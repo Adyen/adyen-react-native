@@ -1,0 +1,6 @@
+module Adyen {
+  umbrella header "Adyen-umbrella.h"
+
+  export *
+  module * { export * }
+}

@@ -1,0 +1,6 @@
+module Pods_AdyTestiOS {
+  umbrella header "Pods-AdyTestiOS-umbrella.h"
+
+  export *
+  module * { export * }
+}

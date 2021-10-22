@@ -1,0 +1,4 @@
+${PODS_ROOT}/Target Support Files/Pods-AdyTestiOS-AdyTestiOSTests/Pods-AdyTestiOS-AdyTestiOSTests-frameworks.sh
+${PODS_ROOT}/Adyen3DS2/Dynamic/Adyen3DS2.framework
+${PODS_XCFRAMEWORKS_BUILD_DIR}/double-conversion/double-conversion.framework/double-conversion
+${PODS_XCFRAMEWORKS_BUILD_DIR}/OpenSSL/OpenSSL.framework/OpenSSL

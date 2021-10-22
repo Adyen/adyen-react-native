@@ -1,0 +1,6 @@
+framework module Adyen3DS2 {
+  umbrella header "Adyen3DS2.h"
+
+  export *
+  module * { export * }
+}
