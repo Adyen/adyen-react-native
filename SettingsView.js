@@ -7,6 +7,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   useColorScheme,
   View
 } from 'react-native';
@@ -20,7 +21,7 @@ const SettingView= ({ navigation }) => {
         <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />  
             <View>
-                <Button title='Back' />
+                <TextInput />
             </View>
         </SafeAreaView>
     )
