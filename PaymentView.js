@@ -74,15 +74,15 @@ const PaymentView = ({ navigation }) => {
             />
             <Button
               title="Open Card Component (WIP)"
-              disabled="true"
+              disabled={true}
             />
             <Button
               title="Open iDEAL (WIP)"
-              disabled="true"
+              disabled={true}
             />
             <Button
               title={platformSpecificButton}
-              disabled="true"
+              disabled={true}
             />
             
         </View>

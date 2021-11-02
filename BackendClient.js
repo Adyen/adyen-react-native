@@ -1,8 +1,6 @@
-const environment = {
-    apiKey: "{YOUR_DEMO_SERVER_API_KEY}",
-    url: "https://checkout-test.adyen.com/v67/"
-  };
 
+import { environment } from "./GlobalConfiguration";
+  
   export const fetchPaymentMethods = (configuration) => {
     let paymentMethodsRequest = new Request(environment.url + 'paymentMethods', {
     method: 'POST',
