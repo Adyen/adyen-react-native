@@ -14,4 +14,4 @@ export const globalConfiguration = {
 export const environment = {
     apiKey: "{YOUR_DEMO_SERVER_API_KEY}",
     url: "https://checkout-test.adyen.com/v67/"
-  };
+};

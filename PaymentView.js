@@ -1,51 +1,53 @@
 import React from 'react';
 
-import { onOpenDropInPress, CHANNEL } from './PaymentHandling';
+import { fetchPaymentMethods } from './BackendClient' ;
+import { openDropInComponent, CHANNEL } from './PaymentHandling';
 
 import {
   Button,
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  Text,
   useColorScheme,
   View
 } from 'react-native';
 
 import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { globalConfiguration } from './Configuration';
 
 const styles = StyleSheet.create({
-    sectionContainer: {
-      marginVertical: 32,
-      borderRadius: 5,
-      backgroundColor: "oldlace"
-    },
     contentView: {
       flex: 1,
       borderRadius: 5,
       justifyContent: "center",
-    },
-    sectionTitle: {
-      paddingVertical: 16,
-      fontSize: 24,
-      fontWeight: '600',
-    },
-    sectionDescription: {
-      marginTop: 8,
-      fontSize: 18,
-      fontWeight: '400',
-    },
-    highlight: {
-      fontWeight: '700',
     }
-  });
+});
+
+var globalPaymentMethods = null;
+
+export const onOpenDropInPress = (configuration) => {
+  if (!globalPaymentMethods) {
+    console.log('Requesting payment methods');
+    fetchPaymentMethods(configuration)
+    .then(paymentMethods => {
+      globalPaymentMethods = paymentMethods;
+      openDropInComponent(paymentMethods, configuration);
+    })
+    .catch(error => {
+      console.log('Network error:', error);
+    })
+  } else {
+    console.log('Using local payment methods');
+    openDropInComponent(globalPaymentMethods, configuration);
+  }
+};
 
 const PaymentView = ({ navigation }) => {
+
     const isDarkMode = useColorScheme() === 'dark';
   
     const backgroundStyle = { backgroundColor: isDarkMode ? Colors.darker : Colors.lighter, };
     const contentBackgroundStyle = { backgroundColor: isDarkMode ? Colors.black : Colors.white };
-    const titleStyle = { color: isDarkMode ? Colors.lighter: Colors.darker };
   
     const platformSpecificPayment = CHANNEL == 'iOS' ? "Apple Pay" : "Google Pay"
     const platformSpecificButton = 'Open ' + platformSpecificPayment + ' (WIP)'
@@ -62,7 +64,7 @@ const PaymentView = ({ navigation }) => {
         
             <Button
               title="Open DropIn"
-              onPress={onOpenDropInPress}
+              onPress={ () => { onOpenDropInPress(globalConfiguration) } }
             />
             <Button
               title="Open Card Component (WIP)"

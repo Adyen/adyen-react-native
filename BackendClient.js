@@ -1,5 +1,5 @@
 
-import { environment } from "./GlobalConfiguration";
+import { environment } from "./Configuration";
   
   export const fetchPaymentMethods = (configuration) => {
     let paymentMethodsRequest = new Request(environment.url + 'paymentMethods', {

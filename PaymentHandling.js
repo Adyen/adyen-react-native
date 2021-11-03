@@ -4,55 +4,34 @@ import {
     NativeEventEmitter,
 } from 'react-native';
 
-import { fetchPaymentMethods, fetchPayments, fetchPaymentDetails } from './BackendClient' ;
-import { globalConfiguration } from './GlobalConfiguration';
+import { fetchPayments, fetchPaymentDetails } from './BackendClient' ;
 
 const { AdyenDropIn } = NativeModules;
 const { CHANNEL } = AdyenDropIn.getConstants();
 
-var globalPaymentMethods = null;
-
-  //  @objc func openDropIn(_ paymentMethods : NSDictionary, configuration: NSDictionary)
-export const onOpenDropInPress = () => {
-    if (!globalPaymentMethods) {
-      console.log('Requesting payment methods');
-      fetchPaymentMethods(globalConfiguration)
-      .then(paymentMethods => {
-        globalPaymentMethods = paymentMethods;
-        openDropInComponent(paymentMethods, globalConfiguration);
-      })
-      .catch(error => {
-        console.log('Network error:', error);
-      })
-    } else {
-      console.log('Using local payment methods');
-      openDropInComponent(globalPaymentMethods, globalConfiguration);
-    }
-  };
-
- const openDropInComponent = (paymentMethods, configuration) => {
+export const openDropInComponent = (paymentMethods, configuration) => {
 
   const eventEmitter = new NativeEventEmitter(NativeModules.AdyenDropIn);
-  this.didSubmitCallback = eventEmitter.addListener('didSubmitCallback', didSubmit);
-  this.didProvideCallback = eventEmitter.addListener('didProvideCallback', didProvide);
+  this.didSubmitCallback = eventEmitter.addListener('didSubmitCallback', (data) =>  didSubmit(configuration, data) );
+  this.didProvideCallback = eventEmitter.addListener('didProvideCallback', (data) =>  didProvide(configuration, data) );
   this.didCompleteCallback = eventEmitter.addListener('didCompleteCallback', didComplete);
   this.didFailCallback = eventEmitter.addListener('didFailCallback', didFail);
   
   AdyenDropIn.openDropIn(paymentMethods, configuration);
 };
 
-const didSubmit = (data) => {
+const didSubmit = (configuration, data) => {
   console.log('didSubmit called: ', data.paymentMethod.type);
   
-  data.shopperLocale = globalConfiguration.shopperLocale;
+  data.shopperLocale = configuration.shopperLocale;
   data.channel = CHANNEL;
-  data.amount = globalConfiguration.amount;
-  data.reference = globalConfiguration.reference;
-  data.shopperReference = globalConfiguration.shopperReference;
-  data.countryCode = globalConfiguration.countryCode;
-  data.merchantAccount = globalConfiguration.merchantAccount;
-  data.additionalData = globalConfiguration.additionalData;
-  data.returnUrl = data.returnUrl ?? globalConfiguration.returnUrl;
+  data.amount = configuration.amount;
+  data.reference = configuration.reference;
+  data.shopperReference = configuration.shopperReference;
+  data.countryCode = configuration.countryCode;
+  data.merchantAccount = configuration.merchantAccount;
+  data.additionalData = configuration.additionalData;
+  data.returnUrl = data.returnUrl ?? configuration.returnUrl;
 
   fetchPayments(data)
   .then(result => {
@@ -71,10 +50,10 @@ const didSubmit = (data) => {
   })
 };
 
-const didProvide = (data) => {
+const didProvide = (configuration, data) => {
   console.log('didProvide called '), data;
 
-  fetchPaymentDetails(globalConfiguration, data.details, data.paymentData)
+  fetchPaymentDetails(configuration, data.details, data.paymentData)
   .then(result => {
       AdyenDropIn.hideDropIn();
       Alert.alert('Payment', result.resultCode);

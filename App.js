@@ -25,7 +25,7 @@ const App = () => {
         headerRight: () => (
           <Button
             onPress={() => navigation.navigate('Settings') }
-            title="⚙︎"
+            title="Edit"
           />
           ),
         })
