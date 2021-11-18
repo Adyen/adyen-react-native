@@ -12,7 +12,7 @@ target 'AdyTestiOS' do
     :hermes_enabled => false
   )
 
-  pod "Adyen", :path=>"/Users/vm/source/react/shared/adyen-ios/"
+  pod "Adyen"
 
   target 'AdyTestiOSTests' do
     inherit! :complete

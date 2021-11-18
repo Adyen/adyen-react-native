@@ -1,29 +1,29 @@
 PODS:
-  - Adyen (4.0.0):
-    - Adyen/Actions (= 4.0.0)
-    - Adyen/Card (= 4.0.0)
-    - Adyen/Components (= 4.0.0)
-    - Adyen/Core (= 4.0.0)
-    - Adyen/DropIn (= 4.0.0)
-    - Adyen/Encryption (= 4.0.0)
-  - Adyen/Actions (4.0.0):
+  - Adyen (4.4.0):
+    - Adyen/Actions (= 4.4.0)
+    - Adyen/Card (= 4.4.0)
+    - Adyen/Components (= 4.4.0)
+    - Adyen/Core (= 4.4.0)
+    - Adyen/DropIn (= 4.4.0)
+    - Adyen/Encryption (= 4.4.0)
+  - Adyen/Actions (4.4.0):
     - Adyen/Core
-    - Adyen3DS2 (= 2.2.2)
-  - Adyen/Card (4.0.0):
+    - Adyen3DS2 (= 2.2.4)
+  - Adyen/Card (4.4.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Components (4.0.0):
+  - Adyen/Components (4.4.0):
     - Adyen/Core
-  - Adyen/Core (4.0.0):
+  - Adyen/Core (4.4.0):
     - AdyenNetworking (= 1.0.0)
-  - Adyen/DropIn (4.0.0):
+  - Adyen/DropIn (4.4.0):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (4.0.0)
-  - Adyen3DS2 (2.2.2)
+  - Adyen/Encryption (4.4.0)
+  - Adyen3DS2 (2.2.4)
   - AdyenNetworking (1.0.0)
   - boost-for-react-native (1.63.0)
   - CocoaAsyncSocket (7.6.5)
@@ -369,7 +369,7 @@ PODS:
     - Yoga (~> 1.14)
 
 DEPENDENCIES:
-  - Adyen (from `/Users/vm/source/react/shared/adyen-ios/`)
+  - Adyen
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - FBReactNativeSpec (from `../node_modules/react-native/React/FBReactNativeSpec`)
@@ -426,6 +426,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Adyen
     - Adyen3DS2
     - AdyenNetworking
     - boost-for-react-native
@@ -445,8 +446,6 @@ SPEC REPOS:
     - YogaKit
 
 EXTERNAL SOURCES:
-  Adyen:
-    :path: "/Users/vm/source/react/shared/adyen-ios/"
   DoubleConversion:
     :podspec: "../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
   FBLazyVector:
@@ -509,8 +508,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: b03930bd7c65f3a9ef5c232bcd4be62a440d11b5
-  Adyen3DS2: 98e8f8759f1bd16a6f609f21e3eaa9f66f38d1c6
+  Adyen: 0f1b5ff0d0e0b3ec561a2d55ab72ae6970d0774d
+  Adyen3DS2: ab81415419e1269b95ec01502d18912985806351
   AdyenNetworking: 14567bd00c00ba2e2580a904708c7ba5f010b1f9
   boost-for-react-native: 39c7adb57c4e60d6c5479dd8623128eb5b3f0f2c
   CocoaAsyncSocket: 065fd1e645c7abab64f7a6a2007a48038fdc6a99
@@ -558,6 +557,6 @@ SPEC CHECKSUMS:
   Yoga: aa0cb45287ebe1004c02a13f279c55a95f1572f4
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 
-PODFILE CHECKSUM: da00b7b4cd00143d98e1840f2908a62581da61c0
+PODFILE CHECKSUM: e740181f9735f1d1521e6cf8f7ad463d79a595c5
 
-COCOAPODS: 1.10.2
+COCOAPODS: 1.11.2

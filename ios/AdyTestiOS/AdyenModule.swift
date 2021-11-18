@@ -226,3 +226,18 @@ fileprivate struct EncodableActionData: Encodable {
   }
   
 }
+
+extension Environment {
+  
+  internal static func parse(_ value: String) -> Environment {
+    switch value.lowercased() {
+    case "beta": return .beta
+    case "live", "liveeurope": return .liveEurope
+    case "liveaustralia": return .liveAustralia
+    case "liveunitedstates": return .liveUnitedStates
+    default:
+      return .test
+    }
+  }
+  
+}

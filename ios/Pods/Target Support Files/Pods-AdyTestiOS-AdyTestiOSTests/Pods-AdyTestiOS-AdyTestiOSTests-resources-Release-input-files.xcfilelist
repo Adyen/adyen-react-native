@@ -1,5 +1,0 @@
-${PODS_ROOT}/Target Support Files/Pods-AdyTestiOS-AdyTestiOSTests/Pods-AdyTestiOS-AdyTestiOSTests-resources.sh
-${PODS_CONFIGURATION_BUILD_DIR}/Adyen/AdyenActions.bundle
-${PODS_CONFIGURATION_BUILD_DIR}/Adyen/AdyenCard.bundle
-${PODS_CONFIGURATION_BUILD_DIR}/Adyen/Adyen.bundle
-${PODS_CONFIGURATION_BUILD_DIR}/React-Core/AccessibilityResources.bundle
