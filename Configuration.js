@@ -1,4 +1,6 @@
-export const globalConfiguration = {
+import React from 'react';
+
+export const defaultConfiguration = {
     environment: "test",
     clientKey: "{YOUR_CLIENT_KEY}",
     countryCode: "NL",

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-
-import { globalConfiguration } from './Configuration';
+import { PaymentMethodsContext } from './PaymentMethodsProvider';
 
 import {
+    Button,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -45,37 +45,57 @@ const FormTextInput = (props) => {
     );
   }
 
-const SettingView= ({ navigation }) => {
+const SettingView = () => {
 
     const isDarkMode = useColorScheme() === 'dark';
     const backgroundStyle = { backgroundColor: isDarkMode ? Colors.darker : Colors.lighter };
-  
+    let tempContext = {};
     return (
-        <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
-            <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />  
-            <View>
-                <FormTextInput 
-                    placeholder='Country' 
-                    value={globalConfiguration.countryCode}
-                    onChangeText={value => globalConfiguration.countryCode = value}
-                    />
-                <FormTextInput 
-                    placeholder='Currency' 
-                    value={globalConfiguration.amount.currency}
-                    onChangeText={value => globalConfiguration.amount.currency = value}
-                    />
-                <FormTextInput 
-                    placeholder='Amount' 
-                    value={globalConfiguration.amount.value.toString()}
-                    onChangeText={value => globalConfiguration.amount.value = parseInt(value)}
-                    />
-                <FormTextInput 
-                    placeholder='Merchant Account' 
-                    value={globalConfiguration.merchantAccount}
-                    onChangeText={value => globalConfiguration.merchantAccount = value}
-                    />
-            </View>
-        </SafeAreaView>
+        <PaymentMethodsContext.Consumer>
+            { context => (
+                <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
+                    <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />  
+                    <View>
+                        <FormTextInput 
+                            placeholder='Country' 
+                            value={context.config.countryCode}
+                            onChangeText={value => tempContext.countryCode = value }
+                            />
+                        <FormTextInput 
+                            placeholder='Currency' 
+                            value={context.config.amount.currency}
+                            onChangeText={value => tempContext.currency = value}
+                            />
+                        <FormTextInput 
+                            placeholder='Amount' 
+                            value={context.config.amount.value.toString()}
+                            onChangeText={value => tempContext.value = parseInt(value)}
+                            />
+                        <FormTextInput 
+                            placeholder='Merchant Account' 
+                            value={context.config.merchantAccount}
+                            onChangeText={value => tempContext.merchantAccount = value}
+                            />
+                        <FormTextInput 
+                            placeholder='Shopper locale' 
+                            value={context.config.shopperLocale}
+                            onChangeText={value => tempContext.shopperLocale = value}
+                            />
+                        <Button
+                            title="Apply"
+                            onPress={ () => {
+                                let newConfig = JSON.parse(JSON.stringify(context.config));
+                                    newConfig.countryCode = tempContext.countryCode || context.config.countryCode;
+                                    newConfig.amount.currency = tempContext.currency || context.config.amount.currency;
+                                    newConfig.amount.value = tempContext.value || context.config.amount.value;
+                                    newConfig.merchantAccount = tempContext.merchantAccount || context.config.merchantAccount;
+                                    newConfig.shopperLocale = tempContext.shopperLocale || context.config.shopperLocale;
+                                context.onConfigChanged(newConfig) 
+                                } } />
+                    </View>
+                </SafeAreaView>
+            )}
+        </PaymentMethodsContext.Consumer>
     )
 };
 

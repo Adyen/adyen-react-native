@@ -4,10 +4,12 @@ import {
     NativeEventEmitter,
 } from 'react-native';
 
-import { fetchPayments, fetchPaymentDetails } from './BackendClient' ;
+import { fetchPayments, fetchPaymentDetails } from './APIClient' ;
 
 const { AdyenDropIn } = NativeModules;
 const { CHANNEL } = AdyenDropIn.getConstants();
+
+export const channel = CHANNEL;
 
 export const openDropInComponent = (paymentMethods, configuration) => {
 
