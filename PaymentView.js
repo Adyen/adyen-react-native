@@ -29,15 +29,6 @@ const styles = StyleSheet.create({
     }
 });
 
-export const onOpenDropInPress = (context) => {
-  if (context.paymentMethods) {
-    console.log('Using local payment methods');
-    openDropInComponent(context.paymentMethods, context.config);
-  } else {
-    console.log('No payment methods!');
-  }
-};
-
 function getFlagEmoji(countryCode) {
   const codePoints = countryCode
     .toUpperCase()
@@ -55,6 +46,15 @@ const PaymentView = () => {
   
     const platformSpecificPayment = channel == 'iOS' ? "Apple Pay" : "Google Pay"
     const platformSpecificButton = 'Open ' + platformSpecificPayment + ' (WIP)'
+
+    const onOpenDropInPress = (context) => {
+      if (context.paymentMethods) {
+        console.log('Using local payment methods');
+        openDropInComponent.apply(this, [context.paymentMethods, context.config]);
+      } else {
+        console.log('No payment methods!');
+      }
+    };
   
     return (
       <PaymentMethodsContext.Consumer>

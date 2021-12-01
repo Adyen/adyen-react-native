@@ -22,7 +22,7 @@ import { environment } from "./Configuration";
         if (response.status === 200) {
           return response.json();
         } else {
-          throw new Error('Payment methods error ' + response.status + ' ' + response.body.stringify);
+          throw new Error('Payment methods error ' + response.status + ' ' + (response.body || {}).stringify);
         }
       })
   };
@@ -43,7 +43,7 @@ import { environment } from "./Configuration";
       if (response.status === 200) {
         return response.json();
       } else {
-        throw new Error('Payments error ' + response.status + ' ' + response.body.stringify);
+        throw new Error('Payments error ' + response.status + ' ' + (response.body || {}).stringify);
       }
     })
   };
@@ -68,7 +68,7 @@ import { environment } from "./Configuration";
       if (response.status === 200) {
         return response.json();
       } else {
-        throw new Error('Payment details error ' + response.status + ' ' + response.body.stringify);
+        throw new Error('Payment details error ' + response.status + ' ' + (response.body || {}).stringify);
       }
     })
   };
