@@ -14,9 +14,10 @@
 		1FB889000A3E368670D05772 /* libPods-AdyTestiOS-AdyTestiOSTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF0EB384AB52E67BF94F12C9 /* libPods-AdyTestiOS-AdyTestiOSTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		9408C56E26DE57A700DCC211 /* AdyenModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 9408C56D26DE57A700DCC211 /* AdyenModule.m */; };
-		946DE24126F36E7500D4C515 /* App.js in Resources */ = {isa = PBXBuildFile; fileRef = 946DE24026F36E7400D4C515 /* App.js */; };
 		94AD102C26E64F5600AF7193 /* AdyenModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94AD102A26E64F5600AF7193 /* AdyenModule.swift */; };
 		94AD102D26E64F5700AF7193 /* AdyenHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94AD102B26E64F5600AF7193 /* AdyenHelpers.swift */; };
+		94AD22D127594C0000927A49 /* Configuration.js in Resources */ = {isa = PBXBuildFile; fileRef = 94AD22D027594BFF00927A49 /* Configuration.js */; };
+		94AD22D3275A34A300927A49 /* PaymentHandling.js in Resources */ = {isa = PBXBuildFile; fileRef = 94AD22D2275A34A300927A49 /* PaymentHandling.js */; };
 		CC4EA38AB65DD8133C1917DC /* libPods-AdyTestiOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0FCE6BAC303F1AA24F04461 /* libPods-AdyTestiOS.a */; };
 /* End PBXBuildFile section */
 
@@ -44,10 +45,11 @@
 		797C52766F0299A6519239B8 /* Pods-AdyTestiOS-AdyTestiOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyTestiOS-AdyTestiOSTests.release.xcconfig"; path = "Target Support Files/Pods-AdyTestiOS-AdyTestiOSTests/Pods-AdyTestiOS-AdyTestiOSTests.release.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AdyTestiOS/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9408C56D26DE57A700DCC211 /* AdyenModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = AdyenModule.m; path = AdyTestiOS/AdyenModule.m; sourceTree = "<group>"; };
-		946DE24026F36E7400D4C515 /* App.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = App.js; path = ../App.js; sourceTree = "<group>"; };
 		94AD102926E64F5600AF7193 /* AdyTestiOS-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "AdyTestiOS-Bridging-Header.h"; path = "AdyTestiOS/AdyTestiOS-Bridging-Header.h"; sourceTree = "<group>"; };
 		94AD102A26E64F5600AF7193 /* AdyenModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AdyenModule.swift; path = AdyTestiOS/AdyenModule.swift; sourceTree = "<group>"; };
 		94AD102B26E64F5600AF7193 /* AdyenHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AdyenHelpers.swift; path = AdyTestiOS/AdyenHelpers.swift; sourceTree = "<group>"; };
+		94AD22D027594BFF00927A49 /* Configuration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = Configuration.js; path = ../Configuration.js; sourceTree = "<group>"; };
+		94AD22D2275A34A300927A49 /* PaymentHandling.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = PaymentHandling.js; path = ../PaymentHandling.js; sourceTree = "<group>"; };
 		BF0EB384AB52E67BF94F12C9 /* libPods-AdyTestiOS-AdyTestiOSTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdyTestiOS-AdyTestiOSTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0FCE6BAC303F1AA24F04461 /* libPods-AdyTestiOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdyTestiOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C527176F2848A49D7A3737F7 /* Pods-AdyTestiOS-AdyTestiOSTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyTestiOS-AdyTestiOSTests.debug.xcconfig"; path = "Target Support Files/Pods-AdyTestiOS-AdyTestiOSTests/Pods-AdyTestiOS-AdyTestiOSTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -140,7 +142,8 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				946DE24026F36E7400D4C515 /* App.js */,
+				94AD22D2275A34A300927A49 /* PaymentHandling.js */,
+				94AD22D027594BFF00927A49 /* Configuration.js */,
 				13B07FAE1A68108700A75B9A /* AdyTestiOS */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* AdyTestiOSTests */,
@@ -256,9 +259,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94AD22D3275A34A300927A49 /* PaymentHandling.js in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
-				946DE24126F36E7500D4C515 /* App.js in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				94AD22D127594C0000927A49 /* Configuration.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -662,7 +666,7 @@
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 ";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -723,7 +727,7 @@
 				COPY_PHASE_STRIP = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 ";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

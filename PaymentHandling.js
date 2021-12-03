@@ -14,6 +14,12 @@ export const channel = CHANNEL;
 export const openDropInComponent = (paymentMethods, configuration) => {
 
   const eventEmitter = new NativeEventEmitter(NativeModules.AdyenDropIn);
+  
+  if (this.didSubmitCallback != null) { this.didSubmitCallback.remove() }
+  if (this.didCompleteCallback != null) { this.didCompleteCallback.remove() }
+  if (this.didFailCallback != null) { this.didFailCallback.remove() }
+  if (this.didProvideCallback != null) { this.didProvideCallback.remove() }
+  
   this.didSubmitCallback = eventEmitter.addListener('didSubmitCallback', (data) =>  didSubmit(configuration, data) );
   this.didProvideCallback = eventEmitter.addListener('didProvideCallback', (data) =>  didProvide(configuration, data) );
   this.didCompleteCallback = eventEmitter.addListener('didCompleteCallback', didComplete);

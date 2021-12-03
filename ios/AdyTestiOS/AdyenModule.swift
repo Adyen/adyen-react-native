@@ -28,7 +28,7 @@ class AdyenDropIn: RCTEventEmitter {
   
   @objc
   override static func requiresMainQueueSetup() -> Bool {
-    return false
+    return true
   }
   
   override func stopObserving() { }
@@ -99,7 +99,9 @@ class AdyenDropIn: RCTEventEmitter {
           let action = try? JSONDecoder().decode(Action.self, from: data)
     else { return }
 
-    dropInComponent?.handle(action)
+    DispatchQueue.main.async { [weak self] in
+      self?.dropInComponent?.handle(action)
+    }
   }
   
 }
