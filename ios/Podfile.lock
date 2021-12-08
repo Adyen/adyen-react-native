@@ -1,28 +1,28 @@
 PODS:
-  - Adyen (4.4.0):
-    - Adyen/Actions (= 4.4.0)
-    - Adyen/Card (= 4.4.0)
-    - Adyen/Components (= 4.4.0)
-    - Adyen/Core (= 4.4.0)
-    - Adyen/DropIn (= 4.4.0)
-    - Adyen/Encryption (= 4.4.0)
-  - Adyen/Actions (4.4.0):
+  - Adyen (4.5.0):
+    - Adyen/Actions (= 4.5.0)
+    - Adyen/Card (= 4.5.0)
+    - Adyen/Components (= 4.5.0)
+    - Adyen/Core (= 4.5.0)
+    - Adyen/DropIn (= 4.5.0)
+    - Adyen/Encryption (= 4.5.0)
+  - Adyen/Actions (4.5.0):
     - Adyen/Core
     - Adyen3DS2 (= 2.2.4)
-  - Adyen/Card (4.4.0):
+  - Adyen/Card (4.5.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Components (4.4.0):
+  - Adyen/Components (4.5.0):
     - Adyen/Core
-  - Adyen/Core (4.4.0):
+  - Adyen/Core (4.5.0):
     - AdyenNetworking (= 1.0.0)
-  - Adyen/DropIn (4.4.0):
+  - Adyen/DropIn (4.5.0):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (4.4.0)
+  - Adyen/Encryption (4.5.0)
   - Adyen3DS2 (2.2.4)
   - AdyenNetworking (1.0.0)
   - boost-for-react-native (1.63.0)
@@ -508,7 +508,7 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: 0f1b5ff0d0e0b3ec561a2d55ab72ae6970d0774d
+  Adyen: dddbc605cadd9e4f5ab74e6f2631ed11c3254fee
   Adyen3DS2: ab81415419e1269b95ec01502d18912985806351
   AdyenNetworking: 14567bd00c00ba2e2580a904708c7ba5f010b1f9
   boost-for-react-native: 39c7adb57c4e60d6c5479dd8623128eb5b3f0f2c
