@@ -18,11 +18,12 @@ import { environment } from "./Configuration";
   
    return fetch(paymentMethodsRequest)
       .then(response => {
-        console.log(response);
+        console.log(response.headers);
         if (response.status === 200) {
           return response.json();
         } else {
-          throw new Error('Payment methods error ' + response.status + ' ' + (response.body || {}).stringify);
+          response.json().then( data => { console.log(data); } );
+          throw new Error('Payment methods error ' + response.status);
         }
       })
   };
@@ -39,11 +40,12 @@ import { environment } from "./Configuration";
   
    return fetch(paymentRequest)
     .then(response => {
-      console.log(response);
+      console.log(response.headers);
       if (response.status === 200) {
         return response.json();
       } else {
-        throw new Error('Payments error ' + response.status + ' ' + (response.body || {}).stringify);
+        response.json().then( data => { console.log(data); } );
+        throw new Error('Payments error ' + response.status );
       }
     })
   };
@@ -64,11 +66,12 @@ import { environment } from "./Configuration";
   
    return fetch(paymentDetailsRequest)
     .then(response => {
-      console.log(response);
+        console.log(response.headers);
       if (response.status === 200) {
         return response.json();
       } else {
-        throw new Error('Payment details error ' + response.status + ' ' + (response.body || {}).stringify);
+        response.json().then( data => { console.log(data); } );
+        throw new Error('Payment details error ' + response.status);
       }
     })
   };

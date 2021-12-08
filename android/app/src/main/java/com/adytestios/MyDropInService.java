@@ -56,4 +56,5 @@ public class MyDropInService extends DropInService implements DropInServiceProxy
         Log.d(TAG, message);
         sendResult(new DropInServiceResult.Finished(message));
     }
+    
 }

@@ -21,6 +21,7 @@ class PaymentMethodsProvider extends Component {
                         console.log('Requesting payment methods');
                         fetchPaymentMethods(newConfig)
                         .then(paymentMethods => {
+                            console.log(paymentMethods);
                             this.setState({ 
                                 config: newConfig, 
                                 paymentMethods: paymentMethods 

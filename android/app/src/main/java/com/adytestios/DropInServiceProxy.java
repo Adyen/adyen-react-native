@@ -52,6 +52,7 @@ public class DropInServiceProxy {
         public void onDidSubmit(@NonNull JSONObject jsonObject);
 
         public void onDidProvide(@NonNull JSONObject jsonObject);
+        
     }
 
     public interface DropInModuleListener {
@@ -61,8 +62,7 @@ public class DropInServiceProxy {
         public void onFail(JSONObject jsonObject);
 
         public void onComplete(@Nullable String message);
+
     }
-
-
 
 }
