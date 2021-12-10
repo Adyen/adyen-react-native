@@ -1,4 +1,4 @@
-package com.adytestios;
+package com.adyenreact;
 
 import com.adyen.checkout.core.api.Environment;
 

@@ -1,6 +1,6 @@
 //
 //  AdyenModule.m
-//  AdyTestiOS
+//  AdyenReact
 //
 //  Created by vm on 31/08/2021.
 //

@@ -1,4 +1,4 @@
-package com.adytestios;
+package com.adyenreact;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;

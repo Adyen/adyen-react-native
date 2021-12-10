@@ -15,7 +15,7 @@ export const AdyenCheckoutContext = React.createContext();
 export class AdyenDropInProvider extends Component {
 
   state = {
-    didSubmitCallback: null, 
+    didSubmitCallback: null,
     didCompleteCallback: null,
     didFailCallback: null,
     didProvideCallback: null
@@ -25,7 +25,7 @@ export class AdyenDropInProvider extends Component {
     return (
       <AdyenCheckoutContext.Provider
           value={{
-            openDropInComponent: (paymentMethods, configuration) => { 
+            openDropInComponent: (paymentMethods, configuration) => {
               const eventEmitter = new NativeEventEmitter(NativeModules.AdyenDropIn);
 
               if (this.state.didSubmitCallback != null) { this.state.didSubmitCallback.remove() }
@@ -52,16 +52,9 @@ export class AdyenDropInProvider extends Component {
   }
 }
 
-const showAlert = (message) => { 
-  setTimeout( function () { 
-    console.log('Alert:' + message.stringify);
-    Alert.alert('Payment', message);
-  }, 4000 );
-};
-
 const didSubmit = (configuration, data) => {
   console.log('didSubmit called: ', data.paymentMethod.type);
-  
+
   data.shopperLocale = configuration.shopperLocale;
   data.channel = configuration.channel;
   data.amount = configuration.amount;
@@ -82,7 +75,7 @@ const didSubmit = (configuration, data) => {
       console.log(result);
 
       AdyenDropIn.hideDropIn();
-      showAlert(result.resultCode);
+      Alert.alert('Payment', message);
     }
   })
   .catch(error => {
@@ -96,7 +89,7 @@ const didProvide = (configuration, data) => {
   fetchPaymentDetails(configuration, data.details, data.paymentData)
   .then(result => {
       AdyenDropIn.hideDropIn();
-      showAlert(result.resultCode);
+      Alert.alert('Payment', message);
   })
   .catch(error => {
     console.log('Network error:', error);

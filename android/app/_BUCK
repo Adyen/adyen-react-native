@@ -35,12 +35,12 @@ android_library(
 
 android_build_config(
     name = "build_config",
-    package = "com.adytestios",
+    package = "com.adyenreact",
 )
 
 android_resource(
     name = "res",
-    package = "com.adytestios",
+    package = "com.adyenreact",
     res = "src/main/res",
 )
 

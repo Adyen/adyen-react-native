@@ -1,4 +1,4 @@
-package com.adytestios;
+package com.adyenreact;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;

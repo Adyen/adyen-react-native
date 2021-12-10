@@ -80,7 +80,7 @@ const PaymentView = () => {
                 title="Open DropIn"
                 onPress={ () => { adyenCheckout.openDropInComponent(context.paymentMethods, context.config) } } />
               )}
-          </AdyenDropInProvider>
+            </AdyenDropInProvider>
 
             <Button
               title="Open Card Component (WIP)"

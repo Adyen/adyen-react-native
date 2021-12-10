@@ -1,4 +1,4 @@
-package com.adytestios;
+package com.adyenreact;
 
 import com.facebook.react.ReactActivity;
 
@@ -10,7 +10,7 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "AdyTestiOS";
+    return "AdyenReact";
   }
 
 }

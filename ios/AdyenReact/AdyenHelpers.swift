@@ -1,6 +1,6 @@
 //
 //  AdyenHelpers.swift
-//  AdyTestiOS
+//  AdyenReact
 //
 //  Created by vm on 03/09/2021.
 //
