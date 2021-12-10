@@ -1,6 +1,7 @@
-import React, {Component} from 'react';
+import React from 'react';
 
-import { openDropInComponent, channel } from './PaymentHandling';
+import { AdyenDropInProvider, AdyenCheckoutContext } from './AdyenDropInProvider';
+import { channel } from './Configuration';
 
 import {
   Button,
@@ -58,7 +59,7 @@ const PaymentView = () => {
   
     return (
       <PaymentMethodsContext.Consumer>
-        { context => (
+        { context => (      
           <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />  
 
@@ -73,9 +74,14 @@ const PaymentView = () => {
                 contentBackgroundStyle
               ]}>
             
-            <Button
-              title="Open DropIn"
-              onPress={ () => { onOpenDropInPress(context) } } />
+            <AdyenDropInProvider>
+            { adyenCheckout => ( 
+              <Button
+                title="Open DropIn"
+                onPress={ () => { adyenCheckout.openDropInComponent(context.paymentMethods, context.config) } } />
+              )}
+          </AdyenDropInProvider>
+
             <Button
               title="Open Card Component (WIP)"
               disabled={true} />

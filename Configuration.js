@@ -1,4 +1,8 @@
-import React from 'react';
+import { NativeModules } from 'react-native';
+const { AdyenDropIn } = NativeModules;
+const { CHANNEL } = AdyenDropIn.getConstants();
+
+export const channel = CHANNEL;
 
 export const defaultConfiguration = {
     environment: "test",
