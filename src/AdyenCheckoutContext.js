@@ -42,23 +42,19 @@ export class AdyenPaymentProvider extends Component {
     return (
       <AdyenCheckoutContext.Provider
           value={{
-            start: (configuration) => {
-              const eventEmitter = new NativeEventEmitter(NativeModules.AdyenDropIn);
-
-              if (this.state.didSubmitCallback != null) { this.state.didSubmitCallback.remove() }
-              if (this.state.didCompleteCallback != null) { this.state.didCompleteCallback.remove() }
-              if (this.state.didFailCallback != null) { this.state.didFailCallback.remove() }
-              if (this.state.didProvideCallback != null) { this.state.didProvideCallback.remove() }
+            start: (nativeModule, configuration) => {
+              finish();
+              const eventEmitter = new NativeEventEmitter(nativeModule);
 
               this.setState({
                 didSubmitCallback: eventEmitter.addListener('didSubmitCallback', (data) =>  didSubmit(configuration, data) ),
                 didProvideCallback: eventEmitter.addListener('didProvideCallback', this.props.didProvide ),
                 didCompleteCallback: eventEmitter.addListener('didCompleteCallback', () => {
-                  finish()
+                  finish();
                   this.props.didComplete();
                  }),
                 didFailCallback: eventEmitter.addListener('didFailCallback', (error) => {
-                  finish()
+                  finish();
                   this.props.didFail(error);
                  }),
               })

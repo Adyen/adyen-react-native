@@ -17,11 +17,17 @@
 #### iOS
 
 1. run `pod install`
+2. add return URL and
+  ```objc
+  - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+    return [RedirectComponentProxy proccessURL:url];
+  }
+  ```
+3.
 
 #### Android
 
-1. Add
-2. Add `com.adyenreact.AdyenDropInService` to manifest:
+1. Add `com.adyenreact.AdyenDropInService` to manifest:
 
 `<service
   android:name="com.adyenreact.AdyenDropInService"
@@ -43,8 +49,8 @@ import { AdyenPaymentProvider } from '@adyen/react-native';
         title="Open DropIn"
         onPress={ () => {
           adyenPayment.start(configuration);
+          AdyenDropIn.openDropIn(paymentMethods, configuration);
         } } />
-
     </View>
   )}
   </AdyenPaymentProvider>

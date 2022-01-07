@@ -1,11 +1,7 @@
 import React from 'react';
 
 import { AdyenPaymentProvider } from '@adyen/react-native';
-import { channel } from './Configuration';
 import { fetchPayments, fetchPaymentDetails } from './APIClient' ;
-
-import { NativeModules } from 'react-native';
-const { AdyenDropIn } = NativeModules;
 
 import {
   Alert,
@@ -15,11 +11,14 @@ import {
   StyleSheet,
   useColorScheme,
   Text,
-  View
-} from 'react-native';
+  View, 
+  NativeModules, 
+  Platform } from 'react-native';
 
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { PaymentMethodsContext } from './PaymentMethodsProvider';
+
+const { AdyenDropIn, AdyenCardComponent } = NativeModules;
 
 const styles = StyleSheet.create({
     contentView: {
@@ -50,12 +49,9 @@ const PaymentView = () => {
     const backgroundStyle = { backgroundColor: isDarkMode ? Colors.darker : Colors.lighter, };
     const contentBackgroundStyle = { backgroundColor: isDarkMode ? Colors.black : Colors.white };
 
-    const platformSpecificPayment = channel == 'iOS' ? "Apple Pay" : "Google Pay"
-    const platformSpecificButton = 'Open ' + platformSpecificPayment + ' (WIP)'
+    const platformSpecificPayment = Platform.OS === 'ios' ? "Apple Pay" : "Google Pay"
 
-    const onOpenDropInPress = (context) => {
-
-    };
+    var paymentComponent = {}
 
     const didSubmit = (data) => {
       console.log('didSubmit called: ', data.paymentMethod.type);
@@ -64,7 +60,7 @@ const PaymentView = () => {
       .then(result => {
         if (result.action) {
           console.log('- - Action!');
-          AdyenDropIn.handle(result.action);
+          paymentComponent.handle(result.action);
         } else {
           console.log('- - Not en action!');
           console.log(result);
@@ -78,7 +74,7 @@ const PaymentView = () => {
 
     const didProvide = (data) => {
       console.log('didProvide called '), data;
-      AdyenDropIn.hideDropIn();
+      paymentComponent.hide();
 
       fetchPaymentDetails(data)
       .then(result => {
@@ -91,13 +87,19 @@ const PaymentView = () => {
 
     const didComplete = () => {
       console.log('didComplete called');
-      AdyenDropIn.hideDropIn();
+      paymentComponent.hide();
     };
 
     const didFail = (error) => {
       console.log('setDidFail called: ', error);
       Alert.alert('Error', error.message || "Unknown error");
-      AdyenDropIn.hideDropIn();
+      paymentComponent.hide();
+    };
+
+    const payWith = (nativeComponent, adyenPayment, paymentMethods, config) => {
+      paymentComponent = nativeComponent;
+      nativeComponent.open(paymentMethods, config);
+      adyenPayment.start(nativeComponent, config);
     };
 
     return (
@@ -118,30 +120,23 @@ const PaymentView = () => {
               didComplete={didComplete} >
                 { adyenPayment => (
                   <View style={[ styles.contentView, contentBackgroundStyle ]}>
-                  <Button
-                    title="Open DropIn"
-                    onPress={ () => {
-                      if (context.paymentMethods) {
-                        adyenPayment.start(context.config);
-                        AdyenDropIn.openDropIn(context.paymentMethods, context.config);
-                      } else {
-                        Alert.alert('Error', 'No payment methods!');
-                      }
-                    } } />
-
-                  <Button
-                    title="Open Card Component (WIP)"
-                    disabled={true} />
-                  <Button
-                    title="Open iDEAL (WIP)"
-                    disabled={true} />
-                  <Button
-                    title={platformSpecificButton}
-                    disabled={true} />
-
-                </View>
+                    <Button 
+                      title="Open DropIn"
+                      disabled={context.paymentMethods == null}
+                      onPress={ () => { payWith(AdyenDropIn, adyenPayment, context.paymentMethods, context.config) } } />
+                    <Button
+                      title="Open Card Component"
+                      disabled={context.paymentMethods == null}
+                      onPress={ () => { payWith(AdyenCardComponent, adyenPayment, context.paymentMethods, context.config) } } />
+                    <Button
+                      title="Open iDEAL (WIP)"
+                      disabled={true} />
+                    <Button
+                      title={ 'Open ' + platformSpecificPayment + ' (WIP)' }
+                      disabled={true} />
+                  </View>
               )}
-              </AdyenPaymentProvider>
+            </AdyenPaymentProvider>
 
           </SafeAreaView>
         )}

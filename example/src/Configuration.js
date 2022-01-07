@@ -1,8 +1,9 @@
-import { NativeModules } from 'react-native';
-const { AdyenDropIn } = NativeModules;
-const { CHANNEL } = AdyenDropIn.getConstants();
+import { Platform } from 'react-native';
 
-export const channel = CHANNEL;
+const channel = Platform.select({
+  ios: () => 'iOS',
+  android: () => 'Android'
+})();
 
 export const defaultConfiguration = {
     environment: "test",
@@ -15,7 +16,8 @@ export const defaultConfiguration = {
     shopperReference: 'Checkout Shopper',
     merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
     shopperLocale: 'en-US',
-    additionalData: { 'allow3DS2': true }
+    additionalData: { 'allow3DS2': true },
+    // applepayMerchantID: 'merchant.com.adyen'
   };
 
 export const environment = {
