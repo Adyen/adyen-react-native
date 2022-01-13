@@ -65,9 +65,9 @@ public class DropInServiceProxy {
 
         public void onAction(@NonNull JSONObject jsonObject);
 
-        public void onFail(JSONObject jsonObject);
+        public void onFail(@Nullable ReadableMap map);
 
-        public void onComplete(@Nullable String message);
+        public void onComplete(@Nullable ReadableMap message);
 
     }
 

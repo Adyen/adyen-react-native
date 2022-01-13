@@ -1,4 +1,6 @@
 buildscript {
+    ext.kotlin_version = "1.6.10"
+    ext.supportLibVersion = "28.0.0"
     if (project == rootProject) {
         repositories {
             google()
@@ -7,19 +9,21 @@ buildscript {
         }
 
         dependencies {
-            classpath 'com.android.tools.build:gradle:3.5.3'
+            classpath 'com.android.tools.build:gradle:4.2.2'
+            classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         }
     }
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
 }
 
 android {
-    compileSdkVersion safeExtGet('compileSdkVersion', 30)
+    compileSdkVersion safeExtGet('compileSdkVersion', 31)
     defaultConfig {
         minSdkVersion safeExtGet('minSdkVersion', 21)
         targetSdkVersion safeExtGet('targetSdkVersion', 30)
@@ -56,5 +60,7 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
-    implementation "com.adyen.checkout:drop-in:4.3.0"
+    implementation "com.adyen.checkout:drop-in:4.4.0"
+    implementation 'com.google.android.material:material:1.5.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }

@@ -4,15 +4,14 @@ import { AdyenPaymentProvider } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails } from './APIClient' ;
 
 import {
-  Alert,
   Button,
   SafeAreaView,
   StatusBar,
   StyleSheet,
   useColorScheme,
   Text,
-  View, 
-  NativeModules, 
+  View,
+  NativeModules,
   Platform } from 'react-native';
 
 import { Colors } from 'react-native/Libraries/NewAppScreen';
@@ -54,49 +53,48 @@ const PaymentView = () => {
     var paymentComponent = {}
 
     const didSubmit = (data) => {
-      console.log('didSubmit called: ', data.paymentMethod.type);
-
+      console.log("Submit!");
       fetchPayments(data)
       .then(result => {
         if (result.action) {
-          console.log('- - Action!');
+          console.log("Action!");
           paymentComponent.handle(result.action);
         } else {
-          console.log('- - Not en action!');
-          console.log(result);
-          Alert.alert('Payment', result.resultCode);
+          let success = result.resultCode === "Authorized";
+          console.log("Payment: " + result.resultCode);
+          paymentComponent.hide(success, { "message": result.resultCode });
         }
       })
       .catch(error => {
-        console.log('Network error:', error);
+        console.log(error.message);
+        paymentComponent.hide(false, { "message": error.message || "Unknown error" });
       })
     };
 
     const didProvide = (data) => {
-      console.log('didProvide called '), data;
-      paymentComponent.hide();
-
+      console.log('didProvide ' + data);
       fetchPaymentDetails(data)
       .then(result => {
-          Alert.alert('Payment', result.resultCode);
+          let success = result.resultCode === "Authorized";
+          paymentComponent.hide(success, { "message": result.resultCode });
       })
       .catch(error => {
-        console.log('Network error:', error);
+        console.log(error);
+        paymentComponent.hide(false, { "message": error.message || "Unknown error" });
       })
     };
 
     const didComplete = () => {
-      console.log('didComplete called');
-      paymentComponent.hide();
+      paymentComponent.hide(true, { "message": "Completed" });
     };
 
     const didFail = (error) => {
-      console.log('setDidFail called: ', error);
-      Alert.alert('Error', error.message || "Unknown error");
-      paymentComponent.hide();
+      console.log('didFailed ' + error.message);
+      paymentComponent.hide(false, { "message": error.message || "Unknown error" });
     };
 
     const payWith = (nativeComponent, adyenPayment, paymentMethods, config) => {
+      console.log('Paying ' + paymentMethods);
       paymentComponent = nativeComponent;
       nativeComponent.open(paymentMethods, config);
       adyenPayment.start(nativeComponent, config);
@@ -120,7 +118,7 @@ const PaymentView = () => {
               didComplete={didComplete} >
                 { adyenPayment => (
                   <View style={[ styles.contentView, contentBackgroundStyle ]}>
-                    <Button 
+                    <Button
                       title="Open DropIn"
                       disabled={context.paymentMethods == null}
                       onPress={ () => { payWith(AdyenDropIn, adyenPayment, context.paymentMethods, context.config) } } />

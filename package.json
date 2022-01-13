@@ -32,7 +32,8 @@
     "release": "release-it",
     "example": "yarn --cwd example",
     "pods": "cd example && pod-install --silent",
-    "bootstrap": "git clean -fxd && yarn example && yarn && yarn pods"
+    "ios": "git clean -fxd && yarn example && yarn && yarn pods && npx react-native run-ios",
+    "android": "git clean -fxd && yarn example && yarn && npx react-native run-android"
   },
   "release-it": {
     "git": {

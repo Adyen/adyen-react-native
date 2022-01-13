@@ -18,17 +18,15 @@ class PaymentMethodsProvider extends Component {
                     config: this.state.config,
                     paymentMethods: this.state.paymentMethods,
                     onConfigChanged: newConfig => {
-                        console.log('Requesting payment methods');
                         fetchPaymentMethods(newConfig)
-                        .then(paymentMethods => {
-                            console.log(paymentMethods);
+                        .then(paymentMethods => {                           
                             this.setState({
                                 config: newConfig,
                                 paymentMethods: paymentMethods
                             })
                         })
                         .catch(error => {
-                            console.log('Network error:', error);
+                            this.props.onError(error)
                         })
                     }
                 }}

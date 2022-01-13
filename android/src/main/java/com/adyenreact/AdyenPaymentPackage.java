@@ -26,6 +26,7 @@ public class AdyenPaymentPackage implements ReactPackage {
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
         modules.add(new AdyenDropInModule(reactContext));
+        modules.add(new AdyenCardComponent(reactContext));
         return modules;
     }
 

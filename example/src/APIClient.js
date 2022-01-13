@@ -34,12 +34,13 @@ const fetchFrom = (url, body) => {
 
     return fetch(paymentMethodsRequest)
       .then(response => {
-        console.log(response.headers);
         if (response.status === 200) {
           return response.json();
         } else {
-          response.json().then( data => { console.log(data); } );
-          throw new Error('Network error ' + url + ': \n' + response.status);
+          return response.json()
+            .then( json => {
+              throw new Error('Network error ' + response.status + ': \n' + json.message || "Unknown error" );
+            })          
         }
       })
 };
