@@ -94,7 +94,7 @@ const PaymentView = () => {
     };
 
     const payWith = (nativeComponent, adyenPayment, paymentMethods, config) => {
-      console.log('Paying ' + paymentMethods);
+      console.log('Paying ' + nativeComponent );
       paymentComponent = nativeComponent;
       nativeComponent.open(paymentMethods, config);
       adyenPayment.start(nativeComponent, config);
