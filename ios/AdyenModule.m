@@ -13,7 +13,8 @@
 RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
                   configuration:(NSDictionary *)configuration)
 
-RCT_EXTERN_METHOD(hide)
+RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
+                  event:(NSDictionary *)event)
 
 RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
 
@@ -24,7 +25,8 @@ RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
 RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
                   configuration:(NSDictionary *)configuration)
 
-RCT_EXTERN_METHOD(hide)
+RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
+                  event:(NSDictionary *)event)
 
 RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
 

@@ -17,18 +17,19 @@ internal class AdyenDropIn: RCTEventEmitter {
 
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() { }
-    override func startObserving() { }
+    override func stopObserving() {}
+    override func startObserving() {}
 
     override func supportedEvents() -> [String]! {
         ["didSubmitCallback", "didProvideCallback", "didCompleteCallback", "didFailCallback"]
     }
 
     @objc
-    func hide() {
-        dropInComponent?.cancelIfNeeded()
+    func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async {
-            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true, completion: nil)
+            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue)
+            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
+            self.dropInComponent = nil
         }
     }
 

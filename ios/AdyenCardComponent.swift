@@ -25,11 +25,13 @@ internal class AdyenCardComponent: RCTEventEmitter {
     }
 
     @objc
-    func hide() {
-        actionHandler = nil
-        currentComponent = nil
+    func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async {
-            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true, completion: nil)
+            self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
+            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
+
+            self.actionHandler = nil
+            self.currentComponent = nil
         }
     }
 

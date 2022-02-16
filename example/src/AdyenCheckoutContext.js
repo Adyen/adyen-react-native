@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { NativeEventEmitter } from 'react-native';
-import { getNativeComponent } from './AdyenNativeModules';
 
 export const AdyenCheckoutContext = React.createContext();
 
@@ -38,31 +37,28 @@ export class AdyenPaymentProvider extends Component {
 
     return (
       <AdyenCheckoutContext.Provider
-        value={{
-          start: (nativeModuleName, configuration) => {
-            finish();
-            console.log('Start payment: ' + nativeModuleName);
-
-            const nativeModule = getNativeComponent(nativeModuleName);
-            const eventEmitter = new NativeEventEmitter(nativeModule);
-            const didSubmitListener = eventEmitter.addListener('didSubmitCallback', (data) => didSubmit(configuration, data));
-            const didProvideListener = eventEmitter.addListener('didProvideCallback', this.props.didProvide);
-            const didCompleteListener = eventEmitter.addListener('didCompleteCallback', () => {
+          value={{
+            start: (nativeModule, configuration) => {
               finish();
-              this.props.didComplete();
-            });
-            const didFailListener = eventEmitter.addListener('didFailCallback', (error) => {
-              finish();
-              this.props.didFail(error);
-            });
+              const eventEmitter = new NativeEventEmitter(nativeModule);
+              const didSubmitListener = eventEmitter.addListener('didSubmitCallback', (data) => didSubmit(configuration, data));
+              const didProvideListener = eventEmitter.addListener('didProvideCallback', this.props.didProvide);
+              const didCompleteListener = eventEmitter.addListener('didCompleteCallback', () => {
+                finish();
+                this.props.didComplete();
+              });
+              const didFailListener = eventEmitter.addListener('didFailCallback', (error) => {
+                finish();
+                this.props.didFail(error);
+              });
 
-            this.setState({
-              didSubmitCallback: didSubmitListener,
-              didProvideCallback: didProvideListener,
-              didCompleteCallback: didCompleteListener,
-              didFailCallback: didFailListener,
-            })
-          }
+              this.setState({
+                didSubmitCallback: didSubmitListener,
+                didProvideCallback: didProvideListener,
+                didCompleteCallback: didCompleteListener,
+                didFailCallback: didFailListener,
+              })
+            }
         }} >
         <AdyenCheckoutContext.Consumer>
           {this.props.children}

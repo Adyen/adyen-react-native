@@ -15,7 +15,7 @@
         "payments",
         "components"
   ],
-  "main": "src/AdyenCheckoutContext.js",
+  "main": "src/index.js",
   "files": [
     "src",
     "android",
@@ -31,9 +31,9 @@
     "prepare": "bob build",
     "release": "release-it",
     "example": "yarn --cwd example",
-    "pods": "cd example && pod-install --silent",
-    "ios": "git clean -fxd && yarn example && yarn && yarn pods && npx react-native run-ios",
-    "android": "git clean -fxd && yarn example && yarn && npx react-native run-android"
+    "run-ios": "yarn example && cd example && yarn ios",
+    "run-android": "yarn example && cd example && yarn android",
+    "bootstrap": "git clean -fxd && yarn"
   },
   "release-it": {
     "git": {
