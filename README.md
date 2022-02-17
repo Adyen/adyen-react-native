@@ -35,23 +35,18 @@
 
 ## Usage
 ```javascript
-import { AdyenPaymentProvider } from '@adyen/react-native';
+import { AdyenDropIn } from '@adyen/react-native';
 
-// TODO: What to do with the module?
-<AdyenPaymentProvider
-  didSubmit={didSubmit}
-  didProvide={didProvide}
-  didFail={didFail}
-  didComplete={didComplete} >
-    { adyenPayment => (
-      <View style={[ styles.contentView, contentBackgroundStyle ]}>
-      <Button
-        title="Open DropIn"
-        onPress={ () => {
-          adyenPayment.start(configuration);
-          AdyenDropIn.openDropIn(paymentMethods, configuration);
-        } } />
-    </View>
-  )}
-  </AdyenPaymentProvider>
+<Button
+  title="Checkout"
+  onPress={() => {
+    const eventEmitter = new NativeEventEmitter(AdyenDropIn);
+    this.didSubmitListener = eventEmitter.addListener('didSubmitCallback', didSubmit);
+    this.didProvideListener = eventEmitter.addListener('didProvideCallback', didProvide);
+    this.didCompleteListener = eventEmitter.addListener('didCompleteCallback', didComplete);
+    this.didFailListener = eventEmitter.addListener('didFailCallback', didFail);
+
+    AdyenDropIn.open(paymentMethods, configuration);
+  }}
+/>
 ```
