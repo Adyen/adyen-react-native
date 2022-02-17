@@ -21,6 +21,10 @@ export const fetchPaymentDetails = (data) => {
   return fetchFrom(environment.url + 'payments/details', data);
 };
 
+export const isSuccess = (result) => {
+  return result.resultCode == 'Authorised' || result.resultCode == 'Received' || result.resultCode == 'Pending'
+}
+
 const fetchFrom = (url, body) => {
   let paymentMethodsRequest = new Request(url,
     {

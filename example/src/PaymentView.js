@@ -1,9 +1,8 @@
 import React from 'react';
 
-import { AdyenPaymentProvider } from './AdyenCheckoutContext';
-import { getNativeComponent } from '@adyen/react-native';
-// import { AdyenPaymentProvider, AdyenDropIn, AdyenCardComponent } from '@adyen/react-native';
-import { fetchPayments, fetchPaymentDetails } from './APIClient' ;
+// import { AdyenPaymentProvider } from './AdyenCheckoutContext';
+import { AdyenPaymentProvider, getNativeComponent } from '@adyen/react-native';
+import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient' ;
 
 import {
   Button,
@@ -38,10 +37,6 @@ function getFlagEmoji(countryCode) {
     .split('')
     .map(char =>  127397 + char.charCodeAt());
   return String.fromCodePoint(...codePoints);
-}
-
-const isSuccess = (result) => {
-  return result.resultCode == 'Authorised' || result.resultCode == 'Received' || result.resultCode == 'Pending'
 }
 
 const PaymentView = () => {
