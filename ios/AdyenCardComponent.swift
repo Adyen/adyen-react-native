@@ -1,16 +1,17 @@
 //
-//  AdyenCardComponent.swift
-//  AdyenReactNative
+// Copyright (c) 2022 Adyen N.V.
 //
-//  Created by Vladimir Abramichev on 11/01/2022.
+// This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
+
 
 import Foundation
 import Adyen
 import React
+import UIKit
 
 @objc(AdyenCardComponent)
-internal class AdyenCardComponent: RCTEventEmitter {
+internal class AdyenCardComponent: BaseModule {
 
     private var currentComponent: PresentableComponent?
     private var actionHandler: AdyenActionComponent?
@@ -19,10 +20,7 @@ internal class AdyenCardComponent: RCTEventEmitter {
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() { }
     override func startObserving() { }
-
-    override func supportedEvents() -> [String]! {
-        ["didSubmitCallback", "didProvideCallback", "didCompleteCallback", "didFailCallback"]
-    }
+    override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
@@ -43,8 +41,8 @@ internal class AdyenCardComponent: RCTEventEmitter {
         else { return }
 
         guard
-            let environment = configuration["environment"] as? String,
-            let clientKey = configuration["clientKey"] as? String
+            let environment = configuration[Keys.environment] as? String,
+            let clientKey = configuration[Keys.clientKey] as? String
         else { return }
 
         let apiContext = APIContext(environment: Environment.parse(environment), clientKey: clientKey)
@@ -58,11 +56,11 @@ internal class AdyenCardComponent: RCTEventEmitter {
                                       configuration: config)
         component.delegate = self
         currentComponent = component
-
-        if let paymentObject = configuration["amount"] as? [String: Any],
-           let paymentAmount = paymentObject["value"] as? Int,
-           let countryCode = configuration["countryCode"] as? String,
-           let currencyCode = paymentObject["currency"] as? String {
+        
+        if let paymentObject = configuration[Keys.amount] as? [String: Any],
+           let paymentAmount = paymentObject[Keys.value] as? Int,
+           let countryCode = configuration[Keys.countryCode] as? String,
+           let currencyCode = paymentObject[Keys.currency] as? String {
             component.payment = Payment(amount: Amount(value: paymentAmount,
                                                        currencyCode: currencyCode),
                                         countryCode: countryCode)
@@ -123,7 +121,7 @@ extension AdyenCardComponent: PresentationDelegate {
 
     @objc private func cancelDidPress() {
         currentComponent?.cancelIfNeeded()
-        AdyenCardComponent.presenter?.dismiss(animated: true)
+        sendEvent(event: .didFail, body: ComponentError.cancelled.toDictionary)
     }
 }
 
@@ -132,11 +130,11 @@ extension AdyenCardComponent: PresentationDelegate {
 extension AdyenCardComponent: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        sendEvent(withName: "didSubmitCallback", body: data.jsonObject)
+        sendEvent(event: .didSubmit, body: data.jsonObject)
     }
 
     internal func didFail(with error: Error, from component: PaymentComponent) {
-        sendEvent(withName: "didFailCallback", body: error.toDictionary)
+        sendEvent(event: .didFail, body: error.toDictionary)
     }
 
 }
@@ -144,14 +142,14 @@ extension AdyenCardComponent: PaymentComponentDelegate {
 extension AdyenCardComponent: ActionComponentDelegate {
 
     internal func didFail(with error: Error, from component: ActionComponent) {
-        sendEvent(withName: "didFailCallback", body: error.toDictionary)
+        sendEvent(event: .didFail, body: error.toDictionary)
     }
 
     internal func didComplete(from component: ActionComponent) {
-        sendEvent(withName: "didCompleteCallback", body: nil)
+        sendEvent(event: .didComplete, body: nil)
     }
 
     internal func didProvide(_ data: ActionComponentData, from component: ActionComponent) {
-        sendEvent(withName: "didProvideCallback", body: data.jsonObject)
+        sendEvent(event: .didFail, body: ComponentError.cancelled.toDictionary)
     }
 }

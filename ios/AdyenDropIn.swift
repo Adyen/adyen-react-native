@@ -11,7 +11,7 @@ import React
 import PassKit
 
 @objc(AdyenDropIn)
-internal class AdyenDropIn: RCTEventEmitter {
+internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
 
@@ -19,10 +19,7 @@ internal class AdyenDropIn: RCTEventEmitter {
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() {}
     override func startObserving() {}
-
-    override func supportedEvents() -> [String]! {
-        ["didSubmitCallback", "didProvideCallback", "didCompleteCallback", "didFailCallback"]
-    }
+    override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
@@ -40,24 +37,23 @@ internal class AdyenDropIn: RCTEventEmitter {
         else { return }
 
         guard
-            let environment = configuration["environment"] as? String,
-            let clientKey = configuration["clientKey"] as? String
+            let environment = configuration[Keys.environment] as? String,
+            let clientKey = configuration[Keys.clientKey] as? String
         else { return }
 
         let apiContext = APIContext(environment: Environment.parse(environment), clientKey: clientKey)
         let config = DropInComponent.Configuration(apiContext: apiContext)
-
-        if let paymentObject = configuration["amount"] as? [String: Any],
-           let paymentAmount = paymentObject["value"] as? Int,
-           let countryCode = configuration["countryCode"] as? String,
-           let currencyCode = paymentObject["currency"] as? String {
-            config.payment = Payment(amount: Amount(value: paymentAmount,
-                                                    currencyCode: currencyCode),
+        
+        if let paymentObject = configuration[Keys.amount] as? [String: Any],
+           let paymentAmount = paymentObject[Keys.value] as? Int,
+           let countryCode = configuration[Keys.countryCode] as? String,
+           let currencyCode = paymentObject[Keys.currency] as? String {
+            config.payment = Payment(amount: Amount(value: paymentAmount, currencyCode: currencyCode),
                                      countryCode: countryCode)
         }
 
         // Apple Pay
-        if let merchantId = configuration["applepayMerchantID"] as? String, let payment = config.payment {
+        if let merchantId = configuration[Keys.applepayMerchantID] as? String, let payment = config.payment {
             let amount = AmountFormatter.decimalAmount(payment.amount.value, currencyCode: payment.amount.currencyCode)
             config.applePay = .init(summaryItems: [PKPaymentSummaryItem(label: "Total", amount: amount)],
                                     merchantIdentifier: merchantId)
@@ -96,19 +92,19 @@ extension AdyenDropIn: DropInComponentDelegate {
     func didSubmit(_ data: PaymentComponentData,
                    for paymentMethod: PaymentMethod,
                    from component: DropInComponent) {
-        sendEvent(withName: "didSubmitCallback", body: data.jsonObject)
+        sendEvent(event: .didSubmit, body: data.jsonObject)
     }
 
     func didProvide(_ data: ActionComponentData, from component: DropInComponent) {
-        sendEvent(withName: "didProvideCallback", body: data.jsonObject)
+        sendEvent(event: .didProvide, body: data.jsonObject)
     }
 
     func didComplete(from component: DropInComponent) {
-        sendEvent(withName: "didCompleteCallback", body: nil)
+        sendEvent(event: .didComplete, body: nil)
     }
 
     func didFail(with error: Error, from component: DropInComponent) {
-        sendEvent(withName: "didFailCallback", body: error.toDictionary)
+        sendEvent(event: .didFail, body: error.toDictionary)
     }
 
 }
