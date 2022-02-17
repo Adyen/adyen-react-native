@@ -40,6 +40,7 @@ public class AdyenDropInModule extends ReactContextBaseJavaModule implements Dro
     private final String TAG = "AdyenDropInModule";
     private final String DID_SUBMIT = "didSubmitCallback";
     private final String DID_FAILED = "didFailCallback";
+    private final String DID_PROVIDE = "didProvideCallback";
     private final String DID_COMPLEATE = "didCompleteCallback";
 
     AdyenDropInModule(ReactApplicationContext context) {
@@ -176,7 +177,7 @@ public class AdyenDropInModule extends ReactContextBaseJavaModule implements Dro
     public void onDidProvide(@NonNull JSONObject jsonObject) {
         try {
             WritableMap map = ReactNativeJson.convertJsonToMap(jsonObject);
-            sendEvent(DID_COMPLEATE, map);
+            sendEvent(DID_PROVIDE, map);
         } catch (JSONException e) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e));
         }

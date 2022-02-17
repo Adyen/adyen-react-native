@@ -26,6 +26,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import com.adyenreact.PaymentComponentListener;
@@ -41,6 +42,7 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
     public final String PAYMENT_METHOD_KEY = "scheme";
     private final String DID_SUBMIT = "didSubmitCallback";
     private final String DID_FAILED = "didFailCallback";
+    private final String DID_PROVIDE = "didProvideCallback";
     private final String DID_COMPLEATE = "didCompleteCallback";
 
     private ActionHandler actionHandler;
@@ -178,7 +180,7 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
         dialog.show(fragmentManager, "Component");
     }
 
-    private void sendEvent(String eventName, ReadableMap map) {
+    private void sendEvent(@NonNull String eventName, @Nullable ReadableMap map) {
         getReactApplicationContext()
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, map);
@@ -207,7 +209,7 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
         JSONObject jsonObject = ActionComponentData.SERIALIZER.serialize(actionComponentData);
         try {
             WritableMap map = ReactNativeJson.convertJsonToMap(jsonObject);
-            sendEvent(DID_COMPLEATE, map);
+            sendEvent(DID_PROVIDE, map);
         } catch (JSONException e) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e));
         }
@@ -216,11 +218,11 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
 
     @Override
     public void onClose() {
-        dialog.dismiss();
+        sendEvent(DID_FAILED, ReactNativeError.mapError("Closed"));
     }
 
     @Override
     public void onFinish() {
-        dialog.dismiss();
+        sendEvent(DID_COMPLEATE, null);
     }
 }
