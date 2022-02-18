@@ -1,8 +1,7 @@
 package com.adyenreact;
 
 import android.app.Activity;
-import android.os.Handler;
-import android.os.Looper;
+import android.content.DialogInterface;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -21,35 +20,26 @@ import com.adyen.checkout.components.model.payments.Amount;
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData;
 import com.adyen.checkout.components.model.payments.response.Action;
 import com.adyen.checkout.core.api.Environment;
+import com.adyen.checkout.core.exception.CheckoutException;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.WritableNativeMap;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
-
-import com.adyenreact.PaymentComponentListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Locale;
 
-public class AdyenCardComponent extends ReactContextBaseJavaModule implements PaymentComponentListener, ActionHandlingInterface {
+public class AdyenCardComponent extends BaseModule implements PaymentComponentListener, ActionHandlingInterface {
 
     public final String TAG = "AdyenCardComponent";
     public final String PAYMENT_METHOD_KEY = "scheme";
-    private final String DID_SUBMIT = "didSubmitCallback";
-    private final String DID_FAILED = "didFailCallback";
-    private final String DID_PROVIDE = "didProvideCallback";
-    private final String DID_COMPLEATE = "didCompleteCallback";
 
     private ActionHandler actionHandler;
-
     private DialogFragment dialog;
 
-    AdyenCardComponent(ReactApplicationContext context) {
+    public AdyenCardComponent(ReactApplicationContext context) {
         super(context);
     }
 
@@ -60,17 +50,9 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
     }
 
     @ReactMethod
-    public void open(ReadableMap paymentMethods, ReadableMap configuration) {
-        PaymentMethodsApiResponse paymentMethodsResponse;
-        try {
-            JSONObject jsonObject = ReactNativeJson.convertMapToJson(paymentMethods);
-            paymentMethodsResponse = PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject);
-        } catch (JSONException e) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e));
-            return;
-        }
-
-        PaymentMethod paymentMethod = getPaymentMethod(paymentMethodsResponse);
+    public void open(ReadableMap paymentMethodsData, ReadableMap configuration) {
+        PaymentMethodsApiResponse paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData);
+        PaymentMethod paymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY);
 
         ConfigurationParser config = new ConfigurationParser(configuration);
         final Environment environment;
@@ -92,8 +74,8 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
 
         actionHandler = new ActionHandler(this, new ActionHandlerConfiguration(shopperLocale, environment, clientKey));
 
-        CardConfiguration componentConfiguration;
-        componentConfiguration = new CardConfiguration.Builder(shopperLocale, environment, clientKey)
+        CardConfiguration componentConfiguration = new CardConfiguration
+                .Builder(shopperLocale, environment, clientKey)
                 .setShopperReference(shopperReference)
                 .build();
 
@@ -122,7 +104,9 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
 
     @ReactMethod
     public void hide(Boolean success, ReadableMap message) {
-        if (dialog == null) { return; }
+        if (dialog == null) {
+            return;
+        }
 
         Log.d(TAG, "Closing component");
         dialog.dismiss();
@@ -136,24 +120,6 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
     @ReactMethod
     public void removeListeners(Integer count) {
         // Remove upstream listeners, stop unnecessary background tasks
-    }
-
-    @Nullable
-    private PaymentMethod getPaymentMethod(PaymentMethodsApiResponse paymentMethodsResponse) {
-        PaymentMethod sepaPaymentMethod = null;
-        for (PaymentMethod paymentMethod : paymentMethodsResponse.getPaymentMethods()) {
-            Log.d(TAG, paymentMethod.getType());
-            if (paymentMethod.getType().equals(PAYMENT_METHOD_KEY)) {
-                sepaPaymentMethod = paymentMethod;
-                break;
-            }
-        }
-
-        if (sepaPaymentMethod == null) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError("Payment methods does not contain " + PAYMENT_METHOD_KEY));
-            return null;
-        }
-        return sepaPaymentMethod;
     }
 
     @Nullable
@@ -180,20 +146,17 @@ public class AdyenCardComponent extends ReactContextBaseJavaModule implements Pa
         dialog.show(fragmentManager, "Component");
     }
 
-    private void sendEvent(@NonNull String eventName, @Nullable ReadableMap map) {
-        getReactApplicationContext()
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, map);
-    }
-
     @Override
     public void onError(Exception exception) {
-        sendEvent(DID_FAILED, ReactNativeError.mapError(exception));
+        ReadableMap errorMap = null;
+        if (exception != null) {
+            errorMap = ReactNativeError.mapError(exception);
+        }
+        sendEvent(DID_FAILED, errorMap);
     }
 
     @Override
     public void onSubmit(PaymentComponentData data) {
-
         JSONObject jsonObject = PaymentComponentData.SERIALIZER.serialize(data);
         try {
             ReadableMap map = ReactNativeJson.convertJsonToMap(jsonObject);

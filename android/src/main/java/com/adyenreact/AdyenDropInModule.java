@@ -35,13 +35,9 @@ import org.json.JSONObject;
 
 import java.util.Locale;
 
-public class AdyenDropInModule extends ReactContextBaseJavaModule implements DropInServiceProxy.DropInServiceListener {
+public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.DropInServiceListener {
 
     private final String TAG = "AdyenDropInModule";
-    private final String DID_SUBMIT = "didSubmitCallback";
-    private final String DID_FAILED = "didFailCallback";
-    private final String DID_PROVIDE = "didProvideCallback";
-    private final String DID_COMPLEATE = "didCompleteCallback";
 
     AdyenDropInModule(ReactApplicationContext context) {
         super(context);
@@ -54,15 +50,9 @@ public class AdyenDropInModule extends ReactContextBaseJavaModule implements Dro
     }
 
     @ReactMethod
-    public void open(ReadableMap paymentMethods, ReadableMap configuration) {
-        PaymentMethodsApiResponse paymentMethodsResponse;
-        try {
-            JSONObject jsonObject = ReactNativeJson.convertMapToJson(paymentMethods);
-            paymentMethodsResponse = PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject);
-        } catch (JSONException e) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e));
-            return;
-        }
+    public void open(ReadableMap paymentMethodsData, ReadableMap configuration) {
+        PaymentMethodsApiResponse paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData);
+        if (paymentMethodsResponse == null) return;
 
         ConfigurationParser config = new ConfigurationParser(configuration);
         final Environment environment;
@@ -115,7 +105,7 @@ public class AdyenDropInModule extends ReactContextBaseJavaModule implements Dro
                     .build();
 
             builder.setAmount(amount)
-                .addGooglePayConfiguration(googlePayConfig);
+                    .addGooglePayConfiguration(googlePayConfig);
         }
 
         Activity currentActivity = getReactApplicationContext().getCurrentActivity();
@@ -131,7 +121,7 @@ public class AdyenDropInModule extends ReactContextBaseJavaModule implements Dro
         final DropInServiceProxy.DropInModuleListener listener = DropInServiceProxy.shared.getModuleListener();
         if (listener == null) {
             IllegalStateException e = new IllegalStateException("Invalid state: DropInModuleListener is missing");
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e) );
+            sendEvent(DID_FAILED, ReactNativeError.mapError(e));
             return;
         }
 
@@ -187,7 +177,7 @@ public class AdyenDropInModule extends ReactContextBaseJavaModule implements Dro
         final DropInServiceProxy.DropInModuleListener listener = DropInServiceProxy.shared.getModuleListener();
         if (listener == null) {
             IllegalStateException e = new IllegalStateException("Invalid state: DropInModuleListener is missing");
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e) );
+            sendEvent(DID_FAILED, ReactNativeError.mapError(e));
             return;
         }
 
@@ -196,12 +186,6 @@ public class AdyenDropInModule extends ReactContextBaseJavaModule implements Dro
         } else {
             listener.onFail(message);
         }
-    }
-
-    private void sendEvent(String eventName, ReadableMap map) {
-        getReactApplicationContext()
-            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-            .emit(eventName, map);
     }
 
 }

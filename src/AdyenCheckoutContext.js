@@ -38,7 +38,7 @@ export class AdyenPaymentProvider extends Component {
       <AdyenCheckoutContext.Provider
           value={{
             start: (eventEmitter, configuration) => {
-              finish();
+              this.finish();
               this.setState({
                 didSubmitCallback: eventEmitter.addListener('didSubmitCallback', (data) => this.didSubmit(configuration, data)),
                 didProvideCallback: eventEmitter.addListener('didProvideCallback', this.props.didProvide),

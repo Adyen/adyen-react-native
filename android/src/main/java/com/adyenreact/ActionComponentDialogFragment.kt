@@ -54,6 +54,7 @@ class ActionComponentDialogFragment(val configuration: ActionHandlerConfiguratio
         const val ACTION = "ACTION"
     }
 
+    private var isCanceled = false;
     private lateinit var binding: FragmentActionComponentBinding
     private lateinit var action: Action
     private lateinit var actionType: String
@@ -70,6 +71,7 @@ class ActionComponentDialogFragment(val configuration: ActionHandlerConfiguratio
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentActionComponentBinding.inflate(inflater)
+        isCanceled = false
         return binding.root
     }
 
@@ -105,8 +107,17 @@ class ActionComponentDialogFragment(val configuration: ActionHandlerConfiguratio
         }
     }
 
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+
+        if (isCanceled) {
+            callback.onError(CheckoutException("Cancelled") )
+        }
+    }
+
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
+        isCanceled = true
         Logger.d(TAG, "onCancel")
         callback.onClose()
     }

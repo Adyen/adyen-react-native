@@ -21,8 +21,16 @@ public class ReactNativeError {
     public static ReadableMap mapError(Exception error) {
         WritableMap map = new WritableNativeMap();
         map.putString(MESSAGE_KEY, error.getLocalizedMessage());
-        map.putString(REASON_KEY, error.getCause().getLocalizedMessage());
-        map.putString(DISCRIPTION_KEY, error.getStackTrace().toString());
+
+        Throwable cause = error.getCause();
+        if (cause != null) {
+            map.putString(REASON_KEY, cause.getLocalizedMessage());
+        }
+
+        StackTraceElement[] stackTrace = error.getStackTrace();
+        if (stackTrace != null && stackTrace.length > 0) {
+            map.putString(DISCRIPTION_KEY, stackTrace.toString());
+        }
         return map;
     }
 
