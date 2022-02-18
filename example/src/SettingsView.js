@@ -36,69 +36,69 @@ const FormTextInput = (props) => {
 };
 
 const SettingFormView = (props) => {
-    
-    const [defaultValue, onChangeValue] = React.useState({
-        ...props.context.config,
-        countryCode: props.context.config.countryCode,
-        amount: {
-          currency: props.context.config.amount.currency,
-          value: props.context.config.amount.value,
-        },
-        merchantAccount: props.context.config.merchantAccount,
-        shopperLocale: props.context.config.shopperLocale,
-      });
 
-      return(
-        <View>
-        <FormTextInput
-          placeholder="Country"
-          value={defaultValue.countryCode}
-          onChangeText={(value) =>
-            onChangeValue({ ...defaultValue, countryCode: value })
-          }
-        />
-        <FormTextInput
-          placeholder="Currency"
-          value={defaultValue.amount.currency}
-          onChangeText={(value) =>
-            onChangeValue({
-              ...defaultValue,
-              amount: { ...defaultValue.amount, currency: value },
-            })
-          }
-        />
-        <FormTextInput
-          placeholder="Amount"
-          value={defaultValue.amount.value.toString()}
-          onChangeText={(value) =>
-            onChangeValue({
-              ...defaultValue,
-              amount: { ...defaultValue.amount, value: value },
-            })
-          }
-        />
-        <FormTextInput
-          placeholder="Merchant Account"
-          value={defaultValue.merchantAccount}
-          onChangeText={(value) =>
-            onChangeValue({ ...defaultValue, merchantAccount: value })
-          }
-        />
-        <FormTextInput
-          placeholder="Shopper locale"
-          value={defaultValue.shopperLocale}
-          onChangeText={(value) =>
-            onChangeValue({ ...defaultValue, shopperLocale: value })
-          }
-        />
-        <Button
-          title="Apply"
-          onPress={() => {
-            props.context.onConfigChanged(defaultValue);
-          }}
-        />
-      </View>
-      );
+  const [defaultValue, onChangeValue] = React.useState({
+    ...props.context.config,
+    countryCode: props.context.config.countryCode,
+    amount: {
+      currency: props.context.config.amount.currency,
+      value: props.context.config.amount.value,
+    },
+    merchantAccount: props.context.config.merchantAccount,
+    shopperLocale: props.context.config.shopperLocale,
+  });
+
+  return (
+    <View>
+      <FormTextInput
+        placeholder="Country"
+        value={defaultValue.countryCode}
+        onChangeText={(value) =>
+          onChangeValue({ ...defaultValue, countryCode: value })
+        }
+      />
+      <FormTextInput
+        placeholder="Currency"
+        value={defaultValue.amount.currency}
+        onChangeText={(value) =>
+          onChangeValue({
+            ...defaultValue,
+            amount: { ...defaultValue.amount, currency: value },
+          })
+        }
+      />
+      <FormTextInput
+        placeholder="Amount"
+        value={defaultValue.amount.value.toString()}
+        onChangeText={(value) =>
+          onChangeValue({
+            ...defaultValue,
+            amount: { ...defaultValue.amount, value: value },
+          })
+        }
+      />
+      <FormTextInput
+        placeholder="Merchant Account"
+        value={defaultValue.merchantAccount}
+        onChangeText={(value) =>
+          onChangeValue({ ...defaultValue, merchantAccount: value })
+        }
+      />
+      <FormTextInput
+        placeholder="Shopper locale"
+        value={defaultValue.shopperLocale}
+        onChangeText={(value) =>
+          onChangeValue({ ...defaultValue, shopperLocale: value })
+        }
+      />
+      <Button
+        title="Apply"
+        onPress={() => {
+          props.context.onConfigChanged(defaultValue);
+        }}
+      />
+    </View>
+  );
 };
 
 const SettingView = () => {

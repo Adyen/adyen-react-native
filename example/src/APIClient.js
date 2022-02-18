@@ -22,7 +22,8 @@ export const fetchPaymentDetails = (data) => {
 };
 
 export const isSuccess = (result) => {
-  return result.resultCode == 'Authorised' || result.resultCode == 'Received' || result.resultCode == 'Pending'
+  const code = result.resultCode;
+  return code === 'Authorised' || code === 'Received' || code === 'Pending'
 }
 
 const fetchFrom = (url, body) => {

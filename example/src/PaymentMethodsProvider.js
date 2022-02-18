@@ -19,15 +19,15 @@ class PaymentMethodsProvider extends Component {
                     paymentMethods: this.state.paymentMethods,
                     onConfigChanged: newConfig => {
                         fetchPaymentMethods(newConfig)
-                        .then(paymentMethods => {                           
-                            this.setState({
-                                config: newConfig,
-                                paymentMethods: paymentMethods
+                            .then(paymentMethods => {
+                                this.setState({
+                                    config: newConfig,
+                                    paymentMethods: paymentMethods
+                                })
                             })
-                        })
-                        .catch(error => {
-                            this.props.onError(error)
-                        })
+                            .catch(error => {
+                                this.props.onError(error)
+                            })
                     }
                 }}
             >
