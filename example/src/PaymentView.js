@@ -158,12 +158,12 @@ const PaymentView = () => {
           </View>
 
           <AdyenPaymentProvider
-            didSubmit={didSubmit}
-            didProvide={didProvide}
-            didFail={didFail}
-            didComplete={didComplete}
+            onSubmit={didSubmit}
+            onProvide={didProvide}
+            onFail={didFail}
+            onComplete={didComplete}
           >
-            {(adyenPayment) => (
+            {adyenPayment => (
               <View style={[styles.contentView, contentBackgroundStyle]}>
                 <Button
                   title="Open DropIn"

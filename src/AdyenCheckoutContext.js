@@ -1,62 +1,63 @@
-import React, { Component } from 'react';
+import React, { useRef, useCallback, createContext } from 'react';
 
-export const AdyenCheckoutContext = React.createContext();
+const AdyenCheckoutContext = createContext({
+  start: () => {},
+});
 
-export class AdyenPaymentProvider extends Component {
+const AdyenPaymentProvider = ({ onSubmit, onComplete, onFail, onProvide }) => {
+  const onSubmitEventListener = useRef(null);
+  const onProvideEventListener = useRef(null);
+  const onCompleteEventListener = useRef(null);
+  const onFailEventListener = useRef(null);
 
-  state = {
-    didSubmitCallback: null,
-    didCompleteCallback: null,
-    didFailCallback: null,
-    didProvideCallback: null
-  }
+  const removeEventListeners = useCallback(() => {
+    onSubmitEventListener.current?.remove();
+    onProvideEventListener.current?.remove();
+    onCompleteEventListener.current?.remove();
+    onFailEventListener.current?.remove();
+  },[]);
 
-  didSubmit = (configuration, data) => {
-    data.shopperLocale = configuration.shopperLocale;
-    data.channel = configuration.channel;
-    data.amount = configuration.amount;
-    data.reference = configuration.reference;
-    data.shopperReference = configuration.shopperReference;
-    data.countryCode = configuration.countryCode;
-    data.merchantAccount = configuration.merchantAccount;
-    data.additionalData = configuration.additionalData;
-    data.returnUrl = data.returnUrl ?? configuration.returnUrl;
+  const submitPayment = useCallback((configuration, data) => {
+    const payload = {
+      ...data,
+      shopperLocale: configuration.shopperLocale,
+      channel: configuration.channel,
+      amount: configuration.amount,
+      reference: configuration.reference,
+      shopperReference: configuration.shopperReference,
+      countryCode: configuration.countryCode,
+      merchantAccount: configuration.merchantAccount,
+      additionalData: configuration.additionalData,
+      returnUrl: data.returnUrl ?? configuration.returnUrl,
+    };
+    onSubmit(payload);
+  }, [onSubmit]);
 
-    this.props.didSubmit(data)
-  };
 
-  finish = () => {
-    if (this.state.didSubmitCallback != null) { this.state.didSubmitCallback.remove() }
-    if (this.state.didCompleteCallback != null) { this.state.didCompleteCallback.remove() }
-    if (this.state.didFailCallback != null) { this.state.didFailCallback.remove() }
-    if (this.state.didProvideCallback != null) { this.state.didProvideCallback.remove() }
-  };
+  const startPaymentMethod = useCallback((eventEmitter, configuration) => {
+    removeEventListeners();
 
-  render() {
+    onSubmitEventListener.current = eventEmitter.addListener('didSubmitCallback', (data) => submitPayment(configuration, data));
+    onProvideEventListener.current = eventEmitter.addListener('didProvideCallback', onProvide);
+    onCompleteEventListener.current =  eventEmitter.addListener('didCompleteCallback', () => {
+      removeEventListeners();
+      onComplete();
+    });
+    onFailEventListener.current = eventEmitter.addListener('didFailCallback', (error) => {
+      removeEventListeners();
+      onFail(error);
+    });
 
-    return (
-      <AdyenCheckoutContext.Provider
-          value={{
-            start: (eventEmitter, configuration) => {
-              this.finish();
-              this.setState({
-                didSubmitCallback: eventEmitter.addListener('didSubmitCallback', (data) => this.didSubmit(configuration, data)),
-                didProvideCallback: eventEmitter.addListener('didProvideCallback', this.props.didProvide),
-                didCompleteCallback: eventEmitter.addListener('didCompleteCallback', () => {
-                  this.finish();
-                  this.props.didComplete();
-                }),
-                didFailCallback: eventEmitter.addListener('didFailCallback', (error) => {
-                  this.finish();
-                  this.props.didFail(error);
-                }),
-              })
-            }
-        }} >
-        <AdyenCheckoutContext.Consumer>
-          {this.props.children}
-        </AdyenCheckoutContext.Consumer>
-      </AdyenCheckoutContext.Provider>
-    );
-  }
+  }, [submitPayment, removeEventListeners, onProvide, onComplete, onFail]);
+
+
+  return (
+    <AdyenCheckoutContext.Provider value={{ start: startPaymentMethod }}>
+      <AdyenCheckoutContext.Consumer>
+        {this.props.children}
+      </AdyenCheckoutContext.Consumer>
+    </AdyenCheckoutContext.Provider>
+  );
 }
+
+export { AdyenCheckoutContext, AdyenPaymentProvider }
