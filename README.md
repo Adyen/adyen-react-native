@@ -27,24 +27,31 @@
 
 #### Android
 
-1. Add `com.adyenreact.AdyenDropInService` to manifest:
+1. Add `AdyenDropInService` to manifest:
 
 `<service
-  android:name="com.adyenreact.AdyenDropInService"
+  android:name="com.adyenreactnativesdk.AdyenDropInService"
   android:permission="android.permission.BIND_JOB_SERVICE"/>`
 
 ## Usage
+
 ```javascript
-import { AdyenDropIn } from '@adyen/react-native';
+import {
+  AdyenDropIn,   
+  PAYMENT_SUBMIT_EVENT,
+  PAYMENT_PROVIDE_DETAILS_EVENT,
+  PAYMENT_COMPLETED_EVENT,
+  PAYMENT_FAILED_EVENT
+} from '@adyen/react-native';
 
 <Button
   title="Checkout"
   onPress={() => {
     const eventEmitter = new NativeEventEmitter(AdyenDropIn);
-    this.didSubmitListener = eventEmitter.addListener('didSubmitCallback', didSubmit);
-    this.didProvideListener = eventEmitter.addListener('didProvideCallback', didProvide);
-    this.didCompleteListener = eventEmitter.addListener('didCompleteCallback', didComplete);
-    this.didFailListener = eventEmitter.addListener('didFailCallback', didFail);
+    this.didSubmitListener = eventEmitter.addListener(PAYMENT_SUBMIT_EVENT, onSubmit);
+    this.didProvideListener = eventEmitter.addListener(PAYMENT_PROVIDE_DETAILS_EVENT, onProvide);
+    this.didCompleteListener = eventEmitter.addListener(PAYMENT_COMPLETED_EVENT, onComplete);
+    this.didFailListener = eventEmitter.addListener(PAYMENT_FAILED_EVENT, onFail);
 
     AdyenDropIn.open(paymentMethods, configuration);
   }}

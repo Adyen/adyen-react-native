@@ -23,7 +23,7 @@
       </activity>
 
       <service
-        android:name="com.adyenreact.AdyenDropInService"
+        android:name="com.adyenreactnativesdk.AdyenDropInService"
         android:permission="android.permission.BIND_JOB_SERVICE"/>
     </application>
 </manifest>
