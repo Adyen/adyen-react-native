@@ -163,7 +163,7 @@ const PaymentView = () => {
             onFail={didFail}
             onComplete={didComplete}
           >
-            {adyenPayment => (
+            {(adyenPayment) => (
               <View style={[styles.contentView, contentBackgroundStyle]}>
                 <Button
                   title="Open DropIn"
