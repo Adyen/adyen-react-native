@@ -1,6 +1,6 @@
-import React from "react";
-import { Colors } from "react-native/Libraries/NewAppScreen";
-import { PaymentMethodsContext } from "./PaymentMethodsProvider";
+import React from 'react';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { PaymentMethodsContext } from './PaymentMethodsProvider';
 
 import {
   Button,
@@ -10,7 +10,7 @@ import {
   TextInput,
   useColorScheme,
   View,
-} from "react-native";
+} from 'react-native';
 
 const FormTextInput = (props) => {
   const [value, onChangeText] = React.useState(props.value);
@@ -26,7 +26,7 @@ const FormTextInput = (props) => {
         value={value}
         onChange={(text) => onChangeText(text)}
         style={{
-          backgroundColor: "lightgrey",
+          backgroundColor: 'lightgrey',
           padding: 8,
           borderRadius: 8,
         }}
@@ -36,7 +36,6 @@ const FormTextInput = (props) => {
 };
 
 const SettingFormView = (props) => {
-
   const [defaultValue, onChangeValue] = React.useState({
     ...props.context.config,
     countryCode: props.context.config.countryCode,
@@ -102,7 +101,7 @@ const SettingFormView = (props) => {
 };
 
 const SettingView = () => {
-  const isDarkMode = useColorScheme() === "dark";
+  const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
@@ -110,10 +109,11 @@ const SettingView = () => {
   return (
     <PaymentMethodsContext.Consumer>
       {(somecontext) => {
-
         return (
           <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
-            <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+            <StatusBar
+              barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+            />
             <SettingFormView context={somecontext} />
           </SafeAreaView>
         );
@@ -123,4 +123,3 @@ const SettingView = () => {
 };
 
 export default SettingView;
-

@@ -18,21 +18,32 @@ import { Button, Alert } from 'react-native';
 const Stack = createNativeStackNavigator();
 
 const App = () => {
-
   return (
-    <PaymentMethodsProvider onError={ (error) => {  Alert.alert('Payment Methods', error.message || "Error"); } } >
+    <PaymentMethodsProvider
+      onError={(error) => {
+        Alert.alert('Payment Methods', error.message || 'Error');
+      }}
+    >
       <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={PaymentView} options={ ({ navigation, route }) => ({
-            title: 'Adyen React Native',
-            headerRight: () => ( <Button onPress={() => navigation.navigate('Settings') } title="Edit" /> )
-          })
-          } />
-        <Stack.Screen name="Settings" component={SettingView} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  </PaymentMethodsProvider>
-   )
+        <Stack.Navigator>
+          <Stack.Screen
+            name="Home"
+            component={PaymentView}
+            options={({ navigation, route }) => ({
+              title: 'Adyen React Native',
+              headerRight: () => (
+                <Button
+                  onPress={() => navigation.navigate('Settings')}
+                  title="Edit"
+                />
+              ),
+            })}
+          />
+          <Stack.Screen name="Settings" component={SettingView} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </PaymentMethodsProvider>
+  );
 };
 
 export default App;

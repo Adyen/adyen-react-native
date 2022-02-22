@@ -1,16 +1,15 @@
-
-import { environment } from "./Configuration";
+import { environment } from './Configuration';
 
 export const fetchPaymentMethods = (configuration) => {
-    let body = {
-      merchantAccount: configuration.merchantAccount,
-      countryCode: configuration.countryCode,
-      shopperLocale: configuration.shopperLocale,
-      amount: configuration.amount,
-      channel: configuration.channel
-    };
+  let body = {
+    merchantAccount: configuration.merchantAccount,
+    countryCode: configuration.countryCode,
+    shopperLocale: configuration.shopperLocale,
+    amount: configuration.amount,
+    channel: configuration.channel,
+  };
 
-    return fetchFrom(environment.url + 'paymentMethods', body)
+  return fetchFrom(environment.url + 'paymentMethods', body);
 };
 
 export const fetchPayments = (data) => {
@@ -23,29 +22,29 @@ export const fetchPaymentDetails = (data) => {
 
 export const isSuccess = (result) => {
   const code = result.resultCode;
-  return code === 'Authorised' || code === 'Received' || code === 'Pending'
-}
+  return code === 'Authorised' || code === 'Received' || code === 'Pending';
+};
 
 const fetchFrom = (url, body) => {
-  let paymentMethodsRequest = new Request(url,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': environment.apiKey
-      },
-      body: JSON.stringify(body)
-    });
+  let paymentMethodsRequest = new Request(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': environment.apiKey,
+    },
+    body: JSON.stringify(body),
+  });
 
-    return fetch(paymentMethodsRequest)
-      .then(response => {
-        if (response.status === 200) {
-          return response.json();
-        } else {
-          return response.json()
-            .then( json => {
-              throw new Error('Network error ' + response.status + ': \n' + json.message || "Unknown error" );
-            })          
-        }
-      })
+  return fetch(paymentMethodsRequest).then((response) => {
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      return response.json().then((json) => {
+        throw new Error(
+          'Network error ' + response.status + ': \n' + json.message ||
+            'Unknown error'
+        );
+      });
+    }
+  });
 };
