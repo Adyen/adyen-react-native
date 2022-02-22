@@ -25,6 +25,7 @@ import com.adyen.checkout.components.util.CurrencyUtils;
 import com.adyen.checkout.dropin.databinding.FragmentGenericComponentBinding;
 import com.adyen.checkout.dropin.ui.ComponentDialogViewModel;
 import com.adyen.checkout.dropin.ui.ComponentFragmentState;
+import com.adyenreactnativesdk.R;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;

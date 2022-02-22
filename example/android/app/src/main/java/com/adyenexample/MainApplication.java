@@ -2,6 +2,8 @@ package com.adyenexample;
 
 import android.app.Application;
 import android.content.Context;
+
+import com.adyenreact.AdyenPaymentPackage;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
@@ -25,6 +27,7 @@ public class MainApplication extends Application implements ReactApplication {
           @SuppressWarnings("UnnecessaryLocalVariable")
           List<ReactPackage> packages = new PackageList(this).getPackages();
           // Packages that cannot be autolinked yet can be added manually here, for example:
+            packages.add(new AdyenPaymentPackage());
           // packages.add(new MyReactNativePackage());
           return packages;
         }
