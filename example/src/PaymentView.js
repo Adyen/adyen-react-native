@@ -1,7 +1,5 @@
 import React from 'react';
 
-// import { AdyenPaymentProvider } from './AdyenCheckoutContext';
-// import { getNativeComponent } from '@adyen/react-native';
 import { AdyenPaymentProvider, getNativeComponent } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
 
@@ -126,11 +124,9 @@ const PaymentView = () => {
   ) => {
     const nativeComponent = getNativeComponent(nativeComponentName);
     setPaymentComponent(nativeComponentName);
-    console.log('Paying with ' + nativeComponent);
-    const eventEmitter = new NativeEventEmitter(nativeComponent);
-    adyenPayment.start(eventEmitter, config);
-
-    nativeComponent.open(paymentMethods, config);
+    
+    console.log('Paying with ' + nativeComponentName);
+    adyenPayment.start(nativeComponent, paymentMethods, config);
   };
 
   return (

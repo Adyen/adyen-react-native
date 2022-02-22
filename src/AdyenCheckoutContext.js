@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, createContext } from 'react';
+import { NativeEventEmitter } from 'react-native';
 import { 
   PAYMENT_SUBMIT_EVENT, 
   PAYMENT_PROVIDE_DETAILS_EVENT, 
@@ -43,9 +44,10 @@ const AdyenPaymentProvider = (props) => {
   );
 
   const startPaymentMethod = useCallback(
-    (eventEmitter, configuration) => {
+    (nativeComponent, paymentMethods, configuration) => {
       removeEventListeners();
 
+      const eventEmitter = new NativeEventEmitter(nativeComponent);
       onSubmitEventListener.current = eventEmitter.addListener(
         PAYMENT_SUBMIT_EVENT,
         (data) => submitPayment(configuration, data)
@@ -68,6 +70,8 @@ const AdyenPaymentProvider = (props) => {
           props.onFail(error);
         }
       );
+
+      nativeComponent.open(paymentMethods, configuration);
     },
     [submitPayment, removeEventListeners, props]
   );
