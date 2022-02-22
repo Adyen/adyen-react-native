@@ -4,7 +4,7 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreact;
+package com.adyenreactnativesdk;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -130,4 +130,3 @@ public class ReactNativeJson {
     }
 
 }
-

@@ -1,4 +1,10 @@
-package com.adyenreact
+/*
+ * Copyright (c) 2022 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
+package com.adyenreactnativesdk
 
 import android.content.Context
 import android.content.DialogInterface
