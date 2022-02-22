@@ -1,5 +1,10 @@
 import React, { useRef, useCallback, createContext } from 'react';
-import { onPaymentSubmitedEvent, onPaymentDetailsProvidedEvent, onPaymentCompletedEvent, onPaymentFailed } from './AdyenCheckoutEvents';
+import { 
+  PAYMENT_SUBMIT_EVENT, 
+  PAYMENT_PROVIDE_DETAILS_EVENT, 
+  PAYMENT_COMPLETED_EVENT, 
+  PAYMENT_FAILED_EVENT 
+} from './AdyenCheckoutEvents';
 
 const AdyenCheckoutContext = createContext({
   start: () => {},
@@ -42,22 +47,22 @@ const AdyenPaymentProvider = (props) => {
       removeEventListeners();
 
       onSubmitEventListener.current = eventEmitter.addListener(
-        onPaymentSubmitedEvent,
+        PAYMENT_SUBMIT_EVENT,
         (data) => submitPayment(configuration, data)
       );
       onProvideEventListener.current = eventEmitter.addListener(
-        onPaymentDetailsProvidedEvent,
+        PAYMENT_PROVIDE_DETAILS_EVENT,
         props.onProvide
       );
       onCompleteEventListener.current = eventEmitter.addListener(
-        onPaymentCompletedEvent,
+        PAYMENT_COMPLETED_EVENT,
         () => {
           removeEventListeners();
           props.onComplete();
         }
       );
       onFailEventListener.current = eventEmitter.addListener(
-        onPaymentFailed,
+        PAYMENT_FAILED_EVENT,
         (error) => {
           removeEventListeners();
           props.onFail(error);
