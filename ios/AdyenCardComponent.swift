@@ -4,9 +4,8 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-
-import Foundation
 import Adyen
+import Foundation
 import React
 import UIKit
 
@@ -18,8 +17,8 @@ internal class AdyenCardComponent: BaseModule {
 
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() { }
-    override func startObserving() { }
+    override func stopObserving() {}
+    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
@@ -34,7 +33,7 @@ internal class AdyenCardComponent: BaseModule {
     }
 
     @objc
-    func open(_ paymentMethods : NSDictionary, configuration: NSDictionary) {
+    func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
         guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []),
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data),
               let paymentMethod = paymentMethods.paymentMethod(ofType: CardPaymentMethod.self)
@@ -124,8 +123,6 @@ extension AdyenCardComponent: PresentationDelegate {
         sendEvent(event: .didFail, body: ComponentError.cancelled.toDictionary)
     }
 }
-
-
 
 extension AdyenCardComponent: PaymentComponentDelegate {
 

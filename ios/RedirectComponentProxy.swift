@@ -4,16 +4,15 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Foundation
 import Adyen
-
+import Foundation
 
 @objc
 public class RedirectComponentProxy: NSObject {
 
     @objc
-    class public func proccessURL(_ url: NSURL) -> Bool {
-        return RedirectComponent.applicationDidOpen(from: url as URL)
+    public class func proccessURL(_ url: NSURL) -> Bool {
+        RedirectComponent.applicationDidOpen(from: url as URL)
     }
 
 }

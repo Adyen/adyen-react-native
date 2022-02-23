@@ -4,11 +4,10 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-
-import Foundation
 import Adyen
-import React
+import Foundation
 import PassKit
+import React
 
 @objc(AdyenDropIn)
 internal class AdyenDropIn: BaseModule {
@@ -31,7 +30,7 @@ internal class AdyenDropIn: BaseModule {
     }
 
     @objc
-    func open(_ paymentMethods : NSDictionary, configuration: NSDictionary) {
+    func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
         guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []),
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
         else { return }
@@ -70,7 +69,8 @@ internal class AdyenDropIn: BaseModule {
             UIApplication.shared.keyWindow?.rootViewController?.present(
                 component.viewController,
                 animated: true,
-                completion: nil)
+                completion: nil
+            )
         }
     }
 
