@@ -1,21 +1,40 @@
 import React, { useRef, useCallback, createContext } from 'react';
-import { NativeEventEmitter } from 'react-native';
-import { 
+import {
   PAYMENT_SUBMIT_EVENT, 
   PAYMENT_PROVIDE_DETAILS_EVENT, 
   PAYMENT_COMPLETED_EVENT, 
   PAYMENT_FAILED_EVENT 
 } from './AdyenCheckoutEvents';
+import { getNativeComponent } from './AdyenNativeModules';
+import { NativeEventEmitter } from 'react-native';
 
 const AdyenCheckoutContext = createContext({
   start: () => {},
+  config: {},
+  paymentMethods: {},
 });
 
-const AdyenPaymentProvider = (props) => {
+const AdyenPaymentProvider = ({ config, paymentMethods, onSubmit, onComplete, onFail, onProvide, children }) => {
   const onSubmitEventListener = useRef(null);
   const onProvideEventListener = useRef(null);
   const onCompleteEventListener = useRef(null);
   const onFailEventListener = useRef(null);
+
+  const submitPayment = useCallback((configuration, data, nativeComponent) => {
+    const payload = {
+      ...data,
+      shopperLocale: configuration.shopperLocale,
+      channel: configuration.channel,
+      amount: configuration.amount,
+      reference: configuration.reference,
+      shopperReference: configuration.shopperReference,
+      countryCode: configuration.countryCode,
+      merchantAccount: configuration.merchantAccount,
+      additionalData: configuration.additionalData,
+      returnUrl: data.returnUrl ?? configuration.returnUrl,
+    };
+    onSubmit(payload, nativeComponent);
+  }, [onSubmit]);
 
   const removeEventListeners = useCallback(() => {
     onSubmitEventListener.current?.remove();
@@ -24,63 +43,43 @@ const AdyenPaymentProvider = (props) => {
     onFailEventListener.current?.remove();
   }, []);
 
-  const submitPayment = useCallback(
-    (configuration, data) => {
-      const payload = {
-        ...data,
-        shopperLocale: configuration.shopperLocale,
-        channel: configuration.channel,
-        amount: configuration.amount,
-        reference: configuration.reference,
-        shopperReference: configuration.shopperReference,
-        countryCode: configuration.countryCode,
-        merchantAccount: configuration.merchantAccount,
-        additionalData: configuration.additionalData,
-        returnUrl: data.returnUrl ?? configuration.returnUrl,
-      };
-      props.onSubmit(payload);
-    },
-    [props]
-  );
+  const startEventListeners = useCallback((eventEmitter, nativeComponent) => {
+    onSubmitEventListener.current = eventEmitter.addListener(
+      PAYMENT_SUBMIT_EVENT,
+      (data) => submitPayment(configuration, data, nativeComponent)
+    );
+    onProvideEventListener.current = eventEmitter.addListener(
+      PAYMENT_PROVIDE_DETAILS_EVENT,
+      (data) => onProvide(data, nativeComponent)
+    );
+    onCompleteEventListener.current = eventEmitter.addListener(
+      PAYMENT_COMPLETED_EVENT,
+      () => {
+        removeEventListeners();
+        onComplete(nativeComponent);
+      }
+    );
+    onFailEventListener.current = eventEmitter.addListener(
+      PAYMENT_FAILED_EVENT,
+      (error) => {
+        removeEventListeners();
+        onFail(error, nativeComponent);
+      }
+    );
+  }, [submitPayment,  removeEventListeners, onProvide, onComplete, onFail]);
 
-  const startPaymentMethod = useCallback(
-    (nativeComponent, paymentMethods, configuration) => {
-      removeEventListeners();
-
-      const eventEmitter = new NativeEventEmitter(nativeComponent);
-      onSubmitEventListener.current = eventEmitter.addListener(
-        PAYMENT_SUBMIT_EVENT,
-        (data) => submitPayment(configuration, data)
-      );
-      onProvideEventListener.current = eventEmitter.addListener(
-        PAYMENT_PROVIDE_DETAILS_EVENT,
-        props.onProvide
-      );
-      onCompleteEventListener.current = eventEmitter.addListener(
-        PAYMENT_COMPLETED_EVENT,
-        () => {
-          removeEventListeners();
-          props.onComplete();
-        }
-      );
-      onFailEventListener.current = eventEmitter.addListener(
-        PAYMENT_FAILED_EVENT,
-        (error) => {
-          removeEventListeners();
-          props.onFail(error);
-        }
-      );
-
-      nativeComponent.open(paymentMethods, configuration);
-    },
-    [submitPayment, removeEventListeners, props]
-  );
+  const start = useCallback(nativeComponentName => {
+    removeEventListeners();
+    const nativeComponent = getNativeComponent(nativeComponentName);
+    const eventEmitter = new NativeEventEmitter(nativeComponent);
+    startEventListeners(eventEmitter, nativeComponent);
+    nativeComponent.open(paymentMethods, config);
+    console.log('Paying with ' + nativeComponent);
+  }, [config, paymentMethods, startEventListeners, removeEventListeners]);
 
   return (
-    <AdyenCheckoutContext.Provider value={{ start: startPaymentMethod }}>
-      <AdyenCheckoutContext.Consumer>
-        {props.children}
-      </AdyenCheckoutContext.Consumer>
+    <AdyenCheckoutContext.Provider value={{ start, config, paymentMethods }}>
+        {children}
     </AdyenCheckoutContext.Provider>
   );
 };
