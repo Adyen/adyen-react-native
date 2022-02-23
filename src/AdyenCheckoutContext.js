@@ -43,7 +43,7 @@ const AdyenPaymentProvider = ({ config, paymentMethods, onSubmit, onComplete, on
     onFailEventListener.current?.remove();
   }, []);
 
-  const startEventListeners = useCallback((eventEmitter, nativeComponent) => {
+  const startEventListeners = useCallback((eventEmitter, configuration, nativeComponent) => {
     onSubmitEventListener.current = eventEmitter.addListener(
       PAYMENT_SUBMIT_EVENT,
       (data) => submitPayment(configuration, data, nativeComponent)
@@ -72,9 +72,8 @@ const AdyenPaymentProvider = ({ config, paymentMethods, onSubmit, onComplete, on
     removeEventListeners();
     const nativeComponent = getNativeComponent(nativeComponentName);
     const eventEmitter = new NativeEventEmitter(nativeComponent);
-    startEventListeners(eventEmitter, nativeComponent);
+    startEventListeners(eventEmitter, config, nativeComponent);
     nativeComponent.open(paymentMethods, config);
-    console.log('Paying with ' + nativeComponent);
   }, [config, paymentMethods, startEventListeners, removeEventListeners]);
 
   return (

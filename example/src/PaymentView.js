@@ -43,14 +43,7 @@ const PaymentView = () => {
           console.log('Action!');
           nativeComponent.handle(result.action);
         } else {
-          let success = isSuccess(result);
-          console.log(
-            'Payment: ' +
-              (success ? 'success' : 'failure') +
-              ' : ' +
-              result.resultCode
-          );
-          nativeComponent.hide(success, { message: result.resultCode });
+          proccessResult(result, nativeComponent);
         }
       })
       .catch((error) => {
@@ -65,14 +58,7 @@ const PaymentView = () => {
     console.log('didProvide');
     fetchPaymentDetails(data)
       .then((result) => {
-        let success = isSuccess(result);
-        console.log(
-          'Payment: ' +
-            (success ? 'success' : 'failure') +
-            ' : ' +
-            result.resultCode
-        );
-        nativeComponent.hide(success, { message: result.resultCode });
+        proccessResult(result, nativeComponent);
       })
       .catch((error) => {
         console.log(error);
@@ -88,8 +74,14 @@ const PaymentView = () => {
   };
 
   const didFail = (error, nativeComponent) => {
-    console.log('didFailed ' + error.message);
+    console.log('didFailed %s', error.message);
     nativeComponent.hide(false, { message: error.message || "Unknown error" });
+  };
+
+  const proccessResult = (result, nativeComponent) => {
+    let success = isSuccess(result);
+    console.log('Payment: %s : %s', (success ? 'success' : 'failure'), result.resultCode);
+    nativeComponent.hide(success, { message: result.resultCode });
   };
 
   return (
@@ -100,15 +92,10 @@ const PaymentView = () => {
 
           <View style={[styles.topContentView]}>
             <Text>
-              {' '}
               {context.config.amount.value} {context.config.amount.currency}
             </Text>
             <Text>
-              {' '}
-              Country:{' '}
-              {context.paymentMethods == null
-                ? '❗️'
-                : getFlagEmoji(context.config.countryCode)}{' '}
+              Country: {context.paymentMethods == null ? '❗️' : getFlagEmoji(context.config.countryCode)}
             </Text>
             <Button
               title="Refresh Payment Methods"

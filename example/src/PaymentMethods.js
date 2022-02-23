@@ -27,12 +27,18 @@ const PaymentMethods = () => {
       <Button
         title="Open DropIn"
         disabled={paymentMethods === null}
-        onPress={() => start('AdyenDropIn')}
+        onPress={() => { 
+          console.log('Paying with AdyenDropIn');
+          start('AdyenDropIn') 
+        }}
       />
       <Button
         title="Open Card Component"
         disabled={paymentMethods === null}
-        onPress={() => start('AdyenCardComponent')}
+        onPress={() => { 
+          console.log('Paying with AdyenCardComponent');
+          start('AdyenCardComponent') 
+        }}
       />
       <Button
         title="Open iDEAL (WIP)"
