@@ -150,6 +150,6 @@ extension AdyenCardComponent: ActionComponentDelegate {
     }
 
     internal func didProvide(_ data: ActionComponentData, from component: ActionComponent) {
-        sendEvent(event: .didFail, body: ComponentError.cancelled.toDictionary)
+        sendEvent(event: .didProvide, body: data.jsonObject)
     }
 }
