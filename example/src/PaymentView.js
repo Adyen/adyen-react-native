@@ -9,6 +9,7 @@ import {
   useColorScheme,
   Text,
   View,
+  Alert,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { PaymentMethodsContext } from './PaymentMethodsProvider';
@@ -33,7 +34,9 @@ function getFlagEmoji(countryCode) {
 
 const PaymentView = () => {
   const isDarkMode = useColorScheme() === 'dark';
-  const backgroundStyle = { backgroundColor: isDarkMode ? Colors.darker : Colors.lighter, };
+  const backgroundStyle = {
+    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  };
 
   const didSubmit = (data, nativeComponent) => {
     console.log('didSubmit');
@@ -46,42 +49,43 @@ const PaymentView = () => {
           proccessResult(result, nativeComponent);
         }
       })
-      .catch((error) => {
-        console.log(error.message);
-        nativeComponent.hide(false, {
-          message: error.message || 'Unknown error',
-        });
-      });
+      .catch((error) => proccessError(error, nativeComponent));
   };
 
   const didProvide = (data, nativeComponent) => {
     console.log('didProvide');
     fetchPaymentDetails(data)
-      .then((result) => {
-        proccessResult(result, nativeComponent);
-      })
-      .catch((error) => {
-        console.log(error);
-        nativeComponent.hide(false, {
-          message: error.message || 'Unknown error',
-        });
-      });
+      .then((result) => proccessResult(result, nativeComponent))
+      .catch((error) => proccessError(error, nativeComponent));
   };
 
   const didComplete = (nativeComponent) => {
     console.log('didComplete');
-    nativeComponent.hide(true, { message: "Completed" });
+    nativeComponent.hide(true, { message: 'Completed' });
   };
 
   const didFail = (error, nativeComponent) => {
     console.log('didFailed %s', error.message);
-    nativeComponent.hide(false, { message: error.message || "Unknown error" });
+    nativeComponent.hide(false, { message: error.message || 'Unknown error' });
+    Alert.alert('Error', error.message);
   };
 
   const proccessResult = (result, nativeComponent) => {
     let success = isSuccess(result);
-    console.log('Payment: %s : %s', (success ? 'success' : 'failure'), result.resultCode);
+    console.log(
+      'Payment: %s : %s',
+      success ? 'success' : 'failure',
+      result.resultCode
+    );
     nativeComponent.hide(success, { message: result.resultCode });
+    Alert.alert(result.resultCode);
+  };
+
+  const proccessError = (error, nativeComponent) => {
+    console.log(error.message);
+    nativeComponent.hide(false, {
+      message: error.message || 'Unknown error',
+    });
   };
 
   return (
@@ -95,7 +99,10 @@ const PaymentView = () => {
               {context.config.amount.value} {context.config.amount.currency}
             </Text>
             <Text>
-              Country: {context.paymentMethods == null ? '❗️' : getFlagEmoji(context.config.countryCode)}
+              Country:{' '}
+              {context.paymentMethods == null
+                ? '❗️'
+                : getFlagEmoji(context.config.countryCode)}
             </Text>
             <Button
               title="Refresh Payment Methods"

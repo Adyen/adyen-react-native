@@ -6,38 +6,42 @@ import {
   StyleSheet,
   useColorScheme,
   View,
-  Platform } from 'react-native';
+  Platform,
+} from 'react-native';
 
 const styles = StyleSheet.create({
   contentView: {
     flex: 1,
     borderRadius: 5,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
 });
 
 const PaymentMethods = () => {
   const { start, paymentMethods } = useAdyenCheckout();
   const isDarkMode = useColorScheme() === 'dark';
-  const contentBackgroundStyle = { backgroundColor: isDarkMode ? Colors.black : Colors.white };
-  const platformSpecificPayment = Platform.OS === 'ios' ? "Apple Pay" : "Google Pay"
+  const contentBackgroundStyle = {
+    backgroundColor: isDarkMode ? Colors.black : Colors.white,
+  };
+  const platformSpecificPayment =
+    Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
 
   return (
     <View style={[styles.contentView, contentBackgroundStyle]}>
       <Button
         title="Open DropIn"
         disabled={paymentMethods === null}
-        onPress={() => { 
+        onPress={() => {
           console.log('Paying with AdyenDropIn');
-          start('AdyenDropIn') 
+          start('AdyenDropIn');
         }}
       />
       <Button
         title="Open Card Component"
         disabled={paymentMethods === null}
-        onPress={() => { 
+        onPress={() => {
           console.log('Paying with AdyenCardComponent');
-          start('AdyenCardComponent') 
+          start('AdyenCardComponent');
         }}
       />
       <Button
