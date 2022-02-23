@@ -15,3 +15,5 @@ export {
   PAYMENT_PROVIDE_DETAILS_EVENT,
   PAYMENT_FAILED_EVENT
 } from './AdyenCheckoutEvents';
+
+export { useAdyenCheckout } from './useAdyenCheckout';
