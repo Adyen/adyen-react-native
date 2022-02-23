@@ -7,7 +7,6 @@
 package com.adyenreactnativesdk;
 
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -26,7 +25,6 @@ import com.adyen.checkout.components.model.payments.Amount;
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData;
 import com.adyen.checkout.components.model.payments.response.Action;
 import com.adyen.checkout.core.api.Environment;
-import com.adyen.checkout.core.exception.CheckoutException;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;

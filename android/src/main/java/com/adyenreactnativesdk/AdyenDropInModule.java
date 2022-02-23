@@ -8,7 +8,6 @@ package com.adyenreactnativesdk;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,11 +23,9 @@ import com.adyen.checkout.dropin.DropInConfiguration;
 import com.adyen.checkout.googlepay.GooglePayConfiguration;
 import com.adyen.checkout.redirect.RedirectComponent;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import org.json.JSONException;
 import org.json.JSONObject;

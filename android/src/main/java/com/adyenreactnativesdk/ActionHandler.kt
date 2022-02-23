@@ -31,13 +31,14 @@ import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.redirect.RedirectConfiguration
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
-import java.lang.Exception
 import java.util.*
 
 
-class ActionHandlerConfiguration(val shopperLocale: Locale,
-                                 val environment: Environment,
-                                 val clientKey: String)
+class ActionHandlerConfiguration(
+    val shopperLocale: Locale,
+    val environment: Environment,
+    val clientKey: String
+)
 
 interface ActionHandlingInterface {
     // Same signature as the Fragment Protocol interface
@@ -98,7 +99,10 @@ class ActionHandler(
 
         activity.runOnUiThread {
             if (provider.requiresView(action)) {
-                Logger.d(TAG, "handleAction - action is viewable, requesting displayAction callback")
+                Logger.d(
+                    TAG,
+                    "handleAction - action is viewable, requesting displayAction callback"
+                )
                 val fragmentManager = activity.supportFragmentManager
 
                 val actionFragment = ActionComponentDialogFragment(configuration, callback)
@@ -156,19 +160,39 @@ class ActionHandler(
     ): BaseActionComponent<out Configuration> {
         return when (provider) {
             RedirectComponent.PROVIDER -> {
-                RedirectComponent.PROVIDER.get(activity, activity.application, getDefaultConfigForAction(configuration))
+                RedirectComponent.PROVIDER.get(
+                    activity,
+                    activity.application,
+                    getDefaultConfigForAction(configuration)
+                )
             }
             Adyen3DS2Component.PROVIDER -> {
-                Adyen3DS2Component.PROVIDER.get(activity, activity.application, getDefaultConfigForAction(configuration))
+                Adyen3DS2Component.PROVIDER.get(
+                    activity,
+                    activity.application,
+                    getDefaultConfigForAction(configuration)
+                )
             }
             WeChatPayActionComponent.PROVIDER -> {
-                WeChatPayActionComponent.PROVIDER.get(activity, activity.application, getDefaultConfigForAction(configuration))
+                WeChatPayActionComponent.PROVIDER.get(
+                    activity,
+                    activity.application,
+                    getDefaultConfigForAction(configuration)
+                )
             }
             AwaitComponent.PROVIDER -> {
-                AwaitComponent.PROVIDER.get(activity, activity.application, getDefaultConfigForAction(configuration))
+                AwaitComponent.PROVIDER.get(
+                    activity,
+                    activity.application,
+                    getDefaultConfigForAction(configuration)
+                )
             }
             QRCodeComponent.PROVIDER -> {
-                QRCodeComponent.PROVIDER.get(activity, activity.application, getDefaultConfigForAction(configuration))
+                QRCodeComponent.PROVIDER.get(
+                    activity,
+                    activity.application,
+                    getDefaultConfigForAction(configuration)
+                )
             }
             else -> {
                 throw CheckoutException("Unable to find component for provider - $provider")
@@ -185,11 +209,31 @@ class ActionHandler(
 
         // get default builder for Configuration type
         val builder: BaseConfigurationBuilder<out Configuration> = when (T::class) {
-            AwaitConfiguration::class -> AwaitConfiguration.Builder(shopperLocale, environment, clientKey)
-            RedirectConfiguration::class -> RedirectConfiguration.Builder(shopperLocale, environment, clientKey)
-            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(shopperLocale, environment, clientKey)
-            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(shopperLocale, environment, clientKey)
-            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(shopperLocale, environment, clientKey)
+            AwaitConfiguration::class -> AwaitConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            RedirectConfiguration::class -> RedirectConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
             else -> throw CheckoutException("Unable to find component configuration for class - ${T::class}")
         }
 

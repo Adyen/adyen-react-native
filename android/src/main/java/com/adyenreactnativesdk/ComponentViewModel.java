@@ -17,6 +17,7 @@ import java.util.Locale;
 
 interface PaymentComponentListener {
     void onError(Exception exception);
+
     void onSubmit(PaymentComponentData data);
 }
 
@@ -26,7 +27,7 @@ class ComponentViewModel {
     private final Locale shopperLocale;
     private PaymentComponentListener listener;
 
-    ComponentViewModel(@NonNull PaymentMethod paymentMethod, @NonNull Locale shopperLocale, @Nullable Amount amount ) {
+    ComponentViewModel(@NonNull PaymentMethod paymentMethod, @NonNull Locale shopperLocale, @Nullable Amount amount) {
         this.paymentMethod = paymentMethod;
         this.amount = amount;
         this.shopperLocale = shopperLocale;

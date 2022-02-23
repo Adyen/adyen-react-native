@@ -14,10 +14,8 @@ import com.adyen.checkout.components.ActionComponentData;
 import com.adyen.checkout.components.PaymentComponentState;
 import com.adyen.checkout.dropin.service.DropInService;
 import com.adyen.checkout.dropin.service.DropInServiceResult;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class AdyenDropInService extends DropInService implements DropInServiceProxy.DropInModuleListener {

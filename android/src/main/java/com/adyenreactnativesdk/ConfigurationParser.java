@@ -13,7 +13,6 @@ import androidx.annotation.NonNull;
 import com.adyen.checkout.components.model.payments.Amount;
 import com.adyen.checkout.core.api.Environment;
 import com.adyen.checkout.core.exception.CheckoutException;
-import com.adyen.threeds2.exception.InvalidInputException;
 import com.facebook.react.bridge.ReadableMap;
 
 import org.json.JSONException;
@@ -34,7 +33,7 @@ final public class ConfigurationParser {
     final String SHOPPERLOCALE_KEY = "shopperLocale";
     final String SHOPPERREFERENCE_KEY = "shopperReference";
 
-    private ReadableMap config;
+    private final ReadableMap config;
 
     public ConfigurationParser(ReadableMap config) {
         this.config = config;

@@ -6,16 +6,11 @@
 
 package com.adyenreactnativesdk;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.adyen.checkout.dropin.service.DropInServiceResult;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
@@ -23,15 +18,14 @@ import java.lang.ref.WeakReference;
 
 public class DropInServiceProxy {
 
+    public static DropInServiceProxy shared = new DropInServiceProxy();
     @Nullable
     private WeakReference<DropInServiceListener> serviceListener;
-
     @Nullable
     private WeakReference<DropInModuleListener> moduleListener;
 
-    public static DropInServiceProxy shared = new DropInServiceProxy();
-
-    private DropInServiceProxy() { }
+    private DropInServiceProxy() {
+    }
 
     @Nullable
     public DropInServiceListener getServiceListener() {
@@ -55,19 +49,19 @@ public class DropInServiceProxy {
 
     public interface DropInServiceListener {
 
-        public void onDidSubmit(@NonNull JSONObject jsonObject);
+        void onDidSubmit(@NonNull JSONObject jsonObject);
 
-        public void onDidProvide(@NonNull JSONObject jsonObject);
+        void onDidProvide(@NonNull JSONObject jsonObject);
 
     }
 
     public interface DropInModuleListener {
 
-        public void onAction(@NonNull JSONObject jsonObject);
+        void onAction(@NonNull JSONObject jsonObject);
 
-        public void onFail(@Nullable ReadableMap map);
+        void onFail(@Nullable ReadableMap map);
 
-        public void onComplete(@Nullable ReadableMap message);
+        void onComplete(@Nullable ReadableMap message);
 
     }
 
