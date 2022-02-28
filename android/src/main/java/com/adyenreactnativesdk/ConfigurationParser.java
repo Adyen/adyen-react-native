@@ -106,13 +106,13 @@ final public class ConfigurationParser {
         }
 
         switch (environment.toLowerCase()) {
-            case "live_europe":
-            case "live":
-                return Environment.EUROPE;
-            case "live_us":
-                return Environment.UNITED_STATES;
-            case "live_australia":
+            case "live-au":
                 return Environment.AUSTRALIA;
+            case "live":
+            case "live-eu":
+                return Environment.EUROPE;
+            case "live-us":
+                return Environment.UNITED_STATES;
             default:
                 return Environment.TEST;
         }
