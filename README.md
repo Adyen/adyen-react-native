@@ -18,13 +18,7 @@ Explain the requirements for using the repo (e.g. which minimum iOS version is n
 
 Add `@adyen/react-native` to your react-native project.
 
-`$ npm install @adyen/react-native --save`
-
-### Mostly automatic installation [WIP]
-
-`$ react-native link @adyen/react-native`
-
-`yarn`
+`$ yarn add @adyen/react-native`
 
 ### iOS integration
 
@@ -61,12 +55,12 @@ Example of configuration properties:
 ```javascript
 const configuration = {
   environment: 'test', // live, live-us, live-au
-  channel: channel, // iOS, Android
+  channel: channel, // iOS, Android. Added automatically by AdyenPaymentProvider
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 },
   reference: 'React Native', // The reference to uniquely identify a payment.
-  returnUrl: 'myapp://', // This value is overrided for Android DropIn
+  returnUrl: 'myapp://', // This value is overridden for Android DropIn
   shopperReference: 'Checkout Shopper', // Your reference to uniquely identify this shopper
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   shopperLocale: 'en-US',
