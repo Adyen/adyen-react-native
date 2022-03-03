@@ -15,6 +15,6 @@ Pod::Spec.new do |s|
 
 
   s.dependency "React-Core"
-  s.dependency "Adyen", '4.7.0'
+  s.dependency "Adyen", '4.7.1'
 
 end
