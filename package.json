@@ -19,11 +19,16 @@
   "module": "lib/module/index",
   "react-native": "src/index",
   "source": "src/index",
+  "bugs": {
+     "url": "https://support.adyen.com/"
+  },
   "files": [
     "src",
     "android",
     "ios",
     "adyen-react-native.podspec",
+    "LICENSE",
+    "README",
     "!android/build",
     "!ios/build",
     "!**/__tests__"

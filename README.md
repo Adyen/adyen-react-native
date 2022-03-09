@@ -1,5 +1,5 @@
-[![Adyen iOS](https://img.shields.io/badge/adyen-v4.7.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
-[![Adyen Android](https://img.shields.io/badge/adyen-v4.4.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
+[![Adyen iOS](https://img.shields.io/badge/ios-v4.7.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
+[![Adyen Android](https://img.shields.io/badge/android-v4.4.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
 
 
 ![Checkout_react_native_beta](https://user-images.githubusercontent.com/2648655/155735539-84066a1f-516c-456b-97a2-f0ba643f875c.png)
