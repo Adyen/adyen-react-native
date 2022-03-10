@@ -12,7 +12,7 @@ React native wrapper for native iOS and Android Adyen Components. This library a
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
 
 ## Requirements
-Explain the requirements for using the repo (e.g. which minimum iOS version is needed to run the SDK).
+Drop-in and Components require a [client key][client.key], that should be provided in the `Configuration`.
 
 ## Installation
 
@@ -126,3 +126,6 @@ If you have a feature request, or spotted a bug or a technical problem, create a
 
 ## License    
 MIT license. For more information, see the LICENSE file.
+
+
+[client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
