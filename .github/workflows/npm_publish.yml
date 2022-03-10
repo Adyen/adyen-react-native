@@ -5,8 +5,9 @@
 name: Publish Package
 
 on:
+  workflow_dispatch:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   publish-npm:
@@ -19,15 +20,13 @@ jobs:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - run: yarn install --frozen-lockfile
-      # Copy README to adyen-web package
-      - run: cp README.md packages/lib/
       # Build and publish to npm
-      - run: cd packages/lib && npm publish --access public
+      - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
           CI: true
       # Upload artifacts
-      - uses: actions/upload-artifact@v2
-        with:
-          name: dist
-          path: packages/lib/dist
+      # - uses: actions/upload-artifact@v2
+      #   with:
+      #     name: dist
+      #     path: packages/lib/dist
