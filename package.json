@@ -1,6 +1,6 @@
 {
   "name": "@adyen/react-native",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Wrapps Adyen Checkout SDKs for iOS and Android for convinient use on React Native.",
   "license": "MIT",
   "author": "Adyen",
@@ -23,6 +23,7 @@
   "source": "src/index",
   "files": [
     "lib",
+    "src",
     "android",
     "ios",
     "adyen-react-native.podspec",
@@ -34,9 +35,10 @@
     "prepare": "bob build",
     "release": "release-it",
     "example": "yarn --cwd example",
+    "pods": "cd example && pod-install --quiet",
     "run-ios": "yarn example && cd example && yarn ios",
     "run-android": "yarn example && cd example && yarn android",
-    "bootstrap": "git clean -fxd && yarn"
+    "bootstrap": "git clean -fxd && yarn example && yarn && yarn pods"
   },
   "devDependencies": {
     "react": "^17.0.2",

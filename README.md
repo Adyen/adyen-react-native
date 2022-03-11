@@ -1,3 +1,4 @@
+[![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
 [![Adyen iOS](https://img.shields.io/badge/ios-v4.7.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
 [![Adyen Android](https://img.shields.io/badge/android-v4.4.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
 
@@ -12,7 +13,7 @@ React native wrapper for native iOS and Android Adyen Components. This library a
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
 
 ## Requirements
-Explain the requirements for using the repo (e.g. which minimum iOS version is needed to run the SDK).
+Drop-in and Components require a [client key][client.key], that should be provided in the `Configuration`.
 
 ## Installation
 
@@ -96,22 +97,16 @@ import {
 Or manage native events by
 
 ```javascript
-import {
-  AdyenDropIn,   
-  PAYMENT_SUBMIT_EVENT,
-  PAYMENT_PROVIDE_DETAILS_EVENT,
-  PAYMENT_COMPLETED_EVENT,
-  PAYMENT_FAILED_EVENT
-} from '@adyen/react-native';
+import { NativeModules } from 'react-native';
 
 <Button
   title="Checkout"
   onPress={() => {
-    const eventEmitter = new NativeEventEmitter(AdyenDropIn);
-    this.didSubmitListener = eventEmitter.addListener(PAYMENT_SUBMIT_EVENT, onSubmit);
-    this.didProvideListener = eventEmitter.addListener(PAYMENT_PROVIDE_DETAILS_EVENT, onProvide);
-    this.didCompleteListener = eventEmitter.addListener(PAYMENT_COMPLETED_EVENT, onComplete);
-    this.didFailListener = eventEmitter.addListener(PAYMENT_FAILED_EVENT, onFail);
+    const eventEmitter = new NativeEventEmitter(NativeModules.AdyenDropIn);
+    this.didSubmitListener = eventEmitter.addListener('PAYMENT_SUBMIT_EVENT', onSubmit);
+    this.didProvideListener = eventEmitter.addListener('PAYMENT_PROVIDE_DETAILS_EVENT', onProvide);
+    this.didCompleteListener = eventEmitter.addListener('PAYMENT_COMPLETED_EVENT', onComplete);
+    this.didFailListener = eventEmitter.addListener('PAYMENT_FAILED_EVENT', onFail);
 
     AdyenDropIn.open(paymentMethods, configuration);
   }}
@@ -126,3 +121,6 @@ If you have a feature request, or spotted a bug or a technical problem, create a
 
 ## License    
 MIT license. For more information, see the LICENSE file.
+
+
+[client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
