@@ -27,7 +27,7 @@ Add `@adyen/react-native` to your react-native project.
 2. add return URL and
   ```objc
 
-  @import AdyenReactNative;
+  @import adyen_react_native;
 
   ...
 
