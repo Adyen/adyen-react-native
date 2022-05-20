@@ -71,11 +71,12 @@ const configuration = {
 
 ### Opening Payment component
 
-To use `@adyen/react-native` you can use our helper component `AdyenPaymentProvider`.
+To use `@adyen/react-native` you can use our helper component `AdyenPaymentProvider` with `AdyenCheckoutContext.Consumer` directly:
 
 ```javascript
 import {
-  AdyenPaymentProvider
+  AdyenPaymentProvider,
+  AdyenCheckoutContext,
 } from '@adyen/react-native';
 
 <AdyenPaymentProvider
@@ -84,14 +85,46 @@ import {
   onSubmit={didSubmit}
   onProvide={didProvide}
   onFail={didFail}
-  onComplete={didComplete}
->
-  <Button
-    title="Checkout"
-    onPress={() => start('AdyenDropIn')}
-  />
+  onComplete={didComplete} >
+    <AdyenCheckoutContext.Consumer>
+      {({ start }) => (
+        <Button
+          title="Open DropIn"
+          onPress={() => { start('AdyenDropIn'); }}
+        />
+      )}
+    </AdyenCheckoutContext.Consumer>
 </AdyenPaymentProvider>
+```
 
+Or use helper `useAdyenCheckout` with standalone component:
+
+```javascript
+import { useAdyenCheckout } from '@adyen/react-native';
+
+const MyChekoutView = () => {
+  const { start } = useAdyenCheckout();
+
+  return (
+      <Button
+        title="Open DropIn"
+        onPress={() => { start('AdyenDropIn'); }} />
+      );
+};
+```
+
+```javascript
+import { AdyenPaymentProvider } from '@adyen/react-native';
+
+<AdyenPaymentProvider
+  config={configuration}
+  paymentMethods={paymentMethods}
+  onSubmit={didSubmit}
+  onProvide={didProvide}
+  onFail={didFail}
+  onComplete={didComplete} >
+    <MyChekoutView />
+</AdyenPaymentProvider>
 ```
 
 Or manage native events by
