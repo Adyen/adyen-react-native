@@ -20,6 +20,7 @@ export const defaultConfiguration = {
   holderNameRequired: true,
   showStorePaymentField : false,
   hideCvc: true,
+  skipListWhenSinglePaymentMethod: true,
 };
 
 export const environment = {

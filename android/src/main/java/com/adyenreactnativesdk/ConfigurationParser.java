@@ -35,6 +35,7 @@ final public class ConfigurationParser {
     final String SHOWSTOREPAYMENTFIELD_KEY = "showStorePaymentField";
     final String HIDECVC_KEY = "hideCvc";
     final String HOLDERNAMEREQUIRED_KEY = "holderNameRequired";
+    final String SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY = "skipListWhenSinglePaymentMethod";
 
     private final ReadableMap config;
 
@@ -125,6 +126,15 @@ final public class ConfigurationParser {
         Boolean value = config.getBoolean(HOLDERNAMEREQUIRED_KEY);
         if (value == null) {
             throw new NoSuchFieldException("No " + HOLDERNAMEREQUIRED_KEY);
+        }
+
+        return value;
+    }
+    @NonNull
+    public Boolean getSkipListWhenSinglePaymentMethod() throws NoSuchFieldException {
+        Boolean value = config.getBoolean(SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
+        if (value == null) {
+            throw new NoSuchFieldException("No " + SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
         }
 
         return value;
