@@ -17,6 +17,9 @@ export const defaultConfiguration = {
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   shopperLocale: 'en-US',
   additionalData: { allow3DS2: true },
+  holderNameRequired: true,
+  showStorePaymentField : false,
+  hideCvc: true,
 };
 
 export const environment = {
