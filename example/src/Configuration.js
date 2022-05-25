@@ -19,7 +19,7 @@ export const defaultConfiguration = {
   additionalData: { allow3DS2: true },
   holderNameRequired: true,
   showStorePaymentField : false,
-  hideCvc: true,
+  hideCvcStoredCard: false,
   skipListWhenSinglePaymentMethod: true,
 };
 
