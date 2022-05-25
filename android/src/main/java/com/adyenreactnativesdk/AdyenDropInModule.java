@@ -59,9 +59,9 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
         final String shopperReference;
         final Amount amount = config.getAmount();
         final Boolean showStorePaymentField;
-        final Boolean hideCvc;
         final Boolean holderNameRequired;
         final Boolean skipListWhenSinglePaymentMethod;
+        final Boolean hideCvcStoredCard;
 
         try {
             environment = config.getEnvironment();
@@ -70,9 +70,9 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
             shopperReference = config.getShopperReference();
             countryCode = config.getCountryCode();
             showStorePaymentField = config.getShowStorePaymentField();
-            hideCvc = config.getHideCvc();
             holderNameRequired = config.getHolderNameRequired();
             skipListWhenSinglePaymentMethod = config.getSkipListWhenSinglePaymentMethod();
+            hideCvcStoredCard = config.getHideCvcStoredCard();
 
         } catch (NoSuchFieldException e) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e));
@@ -89,7 +89,7 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
         cardConfiguration = new CardConfiguration.Builder(shopperLocale, environment, clientKey)
                 .setShopperReference(shopperReference)
                 .setShowStorePaymentField(showStorePaymentField)
-                .setHideCvc(hideCvc)
+                .setHideCvcStoredCard(hideCvcStoredCard)
                 .setHolderNameRequired(holderNameRequired)
                 .build();
 
