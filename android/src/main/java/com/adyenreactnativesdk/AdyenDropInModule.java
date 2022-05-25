@@ -58,6 +58,10 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
         final String countryCode;
         final String shopperReference;
         final Amount amount = config.getAmount();
+        final Boolean showStorePaymentField;
+        final Boolean holderNameRequired;
+        final Boolean skipListWhenSinglePaymentMethod;
+        final Boolean hideCvcStoredCard;
 
         try {
             environment = config.getEnvironment();
@@ -65,6 +69,11 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
             shopperLocale = config.getLocale();
             shopperReference = config.getShopperReference();
             countryCode = config.getCountryCode();
+            showStorePaymentField = config.getShowStorePaymentField();
+            holderNameRequired = config.getHolderNameRequired();
+            skipListWhenSinglePaymentMethod = config.getSkipListWhenSinglePaymentMethod();
+            hideCvcStoredCard = config.getHideCvcStoredCard();
+
         } catch (NoSuchFieldException e) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e));
             return;
@@ -73,11 +82,15 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
         DropInConfiguration.Builder builder;
         builder = new DropInConfiguration.Builder(getReactApplicationContext(), AdyenDropInService.class, clientKey)
                 .setShopperLocale(shopperLocale)
+                .setSkipListWhenSinglePaymentMethod(skipListWhenSinglePaymentMethod)
                 .setEnvironment(environment);
 
         CardConfiguration cardConfiguration;
         cardConfiguration = new CardConfiguration.Builder(shopperLocale, environment, clientKey)
                 .setShopperReference(shopperReference)
+                .setShowStorePaymentField(showStorePaymentField)
+                .setHideCvcStoredCard(hideCvcStoredCard)
+                .setHolderNameRequired(holderNameRequired)
                 .build();
 
         BcmcConfiguration bcmcConfiguration;

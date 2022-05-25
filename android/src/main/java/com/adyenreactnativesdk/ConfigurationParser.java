@@ -32,6 +32,11 @@ final public class ConfigurationParser {
     final String ENVIRONMENT_KEY = "environment";
     final String SHOPPERLOCALE_KEY = "shopperLocale";
     final String SHOPPERREFERENCE_KEY = "shopperReference";
+    final String SHOWSTOREPAYMENTFIELD_KEY = "showStorePaymentField";
+    final String HOLDERNAMEREQUIRED_KEY = "holderNameRequired";
+    final String SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY = "skipListWhenSinglePaymentMethod";
+    final String HIDECVCSTOREDCARD_KEY = "hideCvcStoredCard";
+
 
     private final ReadableMap config;
 
@@ -96,6 +101,46 @@ final public class ConfigurationParser {
         }
 
         return Locale.forLanguageTag(value);
+    }
+
+    @NonNull
+    public Boolean getShowStorePaymentField() throws NoSuchFieldException {
+        Boolean value = config.getBoolean(SHOWSTOREPAYMENTFIELD_KEY);
+        if (value == null) {
+            throw new NoSuchFieldException("No " + SHOWSTOREPAYMENTFIELD_KEY);
+        }
+
+        return value;
+    }
+
+    @NonNull
+    public Boolean getHolderNameRequired() throws NoSuchFieldException {
+        Boolean value = config.getBoolean(HOLDERNAMEREQUIRED_KEY);
+        if (value == null) {
+            throw new NoSuchFieldException("No " + HOLDERNAMEREQUIRED_KEY);
+        }
+
+        return value;
+    }
+
+    @NonNull
+    public Boolean getSkipListWhenSinglePaymentMethod() throws NoSuchFieldException {
+        Boolean value = config.getBoolean(SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
+        if (value == null) {
+            throw new NoSuchFieldException("No " + SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
+        }
+
+        return value;
+    }
+
+    @NonNull
+    public Boolean getHideCvcStoredCard() throws NoSuchFieldException {
+        Boolean value = config.getBoolean(HIDECVCSTOREDCARD_KEY);
+        if (value == null) {
+            throw new NoSuchFieldException("No " + HIDECVCSTOREDCARD_KEY);
+        }
+
+        return value;
     }
 
     @NonNull

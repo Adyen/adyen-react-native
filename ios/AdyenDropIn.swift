@@ -41,7 +41,24 @@ internal class AdyenDropIn: BaseModule {
         else { return }
 
         let apiContext = APIContext(environment: Environment.parse(environment), clientKey: clientKey)
-        let config = DropInComponent.Configuration(apiContext: apiContext)
+        
+        let allowsSkippingPaymentList = configuration[Keys.skipListWhenSinglePaymentMethod] as? Bool
+        
+        let config = DropInComponent.Configuration(apiContext: apiContext,allowsSkippingPaymentList: allowsSkippingPaymentList ?? false)
+        
+        
+        if let showsHolderNameField = configuration[Keys.holderNameRequired] as? Bool {
+            config.card.showsHolderNameField = showsHolderNameField
+        }
+       
+        if let showsStorePaymentMethodField = configuration[Keys.showStorePaymentField] as? Bool {
+            config.card.showsStorePaymentMethodField = showsStorePaymentMethodField
+        }
+        
+        if let showsSecurityCodeField = configuration[Keys.hideCvcStoredCard] as? Bool {
+            config.card.stored.showsSecurityCodeField  = showsSecurityCodeField
+        }
+
         
         if let paymentObject = configuration[Keys.amount] as? [String: Any],
            let paymentAmount = paymentObject[Keys.value] as? Int,
