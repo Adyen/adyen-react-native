@@ -44,8 +44,9 @@ internal class AdyenDropIn: BaseModule {
         
         let allowsSkippingPaymentList = configuration[Keys.skipListWhenSinglePaymentMethod] as? Bool
         
-        let config = DropInComponent.Configuration(apiContext: apiContext,allowsSkippingPaymentList: allowsSkippingPaymentList ?? false)
+        let allowPreselectedPaymentView = configuration[Keys.showPreselectedStoredPaymentMethod] as? Bool
         
+        let config = DropInComponent.Configuration(apiContext: apiContext,allowsSkippingPaymentList: allowsSkippingPaymentList ?? false,allowPreselectedPaymentView: allowPreselectedPaymentView ?? true)
         
         if let showsHolderNameField = configuration[Keys.holderNameRequired] as? Bool {
             config.card.showsHolderNameField = showsHolderNameField

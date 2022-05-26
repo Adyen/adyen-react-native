@@ -21,6 +21,7 @@ export const defaultConfiguration = {
   showStorePaymentField : false,
   hideCvcStoredCard: false,
   skipListWhenSinglePaymentMethod: true,
+  showPreselectedStoredPaymentMethod: true,
 };
 
 export const environment = {

@@ -25,4 +25,5 @@ internal enum Keys {
     static var showStorePaymentField = "showStorePaymentField"
     static var holderNameRequired = "holderNameRequired"
     static var hideCvcStoredCard = "hideCvcStoredCard"
+    static var showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod"
 }
