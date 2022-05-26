@@ -105,52 +105,62 @@ final public class ConfigurationParser {
 
     @NonNull
     public Boolean getShowStorePaymentField() throws NoSuchFieldException {
-        Boolean value = config.getBoolean(SHOWSTOREPAYMENTFIELD_KEY);
-        if (value == null) {
-            throw new NoSuchFieldException("No " + SHOWSTOREPAYMENTFIELD_KEY);
+        if(config.hasKey(SHOWSTOREPAYMENTFIELD_KEY)) {
+            Boolean value = config.getBoolean(SHOWSTOREPAYMENTFIELD_KEY);
+            if (value == null) {
+                throw new NoSuchFieldException("No " + SHOWSTOREPAYMENTFIELD_KEY);
+            }
+            return value;
         }
-
-        return value;
+        return true;
     }
 
     @NonNull
     public Boolean getHolderNameRequired() throws NoSuchFieldException {
-        Boolean value = config.getBoolean(HOLDERNAMEREQUIRED_KEY);
-        if (value == null) {
-            throw new NoSuchFieldException("No " + HOLDERNAMEREQUIRED_KEY);
+        if(config.hasKey(HOLDERNAMEREQUIRED_KEY)) {
+            Boolean value = config.getBoolean(HOLDERNAMEREQUIRED_KEY);
+            if (value == null) {
+                throw new NoSuchFieldException("No " + HOLDERNAMEREQUIRED_KEY);
+            }
+            return value;
         }
-
-        return value;
+        return false;
     }
 
     @NonNull
     public Boolean getSkipListWhenSinglePaymentMethod() throws NoSuchFieldException {
-        Boolean value = config.getBoolean(SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
-        if (value == null) {
-            throw new NoSuchFieldException("No " + SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
+        if(config.hasKey(SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY)) {
+            Boolean value = config.getBoolean(SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
+            if (value == null) {
+                throw new NoSuchFieldException("No " + SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
+            }
+            return value;
         }
-
-        return value;
+        return false;
     }
 
     @NonNull
     public Boolean getHideCvcStoredCard() throws NoSuchFieldException {
-        Boolean value = config.getBoolean(HIDECVCSTOREDCARD_KEY);
-        if (value == null) {
-            throw new NoSuchFieldException("No " + HIDECVCSTOREDCARD_KEY);
+        if(config.hasKey(HIDECVCSTOREDCARD_KEY)) {
+            Boolean value = config.getBoolean(HIDECVCSTOREDCARD_KEY);
+            if (value == null) {
+                throw new NoSuchFieldException("No " + HIDECVCSTOREDCARD_KEY);
+            }
+            return value;
         }
-
-        return value;
+        return true;
     }
 
     @NonNull
     public Boolean getShowPreselectedStoredPaymentMethod() throws NoSuchFieldException {
-        Boolean value = config.getBoolean(SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY);
-        if (value == null) {
-            throw new NoSuchFieldException("No " + SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY);
+        if(config.hasKey(SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY)){
+            Boolean value = config.getBoolean(SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY);
+            if (value == null) {
+                throw new NoSuchFieldException("No " + SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY);
+            }
+            return value;
         }
-
-        return value;
+        return true;
     }
 
     @NonNull
