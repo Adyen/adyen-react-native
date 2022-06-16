@@ -26,9 +26,8 @@ Add `@adyen/react-native` to your react-native project.
 ### iOS integration
 
 1. run `pod install`
-2. add return URL and
+2. add return URL handler to your `AppDelegate.m`
   ```objc
-
   @import adyen_react_native;
 
   ...
@@ -43,9 +42,11 @@ Add `@adyen/react-native` to your react-native project.
 
 1. Add `AdyenDropInService` to manifest:
 
-`<service
+```xml
+<service
   android:name="com.adyenreactnativesdk.AdyenDropInService"
-  android:permission="android.permission.BIND_JOB_SERVICE"/>`
+  android:permission="android.permission.BIND_JOB_SERVICE"/>
+```
 
 ## Usage
 

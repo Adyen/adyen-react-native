@@ -7,6 +7,7 @@ export const fetchPaymentMethods = (configuration) => {
     shopperLocale: configuration.shopperLocale,
     amount: configuration.amount,
     channel: configuration.channel,
+    shopperReference: configuration.shopperReference
   };
 
   return fetchFrom(environment.url + 'paymentMethods', body);
