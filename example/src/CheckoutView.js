@@ -32,7 +32,7 @@ function getFlagEmoji(countryCode) {
   return String.fromCodePoint(...codePoints);
 }
 
-const PaymentView = () => {
+const CheckoutView = () => {
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -126,4 +126,4 @@ const PaymentView = () => {
   );
 };
 
-export default PaymentView;
+export default CheckoutView;
