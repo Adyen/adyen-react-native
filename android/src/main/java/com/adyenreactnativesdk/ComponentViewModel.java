@@ -15,19 +15,13 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 
 import java.util.Locale;
 
-interface PaymentComponentListener {
-    void onError(Exception exception);
-
-    void onSubmit(PaymentComponentData data);
-}
-
-class ComponentViewModel {
+public class ComponentViewModel {
     private final PaymentMethod paymentMethod;
     private final Amount amount;
     private final Locale shopperLocale;
     private PaymentComponentListener listener;
 
-    ComponentViewModel(@NonNull PaymentMethod paymentMethod, @NonNull Locale shopperLocale, @Nullable Amount amount) {
+    public ComponentViewModel(@NonNull PaymentMethod paymentMethod, @NonNull Locale shopperLocale, @Nullable Amount amount) {
         this.paymentMethod = paymentMethod;
         this.amount = amount;
         this.shopperLocale = shopperLocale;

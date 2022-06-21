@@ -4,7 +4,7 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk;
+package com.adyenreactnativesdk.component;
 
 import android.app.Activity;
 import android.util.Log;
@@ -25,6 +25,16 @@ import com.adyen.checkout.components.model.payments.Amount;
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData;
 import com.adyen.checkout.components.model.payments.response.Action;
 import com.adyen.checkout.core.api.Environment;
+import com.adyenreactnativesdk.ActionHandler;
+import com.adyenreactnativesdk.ActionHandlerConfiguration;
+import com.adyenreactnativesdk.ActionHandlingInterface;
+import com.adyenreactnativesdk.AdyenBottomSheetDialogFragment;
+import com.adyenreactnativesdk.ComponentViewModel;
+import com.adyenreactnativesdk.PaymentComponentListener;
+import com.adyenreactnativesdk.ReactNativeError;
+import com.adyenreactnativesdk.ReactNativeJson;
+import com.adyenreactnativesdk.configuration.CardConfigurationParser;
+import com.adyenreactnativesdk.configuration.RootConfigurationParser;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
@@ -37,7 +47,7 @@ import java.util.Locale;
 
 public class AdyenCardComponent extends BaseModule implements PaymentComponentListener, ActionHandlingInterface {
 
-    public final String TAG = "AdyenCardComponent";
+    public final String TAG = "CardComponent";
     public final String PAYMENT_METHOD_KEY = "scheme";
 
     private ActionHandler actionHandler;
@@ -58,19 +68,17 @@ public class AdyenCardComponent extends BaseModule implements PaymentComponentLi
         PaymentMethodsApiResponse paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData);
         PaymentMethod paymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY);
 
-        ConfigurationParser config = new ConfigurationParser(configuration);
+        RootConfigurationParser config = new RootConfigurationParser(configuration);
         final Environment environment;
         final String clientKey;
         final Locale shopperLocale;
         final Amount amount;
-        final String shopperReference;
 
         try {
             environment = config.getEnvironment();
             clientKey = config.getClientKey();
             shopperLocale = config.getLocale();
             amount = config.getAmount();
-            shopperReference = config.getShopperReference();
         } catch (NoSuchFieldException e) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e));
             return;
@@ -78,9 +86,14 @@ public class AdyenCardComponent extends BaseModule implements PaymentComponentLi
 
         actionHandler = new ActionHandler(this, new ActionHandlerConfiguration(shopperLocale, environment, clientKey));
 
-        CardConfiguration componentConfiguration = new CardConfiguration
-                .Builder(shopperLocale, environment, clientKey)
-                .setShopperReference(shopperReference)
+        CardConfigurationParser parser = new CardConfigurationParser(configuration);
+        CardConfiguration componentConfiguration;
+        componentConfiguration = new CardConfiguration.Builder(shopperLocale, environment, clientKey)
+                .setShowStorePaymentField(parser.getShowStorePaymentField())
+                .setHideCvcStoredCard(parser.getHideCvcStoredCard())
+                .setHideCvc(parser.getHideCvc())
+                .setHolderNameRequired(parser.getHolderNameRequired())
+                .setAddressVisibility(parser.getAddressVisibility())
                 .build();
 
         AppCompatActivity theActivity = getAppCompatActivity();

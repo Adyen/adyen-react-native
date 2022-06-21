@@ -4,7 +4,7 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk;
+package com.adyenreactnativesdk.configuration;
 
 import android.util.Log;
 
@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import com.adyen.checkout.components.model.payments.Amount;
 import com.adyen.checkout.core.api.Environment;
 import com.adyen.checkout.core.exception.CheckoutException;
+import com.adyenreactnativesdk.ReactNativeJson;
 import com.facebook.react.bridge.ReadableMap;
 
 import org.json.JSONException;
@@ -22,7 +23,7 @@ import java.util.Locale;
 
 import javax.annotation.Nullable;
 
-final public class ConfigurationParser {
+final public class RootConfigurationParser {
 
     final String TAG = "ConfigurationParser";
 
@@ -35,7 +36,7 @@ final public class ConfigurationParser {
 
     private final ReadableMap config;
 
-    public ConfigurationParser(ReadableMap config) {
+    public RootConfigurationParser(ReadableMap config) {
         this.config = config;
     }
 
@@ -78,14 +79,9 @@ final public class ConfigurationParser {
         return value;
     }
 
-    @NonNull
-    public String getShopperReference() throws NoSuchFieldException {
-        String value = config.getString(SHOPPERREFERENCE_KEY);
-        if (value == null) {
-            throw new NoSuchFieldException("No " + SHOPPERREFERENCE_KEY);
-        }
-
-        return value;
+    @Nullable
+    public String getShopperReference() {
+        return config.getString(SHOPPERREFERENCE_KEY);
     }
 
     @NonNull
