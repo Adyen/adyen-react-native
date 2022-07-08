@@ -1,8 +1,5 @@
 package com.adyenreactnativesdk.configuration;
 
-import androidx.annotation.NonNull;
-
-import com.adyen.checkout.components.base.AddressVisibility;
 import com.facebook.react.bridge.ReadableMap;
 
 final public class DropInConfigurationParser {
@@ -10,8 +7,8 @@ final public class DropInConfigurationParser {
     final String TAG = "DropInConfigurationParser";
 
     final String DROPIN_KEY = "dropin";
-    final String SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY = "showPreselectedStoredPaymentMethod";
-    final String SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY = "skipListWhenSinglePaymentMethod";
+    final String SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY = "showPreselectedStoredPaymentMethod";
+    final String SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY = "skipListWhenSinglePaymentMethod";
 
     private final ReadableMap config;
 
@@ -24,12 +21,12 @@ final public class DropInConfigurationParser {
     }
     
     public boolean getSkipListWhenSinglePaymentMethod() {
-        return config.getBoolean(SKIPLISTWHENSINGLEPAYMENTMETHOD_KEY);
+        return config.getBoolean(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY);
     }
 
     public boolean getShowPreselectedStoredPaymentMethod() {
-        if(config.hasKey(SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY)) {
-            return config.getBoolean(SHOWPRESELECTEDSTOREDPAYMENTMETHOD_KEY);
+        if(config.hasKey(SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY)) {
+            return config.getBoolean(SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY);
         }
         return true;
     }

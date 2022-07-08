@@ -29,6 +29,7 @@ import com.adyenreactnativesdk.ReactNativeError;
 import com.adyenreactnativesdk.ReactNativeJson;
 import com.adyenreactnativesdk.configuration.CardConfigurationParser;
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser;
+import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser;
 import com.adyenreactnativesdk.configuration.RootConfigurationParser;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
@@ -62,12 +63,11 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
         final RootConfigurationParser parser = new RootConfigurationParser(configuration);
         final Environment environment;
         final String clientKey;
-        final Locale shopperLocale;
+
 
         try {
             environment = parser.getEnvironment();
             clientKey = parser.getClientKey();
-            shopperLocale = parser.getLocale();
         } catch (NoSuchFieldException e) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e));
             return;
@@ -75,8 +75,12 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
 
         DropInConfiguration.Builder builder;
         builder = new DropInConfiguration.Builder(getReactApplicationContext(), AdyenDropInService.class, clientKey)
-                .setShopperLocale(shopperLocale)
                 .setEnvironment(environment);
+
+        try {
+            final Locale shopperLocale = parser.getLocale();
+            builder.setShopperLocale(shopperLocale);
+        } catch (NoSuchFieldException e) {  }
 
         configureDropIn(builder, configuration);
         configureCards(builder, configuration);
@@ -89,7 +93,7 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
 
             try {
                 final String countryCode = parser.getCountryCode();
-                configureGooglePay(countryCode, builder);
+                configureGooglePay(countryCode, builder, configuration);
             } catch (NoSuchFieldException e) {
                 Log.d(TAG, "Can't configure GooglePayComponent: No `countryCode` in configuration.");
             }
@@ -180,16 +184,25 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
         builder.setSkipListWhenSinglePaymentMethod(parser.getSkipListWhenSinglePaymentMethod());
     }
 
-    private void configureGooglePay(String countryCode, DropInConfiguration.Builder builder) {
-        GooglePayConfiguration googlePayConfig;
-        googlePayConfig = new GooglePayConfiguration.Builder(
+    private void configureGooglePay(String countryCode, DropInConfiguration.Builder builder, ReadableMap configuration) {
+        GooglePayConfigurationParser parser = new GooglePayConfigurationParser(configuration);
+        GooglePayConfiguration.Builder configBuilder = new GooglePayConfiguration.Builder(
                 builder.getBuilderShopperLocale(),
                 builder.getBuilderEnvironment(),
                 builder.getBuilderClientKey())
                 .setCountryCode(countryCode)
-                .setAmount(builder.getAmount())
-                .build();
-        builder.addGooglePayConfiguration(googlePayConfig);
+                .setAllowedCardNetworks(parser.getAllowedCardNetworks())
+                .setAllowedAuthMethods(parser.getAllowedAuthMethods())
+                .setAllowPrepaidCards(parser.getAllowPrepaidCards())
+                .setBillingAddressRequired(parser.getBillingAddressRequired())
+                .setEmailRequired(parser.getEmailRequired())
+                .setShippingAddressRequired(parser.getShippingAddressRequired())
+                .setExistingPaymentMethodRequired(parser.getExistingPaymentMethodRequired())
+                .setGooglePayEnvironment(parser.getGooglePayEnvironment())
+                .setMerchantAccount(parser.getMerchantAccount())
+                .setAmount(builder.getAmount());
+        configBuilder.setTotalPriceStatus(parser.getTotalPriceStatus());
+        builder.addGooglePayConfiguration(configBuilder.build());
     }
 
     private void configure3DS(DropInConfiguration.Builder builder) {

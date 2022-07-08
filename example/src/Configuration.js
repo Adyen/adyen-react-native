@@ -29,12 +29,13 @@ export const defaultConfiguration = {
     showStorePaymentField : true,
     hideCvcStoredCard: true
   },
-  bcmc: { },
   applepay: {
     merchantID: ''
   },
-  style: {
-    tintColor: ''
+  googlepay: {
+
+  },
+  style: { // TODO: add styling
   }
 };
 

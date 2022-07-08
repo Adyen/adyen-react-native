@@ -28,11 +28,11 @@ final public class RootConfigurationParser {
     final String TAG = "ConfigurationParser";
 
     final String AMOUNT_KEY = "amount";
-    final String CLIENTKEY_KEY = "clientKey";
-    final String COUNTRYCODE_KEY = "countryCode";
+    final String CLIENT_KEY_KEY = "clientKey";
+    final String COUNTRY_CODE_KEY = "countryCode";
     final String ENVIRONMENT_KEY = "environment";
-    final String SHOPPERLOCALE_KEY = "shopperLocale";
-    final String SHOPPERREFERENCE_KEY = "shopperReference";
+    final String SHOPPER_LOCALE_KEY = "shopperLocale";
+    final String SHOPPER_REFERENCE_KEY = "shopperReference";
 
     private final ReadableMap config;
 
@@ -61,34 +61,29 @@ final public class RootConfigurationParser {
 
     @NonNull
     public String getClientKey() throws NoSuchFieldException {
-        String value = config.getString(CLIENTKEY_KEY);
+        String value = config.getString(CLIENT_KEY_KEY);
         if (value == null) {
-            throw new NoSuchFieldException("No " + CLIENTKEY_KEY);
-        }
-
-        return value;
-    }
-
-    @NonNull
-    public String getCountryCode() throws NoSuchFieldException {
-        String value = config.getString(COUNTRYCODE_KEY);
-        if (value == null) {
-            throw new NoSuchFieldException("No " + COUNTRYCODE_KEY);
+            throw new NoSuchFieldException("No " + CLIENT_KEY_KEY);
         }
 
         return value;
     }
 
     @Nullable
+    public String getCountryCode() throws NoSuchFieldException {
+        return config.getString(COUNTRY_CODE_KEY);
+    }
+
+    @Nullable
     public String getShopperReference() {
-        return config.getString(SHOPPERREFERENCE_KEY);
+        return config.getString(SHOPPER_REFERENCE_KEY);
     }
 
     @NonNull
     public Locale getLocale() throws NoSuchFieldException {
-        String value = config.getString(SHOPPERLOCALE_KEY);
+        String value = config.getString(SHOPPER_LOCALE_KEY);
         if (value == null) {
-            throw new NoSuchFieldException("No " + SHOPPERLOCALE_KEY);
+            throw new NoSuchFieldException("No " + SHOPPER_LOCALE_KEY);
         }
 
         return Locale.forLanguageTag(value);

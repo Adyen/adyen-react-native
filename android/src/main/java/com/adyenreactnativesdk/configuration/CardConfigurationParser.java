@@ -16,11 +16,11 @@ final public class CardConfigurationParser {
     final String TAG = "CardConfigurationParser";
 
     final String CARD_KEY = "card";
-    final String SHOWSTOREPAYMENTFIELD_KEY = "showStorePaymentField";
-    final String HOLDERNAMEREQUIRED_KEY = "holderNameRequired";
-    final String HIDECVCSTOREDCARD_KEY = "hideCvcStoredCard";
-    final String HIDECVC_KEY = "hideCvc";
-    final String ADDRESSVISIBILITY_KEY = "addressVisibility";
+    final String SHOW_STORE_PAYMENT_FIELD_KEY = "showStorePaymentField";
+    final String HOLDER_NAME_REQUIRED_KEY = "holderNameRequired";
+    final String HIDE_CVC_STORED_CARD_KEY = "hideCvcStoredCard";
+    final String HIDE_CVC_KEY = "hideCvc";
+    final String ADDRESS_VISIBILITY_KEY = "addressVisibility";
     private final ReadableMap config;
 
     public CardConfigurationParser(ReadableMap config) {
@@ -33,37 +33,37 @@ final public class CardConfigurationParser {
 
     @NonNull
     public Boolean getShowStorePaymentField() {
-        if(config.hasKey(SHOWSTOREPAYMENTFIELD_KEY)) {
-            return config.getBoolean(SHOWSTOREPAYMENTFIELD_KEY);
+        if(config.hasKey(SHOW_STORE_PAYMENT_FIELD_KEY)) {
+            return config.getBoolean(SHOW_STORE_PAYMENT_FIELD_KEY);
         }
         return true;
     }
 
     @NonNull
     public Boolean getHolderNameRequired() {
-        return config.getBoolean(HOLDERNAMEREQUIRED_KEY);
+        return config.getBoolean(HOLDER_NAME_REQUIRED_KEY);
     }
 
     @NonNull
     public Boolean getHideCvcStoredCard() {
-        if(config.hasKey(HIDECVCSTOREDCARD_KEY)) {
-            return config.getBoolean(HIDECVCSTOREDCARD_KEY);
+        if(config.hasKey(HIDE_CVC_STORED_CARD_KEY)) {
+            return config.getBoolean(HIDE_CVC_STORED_CARD_KEY);
         }
         return true;
     }
 
     @NonNull
     public Boolean getHideCvc() {
-        if(config.hasKey(HIDECVC_KEY)) {
-            return config.getBoolean(HIDECVC_KEY);
+        if(config.hasKey(HIDE_CVC_KEY)) {
+            return config.getBoolean(HIDE_CVC_KEY);
         }
         return true;
     }
 
     @NonNull
     public AddressVisibility getAddressVisibility() {
-        if(config.hasKey(ADDRESSVISIBILITY_KEY)) {
-            String value = config.getString(ADDRESSVISIBILITY_KEY);
+        if(config.hasKey(ADDRESS_VISIBILITY_KEY)) {
+            String value = config.getString(ADDRESS_VISIBILITY_KEY);
             switch (value.toLowerCase()) {
                 case "postal_code":
                     return AddressVisibility.POSTAL_CODE;
