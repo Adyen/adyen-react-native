@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { PaymentMethodsContext } from './PaymentMethodsProvider';
-import PaymentMethods from './PaymentMethods';
+import PaymentMethods from './PaymentMethodsView';
 
 const styles = StyleSheet.create({
   topContentView: {

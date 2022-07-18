@@ -1,8 +1,7 @@
 //
-//  JsonHelpers.swift
-//  AdyenReactNative
+// Copyright (c) 2022 Adyen N.V.
 //
-//  Created by Vladimir Abramichev on 05/01/2022.
+// This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
 import Adyen

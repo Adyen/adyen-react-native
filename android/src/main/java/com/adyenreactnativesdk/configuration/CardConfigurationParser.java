@@ -15,6 +15,13 @@ final public class CardConfigurationParser {
 
     final String TAG = "CardConfigurationParser";
 
+    /*
+    private final List<CardType> mSupportedCardTypes;
+    private final SocialSecurityNumberVisibility mSocialSecurityNumberVisibility;
+    private final KCPAuthVisibility mKcpAuthVisibility;
+    private final InstallmentConfiguration mInstallmentConfiguration;
+    * */
+
     final String CARD_KEY = "card";
     final String SHOW_STORE_PAYMENT_FIELD_KEY = "showStorePaymentField";
     final String HOLDER_NAME_REQUIRED_KEY = "holderNameRequired";
@@ -66,6 +73,8 @@ final public class CardConfigurationParser {
             String value = config.getString(ADDRESS_VISIBILITY_KEY);
             switch (value.toLowerCase()) {
                 case "postal_code":
+                case "postal":
+                case "postalCode":
                     return AddressVisibility.POSTAL_CODE;
                 default:
                     return AddressVisibility.NONE;

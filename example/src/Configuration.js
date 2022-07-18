@@ -21,21 +21,25 @@ export const defaultConfiguration = {
   shopperLocale: 'en-US',
   additionalData: { allow3DS2: true },
   dropin: {
-    skipListWhenSinglePaymentMethod: false,
-    showPreselectedStoredPaymentMethod: true
+    skipListWhenSinglePaymentMethod: true,
+    showPreselectedStoredPaymentMethod: false
   },
   card: {
-    holderNameRequired: false,
-    showStorePaymentField : true,
-    hideCvcStoredCard: true
+    holderNameRequired: true,
+    showStorePaymentField : false,
+    hideCvcStoredCard: true,
+    hideCvc: true,
+    addressVisibility: `postalCode`
   },
   applepay: {
-    merchantID: ''
+    // merchantID: 'merchant.com.adyen.MY_MERCHANT_ID',
+    // merchantName: 'MY_MERCHANT'
   },
   googlepay: {
 
   },
-  style: { // TODO: add styling
+  style: {
+    // TODO: add styling
   }
 };
 
