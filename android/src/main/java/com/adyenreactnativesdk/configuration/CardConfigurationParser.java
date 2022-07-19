@@ -8,6 +8,7 @@ package com.adyenreactnativesdk.configuration;
 
 import androidx.annotation.NonNull;
 
+import com.adyen.checkout.card.KCPAuthVisibility;
 import com.adyen.checkout.components.base.AddressVisibility;
 import com.facebook.react.bridge.ReadableMap;
 
@@ -22,12 +23,15 @@ final public class CardConfigurationParser {
     private final InstallmentConfiguration mInstallmentConfiguration;
     * */
 
+    KCPAuthVisibility visibility;
+
     final String CARD_KEY = "card";
     final String SHOW_STORE_PAYMENT_FIELD_KEY = "showStorePaymentField";
     final String HOLDER_NAME_REQUIRED_KEY = "holderNameRequired";
     final String HIDE_CVC_STORED_CARD_KEY = "hideCvcStoredCard";
     final String HIDE_CVC_KEY = "hideCvc";
     final String ADDRESS_VISIBILITY_KEY = "addressVisibility";
+    final String KCP_VISIBILITY_KEY = "kcpVisibility";
     private final ReadableMap config;
 
     public CardConfigurationParser(ReadableMap config) {
@@ -68,13 +72,27 @@ final public class CardConfigurationParser {
     }
 
     @NonNull
+    public KCPAuthVisibility getKcpVisibility() {
+        if(config.hasKey(ADDRESS_VISIBILITY_KEY)) {
+            String value = config.getString(ADDRESS_VISIBILITY_KEY);
+            switch (value.toLowerCase()) {
+                case "show":
+                    return KCPAuthVisibility.SHOW;
+                default:
+                    return KCPAuthVisibility.HIDE;
+            }
+        }
+        return KCPAuthVisibility.HIDE;
+    }
+
+    @NonNull
     public AddressVisibility getAddressVisibility() {
         if(config.hasKey(ADDRESS_VISIBILITY_KEY)) {
             String value = config.getString(ADDRESS_VISIBILITY_KEY);
             switch (value.toLowerCase()) {
                 case "postal_code":
                 case "postal":
-                case "postalCode":
+                case "postalcode":
                     return AddressVisibility.POSTAL_CODE;
                 default:
                     return AddressVisibility.NONE;

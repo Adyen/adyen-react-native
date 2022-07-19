@@ -104,7 +104,25 @@ public struct CardConfigurationParser {
             return .none
         }
         
-        return .init(rawValue: value)
+        switch value.lowercased() {
+        case "postal", "postalcode", "postal_code":
+            return .postalCode
+        default:
+            return .none
+        }
+    }
+    
+    var kcpVisibility: CardComponent.FieldVisibility {
+        guard let value = dict[CardKeys.addressVisibility] as? String else {
+            return .hide
+        }
+        
+        switch value {
+        case "show":
+            return .show
+        default:
+            return .hide
+        }
     }
     
     public var configuration: CardComponent.Configuration {
@@ -114,9 +132,9 @@ public struct CardConfigurationParser {
         return  .init(showsHolderNameField: showsHolderNameField,
                       showsStorePaymentMethodField: showsStorePaymentMethodField,
                       showsSecurityCodeField: showsSecurityCodeField,
+                      koreanAuthenticationMode: kcpVisibility,
                       billingAddressMode: addressVisibility,
                       storedCardConfiguration: storedConfiguration)
-//                      koreanAuthenticationMode: CardComponent.FieldVisibility,
 //                      socialSecurityNumberMode: CardComponent.FieldVisibility,
 //                      allowedCardTypes: [CardType]?,
 //                      installmentConfiguration: InstallmentConfiguration?,

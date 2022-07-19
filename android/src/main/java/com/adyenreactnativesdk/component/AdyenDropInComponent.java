@@ -244,6 +244,7 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
                 .setHideCvc(parser.getHideCvc())
                 .setHolderNameRequired(parser.getHolderNameRequired())
                 .setAddressVisibility(parser.getAddressVisibility())
+                .setKcpAuthVisibility(parser.getKcpVisibility())
                 .build();
         builder.addCardConfiguration(cardConfiguration);
     }

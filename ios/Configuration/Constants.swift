@@ -46,6 +46,7 @@ internal enum CardKeys: SubConfig {
     static var hideCvcStoredCard = "hideCvcStoredCard";
     static var hideCvc = "hideCvc";
     static var addressVisibility = "addressVisibility";
+    static var kcpVisibility = "kcpVisibility";
 }
 
 internal enum ApplePayKeys: SubConfig {

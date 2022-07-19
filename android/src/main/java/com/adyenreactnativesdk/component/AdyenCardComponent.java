@@ -94,6 +94,7 @@ public class AdyenCardComponent extends BaseModule implements PaymentComponentLi
                 .setHideCvc(parser.getHideCvc())
                 .setHolderNameRequired(parser.getHolderNameRequired())
                 .setAddressVisibility(parser.getAddressVisibility())
+                .setKcpAuthVisibility(parser.getKcpVisibility())
                 .build();
 
         AppCompatActivity theActivity = getAppCompatActivity();
