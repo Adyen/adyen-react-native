@@ -191,18 +191,10 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
                 builder.getBuilderEnvironment(),
                 builder.getBuilderClientKey())
                 .setCountryCode(countryCode)
-                .setAllowedCardNetworks(parser.getAllowedCardNetworks())
-                .setAllowedAuthMethods(parser.getAllowedAuthMethods())
-                .setAllowPrepaidCards(parser.getAllowPrepaidCards())
-                .setBillingAddressRequired(parser.getBillingAddressRequired())
-                .setEmailRequired(parser.getEmailRequired())
-                .setShippingAddressRequired(parser.getShippingAddressRequired())
-                .setExistingPaymentMethodRequired(parser.getExistingPaymentMethodRequired())
-                .setGooglePayEnvironment(parser.getGooglePayEnvironment())
-                .setMerchantAccount(parser.getMerchantAccount())
                 .setAmount(builder.getAmount());
-        configBuilder.setTotalPriceStatus(parser.getTotalPriceStatus());
-        builder.addGooglePayConfiguration(configBuilder.build());
+
+        GooglePayConfiguration googlePayConfiguration = parser.getConfiguration(configBuilder);
+        builder.addGooglePayConfiguration(googlePayConfiguration);
     }
 
     private void configure3DS(DropInConfiguration.Builder builder) {

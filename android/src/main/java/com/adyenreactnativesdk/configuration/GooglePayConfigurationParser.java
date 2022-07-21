@@ -2,12 +2,18 @@ package com.adyenreactnativesdk.configuration;
 
 import android.util.Log;
 
+import com.adyen.checkout.core.api.Environment;
+import com.adyen.checkout.dropin.DropInConfiguration;
+import com.adyen.checkout.googlepay.GooglePayComponent;
+import com.adyen.checkout.googlepay.GooglePayConfiguration;
 import com.adyen.checkout.googlepay.util.AllowedCardNetworks;
 import com.facebook.react.bridge.ReadableMap;
+import com.google.android.gms.wallet.WalletConstants;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -29,7 +35,7 @@ public class GooglePayConfigurationParser {
     final String EXISTING_PAYMENT_METHOD_REQUIRED_KEY = "existingPaymentMethodRequired";
     final String GOOGLEPAY_ENVIRONMENT_KEY = "googlePayEnvironment";
 
-
+    private static final String DEFAULT_TOTAL_PRICE_STATUS = "FINAL";
     private final ReadableMap config;
 
     public GooglePayConfigurationParser(ReadableMap config) {
@@ -91,11 +97,16 @@ public class GooglePayConfigurationParser {
         return config.getBoolean(EXISTING_PAYMENT_METHOD_REQUIRED_KEY);
     }
 
-    public int getGooglePayEnvironment() {
+    public int getGooglePayEnvironment(Environment environment) {
         if(config.hasKey(GOOGLEPAY_ENVIRONMENT_KEY)) {
             return config.getInt(GOOGLEPAY_ENVIRONMENT_KEY);
         }
-        return 3; // ENVIRONMENT_TEST
+
+        if (environment.equals(Environment.TEST)) {
+            return WalletConstants.ENVIRONMENT_TEST;
+        }
+
+        return WalletConstants.ENVIRONMENT_PRODUCTION;
     }
 
     @Nullable
@@ -103,7 +114,27 @@ public class GooglePayConfigurationParser {
         return config.getString(MERCHANT_ACCOUNT_KEY);
     }
 
+    @Nullable
     public String getTotalPriceStatus() {
-        return config.getString(TOTAL_PRICE_STATUS_KEY);
+        if(config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
+            return config.getString(TOTAL_PRICE_STATUS_KEY);
+        }
+        return DEFAULT_TOTAL_PRICE_STATUS;
     }
+
+    @Nullable
+    public GooglePayConfiguration getConfiguration(GooglePayConfiguration.Builder builder) {
+        builder.setAllowedCardNetworks(getAllowedCardNetworks())
+                .setAllowedAuthMethods(getAllowedAuthMethods())
+                .setAllowPrepaidCards(getAllowPrepaidCards())
+                .setBillingAddressRequired(getBillingAddressRequired())
+                .setEmailRequired(getEmailRequired())
+                .setShippingAddressRequired(getShippingAddressRequired())
+                .setExistingPaymentMethodRequired(getExistingPaymentMethodRequired())
+                .setGooglePayEnvironment(getGooglePayEnvironment(builder.getBuilderEnvironment()))
+                .setMerchantAccount(getMerchantAccount());
+        builder.setTotalPriceStatus(getTotalPriceStatus());
+        return  builder.build();
+    }
+
 }
