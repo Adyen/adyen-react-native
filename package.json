@@ -7,7 +7,7 @@
   "homepage": "https://adyen.com",
   "repository": "https://github.com/Adyen/adyen-react-native",
   "bugs": {
-     "url": "https://support.adyen.com/"
+    "url": "https://support.adyen.com/"
   },
   "keywords": [
     "adyen",
@@ -41,16 +41,16 @@
     "bootstrap": "git clean -fxd && yarn example && yarn && yarn pods"
   },
   "devDependencies": {
-    "react": "^17.0.2",
-    "react-native": "^0.66.4",
     "@react-native-community/eslint-config": "^2.0.0",
-    "react-native-builder-bob": "^0.18.2",
-    "pod-install": "^0.1.30",
-    "prettier": "^2.0.5",
-    "release-it": "^14.2.2",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^7.0.0",
-    "eslint-plugin-prettier": "^3.1.3"
+    "eslint-plugin-prettier": "^3.1.3",
+    "pod-install": "^0.1.30",
+    "prettier": "^2.0.5",
+    "react": "^17.0.2",
+    "react-native": "0.69.2",
+    "react-native-builder-bob": "^0.18.2",
+    "release-it": "^14.2.2"
   },
   "peerDependencies": {
     "react": "*",
