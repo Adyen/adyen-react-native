@@ -47,10 +47,6 @@ public class GooglePayConfigurationParser {
     }
 
     public List<String> getAllowedCardNetworks() {
-        if (!config.hasKey(ALLOWED_CARD_NETWORKS_KEY)) {
-            return null;
-        }
-
         List<Object> list = config.getArray(ALLOWED_CARD_NETWORKS_KEY).toArrayList();
         List<String> strings = new ArrayList<>(list.size());
         Set<String> allowedCardNetworks = new HashSet<>(AllowedCardNetworks.getAllAllowedCardNetworks());
@@ -66,35 +62,12 @@ public class GooglePayConfigurationParser {
     }
 
     public List<String> getAllowedAuthMethods() {
-        if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
-            List<Object> list = config.getArray(ALLOWED_AUTH_METHODS_KEY).toArrayList();
-            List<String> strings = new ArrayList<>(list.size());
-            for (Object object : list) {
-                strings.add(Objects.toString(object, null));
-            }
-            return strings.isEmpty() ? null : strings;
+        List<Object> list = config.getArray(ALLOWED_AUTH_METHODS_KEY).toArrayList();
+        List<String> strings = new ArrayList<>(list.size());
+        for (Object object : list) {
+            strings.add(Objects.toString(object, null));
         }
-        return null;
-    }
-
-    public boolean getAllowPrepaidCards() {
-        return config.getBoolean(ALLOW_PREPAID_CARDS_KEY);
-    }
-
-    public boolean getBillingAddressRequired() {
-        return config.getBoolean(BILLING_ADDRESS_REQUIRED_KEY);
-    }
-
-    public boolean getEmailRequired() {
-        return config.getBoolean(EMAIL_REQUIRED_KEY);
-    }
-
-    public boolean getShippingAddressRequired() {
-        return config.getBoolean(SHIPPING_ADDRESS_REQUIRED_KEY);
-    }
-
-    public boolean getExistingPaymentMethodRequired() {
-        return config.getBoolean(EXISTING_PAYMENT_METHOD_REQUIRED_KEY);
+        return strings.isEmpty() ? null : strings;
     }
 
     public int getGooglePayEnvironment(Environment environment) {
@@ -110,30 +83,45 @@ public class GooglePayConfigurationParser {
     }
 
     @Nullable
-    public String getMerchantAccount() {
-        return config.getString(MERCHANT_ACCOUNT_KEY);
-    }
-
-    @Nullable
-    public String getTotalPriceStatus() {
-        if(config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
-            return config.getString(TOTAL_PRICE_STATUS_KEY);
-        }
-        return DEFAULT_TOTAL_PRICE_STATUS;
-    }
-
-    @Nullable
     public GooglePayConfiguration getConfiguration(GooglePayConfiguration.Builder builder) {
-        builder.setAllowedCardNetworks(getAllowedCardNetworks())
-                .setAllowedAuthMethods(getAllowedAuthMethods())
-                .setAllowPrepaidCards(getAllowPrepaidCards())
-                .setBillingAddressRequired(getBillingAddressRequired())
-                .setEmailRequired(getEmailRequired())
-                .setShippingAddressRequired(getShippingAddressRequired())
-                .setExistingPaymentMethodRequired(getExistingPaymentMethodRequired())
-                .setGooglePayEnvironment(getGooglePayEnvironment(builder.getBuilderEnvironment()))
-                .setMerchantAccount(getMerchantAccount());
-        builder.setTotalPriceStatus(getTotalPriceStatus());
+        builder.setGooglePayEnvironment(getGooglePayEnvironment(builder.getBuilderEnvironment()));
+
+        if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
+            builder.setAllowedAuthMethods(getAllowedAuthMethods());
+        }
+
+        if (config.hasKey(ALLOWED_CARD_NETWORKS_KEY)) {
+            builder.setAllowedCardNetworks(getAllowedCardNetworks());
+        }
+
+        if(config.hasKey(ALLOW_PREPAID_CARDS_KEY)) {
+            builder.setAllowPrepaidCards(config.getBoolean(ALLOW_PREPAID_CARDS_KEY));
+        }
+
+        if(config.hasKey(BILLING_ADDRESS_REQUIRED_KEY)) {
+            builder.setBillingAddressRequired(config.getBoolean(BILLING_ADDRESS_REQUIRED_KEY));
+        }
+
+        if(config.hasKey(EMAIL_REQUIRED_KEY)) {
+            builder.setEmailRequired(config.getBoolean(EMAIL_REQUIRED_KEY));
+        }
+
+        if(config.hasKey(SHIPPING_ADDRESS_REQUIRED_KEY)) {
+            builder.setShippingAddressRequired(config.getBoolean(SHIPPING_ADDRESS_REQUIRED_KEY));
+        }
+
+        if(config.hasKey(EXISTING_PAYMENT_METHOD_REQUIRED_KEY)) {
+            builder.setExistingPaymentMethodRequired(config.getBoolean(EXISTING_PAYMENT_METHOD_REQUIRED_KEY));
+        }
+
+        if(config.hasKey(MERCHANT_ACCOUNT_KEY)) {
+            builder.setMerchantAccount(config.getString(MERCHANT_ACCOUNT_KEY));
+        }
+
+        if(config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
+            builder.setTotalPriceStatus(config.getString(MERCHANT_ACCOUNT_KEY));
+        }
+
         return  builder.build();
     }
 

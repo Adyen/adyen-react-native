@@ -73,8 +73,8 @@ final public class CardConfigurationParser {
 
     @NonNull
     public KCPAuthVisibility getKcpVisibility() {
-        if(config.hasKey(ADDRESS_VISIBILITY_KEY)) {
-            String value = config.getString(ADDRESS_VISIBILITY_KEY);
+        if(config.hasKey(KCP_VISIBILITY_KEY)) {
+            String value = config.getString(KCP_VISIBILITY_KEY);
             switch (value.toLowerCase()) {
                 case "show":
                     return KCPAuthVisibility.SHOW;
