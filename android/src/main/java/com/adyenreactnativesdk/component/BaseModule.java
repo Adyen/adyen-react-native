@@ -4,13 +4,15 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk;
+package com.adyenreactnativesdk.component;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.adyen.checkout.components.model.PaymentMethodsApiResponse;
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod;
+import com.adyenreactnativesdk.ReactNativeError;
+import com.adyenreactnativesdk.ReactNativeJson;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReadableMap;
@@ -21,10 +23,10 @@ import org.json.JSONObject;
 
 public abstract class BaseModule extends ReactContextBaseJavaModule {
 
-    protected final String DID_SUBMIT = "didSubmitCallback";
-    protected final String DID_FAILED = "didFailCallback";
-    protected final String DID_PROVIDE = "didProvideCallback";
-    protected final String DID_COMPLEATE = "didCompleteCallback";
+    final String DID_SUBMIT = "didSubmitCallback";
+    final String DID_FAILED = "didFailCallback";
+    final String DID_PROVIDE = "didProvideCallback";
+    final String DID_COMPLEATE = "didCompleteCallback";
 
     public BaseModule(ReactApplicationContext context) {
         super(context);

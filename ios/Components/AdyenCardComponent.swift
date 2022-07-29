@@ -39,31 +39,22 @@ internal class AdyenCardComponent: BaseModule {
               let paymentMethod = paymentMethods.paymentMethod(ofType: CardPaymentMethod.self)
         else { return }
 
-        guard
-            let environment = configuration[Keys.environment] as? String,
-            let clientKey = configuration[Keys.clientKey] as? String
-        else { return }
+        let parser = RootConfigurationParser(configuration: configuration)
+        guard let clientKey = parser.clientKey else {
+            return assertionFailure("AdyenDropIn: No clientKey in configuration")
+        }
 
-        let apiContext = APIContext(environment: Environment.parse(environment), clientKey: clientKey)
+        let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
+
         actionHandler = AdyenActionComponent(apiContext: apiContext)
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
 
-        let config = CardComponent.Configuration()
+        let config = CardConfigurationParser(configuration: configuration).configuration
         let component = CardComponent(paymentMethod: paymentMethod,
                                       apiContext: apiContext,
                                       configuration: config)
-        component.delegate = self
-        currentComponent = component
-        
-        if let paymentObject = configuration[Keys.amount] as? [String: Any],
-           let paymentAmount = paymentObject[Keys.value] as? Int,
-           let countryCode = configuration[Keys.countryCode] as? String,
-           let currencyCode = paymentObject[Keys.currency] as? String {
-            component.payment = Payment(amount: Amount(value: paymentAmount,
-                                                       currencyCode: currencyCode),
-                                        countryCode: countryCode)
-        }
+        component.payment = parser.payment
 
         present(component: component)
     }
@@ -92,10 +83,6 @@ extension AdyenCardComponent: PresentationDelegate {
     }
 
     private func present(_ component: PresentableComponent) {
-        if let component = component as? PaymentAwareComponent {
-            component.payment = (currentComponent as? PaymentAwareComponent)?.payment
-        }
-
         if let paymentComponent = component as? PaymentComponent {
             paymentComponent.delegate = self
         }

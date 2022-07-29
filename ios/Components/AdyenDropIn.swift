@@ -35,27 +35,24 @@ internal class AdyenDropIn: BaseModule {
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
         else { return }
 
-        guard
-            let environment = configuration[Keys.environment] as? String,
-            let clientKey = configuration[Keys.clientKey] as? String
-        else { return }
+        let parser = RootConfigurationParser(configuration: configuration)
 
-        let apiContext = APIContext(environment: Environment.parse(environment), clientKey: clientKey)
-        let config = DropInComponent.Configuration(apiContext: apiContext)
-        
-        if let paymentObject = configuration[Keys.amount] as? [String: Any],
-           let paymentAmount = paymentObject[Keys.value] as? Int,
-           let countryCode = configuration[Keys.countryCode] as? String,
-           let currencyCode = paymentObject[Keys.currency] as? String {
-            config.payment = Payment(amount: Amount(value: paymentAmount, currencyCode: currencyCode),
-                                     countryCode: countryCode)
+        guard let clientKey = parser.clientKey else {
+            return assertionFailure("AdyenDropIn: No clientKey in configuration")
         }
 
-        // Apple Pay
-        if let merchantId = configuration[Keys.applepayMerchantID] as? String, let payment = config.payment {
-            let amount = AmountFormatter.decimalAmount(payment.amount.value, currencyCode: payment.amount.currencyCode)
-            config.applePay = .init(summaryItems: [PKPaymentSummaryItem(label: "Total", amount: amount)],
-                                    merchantIdentifier: merchantId)
+        let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
+
+        let config = DropInConfigurationParser(configuration: configuration).configuration(apiContext: apiContext)
+        config.card = CardConfigurationParser(configuration: configuration).configuration
+
+        if let payment = parser.payment {
+            config.payment = payment
+
+            // Apple Pay
+            if let applepayConfig = ApplepayConfigurationParser(configuration: configuration).tryConfiguration(amount: payment.amount) {
+                config.applePay = applepayConfig
+            }
         }
 
         let dropInComponentStyle = DropInComponent.Style()

@@ -49,6 +49,10 @@ const PaymentMethods = () => {
         disabled
       />
       <Button
+        title="Open SEPA (WIP)"
+        disabled
+      />
+      <Button
         title={'Open ' + platformSpecificPayment + ' (WIP)'}
         disabled
       />
