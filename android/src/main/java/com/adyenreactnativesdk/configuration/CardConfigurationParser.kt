@@ -27,7 +27,7 @@ class CardConfigurationParser(config: ReadableMap) {
         const val ADDRESS_VISIBILITY_KEY = "addressVisibility"
         const val KCP_VISIBILITY_KEY = "kcpVisibility"
         const val SOCIAL_SECURITY_VISIBILITY_KEY = "socialSecurity"
-        const  val SUPPORTED_CARD_TYPES_KEY = "supported"
+        const val SUPPORTED_CARD_TYPES_KEY = "supported"
     }
 
     private var config: ReadableMap

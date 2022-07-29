@@ -49,16 +49,43 @@ public struct CardConfigurationParser {
             return .none
         }
 
-        switch value.lowercased() {
-        case "postal", "postalcode", "postal_code":
-            return .postalCode
-        default:
-            return .none
-        }
+        return .init(rawValue: value)
     }
 
     var kcpVisibility: CardComponent.FieldVisibility {
-        guard let value = dict[CardKeys.addressVisibility] as? String else {
+        parseVisibility(CardKeys.addressVisibility)
+    }
+    
+    var socialSecurityVisibility: CardComponent.FieldVisibility {
+        parseVisibility(CardKeys.socialSecurity)
+    }
+    
+    var allowedCardTypes: [CardType]? {
+        guard let strings = dict[CardKeys.allowedCardTypes] as? [String] else {
+            return nil
+        }
+        
+        return strings.map { CardType(rawValue: $0) }
+    }
+    
+    // TODO: add installmentConfiguration: InstallmentConfiguration?
+    
+    public var configuration: CardComponent.Configuration {
+        var storedConfiguration = StoredCardConfiguration()
+        storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
+
+        return  .init(showsHolderNameField: showsHolderNameField,
+                      showsStorePaymentMethodField: showsStorePaymentMethodField,
+                      showsSecurityCodeField: showsSecurityCodeField,
+                      koreanAuthenticationMode: kcpVisibility,
+                      socialSecurityNumberMode: socialSecurityVisibility,
+                      billingAddressMode: addressVisibility,
+                      storedCardConfiguration: storedConfiguration,
+                      allowedCardTypes: allowedCardTypes)
+    }
+    
+    private func parseVisibility(_ key: String) -> CardComponent.FieldVisibility {
+        guard let value = dict[key] as? String else {
             return .hide
         }
 
@@ -68,22 +95,6 @@ public struct CardConfigurationParser {
         default:
             return .hide
         }
-    }
-
-    public var configuration: CardComponent.Configuration {
-        var storedConfiguration = StoredCardConfiguration()
-        storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
-
-        return  .init(showsHolderNameField: showsHolderNameField,
-                      showsStorePaymentMethodField: showsStorePaymentMethodField,
-                      showsSecurityCodeField: showsSecurityCodeField,
-                      koreanAuthenticationMode: kcpVisibility,
-                      billingAddressMode: addressVisibility,
-                      storedCardConfiguration: storedConfiguration)
-//                      socialSecurityNumberMode: CardComponent.FieldVisibility,
-//                      allowedCardTypes: [CardType]?,
-//                      installmentConfiguration: InstallmentConfiguration?,
-//                      billingAddressCountryCodes: [String]?)
     }
 
 }

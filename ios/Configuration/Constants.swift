@@ -35,18 +35,20 @@ internal enum Keys {
 
 internal enum DropInKeys: SubConfig {
     static var rootKey = "dropin";
-    static var showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod";
-    static var skipListWhenSinglePaymentMethod = "skipListWhenSinglePaymentMethod";
+    static var showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod"
+    static var skipListWhenSinglePaymentMethod = "skipListWhenSinglePaymentMethod"
 }
 
 internal enum CardKeys: SubConfig {
     static var rootKey = "card"
-    static var showStorePaymentField = "showStorePaymentField";
-    static var holderNameRequired = "holderNameRequired";
-    static var hideCvcStoredCard = "hideCvcStoredCard";
-    static var hideCvc = "hideCvc";
-    static var addressVisibility = "addressVisibility";
-    static var kcpVisibility = "kcpVisibility";
+    static var showStorePaymentField = "showStorePaymentField"
+    static var holderNameRequired = "holderNameRequired"
+    static var hideCvcStoredCard = "hideCvcStoredCard"
+    static var hideCvc = "hideCvc"
+    static var addressVisibility = "addressVisibility"
+    static var kcpVisibility = "kcpVisibility"
+    static var socialSecurity = "socialSecurity"
+    static var allowedCardTypes = "supported"
 }
 
 internal enum ApplePayKeys: SubConfig {
