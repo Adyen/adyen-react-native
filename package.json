@@ -1,6 +1,6 @@
 {
   "name": "@adyen/react-native",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "description": "Wrapps Adyen Checkout SDKs for iOS and Android for convinient use on React Native.",
   "license": "MIT",
   "author": "Adyen",
