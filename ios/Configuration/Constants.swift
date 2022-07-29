@@ -51,7 +51,6 @@ internal enum CardKeys: SubConfig {
 
 internal enum ApplePayKeys: SubConfig {
     static var rootKey = "applepay"
-    
     static var merchantID = "merchantID"
     static var merchantName = "merchantName"
 }

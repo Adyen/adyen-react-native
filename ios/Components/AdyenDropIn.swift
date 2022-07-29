@@ -34,21 +34,21 @@ internal class AdyenDropIn: BaseModule {
         guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []),
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
         else { return }
-        
-        let parser = ConfigurationParser(configuration: configuration)
+
+        let parser = RootConfigurationParser(configuration: configuration)
 
         guard let clientKey = parser.clientKey else {
             return assertionFailure("AdyenDropIn: No clientKey in configuration")
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
-        
+
         let config = DropInConfigurationParser(configuration: configuration).configuration(apiContext: apiContext)
         config.card = CardConfigurationParser(configuration: configuration).configuration
-        
+
         if let payment = parser.payment {
             config.payment = payment
-            
+
             // Apple Pay
             if let applepayConfig = ApplepayConfigurationParser(configuration: configuration).tryConfiguration(amount: payment.amount) {
                 config.applePay = applepayConfig

@@ -19,11 +19,8 @@ final public class CardConfigurationParser {
     /*
     private final List<CardType> mSupportedCardTypes;
     private final SocialSecurityNumberVisibility mSocialSecurityNumberVisibility;
-    private final KCPAuthVisibility mKcpAuthVisibility;
     private final InstallmentConfiguration mInstallmentConfiguration;
     * */
-
-    KCPAuthVisibility visibility;
 
     final String CARD_KEY = "card";
     final String SHOW_STORE_PAYMENT_FIELD_KEY = "showStorePaymentField";

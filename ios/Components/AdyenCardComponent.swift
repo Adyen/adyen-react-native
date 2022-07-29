@@ -39,13 +39,13 @@ internal class AdyenCardComponent: BaseModule {
               let paymentMethod = paymentMethods.paymentMethod(ofType: CardPaymentMethod.self)
         else { return }
 
-        let parser = ConfigurationParser(configuration: configuration)
+        let parser = RootConfigurationParser(configuration: configuration)
         guard let clientKey = parser.clientKey else {
             return assertionFailure("AdyenDropIn: No clientKey in configuration")
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
-        
+
         actionHandler = AdyenActionComponent(apiContext: apiContext)
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
@@ -55,7 +55,7 @@ internal class AdyenCardComponent: BaseModule {
                                       apiContext: apiContext,
                                       configuration: config)
         component.payment = parser.payment
-        
+
         present(component: component)
     }
 
