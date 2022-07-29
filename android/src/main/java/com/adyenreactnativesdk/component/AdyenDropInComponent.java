@@ -4,10 +4,11 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk;
+package com.adyenreactnativesdk.component;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +23,14 @@ import com.adyen.checkout.dropin.DropIn;
 import com.adyen.checkout.dropin.DropInConfiguration;
 import com.adyen.checkout.googlepay.GooglePayConfiguration;
 import com.adyen.checkout.redirect.RedirectComponent;
+import com.adyenreactnativesdk.AdyenDropInService;
+import com.adyenreactnativesdk.DropInServiceProxy;
+import com.adyenreactnativesdk.ReactNativeError;
+import com.adyenreactnativesdk.ReactNativeJson;
+import com.adyenreactnativesdk.configuration.CardConfigurationParser;
+import com.adyenreactnativesdk.configuration.DropInConfigurationParser;
+import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser;
+import com.adyenreactnativesdk.configuration.RootConfigurationParser;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
@@ -32,11 +41,11 @@ import org.json.JSONObject;
 
 import java.util.Locale;
 
-public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.DropInServiceListener {
+public class AdyenDropInComponent extends BaseModule implements DropInServiceProxy.DropInServiceListener {
 
-    private final String TAG = "AdyenDropInModule";
+    private final String TAG = "DropInComponent";
 
-    AdyenDropInModule(ReactApplicationContext context) {
+    public AdyenDropInComponent(ReactApplicationContext context) {
         super(context);
         DropInServiceProxy.shared.setServiceListener(this);
     }
@@ -48,23 +57,17 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
 
     @ReactMethod
     public void open(ReadableMap paymentMethodsData, ReadableMap configuration) {
-        PaymentMethodsApiResponse paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData);
+        final PaymentMethodsApiResponse paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData);
         if (paymentMethodsResponse == null) return;
 
-        ConfigurationParser config = new ConfigurationParser(configuration);
+        final RootConfigurationParser parser = new RootConfigurationParser(configuration);
         final Environment environment;
         final String clientKey;
-        final Locale shopperLocale;
-        final String countryCode;
-        final String shopperReference;
-        final Amount amount = config.getAmount();
+
 
         try {
-            environment = config.getEnvironment();
-            clientKey = config.getClientKey();
-            shopperLocale = config.getLocale();
-            shopperReference = config.getShopperReference();
-            countryCode = config.getCountryCode();
+            environment = parser.getEnvironment();
+            clientKey = parser.getClientKey();
         } catch (NoSuchFieldException e) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e));
             return;
@@ -72,37 +75,23 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
 
         DropInConfiguration.Builder builder;
         builder = new DropInConfiguration.Builder(getReactApplicationContext(), AdyenDropInService.class, clientKey)
-                .setShopperLocale(shopperLocale)
                 .setEnvironment(environment);
 
-        CardConfiguration cardConfiguration;
-        cardConfiguration = new CardConfiguration.Builder(shopperLocale, environment, clientKey)
-                .setShopperReference(shopperReference)
-                .build();
+        try {
+            final Locale shopperLocale = parser.getLocale();
+            builder.setShopperLocale(shopperLocale);
+        } catch (NoSuchFieldException e) {  }
 
-        BcmcConfiguration bcmcConfiguration;
-        bcmcConfiguration = new BcmcConfiguration.Builder(shopperLocale, environment, clientKey)
-                .setShopperReference(shopperReference)
-                .setShowStorePaymentField(true)
-                .build();
+        configureDropIn(builder, configuration);
+        configureCards(builder, configuration);
+        configureBcmc(builder, configuration);
+        configure3DS(builder);
 
-        Adyen3DS2Configuration adyen3DS2Configuration;
-        adyen3DS2Configuration = new Adyen3DS2Configuration.Builder(shopperLocale, environment, clientKey)
-                .build();
-
-        builder.addCardConfiguration(cardConfiguration)
-                .add3ds2ActionConfiguration(adyen3DS2Configuration)
-                .addBcmcConfiguration(bcmcConfiguration);
-
-        if (amount != null) {
-            GooglePayConfiguration googlePayConfig;
-            googlePayConfig = new GooglePayConfiguration.Builder(shopperLocale, environment, clientKey)
-                    .setCountryCode(countryCode)
-                    .setAmount(amount)
-                    .build();
-
-            builder.setAmount(amount)
-                    .addGooglePayConfiguration(googlePayConfig);
+        final Amount amount = parser.getAmount();
+        final String countryCode = parser.getCountryCode();
+        if (amount != null && countryCode != null) {
+            builder.setAmount(amount);
+            configureGooglePay(builder, configuration, countryCode);
         }
 
         Activity currentActivity = getReactApplicationContext().getCurrentActivity();
@@ -114,7 +103,6 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
 
     @ReactMethod
     public void handle(ReadableMap actionMap) {
-
         final DropInServiceProxy.DropInModuleListener listener = DropInServiceProxy.shared.getModuleListener();
         if (listener == null) {
             IllegalStateException e = new IllegalStateException("Invalid state: DropInModuleListener is missing");
@@ -147,7 +135,7 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
 
     @Override
     public void onDidSubmit(@NonNull JSONObject jsonObject) {
-        WritableMap map = null;
+        WritableMap map;
         try {
             map = ReactNativeJson.convertJsonToMap(jsonObject);
         } catch (JSONException e) {
@@ -185,4 +173,55 @@ public class AdyenDropInModule extends BaseModule implements DropInServiceProxy.
         }
     }
 
+    private void configureDropIn(DropInConfiguration.Builder builder, ReadableMap configuration) {
+        DropInConfigurationParser parser = new DropInConfigurationParser(configuration);
+        builder.setShowPreselectedStoredPaymentMethod(parser.getShowPreselectedStoredPaymentMethod());
+        builder.setSkipListWhenSinglePaymentMethod(parser.getSkipListWhenSinglePaymentMethod());
+    }
+
+    private void configureGooglePay(DropInConfiguration.Builder builder, ReadableMap configuration, String countryCode) {
+        GooglePayConfigurationParser parser = new GooglePayConfigurationParser(configuration);
+        GooglePayConfiguration.Builder configBuilder = new GooglePayConfiguration.Builder(
+                builder.getBuilderShopperLocale(),
+                builder.getBuilderEnvironment(),
+                builder.getBuilderClientKey())
+                .setCountryCode(countryCode)
+                .setAmount(builder.getAmount());
+
+        GooglePayConfiguration googlePayConfiguration = parser.getConfiguration(configBuilder);
+        builder.addGooglePayConfiguration(googlePayConfiguration);
+    }
+
+    private void configure3DS(DropInConfiguration.Builder builder) {
+        Adyen3DS2Configuration adyen3DS2Configuration;
+        adyen3DS2Configuration = new Adyen3DS2Configuration.Builder(
+                builder.getBuilderShopperLocale(),
+                builder.getBuilderEnvironment(),
+                builder.getBuilderClientKey())
+                .build();
+        builder.add3ds2ActionConfiguration(adyen3DS2Configuration);
+    }
+
+    private void configureBcmc(DropInConfiguration.Builder builder, ReadableMap configuration) {
+        ReadableMap bcmcConfig = configuration.getMap("bcmc");
+        if (bcmcConfig == null) {
+            bcmcConfig = new com.facebook.react.bridge.JavaOnlyMap();
+        }
+
+        CardConfigurationParser parser = new CardConfigurationParser(bcmcConfig);
+        BcmcConfiguration.Builder bcmcBuilder = new BcmcConfiguration.Builder(
+                builder.getBuilderShopperLocale(),
+                builder.getBuilderEnvironment(),
+                builder.getBuilderClientKey());
+        builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder));
+    }
+
+    private void configureCards(DropInConfiguration.Builder builder, ReadableMap configuration) {
+        CardConfigurationParser parser = new CardConfigurationParser(configuration);
+        CardConfiguration.Builder cardBuilder = new CardConfiguration.Builder(
+                builder.getBuilderShopperLocale(),
+                builder.getBuilderEnvironment(),
+                builder.getBuilderClientKey());
+        builder.addCardConfiguration(parser.getConfiguration(cardBuilder));
+    }
 }

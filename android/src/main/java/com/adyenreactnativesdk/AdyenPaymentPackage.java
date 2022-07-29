@@ -6,6 +6,8 @@
 
 package com.adyenreactnativesdk;
 
+import com.adyenreactnativesdk.component.AdyenCardComponent;
+import com.adyenreactnativesdk.component.AdyenDropInComponent;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -25,7 +27,7 @@ public class AdyenPaymentPackage implements ReactPackage {
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
-        modules.add(new AdyenDropInModule(reactContext));
+        modules.add(new AdyenDropInComponent(reactContext));
         modules.add(new AdyenCardComponent(reactContext));
         return modules;
     }

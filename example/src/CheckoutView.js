@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { PaymentMethodsContext } from './PaymentMethodsProvider';
-import PaymentMethods from './PaymentMethods';
+import PaymentMethods from './PaymentMethodsView';
 
 const styles = StyleSheet.create({
   topContentView: {
@@ -32,7 +32,7 @@ function getFlagEmoji(countryCode) {
   return String.fromCodePoint(...codePoints);
 }
 
-const PaymentView = () => {
+const CheckoutView = () => {
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -126,4 +126,4 @@ const PaymentView = () => {
   );
 };
 
-export default PaymentView;
+export default CheckoutView;

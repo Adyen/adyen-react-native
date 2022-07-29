@@ -46,7 +46,6 @@ interface ActionHandlingInterface {
     fun onError(error: Exception)
     fun onClose()
     fun onFinish()
-
 }
 
 class ActionHandler(
@@ -99,10 +98,7 @@ class ActionHandler(
 
         activity.runOnUiThread {
             if (provider.requiresView(action)) {
-                Logger.d(
-                    TAG,
-                    "handleAction - action is viewable, requesting displayAction callback"
-                )
+                Logger.d(TAG,"handleAction - action is viewable, requesting displayAction callback")
                 val fragmentManager = activity.supportFragmentManager
 
                 val actionFragment = ActionComponentDialogFragment(configuration, callback)

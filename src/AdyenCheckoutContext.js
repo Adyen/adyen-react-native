@@ -30,10 +30,11 @@ const AdyenPaymentProvider = ({
 
   const submitPayment = useCallback(
     (configuration, data, nativeComponent) => {
+      let channel = Platform.OS === 'ios' ? 'iOS' : 'Android'
       const payload = {
         ...data,
         shopperLocale: configuration.shopperLocale,
-        channel: Platform.select({ ios: () => 'iOS', android: () => 'Android', }),
+        channel: channel,
         amount: configuration.amount,
         reference: configuration.reference,
         shopperReference: configuration.shopperReference,

@@ -10,7 +10,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SettingView from './SettingsView';
-import PaymentView from './PaymentView';
+import CheckoutView from './CheckoutView';
 import PaymentMethodsProvider from './PaymentMethodsProvider';
 
 import { Button, Alert } from 'react-native';
@@ -28,7 +28,7 @@ const App = () => {
         <Stack.Navigator>
           <Stack.Screen
             name="Home"
-            component={PaymentView}
+            component={CheckoutView}
             options={({ navigation, route }) => ({
               title: 'Adyen React Native',
               headerRight: () => (
