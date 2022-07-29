@@ -88,14 +88,8 @@ public class AdyenCardComponent extends BaseModule implements PaymentComponentLi
 
         CardConfigurationParser parser = new CardConfigurationParser(configuration);
         CardConfiguration componentConfiguration;
-        componentConfiguration = new CardConfiguration.Builder(shopperLocale, environment, clientKey)
-                .setShowStorePaymentField(parser.getShowStorePaymentField())
-                .setHideCvcStoredCard(parser.getHideCvcStoredCard())
-                .setHideCvc(parser.getHideCvc())
-                .setHolderNameRequired(parser.getHolderNameRequired())
-                .setAddressVisibility(parser.getAddressVisibility())
-                .setKcpAuthVisibility(parser.getKcpVisibility())
-                .build();
+        CardConfiguration.Builder builder = new CardConfiguration.Builder(shopperLocale, environment, clientKey);
+        componentConfiguration = parser.getConfiguration(builder);
 
         AppCompatActivity theActivity = getAppCompatActivity();
         ComponentViewModel viewModel = new ComponentViewModel(paymentMethod, shopperLocale, amount);

@@ -88,15 +88,10 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
         configure3DS(builder);
 
         final Amount amount = parser.getAmount();
-        if (amount != null) {
+        final String countryCode = parser.getCountryCode();
+        if (amount != null && countryCode != null) {
             builder.setAmount(amount);
-
-            try {
-                final String countryCode = parser.getCountryCode();
-                configureGooglePay(countryCode, builder, configuration);
-            } catch (NoSuchFieldException e) {
-                Log.d(TAG, "Can't configure GooglePayComponent: No `countryCode` in configuration.");
-            }
+            configureGooglePay(builder, configuration, countryCode);
         }
 
         Activity currentActivity = getReactApplicationContext().getCurrentActivity();
@@ -184,7 +179,7 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
         builder.setSkipListWhenSinglePaymentMethod(parser.getSkipListWhenSinglePaymentMethod());
     }
 
-    private void configureGooglePay(String countryCode, DropInConfiguration.Builder builder, ReadableMap configuration) {
+    private void configureGooglePay(DropInConfiguration.Builder builder, ReadableMap configuration, String countryCode) {
         GooglePayConfigurationParser parser = new GooglePayConfigurationParser(configuration);
         GooglePayConfiguration.Builder configBuilder = new GooglePayConfiguration.Builder(
                 builder.getBuilderShopperLocale(),
@@ -208,36 +203,25 @@ public class AdyenDropInComponent extends BaseModule implements DropInServicePro
     }
 
     private void configureBcmc(DropInConfiguration.Builder builder, ReadableMap configuration) {
-        BcmcConfiguration bcmcConfiguration;
         ReadableMap bcmcConfig = configuration.getMap("bcmc");
         if (bcmcConfig == null) {
             bcmcConfig = new com.facebook.react.bridge.JavaOnlyMap();
         }
 
         CardConfigurationParser parser = new CardConfigurationParser(bcmcConfig);
-        bcmcConfiguration = new BcmcConfiguration.Builder(
+        BcmcConfiguration.Builder bcmcBuilder = new BcmcConfiguration.Builder(
                 builder.getBuilderShopperLocale(),
                 builder.getBuilderEnvironment(),
-                builder.getBuilderClientKey())
-                .setShowStorePaymentField(parser.getShowStorePaymentField())
-                .build();
-        builder.addBcmcConfiguration(bcmcConfiguration);
+                builder.getBuilderClientKey());
+        builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder));
     }
 
     private void configureCards(DropInConfiguration.Builder builder, ReadableMap configuration) {
         CardConfigurationParser parser = new CardConfigurationParser(configuration);
-        CardConfiguration cardConfiguration;
-        cardConfiguration = new CardConfiguration.Builder(
+        CardConfiguration.Builder cardBuilder = new CardConfiguration.Builder(
                 builder.getBuilderShopperLocale(),
                 builder.getBuilderEnvironment(),
-                builder.getBuilderClientKey())
-                .setShowStorePaymentField(parser.getShowStorePaymentField())
-                .setHideCvcStoredCard(parser.getHideCvcStoredCard())
-                .setHideCvc(parser.getHideCvc())
-                .setHolderNameRequired(parser.getHolderNameRequired())
-                .setAddressVisibility(parser.getAddressVisibility())
-                .setKcpAuthVisibility(parser.getKcpVisibility())
-                .build();
-        builder.addCardConfiguration(cardConfiguration);
+                builder.getBuilderClientKey());
+        builder.addCardConfiguration(parser.getConfiguration(cardBuilder));
     }
 }

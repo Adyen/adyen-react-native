@@ -42,12 +42,12 @@ final public class RootConfigurationParser {
 
     @Nullable
     public Amount getAmount() {
-        ReadableMap map = config.getMap(AMOUNT_KEY);
-        if (map == null) {
+        if(!config.hasKey(AMOUNT_KEY)) {
             Log.w(TAG, "No `amount` on configuration");
             return null;
         }
 
+        ReadableMap map = config.getMap(AMOUNT_KEY);
         JSONObject jsonObject = null;
         try {
             jsonObject = ReactNativeJson.convertMapToJson(map);
@@ -61,41 +61,43 @@ final public class RootConfigurationParser {
 
     @NonNull
     public String getClientKey() throws NoSuchFieldException {
-        String value = config.getString(CLIENT_KEY_KEY);
-        if (value == null) {
+        if(!config.hasKey(CLIENT_KEY_KEY)) {
             throw new NoSuchFieldException("No " + CLIENT_KEY_KEY);
         }
-
-        return value;
+        return config.getString(CLIENT_KEY_KEY);
     }
 
     @Nullable
-    public String getCountryCode() throws NoSuchFieldException {
-        return config.getString(COUNTRY_CODE_KEY);
+    public String getCountryCode(){
+        if(config.hasKey(COUNTRY_CODE_KEY)) {
+            return config.getString(COUNTRY_CODE_KEY);
+        }
+        return null;
     }
 
     @Nullable
     public String getShopperReference() {
-        return config.getString(SHOPPER_REFERENCE_KEY);
+        if(config.hasKey(SHOPPER_REFERENCE_KEY)) {
+            return config.getString(SHOPPER_REFERENCE_KEY);
+        }
+        return null;
     }
 
     @NonNull
     public Locale getLocale() throws NoSuchFieldException {
-        String value = config.getString(SHOPPER_LOCALE_KEY);
-        if (value == null) {
+        if (!config.hasKey(SHOPPER_LOCALE_KEY)) {
             throw new NoSuchFieldException("No " + SHOPPER_LOCALE_KEY);
         }
-
-        return Locale.forLanguageTag(value);
+        return Locale.forLanguageTag(config.getString(SHOPPER_LOCALE_KEY));
     }
 
     @NonNull
     public Environment getEnvironment() throws NoSuchFieldException {
-        String environment = config.getString(ENVIRONMENT_KEY);
-        if (environment == null) {
+        if(!config.hasKey(ENVIRONMENT_KEY)) {
             throw new NoSuchFieldException("No " + ENVIRONMENT_KEY);
         }
 
+        String environment = config.getString(ENVIRONMENT_KEY);
         switch (environment.toLowerCase()) {
             case "live-au":
                 return Environment.AUSTRALIA;

@@ -2,9 +2,9 @@ package com.adyenreactnativesdk.configuration;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.adyen.checkout.core.api.Environment;
-import com.adyen.checkout.dropin.DropInConfiguration;
-import com.adyen.checkout.googlepay.GooglePayComponent;
 import com.adyen.checkout.googlepay.GooglePayConfiguration;
 import com.adyen.checkout.googlepay.util.AllowedCardNetworks;
 import com.facebook.react.bridge.ReadableMap;
@@ -13,11 +13,8 @@ import com.google.android.gms.wallet.WalletConstants;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
-
-import javax.annotation.Nullable;
 
 public class GooglePayConfigurationParser {
 
@@ -35,7 +32,6 @@ public class GooglePayConfigurationParser {
     final String EXISTING_PAYMENT_METHOD_REQUIRED_KEY = "existingPaymentMethodRequired";
     final String GOOGLEPAY_ENVIRONMENT_KEY = "googlePayEnvironment";
 
-    private static final String DEFAULT_TOTAL_PRICE_STATUS = "FINAL";
     private final ReadableMap config;
 
     public GooglePayConfigurationParser(ReadableMap config) {
@@ -46,7 +42,8 @@ public class GooglePayConfigurationParser {
         }
     }
 
-    public List<String> getAllowedCardNetworks() {
+    @NonNull
+    private List<String> getAllowedCardNetworks() {
         List<Object> list = config.getArray(ALLOWED_CARD_NETWORKS_KEY).toArrayList();
         List<String> strings = new ArrayList<>(list.size());
         Set<String> allowedCardNetworks = new HashSet<>(AllowedCardNetworks.getAllAllowedCardNetworks());
@@ -61,7 +58,8 @@ public class GooglePayConfigurationParser {
         return strings.isEmpty() ? null : strings;
     }
 
-    public List<String> getAllowedAuthMethods() {
+    @NonNull
+    private List<String> getAllowedAuthMethods() {
         List<Object> list = config.getArray(ALLOWED_AUTH_METHODS_KEY).toArrayList();
         List<String> strings = new ArrayList<>(list.size());
         for (Object object : list) {
@@ -70,7 +68,8 @@ public class GooglePayConfigurationParser {
         return strings.isEmpty() ? null : strings;
     }
 
-    public int getGooglePayEnvironment(Environment environment) {
+    @NonNull
+    private int getGooglePayEnvironment(Environment environment) {
         if(config.hasKey(GOOGLEPAY_ENVIRONMENT_KEY)) {
             return config.getInt(GOOGLEPAY_ENVIRONMENT_KEY);
         }
@@ -82,7 +81,7 @@ public class GooglePayConfigurationParser {
         return WalletConstants.ENVIRONMENT_PRODUCTION;
     }
 
-    @Nullable
+    @NonNull
     public GooglePayConfiguration getConfiguration(GooglePayConfiguration.Builder builder) {
         builder.setGooglePayEnvironment(getGooglePayEnvironment(builder.getBuilderEnvironment()));
 

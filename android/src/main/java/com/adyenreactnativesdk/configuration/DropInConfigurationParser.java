@@ -21,7 +21,10 @@ final public class DropInConfigurationParser {
     }
     
     public boolean getSkipListWhenSinglePaymentMethod() {
-        return config.getBoolean(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY);
+        if(config.hasKey(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY)) {
+            return config.getBoolean(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY);
+        }
+        return false;
     }
 
     public boolean getShowPreselectedStoredPaymentMethod() {

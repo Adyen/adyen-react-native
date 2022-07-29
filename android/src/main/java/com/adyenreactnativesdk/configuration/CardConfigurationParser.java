@@ -6,21 +6,25 @@
 
 package com.adyenreactnativesdk.configuration;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
+import com.adyen.checkout.bcmc.BcmcConfiguration;
+import com.adyen.checkout.card.CardConfiguration;
 import com.adyen.checkout.card.KCPAuthVisibility;
+import com.adyen.checkout.card.SocialSecurityNumberVisibility;
+import com.adyen.checkout.card.data.CardType;
 import com.adyen.checkout.components.base.AddressVisibility;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
+
+import java.util.ArrayList;
+import java.util.List;
 
 final public class CardConfigurationParser {
 
     final String TAG = "CardConfigurationParser";
-
-    /*
-    private final List<CardType> mSupportedCardTypes;
-    private final SocialSecurityNumberVisibility mSocialSecurityNumberVisibility;
-    private final InstallmentConfiguration mInstallmentConfiguration;
-    * */
 
     final String CARD_KEY = "card";
     final String SHOW_STORE_PAYMENT_FIELD_KEY = "showStorePaymentField";
@@ -29,6 +33,8 @@ final public class CardConfigurationParser {
     final String HIDE_CVC_KEY = "hideCvc";
     final String ADDRESS_VISIBILITY_KEY = "addressVisibility";
     final String KCP_VISIBILITY_KEY = "kcpVisibility";
+    final String SOCIAL_SECURITY_VISIBILITY_KEY = "socialSecurity";
+    final String SUPPORTED_CARD_TYPES_KEY = "supported";
     private final ReadableMap config;
 
     public CardConfigurationParser(ReadableMap config) {
@@ -40,7 +46,30 @@ final public class CardConfigurationParser {
     }
 
     @NonNull
-    public Boolean getShowStorePaymentField() {
+    public CardConfiguration getConfiguration(CardConfiguration.Builder builder) {
+        if(config.hasKey(SUPPORTED_CARD_TYPES_KEY)) {
+            builder.setSupportedCardTypes(getSupportedCardTypes());
+        }
+
+        return builder
+                .setShowStorePaymentField(getShowStorePaymentField())
+                .setHideCvcStoredCard(getHideCvcStoredCard())
+                .setHideCvc(getHideCvc())
+                .setHolderNameRequired(getHolderNameRequired())
+                .setAddressVisibility(getAddressVisibility())
+                .setKcpAuthVisibility(getKcpVisibility())
+                .setSocialSecurityNumberVisibility(getSocialSecurityNumberVisibility())
+                .build();
+    }
+
+    public BcmcConfiguration getConfiguration(BcmcConfiguration.Builder builder) {
+        return builder
+                .setShowStorePaymentField(getShowStorePaymentField())
+                .build();
+    }
+
+    @NonNull
+    private Boolean getShowStorePaymentField() {
         if(config.hasKey(SHOW_STORE_PAYMENT_FIELD_KEY)) {
             return config.getBoolean(SHOW_STORE_PAYMENT_FIELD_KEY);
         }
@@ -48,12 +77,15 @@ final public class CardConfigurationParser {
     }
 
     @NonNull
-    public Boolean getHolderNameRequired() {
-        return config.getBoolean(HOLDER_NAME_REQUIRED_KEY);
+    private Boolean getHolderNameRequired() {
+        if(config.hasKey(HOLDER_NAME_REQUIRED_KEY)) {
+            return config.getBoolean(HOLDER_NAME_REQUIRED_KEY);
+        }
+        return false;
     }
 
     @NonNull
-    public Boolean getHideCvcStoredCard() {
+    private Boolean getHideCvcStoredCard() {
         if(config.hasKey(HIDE_CVC_STORED_CARD_KEY)) {
             return config.getBoolean(HIDE_CVC_STORED_CARD_KEY);
         }
@@ -61,7 +93,7 @@ final public class CardConfigurationParser {
     }
 
     @NonNull
-    public Boolean getHideCvc() {
+    private Boolean getHideCvc() {
         if(config.hasKey(HIDE_CVC_KEY)) {
             return config.getBoolean(HIDE_CVC_KEY);
         }
@@ -69,7 +101,7 @@ final public class CardConfigurationParser {
     }
 
     @NonNull
-    public KCPAuthVisibility getKcpVisibility() {
+    private KCPAuthVisibility getKcpVisibility() {
         if(config.hasKey(KCP_VISIBILITY_KEY)) {
             String value = config.getString(KCP_VISIBILITY_KEY);
             switch (value.toLowerCase()) {
@@ -83,7 +115,7 @@ final public class CardConfigurationParser {
     }
 
     @NonNull
-    public AddressVisibility getAddressVisibility() {
+    private AddressVisibility getAddressVisibility() {
         if(config.hasKey(ADDRESS_VISIBILITY_KEY)) {
             String value = config.getString(ADDRESS_VISIBILITY_KEY);
             switch (value.toLowerCase()) {
@@ -97,4 +129,38 @@ final public class CardConfigurationParser {
         }
         return AddressVisibility.NONE;
     }
+
+    @NonNull
+    private CardType[] getSupportedCardTypes() {
+        ReadableArray array = config.getArray(SUPPORTED_CARD_TYPES_KEY);
+        int size = array.size();
+        List<CardType> list = new ArrayList<CardType>(size);
+        for (int i = 0; i < size; i++) {
+            String brandName = array.getString(i);
+            CardType type = CardType.getByBrandName(brandName);
+            if(type != null) {
+                list.add(type);
+            } else {
+                Log.w(TAG, "CardType not recognized: " + brandName);
+            }
+        }
+        return (CardType[])list.toArray();
+    }
+
+    @NonNull
+    private SocialSecurityNumberVisibility getSocialSecurityNumberVisibility() {
+        if(config.hasKey(SOCIAL_SECURITY_VISIBILITY_KEY)) {
+            String value = config.getString(SOCIAL_SECURITY_VISIBILITY_KEY);
+            switch (value.toLowerCase()) {
+                case "show":
+                    return SocialSecurityNumberVisibility.SHOW;
+                default:
+                    return SocialSecurityNumberVisibility.HIDE;
+            }
+        }
+        return SocialSecurityNumberVisibility.HIDE;
+    }
+
+    // TODO: add InstallmentConfiguration getInstallmentConfiguration
+
 }
