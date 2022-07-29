@@ -26,10 +26,10 @@ export const defaultConfiguration = {
   },
   card: {
     holderNameRequired: true,
-    showStorePaymentField : false,
-    hideCvcStoredCard: true,
-    hideCvc: true,
     addressVisibility: `postalCode`
+    // showStorePaymentField : false,
+    // hideCvcStoredCard: true,
+    // hideCvc: true,
   },
   applepay: {
     // merchantID: 'merchant.com.adyen.MY_MERCHANT_ID',
