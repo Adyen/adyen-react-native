@@ -1,20 +1,38 @@
-import { environment } from './Configuration';
+import { environment, channel } from './Configuration';
+
+const serverConfiguration = {
+  channel: channel,
+  shopperReference: 'Checkout Shopper',
+  reference: 'React Native'
+};
+
+const parseConfig = (configuration) => {
+    return {
+      merchantAccount: configuration.merchantAccount,
+      countryCode: configuration.countryCode,
+      shopperLocale: configuration.shopperLocale,
+      amount: configuration.amount
+  }
+};
 
 export const fetchPaymentMethods = (configuration) => {
   let body = {
-    merchantAccount: configuration.merchantAccount,
-    countryCode: configuration.countryCode,
-    shopperLocale: configuration.shopperLocale,
-    amount: configuration.amount,
-    channel: configuration.channel,
-    shopperReference: configuration.shopperReference
+    ...parseConfig(configuration),
+    ...serverConfiguration
   };
 
   return fetchFrom(environment.url + 'paymentMethods', body);
 };
 
-export const fetchPayments = (data) => {
-  return fetchFrom(environment.url + 'payments', data);
+export const fetchPayments = (data, configuration) => {
+  let body = {
+    ...data,
+    ...parseConfig(configuration),
+    ...serverConfiguration,
+    additionalData: { allow3DS2: true }
+  };
+
+  return fetchFrom(environment.url + 'payments', body);
 };
 
 export const fetchPaymentDetails = (data) => {
