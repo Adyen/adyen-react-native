@@ -10,10 +10,13 @@ import {
   Text,
   View,
   Alert,
+  NativeModules
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { PaymentMethodsContext } from './PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
+
+const { ForcedAlertModule } = NativeModules;
 
 const styles = StyleSheet.create({
   topContentView: {
@@ -40,16 +43,21 @@ const CheckoutView = () => {
 
   const didSubmit = (data, nativeComponent) => {
     console.log('didSubmit');
-    fetchPayments(data)
-      .then((result) => {
-        if (result.action) {
-          console.log('Action!');
-          nativeComponent.handle(result.action);
-        } else {
-          proccessResult(result, nativeComponent);
+    ForcedAlertModule.alert("SEPA Payment", "I have read and agree with terms and conditions of SEPA Payment", 
+    () => nativeComponent.hide(false, { message: "Canceled" }),
+    () => {
+          fetchPayments(data)
+            .then((result) => {
+              if (result.action) {
+                console.log('Action!');
+                nativeComponent.handle(result.action);
+              } else {
+                proccessResult(result, nativeComponent);
+              }
+            })
+            .catch((error) => proccessError(error, nativeComponent));
         }
-      })
-      .catch((error) => proccessError(error, nativeComponent));
+    );
   };
 
   const didProvide = (data, nativeComponent) => {
