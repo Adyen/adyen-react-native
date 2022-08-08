@@ -6,7 +6,7 @@ import {
   PAYMENT_FAILED_EVENT,
 } from './AdyenCheckoutEvents';
 import { getNativeComponent } from './AdyenNativeModules';
-import { NativeEventEmitter, Platform } from 'react-native';
+import { NativeEventEmitter } from 'react-native';
 
 const AdyenCheckoutContext = createContext({
   start: () => {},
@@ -30,17 +30,8 @@ const AdyenPaymentProvider = ({
 
   const submitPayment = useCallback(
     (configuration, data, nativeComponent) => {
-      let channel = Platform.OS === 'ios' ? 'iOS' : 'Android'
       const payload = {
         ...data,
-        shopperLocale: configuration.shopperLocale,
-        channel: channel,
-        amount: configuration.amount,
-        reference: configuration.reference,
-        shopperReference: configuration.shopperReference,
-        countryCode: configuration.countryCode,
-        merchantAccount: configuration.merchantAccount,
-        additionalData: configuration.additionalData,
         returnUrl: data.returnUrl ?? configuration.returnUrl,
       };
       onSubmit(payload, nativeComponent);

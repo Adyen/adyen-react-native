@@ -1,5 +1,5 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v4.7.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
+[![Adyen iOS](https://img.shields.io/badge/ios-v4.7.1-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
 [![Adyen Android](https://img.shields.io/badge/android-v4.4.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
 
 
@@ -36,7 +36,6 @@ Add `@adyen/react-native` to your react-native project.
     return [RedirectComponentProxy proccessURL:url];
   }
   ```
-3.
 
 #### Android integration
 
@@ -58,17 +57,14 @@ Example of configuration properties:
 
 ```javascript
 const configuration = {
-  environment: 'test', // live, live-us, live-au
-  channel: channel, // iOS, Android. Added automatically by AdyenPaymentProvider
+  environment: 'test', // When you're ready to accept live payments, change the value to one of our live environments.
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 },
-  reference: 'React Native', // The reference to uniquely identify a payment.
-  returnUrl: 'myapp://', // This value is overridden for Android DropIn
+  reference: 'React Native', // The reference to uniquely identify a payment. Can be send from your backend
   shopperReference: 'Checkout Shopper', // Your reference to uniquely identify this shopper
-  merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
-  shopperLocale: 'en-US',
-  additionalData: { allow3DS2: true },
+  returnUrl: 'myapp://', // Custom URL scheme of your app. This value is overridden for Android DropIn. Can be send from your backend
+  shopperLocale: 'en-US'
 };
 ```
 
@@ -150,7 +146,10 @@ import { NativeModules } from 'react-native';
 ```
 
 ## Documentation
-> :construction: **Work in progress**
+
+- [Configuration](/docs/Configuration.md)
+
+> :construction: ** Adyen Docs documentation in progress**
 
 ## Support
 If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our [support team](https://support.adyen.com/hc/en-us/requests/new?ticket_form_id=360000705420).    

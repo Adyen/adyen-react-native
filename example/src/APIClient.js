@@ -1,20 +1,36 @@
-import { environment } from './Configuration';
+import { environment, channel } from './Configuration';
+
+const serverConfiguration = {
+  channel: channel,
+  shopperReference: 'Checkout Shopper',
+  reference: 'React Native'
+};
+
+const parseConfig = ({ merchantAccount, countryCode, shopperLocale, amount }) => ({
+  merchantAccount,
+  countryCode,
+  shopperLocale,
+  amount
+});
 
 export const fetchPaymentMethods = (configuration) => {
   let body = {
-    merchantAccount: configuration.merchantAccount,
-    countryCode: configuration.countryCode,
-    shopperLocale: configuration.shopperLocale,
-    amount: configuration.amount,
-    channel: configuration.channel,
-    shopperReference: configuration.shopperReference
+    ...parseConfig(configuration),
+    ...serverConfiguration
   };
 
   return fetchFrom(environment.url + 'paymentMethods', body);
 };
 
-export const fetchPayments = (data) => {
-  return fetchFrom(environment.url + 'payments', data);
+export const fetchPayments = (data, configuration) => {
+  let body = {
+    ...data,
+    ...parseConfig(configuration),
+    ...serverConfiguration,
+    additionalData: { allow3DS2: true }
+  };
+
+  return fetchFrom(environment.url + 'payments', body);
 };
 
 export const fetchPaymentDetails = (data) => {
@@ -27,7 +43,7 @@ export const isSuccess = (result) => {
 };
 
 const fetchFrom = (url, body) => {
-  let paymentMethodsRequest = new Request(url, {
+  let request = new Request(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -36,16 +52,11 @@ const fetchFrom = (url, body) => {
     body: JSON.stringify(body),
   });
 
-  return fetch(paymentMethodsRequest).then((response) => {
-    if (response.status === 200) {
-      return response.json();
-    } else {
-      return response.json().then((json) => {
-        throw new Error(
-          'Network error ' + response.status + ': \n' + json.message ||
-            'Unknown error'
-        );
-      });
-    }
+  return fetch(request).then((response) => {
+    return response.json().then(payload => {
+      if (response.ok) return payload;
+      throw new Error(`Network Error ${response.status}:
+        ${payload.message || 'Unknown error'}`);
+    });
   });
 };
