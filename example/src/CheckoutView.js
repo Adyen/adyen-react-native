@@ -16,7 +16,7 @@ import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { PaymentMethodsContext } from './PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
 
-const { ForcedAlertModule } = NativeModules;
+const { ForcedAlert } = NativeModules;
 
 const styles = StyleSheet.create({
   topContentView: {
@@ -42,22 +42,15 @@ const CheckoutView = () => {
   };
 
   const didSubmit = (data, nativeComponent) => {
-    console.log('didSubmit');
-    ForcedAlertModule.alert("SEPA Payment", "I have read and agree with terms and conditions of SEPA Payment", 
-    () => nativeComponent.hide(false, { message: "Canceled" }),
-    () => {
-          fetchPayments(data)
-            .then((result) => {
-              if (result.action) {
-                console.log('Action!');
-                nativeComponent.handle(result.action);
-              } else {
-                proccessResult(result, nativeComponent);
-              }
-            })
-            .catch((error) => proccessError(error, nativeComponent));
-        }
+    console.log('didSubmit: ', data.paymentMethod.type);
+    if (data.paymentMethod.type === 'sepadirectdebit') {
+      ForcedAlert.alert("SEPA Payment", "I have read and agree with terms and conditions of SEPA Payment",
+      () => nativeComponent.hide(false, { message: "Canceled" }),
+      () => fetchPayment(data, nativeComponent, proccessResult, proccessError)
     );
+    } else {
+      fetchPayment(data, nativeComponent, proccessResult, proccessError)
+    }
   };
 
   const didProvide = (data, nativeComponent) => {
@@ -95,6 +88,19 @@ const CheckoutView = () => {
       message: error.message || 'Unknown error',
     });
   };
+
+  function fetchPayment(data, nativeComponent, proccessResult, proccessError) {
+    fetchPayments(data)
+      .then((result) => {
+        if (result.action) {
+          console.log('Action!');
+          nativeComponent.handle(result.action);
+        } else {
+          proccessResult(result, nativeComponent);
+        }
+      })
+      .catch((error) => proccessError(error, nativeComponent));
+  }
 
   return (
     <PaymentMethodsContext.Consumer>
@@ -135,3 +141,4 @@ const CheckoutView = () => {
 };
 
 export default CheckoutView;
+
