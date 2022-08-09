@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, createContext } from 'react';
+import React, { useRef, useCallback, createContext, useEffect } from 'react';
 import {
   PAYMENT_SUBMIT_EVENT,
   PAYMENT_PROVIDE_DETAILS_EVENT,
@@ -14,7 +14,7 @@ const AdyenCheckoutContext = createContext({
   paymentMethods: {},
 });
 
-const AdyenPaymentProvider = ({
+const AdyenCheckout = ({
   config,
   paymentMethods,
   onSubmit,
@@ -92,4 +92,15 @@ const AdyenPaymentProvider = ({
   );
 };
 
-export { AdyenCheckoutContext, AdyenPaymentProvider };
+const AdyenPaymentProvider = (props) => {
+
+  useEffect(() => {
+    console.warn('AdyenPaymentProvider is deprecated. Use AdyenCheckout instead');
+  }, []);
+
+  return (
+    <AdyenCheckout {...props} />
+  )
+}
+
+export { AdyenCheckoutContext, AdyenCheckout, AdyenPaymentProvider };

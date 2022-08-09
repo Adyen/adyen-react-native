@@ -5,8 +5,9 @@ export {
 } from './AdyenNativeModules';
 
 export {
-  AdyenPaymentProvider,
+  AdyenCheckout,
   AdyenCheckoutContext,
+  AdyenPaymentProvider
 } from './AdyenCheckoutContext';
 
 export {

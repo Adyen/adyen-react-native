@@ -74,11 +74,11 @@ To use `@adyen/react-native` you can use our helper component `AdyenPaymentProvi
 
 ```javascript
 import {
-  AdyenPaymentProvider,
+  AdyenCheckout,
   AdyenCheckoutContext,
 } from '@adyen/react-native';
 
-<AdyenPaymentProvider
+<AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
   onSubmit={didSubmit}
@@ -93,7 +93,7 @@ import {
         />
       )}
     </AdyenCheckoutContext.Consumer>
-</AdyenPaymentProvider>
+</AdyenCheckout>
 ```
 
 Or use helper `useAdyenCheckout` with standalone component:
@@ -113,9 +113,9 @@ const MyChekoutView = () => {
 ```
 
 ```javascript
-import { AdyenPaymentProvider } from '@adyen/react-native';
+import { AdyenCheckout } from '@adyen/react-native';
 
-<AdyenPaymentProvider
+<AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
   onSubmit={didSubmit}
@@ -123,18 +123,19 @@ import { AdyenPaymentProvider } from '@adyen/react-native';
   onFail={didFail}
   onComplete={didComplete} >
     <MyChekoutView />
-</AdyenPaymentProvider>
+</AdyenCheckout>
 ```
 
 Or manage native events by
 
 ```javascript
 import { NativeModules } from 'react-native';
+const { AdyenDropIn } = NativeModules;
 
 <Button
   title="Checkout"
   onPress={() => {
-    const eventEmitter = new NativeEventEmitter(NativeModules.AdyenDropIn);
+    const eventEmitter = new NativeEventEmitter(AdyenDropIn);
     this.didSubmitListener = eventEmitter.addListener('PAYMENT_SUBMIT_EVENT', onSubmit);
     this.didProvideListener = eventEmitter.addListener('PAYMENT_PROVIDE_DETAILS_EVENT', onProvide);
     this.didCompleteListener = eventEmitter.addListener('PAYMENT_COMPLETED_EVENT', onComplete);
@@ -144,6 +145,12 @@ import { NativeModules } from 'react-native';
   }}
 />
 ```
+
+### Handling Actions
+
+Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions:
+
+
 
 ## Documentation
 
