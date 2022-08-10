@@ -1,5 +1,5 @@
 import React from 'react';
-import { AdyenPaymentProvider } from '@adyen/react-native';
+import { AdyenCheckout } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
 import {
   Button,
@@ -110,7 +110,7 @@ const CheckoutView = () => {
             />
           </View>
 
-          <AdyenPaymentProvider
+          <AdyenCheckout
             config={context.config}
             paymentMethods={context.paymentMethods}
             onSubmit={ (payload, nativeComponent) => { didSubmit(payload, nativeComponent, context.config) }}
@@ -119,7 +119,7 @@ const CheckoutView = () => {
             onComplete={didComplete}
           >
             <PaymentMethods />
-          </AdyenPaymentProvider>
+          </AdyenCheckout>
         </SafeAreaView>
       )}
     </PaymentMethodsContext.Consumer>
