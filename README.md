@@ -11,10 +11,10 @@
 
 Adyen React Native provides you with the building blocks to create a checkout experience for your shoppers, allowing them to pay using the payment method of their choice.
 
-You can integrate with Adyen iOS in two ways:
+You can integrate with Adyen React Native in two ways:
 
-* Native Drop-in: an all-in-one solution, the quickest way to accept payments on your React Native app. React Native wrapper for native iOS and Android Adyen Drop-in. 
-* Native Components: one Component per payment method and combine with your own payments flow. React Native wrapper for native iOS and Android Adyen Components. 
+* Native Drop-in: React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app. 
+* Native Components: React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combinened with your own payments flow. 
 
 ## Contributing
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
