@@ -5,11 +5,16 @@
 
 ![Checkout_react_native_beta](https://user-images.githubusercontent.com/2648655/155735539-84066a1f-516c-456b-97a2-f0ba643f875c.png)
 
-# Adyen Checkout React Native SDK [BETA - Not for production usage]
+# Adyen React Native [BETA - Not for production usage]
 
 > This project is currently under development. Timelines and scope are still to be defined.
 
-React native wrapper for native iOS and Android Adyen Components. This library allows you to accept in-app payments by providing you with the building blocks you need to create a checkout experience.
+Adyen React Native provides you with the building blocks to create a checkout experience for your shoppers, allowing them to pay using the payment method of their choice.
+
+You can integrate with Adyen React Native in two ways:
+
+* Native Drop-in: React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app. 
+* Native Components: React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combinened with your own payments flow. 
 
 ## Contributing
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
