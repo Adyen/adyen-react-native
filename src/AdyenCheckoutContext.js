@@ -77,7 +77,7 @@ const AdyenCheckout = ({
   const start = useCallback(
     (nativeComponentName) => {
       removeEventListeners();
-      const nativeComponent = getNativeComponent(nativeComponentName);
+      const nativeComponent = getNativeComponent(nativeComponentName, paymentMethods, config);
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       startEventListeners(eventEmitter, config, nativeComponent);
       nativeComponent.open(paymentMethods, config);
