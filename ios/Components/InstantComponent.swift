@@ -14,6 +14,7 @@ import React
 internal class InstantComponent: BaseModule {
     
     private var currentComponent: PresentableComponent?
+    private var currentPaymentComponent: PaymentComponent?
     private var actionHandler: AdyenActionComponent?
     
     @objc
@@ -30,6 +31,7 @@ internal class InstantComponent: BaseModule {
 
             self.actionHandler = nil
             self.currentComponent = nil
+            self.currentPaymentComponent = nil
         }
     }
 
@@ -65,7 +67,12 @@ internal class InstantComponent: BaseModule {
 
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, paymentData: nil, apiContext: apiContext)
         component.payment = parser.payment
-        component.initiatePayment()
+        currentPaymentComponent = component
+        component.delegate = self
+        
+        DispatchQueue.main.async {
+            component.initiatePayment()
+        }
     }
 
     @objc

@@ -1,8 +1,9 @@
 import { NativeModules } from 'react-native';
-import { find, naviveComponents } from './ComponentMap';
+import { find, nativeComponents } from './ComponentMap';
 
 const UNKNOWN_PAYMENT_METHOD_ERROR = 
-  'Unknown payment method or native module';
+  'Unknown payment method or native module. \n\n' + 
+  'Make sure your paymentMethods response contains: ';
 
 const LINKING_ERROR =
   `The package '@adyen/react-native' doesn't seem to be linked. Make sure: \n\n` +
@@ -31,34 +32,27 @@ export const AdyenCardComponent = NativeModules.AdyenCardComponent
       { get() { throw new Error(LINKING_ERROR); }, }
     );
 
-export function getNativeComponent(name, paymentMethods, config) {
+export function getNativeComponent(name, paymentMethods) {
   const type = name.toLowerCase();
   switch (type) {
     case 'dropin':
-    case 'AdyenDropIn':
-      return AdyenDropIn;
+    case 'adyendropin':
+      return { nativeComponent: AdyenDropIn };
     case 'AdyenCardComponent':
-      return AdyenCardComponent;
+      return { nativeComponent: AdyenCardComponent };
     default:
       break;
   }
 
   let paymentMethod = find(paymentMethods, type)
-  if (paymentMethod) {
-    throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR);
+  if (!paymentMethod) {
+    throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + name);
   }
 
-  paymentMethods =  {
-    paymentMethods: [
-      paymentMethod
-    ]
+  if (nativeComponents.includes(type)) {
+    return { nativeComponent: AdyenDropIn, paymentMethod: paymentMethod };
   }
 
-  if (naviveComponents.includes(type)) {
-    config.dropin.skipListWhenSinglePaymentMethod = true
-    return AdyenDropIn
-  }
-
-  return AdyenInstant
+  return { nativeComponent: AdyenInstant, paymentMethod: paymentMethod };
 }
 

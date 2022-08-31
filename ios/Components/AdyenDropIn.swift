@@ -30,15 +30,28 @@ internal class AdyenDropIn: BaseModule {
     }
 
     @objc
-    func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []),
-              let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
-        else { return }
+    func open(_ jsonData: NSDictionary, configuration: NSDictionary) {
+        let paymentMethods: PaymentMethods
+        
+        guard let data = try? JSONSerialization.data(withJSONObject: jsonData, options: []) else {
+            return assertionFailure("AdyenDropIn: Can not deserialize paymentMethods.")
+        }
+        
+        if let jsonPaymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data) {
+            paymentMethods = jsonPaymentMethods
+        }
+        else if let jsonPaymentMethod = try? JSONDecoder().decode(AnyPaymentMethod.self, from: data),
+                let anyPaymentMethod = jsonPaymentMethod.value {
+            paymentMethods = PaymentMethods(regular: [anyPaymentMethod], stored: [])
+        }
+        else {
+            return assertionFailure("AdyenDropIn: Can not parse payment method.")
+        }
 
         let parser = RootConfigurationParser(configuration: configuration)
 
         guard let clientKey = parser.clientKey else {
-            return assertionFailure("AdyenDropIn: No clientKey in configuration")
+            return assertionFailure("AdyenDropIn: No clientKey in configuration.")
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
