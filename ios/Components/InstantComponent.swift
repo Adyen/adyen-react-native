@@ -4,17 +4,18 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
+
 import Adyen
 import Foundation
+import PassKit
 import React
-import UIKit
 
-@objc(AdyenCardComponent)
-internal class AdyenCardComponent: BaseModule {
-
+@objc(AdyenInstant)
+internal class InstantComponent: BaseModule {
+    
     private var currentComponent: PresentableComponent?
     private var actionHandler: AdyenActionComponent?
-
+    
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() {}
@@ -34,14 +35,26 @@ internal class AdyenCardComponent: BaseModule {
 
     @objc
     func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []),
-              let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data),
-              let paymentMethod = paymentMethods.paymentMethod(ofType: CardPaymentMethod.self)
-        else { return }
+        let paymentMethod: PaymentMethod
+        guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []) else {
+            return assertionFailure("InstantComponent: Can not deserialize paymentMethods")
+        }
+        
+        if let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data),
+           let firstPaymentMethod = paymentMethods.regular.first {
+            paymentMethod = firstPaymentMethod
+        }
+        else if let jsonPaymentMethod = try? JSONDecoder().decode(AnyPaymentMethod.self, from: data),
+                let anyPaymentMethod = jsonPaymentMethod.value {
+            paymentMethod = anyPaymentMethod
+        }
+        else {
+            return assertionFailure("InstantComponent: Can not parse payment method.")
+        }
 
         let parser = RootConfigurationParser(configuration: configuration)
         guard let clientKey = parser.clientKey else {
-            return assertionFailure("AdyenCardComponent: No clientKey in configuration")
+            return assertionFailure("InstantComponent: No clientKey in configuration")
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
@@ -50,13 +63,9 @@ internal class AdyenCardComponent: BaseModule {
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
 
-        let config = CardConfigurationParser(configuration: configuration).configuration
-        let component = CardComponent(paymentMethod: paymentMethod,
-                                      apiContext: apiContext,
-                                      configuration: config)
+        let component = InstantPaymentComponent(paymentMethod: paymentMethod, paymentData: nil, apiContext: apiContext)
         component.payment = parser.payment
-
-        present(component: component)
+        component.initiatePayment()
     }
 
     @objc
@@ -72,7 +81,7 @@ internal class AdyenCardComponent: BaseModule {
 
 }
 
-extension AdyenCardComponent: PresentationDelegate {
+extension InstantComponent: PresentationDelegate {
 
     private static var presenter: UIViewController? { UIApplication.shared.keyWindow?.rootViewController }
 
@@ -93,8 +102,8 @@ extension AdyenCardComponent: PresentationDelegate {
 
         currentComponent = component
         guard component.requiresModalPresentation else {
-            AdyenCardComponent.presenter?.present(component.viewController,
-                                                  animated: true)
+            InstantComponent.presenter?.present(component.viewController,
+                                                animated: true)
             return
         }
 
@@ -102,7 +111,7 @@ extension AdyenCardComponent: PresentationDelegate {
         component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
                                                                            target: self,
                                                                            action: #selector(cancelDidPress))
-        AdyenCardComponent.presenter?.present(navigation, animated: true)
+        InstantComponent.presenter?.present(navigation, animated: true)
     }
 
     @objc private func cancelDidPress() {
@@ -111,7 +120,7 @@ extension AdyenCardComponent: PresentationDelegate {
     }
 }
 
-extension AdyenCardComponent: PaymentComponentDelegate {
+extension InstantComponent: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
         sendEvent(event: .didSubmit, body: data.jsonObject)
@@ -123,7 +132,7 @@ extension AdyenCardComponent: PaymentComponentDelegate {
 
 }
 
-extension AdyenCardComponent: ActionComponentDelegate {
+extension InstantComponent: ActionComponentDelegate {
 
     internal func didFail(with error: Error, from component: ActionComponent) {
         sendEvent(event: .didFail, body: error.toDictionary)
