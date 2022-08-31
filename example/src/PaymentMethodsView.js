@@ -18,6 +18,7 @@ const styles = StyleSheet.create({
 });
 
 const PaymentMethods = () => {
+
   const { start, paymentMethods } = useAdyenCheckout();
   const isDarkMode = useColorScheme() === 'dark';
   const contentBackgroundStyle = {
@@ -25,6 +26,12 @@ const PaymentMethods = () => {
   };
   const platformSpecificPayment =
     Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
+  const platformSpecificType =
+    Platform.OS === 'ios' ? 'applepay' : 'googlepay';
+  const isAvailable = (type) => { 
+    if (!paymentMethods) { return false; }
+    return paymentMethods.paymentMethods.find(x => x.type === type.toLowerCase()) != null
+  };
 
   return (
     <View style={[styles.contentView, contentBackgroundStyle]}>
@@ -32,29 +39,50 @@ const PaymentMethods = () => {
         title="Open DropIn"
         disabled={paymentMethods === null}
         onPress={() => {
-          console.log('Paying with AdyenDropIn');
-          start('AdyenDropIn');
+          start('dropin');
         }}
       />
       <Button
         title="Open Card Component"
         disabled={paymentMethods === null}
         onPress={() => {
-          console.log('Paying with AdyenCardComponent');
-          start('AdyenCardComponent');
+          start('scheme');
         }}
       />
       <Button
-        title="Open iDEAL (WIP)"
-        disabled
+        title="Open iDeal"
+        disabled={paymentMethods === null || !isAvailable('ideal')}
+        onPress={() => {
+          start('ideal');
+        }}
       />
       <Button
-        title="Open SEPA (WIP)"
-        disabled
+        title="Open SEPA"
+        disabled={paymentMethods === null || !isAvailable('sepaDirectDebit') }
+        onPress={() => {
+          start('sepaDirectDebit');
+        }}
+      />
+      <Button
+        title="Open PayPal"
+        disabled={paymentMethods === null || !isAvailable('paypal')}
+        onPress={() => {
+          start('paypal');
+        }}
+      />
+      <Button
+        title="Open Qiwi Wallet"
+        disabled={paymentMethods === null || !isAvailable('qiwiwallet') }
+        onPress={() => {
+          start('qiwiwallet');
+        }}
       />
       <Button
         title={'Open ' + platformSpecificPayment + ' (WIP)'}
-        disabled
+        disabled={paymentMethods === null || !isAvailable(platformSpecificType)}
+        onPress={() => {
+          start(platformSpecificType);
+        }}
       />
     </View>
   );
