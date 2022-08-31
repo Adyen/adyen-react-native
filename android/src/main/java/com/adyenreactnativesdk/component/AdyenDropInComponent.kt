@@ -33,7 +33,6 @@ import com.adyen.checkout.core.api.Environment
 import java.lang.IllegalStateException
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context), DropInServiceListener {
-    private val TAG = "DropInComponent"
     override fun getName(): String {
         return "AdyenDropIn"
     }
@@ -53,11 +52,8 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
         val builder = Builder(reactApplicationContext, AdyenDropInService::class.java, clientKey)
                 .setEnvironment(environment)
-        try {
-            val shopperLocale = parser.locale
-            builder.setShopperLocale(shopperLocale)
-        } catch (e: NoSuchFieldException) { }
 
+        parser.locale?.let { builder.setShopperLocale(it) }
         configureDropIn(builder, configuration)
         configureCards(builder, configuration)
         configureBcmc(builder, configuration)
@@ -193,5 +189,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
     init {
         DropInServiceProxy.shared.setServiceListener(this)
+    }
+
+    companion object {
+        private val TAG = "DropInComponent"
     }
 }

@@ -49,12 +49,13 @@ import com.adyen.checkout.qrcode.QRCodeComponent
 import com.adyen.checkout.qrcode.QRCodeConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.redirect.RedirectConfiguration
+import com.adyen.checkout.voucher.VoucherConfiguration
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
 
 class ActionComponentDialogFragment(
     val configuration: ActionHandlerConfiguration,
-    val callback: ActionHandlingInterface
+    private val callback: ActionHandlingInterface
 ) : BottomSheetDialogFragment(), Observer<ActionComponentData> {
 
     companion object {
@@ -290,31 +291,12 @@ class ActionComponentDialogFragment(
 
         // get default builder for Configuration type
         val builder: BaseConfigurationBuilder<out Configuration> = when (T::class) {
-            AwaitConfiguration::class -> AwaitConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            RedirectConfiguration::class -> RedirectConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
+            AwaitConfiguration::class -> AwaitConfiguration.Builder(shopperLocale, environment, clientKey)
+            RedirectConfiguration::class -> RedirectConfiguration.Builder(shopperLocale, environment, clientKey)
+            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(shopperLocale, environment, clientKey)
+            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(shopperLocale, environment, clientKey)
+            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(shopperLocale, environment, clientKey)
+            VoucherConfiguration::class -> VoucherConfiguration.Builder(shopperLocale, environment, clientKey)
             else -> throw CheckoutException("Unable to find component configuration for class - ${T::class}")
         }
 

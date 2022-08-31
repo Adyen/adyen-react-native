@@ -59,10 +59,10 @@ class RootConfigurationParser(private val config: ReadableMap) {
             config.getString(SHOPPER_REFERENCE_KEY)
         } else null
 
-    val locale: Locale
-        @Throws(NoSuchFieldException::class) get() {
+    val locale: Locale?
+        get() {
             if (!config.hasKey(SHOPPER_LOCALE_KEY)) {
-                throw NoSuchFieldException("No $SHOPPER_LOCALE_KEY")
+                return null
             }
             return Locale.forLanguageTag(config.getString(SHOPPER_LOCALE_KEY)!!)
         }
@@ -73,7 +73,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 throw NoSuchFieldException("No $ENVIRONMENT_KEY")
             }
             val environment = config.getString(ENVIRONMENT_KEY)!!
-            return when (environment.lowercase()) {
+            return when (environment.toLowerCase(Locale.ROOT)) {
                 "live-au" -> Environment.AUSTRALIA
                 "live", "live-eu" -> Environment.EUROPE
                 "live-us" -> Environment.UNITED_STATES

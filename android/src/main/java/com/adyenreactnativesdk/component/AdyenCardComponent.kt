@@ -28,8 +28,6 @@ import java.util.*
 
 class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
-    val TAG = "CardComponent"
-    val PAYMENT_METHOD_KEY = "scheme"
     private var actionHandler: ActionHandler? = null
     private var dialog: DialogFragment? = null
 
@@ -38,11 +36,19 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     }
 
     @ReactMethod
-    fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap?) {
+    fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
+        if (paymentMethods == null) {
+            sendEvent(DID_FAILED, ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods"))
+            return
+        }
         val paymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
+        if (paymentMethod == null) {
+            sendEvent(DID_FAILED, ReactNativeError.mapError("${TAG}: can not parse payment methods"))
+            return
+        }
 
-        val config = RootConfigurationParser(configuration!!)
+        val config = RootConfigurationParser(configuration)
         val environment: Environment
         val clientKey: String
         val shopperLocale: Locale
@@ -50,7 +56,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         try {
             environment = config.environment
             clientKey = config.clientKey
-            shopperLocale = config.locale
+            shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
             amount = config.amount
         } catch (e: NoSuchFieldException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
@@ -66,9 +72,9 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         componentConfiguration = parser.getConfiguration(builder)
 
         val theActivity = appCompatActivity
-        val viewModel = ComponentViewModel(paymentMethod!!, shopperLocale, amount)
+        val viewModel = ComponentViewModel(paymentMethod, shopperLocale, amount)
         viewModel.listener = this
-        theActivity!!.runOnUiThread {
+        theActivity.runOnUiThread {
             showComponentView(
                 theActivity,
                 viewModel,
@@ -82,7 +88,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             val action = Action.SERIALIZER.deserialize(jsonObject)
-            actionHandler!!.handleAction(appCompatActivity!!, action)
+            actionHandler?.handleAction(appCompatActivity, action)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
         }
@@ -93,8 +99,8 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         if (dialog == null) {
             return
         }
-        Log.d(TAG, "Closing component")
-        dialog!!.dismiss()
+        Log.d(Companion.TAG, "Closing component")
+        dialog?.dismiss()
     }
 
     @ReactMethod
@@ -107,28 +113,18 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         // Remove upstream listeners, stop unnecessary background tasks
     }
 
-    private val appCompatActivity: AppCompatActivity?
-        private get() {
-            val currentActivity = reactApplicationContext.currentActivity
-            val theActivity = currentActivity as AppCompatActivity?
-            if (theActivity == null) {
-                sendEvent(DID_FAILED, ReactNativeError.mapError("Not an AppCompact Activity"))
-                return null
-            }
-            return theActivity
-        }
-
     private fun showComponentView(
-        theActivity: AppCompatActivity?,
+        theActivity: AppCompatActivity,
         viewModel: ComponentViewModel,
         configuration: CardConfiguration
     ) {
-        val componentView = CardView(theActivity!!)
-        val component: CardComponent = CardComponent.getPROVIDER()
+        val componentView = CardView(theActivity)
+        val component: CardComponent = CardComponent.PROVIDER
             .get<AppCompatActivity>(theActivity, viewModel.paymentMethod, configuration)
         val fragmentManager = theActivity.supportFragmentManager
-        dialog = AdyenBottomSheetDialogFragment(viewModel, componentView, component)
-        dialog.show(fragmentManager, "Component")
+        val componentDialog = AdyenBottomSheetDialogFragment(viewModel, componentView, component)
+        componentDialog.show(fragmentManager, "Component")
+        dialog = componentDialog
     }
 
     override fun onError(exception: Exception) {
@@ -139,11 +135,11 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         sendEvent(DID_FAILED, errorMap)
     }
 
-    override fun onSubmit(data: PaymentComponentData<*>?) {
-        val jsonObject = PaymentComponentData.SERIALIZER.serialize(data!!)
+    override fun onSubmit(data: PaymentComponentData<*>) {
+        val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: ReadableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            Log.d(TAG, "Paying")
+            Log.d(Companion.TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
@@ -166,5 +162,10 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
 
     override fun onFinish() {
         sendEvent(DID_COMPLEATE, null)
+    }
+
+    companion object {
+        private val PAYMENT_METHOD_KEY = "scheme"
+        private val TAG = "CardComponent"
     }
 }

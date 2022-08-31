@@ -6,8 +6,8 @@
 
 package com.adyenreactnativesdk
 
-import android.content.Intent
-import android.os.Bundle
+import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Component
@@ -19,7 +19,6 @@ import com.adyen.checkout.components.ActionComponentProvider
 import com.adyen.checkout.components.base.BaseActionComponent
 import com.adyen.checkout.components.base.BaseConfigurationBuilder
 import com.adyen.checkout.components.base.Configuration
-import com.adyen.checkout.components.base.IntentHandlingComponent
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.core.exception.CheckoutException
@@ -53,6 +52,8 @@ class ActionHandler(
     private val configuration: ActionHandlerConfiguration
 ) : Observer<ActionComponentData> {
 
+    private var dialog: DialogFragment? = null
+
     companion object {
         val TAG = LogUtil.getTag()
         const val UNKNOWN_ACTION = "UNKNOWN ACTION"
@@ -67,23 +68,6 @@ class ActionHandler(
         if (componentData != null) {
             callback.provide(componentData)
         }
-    }
-
-    fun saveState(bundle: Bundle?) {
-        bundle?.putParcelable(BUNDLE_ACTION, loadedAction)
-    }
-
-    fun restoreState(activity: FragmentActivity, bundle: Bundle?) {
-        loadedAction = bundle?.getParcelable(BUNDLE_ACTION)
-        loadComponent(activity, loadedAction)
-    }
-
-    @SuppressWarnings("ReturnCount")
-    private fun loadComponent(activity: FragmentActivity, action: Action?) {
-        if (action == null) return
-        val provider = getActionProviderFor(action) ?: return
-        if (provider.requiresView(action)) return
-        loadComponent(activity, provider)
     }
 
     fun handleAction(activity: FragmentActivity, action: Action) {
@@ -104,11 +88,17 @@ class ActionHandler(
                 val actionFragment = ActionComponentDialogFragment(configuration, callback)
                 actionFragment.show(fragmentManager, ACTION_FRAGMENT_TAG)
                 actionFragment.setToHandleWhenStarting()
+                dialog = actionFragment
+
             } else {
                 loadComponent(activity, provider)
                 loadedComponent?.handleAction(activity, action)
             }
         }
+    }
+
+    fun hide() {
+        dialog?.dismiss()
     }
 
     private fun loadComponent(
@@ -118,27 +108,12 @@ class ActionHandler(
         getActionComponentFor(activity, provider, configuration).apply {
             loadedComponent = this
             observe(activity, this@ActionHandler)
-            observeErrors(activity, { callback.onError(it.exception) })
+            observeErrors(activity) { callback.onError(it.exception) }
             Logger.d(TAG, "handleAction - loaded a new component - ${this::class.java.simpleName}")
         }
     }
 
-    fun handleRedirectResponse(intent: Intent) {
-        handleIntent(intent)
-    }
-
-    fun handleWeChatPayResponse(intent: Intent) {
-        handleIntent(intent)
-    }
-
-    private fun handleIntent(intent: Intent) {
-        val component = loadedComponent ?: throw CheckoutException("Action component is not loaded")
-        Logger.d(TAG, "handleAction - loaded component type: ${component::class.java.simpleName}")
-        if (component !is IntentHandlingComponent) throw CheckoutException("Loaded component cannot handle intents")
-        component.handleIntent(intent)
-    }
-
-    internal fun getActionProviderFor(action: Action): ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>? {
+    private fun getActionProviderFor(action: Action): ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>? {
         val allActionProviders = listOf(
             RedirectComponent.PROVIDER,
             Adyen3DS2Component.PROVIDER,
@@ -149,7 +124,7 @@ class ActionHandler(
         return allActionProviders.firstOrNull { it.canHandleAction(action) }
     }
 
-    internal fun getActionComponentFor(
+    private fun getActionComponentFor(
         activity: FragmentActivity,
         provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
         configuration: ActionHandlerConfiguration
@@ -196,7 +171,7 @@ class ActionHandler(
         }
     }
 
-    internal inline fun <reified T : Configuration> getDefaultConfigForAction(
+    private inline fun <reified T : Configuration> getDefaultConfigForAction(
         configuration: ActionHandlerConfiguration
     ): T {
         val shopperLocale = configuration.shopperLocale
