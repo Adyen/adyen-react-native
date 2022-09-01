@@ -6,7 +6,6 @@
 
 package com.adyenreactnativesdk
 
-import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
@@ -28,6 +27,8 @@ import com.adyen.checkout.qrcode.QRCodeComponent
 import com.adyen.checkout.qrcode.QRCodeConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.redirect.RedirectConfiguration
+import com.adyen.checkout.voucher.VoucherComponent
+import com.adyen.checkout.voucher.VoucherConfiguration
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
 import java.util.*
@@ -56,9 +57,7 @@ class ActionHandler(
 
     companion object {
         val TAG = LogUtil.getTag()
-        const val UNKNOWN_ACTION = "UNKNOWN ACTION"
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
-        private const val BUNDLE_ACTION = "bundle_action"
     }
 
     private var loadedComponent: BaseActionComponent<*>? = null
@@ -82,7 +81,10 @@ class ActionHandler(
 
         activity.runOnUiThread {
             if (provider.requiresView(action)) {
-                Logger.d(TAG,"handleAction - action is viewable, requesting displayAction callback")
+                Logger.d(
+                    TAG,
+                    "handleAction - action is viewable, requesting displayAction callback"
+                )
                 val fragmentManager = activity.supportFragmentManager
 
                 val actionFragment = ActionComponentDialogFragment(configuration, callback)
@@ -119,7 +121,8 @@ class ActionHandler(
             Adyen3DS2Component.PROVIDER,
             WeChatPayActionComponent.PROVIDER,
             AwaitComponent.PROVIDER,
-            QRCodeComponent.PROVIDER
+            QRCodeComponent.PROVIDER,
+            VoucherComponent.PROVIDER
         )
         return allActionProviders.firstOrNull { it.canHandleAction(action) }
     }
@@ -165,6 +168,13 @@ class ActionHandler(
                     getDefaultConfigForAction(configuration)
                 )
             }
+            VoucherComponent.PROVIDER -> {
+                VoucherComponent.PROVIDER.get(
+                    activity,
+                    activity.application,
+                    getDefaultConfigForAction(configuration)
+                )
+            }
             else -> {
                 throw CheckoutException("Unable to find component for provider - $provider")
             }
@@ -201,6 +211,11 @@ class ActionHandler(
                 clientKey
             )
             WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            VoucherConfiguration::class -> VoucherConfiguration.Builder(
                 shopperLocale,
                 environment,
                 clientKey

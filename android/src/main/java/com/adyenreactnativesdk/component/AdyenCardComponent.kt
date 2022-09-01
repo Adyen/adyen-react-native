@@ -134,11 +134,8 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         dialog = componentDialog
     }
 
-    override fun onError(exception: Exception) {
-        var errorMap: ReadableMap? = null
-        if (exception != null) {
-            errorMap = ReactNativeError.mapError(exception)
-        }
+    override fun onError(error: Exception) {
+        val errorMap = ReactNativeError.mapError(error)
         sendEvent(DID_FAILED, errorMap)
     }
 
@@ -172,7 +169,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     }
 
     companion object {
-        private val PAYMENT_METHOD_KEY = "scheme"
-        private val TAG = "CardComponent"
+        private const val PAYMENT_METHOD_KEY = "scheme"
+        private const val TAG = "CardComponent"
     }
 }
