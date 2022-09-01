@@ -50,6 +50,7 @@ import com.adyen.checkout.qrcode.QRCodeConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.redirect.RedirectConfiguration
 import com.adyen.checkout.voucher.VoucherConfiguration
+import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
 
@@ -63,7 +64,7 @@ class ActionComponentDialogFragment(
         const val ACTION = "ACTION"
     }
 
-    private var isCanceled = false;
+    private var isCanceled = false
     private lateinit var binding: FragmentActionComponentBinding
     private lateinit var action: Action
     private lateinit var actionType: String
@@ -195,28 +196,15 @@ class ActionComponentDialogFragment(
         return getActionProviderFor(action)?.providesDetails() == false
     }
 
-    internal fun getViewFor(
+    private fun getViewFor(
         context: Context,
         paymentType: String
     ): ComponentView<in OutputData, ViewableComponent<*, *, *>> {
         @Suppress("UNCHECKED_CAST")
         return when (paymentType) {
-            PaymentMethodTypes.BCMC -> BcmcView(context)
-            PaymentMethodTypes.DOTPAY -> DotpayRecyclerView(context)
-            PaymentMethodTypes.ENTERCASH -> EntercashRecyclerView(context)
-            PaymentMethodTypes.EPS -> EPSRecyclerView(context)
-            PaymentMethodTypes.IDEAL -> IdealRecyclerView(context)
-            PaymentMethodTypes.MB_WAY -> MBWayView(context)
-            PaymentMethodTypes.MOLPAY_THAILAND,
-            PaymentMethodTypes.MOLPAY_MALAYSIA,
-            PaymentMethodTypes.MOLPAY_VIETNAM -> MolpayRecyclerView(context)
-            PaymentMethodTypes.OPEN_BANKING -> OpenBankingRecyclerView(context)
-            PaymentMethodTypes.SCHEME -> CardView(context)
-            PaymentMethodTypes.SEPA -> SepaView(context)
-            PaymentMethodTypes.BLIK -> BlikView(context)
-            // GooglePay and WeChatPay do not require a View in Drop-in
             ActionTypes.AWAIT -> AwaitView(context)
             ActionTypes.QR_CODE -> QRCodeView(context)
+            ActionTypes.VOUCHER -> VoucherView(context)
             else -> {
                 throw CheckoutException("Unable to find view for type - $paymentType")
             }
@@ -224,7 +212,7 @@ class ActionComponentDialogFragment(
         } as ComponentView<in OutputData, ViewableComponent<*, *, *>>
     }
 
-    internal fun getActionProviderFor(action: Action): ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>? {
+    private fun getActionProviderFor(action: Action): ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>? {
         val allActionProviders = listOf(
             RedirectComponent.PROVIDER,
             Adyen3DS2Component.PROVIDER,
@@ -235,7 +223,7 @@ class ActionComponentDialogFragment(
         return allActionProviders.firstOrNull { it.canHandleAction(action) }
     }
 
-    internal fun getActionComponentFor(
+    private fun getActionComponentFor(
         activity: FragmentActivity,
         provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
         configuration: ActionHandlerConfiguration
@@ -282,7 +270,7 @@ class ActionComponentDialogFragment(
         }
     }
 
-    internal inline fun <reified T : Configuration> getDefaultConfigForAction(
+    private inline fun <reified T : Configuration> getDefaultConfigForAction(
         configuration: ActionHandlerConfiguration
     ): T {
         val shopperLocale = configuration.shopperLocale

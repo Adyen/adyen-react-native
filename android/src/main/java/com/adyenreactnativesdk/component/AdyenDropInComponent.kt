@@ -32,7 +32,9 @@ import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.core.api.Environment
 import java.lang.IllegalStateException
 
-class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context), DropInServiceListener {
+class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
+    DropInServiceListener {
+    
     override fun getName(): String {
         return "AdyenDropIn"
     }
@@ -51,7 +53,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             return
         }
         val builder = Builder(reactApplicationContext, AdyenDropInService::class.java, clientKey)
-                .setEnvironment(environment)
+            .setEnvironment(environment)
 
         parser.locale?.let { builder.setShopperLocale(it) }
         configureDropIn(builder, configuration)
@@ -103,8 +105,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     override fun onDidSubmit(jsonObject: JSONObject) {
-        val map: WritableMap
-        map = try {
+        val map: WritableMap = try {
             ReactNativeJson.convertJsonToMap(jsonObject)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
@@ -127,7 +128,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
         val listener = DropInServiceProxy.shared.moduleListener
         if (listener == null) {
-            val e = IllegalStateException("Invalid state: DropInModuleListener is missing")
+            val e = IllegalStateException("$TAG Invalid state: DropInModuleListener is missing")
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
             return
         }
@@ -144,23 +145,30 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         builder.setSkipListWhenSinglePaymentMethod(parser.skipListWhenSinglePaymentMethod)
     }
 
-    private fun configureGooglePay(builder: Builder, configuration: ReadableMap, countryCode: String) {
+    private fun configureGooglePay(
+        builder: Builder,
+        configuration: ReadableMap,
+        countryCode: String
+    ) {
         val parser = GooglePayConfigurationParser(configuration)
         val configBuilder = GooglePayConfiguration.Builder(
-                builder.builderShopperLocale,
-                builder.builderEnvironment,
-                builder.builderClientKey)
-                .setCountryCode(countryCode)
-                .setAmount(builder.amount)
+            builder.builderShopperLocale,
+            builder.builderEnvironment,
+            builder.builderClientKey
+        )
+            .setCountryCode(countryCode)
+            .setAmount(builder.amount)
         val googlePayConfiguration = parser.getConfiguration(configBuilder)
         builder.addGooglePayConfiguration(googlePayConfiguration)
     }
 
     private fun configure3DS(builder: Builder) {
-        builder.add3ds2ActionConfiguration(Adyen3DS2Configuration.Builder(
+        builder.add3ds2ActionConfiguration(
+            Adyen3DS2Configuration.Builder(
                 builder.builderShopperLocale,
                 builder.builderEnvironment,
-                builder.builderClientKey)
+                builder.builderClientKey
+            )
                 .build()
         )
     }
@@ -172,18 +180,20 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
         val parser = CardConfigurationParser(bcmcConfig)
         val bcmcBuilder = BcmcConfiguration.Builder(
-                builder.builderShopperLocale,
-                builder.builderEnvironment,
-                builder.builderClientKey)
+            builder.builderShopperLocale,
+            builder.builderEnvironment,
+            builder.builderClientKey
+        )
         builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder))
     }
 
     private fun configureCards(builder: Builder, configuration: ReadableMap) {
         val parser = CardConfigurationParser(configuration)
         val cardBuilder = CardConfiguration.Builder(
-                builder.builderShopperLocale,
-                builder.builderEnvironment,
-                builder.builderClientKey)
+            builder.builderShopperLocale,
+            builder.builderEnvironment,
+            builder.builderClientKey
+        )
         builder.addCardConfiguration(parser.getConfiguration(cardBuilder))
     }
 
@@ -192,6 +202,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     companion object {
-        private val TAG = "DropInComponent"
+        private const val TAG = "DropInComponent"
     }
 }

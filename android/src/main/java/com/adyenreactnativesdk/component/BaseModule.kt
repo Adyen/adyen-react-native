@@ -21,10 +21,7 @@ import java.util.*
 
 
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
-    val DID_SUBMIT = "didSubmitCallback"
-    val DID_FAILED = "didFailCallback"
-    val DID_PROVIDE = "didProvideCallback"
-    val DID_COMPLEATE = "didCompleteCallback"
+
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
             .getJSModule(RCTDeviceEventEmitter::class.java)
@@ -32,15 +29,13 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     protected fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse? {
-        val paymentMethodsResponse: PaymentMethodsApiResponse
-        paymentMethodsResponse = try {
+        return try {
             val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
             PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
             return null
         }
-        return paymentMethodsResponse
     }
 
     protected fun getPaymentMethod(
@@ -77,4 +72,11 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             }
             return theActivity
         }
+
+    companion object {
+        const val DID_COMPLETE = "didCompleteCallback"
+        const val DID_PROVIDE = "didProvideCallback"
+        const val DID_FAILED = "didFailCallback"
+        const val DID_SUBMIT = "didSubmitCallback"
+    }
 }

@@ -39,12 +39,18 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
         if (paymentMethods == null) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods"))
+            sendEvent(
+                DID_FAILED,
+                ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods")
+            )
             return
         }
         val paymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
         if (paymentMethod == null) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError("${TAG}: can not parse payment methods"))
+            sendEvent(
+                DID_FAILED,
+                ReactNativeError.mapError("${TAG}: can not parse payment methods")
+            )
             return
         }
 
@@ -63,7 +69,8 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
             return
         }
 
-        val actionHandlerConfiguration = ActionHandlerConfiguration(shopperLocale, environment, clientKey)
+        val actionHandlerConfiguration =
+            ActionHandlerConfiguration(shopperLocale, environment, clientKey)
         actionHandler = ActionHandler(this, actionHandlerConfiguration)
 
         val parser = CardConfigurationParser(configuration)
@@ -99,7 +106,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         if (dialog == null) {
             return
         }
-        Log.d(Companion.TAG, "Closing component")
+        Log.d(TAG, "Closing component")
         dialog?.dismiss()
     }
 
@@ -139,7 +146,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: ReadableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            Log.d(Companion.TAG, "Paying")
+            Log.d(TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
@@ -161,7 +168,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     }
 
     override fun onFinish() {
-        sendEvent(DID_COMPLEATE, null)
+        sendEvent(DID_COMPLETE, null)
     }
 
     companion object {
