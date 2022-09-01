@@ -95,16 +95,17 @@ class CardConfigurationParser(config: ReadableMap) {
 
     private val addressVisibility: AddressConfiguration
         get() {
-            return if (config.hasKey(ADDRESS_VISIBILITY_KEY))
-                ({
+            return when {
+                config.hasKey(ADDRESS_VISIBILITY_KEY) -> {
                     val value = config.getString(ADDRESS_VISIBILITY_KEY)!!
                     when (value.lowercase()) {
                         "postal_code", "postal", "postalcode" -> PostalCode
-                        "full" -> FullAddress
+                        "full" -> FullAddress(null, emptyList())
                         else -> None
                     }
-                }) as AddressConfiguration
-            else None
+                }
+                else -> None
+            }
         }
 
     private val supportedCardTypes: Array<CardType>
