@@ -54,12 +54,6 @@ class ActionHandler(
 ) : Observer<ActionComponentData> {
 
     private var dialog: DialogFragment? = null
-
-    companion object {
-        val TAG = LogUtil.getTag()
-        const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
-    }
-
     private var loadedComponent: BaseActionComponent<*>? = null
     private var loadedAction: Action? = null
 
@@ -115,16 +109,115 @@ class ActionHandler(
         }
     }
 
-    private fun getActionProviderFor(action: Action): ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>? {
-        val allActionProviders = listOf(
-            RedirectComponent.PROVIDER,
-            Adyen3DS2Component.PROVIDER,
-            WeChatPayActionComponent.PROVIDER,
-            AwaitComponent.PROVIDER,
-            QRCodeComponent.PROVIDER,
-            VoucherComponent.PROVIDER
-        )
-        return allActionProviders.firstOrNull { it.canHandleAction(action) }
+    companion object {
+        private val TAG = LogUtil.getTag()
+        const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
+
+        internal inline fun <reified T : Configuration> getDefaultConfigForAction(
+            configuration: ActionHandlerConfiguration
+        ): T {
+            val shopperLocale = configuration.shopperLocale
+            val environment = configuration.environment
+            val clientKey = configuration.clientKey
+
+            // get default builder for Configuration type
+            val builder: BaseConfigurationBuilder<out Configuration> = when (T::class) {
+                AwaitConfiguration::class -> AwaitConfiguration.Builder(
+                    shopperLocale,
+                    environment,
+                    clientKey
+                )
+                RedirectConfiguration::class -> RedirectConfiguration.Builder(
+                    shopperLocale,
+                    environment,
+                    clientKey
+                )
+                QRCodeConfiguration::class -> QRCodeConfiguration.Builder(
+                    shopperLocale,
+                    environment,
+                    clientKey
+                )
+                Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(
+                    shopperLocale,
+                    environment,
+                    clientKey
+                )
+                WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(
+                    shopperLocale,
+                    environment,
+                    clientKey
+                )
+                VoucherConfiguration::class -> VoucherConfiguration.Builder(
+                    shopperLocale,
+                    environment,
+                    clientKey
+                )
+                else -> throw CheckoutException("Unable to find component configuration for class - ${T::class}")
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            return builder.build() as T
+        }
+
+        internal fun getActionProviderFor(action: Action): ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>? {
+            val allActionProviders = listOf(
+                RedirectComponent.PROVIDER,
+                Adyen3DS2Component.PROVIDER,
+                WeChatPayActionComponent.PROVIDER,
+                AwaitComponent.PROVIDER,
+                QRCodeComponent.PROVIDER,
+                VoucherComponent.PROVIDER
+            )
+            return allActionProviders.firstOrNull { it.canHandleAction(action) }
+        }
+
+        internal fun getActionComponentFor(
+            actionComponentDialogFragment: ActionComponentDialogFragment,
+            activity: FragmentActivity,
+            provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
+            configuration: ActionHandlerConfiguration
+        ): BaseActionComponent<out Configuration> {
+            return when (provider) {
+                RedirectComponent.PROVIDER -> {
+                    RedirectComponent.PROVIDER.get(
+                        activity,
+                        activity.application,
+                        getDefaultConfigForAction(configuration)
+                    )
+                }
+                Adyen3DS2Component.PROVIDER -> {
+                    Adyen3DS2Component.PROVIDER.get(
+                        activity,
+                        activity.application,
+                        getDefaultConfigForAction(configuration)
+                    )
+                }
+                WeChatPayActionComponent.PROVIDER -> {
+                    WeChatPayActionComponent.PROVIDER.get(
+                        activity,
+                        activity.application,
+                        getDefaultConfigForAction(configuration)
+                    )
+                }
+                AwaitComponent.PROVIDER -> {
+                    AwaitComponent.PROVIDER.get(
+                        activity,
+                        activity.application,
+                        getDefaultConfigForAction(configuration)
+                    )
+                }
+                QRCodeComponent.PROVIDER -> {
+                    QRCodeComponent.PROVIDER.get(
+                        activity,
+                        activity.application,
+                        getDefaultConfigForAction(configuration)
+                    )
+                }
+                else -> {
+                    throw CheckoutException("Unable to find component for provider - $provider")
+                }
+            }
+        }
     }
 
     private fun getActionComponentFor(
@@ -179,51 +272,5 @@ class ActionHandler(
                 throw CheckoutException("Unable to find component for provider - $provider")
             }
         }
-    }
-
-    private inline fun <reified T : Configuration> getDefaultConfigForAction(
-        configuration: ActionHandlerConfiguration
-    ): T {
-        val shopperLocale = configuration.shopperLocale
-        val environment = configuration.environment
-        val clientKey = configuration.clientKey
-
-        // get default builder for Configuration type
-        val builder: BaseConfigurationBuilder<out Configuration> = when (T::class) {
-            AwaitConfiguration::class -> AwaitConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            RedirectConfiguration::class -> RedirectConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            VoucherConfiguration::class -> VoucherConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            else -> throw CheckoutException("Unable to find component configuration for class - ${T::class}")
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        return builder.build() as T
     }
 }

@@ -49,13 +49,14 @@ import com.adyen.checkout.qrcode.QRCodeComponent
 import com.adyen.checkout.qrcode.QRCodeConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.redirect.RedirectConfiguration
+import com.adyen.checkout.voucher.VoucherComponent
 import com.adyen.checkout.voucher.VoucherConfiguration
 import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
 
 class ActionComponentDialogFragment(
-    val configuration: ActionHandlerConfiguration,
+    private val configuration: ActionHandlerConfiguration,
     private val callback: ActionHandlingInterface
 ) : BottomSheetDialogFragment(), Observer<ActionComponentData> {
 
@@ -154,12 +155,13 @@ class ActionComponentDialogFragment(
      */
     @SuppressWarnings("ThrowsCount")
     private fun getComponent(action: Action): ViewableComponent<*, *, ActionComponentData> {
-        val provider = getActionProviderFor(action)
+        val provider = ActionHandler.getActionProviderFor(action)
             ?: throw ComponentException("Unexpected Action component type - $actionType")
         if (!provider.requiresView(action)) {
             throw ComponentException("Action is not viewable - action: ${action.type} - paymentMethod: ${action.paymentMethodType}")
         }
-        val component = getActionComponentFor(requireActivity(), provider, configuration)
+        val component =
+            ActionHandler.getActionComponentFor(this, requireActivity(), provider, configuration)
         if (!component.canHandleAction(action)) {
             throw ComponentException("Unexpected Action component type - action: ${action.type} - paymentMethod: ${action.paymentMethodType}")
         }
@@ -193,7 +195,7 @@ class ActionComponentDialogFragment(
     }
 
     private fun shouldFinishWithAction(): Boolean {
-        return getActionProviderFor(action)?.providesDetails() == false
+        return ActionHandler.getActionProviderFor(action)?.providesDetails() == false
     }
 
     private fun getViewFor(
@@ -212,107 +214,4 @@ class ActionComponentDialogFragment(
         } as ComponentView<in OutputData, ViewableComponent<*, *, *>>
     }
 
-    private fun getActionProviderFor(action: Action): ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>? {
-        val allActionProviders = listOf(
-            RedirectComponent.PROVIDER,
-            Adyen3DS2Component.PROVIDER,
-            WeChatPayActionComponent.PROVIDER,
-            AwaitComponent.PROVIDER,
-            QRCodeComponent.PROVIDER
-        )
-        return allActionProviders.firstOrNull { it.canHandleAction(action) }
-    }
-
-    private fun getActionComponentFor(
-        activity: FragmentActivity,
-        provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
-        configuration: ActionHandlerConfiguration
-    ): BaseActionComponent<out Configuration> {
-        return when (provider) {
-            RedirectComponent.PROVIDER -> {
-                RedirectComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            Adyen3DS2Component.PROVIDER -> {
-                Adyen3DS2Component.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            WeChatPayActionComponent.PROVIDER -> {
-                WeChatPayActionComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            AwaitComponent.PROVIDER -> {
-                AwaitComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            QRCodeComponent.PROVIDER -> {
-                QRCodeComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            else -> {
-                throw CheckoutException("Unable to find component for provider - $provider")
-            }
-        }
-    }
-
-    private inline fun <reified T : Configuration> getDefaultConfigForAction(
-        configuration: ActionHandlerConfiguration
-    ): T {
-        val shopperLocale = configuration.shopperLocale
-        val environment = configuration.environment
-        val clientKey = configuration.clientKey
-
-        // get default builder for Configuration type
-        val builder: BaseConfigurationBuilder<out Configuration> = when (T::class) {
-            AwaitConfiguration::class -> AwaitConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            RedirectConfiguration::class -> RedirectConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            VoucherConfiguration::class -> VoucherConfiguration.Builder(
-                shopperLocale,
-                environment,
-                clientKey
-            )
-            else -> throw CheckoutException("Unable to find component configuration for class - ${T::class}")
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        return builder.build() as T
-    }
 }
