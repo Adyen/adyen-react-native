@@ -37,7 +37,8 @@ class GooglePayConfigurationParser(config: ReadableMap) {
 
     private val allowedCardNetworks: List<String>
         get() {
-            val list: List<Any> = config.getArray(ALLOWED_CARD_NETWORKS_KEY)!!.toArrayList()
+            val list: List<Any> =
+                config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList() ?: emptyList()
             val strings: MutableList<String> = ArrayList(list.size)
             val allowedCardNetworks: Set<String> =
                 HashSet(AllowedCardNetworks.getAllAllowedCardNetworks())
@@ -53,7 +54,8 @@ class GooglePayConfigurationParser(config: ReadableMap) {
 
     private val allowedAuthMethods: List<String>
         get() {
-            val list: List<Any> = config.getArray(ALLOWED_AUTH_METHODS_KEY)!!.toArrayList()
+            val list: List<Any> =
+                config.getArray(ALLOWED_AUTH_METHODS_KEY)?.toArrayList() ?: emptyList()
             val strings: MutableList<String> = ArrayList(list.size)
             for (`object` in list) {
                 strings.add(`object`.toString())
@@ -65,9 +67,10 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         if (config.hasKey(GOOGLEPAY_ENVIRONMENT_KEY)) {
             return config.getInt(GOOGLEPAY_ENVIRONMENT_KEY)
         }
-        return if (environment == Environment.TEST) {
-            WalletConstants.ENVIRONMENT_TEST
-        } else WalletConstants.ENVIRONMENT_PRODUCTION
+        return when (environment) {
+            Environment.TEST -> WalletConstants.ENVIRONMENT_TEST
+            else -> WalletConstants.ENVIRONMENT_PRODUCTION
+        }
     }
 
     fun getConfiguration(builder: GooglePayConfiguration.Builder): GooglePayConfiguration {
@@ -91,10 +94,14 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             builder.setShippingAddressRequired(config.getBoolean(SHIPPING_ADDRESS_REQUIRED_KEY))
         }
         if (config.hasKey(EXISTING_PAYMENT_METHOD_REQUIRED_KEY)) {
-            builder.setExistingPaymentMethodRequired(config.getBoolean(EXISTING_PAYMENT_METHOD_REQUIRED_KEY))
+            builder.setExistingPaymentMethodRequired(
+                config.getBoolean(
+                    EXISTING_PAYMENT_METHOD_REQUIRED_KEY
+                )
+            )
         }
         if (config.hasKey(MERCHANT_ACCOUNT_KEY)) {
-            builder.setMerchantAccount(config.getString(MERCHANT_ACCOUNT_KEY)!!)
+            config.getString(MERCHANT_ACCOUNT_KEY)?.let { builder.setMerchantAccount(it) }
         }
         if (config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
             builder.setTotalPriceStatus(config.getString(TOTAL_PRICE_STATUS_KEY))

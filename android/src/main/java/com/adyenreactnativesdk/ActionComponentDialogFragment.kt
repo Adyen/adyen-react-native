@@ -279,12 +279,36 @@ class ActionComponentDialogFragment(
 
         // get default builder for Configuration type
         val builder: BaseConfigurationBuilder<out Configuration> = when (T::class) {
-            AwaitConfiguration::class -> AwaitConfiguration.Builder(shopperLocale, environment, clientKey)
-            RedirectConfiguration::class -> RedirectConfiguration.Builder(shopperLocale, environment, clientKey)
-            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(shopperLocale, environment, clientKey)
-            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(shopperLocale, environment, clientKey)
-            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(shopperLocale, environment, clientKey)
-            VoucherConfiguration::class -> VoucherConfiguration.Builder(shopperLocale, environment, clientKey)
+            AwaitConfiguration::class -> AwaitConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            RedirectConfiguration::class -> RedirectConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            QRCodeConfiguration::class -> QRCodeConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            Adyen3DS2Configuration::class -> Adyen3DS2Configuration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            WeChatPayActionConfiguration::class -> WeChatPayActionConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
+            VoucherConfiguration::class -> VoucherConfiguration.Builder(
+                shopperLocale,
+                environment,
+                clientKey
+            )
             else -> throw CheckoutException("Unable to find component configuration for class - ${T::class}")
         }
 

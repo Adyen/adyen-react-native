@@ -9,8 +9,9 @@ import android.util.Log
 import com.facebook.react.bridge.ReadableMap
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.bcmc.BcmcConfiguration
+import com.adyen.checkout.card.AddressConfiguration
+import com.adyen.checkout.card.AddressConfiguration.*
 import com.adyen.checkout.card.KCPAuthVisibility
-import com.adyen.checkout.components.base.AddressVisibility
 import com.adyen.checkout.card.data.CardType
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
 import java.util.ArrayList
@@ -49,7 +50,7 @@ class CardConfigurationParser(config: ReadableMap) {
             .setHideCvcStoredCard(hideCvcStoredCard)
             .setHideCvc(hideCvc)
             .setHolderNameRequired(holderNameRequired)
-            .setAddressVisibility(addressVisibility)
+            .setAddressConfiguration(addressVisibility)
             .setKcpAuthVisibility(kcpVisibility)
             .setSocialSecurityNumberVisibility(socialSecurityNumberVisibility)
             .build()
@@ -82,56 +83,56 @@ class CardConfigurationParser(config: ReadableMap) {
         } else true
 
     private val kcpVisibility: KCPAuthVisibility
-         get() {
-            if (config.hasKey(KCP_VISIBILITY_KEY)) {
+        get() {
+            return if (config.hasKey(KCP_VISIBILITY_KEY)) {
                 val value = config.getString(KCP_VISIBILITY_KEY)!!
-                return when (value.lowercase()) {
+                when (value.lowercase()) {
                     "show" -> KCPAuthVisibility.SHOW
                     else -> KCPAuthVisibility.HIDE
                 }
-            }
-            return KCPAuthVisibility.HIDE
+            } else KCPAuthVisibility.HIDE
         }
 
-    private val addressVisibility: AddressVisibility
+    private val addressVisibility: AddressConfiguration
         get() {
-            if (config.hasKey(ADDRESS_VISIBILITY_KEY)) {
-                val value = config.getString(ADDRESS_VISIBILITY_KEY)!!
-                return when (value.lowercase()) {
-                    "postal_code", "postal", "postalcode" -> AddressVisibility.POSTAL_CODE
-                    else -> AddressVisibility.NONE
-                }
-            }
-            return AddressVisibility.NONE
+            return if (config.hasKey(ADDRESS_VISIBILITY_KEY))
+                ({
+                    val value = config.getString(ADDRESS_VISIBILITY_KEY)!!
+                    when (value.lowercase()) {
+                        "postal_code", "postal", "postalcode" -> PostalCode
+                        "full" -> FullAddress
+                        else -> None
+                    }
+                }) as AddressConfiguration
+            else None
         }
 
     private val supportedCardTypes: Array<CardType>
         get() {
-            val array = config.getArray(SUPPORTED_CARD_TYPES_KEY)
-            val size = array!!.size()
+            val array = config.getArray(SUPPORTED_CARD_TYPES_KEY)!!
+            val size = array.size()
             val list: MutableList<CardType> = ArrayList(size)
             for (i in 0 until size) {
                 val brandName = array.getString(i)
                 val type = CardType.getByBrandName(brandName)
-                if (type != null) {
-                    list.add(type)
-                } else {
-                    Log.w(TAG, "CardType not recognized: $brandName")
-                }
+                if (type != null) list.add(type)
+                else Log.w(TAG, "CardType not recognized: $brandName")
             }
             return list.toTypedArray()
         }
 
     private val socialSecurityNumberVisibility: SocialSecurityNumberVisibility
         get() {
-            if (config.hasKey(SOCIAL_SECURITY_VISIBILITY_KEY)) {
-                val value = config.getString(SOCIAL_SECURITY_VISIBILITY_KEY)!!
-                return when (value.lowercase()) {
-                    "show" -> SocialSecurityNumberVisibility.SHOW
-                    else -> SocialSecurityNumberVisibility.HIDE
+            return when {
+                config.hasKey(SOCIAL_SECURITY_VISIBILITY_KEY) -> {
+                    val value = config.getString(SOCIAL_SECURITY_VISIBILITY_KEY)!!
+                    when (value.lowercase()) {
+                        "show" -> SocialSecurityNumberVisibility.SHOW
+                        else -> SocialSecurityNumberVisibility.HIDE
+                    }
                 }
+                else -> SocialSecurityNumberVisibility.HIDE
             }
-            return SocialSecurityNumberVisibility.HIDE
         }
 
     // TODO: add InstallmentConfiguration getInstallmentConfiguration

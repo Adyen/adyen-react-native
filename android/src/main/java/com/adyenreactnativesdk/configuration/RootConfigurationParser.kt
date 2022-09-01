@@ -21,7 +21,6 @@ class RootConfigurationParser(private val config: ReadableMap) {
         const val COUNTRY_CODE_KEY = "countryCode"
         const val ENVIRONMENT_KEY = "environment"
         const val SHOPPER_LOCALE_KEY = "shopperLocale"
-        const val SHOPPER_REFERENCE_KEY = "shopperReference"
     }
 
     val amount: Amount?
@@ -31,7 +30,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 return null
             }
             val map = config.getMap(AMOUNT_KEY)
-            var jsonObject = try {
+            val jsonObject = try {
                 ReactNativeJson.convertMapToJson(map)
             } catch (e: Throwable) {
                 Log.w(TAG, "Amount" + map.toString() + " not valid", e)
@@ -52,11 +51,6 @@ class RootConfigurationParser(private val config: ReadableMap) {
     val countryCode: String?
         get() = if (config.hasKey(COUNTRY_CODE_KEY)) {
             config.getString(COUNTRY_CODE_KEY)
-        } else null
-
-    val shopperReference: String?
-        get() = if (config.hasKey(SHOPPER_REFERENCE_KEY)) {
-            config.getString(SHOPPER_REFERENCE_KEY)
         } else null
 
     val locale: Locale?
