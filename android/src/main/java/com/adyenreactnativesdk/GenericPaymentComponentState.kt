@@ -22,7 +22,7 @@ class GenericPaymentComponentState<PaymentMethodDetailsT : PaymentMethodDetails?
     /**
      * @return If the collected data is valid to be sent to the backend.
      */
-    open val isValid: Boolean
+    val isValid: Boolean
         get() = isInputValid && isReady
 
     init {

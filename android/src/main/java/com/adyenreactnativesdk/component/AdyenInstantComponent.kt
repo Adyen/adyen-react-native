@@ -16,7 +16,8 @@ import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 import java.util.*
 
-class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context), PaymentComponentListener, ActionHandlingInterface {
+class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context),
+    PaymentComponentListener, ActionHandlingInterface {
 
     private var actionHandler: ActionHandler? = null
 
@@ -28,13 +29,19 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods
         if (paymentMethods == null || paymentMethods.isEmpty()) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods"))
+            sendEvent(
+                DID_FAILED,
+                ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods")
+            )
             return
         }
         val paymentMethod = paymentMethods[0]
         val type = paymentMethod.type
         if (paymentMethod == null || type.isNullOrEmpty()) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError("${TAG}: can not parse payment methods"))
+            sendEvent(
+                DID_FAILED,
+                ReactNativeError.mapError("${TAG}: can not parse payment methods")
+            )
             return
         }
 
@@ -42,18 +49,17 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         val environment: Environment
         val clientKey: String
         val shopperLocale: Locale
-        val amount: Amount?
         try {
             environment = config.environment
             clientKey = config.clientKey
             shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
-            amount = config.amount
         } catch (e: NoSuchFieldException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
             return
         }
 
-        val actionHandlerConfiguration = ActionHandlerConfiguration(shopperLocale, environment, clientKey)
+        val actionHandlerConfiguration =
+            ActionHandlerConfiguration(shopperLocale, environment, clientKey)
         actionHandler = ActionHandler(this, actionHandlerConfiguration)
 
         sendPayment(type)
@@ -75,11 +81,8 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         actionHandler?.hide()
     }
 
-    override fun onError(exception: Exception) {
-        var errorMap: ReadableMap? = null
-        if (exception != null) {
-            errorMap = ReactNativeError.mapError(exception)
-        }
+    override fun onError(error: Exception) {
+        val errorMap = ReactNativeError.mapError(error)
         sendEvent(DID_FAILED, errorMap)
     }
 
@@ -109,7 +112,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     }
 
     override fun onFinish() {
-        sendEvent(DID_COMPLEATE, null)
+        sendEvent(DID_COMPLETE, null)
     }
 
     companion object {
