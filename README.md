@@ -1,6 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
 [![Adyen iOS](https://img.shields.io/badge/ios-v4.7.1-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
-[![Adyen Android](https://img.shields.io/badge/android-v4.4.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
+[![Adyen Android](https://img.shields.io/badge/android-v4.7.1-brightgreen.svg)](https://github.com/Adyen/adyen-android)
 
 
 ![Checkout_react_native_beta](https://user-images.githubusercontent.com/2648655/155735539-84066a1f-516c-456b-97a2-f0ba643f875c.png)
@@ -13,8 +13,8 @@ Adyen React Native provides you with the building blocks to create a checkout ex
 
 You can integrate with Adyen React Native in two ways:
 
-* Native Drop-in: React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app. 
-* Native Components: React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combinened with your own payments flow. 
+* Native Drop-in: React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
+* Native Components: React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combinened with your own payments flow.
 
 ## Contributing
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
