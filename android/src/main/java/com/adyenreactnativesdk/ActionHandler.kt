@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk
 
+import android.content.Context
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
@@ -13,26 +14,33 @@ import com.adyen.checkout.adyen3ds2.Adyen3DS2Component
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.await.AwaitComponent
 import com.adyen.checkout.await.AwaitConfiguration
+import com.adyen.checkout.await.AwaitView
 import com.adyen.checkout.components.ActionComponentData
 import com.adyen.checkout.components.ActionComponentProvider
+import com.adyen.checkout.components.ComponentView
+import com.adyen.checkout.components.ViewableComponent
 import com.adyen.checkout.components.base.BaseActionComponent
 import com.adyen.checkout.components.base.BaseConfigurationBuilder
 import com.adyen.checkout.components.base.Configuration
+import com.adyen.checkout.components.base.OutputData
 import com.adyen.checkout.components.model.payments.response.Action
+import com.adyen.checkout.components.util.ActionTypes
 import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
 import com.adyen.checkout.qrcode.QRCodeComponent
 import com.adyen.checkout.qrcode.QRCodeConfiguration
+import com.adyen.checkout.qrcode.QRCodeView
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.redirect.RedirectConfiguration
 import com.adyen.checkout.voucher.VoucherComponent
 import com.adyen.checkout.voucher.VoucherConfiguration
+import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
+import java.lang.ref.WeakReference
 import java.util.*
-
 
 class ActionHandlerConfiguration(
     val shopperLocale: Locale,
@@ -53,7 +61,7 @@ class ActionHandler(
     private val configuration: ActionHandlerConfiguration
 ) : Observer<ActionComponentData> {
 
-    private var dialog: DialogFragment? = null
+    private var dialog: WeakReference<DialogFragment> = WeakReference(null)
     private var loadedComponent: BaseActionComponent<*>? = null
     private var loadedAction: Action? = null
 
@@ -84,7 +92,7 @@ class ActionHandler(
                 val actionFragment = ActionComponentDialogFragment(configuration, callback)
                 actionFragment.show(fragmentManager, ACTION_FRAGMENT_TAG)
                 actionFragment.setToHandleWhenStarting()
-                dialog = actionFragment
+                dialog = WeakReference<DialogFragment>(actionFragment)
 
             } else {
                 loadComponent(activity, provider)
@@ -94,7 +102,8 @@ class ActionHandler(
     }
 
     fun hide() {
-        dialog?.dismiss()
+        dialog.get()?.dismiss()
+        dialog.clear()
     }
 
     private fun loadComponent(
@@ -172,7 +181,6 @@ class ActionHandler(
         }
 
         internal fun getActionComponentFor(
-            actionComponentDialogFragment: ActionComponentDialogFragment,
             activity: FragmentActivity,
             provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
             configuration: ActionHandlerConfiguration
@@ -218,59 +226,21 @@ class ActionHandler(
                 }
             }
         }
-    }
 
-    private fun getActionComponentFor(
-        activity: FragmentActivity,
-        provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
-        configuration: ActionHandlerConfiguration
-    ): BaseActionComponent<out Configuration> {
-        return when (provider) {
-            RedirectComponent.PROVIDER -> {
-                RedirectComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            Adyen3DS2Component.PROVIDER -> {
-                Adyen3DS2Component.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            WeChatPayActionComponent.PROVIDER -> {
-                WeChatPayActionComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            AwaitComponent.PROVIDER -> {
-                AwaitComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            QRCodeComponent.PROVIDER -> {
-                QRCodeComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            VoucherComponent.PROVIDER -> {
-                VoucherComponent.PROVIDER.get(
-                    activity,
-                    activity.application,
-                    getDefaultConfigForAction(configuration)
-                )
-            }
-            else -> {
-                throw CheckoutException("Unable to find component for provider - $provider")
-            }
+        internal fun getViewFor(
+            context: Context,
+            paymentType: String
+        ): ComponentView<in OutputData, ViewableComponent<*, *, *>> {
+            @Suppress("UNCHECKED_CAST")
+            return when (paymentType) {
+                ActionTypes.AWAIT -> AwaitView(context)
+                ActionTypes.QR_CODE -> QRCodeView(context)
+                ActionTypes.VOUCHER -> VoucherView(context)
+                else -> {
+                    throw CheckoutException("Unable to find view for type - $paymentType")
+                }
+                // TODO check if this generic approach can be improved
+            } as ComponentView<in OutputData, ViewableComponent<*, *, *>>
         }
     }
 }

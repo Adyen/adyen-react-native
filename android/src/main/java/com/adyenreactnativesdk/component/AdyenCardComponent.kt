@@ -24,12 +24,13 @@ import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
 import com.adyenreactnativesdk.*
 import java.lang.Exception
+import java.lang.ref.WeakReference
 import java.util.*
 
 class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
     private var actionHandler: ActionHandler? = null
-    private var dialog: DialogFragment? = null
+    private var dialog: WeakReference<DialogFragment> = WeakReference(null)
 
     override fun getName(): String {
         return "AdyenCardComponent"
@@ -103,11 +104,9 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
 
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
-        if (dialog == null) {
-            return
-        }
+        val dialogFragment = dialog.get() ?: return
         Log.d(TAG, "Closing component")
-        dialog?.dismiss()
+        dialogFragment.dismiss()
     }
 
     @ReactMethod
@@ -131,7 +130,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         val fragmentManager = theActivity.supportFragmentManager
         val componentDialog = AdyenBottomSheetDialogFragment(viewModel, componentView, component)
         componentDialog.show(fragmentManager, "Component")
-        dialog = componentDialog
+        dialog = WeakReference<DialogFragment>(componentDialog)
     }
 
     override fun onError(error: Exception) {
