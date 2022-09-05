@@ -13,7 +13,6 @@ import React
 @objc(AdyenInstant)
 final internal class InstantComponent: BaseModule {
     
-    private var currentComponent: PresentableComponent?
     private var currentPaymentComponent: PaymentComponent?
     private var actionHandler: AdyenActionComponent?
     
@@ -37,10 +36,10 @@ final internal class InstantComponent: BaseModule {
     }
 
     @objc
-    func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
-        let paymentMethod: RedirectPaymentMethod
+    func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
+        let paymentMethod: PaymentMethod
         do {
-            paymentMethod = try parsePaymentMethods(jsonData: paymentMethods, for: RedirectPaymentMethod.self)
+            paymentMethod = try parseFirstPaymentMethod(from: paymentMethodsDict)
         } catch {
             return assertionFailure("InstantComponent: \(error.localizedDescription)")
         }
@@ -81,40 +80,10 @@ final internal class InstantComponent: BaseModule {
 
 extension InstantComponent: PresentationDelegate {
 
-    private static var presenter: UIViewController? { UIApplication.shared.keyWindow?.rootViewController }
-
     func present(component: PresentableComponent) {
         DispatchQueue.main.async { [weak self] in
             self?.present(component)
         }
-    }
-
-    private func present(_ component: PresentableComponent) {
-        if let paymentComponent = component as? PaymentComponent {
-            paymentComponent.delegate = self
-        }
-
-        if let actionComponent = component as? ActionComponent {
-            actionComponent.delegate = self
-        }
-
-        currentComponent = component
-        guard component.requiresModalPresentation else {
-            InstantComponent.presenter?.present(component.viewController,
-                                                animated: true)
-            return
-        }
-
-        let navigation = UINavigationController(rootViewController: component.viewController)
-        component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
-                                                                           target: self,
-                                                                           action: #selector(cancelDidPress))
-        InstantComponent.presenter?.present(navigation, animated: true)
-    }
-
-    @objc private func cancelDidPress() {
-        currentComponent?.cancelIfNeeded()
-        sendEvent(event: .didFail, body: ComponentError.cancelled.toDictionary)
     }
 }
 

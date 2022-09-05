@@ -13,6 +13,7 @@ import React
 final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
+    private var currentPresenter: UIViewController?
 
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
@@ -26,16 +27,17 @@ final internal class AdyenDropIn: BaseModule {
             guard let self = self else { return }
             
             self.dropInComponent?.finalizeIfNeeded(with: success.boolValue)
-            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
+            self.currentPresenter?.dismiss(animated: true)
+            self.currentPresenter = nil
             self.dropInComponent = nil
         }
     }
 
     @objc
-    func open(_ jsonData: NSDictionary, configuration: NSDictionary) {
+    func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         let paymentMethods: PaymentMethods
         do {
-            paymentMethods = try parsePaymentMethods(jsonData: jsonData)
+            paymentMethods = try parsePaymentMethods(from: paymentMethodsDict)
         } catch {
             return assertionFailure("AdyenDropIn: \(error.localizedDescription)")
         }
@@ -67,8 +69,10 @@ final internal class AdyenDropIn: BaseModule {
         component.delegate = self
         dropInComponent = component
 
-        DispatchQueue.main.async {
-            UIApplication.shared.keyWindow?.rootViewController?.present(
+        DispatchQueue.main.async { [weak self] in
+            let presenter = Self.presenter
+            self?.currentPresenter = presenter
+            presenter?.present(
                 component.viewController,
                 animated: true,
                 completion: nil

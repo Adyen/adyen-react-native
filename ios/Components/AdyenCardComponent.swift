@@ -12,7 +12,6 @@ import UIKit
 @objc(AdyenCardComponent)
 final internal class AdyenCardComponent: BaseModule {
 
-    private var currentComponent: PresentableComponent?
     private var actionHandler: AdyenActionComponent?
 
     @objc
@@ -27,7 +26,7 @@ final internal class AdyenCardComponent: BaseModule {
             guard let self = self else { return }
             
             self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
-            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
+            Self.presenter?.dismiss(animated: true)
             self.actionHandler?.currentActionComponent?.cancelIfNeeded()
             self.actionHandler = nil
             self.currentComponent = nil
@@ -35,10 +34,10 @@ final internal class AdyenCardComponent: BaseModule {
     }
 
     @objc
-    func open(_ jsonData: NSDictionary, configuration: NSDictionary) {
+    func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         let paymentMethod: CardPaymentMethod
         do {
-            paymentMethod = try parsePaymentMethods(jsonData: jsonData, for: CardPaymentMethod.self)
+            paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: CardPaymentMethod.self)
         } catch {
             return assertionFailure("AdyenCardComponent: \(error.localizedDescription)")
         }
@@ -78,40 +77,10 @@ final internal class AdyenCardComponent: BaseModule {
 
 extension AdyenCardComponent: PresentationDelegate {
 
-    private static var presenter: UIViewController? { UIApplication.shared.keyWindow?.rootViewController }
-
     func present(component: PresentableComponent) {
         DispatchQueue.main.async { [weak self] in
             self?.present(component)
         }
-    }
-
-    private func present(_ component: PresentableComponent) {
-        if let paymentComponent = component as? PaymentComponent {
-            paymentComponent.delegate = self
-        }
-
-        if let actionComponent = component as? ActionComponent {
-            actionComponent.delegate = self
-        }
-
-        currentComponent = component
-        guard component.requiresModalPresentation else {
-            AdyenCardComponent.presenter?.present(component.viewController,
-                                                  animated: true)
-            return
-        }
-
-        let navigation = UINavigationController(rootViewController: component.viewController)
-        component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
-                                                                           target: self,
-                                                                           action: #selector(cancelDidPress))
-        AdyenCardComponent.presenter?.present(navigation, animated: true)
-    }
-
-    @objc private func cancelDidPress() {
-        currentComponent?.cancelIfNeeded()
-        sendEvent(event: .didFail, body: ComponentError.cancelled.toDictionary)
     }
 }
 
