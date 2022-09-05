@@ -27,7 +27,31 @@ export const fetchPayments = (data, configuration) => {
     ...data,
     ...parseConfig(configuration),
     ...serverConfiguration,
-    additionalData: { allow3DS2: true }
+    additionalData: { allow3DS2: true },
+    lineItems: [
+      {
+        quantity: "1",
+        amountExcludingTax: "331",
+        taxPercentage: "2100",
+        description: "Shoes",
+        id: "Item #1",
+        taxAmount: "69",
+        amountIncludingTax: "400",
+        productUrl: "URL_TO_PURCHASED_ITEM",
+        imageUrl: "URL_TO_PICTURE_OF_PURCHASED_ITEM"
+      },
+      {
+        quantity: "2",
+        amountExcludingTax: "248",
+        taxPercentage: "2100",
+        description: "Socks",
+        id: "Item #2",
+        taxAmount: "52",
+        amountIncludingTax: "300",
+        productUrl: "URL_TO_PURCHASED_ITEM",
+        imageUrl: "URL_TO_PICTURE_OF_PURCHASED_ITEM"
+      }
+    ]
   };
 
   return fetchFrom(environment.url + 'payments', body);

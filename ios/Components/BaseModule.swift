@@ -11,6 +11,7 @@ import Adyen
 internal class BaseModule: RCTEventEmitter {
     
     internal var currentComponent: PresentableComponent?
+    internal var currentPresenter: UIViewController?
     
     private enum Error: LocalizedError {
         case deserializationError
@@ -39,8 +40,9 @@ internal class BaseModule: RCTEventEmitter {
         }
 
         currentComponent = component
+        currentPresenter = UIViewController.topPresenter
         guard component.requiresModalPresentation else {
-            Self.presenter?.present(component.viewController,
+            currentPresenter?.present(component.viewController,
                                                 animated: true)
             return
         }
@@ -49,7 +51,7 @@ internal class BaseModule: RCTEventEmitter {
         component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
                                                                            target: self,
                                                                            action: #selector(cancelDidPress))
-        Self.presenter?.present(navigation, animated: true)
+        currentPresenter?.present(navigation, animated: true)
     }
 
     @objc private func cancelDidPress() {
@@ -58,9 +60,7 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     override open func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
-    
-    internal static var presenter: UIViewController? { UIViewController.topPresenter }
-    
+        
     internal func sendEvent(event: Events, body: Any!) {
         self.sendEvent(withName: event.rawValue, body: body)
     }

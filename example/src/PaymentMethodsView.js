@@ -28,7 +28,7 @@ const PaymentMethods = () => {
     Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
   const platformSpecificType =
     Platform.OS === 'ios' ? 'applepay' : 'googlepay';
-  const isAvailable = (type) => { 
+  const isAvailable = (type) => {
     if (!paymentMethods) { return false; }
     return paymentMethods.paymentMethods.find(x => x.type === type.toLowerCase()) != null
   };
@@ -64,10 +64,10 @@ const PaymentMethods = () => {
         }}
       />
       <Button
-        title="Open PayPal"
-        disabled={paymentMethods === null || !isAvailable('paypal')}
+        title="Open Klarna"
+        disabled={paymentMethods === null || !isAvailable('klarna')}
         onPress={() => {
-          start('paypal');
+          start('klarna');
         }}
       />
       <Button

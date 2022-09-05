@@ -26,7 +26,7 @@ final internal class AdyenCardComponent: BaseModule {
             guard let self = self else { return }
             
             self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
-            Self.presenter?.dismiss(animated: true)
+            self.currentPresenter?.dismiss(animated: true)
             self.actionHandler?.currentActionComponent?.cancelIfNeeded()
             self.actionHandler = nil
             self.currentComponent = nil

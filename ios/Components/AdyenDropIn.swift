@@ -13,7 +13,7 @@ import React
 final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
-    private var currentPresenter: UIViewController?
+    
 
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
@@ -70,7 +70,7 @@ final internal class AdyenDropIn: BaseModule {
         dropInComponent = component
 
         DispatchQueue.main.async { [weak self] in
-            let presenter = Self.presenter
+            let presenter = UIViewController.topPresenter
             self?.currentPresenter = presenter
             presenter?.present(
                 component.viewController,

@@ -31,6 +31,9 @@ final internal class InstantComponent: BaseModule {
             self.actionHandler?.currentActionComponent?.cancelIfNeeded()
             self.actionHandler = nil
             self.currentComponent = nil
+            
+            self.currentPresenter?.dismiss(animated: true)
+            self.currentPresenter = nil
             self.currentPaymentComponent = nil
         }
     }
