@@ -10,7 +10,7 @@ import React
 import UIKit
 
 @objc(AdyenCardComponent)
-internal class AdyenCardComponent: BaseModule {
+final internal class AdyenCardComponent: BaseModule {
 
     private var currentComponent: PresentableComponent?
     private var actionHandler: AdyenActionComponent?
@@ -23,21 +23,25 @@ internal class AdyenCardComponent: BaseModule {
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
             self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
             UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
-
+            self.actionHandler?.currentActionComponent?.cancelIfNeeded()
             self.actionHandler = nil
             self.currentComponent = nil
         }
     }
 
     @objc
-    func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []),
-              let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data),
-              let paymentMethod = paymentMethods.paymentMethod(ofType: CardPaymentMethod.self)
-        else { return }
+    func open(_ jsonData: NSDictionary, configuration: NSDictionary) {
+        let paymentMethod: CardPaymentMethod
+        do {
+            paymentMethod = try parsePaymentMethods(jsonData: jsonData, for: CardPaymentMethod.self)
+        } catch {
+            return assertionFailure("AdyenCardComponent: \(error.localizedDescription)")
+        }
 
         let parser = RootConfigurationParser(configuration: configuration)
         guard let clientKey = parser.clientKey else {
@@ -77,8 +81,8 @@ extension AdyenCardComponent: PresentationDelegate {
     private static var presenter: UIViewController? { UIApplication.shared.keyWindow?.rootViewController }
 
     func present(component: PresentableComponent) {
-        DispatchQueue.main.async {
-            self.present(component)
+        DispatchQueue.main.async { [weak self] in
+            self?.present(component)
         }
     }
 

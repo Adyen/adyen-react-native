@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenDropIn)
-internal class AdyenDropIn: BaseModule {
+final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
 
@@ -22,7 +22,9 @@ internal class AdyenDropIn: BaseModule {
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
             self.dropInComponent?.finalizeIfNeeded(with: success.boolValue)
             UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
             self.dropInComponent = nil
@@ -32,20 +34,10 @@ internal class AdyenDropIn: BaseModule {
     @objc
     func open(_ jsonData: NSDictionary, configuration: NSDictionary) {
         let paymentMethods: PaymentMethods
-        
-        guard let data = try? JSONSerialization.data(withJSONObject: jsonData, options: []) else {
-            return assertionFailure("AdyenDropIn: Can not deserialize paymentMethods.")
-        }
-        
-        if let jsonPaymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data) {
-            paymentMethods = jsonPaymentMethods
-        }
-        else if let jsonPaymentMethod = try? JSONDecoder().decode(AnyPaymentMethod.self, from: data),
-                let anyPaymentMethod = jsonPaymentMethod.value {
-            paymentMethods = PaymentMethods(regular: [anyPaymentMethod], stored: [])
-        }
-        else {
-            return assertionFailure("AdyenDropIn: Can not parse payment method.")
+        do {
+            paymentMethods = try parsePaymentMethods(jsonData: jsonData)
+        } catch {
+            return assertionFailure("AdyenDropIn: \(error.localizedDescription)")
         }
 
         let parser = RootConfigurationParser(configuration: configuration)

@@ -11,7 +11,7 @@ import PassKit
 import React
 
 @objc(AdyenInstant)
-internal class InstantComponent: BaseModule {
+final internal class InstantComponent: BaseModule {
     
     private var currentComponent: PresentableComponent?
     private var currentPaymentComponent: PaymentComponent?
@@ -25,10 +25,11 @@ internal class InstantComponent: BaseModule {
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async {[weak self] in
+            guard let self = self else { return }
+            
             self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
-            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
-
+            self.actionHandler?.currentActionComponent?.cancelIfNeeded()
             self.actionHandler = nil
             self.currentComponent = nil
             self.currentPaymentComponent = nil
@@ -37,21 +38,11 @@ internal class InstantComponent: BaseModule {
 
     @objc
     func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
-        let paymentMethod: PaymentMethod
-        guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []) else {
-            return assertionFailure("InstantComponent: Can not deserialize paymentMethods")
-        }
-        
-        if let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data),
-           let firstPaymentMethod = paymentMethods.regular.first {
-            paymentMethod = firstPaymentMethod
-        }
-        else if let jsonPaymentMethod = try? JSONDecoder().decode(AnyPaymentMethod.self, from: data),
-                let anyPaymentMethod = jsonPaymentMethod.value {
-            paymentMethod = anyPaymentMethod
-        }
-        else {
-            return assertionFailure("InstantComponent: Can not parse payment method.")
+        let paymentMethod: RedirectPaymentMethod
+        do {
+            paymentMethod = try parsePaymentMethods(jsonData: paymentMethods, for: RedirectPaymentMethod.self)
+        } catch {
+            return assertionFailure("InstantComponent: \(error.localizedDescription)")
         }
 
         let parser = RootConfigurationParser(configuration: configuration)
@@ -93,8 +84,8 @@ extension InstantComponent: PresentationDelegate {
     private static var presenter: UIViewController? { UIApplication.shared.keyWindow?.rootViewController }
 
     func present(component: PresentableComponent) {
-        DispatchQueue.main.async {
-            self.present(component)
+        DispatchQueue.main.async { [weak self] in
+            self?.present(component)
         }
     }
 
