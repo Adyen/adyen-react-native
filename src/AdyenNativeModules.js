@@ -1,5 +1,5 @@
 import { NativeModules } from 'react-native';
-import { find, nativeComponents } from './ComponentMap';
+import { find, NATIVE_COMPONENTS } from './ComponentMap';
 
 const UNKNOWN_PAYMENT_METHOD_ERROR = 
   'Unknown payment method or native module. \n\n' + 
@@ -49,7 +49,7 @@ export function getNativeComponent(name, paymentMethods) {
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + name);
   }
 
-  if (nativeComponents.includes(type)) {
+  if (NATIVE_COMPONENTS.includes(type)) {
     return { nativeComponent: AdyenDropIn, paymentMethod: paymentMethod };
   }
 
