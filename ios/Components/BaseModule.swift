@@ -42,8 +42,7 @@ internal class BaseModule: RCTEventEmitter {
         currentComponent = component
         currentPresenter = UIViewController.topPresenter
         guard component.requiresModalPresentation else {
-            currentPresenter?.present(component.viewController,
-                                                animated: true)
+            currentPresenter?.present(component.viewController, animated: true)
             return
         }
 
@@ -74,10 +73,6 @@ internal class BaseModule: RCTEventEmitter {
         
         if let jsonPaymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data) {
             paymentMethods = jsonPaymentMethods
-        }
-        else if let jsonPaymentMethod = try? JSONDecoder().decode(AnyPaymentMethod.self, from: data),
-                let anyPaymentMethod = jsonPaymentMethod.value {
-            paymentMethods = PaymentMethods(regular: [anyPaymentMethod], stored: [])
         }
         else {
             throw Error.parsingError
