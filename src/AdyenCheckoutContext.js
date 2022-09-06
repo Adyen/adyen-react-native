@@ -77,10 +77,17 @@ const AdyenCheckout = ({
   const start = useCallback(
     (nativeComponentName) => {
       removeEventListeners();
-      const nativeComponent = getNativeComponent(nativeComponentName);
+      const { nativeComponent, paymentMethod } = getNativeComponent(nativeComponentName, paymentMethods);
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       startEventListeners(eventEmitter, config, nativeComponent);
-      nativeComponent.open(paymentMethods, config);
+
+      if (paymentMethod) {
+        const singlePaymentMethods = { paymentMethods: [ paymentMethod ] }
+        const singlePaymentConfig = { ...config, dropin: { skipListWhenSinglePaymentMethod: true } }
+        nativeComponent.open(singlePaymentMethods, singlePaymentConfig);
+      } else { 
+        nativeComponent.open(paymentMethods, config);
+      }
     },
     [config, paymentMethods, startEventListeners, removeEventListeners]
   );

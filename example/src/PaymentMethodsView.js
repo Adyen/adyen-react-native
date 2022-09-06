@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useAdyenCheckout } from '@adyen/react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import {
@@ -18,43 +18,71 @@ const styles = StyleSheet.create({
 });
 
 const PaymentMethods = () => {
-  const { start, paymentMethods } = useAdyenCheckout();
+
+  const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
   const isDarkMode = useColorScheme() === 'dark';
   const contentBackgroundStyle = {
     backgroundColor: isDarkMode ? Colors.black : Colors.white,
   };
   const platformSpecificPayment =
     Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
+  const platformSpecificType =
+    Platform.OS === 'ios' ? 'applepay' : 'googlepay';
+
+  const isAvailable = useCallback(type => { 
+    return paymentMethodsResponse.paymentMethods.length > 0 && paymentMethodsResponse.paymentMethods.some(pm => pm.type === type.toLowerCase());
+  }, [paymentMethodsResponse]);
 
   return (
     <View style={[styles.contentView, contentBackgroundStyle]}>
       <Button
         title="Open DropIn"
-        disabled={paymentMethods === null}
+        disabled={paymentMethodsResponse === null}
         onPress={() => {
-          console.log('Paying with AdyenDropIn');
-          start('AdyenDropIn');
+          start('dropin');
         }}
       />
       <Button
         title="Open Card Component"
-        disabled={paymentMethods === null}
+        disabled={paymentMethodsResponse === null}
         onPress={() => {
-          console.log('Paying with AdyenCardComponent');
-          start('AdyenCardComponent');
+          start('scheme');
         }}
       />
       <Button
-        title="Open iDEAL (WIP)"
-        disabled
+        title="Open iDeal"
+        disabled={paymentMethodsResponse === null || !isAvailable('ideal')}
+        onPress={() => {
+          start('ideal');
+        }}
       />
       <Button
-        title="Open SEPA (WIP)"
-        disabled
+        title="Open SEPA"
+        disabled={paymentMethodsResponse === null || !isAvailable('sepaDirectDebit') }
+        onPress={() => {
+          start('sepaDirectDebit');
+        }}
+      />
+      <Button
+        title="Open Klarna"
+        disabled={paymentMethodsResponse === null || !isAvailable('klarna')}
+        onPress={() => {
+          start('klarna');
+        }}
+      />
+      <Button
+        title="Open Qiwi Wallet"
+        disabled={paymentMethodsResponse === null || !isAvailable('qiwiwallet') }
+        onPress={() => {
+          start('qiwiwallet');
+        }}
       />
       <Button
         title={'Open ' + platformSpecificPayment + ' (WIP)'}
-        disabled
+        disabled={paymentMethodsResponse === null || !isAvailable(platformSpecificType)}
+        onPress={() => {
+          start(platformSpecificType);
+        }}
       />
     </View>
   );

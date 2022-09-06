@@ -1,36 +1,25 @@
-/*
- * Copyright (c) 2021 Adyen N.V.
- *
- * This file is open source and available under the MIT license. See the LICENSE file for more info.
- */
 package com.adyenreactnativesdk.component
 
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.ReadableMap
-import com.adyenreactnativesdk.configuration.RootConfigurationParser
-import com.adyen.checkout.components.model.payments.Amount
-import com.adyenreactnativesdk.configuration.CardConfigurationParser
-import com.adyen.checkout.card.CardConfiguration
-import org.json.JSONException
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.DialogFragment
-import com.adyen.checkout.card.CardComponent
-import com.adyen.checkout.card.CardView
-import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.ActionComponentData
+import com.adyen.checkout.components.model.payments.Amount
+import com.adyen.checkout.components.model.payments.request.GenericPaymentMethod
+import com.adyen.checkout.components.model.payments.request.PaymentComponentData
+import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
 import com.adyenreactnativesdk.*
-import java.lang.Exception
-import java.lang.ref.WeakReference
+import com.adyenreactnativesdk.configuration.RootConfigurationParser
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
+import org.json.JSONException
 import java.util.*
 
-class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context),
+class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
+
     private var actionHandler: ActionHandler? = null
-    private var dialog: WeakReference<DialogFragment> = WeakReference(null)
 
     override fun getName(): String {
         return COMPONENT_NAME
@@ -38,16 +27,17 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
-        if (paymentMethods == null) {
+        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods
+        if (paymentMethods == null || paymentMethods.isEmpty()) {
             sendEvent(
                 DID_FAILED,
                 ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods")
             )
             return
         }
-        val paymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
-        if (paymentMethod == null) {
+        val paymentMethod = paymentMethods[0]
+        val type = paymentMethod.type
+        if (paymentMethod == null || type.isNullOrEmpty()) {
             sendEvent(
                 DID_FAILED,
                 ReactNativeError.mapError("${TAG}: can not parse payment methods")
@@ -59,12 +49,10 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         val environment: Environment
         val clientKey: String
         val shopperLocale: Locale
-        val amount: Amount?
         try {
             environment = config.environment
             clientKey = config.clientKey
             shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
-            amount = config.amount
         } catch (e: NoSuchFieldException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
             return
@@ -74,21 +62,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
             ActionHandlerConfiguration(shopperLocale, environment, clientKey)
         actionHandler = ActionHandler(this, actionHandlerConfiguration)
 
-        val parser = CardConfigurationParser(configuration)
-        val componentConfiguration: CardConfiguration
-        val builder = CardConfiguration.Builder(shopperLocale, environment, clientKey)
-        componentConfiguration = parser.getConfiguration(builder)
-
-        val theActivity = appCompatActivity
-        val viewModel = ComponentViewModel(paymentMethod, shopperLocale, amount)
-        viewModel.listener = this
-        theActivity.runOnUiThread {
-            showComponentView(
-                theActivity,
-                viewModel,
-                componentConfiguration
-            )
-        }
+        sendPayment(type)
     }
 
     @ReactMethod
@@ -104,33 +78,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
 
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
-        val dialogFragment = dialog.get() ?: return
-        Log.d(TAG, "Closing component")
-        dialogFragment.dismiss()
-    }
-
-    @ReactMethod
-    fun addListener(eventName: String?) {
-        // Set up any upstream listeners or background tasks as necessary
-    }
-
-    @ReactMethod
-    fun removeListeners(count: Int?) {
-        // Remove upstream listeners, stop unnecessary background tasks
-    }
-
-    private fun showComponentView(
-        theActivity: AppCompatActivity,
-        viewModel: ComponentViewModel,
-        configuration: CardConfiguration
-    ) {
-        val componentView = CardView(theActivity)
-        val component: CardComponent = CardComponent.PROVIDER
-            .get<AppCompatActivity>(theActivity, viewModel.paymentMethod, configuration)
-        val fragmentManager = theActivity.supportFragmentManager
-        val componentDialog = AdyenBottomSheetDialogFragment(viewModel, componentView, component)
-        componentDialog.show(fragmentManager, "Component")
-        dialog = WeakReference<DialogFragment>(componentDialog)
+        actionHandler?.hide()
     }
 
     override fun onError(error: Exception) {
@@ -142,7 +90,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: ReadableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            Log.d(TAG, "Paying")
+            Log.d(Companion.TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
@@ -168,8 +116,19 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     }
 
     companion object {
-        private const val PAYMENT_METHOD_KEY = "scheme"
-        private const val TAG = "CardComponent"
+        private const val TAG = "InstantComponent"
         private const val COMPONENT_NAME = "AdyenInstant"
     }
+
+    private fun sendPayment(type: String) {
+        val paymentComponentData = PaymentComponentData<PaymentMethodDetails>()
+        paymentComponentData.paymentMethod = GenericPaymentMethod(type)
+        val paymentComponentState = GenericPaymentComponentState(paymentComponentData,
+            isInputValid = true,
+            isReady = true
+        )
+        onSubmit(paymentComponentState.data)
+    }
+
 }
+

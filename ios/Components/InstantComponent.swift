@@ -4,16 +4,18 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
+
 import Adyen
 import Foundation
+import PassKit
 import React
-import UIKit
 
-@objc(AdyenCardComponent)
-final internal class AdyenCardComponent: BaseModule {
-
+@objc(AdyenInstant)
+final internal class InstantComponent: BaseModule {
+    
+    private var currentPaymentComponent: PaymentComponent?
     private var actionHandler: AdyenActionComponent?
-
+    
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() {}
@@ -22,29 +24,32 @@ final internal class AdyenCardComponent: BaseModule {
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
-        DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.async {[weak self] in
             guard let self = self else { return }
             
             self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
-            self.currentPresenter?.dismiss(animated: true)
             self.actionHandler?.currentActionComponent?.cancelIfNeeded()
             self.actionHandler = nil
             self.currentComponent = nil
+            
+            self.currentPresenter?.dismiss(animated: true)
+            self.currentPresenter = nil
+            self.currentPaymentComponent = nil
         }
     }
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        let paymentMethod: CardPaymentMethod
+        let paymentMethod: PaymentMethod
         do {
-            paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: CardPaymentMethod.self)
+            paymentMethod = try parseFirstPaymentMethod(from: paymentMethodsDict)
         } catch {
-            return assertionFailure("AdyenCardComponent: \(error.localizedDescription)")
+            return assertionFailure("InstantComponent: \(error.localizedDescription)")
         }
 
         let parser = RootConfigurationParser(configuration: configuration)
         guard let clientKey = parser.clientKey else {
-            return assertionFailure("AdyenCardComponent: No clientKey in configuration")
+            return assertionFailure("InstantComponent: No clientKey in configuration")
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
@@ -53,13 +58,14 @@ final internal class AdyenCardComponent: BaseModule {
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
 
-        let config = CardConfigurationParser(configuration: configuration).configuration
-        let component = CardComponent(paymentMethod: paymentMethod,
-                                      apiContext: apiContext,
-                                      configuration: config)
+        let component = InstantPaymentComponent(paymentMethod: paymentMethod, paymentData: nil, apiContext: apiContext)
         component.payment = parser.payment
-
-        present(component: component)
+        currentPaymentComponent = component
+        component.delegate = self
+        
+        DispatchQueue.main.async {
+            component.initiatePayment()
+        }
     }
 
     @objc
@@ -75,7 +81,7 @@ final internal class AdyenCardComponent: BaseModule {
 
 }
 
-extension AdyenCardComponent: PresentationDelegate {
+extension InstantComponent: PresentationDelegate {
 
     func present(component: PresentableComponent) {
         DispatchQueue.main.async { [weak self] in
@@ -84,7 +90,7 @@ extension AdyenCardComponent: PresentationDelegate {
     }
 }
 
-extension AdyenCardComponent: PaymentComponentDelegate {
+extension InstantComponent: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
         sendEvent(event: .didSubmit, body: data.jsonObject)
@@ -96,7 +102,7 @@ extension AdyenCardComponent: PaymentComponentDelegate {
 
 }
 
-extension AdyenCardComponent: ActionComponentDelegate {
+extension InstantComponent: ActionComponentDelegate {
 
     internal func didFail(with error: Error, from component: ActionComponent) {
         sendEvent(event: .didFail, body: error.toDictionary)

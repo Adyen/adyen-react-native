@@ -1,5 +1,5 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v4.7.1-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
+[![Adyen iOS](https://img.shields.io/badge/ios-v4.8.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
 [![Adyen Android](https://img.shields.io/badge/android-v4.7.1-brightgreen.svg)](https://github.com/Adyen/adyen-android)
 
 
