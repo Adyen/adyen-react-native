@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk
+package com.adyenreactnativesdk.component.instant
 
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails

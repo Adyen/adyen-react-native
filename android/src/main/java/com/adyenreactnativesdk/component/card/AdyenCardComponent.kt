@@ -3,7 +3,7 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
-package com.adyenreactnativesdk.component
+package com.adyenreactnativesdk.component.card
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -23,6 +23,12 @@ import com.adyen.checkout.components.ActionComponentData
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
 import com.adyenreactnativesdk.*
+import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.ui.ComponentViewModel
+import com.adyenreactnativesdk.ui.PaymentComponentListener
+import com.adyenreactnativesdk.ui.AdyenBottomSheetDialogFragment
+import com.adyenreactnativesdk.util.ReactNativeError
+import com.adyenreactnativesdk.util.ReactNativeJson
 import java.lang.Exception
 import java.lang.ref.WeakReference
 import java.util.*
@@ -42,7 +48,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         if (paymentMethods == null) {
             sendEvent(
                 DID_FAILED,
-                ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods")
+                ReactNativeError.mapError("$TAG: can not deserialize paymentMethods")
             )
             return
         }
@@ -50,7 +56,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         if (paymentMethod == null) {
             sendEvent(
                 DID_FAILED,
-                ReactNativeError.mapError("${TAG}: can not parse payment methods")
+                ReactNativeError.mapError("$TAG: can not parse payment methods")
             )
             return
         }
@@ -80,7 +86,11 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         componentConfiguration = parser.getConfiguration(builder)
 
         val theActivity = appCompatActivity
-        val viewModel = ComponentViewModel(paymentMethod, shopperLocale, amount)
+        val viewModel = ComponentViewModel(
+            paymentMethod,
+            shopperLocale,
+            amount
+        )
         viewModel.listener = this
         theActivity.runOnUiThread {
             showComponentView(
@@ -128,7 +138,12 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         val component: CardComponent = CardComponent.PROVIDER
             .get<AppCompatActivity>(theActivity, viewModel.paymentMethod, configuration)
         val fragmentManager = theActivity.supportFragmentManager
-        val componentDialog = AdyenBottomSheetDialogFragment(viewModel, componentView, component)
+        val componentDialog =
+            AdyenBottomSheetDialogFragment(
+                viewModel,
+                componentView,
+                component
+            )
         componentDialog.show(fragmentManager, "Component")
         dialog = WeakReference<DialogFragment>(componentDialog)
     }

@@ -1,15 +1,18 @@
-package com.adyenreactnativesdk.component
+package com.adyenreactnativesdk.component.instant
 
 import android.util.Log
 import com.adyen.checkout.components.ActionComponentData
-import com.adyen.checkout.components.model.payments.Amount
 import com.adyen.checkout.components.model.payments.request.GenericPaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
 import com.adyenreactnativesdk.*
+import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.ui.PaymentComponentListener
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
+import com.adyenreactnativesdk.util.ReactNativeError
+import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
@@ -31,7 +34,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         if (paymentMethods == null || paymentMethods.isEmpty()) {
             sendEvent(
                 DID_FAILED,
-                ReactNativeError.mapError("${TAG}: can not deserialize paymentMethods")
+                ReactNativeError.mapError("$TAG: can not deserialize paymentMethods")
             )
             return
         }
@@ -40,7 +43,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         if (paymentMethod == null || type.isNullOrEmpty()) {
             sendEvent(
                 DID_FAILED,
-                ReactNativeError.mapError("${TAG}: can not parse payment methods")
+                ReactNativeError.mapError("$TAG: can not parse payment methods")
             )
             return
         }
@@ -90,7 +93,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: ReadableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            Log.d(Companion.TAG, "Paying")
+            Log.d(TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))

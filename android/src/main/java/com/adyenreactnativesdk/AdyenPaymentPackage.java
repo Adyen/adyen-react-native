@@ -6,9 +6,9 @@
 
 package com.adyenreactnativesdk;
 
-import com.adyenreactnativesdk.component.AdyenCardComponent;
-import com.adyenreactnativesdk.component.AdyenDropInComponent;
-import com.adyenreactnativesdk.component.AdyenInstantComponent;
+import com.adyenreactnativesdk.component.card.AdyenCardComponent;
+import com.adyenreactnativesdk.component.dropin.AdyenDropInComponent;
+import com.adyenreactnativesdk.component.instant.AdyenInstantComponent;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;

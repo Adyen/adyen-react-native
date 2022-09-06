@@ -10,8 +10,8 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.checkout.components.model.PaymentMethodsApiResponse
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
-import com.adyenreactnativesdk.ReactNativeError
-import com.adyenreactnativesdk.ReactNativeJson
+import com.adyenreactnativesdk.util.ReactNativeError
+import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReadableMap
