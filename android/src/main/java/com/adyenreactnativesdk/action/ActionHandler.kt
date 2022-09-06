@@ -39,6 +39,7 @@ import com.adyen.checkout.voucher.VoucherConfiguration
 import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
+import com.adyenreactnativesdk.action.ActionComponentDialogFragment
 import java.lang.ref.WeakReference
 import java.util.*
 

@@ -9,7 +9,7 @@ import android.util.Log
 import com.facebook.react.bridge.ReadableMap
 import com.adyen.checkout.components.model.payments.Amount
 import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.ReactNativeJson
+import com.adyenreactnativesdk.util.ReactNativeJson
 import java.util.*
 
 class RootConfigurationParser(private val config: ReadableMap) {

@@ -4,14 +4,13 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk;
+package com.adyenreactnativesdk.ui;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod;
 import com.adyen.checkout.components.model.payments.Amount;
-import com.adyen.checkout.components.model.payments.request.PaymentComponentData;
 
 import java.util.Locale;
 

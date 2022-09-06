@@ -3,21 +3,19 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
-package com.adyenreactnativesdk.component
+package com.adyenreactnativesdk.component.dropin
 
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.facebook.react.bridge.ReactApplicationContext
-import com.adyenreactnativesdk.DropInServiceProxy.DropInServiceListener
+import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInServiceListener
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
-import com.adyenreactnativesdk.ReactNativeError
-import com.adyenreactnativesdk.AdyenDropInService
+import com.adyenreactnativesdk.util.ReactNativeError
 import android.content.Intent
-import com.adyenreactnativesdk.DropInServiceProxy
 import org.json.JSONObject
-import com.adyenreactnativesdk.ReactNativeJson
+import com.adyenreactnativesdk.util.ReactNativeJson
 import org.json.JSONException
 import com.facebook.react.bridge.WritableMap
 import com.adyen.checkout.redirect.RedirectComponent
@@ -30,6 +28,7 @@ import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.core.api.Environment
+import com.adyenreactnativesdk.component.BaseModule
 import java.lang.IllegalStateException
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),

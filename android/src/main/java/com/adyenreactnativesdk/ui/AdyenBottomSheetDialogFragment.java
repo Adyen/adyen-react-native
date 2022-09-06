@@ -4,7 +4,7 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk;
+package com.adyenreactnativesdk.ui;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -31,6 +31,7 @@ import com.adyen.checkout.components.util.CurrencyUtils;
 import com.adyen.checkout.dropin.databinding.FragmentGenericComponentBinding;
 import com.adyen.checkout.dropin.ui.viewmodel.ComponentDialogViewModel;
 import com.adyen.checkout.dropin.ui.viewmodel.ComponentFragmentState;
+import com.adyenreactnativesdk.R;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
