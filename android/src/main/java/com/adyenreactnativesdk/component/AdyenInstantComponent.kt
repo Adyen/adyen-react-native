@@ -122,7 +122,10 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     private fun sendPayment(type: String) {
         val paymentComponentData = PaymentComponentData<PaymentMethodDetails>()
         paymentComponentData.paymentMethod = GenericPaymentMethod(type)
-        val paymentComponentState = GenericPaymentComponentState(paymentComponentData, true, true)
+        val paymentComponentState = GenericPaymentComponentState(paymentComponentData,
+            isInputValid = true,
+            isReady = true
+        )
         onSubmit(paymentComponentState.data)
     }
 
