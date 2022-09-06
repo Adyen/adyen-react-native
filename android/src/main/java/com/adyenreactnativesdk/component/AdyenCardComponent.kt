@@ -33,7 +33,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     private var dialog: WeakReference<DialogFragment> = WeakReference(null)
 
     override fun getName(): String {
-        return "AdyenCardComponent"
+        return COMPONENT_NAME
     }
 
     @ReactMethod
@@ -170,5 +170,6 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     companion object {
         private const val PAYMENT_METHOD_KEY = "scheme"
         private const val TAG = "CardComponent"
+        private const val COMPONENT_NAME = "AdyenInstant"
     }
 }

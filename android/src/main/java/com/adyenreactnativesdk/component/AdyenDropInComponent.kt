@@ -36,7 +36,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     DropInServiceListener {
     
     override fun getName(): String {
-        return "AdyenDropIn"
+        return COMPONENT_NAME
     }
 
     @ReactMethod
@@ -203,5 +203,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
     companion object {
         private const val TAG = "DropInComponent"
+        private const val COMPONENT_NAME = "AdyenDropIn"
     }
 }

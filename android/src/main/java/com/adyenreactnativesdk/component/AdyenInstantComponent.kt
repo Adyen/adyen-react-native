@@ -22,7 +22,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     private var actionHandler: ActionHandler? = null
 
     override fun getName(): String {
-        return "AdyenInstant"
+        return COMPONENT_NAME
     }
 
     @ReactMethod
@@ -117,6 +117,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
 
     companion object {
         private const val TAG = "InstantComponent"
+        private const val COMPONENT_NAME = "AdyenInstant"
     }
 
     private fun sendPayment(type: String) {
