@@ -82,6 +82,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         actionHandler?.hide()
+        actionHandler = null
     }
 
     override fun onError(error: Exception) {
@@ -118,20 +119,20 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         sendEvent(DID_COMPLETE, null)
     }
 
-    companion object {
-        private const val TAG = "InstantComponent"
-        private const val COMPONENT_NAME = "AdyenInstant"
-    }
-
     private fun sendPayment(type: String) {
         val paymentComponentData = PaymentComponentData<PaymentMethodDetails>()
         paymentComponentData.paymentMethod = GenericPaymentMethod(type)
-        val paymentComponentState = GenericPaymentComponentState(paymentComponentData,
+        val paymentComponentState = GenericPaymentComponentState(
+            paymentComponentData,
             isInputValid = true,
             isReady = true
         )
         onSubmit(paymentComponentState.data)
     }
 
+    companion object {
+        private const val TAG = "InstantComponent"
+        private const val COMPONENT_NAME = "AdyenInstant"
+    }
 }
 

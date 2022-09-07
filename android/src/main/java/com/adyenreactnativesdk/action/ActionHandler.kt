@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk
 
 import android.content.Context
+import android.content.Intent
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
@@ -15,14 +16,8 @@ import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.await.AwaitComponent
 import com.adyen.checkout.await.AwaitConfiguration
 import com.adyen.checkout.await.AwaitView
-import com.adyen.checkout.components.ActionComponentData
-import com.adyen.checkout.components.ActionComponentProvider
-import com.adyen.checkout.components.ComponentView
-import com.adyen.checkout.components.ViewableComponent
-import com.adyen.checkout.components.base.BaseActionComponent
-import com.adyen.checkout.components.base.BaseConfigurationBuilder
-import com.adyen.checkout.components.base.Configuration
-import com.adyen.checkout.components.base.OutputData
+import com.adyen.checkout.components.*
+import com.adyen.checkout.components.base.*
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.components.util.ActionTypes
 import com.adyen.checkout.core.api.Environment
@@ -57,7 +52,7 @@ interface ActionHandlingInterface {
     fun onFinish()
 }
 
-class ActionHandler(
+sealed class ActionHandler(
     private val callback: ActionHandlingInterface,
     private val configuration: ActionHandlerConfiguration
 ) : Observer<ActionComponentData> {
@@ -121,9 +116,14 @@ class ActionHandler(
 
     companion object {
         private val TAG = LogUtil.getTag()
+        private var intentHandlingComponent: WeakReference<IntentHandlingComponent> = WeakReference(null)
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
 
-        internal inline fun <reified T : Configuration> getDefaultConfigForAction(
+        fun handle(intent: Intent) {
+            intentHandlingComponent.get()?.handleIntent(intent)
+        }
+
+        private inline fun <reified T : Configuration> getDefaultConfigForAction(
             configuration: ActionHandlerConfiguration
         ): T {
             val shopperLocale = configuration.shopperLocale
@@ -186,7 +186,7 @@ class ActionHandler(
             provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
             configuration: ActionHandlerConfiguration
         ): BaseActionComponent<out Configuration> {
-            return when (provider) {
+            val actionComponent = when (provider) {
                 RedirectComponent.PROVIDER -> {
                     RedirectComponent.PROVIDER.get(
                         activity,
@@ -226,6 +226,11 @@ class ActionHandler(
                     throw CheckoutException("Unable to find component for provider - $provider")
                 }
             }
+
+            if (actionComponent is IntentHandlingComponent)
+                intentHandlingComponent = WeakReference(actionComponent)
+
+            return actionComponent
         }
 
         internal fun getViewFor(
