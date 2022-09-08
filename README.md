@@ -44,12 +44,47 @@ Add `@adyen/react-native` to your react-native project.
 
 #### Android integration
 
+##### For Drop-In
+
 1. Add `AdyenDropInService` to manifest:
 
 ```xml
 <service
   android:name="com.adyenreactnativesdk.AdyenDropInService"
   android:permission="android.permission.BIND_JOB_SERVICE"/>
+```
+
+##### For standalone components
+
+1. [Provide `rootProject.ext.adyenRectNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
+To do so, add folowing to your **App's build.gradle** `defaultConfig`
+
+```groovy
+defaultConfig {
+    ...
+    manifestPlaceholders = [redirectScheme: rootProject.ext.adyenRectNativeRedirectScheme]
+}
+```
+
+2. Add `intent-filter` to your Checkout activity:
+
+```xml
+<intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:host="${applicationId}" android:scheme="${redirectScheme}" />
+</intent-filter>
+```
+
+3. Add return URL handler to your Checkout activity `onNewIntent`:
+
+```java
+@Override
+public void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    ActionHandler.Companion.handle(intent);
+}
 ```
 
 ## Usage
@@ -86,7 +121,7 @@ const MyChekoutView = () => {
   return (
       <Button
         title="Open DropIn"
-        onPress={() => { start('AdyenDropIn'); }} />
+        onPress={() => { start('dropIn'); }} />
       );
 };
 ```
@@ -124,7 +159,7 @@ import {
       {({ start }) => (
         <Button
           title="Open DropIn"
-          onPress={() => { start('AdyenDropIn'); }}
+          onPress={() => { start('dropIn'); }}
         />
       )}
     </AdyenCheckoutContext.Consumer>
@@ -156,7 +191,6 @@ const { AdyenDropIn } = NativeModules;
 Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions, use `nativeComponent.handle(action)` from  `onSubmit` callback.
 
 ```javascript
-
 const handleSubmit = (payload, nativeComponent) => {
   server.makePayment(payload)
     .then((result) => {

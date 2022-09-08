@@ -118,6 +118,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         val dialogFragment = dialog.get() ?: return
         Log.d(TAG, "Closing component")
         dialogFragment.dismiss()
+        actionHandler = null
     }
 
     @ReactMethod
@@ -158,7 +159,7 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            map.putString ("returnUrl", ActionHandler.getReturnUrl(reactApplicationContext))
+            map.putString("returnUrl", ActionHandler.getReturnUrl(reactApplicationContext))
             Log.d(TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
