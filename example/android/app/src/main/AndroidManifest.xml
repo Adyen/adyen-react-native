@@ -16,14 +16,21 @@
         android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
         android:launchMode="singleTask"
         android:windowSoftInputMode="adjustResize">
-        <intent-filter>
+          <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
+          </intent-filter>
+          <intent-filter>
+              <action android:name="android.intent.action.VIEW"/>
+              <category android:name="android.intent.category.DEFAULT"/>
+              <category android:name="android.intent.category.BROWSABLE"/>
+              <data android:host="${applicationId}"
+                    android:scheme="${redirectScheme}"/>
+          </intent-filter>
       </activity>
 
       <service
-        android:name="com.adyenreactnativesdk.AdyenDropInService"
+        android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService"
         android:permission="android.permission.BIND_JOB_SERVICE"/>
     </application>
 </manifest>

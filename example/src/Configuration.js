@@ -13,8 +13,8 @@ export const defaultConfiguration = {
     currency: 'EUR',
     value: 1000 // The amount value in minor units.
   },
-  returnUrl: 'myapp://',
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
+  returnUrl: 'myapp://', // Only used for iOS
   shopperLocale: 'en-US',
   dropin: {
     skipListWhenSinglePaymentMethod: true,

@@ -29,6 +29,7 @@ import com.adyenreactnativesdk.ui.PaymentComponentListener
 import com.adyenreactnativesdk.ui.AdyenBottomSheetDialogFragment
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.WritableMap
 import java.lang.Exception
 import java.lang.ref.WeakReference
 import java.util.*
@@ -156,7 +157,8 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     override fun onSubmit(data: PaymentComponentData<*>) {
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
-            val map: ReadableMap = ReactNativeJson.convertJsonToMap(jsonObject)
+            val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
+            map.putString ("returnUrl", ActionHandler.getReturnUrl(reactApplicationContext))
             Log.d(TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
@@ -185,6 +187,6 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
     companion object {
         private const val PAYMENT_METHOD_KEY = "scheme"
         private const val TAG = "CardComponent"
-        private const val COMPONENT_NAME = "AdyenInstant"
+        private const val COMPONENT_NAME = "AdyenCardComponent"
     }
 }

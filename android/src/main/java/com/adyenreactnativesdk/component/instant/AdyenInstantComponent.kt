@@ -7,6 +7,7 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
+import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.*
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.ui.PaymentComponentListener
@@ -16,6 +17,7 @@ import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import org.json.JSONException
 import java.util.*
 
@@ -82,6 +84,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         actionHandler?.hide()
+        actionHandler = null
     }
 
     override fun onError(error: Exception) {
@@ -92,7 +95,8 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     override fun onSubmit(data: PaymentComponentData<*>) {
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
-            val map: ReadableMap = ReactNativeJson.convertJsonToMap(jsonObject)
+            val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
+            map.putString ("returnUrl", ActionHandler.getReturnUrl(reactApplicationContext))
             Log.d(TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
@@ -118,20 +122,20 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         sendEvent(DID_COMPLETE, null)
     }
 
-    companion object {
-        private const val TAG = "InstantComponent"
-        private const val COMPONENT_NAME = "AdyenInstant"
-    }
-
     private fun sendPayment(type: String) {
         val paymentComponentData = PaymentComponentData<PaymentMethodDetails>()
         paymentComponentData.paymentMethod = GenericPaymentMethod(type)
-        val paymentComponentState = GenericPaymentComponentState(paymentComponentData,
+        val paymentComponentState = GenericPaymentComponentState(
+            paymentComponentData,
             isInputValid = true,
             isReady = true
         )
         onSubmit(paymentComponentState.data)
     }
 
+    companion object {
+        private const val TAG = "InstantComponent"
+        private const val COMPONENT_NAME = "AdyenInstant"
+    }
 }
 
