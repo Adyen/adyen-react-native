@@ -3,6 +3,9 @@ def safeExtGet(prop, fallback) {
 }
 
 buildscript {
+
+      rootProject.ext.adyenRectNativeRedirectScheme = "adyenreactnative"
+
       repositories {
           google()
           jcenter()
@@ -24,7 +27,7 @@ android {
         targetSdkVersion safeExtGet('targetSdkVersion', 30)
         versionCode 1
         versionName "1.0"
-
+        buildConfigField "String", "adyenRectNativeRedirectScheme", "\"$rootProject.ext.adyenRectNativeRedirectScheme\""
     }
 
     buildTypes {

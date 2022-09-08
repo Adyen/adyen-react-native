@@ -16,7 +16,10 @@ import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.await.AwaitComponent
 import com.adyen.checkout.await.AwaitConfiguration
 import com.adyen.checkout.await.AwaitView
-import com.adyen.checkout.components.*
+import com.adyen.checkout.components.ActionComponentData
+import com.adyen.checkout.components.ActionComponentProvider
+import com.adyen.checkout.components.ComponentView
+import com.adyen.checkout.components.ViewableComponent
 import com.adyen.checkout.components.base.*
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.components.util.ActionTypes
@@ -52,7 +55,7 @@ interface ActionHandlingInterface {
     fun onFinish()
 }
 
-sealed class ActionHandler(
+class ActionHandler(
     private val callback: ActionHandlingInterface,
     private val configuration: ActionHandlerConfiguration
 ) : Observer<ActionComponentData> {
@@ -118,9 +121,16 @@ sealed class ActionHandler(
         private val TAG = LogUtil.getTag()
         private var intentHandlingComponent: WeakReference<IntentHandlingComponent> = WeakReference(null)
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
+        private const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
+
+        fun getReturnUrl(context: Context): String {
+            return REDIRECT_RESULT_SCHEME + context.packageName
+        }
 
         fun handle(intent: Intent) {
-            intentHandlingComponent.get()?.handleIntent(intent)
+            val data = intent.data
+            if (data != null && data.toString().startsWith(REDIRECT_RESULT_SCHEME))
+                intentHandlingComponent.get()?.handleIntent(intent)
         }
 
         private inline fun <reified T : Configuration> getDefaultConfigForAction(

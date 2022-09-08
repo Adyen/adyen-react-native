@@ -1,6 +1,7 @@
 package com.adyenexample;
 
 import android.content.Intent;
+import android.net.Uri;
 
 import com.adyenreactnativesdk.ActionHandler;
 import com.facebook.react.ReactActivity;
