@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import { fetchPaymentMethods } from './APIClient';
-import { defaultConfiguration } from './Configuration';
+import { DEFAULT_CONFIGURATION } from './Configuration';
 
 export const PaymentMethodsContext = React.createContext();
 
 class PaymentMethodsProvider extends Component {
   state = {
-    config: defaultConfiguration,
+    config: DEFAULT_CONFIGURATION,
     paymentMethods: null,
   };
 
