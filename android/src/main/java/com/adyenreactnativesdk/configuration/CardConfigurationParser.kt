@@ -75,12 +75,12 @@ class CardConfigurationParser(config: ReadableMap) {
     private val hideCvcStoredCard: Boolean
         get() = if (config.hasKey(HIDE_CVC_STORED_CARD_KEY)) {
             config.getBoolean(HIDE_CVC_STORED_CARD_KEY)
-        } else true
+        } else false
 
     private val hideCvc: Boolean
         get() = if (config.hasKey(HIDE_CVC_KEY)) {
             config.getBoolean(HIDE_CVC_KEY)
-        } else true
+        } else false
 
     private val kcpVisibility: KCPAuthVisibility
         get() {
