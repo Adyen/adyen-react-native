@@ -20,7 +20,6 @@ export const fetchPaymentMethods = (configuration) => {
     ...serverConfiguration
   };
 
-  console.log(serverConfiguration.shopperLocale)
   return fetchFrom(environment.url + 'paymentMethods', body);
 };
 
