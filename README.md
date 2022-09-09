@@ -101,7 +101,7 @@ const configuration = {
   amount: { currency: 'EUR', value: 1000 },
   reference: 'React Native', // The reference to uniquely identify a payment. Can be send from your backend
   shopperReference: 'Checkout Shopper', // Your reference to uniquely identify this shopper
-  returnUrl: 'myapp://', // Custom URL scheme of your app. This value is overridden for Android DropIn. Can be send from your backend
+  returnUrl: 'myapp://', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
   shopperLocale: 'en-US'
 };
 ```
