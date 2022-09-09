@@ -119,11 +119,12 @@ class ActionHandler(
 
     companion object {
         private val TAG = LogUtil.getTag()
-        private var intentHandlingComponent: WeakReference<IntentHandlingComponent> = WeakReference(null)
+        private var intentHandlingComponent: WeakReference<IntentHandlingComponent> =
+            WeakReference(null)
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
-        private const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
+        const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
 
-        fun getReturnUrl(context: Context): String {
+        internal fun getReturnUrl(context: Context): String {
             return REDIRECT_RESULT_SCHEME + context.packageName
         }
 
