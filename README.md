@@ -49,9 +49,7 @@ Add `@adyen/react-native` to your react-native project.
 1. Add `AdyenDropInService` to manifest:
 
 ```xml
-<service
-  android:name="com.adyenreactnativesdk.AdyenDropInService"
-  android:permission="android.permission.BIND_JOB_SERVICE"/>
+<service android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService" />
 ```
 
 ##### For standalone components

@@ -32,8 +32,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService" />
     </application>
 </manifest>
