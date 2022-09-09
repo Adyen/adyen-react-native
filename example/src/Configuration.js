@@ -1,11 +1,17 @@
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 
-export const channel = Platform.select({
+export const DEVICE_LOCALE =
+      (Platform.OS === 'ios'
+        ? NativeModules.SettingsManager.settings.AppleLocale ||
+          NativeModules.SettingsManager.settings.AppleLanguages[0] //iOS 13
+        : NativeModules.I18nManager.localeIdentifier).replace('_', '-')
+
+export const CHANNEL = Platform.select({
   ios: () => 'iOS',
   android: () => 'Android',
 })();
 
-export const defaultConfiguration = {
+export const DEFAULT_CONFIGURATION = {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
@@ -15,7 +21,6 @@ export const defaultConfiguration = {
   },
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   returnUrl: 'myapp://', // Only used for iOS
-  shopperLocale: 'en-US',
   dropin: {
     skipListWhenSinglePaymentMethod: true,
     // showPreselectedStoredPaymentMethod: false
@@ -38,7 +43,7 @@ export const defaultConfiguration = {
   }
 };
 
-export const environment = {
+export const ENVIRONMENT = {
   apiKey:
     '{YOUR_DEMO_SERVER_API_KEY}',
   url: 'https://checkout-test.adyen.com/v67/',

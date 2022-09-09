@@ -1,9 +1,10 @@
-import { environment, channel } from './Configuration';
+import { ENVIRONMENT, CHANNEL, DEVICE_LOCALE } from './Configuration';
 
 const serverConfiguration = {
-  channel: channel,
+  channel: CHANNEL,
   shopperReference: 'Checkout Shopper',
-  reference: 'React Native'
+  reference: 'React Native',
+  shopperLocale: DEVICE_LOCALE
 };
 
 const parseConfig = ({ merchantAccount, countryCode, shopperLocale, amount }) => ({
@@ -19,7 +20,7 @@ export const fetchPaymentMethods = (configuration) => {
     ...serverConfiguration
   };
 
-  return fetchFrom(environment.url + 'paymentMethods', body);
+  return fetchFrom(ENVIRONMENT.url + 'paymentMethods', body);
 };
 
 export const fetchPayments = (data, configuration) => {
@@ -54,11 +55,11 @@ export const fetchPayments = (data, configuration) => {
     ]
   };
 
-  return fetchFrom(environment.url + 'payments', body);
+  return fetchFrom(ENVIRONMENT.url + 'payments', body);
 };
 
 export const fetchPaymentDetails = (data) => {
-  return fetchFrom(environment.url + 'payments/details', data);
+  return fetchFrom(ENVIRONMENT.url + 'payments/details', data);
 };
 
 export const isSuccess = (result) => {
@@ -71,7 +72,7 @@ const fetchFrom = (url, body) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': environment.apiKey,
+      'X-API-Key': ENVIRONMENT.apiKey,
     },
     body: JSON.stringify(body),
   });
