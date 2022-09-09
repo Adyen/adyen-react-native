@@ -1,4 +1,10 @@
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
+
+export const deviceLocale =
+      (Platform.OS === 'ios'
+        ? NativeModules.SettingsManager.settings.AppleLocale ||
+          NativeModules.SettingsManager.settings.AppleLanguages[0] //iOS 13
+        : NativeModules.I18nManager.localeIdentifier).replace('_', '-')
 
 export const channel = Platform.select({
   ios: () => 'iOS',
@@ -15,7 +21,6 @@ export const defaultConfiguration = {
   },
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   returnUrl: 'myapp://', // Only used for iOS
-  shopperLocale: 'en-US',
   dropin: {
     skipListWhenSinglePaymentMethod: true,
     // showPreselectedStoredPaymentMethod: false

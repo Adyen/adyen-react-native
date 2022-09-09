@@ -1,9 +1,10 @@
-import { environment, channel } from './Configuration';
+import { environment, channel, deviceLocale } from './Configuration';
 
 const serverConfiguration = {
   channel: channel,
   shopperReference: 'Checkout Shopper',
-  reference: 'React Native'
+  reference: 'React Native',
+  shopperLocale: deviceLocale,
 };
 
 const parseConfig = ({ merchantAccount, countryCode, shopperLocale, amount }) => ({
@@ -19,6 +20,7 @@ export const fetchPaymentMethods = (configuration) => {
     ...serverConfiguration
   };
 
+  console.log(serverConfiguration.shopperLocale)
   return fetchFrom(environment.url + 'paymentMethods', body);
 };
 
