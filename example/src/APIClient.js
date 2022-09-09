@@ -4,7 +4,7 @@ const serverConfiguration = {
   channel: channel,
   shopperReference: 'Checkout Shopper',
   reference: 'React Native',
-  shopperLocale: deviceLocale,
+  shopperLocale: deviceLocale
 };
 
 const parseConfig = ({ merchantAccount, countryCode, shopperLocale, amount }) => ({
