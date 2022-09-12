@@ -1,28 +1,29 @@
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 
-const channel = Platform.select({
+export const DEVICE_LOCALE =
+      (Platform.OS === 'ios'
+        ? NativeModules.SettingsManager.settings.AppleLocale ||
+          NativeModules.SettingsManager.settings.AppleLanguages[0] //iOS 13
+        : NativeModules.I18nManager.localeIdentifier).replace('_', '-')
+
+export const CHANNEL = Platform.select({
   ios: () => 'iOS',
   android: () => 'Android',
 })();
 
-export const defaultConfiguration = {
+export const DEFAULT_CONFIGURATION = {
   environment: 'test',
-  channel: channel,
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: {
     currency: 'EUR',
-    value: 1000 // The amount information for the transaction (in minor units). For BIN or card verification requests, set amount to 0 (zero).
+    value: 1000 // The amount value in minor units.
   },
-  reference: 'React Native',
-  returnUrl: 'myapp://',
-  shopperReference: 'Checkout Shopper',
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
-  shopperLocale: 'en-US',
-  additionalData: { allow3DS2: true },
+  returnUrl: 'myapp://', // Only used for iOS
   dropin: {
     skipListWhenSinglePaymentMethod: true,
-    showPreselectedStoredPaymentMethod: false
+    // showPreselectedStoredPaymentMethod: false
   },
   card: {
     holderNameRequired: true,
@@ -36,14 +37,13 @@ export const defaultConfiguration = {
     // merchantName: 'MY_MERCHANT'
   },
   googlepay: {
-
   },
   style: {
     // TODO: add styling
   }
 };
 
-export const environment = {
+export const ENVIRONMENT = {
   apiKey:
     '{YOUR_DEMO_SERVER_API_KEY}',
   url: 'https://checkout-test.adyen.com/v67/',

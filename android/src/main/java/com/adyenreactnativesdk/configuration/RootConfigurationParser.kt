@@ -9,7 +9,7 @@ import android.util.Log
 import com.facebook.react.bridge.ReadableMap
 import com.adyen.checkout.components.model.payments.Amount
 import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.ReactNativeJson
+import com.adyenreactnativesdk.util.ReactNativeJson
 import java.util.*
 
 class RootConfigurationParser(private val config: ReadableMap) {
@@ -21,7 +21,6 @@ class RootConfigurationParser(private val config: ReadableMap) {
         const val COUNTRY_CODE_KEY = "countryCode"
         const val ENVIRONMENT_KEY = "environment"
         const val SHOPPER_LOCALE_KEY = "shopperLocale"
-        const val SHOPPER_REFERENCE_KEY = "shopperReference"
     }
 
     val amount: Amount?
@@ -31,7 +30,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 return null
             }
             val map = config.getMap(AMOUNT_KEY)
-            var jsonObject = try {
+            val jsonObject = try {
                 ReactNativeJson.convertMapToJson(map)
             } catch (e: Throwable) {
                 Log.w(TAG, "Amount" + map.toString() + " not valid", e)
@@ -54,15 +53,10 @@ class RootConfigurationParser(private val config: ReadableMap) {
             config.getString(COUNTRY_CODE_KEY)
         } else null
 
-    val shopperReference: String?
-        get() = if (config.hasKey(SHOPPER_REFERENCE_KEY)) {
-            config.getString(SHOPPER_REFERENCE_KEY)
-        } else null
-
-    val locale: Locale
-        @Throws(NoSuchFieldException::class) get() {
+    val locale: Locale?
+        get() {
             if (!config.hasKey(SHOPPER_LOCALE_KEY)) {
-                throw NoSuchFieldException("No $SHOPPER_LOCALE_KEY")
+                return null
             }
             return Locale.forLanguageTag(config.getString(SHOPPER_LOCALE_KEY)!!)
         }
@@ -73,7 +67,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 throw NoSuchFieldException("No $ENVIRONMENT_KEY")
             }
             val environment = config.getString(ENVIRONMENT_KEY)!!
-            return when (environment.lowercase()) {
+            return when (environment.toLowerCase(Locale.ROOT)) {
                 "live-au" -> Environment.AUSTRALIA
                 "live", "live-eu" -> Environment.EUROPE
                 "live-us" -> Environment.UNITED_STATES

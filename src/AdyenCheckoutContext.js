@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, createContext } from 'react';
+import React, { useRef, useCallback, createContext, useEffect } from 'react';
 import {
   PAYMENT_SUBMIT_EVENT,
   PAYMENT_PROVIDE_DETAILS_EVENT,
@@ -6,7 +6,7 @@ import {
   PAYMENT_FAILED_EVENT,
 } from './AdyenCheckoutEvents';
 import { getNativeComponent } from './AdyenNativeModules';
-import { NativeEventEmitter, Platform } from 'react-native';
+import { NativeEventEmitter } from 'react-native';
 
 const AdyenCheckoutContext = createContext({
   start: () => {},
@@ -14,7 +14,7 @@ const AdyenCheckoutContext = createContext({
   paymentMethods: {},
 });
 
-const AdyenPaymentProvider = ({
+const AdyenCheckout = ({
   config,
   paymentMethods,
   onSubmit,
@@ -30,17 +30,8 @@ const AdyenPaymentProvider = ({
 
   const submitPayment = useCallback(
     (configuration, data, nativeComponent) => {
-      let channel = Platform.OS === 'ios' ? 'iOS' : 'Android'
       const payload = {
         ...data,
-        shopperLocale: configuration.shopperLocale,
-        channel: channel,
-        amount: configuration.amount,
-        reference: configuration.reference,
-        shopperReference: configuration.shopperReference,
-        countryCode: configuration.countryCode,
-        merchantAccount: configuration.merchantAccount,
-        additionalData: configuration.additionalData,
         returnUrl: data.returnUrl ?? configuration.returnUrl,
       };
       onSubmit(payload, nativeComponent);
@@ -86,10 +77,17 @@ const AdyenPaymentProvider = ({
   const start = useCallback(
     (nativeComponentName) => {
       removeEventListeners();
-      const nativeComponent = getNativeComponent(nativeComponentName);
+      const { nativeComponent, paymentMethod } = getNativeComponent(nativeComponentName, paymentMethods);
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       startEventListeners(eventEmitter, config, nativeComponent);
-      nativeComponent.open(paymentMethods, config);
+
+      if (paymentMethod) {
+        const singlePaymentMethods = { paymentMethods: [ paymentMethod ] }
+        const singlePaymentConfig = { ...config, dropin: { skipListWhenSinglePaymentMethod: true } }
+        nativeComponent.open(singlePaymentMethods, singlePaymentConfig);
+      } else { 
+        nativeComponent.open(paymentMethods, config);
+      }
     },
     [config, paymentMethods, startEventListeners, removeEventListeners]
   );
@@ -101,4 +99,15 @@ const AdyenPaymentProvider = ({
   );
 };
 
-export { AdyenCheckoutContext, AdyenPaymentProvider };
+const AdyenPaymentProvider = (props) => {
+
+  useEffect(() => {
+    console.warn('AdyenPaymentProvider is deprecated. Use AdyenCheckout instead');
+  }, []);
+
+  return (
+    <AdyenCheckout {...props} />
+  )
+}
+
+export { AdyenCheckoutContext, AdyenCheckout, AdyenPaymentProvider };

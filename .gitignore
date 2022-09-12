@@ -36,6 +36,7 @@ Pods/
 .idea
 .gradle
 local.properties
+*.hprof
 
 # node.js
 node_modules/

@@ -3,6 +3,9 @@ def safeExtGet(prop, fallback) {
 }
 
 buildscript {
+
+      rootProject.ext.adyenRectNativeRedirectScheme = "adyenreactnative"
+
       repositories {
           google()
           jcenter()
@@ -24,7 +27,7 @@ android {
         targetSdkVersion safeExtGet('targetSdkVersion', 30)
         versionCode 1
         versionName "1.0"
-
+        buildConfigField "String", "adyenRectNativeRedirectScheme", "\"$rootProject.ext.adyenRectNativeRedirectScheme\""
     }
 
     buildTypes {
@@ -56,7 +59,7 @@ dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
-    implementation "com.adyen.checkout:drop-in:4.4.0"
+    implementation "com.adyen.checkout:drop-in:4.7.1"
     implementation 'com.google.android.material:material:1.5.0'
 
 }

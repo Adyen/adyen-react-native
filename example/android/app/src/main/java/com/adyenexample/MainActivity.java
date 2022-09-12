@@ -1,5 +1,9 @@
 package com.adyenexample;
 
+import android.content.Intent;
+import android.net.Uri;
+
+import com.adyenreactnativesdk.ActionHandler;
 import com.facebook.react.ReactActivity;
 
 public class MainActivity extends ReactActivity {
@@ -11,5 +15,11 @@ public class MainActivity extends ReactActivity {
   @Override
   protected String getMainComponentName() {
     return "AdyenExample";
+  }
+
+  @Override
+  public void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    ActionHandler.Companion.handle(intent);
   }
 }

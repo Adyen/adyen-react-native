@@ -10,9 +10,10 @@ import PassKit
 import React
 
 @objc(AdyenDropIn)
-internal class AdyenDropIn: BaseModule {
+final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
+    
 
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
@@ -22,23 +23,29 @@ internal class AdyenDropIn: BaseModule {
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
             self.dropInComponent?.finalizeIfNeeded(with: success.boolValue)
-            UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true)
+            self.currentPresenter?.dismiss(animated: true)
+            self.currentPresenter = nil
             self.dropInComponent = nil
         }
     }
 
     @objc
-    func open(_ paymentMethods: NSDictionary, configuration: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: paymentMethods, options: []),
-              let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
-        else { return }
+    func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
+        let paymentMethods: PaymentMethods
+        do {
+            paymentMethods = try parsePaymentMethods(from: paymentMethodsDict)
+        } catch {
+            return assertionFailure("AdyenDropIn: \(error.localizedDescription)")
+        }
 
         let parser = RootConfigurationParser(configuration: configuration)
 
         guard let clientKey = parser.clientKey else {
-            return assertionFailure("AdyenDropIn: No clientKey in configuration")
+            return assertionFailure("AdyenDropIn: No clientKey in configuration.")
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
@@ -62,8 +69,10 @@ internal class AdyenDropIn: BaseModule {
         component.delegate = self
         dropInComponent = component
 
-        DispatchQueue.main.async {
-            UIApplication.shared.keyWindow?.rootViewController?.present(
+        DispatchQueue.main.async { [weak self] in
+            let presenter = UIViewController.topPresenter
+            self?.currentPresenter = presenter
+            presenter?.present(
                 component.viewController,
                 animated: true,
                 completion: nil

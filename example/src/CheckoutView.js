@@ -1,5 +1,5 @@
 import React from 'react';
-import { AdyenPaymentProvider } from '@adyen/react-native';
+import { AdyenCheckout } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
 import {
   Button,
@@ -38,9 +38,9 @@ const CheckoutView = () => {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
-  const didSubmit = (data, nativeComponent) => {
+  const didSubmit = (data, nativeComponent, configuration) => {
     console.log('didSubmit');
-    fetchPayments(data)
+    fetchPayments(data, configuration)
       .then((result) => {
         if (result.action) {
           console.log('Action!');
@@ -110,16 +110,16 @@ const CheckoutView = () => {
             />
           </View>
 
-          <AdyenPaymentProvider
+          <AdyenCheckout
             config={context.config}
             paymentMethods={context.paymentMethods}
-            onSubmit={didSubmit}
+            onSubmit={ (payload, nativeComponent) => { didSubmit(payload, nativeComponent, context.config) }}
             onProvide={didProvide}
             onFail={didFail}
             onComplete={didComplete}
           >
             <PaymentMethods />
-          </AdyenPaymentProvider>
+          </AdyenCheckout>
         </SafeAreaView>
       )}
     </PaymentMethodsContext.Consumer>

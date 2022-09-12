@@ -1,12 +1,12 @@
 export {
   AdyenCardComponent,
   AdyenDropIn,
-  getNativeComponent,
 } from './AdyenNativeModules';
 
 export {
-  AdyenPaymentProvider,
+  AdyenCheckout,
   AdyenCheckoutContext,
+  AdyenPaymentProvider
 } from './AdyenCheckoutContext';
 
 export {

@@ -5,7 +5,7 @@ const useAdyenCheckout = () => {
   const context = useContext(AdyenCheckoutContext);
   if (context === undefined) {
     throw new Error(
-      'useAdyenCheckout must be used within a AdyenCheckoutProvider'
+      'useAdyenCheckout must be used within a AdyenCheckout'
     );
   }
   return context;
