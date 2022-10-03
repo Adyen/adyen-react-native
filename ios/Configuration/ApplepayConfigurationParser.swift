@@ -31,7 +31,7 @@ public struct ApplepayConfigurationParser {
         return dict[ApplePayKeys.merchantName] as? String
     }
 
-    public func tryConfiguration(amount: Amount) -> ApplePayComponent.Configuration? {
+    public func tryConfiguration(amount: Amount) -> Adyen.ApplePayComponent.Configuration? {
         guard let merchantName = merchantName, let merchantID = merchantID else {
             return nil
         }

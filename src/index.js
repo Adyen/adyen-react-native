@@ -1,6 +1,8 @@
 export {
   AdyenCardComponent,
   AdyenDropIn,
+  AdyenApplePay,
+  AdyenInstant
 } from './AdyenNativeModules';
 
 export {

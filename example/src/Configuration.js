@@ -33,8 +33,8 @@ export const DEFAULT_CONFIGURATION = {
     // hideCvc: true,
   },
   applepay: {
-    // merchantID: 'merchant.com.adyen.MY_MERCHANT_ID',
-    // merchantName: 'MY_MERCHANT'
+    merchantID: 'merchant.com.adyen.MY_MERCHANT_ID',
+    merchantName: 'MY_MERCHANT'
   },
   googlepay: {
   },
