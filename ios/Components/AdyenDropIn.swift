@@ -13,7 +13,6 @@ import React
 final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
-    
 
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
@@ -26,10 +25,11 @@ final internal class AdyenDropIn: BaseModule {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue)
-            self.currentPresenter?.dismiss(animated: true)
-            self.currentPresenter = nil
-            self.dropInComponent = nil
+            self.currentComponent?.finalizeIfNeeded(with: success.boolValue) {
+                self.currentPresenter?.dismiss(animated: true)
+                self.currentPresenter = nil
+                self.dropInComponent = nil
+            }
         }
     }
 
