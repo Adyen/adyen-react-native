@@ -1,6 +1,6 @@
 
 export function find(paymentMethods, type) {
-    return paymentMethods.paymentMethods.find(pm => pm.type === mapCreatedComponentType(type));
+    return paymentMethods.paymentMethods.find(pm => pm.type.toLowerCase() === mapCreatedComponentType(type));
 }
 
 function mapCreatedComponentType(pmType) {
