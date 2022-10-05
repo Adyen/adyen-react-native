@@ -29,8 +29,9 @@ const PaymentMethods = () => {
   const platformSpecificType =
     Platform.OS === 'ios' ? 'applepay' : 'googlepay';
 
-  const isAvailable = useCallback(type => { 
-    return paymentMethodsResponse.paymentMethods.length > 0 && paymentMethodsResponse.paymentMethods.some(pm => pm.type === type.toLowerCase());
+  const isAvailable = useCallback(type => {
+    const paymentMethods = paymentMethodsResponse.paymentMethods;
+    return paymentMethods.length > 0 && paymentMethods.some(pm => pm.type.toLowerCase() === type.toLowerCase());
   }, [paymentMethodsResponse]);
 
   return (
