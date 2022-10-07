@@ -1,8 +1,8 @@
 import { NativeModules } from 'react-native';
 import { find, NATIVE_COMPONENTS } from './ComponentMap';
 
-const UNKNOWN_PAYMENT_METHOD_ERROR = 
-  'Unknown payment method or native module. \n\n' + 
+const UNKNOWN_PAYMENT_METHOD_ERROR =
+  'Unknown payment method or native module. \n\n' +
   'Make sure your paymentMethods response contains: ';
 
 const LINKING_ERROR =
@@ -39,17 +39,29 @@ export const AdyenApplePay = NativeModules.AdyenApplePay
       { get() { throw new Error(LINKING_ERROR); }, }
     );
 
+export const AdyenGooglePay = NativeModules.AdyenGooglePay
+  ? NativeModules.AdyenGooglePay
+  : new Proxy(
+      {},
+      { get() { throw new Error(LINKING_ERROR); }, }
+    );
+
 export function getNativeComponent(name, paymentMethods) {
   const type = name.toLowerCase();
   switch (type) {
     case 'dropin':
+    case 'drop-in':
     case 'adyendropin':
       return { nativeComponent: AdyenDropIn };
-    case 'AdyenCardComponent':
+    case 'adyencardcomponent':
       return { nativeComponent: AdyenCardComponent };
     case 'applepay':
     case 'apple-pay':
       return { nativeComponent: AdyenApplePay };
+    case 'paywithgoogle':
+    case 'googlepay':
+    case 'google-pay':
+      return { nativeComponent: AdyenGooglePay };
     default:
       break;
   }
@@ -65,4 +77,3 @@ export function getNativeComponent(name, paymentMethods) {
 
   return { nativeComponent: AdyenInstant, paymentMethod: paymentMethod };
 }
-
