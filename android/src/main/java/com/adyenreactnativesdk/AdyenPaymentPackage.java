@@ -31,6 +31,7 @@ public class AdyenPaymentPackage implements ReactPackage {
         modules.add(new AdyenDropInComponent(reactContext));
         modules.add(new AdyenCardComponent(reactContext));
         modules.add(new AdyenInstantComponent(reactContext));
+        modules.add(new AdyenGooglePayComponent(reactContext));
         return modules;
     }
 

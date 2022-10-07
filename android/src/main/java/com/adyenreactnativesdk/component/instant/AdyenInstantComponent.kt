@@ -7,7 +7,6 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
-import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.*
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.ui.PaymentComponentListener
