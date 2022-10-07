@@ -28,6 +28,7 @@
 ### ApplePay component
 * **merchantID** - The merchant identifier for apple pay.
 * **merchantName** - The merchant name. Used for generation of [PKPaymentSummaryItem]
+* **allowOnboarding** - The flag to toggle onboarding. If true, allow the shopper to add cards to Apple Pay if non exists yet. If false, then Apple Pay is disabled if the shopper doesn’t have supported cards on Apple Pay wallet. Default is false.
 
 ### GooglePay component
 * **merchantAccount** - The merchant account to be put in the payment token from Google to Adyen. By default uses value from `brands`

@@ -34,7 +34,8 @@ export const DEFAULT_CONFIGURATION = {
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
-    merchantName: '{YOUR_MERCHANT_NAME}'
+    merchantName: '{YOUR_MERCHANT_NAME}',
+    //allowOnboarding: true
   },
   googlepay: {
   },
