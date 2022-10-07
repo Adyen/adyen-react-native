@@ -12,8 +12,6 @@ import UIKit
 @objc(AdyenCardComponent)
 final internal class AdyenCardComponent: BaseModule {
 
-    private var actionHandler: AdyenActionComponent?
-
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() {}
@@ -25,11 +23,9 @@ final internal class AdyenCardComponent: BaseModule {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
-            self.currentPresenter?.dismiss(animated: true)
-            self.actionHandler?.currentActionComponent?.cancelIfNeeded()
-            self.actionHandler = nil
-            self.currentComponent = nil
+            self.currentComponent?.finalizeIfNeeded(with: true, completion: {
+                self.cleanUp()
+            })
         }
     }
 

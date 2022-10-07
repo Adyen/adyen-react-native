@@ -25,9 +25,8 @@ final internal class AdyenDropIn: BaseModule {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            self.currentComponent?.finalizeIfNeeded(with: success.boolValue) {
-                self.currentPresenter?.dismiss(animated: true)
-                self.currentPresenter = nil
+            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue) {
+                self.cleanUp()
                 self.dropInComponent = nil
             }
         }

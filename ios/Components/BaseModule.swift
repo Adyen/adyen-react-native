@@ -10,8 +10,15 @@ import Adyen
 
 internal class BaseModule: RCTEventEmitter {
     
-    internal var currentComponent: PresentableComponent?
+    internal var currentComponent: Component?
+    internal var currentPaymentComponent: PaymentComponent? {
+        currentComponent as? PaymentComponent
+    }
+    internal var currentPresentableComponent: PresentableComponent? {
+        currentComponent as? PresentableComponent
+    }
     internal var currentPresenter: UIViewController?
+    internal var actionHandler: AdyenActionComponent?
     
     private enum Error: LocalizedError {
         case deserializationError
@@ -99,6 +106,15 @@ internal class BaseModule: RCTEventEmitter {
         }
         
         return paymentMethod
+    }
+    
+    internal func cleanUp() {
+        actionHandler?.currentActionComponent?.cancelIfNeeded()
+        actionHandler = nil
+        currentComponent = nil
+        
+        currentPresenter?.dismiss(animated: true)
+        currentPresenter = nil
     }
     
 }
