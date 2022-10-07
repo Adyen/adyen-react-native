@@ -25,8 +25,7 @@ final internal class ApplePayComponent: BaseModule {
             guard let self = self else { return }
 
             self.currentComponent?.finalizeIfNeeded(with: success.boolValue) {
-                self.currentPresenter?.dismiss(animated: true)
-                self.currentPresenter = nil
+                self.cleanUp()
             }
         }
     }
