@@ -10,8 +10,21 @@ import Adyen
 
 internal class BaseModule: RCTEventEmitter {
     
-    internal var currentComponent: PresentableComponent?
+    @objc
+    override static func requiresMainQueueSetup() -> Bool { true }
+    override func stopObserving() {}
+    override func startObserving() {}
+    override open func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+
+    internal var currentComponent: Component?
+    internal var currentPaymentComponent: PaymentComponent? {
+        currentComponent as? PaymentComponent
+    }
+    internal var currentPresentableComponent: PresentableComponent? {
+        currentComponent as? PresentableComponent
+    }
     internal var currentPresenter: UIViewController?
+    internal var actionHandler: AdyenActionComponent?
     
     private enum Error: LocalizedError {
         case deserializationError
@@ -57,8 +70,6 @@ internal class BaseModule: RCTEventEmitter {
         currentComponent?.cancelIfNeeded()
         sendEvent(event: .didFail, body: ComponentError.cancelled.toDictionary)
     }
-
-    override open func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
         
     internal func sendEvent(event: Events, body: Any!) {
         self.sendEvent(withName: event.rawValue, body: body)
@@ -99,6 +110,26 @@ internal class BaseModule: RCTEventEmitter {
         }
         
         return paymentMethod
+    }
+    
+    internal func cleanUp() {
+        actionHandler?.currentActionComponent?.cancelIfNeeded()
+        actionHandler = nil
+        currentComponent = nil
+        
+        currentPresenter?.dismiss(animated: true)
+        currentPresenter = nil
+    }
+    
+}
+
+
+extension BaseModule: PresentationDelegate {
+    
+    internal func present(component: PresentableComponent) {
+        DispatchQueue.main.async { [weak self] in
+            self?.present(component)
+        }
     }
     
 }

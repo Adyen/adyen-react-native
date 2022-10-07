@@ -32,6 +32,13 @@ export const AdyenCardComponent = NativeModules.AdyenCardComponent
       { get() { throw new Error(LINKING_ERROR); }, }
     );
 
+export const AdyenApplePay = NativeModules.AdyenApplePay
+  ? NativeModules.AdyenApplePay
+  : new Proxy(
+      {},
+      { get() { throw new Error(LINKING_ERROR); }, }
+    );
+
 export function getNativeComponent(name, paymentMethods) {
   const type = name.toLowerCase();
   switch (type) {
@@ -40,6 +47,9 @@ export function getNativeComponent(name, paymentMethods) {
       return { nativeComponent: AdyenDropIn };
     case 'AdyenCardComponent':
       return { nativeComponent: AdyenCardComponent };
+    case 'applepay':
+    case 'apple-pay':
+      return { nativeComponent: AdyenApplePay };
     default:
       break;
   }

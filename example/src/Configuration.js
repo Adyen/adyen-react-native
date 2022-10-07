@@ -33,8 +33,9 @@ export const DEFAULT_CONFIGURATION = {
     // hideCvc: true,
   },
   applepay: {
-    // merchantID: 'merchant.com.adyen.MY_MERCHANT_ID',
-    // merchantName: 'MY_MERCHANT'
+    merchantID: '{YOUR_APPLE_MERCHANT_ID}',
+    merchantName: '{YOUR_MERCHANT_NAME}',
+    //allowOnboarding: true
   },
   googlepay: {
   },
@@ -43,6 +44,7 @@ export const DEFAULT_CONFIGURATION = {
   }
 };
 
+// For test purpose only! Do not contact Adyen API from your mobile app on LIVE.
 export const ENVIRONMENT = {
   apiKey:
     '{YOUR_DEMO_SERVER_API_KEY}',

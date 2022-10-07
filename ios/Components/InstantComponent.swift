@@ -12,14 +12,6 @@ import React
 
 @objc(AdyenInstant)
 final internal class InstantComponent: BaseModule {
-    
-    private var currentPaymentComponent: PaymentComponent?
-    private var actionHandler: AdyenActionComponent?
-    
-    @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
@@ -27,14 +19,9 @@ final internal class InstantComponent: BaseModule {
         DispatchQueue.main.async {[weak self] in
             guard let self = self else { return }
             
-            self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
-            self.actionHandler?.currentActionComponent?.cancelIfNeeded()
-            self.actionHandler = nil
-            self.currentComponent = nil
-            
-            self.currentPresenter?.dismiss(animated: true)
-            self.currentPresenter = nil
-            self.currentPaymentComponent = nil
+            self.currentComponent?.finalizeIfNeeded(with: success.boolValue) {
+                self.cleanUp()
+            }
         }
     }
 
@@ -60,8 +47,8 @@ final internal class InstantComponent: BaseModule {
 
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, paymentData: nil, apiContext: apiContext)
         component.payment = parser.payment
-        currentPaymentComponent = component
         component.delegate = self
+        currentComponent = component
         
         DispatchQueue.main.async {
             component.initiatePayment()
@@ -79,15 +66,6 @@ final internal class InstantComponent: BaseModule {
         }
     }
 
-}
-
-extension InstantComponent: PresentationDelegate {
-
-    func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
-            self?.present(component)
-        }
-    }
 }
 
 extension InstantComponent: PaymentComponentDelegate {

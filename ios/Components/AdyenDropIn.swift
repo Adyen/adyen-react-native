@@ -13,23 +13,17 @@ import React
 final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
-    
 
-    @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
-
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue)
-            self.currentPresenter?.dismiss(animated: true)
-            self.currentPresenter = nil
-            self.dropInComponent = nil
+            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue) {
+                self.cleanUp()
+                self.dropInComponent = nil
+            }
         }
     }
 
@@ -66,18 +60,9 @@ final internal class AdyenDropIn: BaseModule {
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         configuration: config,
                                         style: dropInComponentStyle)
-        component.delegate = self
         dropInComponent = component
-
-        DispatchQueue.main.async { [weak self] in
-            let presenter = UIViewController.topPresenter
-            self?.currentPresenter = presenter
-            presenter?.present(
-                component.viewController,
-                animated: true,
-                completion: nil
-            )
-        }
+        dropInComponent?.delegate = self
+        present(component: component)
     }
 
     @objc

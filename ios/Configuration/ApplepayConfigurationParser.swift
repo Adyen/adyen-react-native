@@ -31,7 +31,11 @@ public struct ApplepayConfigurationParser {
         return dict[ApplePayKeys.merchantName] as? String
     }
 
-    public func tryConfiguration(amount: Amount) -> ApplePayComponent.Configuration? {
+    var allowOnboarding: Bool {
+        return dict[ApplePayKeys.allowOnboarding] as? Bool ?? false
+    }
+
+    public func tryConfiguration(amount: Amount) -> Adyen.ApplePayComponent.Configuration? {
         guard let merchantName = merchantName, let merchantID = merchantID else {
             return nil
         }
@@ -41,7 +45,7 @@ public struct ApplepayConfigurationParser {
                                                    localeIdentifier: amount.localeIdentifier)
         return .init(summaryItems: [PKPaymentSummaryItem(label: merchantName, amount: amount)],
                      merchantIdentifier: merchantID,
-                     allowOnboarding: false)
+                     allowOnboarding: allowOnboarding)
 //                     requiredBillingContactFields: Set<PKContactField>,
 //                     requiredShippingContactFields: Set<PKContactField>,
 //                     billingContact: PKContact?,

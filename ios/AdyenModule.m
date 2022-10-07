@@ -43,3 +43,13 @@ RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
 RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
 
 @end
+
+@interface RCT_EXTERN_MODULE(AdyenApplePay, NSObject)
+
+RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
+                  configuration:(NSDictionary *)configuration)
+
+RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
+                  event:(NSDictionary *)event)
+
+@end
