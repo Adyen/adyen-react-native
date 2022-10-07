@@ -12,12 +12,7 @@ import UIKit
 @objc(AdyenCardComponent)
 final internal class AdyenCardComponent: BaseModule {
 
-    @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
-
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async { [weak self] in
@@ -54,7 +49,6 @@ final internal class AdyenCardComponent: BaseModule {
                                       apiContext: apiContext,
                                       configuration: config)
         component.payment = parser.payment
-
         present(component: component)
     }
 
@@ -69,15 +63,6 @@ final internal class AdyenCardComponent: BaseModule {
         }
     }
 
-}
-
-extension AdyenCardComponent: PresentationDelegate {
-
-    func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
-            self?.present(component)
-        }
-    }
 }
 
 extension AdyenCardComponent: PaymentComponentDelegate {
