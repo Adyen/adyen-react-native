@@ -23,8 +23,6 @@ import java.util.*
 class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
 
-    private var actionHandler: ActionHandler? = null
-
     override fun getName(): String {
         return COMPONENT_NAME
     }

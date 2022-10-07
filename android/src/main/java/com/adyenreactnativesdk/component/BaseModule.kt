@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.checkout.components.model.PaymentMethodsApiResponse
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
+import com.adyenreactnativesdk.ActionHandler
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -21,6 +22,8 @@ import java.util.*
 
 
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
+
+    protected var actionHandler: ActionHandler? = null
 
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext

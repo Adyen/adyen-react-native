@@ -36,7 +36,6 @@ import java.util.*
 
 class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
-    private var actionHandler: ActionHandler? = null
     private var dialog: WeakReference<DialogFragment> = WeakReference(null)
 
     override fun getName(): String {
