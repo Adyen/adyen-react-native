@@ -53,3 +53,12 @@ RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
                   event:(NSDictionary *)event)
 
 @end
+
+// Mock to prevent NativeModule check failure
+@interface RCT_EXTERN_MODULE(AdyenGooglePay, NSObject)
+
+RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
+                configuration:(NSDictionary *)configuration)
+
+@end
+
