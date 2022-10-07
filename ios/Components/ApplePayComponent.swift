@@ -13,12 +13,7 @@ import React
 @objc(AdyenApplePay)
 final internal class ApplePayComponent: BaseModule {
 
-    @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
-
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async {[weak self] in
@@ -59,26 +54,13 @@ final internal class ApplePayComponent: BaseModule {
                                                         apiContext: apiContext,
                                                         payment: payment,
                                                         configuration: applepayConfig)
-            currentComponent = applePayComponent
-            applePayComponent.delegate = self
         } catch {
             return assertionFailure("ApplePayComponent: \(error.localizedDescription)")
         }
 
-        DispatchQueue.main.async {
-            self.present(applePayComponent)
-        }
+        present(component: applePayComponent)
     }
 
-}
-
-extension ApplePayComponent: PresentationDelegate {
-
-    func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
-            self?.present(component)
-        }
-    }
 }
 
 extension ApplePayComponent: PaymentComponentDelegate {

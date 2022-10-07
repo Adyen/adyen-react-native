@@ -12,11 +12,6 @@ import React
 
 @objc(AdyenInstant)
 final internal class InstantComponent: BaseModule {
-        
-    @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
@@ -71,15 +66,6 @@ final internal class InstantComponent: BaseModule {
         }
     }
 
-}
-
-extension InstantComponent: PresentationDelegate {
-
-    func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
-            self?.present(component)
-        }
-    }
 }
 
 extension InstantComponent: PaymentComponentDelegate {
