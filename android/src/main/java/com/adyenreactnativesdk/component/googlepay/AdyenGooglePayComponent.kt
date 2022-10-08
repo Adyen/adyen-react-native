@@ -2,15 +2,24 @@ package com.adyenreactnativesdk.component.googlepay
 
 import android.content.Intent
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.DialogFragment
+import com.adyen.checkout.card.CardComponent
+import com.adyen.checkout.card.CardConfiguration
+import com.adyen.checkout.card.CardView
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.core.api.Environment
+import com.adyen.checkout.dropin.ui.component.GooglePayComponentDialogFragment
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.*
 import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.component.card.AdyenCardComponent
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
+import com.adyenreactnativesdk.ui.AdyenBottomSheetDialogFragment
+import com.adyenreactnativesdk.ui.ComponentViewModel
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -18,6 +27,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import org.json.JSONException
+import java.lang.ref.WeakReference
 import java.util.*
 
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {
@@ -30,15 +40,24 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods
-        if (paymentMethods == null || paymentMethods.isEmpty()) {
+        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
+        if (paymentMethods == null) {
             sendEvent(
                 DID_FAILED,
                 ReactNativeError.mapError("$TAG: can not deserialize paymentMethods")
             )
             return
         }
-        val paymentMethod = paymentMethods[0]
+
+        val paymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
+        if (paymentMethod == null) {
+            sendEvent(
+                DID_FAILED,
+                ReactNativeError.mapError("${TAG}: can not parse payment methods")
+            )
+            return
+        }
+
         val type = paymentMethod.type
         if (paymentMethod == null || type.isNullOrEmpty()) {
             sendEvent(
@@ -143,9 +162,11 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         private const val TAG = "GooglePayComponent"
         private const val COMPONENT_NAME = "AdyenGooglePay"
         private const val GOOGLEPAY_REQUEST_CODE = 1001
+        private const val PAYMENT_METHOD_KEY = "paywithgoogle"
 
         private var shared: AdyenGooglePayComponent? = null
 
+        @JvmStatic
         fun handleState(requestCode: Int, resultCode: Int, data: Intent?) {
             if (requestCode == GOOGLEPAY_REQUEST_CODE) {
                 shared?.manageState(resultCode, data)

@@ -49,11 +49,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             if (currentPaymentMethod.type == paymentMethodName) {
                 return currentPaymentMethod
             }
-
-        sendEvent(
-            DID_FAILED,
-            ReactNativeError.mapError("Payment methods does not contain $paymentMethodName")
-        )
         return null
     }
 
