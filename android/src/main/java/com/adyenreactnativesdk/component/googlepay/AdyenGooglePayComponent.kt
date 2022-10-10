@@ -134,16 +134,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         shared = null
     }
 
-    @ReactMethod
-    fun addListener(eventName: String?) {
-        // Set up any upstream listeners or background tasks as necessary
-    }
-
-    @ReactMethod
-    fun removeListeners(count: Int?) {
-        // Remove upstream listeners, stop unnecessary background tasks
-    }
-
     fun onError(error: Exception) {
         val errorMap = ReactNativeError.mapError(error)
         sendEvent(DID_FAILED, errorMap)

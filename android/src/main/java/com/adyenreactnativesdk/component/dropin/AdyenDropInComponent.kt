@@ -93,16 +93,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         proxyHideDropInCommand(success, message)
     }
 
-    @ReactMethod
-    fun addListener(eventName: String?) {
-        // Set up any upstream listeners or background tasks as necessary
-    }
-
-    @ReactMethod
-    fun removeListeners(count: Int?) {
-        // Remove upstream listeners, stop unnecessary background tasks
-    }
-
     override fun onDidSubmit(jsonObject: JSONObject) {
         val map: WritableMap = try {
             ReactNativeJson.convertJsonToMap(jsonObject)

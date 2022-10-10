@@ -15,6 +15,7 @@ import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.json.JSONException
@@ -24,6 +25,16 @@ import java.util.*
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
 
     protected var actionHandler: ActionHandler? = null
+
+    @ReactMethod
+    fun addListener(eventName: String?) {
+        // Set up any upstream listeners or background tasks as necessary
+    }
+
+    @ReactMethod
+    fun removeListeners(count: Int?) {
+        // Remove upstream listeners, stop unnecessary background tasks
+    }
 
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
