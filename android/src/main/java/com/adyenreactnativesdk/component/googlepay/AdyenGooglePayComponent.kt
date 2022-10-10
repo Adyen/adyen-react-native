@@ -2,24 +2,17 @@ package com.adyenreactnativesdk.component.googlepay
 
 import android.content.Intent
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
-import com.adyen.checkout.card.CardComponent
-import com.adyen.checkout.card.CardConfiguration
-import com.adyen.checkout.card.CardView
+import com.adyen.checkout.components.PaymentComponentState
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.core.api.Environment
-import com.adyen.checkout.dropin.ui.component.GooglePayComponentDialogFragment
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
-import com.adyenreactnativesdk.*
+import com.adyenreactnativesdk.ActionHandler
 import com.adyenreactnativesdk.component.BaseModule
-import com.adyenreactnativesdk.component.card.AdyenCardComponent
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
-import com.adyenreactnativesdk.ui.AdyenBottomSheetDialogFragment
-import com.adyenreactnativesdk.ui.ComponentViewModel
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -101,11 +94,31 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             .setAmount(amount)
         val googlePayConfiguration = parser.getConfiguration(configBuilder)
 
-        GooglePayComponent.PROVIDER.isAvailable(appCompatActivity.application, paymentMethod, googlePayConfiguration) {
-                isAvailable: Boolean, paymentMethod: PaymentMethod, config: GooglePayConfiguration? ->
+        GooglePayComponent.PROVIDER.isAvailable(
+            appCompatActivity.application,
+            paymentMethod,
+            googlePayConfiguration
+        ) { isAvailable: Boolean, paymentMethod: PaymentMethod, config: GooglePayConfiguration? ->
             if (isAvailable) {
-                googlePayComponent = GooglePayComponent.PROVIDER.get(appCompatActivity, paymentMethod, googlePayConfiguration)
-                googlePayComponent?.startGooglePayScreen(appCompatActivity, GOOGLEPAY_REQUEST_CODE)
+                val component = GooglePayComponent.PROVIDER.get(
+                    appCompatActivity,
+                    paymentMethod,
+                    googlePayConfiguration
+                )
+                googlePayComponent = component
+                shared = this
+                component.observe(appCompatActivity) { googlePayComponentState ->
+                    if (googlePayComponentState?.isValid == true) {
+                        onSubmit(googlePayComponentState.data)
+                    }
+                }
+                component.observeErrors(appCompatActivity) { componentError ->
+                    onError(componentError.exception)
+                }
+                component.startGooglePayScreen(
+                    appCompatActivity,
+                    GOOGLEPAY_REQUEST_CODE
+                )
             } else {
                 sendEvent(
                     DID_FAILED,
@@ -118,6 +131,17 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         googlePayComponent = null
+        shared = null
+    }
+
+    @ReactMethod
+    fun addListener(eventName: String?) {
+        // Set up any upstream listeners or background tasks as necessary
+    }
+
+    @ReactMethod
+    fun removeListeners(count: Int?) {
+        // Remove upstream listeners, stop unnecessary background tasks
     }
 
     fun onError(error: Exception) {
@@ -130,31 +154,14 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         try {
             val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
             map.putString("returnUrl", ActionHandler.getReturnUrl(reactApplicationContext))
-            Log.d(TAG, "Paying")
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
         }
     }
 
-    fun onClose() {
-        sendEvent(DID_FAILED, ReactNativeError.mapError("Closed"))
-    }
-
-    fun onFinish() {
-        sendEvent(DID_COMPLETE, null)
-    }
-
     fun manageState(resultCode: Int, data: Intent?) {
-        googlePayComponent?.observe(appCompatActivity) { googlePayComponentState ->
-            if (googlePayComponentState?.isValid == true) {
-                // When the shopper proceeds to pay, pass the `paymentComponentState.data` to your server to send a /payments request
-               onSubmit(googlePayComponentState.data)
-            }
-        }
-        googlePayComponent?.observeErrors(appCompatActivity) { componentError ->
-            onError(componentError.exception)
-        }
+        Log.d(TAG, "handleState called - $resultCode")
         googlePayComponent?.handleActivityResult(resultCode, data)
     }
 
@@ -173,4 +180,5 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             }
         }
     }
+
 }
