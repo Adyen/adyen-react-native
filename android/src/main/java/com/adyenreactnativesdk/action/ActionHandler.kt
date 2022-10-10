@@ -128,7 +128,16 @@ class ActionHandler(
             return REDIRECT_RESULT_SCHEME + context.packageName
         }
 
+        @JvmStatic
+        @Deprecated(
+            message = "This method is deprecated",
+            replaceWith = ReplaceWith("handleIntent(intent)"))
         fun handle(intent: Intent) {
+            handleIntent(intent)
+        }
+
+        @JvmStatic
+        fun handleIntent(intent: Intent) {
             val data = intent.data
             if (data != null && data.toString().startsWith(REDIRECT_RESULT_SCHEME))
                 intentHandlingComponent.get()?.handleIntent(intent)
