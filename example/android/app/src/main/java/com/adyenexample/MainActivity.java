@@ -1,9 +1,10 @@
 package com.adyenexample;
 
 import android.content.Intent;
-import android.net.Uri;
+import android.util.Log;
 
 import com.adyenreactnativesdk.ActionHandler;
+import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent;
 import com.facebook.react.ReactActivity;
 
 public class MainActivity extends ReactActivity {
@@ -20,6 +21,14 @@ public class MainActivity extends ReactActivity {
   @Override
   public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    ActionHandler.Companion.handle(intent);
+    Log.d("MainActivity", "onNewIntent");
+    ActionHandler.handleIntent(intent);
+  }
+
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    Log.d("MainActivity", "onActivityResult");
+    AdyenGooglePayComponent.handleState(requestCode, resultCode, data);
   }
 }

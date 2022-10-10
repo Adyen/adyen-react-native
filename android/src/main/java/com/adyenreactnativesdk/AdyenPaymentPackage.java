@@ -6,8 +6,10 @@
 
 package com.adyenreactnativesdk;
 
+import com.adyenreactnativesdk.component.applepay.AdyenApplePayMock;
 import com.adyenreactnativesdk.component.card.AdyenCardComponent;
 import com.adyenreactnativesdk.component.dropin.AdyenDropInComponent;
+import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent;
 import com.adyenreactnativesdk.component.instant.AdyenInstantComponent;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;
@@ -31,6 +33,8 @@ public class AdyenPaymentPackage implements ReactPackage {
         modules.add(new AdyenDropInComponent(reactContext));
         modules.add(new AdyenCardComponent(reactContext));
         modules.add(new AdyenInstantComponent(reactContext));
+        modules.add(new AdyenGooglePayComponent(reactContext));
+        modules.add(new AdyenApplePayMock(reactContext));
         return modules;
     }
 

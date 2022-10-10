@@ -7,7 +7,6 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
-import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.*
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.ui.PaymentComponentListener
@@ -23,8 +22,6 @@ import java.util.*
 
 class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
-
-    private var actionHandler: ActionHandler? = null
 
     override fun getName(): String {
         return COMPONENT_NAME

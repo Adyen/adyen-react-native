@@ -43,8 +43,9 @@ final internal class ApplePayComponent: BaseModule {
             return assertionFailure("ApplePayComponent: No payment in configuration")
         }
         
-        guard let applepayConfig = ApplepayConfigurationParser(configuration: configuration).tryConfiguration(amount: payment.amount) else {
-            return assertionFailure("ApplePayComponent: No payment in configuration")
+        let applePayParser = ApplepayConfigurationParser(configuration: configuration)
+        guard let applepayConfig = applePayParser.tryConfiguration(amount: payment.amount) else {
+            return assertionFailure("ApplePayComponent: No merchantName or merchantID in configuration")
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)

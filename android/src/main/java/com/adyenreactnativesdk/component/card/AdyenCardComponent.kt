@@ -36,7 +36,6 @@ import java.util.*
 
 class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
-    private var actionHandler: ActionHandler? = null
     private var dialog: WeakReference<DialogFragment> = WeakReference(null)
 
     override fun getName(): String {
@@ -119,16 +118,6 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         Log.d(TAG, "Closing component")
         dialogFragment.dismiss()
         actionHandler = null
-    }
-
-    @ReactMethod
-    fun addListener(eventName: String?) {
-        // Set up any upstream listeners or background tasks as necessary
-    }
-
-    @ReactMethod
-    fun removeListeners(count: Int?) {
-        // Remove upstream listeners, stop unnecessary background tasks
     }
 
     private fun showComponentView(
