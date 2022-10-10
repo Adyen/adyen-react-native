@@ -120,16 +120,6 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         actionHandler = null
     }
 
-    @ReactMethod
-    fun addListener(eventName: String?) {
-        // Set up any upstream listeners or background tasks as necessary
-    }
-
-    @ReactMethod
-    fun removeListeners(count: Int?) {
-        // Remove upstream listeners, stop unnecessary background tasks
-    }
-
     private fun showComponentView(
         theActivity: AppCompatActivity,
         viewModel: ComponentViewModel,
