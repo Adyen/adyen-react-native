@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { PaymentMethodsContext } from './PaymentMethodsProvider';
+import { usePaymentMethods } from './PaymentMethodsProvider';
 
 import {
   Button,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 const FormTextInput = (props) => {
-  const [value, onChangeText] = React.useState(props.value);
+  const [value, onChangeText] = useState(props.value);
 
   return (
     <View style={{ margin: 8 }}>
@@ -35,90 +35,72 @@ const FormTextInput = (props) => {
   );
 };
 
-const SettingFormView = (props) => {
-  const [defaultValue, onChangeValue] = React.useState({
-    ...props.context.config,
-    countryCode: props.context.config.countryCode,
+const SettingFormView = ({ navigation: { goBack } }) => {
+
+  const { config, onConfigChanged } = usePaymentMethods();
+
+  var defaultValue = {
+    ...config,
+    countryCode: config.countryCode,
     amount: {
-      currency: props.context.config.amount.currency,
-      value: props.context.config.amount.value,
+      currency: config.amount.currency,
+      value: config.amount.value,
     },
-    merchantAccount: props.context.config.merchantAccount,
-    shopperLocale: props.context.config.shopperLocale,
-  });
+    merchantAccount: config.merchantAccount,
+    shopperLocale: config.shopperLocale,
+  };
 
   return (
     <View>
       <FormTextInput
         placeholder="Country"
         value={defaultValue.countryCode}
-        onChangeText={(value) =>
-          onChangeValue({ ...defaultValue, countryCode: value })
-        }
+        onChangeText={(value) => defaultValue.countryCode = value }
       />
       <FormTextInput
         placeholder="Currency"
         value={defaultValue.amount.currency}
-        onChangeText={(value) =>
-          onChangeValue({
-            ...defaultValue,
-            amount: { ...defaultValue.amount, currency: value },
-          })
-        }
+        onChangeText={(value) => defaultValue.amount.currency = value }        
       />
       <FormTextInput
         placeholder="Amount"
         value={defaultValue.amount.value.toString()}
-        onChangeText={(value) =>
-          onChangeValue({
-            ...defaultValue,
-            amount: { ...defaultValue.amount, value: value },
-          })
-        }
+        onChangeText={(value) => defaultValue.amount.value = value }
       />
       <FormTextInput
         placeholder="Merchant Account"
         value={defaultValue.merchantAccount}
-        onChangeText={(value) =>
-          onChangeValue({ ...defaultValue, merchantAccount: value })
-        }
+        onChangeText={(value) => defaultValue.merchantAccount = value}
       />
       <FormTextInput
         placeholder="Shopper locale"
         value={defaultValue.shopperLocale}
-        onChangeText={(value) =>
-          onChangeValue({ ...defaultValue, shopperLocale: value })
-        }
+        onChangeText={(value) => defaultValue.shopperLocale = value}
       />
       <Button
         title="Apply"
         onPress={() => {
-          props.context.onConfigChanged(defaultValue);
+          onConfigChanged(defaultValue);
+          goBack()
         }}
       />
     </View>
   );
 };
 
-const SettingView = () => {
+const SettingView = ({navigation}) => {
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
   return (
-    <PaymentMethodsContext.Consumer>
-      {(somecontext) => {
-        return (
-          <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
-            <StatusBar
-              barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            />
-            <SettingFormView context={somecontext} />
-          </SafeAreaView>
-        );
-      }}
-    </PaymentMethodsContext.Consumer>
+    <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+      />
+      <SettingFormView navigation={navigation} />
+    </SafeAreaView>
   );
 };
 
