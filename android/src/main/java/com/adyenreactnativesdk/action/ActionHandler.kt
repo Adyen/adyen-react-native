@@ -8,6 +8,7 @@ package com.adyenreactnativesdk
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
@@ -26,7 +27,6 @@ import com.adyen.checkout.components.util.ActionTypes
 import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.log.LogUtil
-import com.adyen.checkout.core.log.Logger
 import com.adyen.checkout.qrcode.QRCodeComponent
 import com.adyen.checkout.qrcode.QRCodeConfiguration
 import com.adyen.checkout.qrcode.QRCodeView
@@ -71,10 +71,10 @@ class ActionHandler(
     }
 
     fun handleAction(activity: FragmentActivity, action: Action) {
-        Logger.d(TAG, "handleAction - ${action.type}")
+        Log.d(TAG, "handleAction - ${action.type}")
         val provider = getActionProviderFor(action)
         if (provider == null) {
-            Logger.e(TAG, "Unknown Action - ${action.type}")
+            Log.e(TAG, "Unknown Action - ${action.type}")
             return
         }
 
@@ -82,7 +82,7 @@ class ActionHandler(
 
         activity.runOnUiThread {
             if (provider.requiresView(action)) {
-                Logger.d(
+                Log.d(
                     TAG,
                     "handleAction - action is viewable, requesting displayAction callback"
                 )
@@ -94,15 +94,22 @@ class ActionHandler(
                 dialog = WeakReference<DialogFragment>(actionFragment)
 
             } else {
+                Log.d(
+                    TAG,
+                    "handleAction - action have no view, loading component"
+                )
                 loadComponent(activity, provider)
                 loadedComponent?.handleAction(activity, action)
             }
         }
     }
 
-    fun hide() {
+    fun hide(activity: FragmentActivity) {
         dialog.get()?.dismiss()
         dialog.clear()
+        loadedComponent?.removeObservers(activity)
+        loadedComponent?.removeErrorObservers(activity)
+        loadedComponent = null
     }
 
     private fun loadComponent(
@@ -113,7 +120,7 @@ class ActionHandler(
             loadedComponent = this
             observe(activity, this@ActionHandler)
             observeErrors(activity) { callback.onError(it.exception) }
-            Logger.d(TAG, "handleAction - loaded a new component - ${this::class.java.simpleName}")
+            Log.d(TAG, "handleAction - loaded a new component - ${this::class.java.simpleName}")
         }
     }
 
