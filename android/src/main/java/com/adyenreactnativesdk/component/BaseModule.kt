@@ -26,16 +26,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     protected var actionHandler: ActionHandler? = null
 
-    @ReactMethod
-    fun addListener(eventName: String?) {
-        // Set up any upstream listeners or background tasks as necessary
-    }
-
-    @ReactMethod
-    fun removeListeners(count: Int?) {
-        // Remove upstream listeners, stop unnecessary background tasks
-    }
-
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
             .getJSModule(RCTDeviceEventEmitter::class.java)
