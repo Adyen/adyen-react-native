@@ -2,14 +2,12 @@ package com.adyenreactnativesdk.component.googlepay
 
 import android.content.Intent
 import android.util.Log
-import androidx.fragment.app.DialogFragment
-import com.adyen.checkout.components.PaymentComponentState
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
-import com.adyenreactnativesdk.ActionHandler
+import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
@@ -20,7 +18,6 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import org.json.JSONException
-import java.lang.ref.WeakReference
 import java.util.*
 
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {

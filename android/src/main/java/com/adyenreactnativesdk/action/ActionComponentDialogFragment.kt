@@ -20,9 +20,6 @@ import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
 import com.adyen.checkout.dropin.databinding.FragmentActionComponentBinding
-import com.adyenreactnativesdk.ActionHandler
-import com.adyenreactnativesdk.ActionHandlerConfiguration
-import com.adyenreactnativesdk.ActionHandlingInterface
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 class ActionComponentDialogFragment(
