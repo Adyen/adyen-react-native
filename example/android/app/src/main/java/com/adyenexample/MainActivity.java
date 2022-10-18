@@ -3,7 +3,7 @@ package com.adyenexample;
 import android.content.Intent;
 import android.util.Log;
 
-import com.adyenreactnativesdk.ActionHandler;
+import com.adyenreactnativesdk.action.ActionHandler;
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent;
 import com.facebook.react.ReactActivity;
 

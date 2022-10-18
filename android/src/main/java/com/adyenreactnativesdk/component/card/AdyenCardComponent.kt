@@ -22,7 +22,9 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.ActionComponentData
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.*
+import com.adyenreactnativesdk.action.ActionHandler
+import com.adyenreactnativesdk.action.ActionHandlerConfiguration
+import com.adyenreactnativesdk.action.ActionHandlingInterface
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.ui.ComponentViewModel
 import com.adyenreactnativesdk.ui.PaymentComponentListener
