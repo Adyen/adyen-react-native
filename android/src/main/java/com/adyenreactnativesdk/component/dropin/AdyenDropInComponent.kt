@@ -5,6 +5,7 @@
  */
 package com.adyenreactnativesdk.component.dropin
 
+import android.content.Context
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.facebook.react.bridge.ReactApplicationContext
@@ -14,6 +15,9 @@ import com.facebook.react.bridge.ReadableMap
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeError
 import android.content.Intent
+import androidx.activity.result.ActivityResultCaller
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContract
 import org.json.JSONObject
 import com.adyenreactnativesdk.util.ReactNativeJson
 import org.json.JSONException
@@ -28,11 +32,14 @@ import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.core.api.Environment
+import com.adyen.checkout.dropin.DropIn
+import com.adyen.checkout.dropin.DropInResult
 import com.adyenreactnativesdk.component.BaseModule
 import java.lang.IllegalStateException
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
-    DropInServiceListener {
+    DropInServiceListener,
+    Cancelable {
 
     @ReactMethod
     fun addListener(eventName: String?) { }
@@ -75,7 +82,12 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         val currentActivity = reactApplicationContext.currentActivity
         val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        startPayment(currentActivity, paymentMethodsResponse, builder.build(), resultIntent)
+
+        dropInLauncher?.let {
+            startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), resultIntent)
+        } ?: run {
+            startPayment(currentActivity, paymentMethodsResponse, builder.build(), resultIntent)
+        }
     }
 
     @ReactMethod
@@ -97,6 +109,12 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     @ReactMethod
     fun hide(success: Boolean, message: ReadableMap?) {
         proxyHideDropInCommand(success, message)
+        dropInLauncher = null
+        dropInCallback.cancelDelegate = null
+    }
+
+    override fun onCancel() {
+        sendEvent(DID_FAILED, ReactNativeError.mapError("CanceledByShopper"))
     }
 
     override fun onDidSubmit(jsonObject: JSONObject) {
@@ -195,10 +213,49 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
     init {
         DropInServiceProxy.shared.serviceListener = this
+        dropInCallback.cancelDelegate = this
     }
 
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
+        private var dropInLauncher: ActivityResultLauncher<Intent>? = null
+        private val dropInCallback = DropInCallbackListener()
+
+        @JvmStatic
+        fun setDropInLauncher(activity: ActivityResultCaller) {
+            dropInLauncher = activity.registerForActivityResult(ReactDropInResultContract(), dropInCallback::onDropInResult)
+        }
+    }
+
+}
+
+internal interface Cancelable {
+    fun onCancel()
+}
+
+internal interface ReactDropInCallback {
+    fun onDropInResult(dropInResult: DropInResult?)
+}
+
+internal class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
+    override fun createIntent(context: Context, input: Intent): Intent {
+        return input
+    }
+
+    override fun parseResult(resultCode: Int, intent: Intent?): DropInResult? {
+        return DropIn.handleActivityResult(DropIn.DROP_IN_REQUEST_CODE, resultCode, intent)
+    }
+}
+
+private class DropInCallbackListener: ReactDropInCallback {
+
+    var cancelDelegate: Cancelable? = null
+
+    override fun onDropInResult(dropInResult: DropInResult?) {
+        if (dropInResult == null) return
+        when (dropInResult) {
+            is DropInResult.CancelledByUser -> cancelDelegate?.onCancel()
+        }
     }
 }
