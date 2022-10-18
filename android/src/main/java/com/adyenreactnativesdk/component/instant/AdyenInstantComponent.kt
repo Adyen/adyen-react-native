@@ -28,6 +28,12 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     }
 
     @ReactMethod
+    fun addListener(eventName: String?) { }
+
+    @ReactMethod
+    fun removeListeners(count: Int?) { }
+
+    @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods
         if (paymentMethods == null || paymentMethods.isEmpty()) {

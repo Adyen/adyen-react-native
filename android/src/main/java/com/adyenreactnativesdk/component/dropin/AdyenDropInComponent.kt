@@ -33,6 +33,12 @@ import java.lang.IllegalStateException
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
     DropInServiceListener {
+
+    @ReactMethod
+    fun addListener(eventName: String?) { }
+
+    @ReactMethod
+    fun removeListeners(count: Int?) { }
     
     override fun getName(): String {
         return COMPONENT_NAME

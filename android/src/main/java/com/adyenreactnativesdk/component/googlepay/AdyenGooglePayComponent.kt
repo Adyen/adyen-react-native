@@ -32,6 +32,12 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     }
 
     @ReactMethod
+    fun addListener(eventName: String?) { }
+
+    @ReactMethod
+    fun removeListeners(count: Int?) { }
+
+    @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
         if (paymentMethods == null) {
