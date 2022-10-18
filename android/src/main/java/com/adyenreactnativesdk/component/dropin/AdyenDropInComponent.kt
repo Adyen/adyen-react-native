@@ -127,8 +127,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
             return
         }
-        if (success) {
-            listener.onComplete(message)
+        val messageString = message?.getString("message")
+        if (success && messageString != null) {
+            listener.onComplete(messageString)
         } else {
             listener.onFail(message)
         }

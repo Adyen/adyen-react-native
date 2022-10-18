@@ -45,20 +45,11 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             return
         }
 
-        val paymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
-        if (paymentMethod == null) {
+        val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
+        if (googlePayPaymentMethod == null) {
             sendEvent(
                 DID_FAILED,
-                ReactNativeError.mapError("${TAG}: can not parse payment methods")
-            )
-            return
-        }
-
-        val type = paymentMethod.type
-        if (paymentMethod == null || type.isNullOrEmpty()) {
-            sendEvent(
-                DID_FAILED,
-                ReactNativeError.mapError("$TAG: can not parse payment methods")
+                ReactNativeError.mapError("${TAG}: can not find $PAYMENT_METHOD_KEY within payment methods")
             )
             return
         }
@@ -99,7 +90,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
 
         GooglePayComponent.PROVIDER.isAvailable(
             appCompatActivity.application,
-            paymentMethod,
+            googlePayPaymentMethod,
             googlePayConfiguration
         ) { isAvailable: Boolean, paymentMethod: PaymentMethod, config: GooglePayConfiguration? ->
             if (isAvailable) {
@@ -137,12 +128,12 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         shared = null
     }
 
-    fun onError(error: Exception) {
+    private fun onError(error: Exception) {
         val errorMap = ReactNativeError.mapError(error)
         sendEvent(DID_FAILED, errorMap)
     }
 
-    fun onSubmit(data: PaymentComponentData<*>) {
+    private fun onSubmit(data: PaymentComponentData<*>) {
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
