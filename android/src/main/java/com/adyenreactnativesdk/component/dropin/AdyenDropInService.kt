@@ -18,7 +18,7 @@ import org.json.JSONObject
 class AdyenDropInService : DropInService(), DropInModuleListener {
     override fun onCreate() {
         super.onCreate()
-        DropInServiceProxy.shared.setModuleListener(this)
+        DropInServiceProxy.shared.moduleListener = this
     }
 
     override fun onPaymentsCallRequested(

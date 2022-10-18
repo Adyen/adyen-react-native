@@ -194,7 +194,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     init {
-        DropInServiceProxy.shared.setServiceListener(this)
+        DropInServiceProxy.shared.serviceListener = this
     }
 
     companion object {
