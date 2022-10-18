@@ -7,7 +7,9 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.*
+import com.adyenreactnativesdk.action.ActionHandler
+import com.adyenreactnativesdk.action.ActionHandlerConfiguration
+import com.adyenreactnativesdk.action.ActionHandlingInterface
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.ui.PaymentComponentListener
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
@@ -26,6 +28,12 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     override fun getName(): String {
         return COMPONENT_NAME
     }
+
+    @ReactMethod
+    fun addListener(eventName: String?) { }
+
+    @ReactMethod
+    fun removeListeners(count: Int?) { }
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {

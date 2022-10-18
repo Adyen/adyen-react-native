@@ -33,6 +33,12 @@ import java.lang.IllegalStateException
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
     DropInServiceListener {
+
+    @ReactMethod
+    fun addListener(eventName: String?) { }
+
+    @ReactMethod
+    fun removeListeners(count: Int?) { }
     
     override fun getName(): String {
         return COMPONENT_NAME
@@ -121,8 +127,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
             return
         }
-        if (success) {
-            listener.onComplete(message)
+        val messageString = message?.getString("message")
+        if (success && messageString != null) {
+            listener.onComplete(messageString)
         } else {
             listener.onFail(message)
         }
@@ -187,7 +194,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     init {
-        DropInServiceProxy.shared.setServiceListener(this)
+        DropInServiceProxy.shared.serviceListener = this
     }
 
     companion object {

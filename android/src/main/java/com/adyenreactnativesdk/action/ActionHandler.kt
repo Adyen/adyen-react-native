@@ -4,7 +4,7 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk
+package com.adyenreactnativesdk.action
 
 import android.content.Context
 import android.content.Intent
@@ -37,7 +37,7 @@ import com.adyen.checkout.voucher.VoucherConfiguration
 import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
-import com.adyenreactnativesdk.action.ActionComponentDialogFragment
+import com.adyenreactnativesdk.BuildConfig
 import java.lang.ref.WeakReference
 import java.util.*
 
