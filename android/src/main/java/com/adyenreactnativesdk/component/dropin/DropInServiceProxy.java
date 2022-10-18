@@ -61,7 +61,7 @@ public class DropInServiceProxy {
 
         void onFail(@Nullable ReadableMap map);
 
-        void onComplete(@Nullable ReadableMap message);
+        void onComplete(@NonNull String message);
 
     }
 
