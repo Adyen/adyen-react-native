@@ -23,10 +23,17 @@ const AdyenCheckout = ({
   onProvide,
   children,
 }) => {
+
   const onSubmitEventListener = useRef(null);
   const onProvideEventListener = useRef(null);
   const onCompleteEventListener = useRef(null);
   const onFailEventListener = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      removeEventListeners()
+    }
+  }, [])
 
   const submitPayment = useCallback(
     (configuration, data, nativeComponent) => {
@@ -99,15 +106,4 @@ const AdyenCheckout = ({
   );
 };
 
-const AdyenPaymentProvider = (props) => {
-
-  useEffect(() => {
-    console.warn('AdyenPaymentProvider is deprecated. Use AdyenCheckout instead');
-  }, []);
-
-  return (
-    <AdyenCheckout {...props} />
-  )
-}
-
-export { AdyenCheckoutContext, AdyenCheckout, AdyenPaymentProvider };
+export { AdyenCheckoutContext, AdyenCheckout };
