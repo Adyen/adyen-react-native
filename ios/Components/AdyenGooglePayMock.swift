@@ -11,10 +11,10 @@ import Adyen
 @objc(AdyenGooglePay)
 internal class AdyenGooglePayMock: BaseModule {
     
-    override func supportedEvents() -> [String]! { [] }
+    override func supportedEvents() -> [String]! { [Events.didFail.rawValue] }
     
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        return assertionFailure("AdyenGooglePay: not supported on iOS")
+        return sendEvent(error: NativeModuleError.notSupported)
     }
 }

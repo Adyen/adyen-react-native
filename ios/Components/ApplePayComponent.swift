@@ -27,26 +27,21 @@ final internal class ApplePayComponent: BaseModule {
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
+        let parser = RootConfigurationParser(configuration: configuration)
+        let applePayParser = ApplepayConfigurationParser(configuration: configuration)
         let paymentMethod: ApplePayPaymentMethod
+        let clientKey: String
+        let payment: Payment
+        let applepayConfig: Adyen.ApplePayComponent.Configuration
         do {
             paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: ApplePayPaymentMethod.self)
+            clientKey = try fetchClientKey(from: parser)
+            payment = try fetchPayment(from: parser)
+            applepayConfig = try applePayParser.buildConfiguration(amount: payment.amount)
         } catch {
-            return assertionFailure("ApplePayComponent: \(error.localizedDescription)")
-        }
-
-        let parser = RootConfigurationParser(configuration: configuration)
-        guard let clientKey = parser.clientKey else {
-            return assertionFailure("ApplePayComponent: No clientKey in configuration")
+            return sendEvent(error: error)
         }
         
-        guard let payment = parser.payment else {
-            return assertionFailure("ApplePayComponent: No payment in configuration")
-        }
-        
-        let applePayParser = ApplepayConfigurationParser(configuration: configuration)
-        guard let applepayConfig = applePayParser.tryConfiguration(amount: payment.amount) else {
-            return assertionFailure("ApplePayComponent: No merchantName or merchantID in configuration")
-        }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
         let applePayComponent: Adyen.ApplePayComponent
@@ -56,7 +51,7 @@ final internal class ApplePayComponent: BaseModule {
                                                         payment: payment,
                                                         configuration: applepayConfig)
         } catch {
-            return assertionFailure("ApplePayComponent: \(error.localizedDescription)")
+            return sendEvent(error: error)
         }
 
         present(component: applePayComponent)
@@ -71,7 +66,7 @@ extension ApplePayComponent: PaymentComponentDelegate {
     }
 
     internal func didFail(with error: Error, from component: PaymentComponent) {
-        sendEvent(event: .didFail, body: error.toDictionary)
+        sendEvent(error: error)
     }
 
 }
