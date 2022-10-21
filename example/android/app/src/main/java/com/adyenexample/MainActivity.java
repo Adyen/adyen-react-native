@@ -14,7 +14,7 @@ public class MainActivity extends ReactActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
+    Log.d("MainActivity", "onCreate");
     AdyenDropInComponent.setDropInLauncher(this);
   }
 

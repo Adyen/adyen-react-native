@@ -33,6 +33,7 @@ import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.dropin.DropIn
+import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.util.AdyenConstants
@@ -84,6 +85,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
+        dropInCallback.cancelDelegate = this
         dropInLauncher?.let {
             startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), resultIntent)
         } ?: run {
@@ -110,7 +112,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     @ReactMethod
     fun hide(success: Boolean, message: ReadableMap?) {
         proxyHideDropInCommand(success, message)
-        dropInLauncher = null
         dropInCallback.cancelDelegate = null
     }
 
@@ -214,7 +215,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
     init {
         DropInServiceProxy.shared.serviceListener = this
-        dropInCallback.cancelDelegate = this
     }
 
     companion object {
@@ -227,6 +227,11 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         fun setDropInLauncher(activity: ActivityResultCaller) {
             dropInLauncher = activity.registerForActivityResult(ReactDropInResultContract(), dropInCallback::onDropInResult)
         }
+
+        @JvmStatic
+        fun setDropInLauncher() {
+            dropInLauncher = null
+        }
     }
 
 }
@@ -235,11 +240,7 @@ internal interface Cancelable {
     fun onCancel()
 }
 
-internal interface ReactDropInCallback {
-    fun onDropInResult(dropInResult: DropInResult?)
-}
-
-internal class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
+private class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
     override fun createIntent(context: Context, input: Intent): Intent {
         return input
     }
@@ -249,7 +250,7 @@ internal class ReactDropInResultContract : ActivityResultContract<Intent, DropIn
     }
 }
 
-private class DropInCallbackListener: ReactDropInCallback {
+private class DropInCallbackListener: DropInCallback {
 
     var cancelDelegate: Cancelable? = null
 
