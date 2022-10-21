@@ -35,6 +35,7 @@ import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInResult
 import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.util.AdyenConstants
 import java.lang.IllegalStateException
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
@@ -114,7 +115,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     override fun onCancel() {
-        sendEvent(DID_FAILED, ReactNativeError.mapError("CanceledByShopper"))
+        sendEvent(DID_FAILED, ReactNativeError.mapError(AdyenConstants.ERROR_CANCELED_BY_SHOPPER))
     }
 
     override fun onDidSubmit(jsonObject: JSONObject) {
@@ -125,7 +126,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             return
         }
         val context = reactApplicationContext
-        map.putString("returnUrl", RedirectComponent.getReturnUrl(context))
+        map.putString(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
         sendEvent(DID_SUBMIT, map)
     }
 
@@ -145,7 +146,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
             return
         }
-        val messageString = message?.getString("message")
+        val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
         if (success && messageString != null) {
             listener.onComplete(messageString)
         } else {

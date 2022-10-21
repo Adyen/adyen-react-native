@@ -13,6 +13,7 @@ import com.adyenreactnativesdk.action.ActionHandlingInterface
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.ui.PaymentComponentListener
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
+import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -103,8 +104,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            map.putString("returnUrl", ActionHandler.getReturnUrl(reactApplicationContext))
-            Log.d(TAG, "Paying")
+            map.putString(AdyenConstants.PARAMETER_RETURN_URL, ActionHandler.getReturnUrl(reactApplicationContext))
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
@@ -122,7 +122,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     }
 
     override fun onClose() {
-        sendEvent(DID_FAILED, ReactNativeError.mapError("Closed"))
+        sendEvent(DID_FAILED, ReactNativeError.mapError(AdyenConstants.ERROR_CANCELED_BY_SHOPPER))
     }
 
     override fun onFinish() {
