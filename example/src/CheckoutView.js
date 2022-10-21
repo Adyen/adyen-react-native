@@ -14,6 +14,7 @@ import {
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { PaymentMethodsContext } from './PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
+import { ERROR_CODE_CANCELED } from '../../src';
 
 const styles = StyleSheet.create({
   topContentView: {
@@ -39,7 +40,7 @@ const CheckoutView = () => {
   };
 
   const didSubmit = (data, nativeComponent, configuration) => {
-    console.log('didSubmit');
+    console.log('didSubmit: %s', data.paymentMethod.type);
     fetchPayments(data, configuration)
       .then((result) => {
         if (result.action) {
@@ -65,9 +66,8 @@ const CheckoutView = () => {
   };
 
   const didFail = (error, nativeComponent) => {
-    console.log('didFailed %s', error.message);
-    nativeComponent.hide(false, { message: error.message || 'Unknown error' });
-    Alert.alert('Error', error.message);
+    console.log('didFailed: %s', error.message);
+    proccessError(error, nativeComponent)
   };
 
   const proccessResult = (result, nativeComponent) => {
@@ -82,10 +82,12 @@ const CheckoutView = () => {
   };
 
   const proccessError = (error, nativeComponent) => {
-    console.log(error.message);
-    nativeComponent.hide(false, {
-      message: error.message || 'Unknown error',
-    });
+    nativeComponent.hide(false, { message: error.message || 'Unknown error' });
+    if (error.errorCode == ERROR_CODE_CANCELED) {
+      Alert.alert('Canceled');
+    } else {
+      Alert.alert('Error', error.message);
+    }
   };
 
   return (
