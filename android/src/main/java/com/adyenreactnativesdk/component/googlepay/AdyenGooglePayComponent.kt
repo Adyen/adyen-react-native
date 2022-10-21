@@ -11,6 +11,7 @@ import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
+import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -49,7 +50,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         if (googlePayPaymentMethod == null) {
             sendEvent(
                 DID_FAILED,
-                ReactNativeError.mapError("${TAG}: can not find $PAYMENT_METHOD_KEY within payment methods")
+                ReactNativeError.mapError("$TAG: can not find $PAYMENT_METHOD_KEY within payment methods")
             )
             return
         }
@@ -137,7 +138,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            map.putString("returnUrl", ActionHandler.getReturnUrl(reactApplicationContext))
+            map.putString(AdyenConstants.PARAMETER_RETURN_URL, ActionHandler.getReturnUrl(reactApplicationContext))
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendEvent(DID_FAILED, ReactNativeError.mapError(e))
@@ -145,7 +146,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     }
 
     fun manageState(resultCode: Int, data: Intent?) {
-        Log.d(TAG, "handleState called - $resultCode")
         googlePayComponent?.handleActivityResult(resultCode, data)
     }
 
