@@ -17,6 +17,7 @@ export {
   PAYMENT_SUBMIT_EVENT,
   PAYMENT_PROVIDE_DETAILS_EVENT,
   PAYMENT_FAILED_EVENT,
-} from './AdyenCheckoutEvents';
+  ERROR_CANCELED
+} from './Constants';
 
 export { useAdyenCheckout } from './useAdyenCheckout';

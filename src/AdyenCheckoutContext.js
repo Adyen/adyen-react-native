@@ -4,7 +4,7 @@ import {
   PAYMENT_PROVIDE_DETAILS_EVENT,
   PAYMENT_COMPLETED_EVENT,
   PAYMENT_FAILED_EVENT,
-} from './AdyenCheckoutEvents';
+} from './Constants';
 import { getNativeComponent } from './AdyenNativeModules';
 import { NativeEventEmitter } from 'react-native';
 
