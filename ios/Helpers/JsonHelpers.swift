@@ -35,18 +35,3 @@ private extension Encodable {
         return object
     }
 }
-
-internal extension Error {
-
-    var toDictionary: [String: Any] {
-        var dict = ["message": self.localizedDescription]
-
-        if let localized = self as? LocalizedError {
-            dict["reason"] = localized.failureReason
-            dict["discription"] = localized.errorDescription
-            dict["recovery"] = localized.recoverySuggestion
-        }
-
-        return dict
-    }
-}

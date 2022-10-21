@@ -10,12 +10,6 @@ protocol SubConfig {
     static var rootKey: String { get }
 }
 
-extension Dictionary where Key == String {
-    func hasConfig(_ keys: SubConfig.Type) -> Bool {
-        return self[keys.rootKey] != nil
-    }
-}
-
 internal enum Events: String, CaseIterable {
     case didSubmit = "didSubmitCallback"
     case didProvide = "didProvideCallback"

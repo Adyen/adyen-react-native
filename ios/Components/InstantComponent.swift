@@ -27,16 +27,14 @@ final internal class InstantComponent: BaseModule {
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        let paymentMethod: PaymentMethod
-        do {
-            paymentMethod = try parseFirstPaymentMethod(from: paymentMethodsDict)
-        } catch {
-            return assertionFailure("InstantComponent: \(error.localizedDescription)")
-        }
-
         let parser = RootConfigurationParser(configuration: configuration)
-        guard let clientKey = parser.clientKey else {
-            return assertionFailure("InstantComponent: No clientKey in configuration")
+        let paymentMethod: PaymentMethod
+        let clientKey: String
+        do {
+            paymentMethod = try parseAnyPaymentMethod(from: paymentMethodsDict)
+            clientKey = try fetchClientKey(from: parser)
+        } catch {
+            return sendEvent(error: error)
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
@@ -56,11 +54,14 @@ final internal class InstantComponent: BaseModule {
     }
 
     @objc
-    func handle(_ action: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: action, options: []),
-              let action = try? JSONDecoder().decode(Action.self, from: data)
-        else { return }
-
+    func handle(_ dictionary: NSDictionary) {
+        let action: Action
+        do {
+            action = try parseAction(from: dictionary)
+        } catch {
+            return sendEvent(error: error)
+        }
+        
         DispatchQueue.main.async { [weak self] in
             self?.actionHandler?.handle(action)
         }
@@ -83,7 +84,7 @@ extension InstantComponent: PaymentComponentDelegate {
 extension InstantComponent: ActionComponentDelegate {
 
     internal func didFail(with error: Error, from component: ActionComponent) {
-        sendEvent(event: .didFail, body: error.toDictionary)
+        sendEvent(error: error)
     }
 
     internal func didComplete(from component: ActionComponent) {
