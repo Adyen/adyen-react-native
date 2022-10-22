@@ -1,14 +1,14 @@
 package com.adyenreactnativesdk.component.googlepay
 
 import android.content.Intent
-import android.util.Log
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
-import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyenreactnativesdk.component.KnownException
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
@@ -19,7 +19,6 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import org.json.JSONException
-import java.util.*
 
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {
 
@@ -39,43 +38,31 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
         if (paymentMethods == null) {
-            sendEvent(
-                DID_FAILED,
-                ReactNativeError.mapError("$TAG: can not deserialize paymentMethods")
-            )
+            sendErrorEvent(BaseModuleException.INVALID_PAYMENT_METHODS)
             return
         }
 
         val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
         if (googlePayPaymentMethod == null) {
-            sendEvent(
-                DID_FAILED,
-                ReactNativeError.mapError("$TAG: can not find $PAYMENT_METHOD_KEY within payment methods")
-            )
+            sendErrorEvent(BaseModuleException.noPaymentMethod(PAYMENT_METHOD_KEY))
             return
         }
 
-        val rootConfigurationParser = RootConfigurationParser(configuration)
-        val environment: Environment
+        val rootParser = RootConfigurationParser(configuration)
+        val environment = rootParser.environment
+        val shopperLocale = rootParser.locale ?: currentLocale(reactApplicationContext)
         val clientKey: String
-        val shopperLocale: Locale
-
-        try {
-            environment = rootConfigurationParser.environment
-            clientKey = rootConfigurationParser.clientKey
-            shopperLocale = rootConfigurationParser.locale ?: currentLocale(reactApplicationContext)
-        } catch (e: NoSuchFieldException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
-            return
+        rootParser.clientKey.let {
+            clientKey = if (it != null) it else {
+                sendErrorEvent(BaseModuleException.NO_CLIENT_KEY)
+                return
+            }
         }
 
-        val amount = rootConfigurationParser.amount
-        val countryCode = rootConfigurationParser.countryCode
+        val amount = rootParser.amount
+        val countryCode = rootParser.countryCode
         if (amount == null || countryCode == null) {
-            sendEvent(
-                DID_FAILED,
-                ReactNativeError.mapError("$TAG: configuration must contain amount and country code")
-            )
+            sendErrorEvent(BaseModuleException.NO_PAYMENT)
             return
         }
 
@@ -115,10 +102,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
                     GOOGLEPAY_REQUEST_CODE
                 )
             } else {
-                sendEvent(
-                    DID_FAILED,
-                    ReactNativeError.mapError("$TAG: GooglePay unavailable")
-                )
+                sendErrorEvent(GooglePayException.NOT_SUPPORTED)
             }
         }
     }
@@ -130,8 +114,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     }
 
     private fun onError(error: Exception) {
-        val errorMap = ReactNativeError.mapError(error)
-        sendEvent(DID_FAILED, errorMap)
+        sendErrorEvent(error)
     }
 
     private fun onSubmit(data: PaymentComponentData<*>) {
@@ -141,7 +124,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             map.putString(AdyenConstants.PARAMETER_RETURN_URL, ActionHandler.getReturnUrl(reactApplicationContext))
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(e)
         }
     }
 
@@ -166,3 +149,14 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     }
 
 }
+
+class GooglePayException(code: String, message: String, cause: Throwable? = null) : KnownException(code = code, errorMessage = message, cause) {
+    companion object {
+        val NOT_SUPPORTED = GooglePayException(
+            code = "notSupported",
+            message = "GooglePay unavailable"
+        )
+    }
+}
+
+

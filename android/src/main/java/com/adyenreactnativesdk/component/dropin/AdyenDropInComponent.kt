@@ -6,42 +6,37 @@
 package com.adyenreactnativesdk.component.dropin
 
 import android.content.Context
-import com.adyen.checkout.dropin.DropInConfiguration.Builder
-import com.adyen.checkout.dropin.DropIn.startPayment
-import com.facebook.react.bridge.ReactApplicationContext
-import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInServiceListener
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.ReadableMap
-import com.adyenreactnativesdk.configuration.RootConfigurationParser
-import com.adyenreactnativesdk.util.ReactNativeError
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
-import org.json.JSONObject
-import com.adyenreactnativesdk.util.ReactNativeJson
-import org.json.JSONException
-import com.facebook.react.bridge.WritableMap
-import com.adyen.checkout.redirect.RedirectComponent
-import com.adyenreactnativesdk.configuration.DropInConfigurationParser
-import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
-import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
-import com.facebook.react.bridge.JavaOnlyMap
-import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
-import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.dropin.DropIn
+import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInCallback
+import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.dropin.DropInResult
+import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyenreactnativesdk.component.KnownException
+import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInServiceListener
+import com.adyenreactnativesdk.configuration.CardConfigurationParser
+import com.adyenreactnativesdk.configuration.DropInConfigurationParser
+import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
+import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
-import java.lang.IllegalStateException
+import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.*
+import org.json.JSONException
+import org.json.JSONObject
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
     DropInServiceListener,
-    Cancelable {
+    ReactDropInCallback {
 
     @ReactMethod
     fun addListener(eventName: String?) { }
@@ -57,15 +52,15 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) {
         val paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
         val parser = RootConfigurationParser(configuration)
-        val environment: Environment
+        val environment = parser.environment
         val clientKey: String
-        try {
-            environment = parser.environment
-            clientKey = parser.clientKey
-        } catch (e: NoSuchFieldException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
-            return
+        parser.clientKey.let {
+            clientKey = if (it != null) it else {
+                sendErrorEvent(BaseModuleException.NO_CLIENT_KEY)
+                return
+            }
         }
+
         val builder = Builder(reactApplicationContext, AdyenDropInService::class.java, clientKey)
             .setEnvironment(environment)
 
@@ -85,7 +80,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
-        dropInCallback.cancelDelegate = this
+        dropInCallback.dropInCallback = this
         dropInLauncher?.let {
             startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), resultIntent)
         } ?: run {
@@ -97,33 +92,44 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     fun handle(actionMap: ReadableMap?) {
         val listener = DropInServiceProxy.shared.moduleListener
         if (listener == null) {
-            val e = IllegalStateException("Invalid state: DropInModuleListener is missing")
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(DropInException.NO_MODULE_LISTENER)
             return
         }
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             listener.onAction(jsonObject)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(BaseModuleException.INVALID_ACTION)
         }
     }
 
     @ReactMethod
     fun hide(success: Boolean, message: ReadableMap?) {
         proxyHideDropInCommand(success, message)
-        dropInCallback.cancelDelegate = null
+        dropInCallback.dropInCallback = null
     }
 
     override fun onCancel() {
-        sendEvent(DID_FAILED, ReactNativeError.mapError(AdyenConstants.ERROR_CANCELED_BY_SHOPPER))
+        sendErrorEvent(BaseModuleException.CANCELED)
+    }
+
+    override fun onError(reason: String?) {
+        if (reason == "Challenge canceled.") { // for canceled 3DS
+            sendErrorEvent(BaseModuleException.CANCELED)
+        } else {
+            sendErrorEvent(DropInException.unknown(reason))
+        }
+    }
+
+    override fun onCompleated(result: String) {
+        hide(true, null)
     }
 
     override fun onDidSubmit(jsonObject: JSONObject) {
         val map: WritableMap = try {
             ReactNativeJson.convertJsonToMap(jsonObject)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(e)
             return
         }
         val context = reactApplicationContext
@@ -136,15 +142,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             val map = ReactNativeJson.convertJsonToMap(jsonObject)
             sendEvent(DID_PROVIDE, map)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(e)
         }
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
         val listener = DropInServiceProxy.shared.moduleListener
         if (listener == null) {
-            val e = IllegalStateException("$TAG Invalid state: DropInModuleListener is missing")
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(DropInException.NO_MODULE_LISTENER)
             return
         }
         val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
@@ -184,8 +189,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
                 builder.builderShopperLocale,
                 builder.builderEnvironment,
                 builder.builderClientKey
-            )
-                .build()
+            ).build()
         )
     }
 
@@ -229,15 +233,17 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
 
         @JvmStatic
-        fun setDropInLauncher() {
+        fun removeDropInLauncher() {
             dropInLauncher = null
         }
     }
 
 }
 
-internal interface Cancelable {
+internal interface ReactDropInCallback {
     fun onCancel()
+    fun onError(reason: String?)
+    fun onCompleated(result: String)
 }
 
 private class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
@@ -252,12 +258,30 @@ private class ReactDropInResultContract : ActivityResultContract<Intent, DropInR
 
 private class DropInCallbackListener: DropInCallback {
 
-    var cancelDelegate: Cancelable? = null
+    var dropInCallback: ReactDropInCallback? = null
 
     override fun onDropInResult(dropInResult: DropInResult?) {
         if (dropInResult == null) return
         when (dropInResult) {
-            is DropInResult.CancelledByUser -> cancelDelegate?.onCancel()
+            is DropInResult.CancelledByUser -> dropInCallback?.onCancel()
+            is DropInResult.Error -> dropInCallback?.onError(dropInResult.reason)
+            is DropInResult.Finished -> dropInCallback?.onCompleated(dropInResult.result)
+        }
+    }
+}
+
+class DropInException(code: String, message: String, cause: Throwable? = null) : KnownException(code = code, errorMessage = message, cause) {
+    companion object {
+        val NO_MODULE_LISTENER = DropInException(
+            code = "noModulListener",
+            message = "Invalid state: DropInModuleListener is missing"
+        )
+        fun unknown(reason: String?): DropInException {
+            val message = if (reason.isNullOrEmpty()) "reason unknown" else reason
+            return DropInException(
+                code = "unknown",
+                message = message
+            )
         }
     }
 }

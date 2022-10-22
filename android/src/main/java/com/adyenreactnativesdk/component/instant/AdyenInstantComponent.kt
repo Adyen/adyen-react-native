@@ -11,6 +11,7 @@ import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.action.ActionHandlerConfiguration
 import com.adyenreactnativesdk.action.ActionHandlingInterface
 import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.ui.PaymentComponentListener
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
@@ -40,34 +41,26 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods
         if (paymentMethods == null || paymentMethods.isEmpty()) {
-            sendEvent(
-                DID_FAILED,
-                ReactNativeError.mapError("$TAG: can not deserialize paymentMethods")
-            )
+            sendErrorEvent(BaseModuleException.INVALID_PAYMENT_METHODS)
             return
         }
-        val paymentMethod = paymentMethods[0]
-        val type = paymentMethod.type
-        if (paymentMethod == null || type.isNullOrEmpty()) {
-            sendEvent(
-                DID_FAILED,
-                ReactNativeError.mapError("$TAG: can not parse payment methods")
-            )
+        val type = paymentMethods.firstOrNull()?.type
+        if (type == null) {
+            sendErrorEvent(BaseModuleException.INVALID_PAYMENT_METHODS)
             return
         }
 
         val config = RootConfigurationParser(configuration)
-        val environment: Environment
+        val environment = config.environment
         val clientKey: String
-        val shopperLocale: Locale
-        try {
-            environment = config.environment
-            clientKey = config.clientKey
-            shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
-        } catch (e: NoSuchFieldException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
-            return
+        config.clientKey.let {
+            clientKey = if (it != null) it else {
+                sendErrorEvent(BaseModuleException.NO_CLIENT_KEY)
+                return
+            }
         }
+
+        val shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
 
         val actionHandlerConfiguration =
             ActionHandlerConfiguration(shopperLocale, environment, clientKey)
@@ -83,7 +76,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
             val action = Action.SERIALIZER.deserialize(jsonObject)
             actionHandler?.handleAction(appCompatActivity, action)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(BaseModuleException.INVALID_ACTION)
         }
     }
 
@@ -96,8 +89,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     }
 
     override fun onError(error: Exception) {
-        val errorMap = ReactNativeError.mapError(error)
-        sendEvent(DID_FAILED, errorMap)
+        sendErrorEvent(error)
     }
 
     override fun onSubmit(data: PaymentComponentData<*>) {
@@ -107,7 +99,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
             map.putString(AdyenConstants.PARAMETER_RETURN_URL, ActionHandler.getReturnUrl(reactApplicationContext))
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(e)
         }
     }
 
@@ -117,12 +109,12 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
             val map = ReactNativeJson.convertJsonToMap(jsonObject)
             sendEvent(DID_PROVIDE, map)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(e)
         }
     }
 
     override fun onClose() {
-        sendEvent(DID_FAILED, ReactNativeError.mapError(AdyenConstants.ERROR_CANCELED_BY_SHOPPER))
+        sendErrorEvent(BaseModuleException.CANCELED)
     }
 
     override fun onFinish() {
