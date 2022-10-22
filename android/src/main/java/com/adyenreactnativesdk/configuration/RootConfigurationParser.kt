@@ -9,6 +9,7 @@ import android.util.Log
 import com.facebook.react.bridge.ReadableMap
 import com.adyen.checkout.components.model.payments.Amount
 import com.adyen.checkout.core.api.Environment
+import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.util.ReactNativeJson
 import java.util.*
 
@@ -25,28 +26,23 @@ class RootConfigurationParser(private val config: ReadableMap) {
 
     val amount: Amount?
         get() {
-            if (!config.hasKey(AMOUNT_KEY)) {
-                Log.w(TAG, "No `amount` on configuration")
-                return null
+            if (config.hasKey(AMOUNT_KEY)) {
+                val map = config.getMap(AMOUNT_KEY)
+                val jsonObject = try {
+                    ReactNativeJson.convertMapToJson(map)
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Amount" + map.toString() + " not valid", e)
+                    return null
+                }
+                return Amount.SERIALIZER.deserialize(jsonObject)
             }
-            val map = config.getMap(AMOUNT_KEY)
-            val jsonObject = try {
-                ReactNativeJson.convertMapToJson(map)
-            } catch (e: Throwable) {
-                Log.w(TAG, "Amount" + map.toString() + " not valid", e)
-                return null
-            }
-
-            return Amount.SERIALIZER.deserialize(jsonObject)
+            return null
         }
 
-    val clientKey: String
-        @Throws(NoSuchFieldException::class) get() {
-            if (!config.hasKey(CLIENT_KEY_KEY)) {
-                throw NoSuchFieldException("No $CLIENT_KEY_KEY")
-            }
-            return config.getString(CLIENT_KEY_KEY)!!
-        }
+    val clientKey: String?
+        get() = if (config.hasKey(CLIENT_KEY_KEY)) {
+            config.getString(CLIENT_KEY_KEY)
+        } else null
 
     val countryCode: String?
         get() = if (config.hasKey(COUNTRY_CODE_KEY)) {
@@ -54,24 +50,19 @@ class RootConfigurationParser(private val config: ReadableMap) {
         } else null
 
     val locale: Locale?
-        get() {
-            if (!config.hasKey(SHOPPER_LOCALE_KEY)) {
-                return null
-            }
-            return Locale.forLanguageTag(config.getString(SHOPPER_LOCALE_KEY)!!)
-        }
+        get() = if (config.hasKey(SHOPPER_LOCALE_KEY)) {
+            Locale.forLanguageTag(config.getString(SHOPPER_LOCALE_KEY)!!)
+        } else null
 
     val environment: Environment
-        @Throws(NoSuchFieldException::class) get() {
-            if (!config.hasKey(ENVIRONMENT_KEY)) {
-                throw NoSuchFieldException("No $ENVIRONMENT_KEY")
-            }
+        get() = if (config.hasKey(ENVIRONMENT_KEY)) {
             val environment = config.getString(ENVIRONMENT_KEY)!!
-            return when (environment.toLowerCase(Locale.ROOT)) {
+            when (environment.toLowerCase(Locale.ROOT)) {
                 "live-au" -> Environment.AUSTRALIA
                 "live", "live-eu" -> Environment.EUROPE
                 "live-us" -> Environment.UNITED_STATES
                 else -> Environment.TEST
             }
-        }
+        } else Environment.TEST
+
 }
