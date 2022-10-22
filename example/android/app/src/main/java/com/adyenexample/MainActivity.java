@@ -38,6 +38,6 @@ public class MainActivity extends ReactActivity {
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
     Log.d("MainActivity", "onActivityResult");
-    AdyenGooglePayComponent.handleState(requestCode, resultCode, data);
+    AdyenGooglePayComponent.handleActivityResult(requestCode, resultCode, data);
   }
 }

@@ -74,13 +74,33 @@ defaultConfig {
 </intent-filter>
 ```
 
-3. Add return URL handler to your Checkout activity `onNewIntent`:
+3. Provide your Checkout activity as `DropInLauncher`. This will improve responsiveness of DropIn and standalone native components:
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+  super.onCreate(savedInstanceState);
+  AdyenDropInComponent.setDropInLauncher(this);
+}
+```
+
+4. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
 
 ```java
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
     ActionHandler.Companion.handle(intent);
+}
+```
+
+5. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
+
+```java
+@Override
+public void onActivityResult(int requestCode, int resultCode, Intent data) {
+  super.onActivityResult(requestCode, resultCode, data);
+  AdyenGooglePayComponent.handleState(requestCode, resultCode, data);
 }
 ```
 
@@ -97,7 +117,7 @@ const configuration = {
   environment: 'test', // When you're ready to accept live payments, change the value to one of our live environments.
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
-  amount: { currency: 'EUR', value: 1000 },
+  amount: { currency: 'EUR', value: 1000 }, // Value in minor units
   reference: 'React Native', // The reference to uniquely identify a payment. Can be send from your backend
   shopperReference: 'Checkout Shopper', // Your reference to uniquely identify this shopper
   returnUrl: 'myapp://', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
@@ -162,7 +182,7 @@ import {
 </AdyenCheckout>
 ```
 
-Or manage native events by
+Or manage native events manually by
 
 ```javascript
 import { NativeModules } from 'react-native';
@@ -185,7 +205,7 @@ const { AdyenDropIn } = NativeModules;
 ### Handling Actions
 
 > :exclamation: Native components only handling actions after payment was **started**(nativeComponent.open) and before it was **hidden**(nativeComponent.hide)
-Handling of actions on its own is not yet supported
+Handling of actions on its own is not supported
 
 Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions, use `nativeComponent.handle(action)` from  `onSubmit` callback.
 
@@ -221,6 +241,7 @@ AdyenDropIn.handle(action);
 ## Documentation
 
 - [Configuration](/docs/Configuration.md)
+- [Error codes](/docs/Error codes.md)
 
 > :construction: ** Adyen Docs documentation in progress**
 
