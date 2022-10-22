@@ -147,7 +147,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         }
     }
 
-    fun manageState(resultCode: Int, data: Intent?) {
+    fun handleActivityResult(resultCode: Int, data: Intent?) {
         googlePayComponent?.handleActivityResult(resultCode, data)
     }
 
@@ -160,9 +160,9 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         private var shared: AdyenGooglePayComponent? = null
 
         @JvmStatic
-        fun handleState(requestCode: Int, resultCode: Int, data: Intent?) {
+        fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             if (requestCode == GOOGLEPAY_REQUEST_CODE) {
-                shared?.manageState(resultCode, data)
+                shared?.handleActivityResult(resultCode, data)
             }
         }
     }
