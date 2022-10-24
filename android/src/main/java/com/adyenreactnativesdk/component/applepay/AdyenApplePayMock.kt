@@ -1,6 +1,7 @@
 package com.adyenreactnativesdk.component.applepay
 
 import com.adyenreactnativesdk.component.BaseModule
+import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.instant.AdyenInstantComponent
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -18,6 +19,6 @@ class AdyenApplePayMock(context: ReactApplicationContext?) : BaseModule(context)
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        throw RuntimeException("AdyenApplePay is not supported on Android!")
+        sendErrorEvent(BaseModuleException.NotSupported())
     }
 }

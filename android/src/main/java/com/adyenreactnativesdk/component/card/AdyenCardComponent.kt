@@ -64,22 +64,13 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         }
 
         val config = RootConfigurationParser(configuration)
-        val environment: Environment
-        val clientKey: String
-        val shopperLocale: Locale
-        val amount: Amount?
-        try {
-            environment = config.environment
-            clientKey = config.clientKey
-            shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
-            amount = config.amount
-        } catch (e: NoSuchFieldException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
-            return
-        }
+        val environment = config.environment
+        val clientKey = config.clientKey
+        val shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
+        val amount = config.amount
 
         val actionHandlerConfiguration =
-            ActionHandlerConfiguration(shopperLocale, environment, clientKey)
+            ActionHandlerConfiguration(shopperLocale, environment, clientKey!!)
         actionHandler = ActionHandler(this, actionHandlerConfiguration)
 
         val parser = CardConfigurationParser(configuration)

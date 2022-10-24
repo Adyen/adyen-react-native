@@ -1,13 +1,22 @@
 package com.adyenexample;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.adyenreactnativesdk.action.ActionHandler;
+import com.adyenreactnativesdk.component.dropin.AdyenDropInComponent;
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent;
 import com.facebook.react.ReactActivity;
 
 public class MainActivity extends ReactActivity {
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    Log.d("MainActivity", "onCreate");
+    AdyenDropInComponent.setDropInLauncher(this);
+  }
 
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule
