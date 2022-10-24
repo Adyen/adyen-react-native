@@ -23,28 +23,27 @@ object ReactNativeError {
     private const val ERROR_CODE = "errorCode"
 
     fun mapError(message: String?): ReadableMap {
-        val map: WritableMap = WritableNativeMap()
-        map.putString(MESSAGE_KEY, message)
-        return map
+        return WritableNativeMap().apply {
+            putString(MESSAGE_KEY, message)
+        }
     }
 
     fun mapError(error: Exception): ReadableMap {
-        val map: WritableMap = WritableNativeMap()
-        map.putString(MESSAGE_KEY, error.localizedMessage)
-        val cause = error.cause
-        if (cause != null) {
-            map.putString(REASON_KEY, cause.localizedMessage)
-        }
-        val stackTrace = error.stackTrace
-        if (stackTrace != null && stackTrace.isNotEmpty()) {
-            map.putString(DISCRIPTION_KEY, stackTrace.toString())
-        }
+        return WritableNativeMap().apply {
+            putString(MESSAGE_KEY, error.localizedMessage)
+            error.cause?.let {
+                putString(REASON_KEY, it.localizedMessage)
+            }
 
-        (error as? KnownException)?.let {
-            map.putString(ERROR_CODE, it.code)
-        }
+            val stackTrace = error.stackTrace
+            if (stackTrace.isNotEmpty()) {
+                putString(DISCRIPTION_KEY, stackTrace.toString())
+            }
 
-        return map
+            (error as? KnownException)?.let {
+                putString(ERROR_CODE, it.code)
+            }
+        }
     }
 
 }
