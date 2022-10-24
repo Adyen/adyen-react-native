@@ -56,7 +56,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         val clientKey: String
         parser.clientKey.let {
             clientKey = if (it != null) it else {
-                sendErrorEvent(BaseModuleException.NO_CLIENT_KEY)
+                sendErrorEvent(BaseModuleException.NoClientKey())
                 return
             }
         }
@@ -92,14 +92,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     fun handle(actionMap: ReadableMap?) {
         val listener = DropInServiceProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(DropInException.NO_MODULE_LISTENER)
+            sendErrorEvent(DropInException.NoModuleListener())
             return
         }
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             listener.onAction(jsonObject)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.INVALID_ACTION)
+            sendErrorEvent(BaseModuleException.InvalidAction())
         }
     }
 
@@ -110,14 +110,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     override fun onCancel() {
-        sendErrorEvent(BaseModuleException.CANCELED)
+        sendErrorEvent(BaseModuleException.Canceled())
     }
 
     override fun onError(reason: String?) {
         if (reason == "Challenge canceled.") { // for canceled 3DS
-            sendErrorEvent(BaseModuleException.CANCELED)
+            sendErrorEvent(BaseModuleException.Canceled())
         } else {
-            sendErrorEvent(DropInException.unknown(reason))
+            sendErrorEvent(DropInException.Unknown(reason))
         }
     }
 
@@ -149,7 +149,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
         val listener = DropInServiceProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(DropInException.NO_MODULE_LISTENER)
+            sendErrorEvent(DropInException.NoModuleListener())
             return
         }
         val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
@@ -229,7 +229,10 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
         @JvmStatic
         fun setDropInLauncher(activity: ActivityResultCaller) {
-            dropInLauncher = activity.registerForActivityResult(ReactDropInResultContract(), dropInCallback::onDropInResult)
+            dropInLauncher = activity.registerForActivityResult(
+                ReactDropInResultContract(),
+                dropInCallback::onDropInResult
+            )
         }
 
         @JvmStatic
@@ -256,7 +259,7 @@ private class ReactDropInResultContract : ActivityResultContract<Intent, DropInR
     }
 }
 
-private class DropInCallbackListener: DropInCallback {
+private class DropInCallbackListener : DropInCallback {
 
     var dropInCallback: ReactDropInCallback? = null
 
@@ -270,18 +273,15 @@ private class DropInCallbackListener: DropInCallback {
     }
 }
 
-class DropInException(code: String, message: String, cause: Throwable? = null) : KnownException(code = code, errorMessage = message, cause) {
-    companion object {
-        val NO_MODULE_LISTENER = DropInException(
-            code = "noModulListener",
-            message = "Invalid state: DropInModuleListener is missing"
-        )
-        fun unknown(reason: String?): DropInException {
-            val message = if (reason.isNullOrEmpty()) "reason unknown" else reason
-            return DropInException(
-                code = "unknown",
-                message = message
-            )
-        }
-    }
+sealed class DropInException(code: String, message: String, cause: Throwable? = null) :
+    KnownException(code = code, errorMessage = message, cause) {
+    class NoModuleListener : DropInException(
+        code = "noModulListener",
+        message = "Invalid state: DropInModuleListener is missing"
+    )
+
+    class Unknown(reason: String?) : DropInException(
+        code = "unknown",
+        message = if (reason.isNullOrEmpty()) "reason unknown" else reason
+    )
 }

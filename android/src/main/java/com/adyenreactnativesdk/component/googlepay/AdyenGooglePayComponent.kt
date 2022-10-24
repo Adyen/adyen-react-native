@@ -38,13 +38,13 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
         if (paymentMethods == null) {
-            sendErrorEvent(BaseModuleException.INVALID_PAYMENT_METHODS)
+            sendErrorEvent(BaseModuleException.InvalidPaymentMethods())
             return
         }
 
         val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
         if (googlePayPaymentMethod == null) {
-            sendErrorEvent(BaseModuleException.noPaymentMethod(PAYMENT_METHOD_KEY))
+            sendErrorEvent(BaseModuleException.NoPaymentMethod(PAYMENT_METHOD_KEY))
             return
         }
 
@@ -54,7 +54,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         val clientKey: String
         rootParser.clientKey.let {
             clientKey = if (it != null) it else {
-                sendErrorEvent(BaseModuleException.NO_CLIENT_KEY)
+                sendErrorEvent(BaseModuleException.NoClientKey())
                 return
             }
         }
@@ -62,7 +62,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         val amount = rootParser.amount
         val countryCode = rootParser.countryCode
         if (amount == null || countryCode == null) {
-            sendErrorEvent(BaseModuleException.NO_PAYMENT)
+            sendErrorEvent(BaseModuleException.NoPayment())
             return
         }
 
@@ -102,7 +102,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
                     GOOGLEPAY_REQUEST_CODE
                 )
             } else {
-                sendErrorEvent(GooglePayException.NOT_SUPPORTED)
+                sendErrorEvent(GooglePayException.NotSupported())
             }
         }
     }
@@ -121,7 +121,10 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
         try {
             val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            map.putString(AdyenConstants.PARAMETER_RETURN_URL, ActionHandler.getReturnUrl(reactApplicationContext))
+            map.putString(
+                AdyenConstants.PARAMETER_RETURN_URL,
+                ActionHandler.getReturnUrl(reactApplicationContext)
+            )
             sendEvent(DID_SUBMIT, map)
         } catch (e: JSONException) {
             sendErrorEvent(e)
@@ -150,13 +153,12 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
 
 }
 
-class GooglePayException(code: String, message: String, cause: Throwable? = null) : KnownException(code = code, errorMessage = message, cause) {
-    companion object {
-        val NOT_SUPPORTED = GooglePayException(
-            code = "notSupported",
-            message = "GooglePay unavailable"
-        )
-    }
+sealed class GooglePayException(code: String, message: String, cause: Throwable? = null) :
+    KnownException(code = code, errorMessage = message, cause) {
+    class NotSupported : GooglePayException(
+        code = "notSupported",
+        message = "GooglePay unavailable"
+    )
 }
 
 
