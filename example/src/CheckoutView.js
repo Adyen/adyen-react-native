@@ -40,7 +40,7 @@ const CheckoutView = () => {
   };
 
   const didSubmit = (data, nativeComponent, configuration) => {
-    console.log('didSubmit: %s', data.paymentMethod.type);
+    console.log(`didSubmit: ${data.paymentMethod.type}`);
     fetchPayments(data, configuration)
       .then((result) => {
         if (result.action) {
@@ -66,17 +66,13 @@ const CheckoutView = () => {
   };
 
   const didFail = (error, nativeComponent) => {
-    console.log('didFailed: %s', error.message);
+    console.log(`didFailed: ${error.message}`);
     proccessError(error, nativeComponent)
   };
 
   const proccessResult = (result, nativeComponent) => {
     let success = isSuccess(result);
-    console.log(
-      'Payment: %s : %s',
-      success ? 'success' : 'failure',
-      result.resultCode
-    );
+    console.log(`Payment: ${success ? "success" : "failure"} : ${result.resultCode}`);
     nativeComponent.hide(success, { message: result.resultCode });
     Alert.alert(result.resultCode);
   };
