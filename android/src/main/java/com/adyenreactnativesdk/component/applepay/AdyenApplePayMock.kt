@@ -19,6 +19,6 @@ class AdyenApplePayMock(context: ReactApplicationContext?) : BaseModule(context)
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        sendErrorEvent(BaseModuleException.NOT_SUPPORTED)
+        sendErrorEvent(BaseModuleException.NotSupported())
     }
 }

@@ -1,12 +1,10 @@
 package com.adyenreactnativesdk.component.instant
 
-import android.util.Log
 import com.adyen.checkout.components.ActionComponentData
 import com.adyen.checkout.components.model.payments.request.GenericPaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.components.model.payments.response.Action
-import com.adyen.checkout.core.api.Environment
 import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.action.ActionHandlerConfiguration
 import com.adyenreactnativesdk.action.ActionHandlingInterface
@@ -15,14 +13,12 @@ import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.ui.PaymentComponentListener
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
-import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import org.json.JSONException
-import java.util.*
 
 class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
@@ -41,12 +37,12 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods
         if (paymentMethods == null || paymentMethods.isEmpty()) {
-            sendErrorEvent(BaseModuleException.INVALID_PAYMENT_METHODS)
+            sendErrorEvent(BaseModuleException.InvalidPaymentMethods())
             return
         }
         val type = paymentMethods.firstOrNull()?.type
         if (type == null) {
-            sendErrorEvent(BaseModuleException.INVALID_PAYMENT_METHODS)
+            sendErrorEvent(BaseModuleException.InvalidPaymentMethods())
             return
         }
 
@@ -55,7 +51,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         val clientKey: String
         config.clientKey.let {
             clientKey = if (it != null) it else {
-                sendErrorEvent(BaseModuleException.NO_CLIENT_KEY)
+                sendErrorEvent(BaseModuleException.NoClientKey())
                 return
             }
         }
@@ -76,7 +72,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
             val action = Action.SERIALIZER.deserialize(jsonObject)
             actionHandler?.handleAction(appCompatActivity, action)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.INVALID_ACTION)
+            sendErrorEvent(BaseModuleException.InvalidAction())
         }
     }
 
@@ -114,7 +110,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     }
 
     override fun onClose() {
-        sendErrorEvent(BaseModuleException.CANCELED)
+        sendErrorEvent(BaseModuleException.Canceled())
     }
 
     override fun onFinish() {
