@@ -80,8 +80,8 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     fun hide(success: Boolean?, message: ReadableMap?) {
         appCompatActivity.runOnUiThread {
             actionHandler?.hide(appCompatActivity)
+            actionHandler = null
         }
-        actionHandler = null
     }
 
     override fun onError(error: Exception) {
