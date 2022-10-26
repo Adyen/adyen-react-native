@@ -40,7 +40,7 @@ import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
 import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.ui.Cancelable
-import com.adyenreactnativesdk.ui.LoadingDialogFragment
+import com.adyenreactnativesdk.ui.PendingPaymentDialogFragment
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -74,7 +74,7 @@ class ActionHandler(
         }
     }
 
-    private var loadingDialogFragment : LoadingDialogFragment? = null
+    private var loadingDialogFragment : PendingPaymentDialogFragment? = null
 
     fun handleAction(activity: FragmentActivity, action: Action) {
         Log.d(TAG, "handleAction - ${action.type}")
@@ -93,7 +93,8 @@ class ActionHandler(
                 actionFragment.setToHandleWhenStarting()
                 dialog = WeakReference<DialogFragment>(actionFragment)
             } else {
-                loadingDialogFragment = LoadingDialogFragment.newInstance(this)
+                loadingDialogFragment = PendingPaymentDialogFragment.newInstance()
+                loadingDialogFragment?.cancelable = this
                 loadingDialogFragment?.showNow(activity.supportFragmentManager, TAG)
                 loadComponent(loadingDialogFragment, activity, provider)
                 loadedComponent?.handleAction(activity, action)

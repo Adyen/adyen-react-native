@@ -5,6 +5,8 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.INVISIBLE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.DialogFragment
@@ -14,7 +16,9 @@ interface Cancelable {
     fun canceled()
 }
 
-class LoadingDialogFragment(private val cancelable: Cancelable) : DialogFragment() {
+class PendingPaymentDialogFragment() : DialogFragment() {
+
+    var cancelable: Cancelable? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         isCancelable = false
@@ -26,14 +30,15 @@ class LoadingDialogFragment(private val cancelable: Cancelable) : DialogFragment
         requireDialog().window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val button = view.findViewById<Button>(R.id.loading_button)
+        button.visibility = if (cancelable == null) INVISIBLE else  VISIBLE
         button.setOnClickListener {
-            cancelable.canceled()
+            cancelable?.canceled()
         }
     }
 
     companion object {
-        fun newInstance(cancelable: Cancelable): LoadingDialogFragment {
-            return LoadingDialogFragment(cancelable)
+        fun newInstance(): PendingPaymentDialogFragment {
+            return PendingPaymentDialogFragment()
         }
     }
 }
