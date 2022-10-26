@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Component
@@ -38,6 +39,8 @@ import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
 import com.adyenreactnativesdk.BuildConfig
+import com.adyenreactnativesdk.ui.Cancelable
+import com.adyenreactnativesdk.ui.PendingPaymentDialogFragment
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -58,7 +61,8 @@ interface ActionHandlingInterface {
 class ActionHandler(
     private val callback: ActionHandlingInterface,
     private val configuration: ActionHandlerConfiguration
-) : Observer<ActionComponentData> {
+) : Observer<ActionComponentData>,
+    Cancelable {
 
     private var dialog: WeakReference<DialogFragment> = WeakReference(null)
     private var loadedComponent: BaseActionComponent<*>? = null
@@ -69,6 +73,8 @@ class ActionHandler(
             callback.provide(componentData)
         }
     }
+
+    private var loadingDialogFragment : PendingPaymentDialogFragment? = null
 
     fun handleAction(activity: FragmentActivity, action: Action) {
         Log.d(TAG, "handleAction - ${action.type}")
@@ -82,23 +88,15 @@ class ActionHandler(
 
         activity.runOnUiThread {
             if (provider.requiresView(action)) {
-                Log.d(
-                    TAG,
-                    "handleAction - action is viewable, requesting displayAction callback"
-                )
-                val fragmentManager = activity.supportFragmentManager
-
                 val actionFragment = ActionComponentDialogFragment(configuration, callback)
-                actionFragment.show(fragmentManager, ACTION_FRAGMENT_TAG)
+                actionFragment.show(activity.supportFragmentManager, ACTION_FRAGMENT_TAG)
                 actionFragment.setToHandleWhenStarting()
                 dialog = WeakReference<DialogFragment>(actionFragment)
-
             } else {
-                Log.d(
-                    TAG,
-                    "handleAction - action have no view, loading component"
-                )
-                loadComponent(activity, provider)
+                loadingDialogFragment = PendingPaymentDialogFragment.newInstance()
+                loadingDialogFragment?.cancelable = this
+                loadingDialogFragment?.showNow(activity.supportFragmentManager, TAG)
+                loadComponent(loadingDialogFragment, activity, provider)
                 loadedComponent?.handleAction(activity, action)
             }
         }
@@ -110,13 +108,20 @@ class ActionHandler(
         loadedComponent?.removeObservers(activity)
         loadedComponent?.removeErrorObservers(activity)
         loadedComponent = null
+        loadingDialogFragment?.dismiss()
+        loadingDialogFragment = null
+    }
+
+    override fun canceled() {
+        callback.onClose()
     }
 
     private fun loadComponent(
+        fragment: Fragment?,
         activity: FragmentActivity,
         provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>
     ) {
-        getActionComponentFor(activity, provider, configuration).apply {
+        getActionComponentFor(activity, fragment, provider, configuration).apply {
             loadedComponent = this
             observe(activity, this@ActionHandler)
             observeErrors(activity) { callback.onError(it.exception) }
@@ -129,7 +134,7 @@ class ActionHandler(
         private var intentHandlingComponent: WeakReference<IntentHandlingComponent> =
             WeakReference(null)
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
-        const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
+        private const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
 
         internal fun getReturnUrl(context: Context): String {
             return REDIRECT_RESULT_SCHEME + context.packageName
@@ -210,41 +215,43 @@ class ActionHandler(
 
         internal fun getActionComponentFor(
             activity: FragmentActivity,
+            fragment: Fragment?,
             provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
             configuration: ActionHandlerConfiguration
         ): BaseActionComponent<out Configuration> {
+            var lifecycleOwner = fragment ?: activity
             val actionComponent = when (provider) {
                 RedirectComponent.PROVIDER -> {
                     RedirectComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 Adyen3DS2Component.PROVIDER -> {
                     Adyen3DS2Component.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 WeChatPayActionComponent.PROVIDER -> {
                     WeChatPayActionComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 AwaitComponent.PROVIDER -> {
                     AwaitComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 QRCodeComponent.PROVIDER -> {
                     QRCodeComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
