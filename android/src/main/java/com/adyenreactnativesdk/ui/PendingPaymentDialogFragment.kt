@@ -20,6 +20,11 @@ class PendingPaymentDialogFragment() : DialogFragment() {
 
     var cancelable: Cancelable? = null
 
+    override fun onDestroy() {
+        super.onDestroy()
+        cancelable = null
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         isCancelable = false
         return inflater.inflate(R.layout.loading, container, false)
