@@ -127,7 +127,7 @@ class ActionComponentDialogFragment(
             throw ComponentException("Action is not viewable - action: ${action.type} - paymentMethod: ${action.paymentMethodType}")
         }
         val component =
-            ActionHandler.getActionComponentFor(requireActivity(), provider, configuration)
+            ActionHandler.getActionComponentFor(requireActivity(), null, provider, configuration)
         if (!component.canHandleAction(action)) {
             throw ComponentException("Unexpected Action component type - action: ${action.type} - paymentMethod: ${action.paymentMethodType}")
         }
