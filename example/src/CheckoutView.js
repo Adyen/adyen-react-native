@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AdyenCheckout } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
 import {
-  Button,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -12,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { PaymentMethodsContext } from './PaymentMethodsProvider';
+import { usePaymentMethods } from './PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
 import { ERROR_CODE_CANCELED } from '../../src';
 
@@ -22,7 +21,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     justifyContent: 'center',
     padding: 16,
-  },
+  }
 });
 
 function getFlagEmoji(countryCode) {
@@ -33,7 +32,7 @@ function getFlagEmoji(countryCode) {
   return String.fromCodePoint(...codePoints);
 }
 
-const CheckoutView = () => {
+const CheckoutView = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -74,7 +73,8 @@ const CheckoutView = () => {
     let success = isSuccess(result);
     console.log(`Payment: ${success ? "success" : "failure"} : ${result.resultCode}`);
     nativeComponent.hide(success, { message: result.resultCode });
-    Alert.alert(result.resultCode);
+    navigation.popToTop();
+    navigation.push('ResultPage', { result: result.resultCode })
   };
 
   const proccessError = (error, nativeComponent) => {
@@ -86,42 +86,50 @@ const CheckoutView = () => {
     }
   };
 
+  const { config, paymentMethods, onConfigChanged } = usePaymentMethods();
+
+  useEffect(() => { onConfigChanged(config) },
+    [paymentMethods == null],
+  );
+
   return (
-    <PaymentMethodsContext.Consumer>
-      {(context) => (
-        <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
-          <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-          <View style={[styles.topContentView]}>
-            <Text>
-              {context.config.amount.value} {context.config.amount.currency}
-            </Text>
-            <Text>
-              Country:{' '}
-              {context.paymentMethods == null
-                ? '❗️'
-                : getFlagEmoji(context.config.countryCode)}
-            </Text>
-            <Button
-              title="Refresh Payment Methods"
-              onPress={() => context.onConfigChanged(context.config)}
-            />
-          </View>
+      <PaymentMethodsView config={config} paymentMethods={paymentMethods} />
 
-          <AdyenCheckout
-            config={context.config}
-            paymentMethods={context.paymentMethods}
-            onSubmit={ (payload, nativeComponent) => { didSubmit(payload, nativeComponent, context.config) }}
-            onProvide={didProvide}
-            onFail={didFail}
-            onComplete={didComplete}
-          >
-            <PaymentMethods />
-          </AdyenCheckout>
-        </SafeAreaView>
-      )}
-    </PaymentMethodsContext.Consumer>
+      <AdyenCheckout
+        config={config}
+        paymentMethods={paymentMethods}
+        onSubmit={(payload, nativeComponent) => { didSubmit(payload, nativeComponent, config) }}
+        onProvide={didProvide}
+        onFail={didFail}
+        onComplete={didComplete}
+      >
+        <PaymentMethods />
+      </AdyenCheckout>
+    </SafeAreaView>
   );
 };
+
+const PaymentMethodsView = (props) => {
+
+  return (
+    <View style={[styles.topContentView]}>
+      {props.paymentMethods 
+        ?
+        <Text style={{textAlign: 'center'}}>
+          {`${props.config.amount.value} ${props.config.amount.currency}`}
+          {'\n'}
+          Country: { getFlagEmoji(props.config.countryCode) }
+        </Text>
+        : 
+        <Text >
+          No PaymentMethods
+        </Text>
+      }
+    </View>
+  );
+}
 
 export default CheckoutView;
