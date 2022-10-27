@@ -33,10 +33,12 @@ function getFlagEmoji(countryCode) {
 }
 
 const CheckoutView = ({ navigation }) => {
-  const isDarkMode = useColorScheme() === 'dark';
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+
+  useEffect(() => { onConfigChanged(config) },
+    [paymentMethods == null],
+  );
+
+  const { config, paymentMethods, onConfigChanged } = usePaymentMethods();
 
   const didSubmit = (data, nativeComponent, configuration) => {
     console.log(`didSubmit: ${data.paymentMethod.type}`);
@@ -86,15 +88,8 @@ const CheckoutView = ({ navigation }) => {
     }
   };
 
-  const { config, paymentMethods, onConfigChanged } = usePaymentMethods();
-
-  useEffect(() => { onConfigChanged(config) },
-    [paymentMethods == null],
-  );
-
   return (
-    <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={[{ flex: 1 }]}>
 
       <PaymentMethodsView config={config} paymentMethods={paymentMethods} />
 
@@ -104,26 +99,25 @@ const CheckoutView = ({ navigation }) => {
         onSubmit={(payload, nativeComponent) => { didSubmit(payload, nativeComponent, config) }}
         onProvide={didProvide}
         onFail={didFail}
-        onComplete={didComplete}
-      >
+        onComplete={didComplete} >
         <PaymentMethods />
       </AdyenCheckout>
     </SafeAreaView>
   );
 };
 
-const PaymentMethodsView = (props) => {
+const PaymentMethodsView = ({ paymentMethods, config }) => {
 
   return (
     <View style={[styles.topContentView]}>
-      {props.paymentMethods 
+      { paymentMethods
         ?
         <Text style={{textAlign: 'center'}}>
-          {`${props.config.amount.value} ${props.config.amount.currency}`}
+          {`${config.amount.value} ${config.amount.currency}`}
           {'\n'}
-          Country: { getFlagEmoji(props.config.countryCode) }
+          Country: { getFlagEmoji(config.countryCode) }
         </Text>
-        : 
+        :
         <Text >
           No PaymentMethods
         </Text>
