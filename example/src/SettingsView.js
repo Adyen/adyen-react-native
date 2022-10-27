@@ -1,29 +1,28 @@
 import React, { useState } from 'react';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { usePaymentMethods } from './PaymentMethodsProvider';
 
 import {
   Button,
   SafeAreaView,
-  StatusBar,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from 'react-native';
 
 const FormTextInput = (props) => {
-  const [value, onChangeText] = useState(props.value);
+
+  const { value, placeholder } = props;
+  const [currentValue, onChangeText] = useState(value);
 
   return (
     <View style={{ margin: 8 }}>
-      <Text>{props.placeholder}</Text>
+      <Text>{placeholder}</Text>
       <TextInput
         {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below
         editable
         maxLength={40}
         placeholder=""
-        value={value}
+        value={currentValue}
         onChange={(text) => onChangeText(text)}
         style={{
           backgroundColor: 'lightgrey',
@@ -55,12 +54,15 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       <FormTextInput
         placeholder="Country"
         value={defaultValue.countryCode}
-        onChangeText={(value) => defaultValue.countryCode = value }
+        onChangeText={(value) => {
+          console.log('changing');
+          defaultValue.countryCode = value;
+        }}
       />
       <FormTextInput
         placeholder="Currency"
         value={defaultValue.amount.currency}
-        onChangeText={(value) => defaultValue.amount.currency = value }        
+        onChangeText={(value) => defaultValue.amount.currency = value }
       />
       <FormTextInput
         placeholder="Amount"
@@ -89,16 +91,8 @@ const SettingFormView = ({ navigation: { goBack } }) => {
 };
 
 const SettingView = ({navigation}) => {
-  const isDarkMode = useColorScheme() === 'dark';
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
   return (
-    <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-      />
+    <SafeAreaView style={[{ flex: 1 }]}>
       <SettingFormView navigation={navigation} />
     </SafeAreaView>
   );

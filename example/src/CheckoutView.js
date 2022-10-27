@@ -90,9 +90,7 @@ const CheckoutView = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[{ flex: 1 }]}>
-
       <PaymentMethodsView config={config} paymentMethods={paymentMethods} />
-
       <AdyenCheckout
         config={config}
         paymentMethods={paymentMethods}
