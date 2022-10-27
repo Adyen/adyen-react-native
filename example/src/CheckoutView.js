@@ -1,18 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AdyenCheckout } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
-import {
-  Button,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  useColorScheme,
-  Text,
-  View,
-  Alert,
-} from 'react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { PaymentMethodsContext } from './PaymentMethodsProvider';
+import { SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native';
+import { usePaymentMethods } from './PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
 import { ERROR_CODE_CANCELED } from '../../src';
 
@@ -33,11 +23,12 @@ function getFlagEmoji(countryCode) {
   return String.fromCodePoint(...codePoints);
 }
 
-const CheckoutView = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+const CheckoutView = ({ navigation }) => {
+  const { config, paymentMethods, refreshPaymentMethods } = usePaymentMethods();
+
+  useEffect(() => {
+    refreshPaymentMethods();
+  }, []);
 
   const didSubmit = (data, nativeComponent, configuration) => {
     console.log(`didSubmit: ${data.paymentMethod.type}`);
@@ -67,14 +58,17 @@ const CheckoutView = () => {
 
   const didFail = (error, nativeComponent) => {
     console.log(`didFailed: ${error.message}`);
-    proccessError(error, nativeComponent)
+    proccessError(error, nativeComponent);
   };
 
   const proccessResult = (result, nativeComponent) => {
     let success = isSuccess(result);
-    console.log(`Payment: ${success ? "success" : "failure"} : ${result.resultCode}`);
+    console.log(
+      `Payment: ${success ? 'success' : 'failure'} : ${result.resultCode}`
+    );
     nativeComponent.hide(success, { message: result.resultCode });
-    Alert.alert(result.resultCode);
+    navigation.popToTop();
+    navigation.push('ResultPage', { result: result.resultCode });
   };
 
   const proccessError = (error, nativeComponent) => {
@@ -87,40 +81,37 @@ const CheckoutView = () => {
   };
 
   return (
-    <PaymentMethodsContext.Consumer>
-      {(context) => (
-        <SafeAreaView style={[backgroundStyle, { flex: 1 }]}>
-          <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={[{ flex: 1 }]}>
+      <PaymentMethodsView config={config} paymentMethods={paymentMethods} />
+      <AdyenCheckout
+        config={config}
+        paymentMethods={paymentMethods}
+        onSubmit={(payload, nativeComponent) => {
+          didSubmit(payload, nativeComponent, config);
+        }}
+        onProvide={didProvide}
+        onFail={didFail}
+        onComplete={didComplete}
+      >
+        <PaymentMethods />
+      </AdyenCheckout>
+    </SafeAreaView>
+  );
+};
 
-          <View style={[styles.topContentView]}>
-            <Text>
-              {context.config.amount.value} {context.config.amount.currency}
-            </Text>
-            <Text>
-              Country:{' '}
-              {context.paymentMethods == null
-                ? '❗️'
-                : getFlagEmoji(context.config.countryCode)}
-            </Text>
-            <Button
-              title="Refresh Payment Methods"
-              onPress={() => context.onConfigChanged(context.config)}
-            />
-          </View>
-
-          <AdyenCheckout
-            config={context.config}
-            paymentMethods={context.paymentMethods}
-            onSubmit={ (payload, nativeComponent) => { didSubmit(payload, nativeComponent, context.config) }}
-            onProvide={didProvide}
-            onFail={didFail}
-            onComplete={didComplete}
-          >
-            <PaymentMethods />
-          </AdyenCheckout>
-        </SafeAreaView>
+const PaymentMethodsView = ({ paymentMethods, config }) => {
+  return (
+    <View style={[styles.topContentView]}>
+      {paymentMethods ? (
+        <Text style={{ textAlign: 'center' }}>
+          {`${config.amount.value} ${config.amount.currency}`}
+          {'\n'}
+          Country: {getFlagEmoji(config.countryCode)}
+        </Text>
+      ) : (
+        <Text>No PaymentMethods</Text>
       )}
-    </PaymentMethodsContext.Consumer>
+    </View>
   );
 };
 
