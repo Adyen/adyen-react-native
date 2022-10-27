@@ -27,7 +27,7 @@ class PendingPaymentDialogFragment() : DialogFragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         isCancelable = false
-        return inflater.inflate(R.layout.loading, container, false)
+        return inflater.inflate(R.layout.pending_payment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
