@@ -1,16 +1,7 @@
 import React, { useEffect } from 'react';
 import { AdyenCheckout } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
-import {
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  useColorScheme,
-  Text,
-  View,
-  Alert,
-} from 'react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native';
 import { usePaymentMethods } from './PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
 import { ERROR_CODE_CANCELED } from '../../src';
@@ -21,7 +12,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     justifyContent: 'center',
     padding: 16,
-  }
+  },
 });
 
 function getFlagEmoji(countryCode) {
@@ -33,12 +24,11 @@ function getFlagEmoji(countryCode) {
 }
 
 const CheckoutView = ({ navigation }) => {
+  const { config, paymentMethods, refreshPaymentMethods } = usePaymentMethods();
 
-  useEffect(() => { onConfigChanged(config) },
-    [paymentMethods == null],
-  );
-
-  const { config, paymentMethods, onConfigChanged } = usePaymentMethods();
+  useEffect(() => {
+    refreshPaymentMethods();
+  }, []);
 
   const didSubmit = (data, nativeComponent, configuration) => {
     console.log(`didSubmit: ${data.paymentMethod.type}`);
@@ -68,15 +58,17 @@ const CheckoutView = ({ navigation }) => {
 
   const didFail = (error, nativeComponent) => {
     console.log(`didFailed: ${error.message}`);
-    proccessError(error, nativeComponent)
+    proccessError(error, nativeComponent);
   };
 
   const proccessResult = (result, nativeComponent) => {
     let success = isSuccess(result);
-    console.log(`Payment: ${success ? "success" : "failure"} : ${result.resultCode}`);
+    console.log(
+      `Payment: ${success ? 'success' : 'failure'} : ${result.resultCode}`
+    );
     nativeComponent.hide(success, { message: result.resultCode });
     navigation.popToTop();
-    navigation.push('ResultPage', { result: result.resultCode })
+    navigation.push('ResultPage', { result: result.resultCode });
   };
 
   const proccessError = (error, nativeComponent) => {
@@ -94,10 +86,13 @@ const CheckoutView = ({ navigation }) => {
       <AdyenCheckout
         config={config}
         paymentMethods={paymentMethods}
-        onSubmit={(payload, nativeComponent) => { didSubmit(payload, nativeComponent, config) }}
+        onSubmit={(payload, nativeComponent) => {
+          didSubmit(payload, nativeComponent, config);
+        }}
         onProvide={didProvide}
         onFail={didFail}
-        onComplete={didComplete} >
+        onComplete={didComplete}
+      >
         <PaymentMethods />
       </AdyenCheckout>
     </SafeAreaView>
@@ -105,23 +100,19 @@ const CheckoutView = ({ navigation }) => {
 };
 
 const PaymentMethodsView = ({ paymentMethods, config }) => {
-
   return (
     <View style={[styles.topContentView]}>
-      { paymentMethods
-        ?
-        <Text style={{textAlign: 'center'}}>
+      {paymentMethods ? (
+        <Text style={{ textAlign: 'center' }}>
           {`${config.amount.value} ${config.amount.currency}`}
           {'\n'}
-          Country: { getFlagEmoji(config.countryCode) }
+          Country: {getFlagEmoji(config.countryCode)}
         </Text>
-        :
-        <Text >
-          No PaymentMethods
-        </Text>
-      }
+      ) : (
+        <Text>No PaymentMethods</Text>
+      )}
     </View>
   );
-}
+};
 
 export default CheckoutView;
