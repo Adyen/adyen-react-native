@@ -26,7 +26,7 @@ class PaymentMethodsProvider extends Component {
         value={{
           config: this.state.config,
           paymentMethods: this.state.paymentMethods,
-          onConfigChanged: (newConfig) => {
+          refreshPaymentMethods: (newConfig = this.state.config) => {
             fetchPaymentMethods(newConfig)
               .then((paymentMethods) => {
                 this.setState({

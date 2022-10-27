@@ -20,14 +20,14 @@ const Stack = createNativeStackNavigator();
 
 const Home = ({ navigation }) => {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center'}} >
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <Button
         onPress={() => navigation.navigate('CheckoutPage')}
         title="Checkout"
       />
     </View>
-  )
-}
+  );
+};
 
 const App = () => {
   return (

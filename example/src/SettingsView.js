@@ -1,29 +1,19 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { usePaymentMethods } from './PaymentMethodsProvider';
 
-import {
-  Button,
-  SafeAreaView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Button, SafeAreaView, Text, TextInput, View } from 'react-native';
 
-const FormTextInput = (props) => {
-
-  const { value, placeholder } = props;
-  const [currentValue, onChangeText] = useState(value);
-
+const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
   return (
     <View style={{ margin: 8 }}>
-      <Text>{placeholder}</Text>
+      <Text>{title}</Text>
       <TextInput
-        {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below
+        {...rest} // Inherit any props passed to it; e.g., multiline, numberOfLines below
         editable
         maxLength={40}
         placeholder=""
-        value={currentValue}
-        onChange={(text) => onChangeText(text)}
+        value={value}
+        onChangeText={onChangeText}
         style={{
           backgroundColor: 'lightgrey',
           padding: 8,
@@ -35,62 +25,72 @@ const FormTextInput = (props) => {
 };
 
 const SettingFormView = ({ navigation: { goBack } }) => {
+  const { config, refreshPaymentMethods } = usePaymentMethods();
 
-  const { config, onConfigChanged } = usePaymentMethods();
+  const [countryCode, setCountryCode] = useState(config.countryCode);
+  const [amount, setAmount] = useState(config.amount.value);
+  const [currency, setCurrency] = useState(config.amount.currency);
+  const [merchantAccount, setMerchantAccount] = useState(
+    config.merchantAccount
+  );
+  const [shopperLocale, setShopperLocale] = useState(config.shopperLocale);
 
-  var defaultValue = {
-    ...config,
-    countryCode: config.countryCode,
-    amount: {
-      currency: config.amount.currency,
-      value: config.amount.value,
-    },
-    merchantAccount: config.merchantAccount,
-    shopperLocale: config.shopperLocale,
-  };
+  const handleOnPress = useCallback(() => {
+    const newConfiguration = {
+      ...config,
+      countryCode: countryCode,
+      amount: {
+        currency: currency,
+        value: amount,
+      },
+      merchantAccount: merchantAccount,
+      shopperLocale: shopperLocale,
+    };
+    refreshPaymentMethods(newConfiguration);
+    goBack();
+  }, [
+    countryCode,
+    currency,
+    amount,
+    merchantAccount,
+    shopperLocale,
+    refreshPaymentMethods,
+    config,
+  ]);
 
   return (
     <View>
       <FormTextInput
-        placeholder="Country"
-        value={defaultValue.countryCode}
-        onChangeText={(value) => {
-          console.log('changing');
-          defaultValue.countryCode = value;
-        }}
+        title="Country"
+        value={countryCode}
+        onChangeText={setCountryCode}
       />
       <FormTextInput
-        placeholder="Currency"
-        value={defaultValue.amount.currency}
-        onChangeText={(value) => defaultValue.amount.currency = value }
+        title="Currency"
+        value={currency}
+        onChangeText={setCurrency}
       />
       <FormTextInput
-        placeholder="Amount"
-        value={defaultValue.amount.value.toString()}
-        onChangeText={(value) => defaultValue.amount.value = value }
+        title="Amount"
+        value={amount.toString()}
+        onChangeText={setAmount}
       />
       <FormTextInput
-        placeholder="Merchant Account"
-        value={defaultValue.merchantAccount}
-        onChangeText={(value) => defaultValue.merchantAccount = value}
+        title="Merchant Account"
+        value={merchantAccount}
+        onChangeText={setMerchantAccount}
       />
       <FormTextInput
-        placeholder="Shopper locale"
-        value={defaultValue.shopperLocale}
-        onChangeText={(value) => defaultValue.shopperLocale = value}
+        title="Shopper locale"
+        value={shopperLocale}
+        onChangeText={setShopperLocale}
       />
-      <Button
-        title="Apply"
-        onPress={() => {
-          onConfigChanged(defaultValue);
-          goBack()
-        }}
-      />
+      <Button title="Apply" onPress={handleOnPress} />
     </View>
   );
 };
 
-const SettingView = ({navigation}) => {
+const SettingView = ({ navigation }) => {
   return (
     <SafeAreaView style={[{ flex: 1 }]}>
       <SettingFormView navigation={navigation} />
