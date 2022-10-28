@@ -3,6 +3,7 @@ package com.adyenreactnativesdk.component.googlepay
 import android.content.Intent
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
+import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.action.ActionHandler
@@ -11,8 +12,8 @@ import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
+import com.adyenreactnativesdk.ui.PendingPaymentDialogFragment
 import com.adyenreactnativesdk.util.AdyenConstants
-import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -23,6 +24,7 @@ import org.json.JSONException
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {
 
     private var googlePayComponent: GooglePayComponent? = null
+    private var pendingPaymentDialogFragment: PendingPaymentDialogFragment? = null
 
     override fun getName(): String {
         return COMPONENT_NAME
@@ -36,11 +38,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)
-        if (paymentMethods == null) {
-            sendErrorEvent(BaseModuleException.InvalidPaymentMethods())
-            return
-        }
+        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
 
         val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
         if (googlePayPaymentMethod == null) {
@@ -80,41 +78,59 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             appCompatActivity.application,
             googlePayPaymentMethod,
             googlePayConfiguration
-        ) { isAvailable: Boolean, paymentMethod: PaymentMethod, config: GooglePayConfiguration? ->
-            if (isAvailable) {
-                val component = GooglePayComponent.PROVIDER.get(
-                    appCompatActivity,
-                    paymentMethod,
-                    googlePayConfiguration
-                )
-                googlePayComponent = component
-                shared = this
-                component.observe(appCompatActivity) { googlePayComponentState ->
-                    if (googlePayComponentState?.isValid == true) {
-                        onSubmit(googlePayComponentState.data)
-                    }
-                }
-                component.observeErrors(appCompatActivity) { componentError ->
-                    onError(componentError.exception)
-                }
-                component.startGooglePayScreen(
-                    appCompatActivity,
-                    GOOGLEPAY_REQUEST_CODE
-                )
-            } else {
+        ) { isAvailable: Boolean, paymentMethod: PaymentMethod, _: GooglePayConfiguration? ->
+            if (!isAvailable) {
                 sendErrorEvent(GooglePayException.NotSupported())
+                return@isAvailable
             }
+
+            val dialogFragment = PendingPaymentDialogFragment.newInstance()
+            dialogFragment.showNow(appCompatActivity.supportFragmentManager, TAG)
+
+            val component = GooglePayComponent.PROVIDER.get(
+                dialogFragment,
+                paymentMethod,
+                googlePayConfiguration
+            )
+            component.observe(dialogFragment) { googlePayComponentState ->
+                if (googlePayComponentState?.isValid == true) {
+                    onSubmit(googlePayComponentState.data)
+                }
+            }
+            component.observeErrors(dialogFragment) { componentError ->
+                onError(componentError.exception)
+            }
+            component.startGooglePayScreen(
+                appCompatActivity,
+                GOOGLEPAY_REQUEST_CODE
+            )
+
+            shared = this
+            pendingPaymentDialogFragment = dialogFragment
+            googlePayComponent = component
         }
     }
 
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
-        googlePayComponent = null
+        appCompatActivity.runOnUiThread {
+            pendingPaymentDialogFragment?.let {
+                googlePayComponent?.removeObservers(it)
+                googlePayComponent?.removeErrorObservers(it)
+            }
+            pendingPaymentDialogFragment?.dismiss()
+            pendingPaymentDialogFragment = null
+            googlePayComponent = null
+        }
         shared = null
     }
 
     private fun onError(error: Exception) {
-        sendErrorEvent(error)
+        sendErrorEvent(
+            if ((error as? ComponentException)?.message == "Payment canceled.")
+                BaseModuleException.Canceled()
+            else error
+        )
     }
 
     private fun onSubmit(data: PaymentComponentData<*>) {

@@ -43,7 +43,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
             PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
         } catch (e: JSONException) {
-            sendErrorEvent(e)
+            sendErrorEvent(BaseModuleException.InvalidPaymentMethods(e))
             return null
         }
     }

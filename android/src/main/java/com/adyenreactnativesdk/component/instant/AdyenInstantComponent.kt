@@ -35,14 +35,11 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods
-        if (paymentMethods == null || paymentMethods.isEmpty()) {
-            sendErrorEvent(BaseModuleException.InvalidPaymentMethods())
-            return
-        }
+        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods ?: return
+
         val type = paymentMethods.firstOrNull()?.type
         if (type == null) {
-            sendErrorEvent(BaseModuleException.InvalidPaymentMethods())
+            sendErrorEvent(BaseModuleException.InvalidPaymentMethods(null))
             return
         }
 
@@ -72,7 +69,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
             val action = Action.SERIALIZER.deserialize(jsonObject)
             actionHandler?.handleAction(appCompatActivity, action)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.InvalidAction())
+            sendErrorEvent(BaseModuleException.InvalidAction(e))
         }
     }
 
