@@ -14,7 +14,7 @@ internal enum Parameter {
     static let message = "message"
     static let errorCode = "errorCode"
     static let reason = "reason"
-    static let discription = "discription"
+    static let description = "description"
     static let recovery = "recovery"
 }
 
@@ -25,10 +25,10 @@ internal extension Swift.Error {
 
         if let localized = self as? LocalizedError {
             dict[Parameter.reason] = localized.failureReason
-            dict[Parameter.discription] = localized.errorDescription
+            dict[Parameter.description] = localized.errorDescription
             dict[Parameter.recovery] = localized.recoverySuggestion
         }
-        
+
         if let knownError = self as? KnownError {
             dict[Parameter.errorCode] = knownError.errorCode
         }
