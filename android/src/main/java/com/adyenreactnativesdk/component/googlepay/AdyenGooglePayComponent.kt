@@ -27,7 +27,7 @@ import org.json.JSONException
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {
 
     private var googlePayComponent: GooglePayComponent? = null
-    private var loadingDialogFragment: PendingPaymentDialogFragment? = null
+    private var pendingPaymentDialogFragment: PendingPaymentDialogFragment? = null
 
     override fun getName(): String {
         return COMPONENT_NAME
@@ -115,12 +115,12 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         appCompatActivity.runOnUiThread {
-            loadingDialogFragment?.let {
+            pendingPaymentDialogFragment?.let {
                 googlePayComponent?.removeObservers(it)
                 googlePayComponent?.removeErrorObservers(it)
             }
-            loadingDialogFragment?.dismiss()
-            loadingDialogFragment = null
+            pendingPaymentDialogFragment?.dismiss()
+            pendingPaymentDialogFragment = null
             googlePayComponent = null
         }
         shared = null

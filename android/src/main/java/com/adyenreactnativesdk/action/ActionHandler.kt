@@ -74,7 +74,7 @@ class ActionHandler(
         }
     }
 
-    private var loadingDialogFragment : PendingPaymentDialogFragment? = null
+    private var pendingPaymentDialogFragment : PendingPaymentDialogFragment? = null
 
     fun handleAction(activity: FragmentActivity, action: Action) {
         Log.d(TAG, "handleAction - ${action.type}")
@@ -93,10 +93,10 @@ class ActionHandler(
                 actionFragment.setToHandleWhenStarting()
                 dialog = WeakReference<DialogFragment>(actionFragment)
             } else {
-                loadingDialogFragment = PendingPaymentDialogFragment.newInstance()
-                loadingDialogFragment?.cancelable = this
-                loadingDialogFragment?.showNow(activity.supportFragmentManager, TAG)
-                loadComponent(loadingDialogFragment, activity, provider)
+                pendingPaymentDialogFragment = PendingPaymentDialogFragment.newInstance()
+                pendingPaymentDialogFragment?.cancelable = this
+                pendingPaymentDialogFragment?.showNow(activity.supportFragmentManager, TAG)
+                loadComponent(pendingPaymentDialogFragment, activity, provider)
                 loadedComponent?.handleAction(activity, action)
             }
         }
@@ -106,8 +106,8 @@ class ActionHandler(
         dialog.get()?.dismiss()
         dialog.clear()
         loadedComponent = null
-        loadingDialogFragment?.dismiss()
-        loadingDialogFragment = null
+        pendingPaymentDialogFragment?.dismiss()
+        pendingPaymentDialogFragment = null
     }
 
     override fun canceled() {
