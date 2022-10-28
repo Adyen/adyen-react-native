@@ -22,7 +22,9 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.components.ActionComponentData
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.*
+import com.adyenreactnativesdk.action.ActionHandler
+import com.adyenreactnativesdk.action.ActionHandlerConfiguration
+import com.adyenreactnativesdk.action.ActionHandlingInterface
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.ui.ComponentViewModel
 import com.adyenreactnativesdk.ui.PaymentComponentListener
@@ -36,7 +38,6 @@ import java.util.*
 
 class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context),
     PaymentComponentListener, ActionHandlingInterface {
-    private var actionHandler: ActionHandler? = null
     private var dialog: WeakReference<DialogFragment> = WeakReference(null)
 
     override fun getName(): String {
@@ -63,22 +64,13 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         }
 
         val config = RootConfigurationParser(configuration)
-        val environment: Environment
-        val clientKey: String
-        val shopperLocale: Locale
-        val amount: Amount?
-        try {
-            environment = config.environment
-            clientKey = config.clientKey
-            shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
-            amount = config.amount
-        } catch (e: NoSuchFieldException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
-            return
-        }
+        val environment = config.environment
+        val clientKey = config.clientKey
+        val shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
+        val amount = config.amount
 
         val actionHandlerConfiguration =
-            ActionHandlerConfiguration(shopperLocale, environment, clientKey)
+            ActionHandlerConfiguration(shopperLocale, environment, clientKey!!)
         actionHandler = ActionHandler(this, actionHandlerConfiguration)
 
         val parser = CardConfigurationParser(configuration)
@@ -119,16 +111,6 @@ class AdyenCardComponent(context: ReactApplicationContext?) : BaseModule(context
         Log.d(TAG, "Closing component")
         dialogFragment.dismiss()
         actionHandler = null
-    }
-
-    @ReactMethod
-    fun addListener(eventName: String?) {
-        // Set up any upstream listeners or background tasks as necessary
-    }
-
-    @ReactMethod
-    fun removeListeners(count: Int?) {
-        // Remove upstream listeners, stop unnecessary background tasks
     }
 
     private fun showComponentView(

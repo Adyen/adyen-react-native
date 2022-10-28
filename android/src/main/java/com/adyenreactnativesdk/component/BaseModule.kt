@@ -10,6 +10,9 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.checkout.components.model.PaymentMethodsApiResponse
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
+import com.adyen.checkout.components.model.payments.response.Action
+import com.adyenreactnativesdk.action.ActionHandler
+import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -19,8 +22,9 @@ import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEm
 import org.json.JSONException
 import java.util.*
 
-
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
+
+    protected var actionHandler: ActionHandler? = null
 
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
@@ -28,12 +32,18 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             .emit(eventName, map)
     }
 
+    protected fun sendErrorEvent(error: Exception) {
+        reactApplicationContext
+            .getJSModule(RCTDeviceEventEmitter::class.java)
+            .emit(DID_FAILED, ReactNativeError.mapError(error))
+    }
+
     protected fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse? {
         return try {
             val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
             PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
         } catch (e: JSONException) {
-            sendEvent(DID_FAILED, ReactNativeError.mapError(e))
+            sendErrorEvent(BaseModuleException.InvalidPaymentMethods(e))
             return null
         }
     }
@@ -46,11 +56,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             if (currentPaymentMethod.type == paymentMethodName) {
                 return currentPaymentMethod
             }
-
-        sendEvent(
-            DID_FAILED,
-            ReactNativeError.mapError("Payment methods does not contain $paymentMethodName")
-        )
         return null
     }
 
@@ -65,12 +70,8 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     protected val appCompatActivity: AppCompatActivity
         get() {
             val currentActivity = reactApplicationContext.currentActivity
-            val theActivity = currentActivity as AppCompatActivity?
-            if (theActivity == null) {
-                sendEvent(DID_FAILED, ReactNativeError.mapError("Not an AppCompact Activity"))
-                throw Exception("Not an AppCompact Activity")
-            }
-            return theActivity
+            return currentActivity as AppCompatActivity?
+                ?: throw Exception("Not an AppCompact Activity")
         }
 
     companion object {

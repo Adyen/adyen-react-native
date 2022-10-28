@@ -4,11 +4,13 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk
+package com.adyenreactnativesdk.action
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Component
@@ -26,7 +28,6 @@ import com.adyen.checkout.components.util.ActionTypes
 import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.log.LogUtil
-import com.adyen.checkout.core.log.Logger
 import com.adyen.checkout.qrcode.QRCodeComponent
 import com.adyen.checkout.qrcode.QRCodeConfiguration
 import com.adyen.checkout.qrcode.QRCodeView
@@ -37,7 +38,9 @@ import com.adyen.checkout.voucher.VoucherConfiguration
 import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
-import com.adyenreactnativesdk.action.ActionComponentDialogFragment
+import com.adyenreactnativesdk.BuildConfig
+import com.adyenreactnativesdk.ui.Cancelable
+import com.adyenreactnativesdk.ui.PendingPaymentDialogFragment
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -58,7 +61,8 @@ interface ActionHandlingInterface {
 class ActionHandler(
     private val callback: ActionHandlingInterface,
     private val configuration: ActionHandlerConfiguration
-) : Observer<ActionComponentData> {
+) : Observer<ActionComponentData>,
+    Cancelable {
 
     private var dialog: WeakReference<DialogFragment> = WeakReference(null)
     private var loadedComponent: BaseActionComponent<*>? = null
@@ -70,11 +74,13 @@ class ActionHandler(
         }
     }
 
+    private var pendingPaymentDialogFragment : PendingPaymentDialogFragment? = null
+
     fun handleAction(activity: FragmentActivity, action: Action) {
-        Logger.d(TAG, "handleAction - ${action.type}")
+        Log.d(TAG, "handleAction - ${action.type}")
         val provider = getActionProviderFor(action)
         if (provider == null) {
-            Logger.e(TAG, "Unknown Action - ${action.type}")
+            Log.e(TAG, "Unknown Action - ${action.type}")
             return
         }
 
@@ -82,38 +88,42 @@ class ActionHandler(
 
         activity.runOnUiThread {
             if (provider.requiresView(action)) {
-                Logger.d(
-                    TAG,
-                    "handleAction - action is viewable, requesting displayAction callback"
-                )
-                val fragmentManager = activity.supportFragmentManager
-
                 val actionFragment = ActionComponentDialogFragment(configuration, callback)
-                actionFragment.show(fragmentManager, ACTION_FRAGMENT_TAG)
+                actionFragment.show(activity.supportFragmentManager, ACTION_FRAGMENT_TAG)
                 actionFragment.setToHandleWhenStarting()
                 dialog = WeakReference<DialogFragment>(actionFragment)
-
             } else {
-                loadComponent(activity, provider)
+                pendingPaymentDialogFragment = PendingPaymentDialogFragment.newInstance()
+                pendingPaymentDialogFragment?.cancelable = this
+                pendingPaymentDialogFragment?.showNow(activity.supportFragmentManager, TAG)
+                loadComponent(pendingPaymentDialogFragment, activity, provider)
                 loadedComponent?.handleAction(activity, action)
             }
         }
     }
 
-    fun hide() {
+    fun hide(activity: FragmentActivity) {
         dialog.get()?.dismiss()
         dialog.clear()
+        loadedComponent = null
+        pendingPaymentDialogFragment?.dismiss()
+        pendingPaymentDialogFragment = null
+    }
+
+    override fun canceled() {
+        callback.onClose()
     }
 
     private fun loadComponent(
+        fragment: Fragment?,
         activity: FragmentActivity,
         provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>
     ) {
-        getActionComponentFor(activity, provider, configuration).apply {
+        getActionComponentFor(activity, fragment, provider, configuration).apply {
             loadedComponent = this
             observe(activity, this@ActionHandler)
             observeErrors(activity) { callback.onError(it.exception) }
-            Logger.d(TAG, "handleAction - loaded a new component - ${this::class.java.simpleName}")
+            Log.d(TAG, "handleAction - loaded a new component - ${this::class.java.simpleName}")
         }
     }
 
@@ -122,13 +132,22 @@ class ActionHandler(
         private var intentHandlingComponent: WeakReference<IntentHandlingComponent> =
             WeakReference(null)
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
-        const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
+        private const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
 
         internal fun getReturnUrl(context: Context): String {
             return REDIRECT_RESULT_SCHEME + context.packageName
         }
 
+        @JvmStatic
+        @Deprecated(
+            message = "This method is deprecated",
+            replaceWith = ReplaceWith("handleIntent(intent)"))
         fun handle(intent: Intent) {
+            handleIntent(intent)
+        }
+
+        @JvmStatic
+        fun handleIntent(intent: Intent) {
             val data = intent.data
             if (data != null && data.toString().startsWith(REDIRECT_RESULT_SCHEME))
                 intentHandlingComponent.get()?.handleIntent(intent)
@@ -194,41 +213,43 @@ class ActionHandler(
 
         internal fun getActionComponentFor(
             activity: FragmentActivity,
+            fragment: Fragment?,
             provider: ActionComponentProvider<out BaseActionComponent<out Configuration>, out Configuration>,
             configuration: ActionHandlerConfiguration
         ): BaseActionComponent<out Configuration> {
+            var lifecycleOwner = fragment ?: activity
             val actionComponent = when (provider) {
                 RedirectComponent.PROVIDER -> {
                     RedirectComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 Adyen3DS2Component.PROVIDER -> {
                     Adyen3DS2Component.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 WeChatPayActionComponent.PROVIDER -> {
                     WeChatPayActionComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 AwaitComponent.PROVIDER -> {
                     AwaitComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )
                 }
                 QRCodeComponent.PROVIDER -> {
                     QRCodeComponent.PROVIDER.get(
-                        activity,
+                        lifecycleOwner,
                         activity.application,
                         getDefaultConfigForAction(configuration)
                     )

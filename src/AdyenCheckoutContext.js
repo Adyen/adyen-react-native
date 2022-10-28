@@ -4,7 +4,7 @@ import {
   PAYMENT_PROVIDE_DETAILS_EVENT,
   PAYMENT_COMPLETED_EVENT,
   PAYMENT_FAILED_EVENT,
-} from './AdyenCheckoutEvents';
+} from './constants';
 import { getNativeComponent } from './AdyenNativeModules';
 import { NativeEventEmitter } from 'react-native';
 
@@ -23,10 +23,17 @@ const AdyenCheckout = ({
   onProvide,
   children,
 }) => {
+
   const onSubmitEventListener = useRef(null);
   const onProvideEventListener = useRef(null);
   const onCompleteEventListener = useRef(null);
   const onFailEventListener = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      removeEventListeners()
+    }
+  }, [])
 
   const submitPayment = useCallback(
     (configuration, data, nativeComponent) => {
@@ -99,15 +106,4 @@ const AdyenCheckout = ({
   );
 };
 
-const AdyenPaymentProvider = (props) => {
-
-  useEffect(() => {
-    console.warn('AdyenPaymentProvider is deprecated. Use AdyenCheckout instead');
-  }, []);
-
-  return (
-    <AdyenCheckout {...props} />
-  )
-}
-
-export { AdyenCheckoutContext, AdyenCheckout, AdyenPaymentProvider };
+export { AdyenCheckoutContext, AdyenCheckout };

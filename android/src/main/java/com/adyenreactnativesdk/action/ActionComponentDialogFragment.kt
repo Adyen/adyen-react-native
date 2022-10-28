@@ -20,9 +20,6 @@ import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
 import com.adyen.checkout.dropin.databinding.FragmentActionComponentBinding
-import com.adyenreactnativesdk.ActionHandler
-import com.adyenreactnativesdk.ActionHandlerConfiguration
-import com.adyenreactnativesdk.ActionHandlingInterface
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 class ActionComponentDialogFragment(
@@ -130,7 +127,7 @@ class ActionComponentDialogFragment(
             throw ComponentException("Action is not viewable - action: ${action.type} - paymentMethod: ${action.paymentMethodType}")
         }
         val component =
-            ActionHandler.getActionComponentFor(requireActivity(), provider, configuration)
+            ActionHandler.getActionComponentFor(requireActivity(), null, provider, configuration)
         if (!component.canHandleAction(action)) {
             throw ComponentException("Unexpected Action component type - action: ${action.type} - paymentMethod: ${action.paymentMethodType}")
         }

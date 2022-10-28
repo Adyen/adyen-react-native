@@ -1,10 +1,11 @@
 import { Platform, NativeModules } from 'react-native';
 
-export const DEVICE_LOCALE =
-      (Platform.OS === 'ios'
-        ? NativeModules.SettingsManager.settings.AppleLocale ||
-          NativeModules.SettingsManager.settings.AppleLanguages[0] //iOS 13
-        : NativeModules.I18nManager.localeIdentifier).replace('_', '-')
+export const DEVICE_LOCALE = (
+  Platform.OS === 'ios'
+    ? NativeModules.SettingsManager.settings.AppleLocale ||
+      NativeModules.SettingsManager.settings.AppleLanguages[0] //iOS 13
+    : NativeModules.I18nManager.localeIdentifier
+).replace('_', '-');
 
 export const CHANNEL = Platform.select({
   ios: () => 'iOS',
@@ -17,7 +18,7 @@ export const DEFAULT_CONFIGURATION = {
   countryCode: 'NL',
   amount: {
     currency: 'EUR',
-    value: 1000 // The amount value in minor units.
+    value: 1000, // The amount value in minor units.
   },
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   returnUrl: 'myapp://', // Only used for iOS
@@ -27,22 +28,23 @@ export const DEFAULT_CONFIGURATION = {
   },
   card: {
     holderNameRequired: true,
-    addressVisibility: `postalCode`
+    addressVisibility: `postalCode`,
     // showStorePaymentField : false,
     // hideCvcStoredCard: true,
     // hideCvc: true,
   },
   applepay: {
-    // merchantID: 'merchant.com.adyen.MY_MERCHANT_ID',
-    // merchantName: 'MY_MERCHANT'
+    merchantID: '{YOUR_APPLE_MERCHANT_ID}',
+    merchantName: '{YOUR_MERCHANT_NAME}',
+    //allowOnboarding: true
   },
-  googlepay: {
-  },
+  googlepay: {},
   style: {
     // TODO: add styling
-  }
+  },
 };
 
+// For test purpose only! Do not contact Adyen API from your mobile app on LIVE.
 export const ENVIRONMENT = {
   apiKey:
     '{YOUR_DEMO_SERVER_API_KEY}',

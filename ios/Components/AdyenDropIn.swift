@@ -13,39 +13,30 @@ import React
 final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
-    
 
-    @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
-
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue)
-            self.currentPresenter?.dismiss(animated: true)
-            self.currentPresenter = nil
-            self.dropInComponent = nil
+            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue) {
+                self.cleanUp()
+                self.dropInComponent = nil
+            }
         }
     }
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
+        let parser = RootConfigurationParser(configuration: configuration)
         let paymentMethods: PaymentMethods
+        let clientKey: String
         do {
             paymentMethods = try parsePaymentMethods(from: paymentMethodsDict)
+            clientKey = try fetchClientKey(from: parser)
         } catch {
-            return assertionFailure("AdyenDropIn: \(error.localizedDescription)")
-        }
-
-        let parser = RootConfigurationParser(configuration: configuration)
-
-        guard let clientKey = parser.clientKey else {
-            return assertionFailure("AdyenDropIn: No clientKey in configuration.")
+            return sendEvent(error: error)
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
@@ -55,10 +46,8 @@ final internal class AdyenDropIn: BaseModule {
 
         if let payment = parser.payment {
             config.payment = payment
-
-            // Apple Pay
-            if let applepayConfig = ApplepayConfigurationParser(configuration: configuration).tryConfiguration(amount: payment.amount) {
-                config.applePay = applepayConfig
+            (try? ApplepayConfigurationParser(configuration: configuration).buildConfiguration(amount: payment.amount)).map {
+                config.applePay = $0
             }
         }
 
@@ -66,25 +55,19 @@ final internal class AdyenDropIn: BaseModule {
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         configuration: config,
                                         style: dropInComponentStyle)
-        component.delegate = self
         dropInComponent = component
-
-        DispatchQueue.main.async { [weak self] in
-            let presenter = UIViewController.topPresenter
-            self?.currentPresenter = presenter
-            presenter?.present(
-                component.viewController,
-                animated: true,
-                completion: nil
-            )
-        }
+        dropInComponent?.delegate = self
+        present(component: component)
     }
 
     @objc
-    func handle(_ action: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: action, options: []),
-              let action = try? JSONDecoder().decode(Action.self, from: data)
-        else { return }
+    func handle(_ dictionary: NSDictionary) {
+        let action: Action
+        do {
+            action = try parseAction(from: dictionary)
+        } catch {
+            return sendEvent(error: error)
+        }
 
         DispatchQueue.main.async { [weak self] in
             self?.dropInComponent?.handle(action)
@@ -110,7 +93,7 @@ extension AdyenDropIn: DropInComponentDelegate {
     }
 
     func didFail(with error: Error, from component: DropInComponent) {
-        sendEvent(event: .didFail, body: error.toDictionary)
+        sendEvent(error: error)
     }
 
 }

@@ -15,4 +15,8 @@ public class RedirectComponentProxy: NSObject {
         RedirectComponent.applicationDidOpen(from: url as URL)
     }
 
+    public class func proccessURL(_ url: URL) -> Bool {
+        RedirectComponent.applicationDidOpen(from: url)
+    }
+
 }

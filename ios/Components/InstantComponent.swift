@@ -12,14 +12,6 @@ import React
 
 @objc(AdyenInstant)
 final internal class InstantComponent: BaseModule {
-    
-    private var currentPaymentComponent: PaymentComponent?
-    private var actionHandler: AdyenActionComponent?
-    
-    @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
@@ -27,29 +19,22 @@ final internal class InstantComponent: BaseModule {
         DispatchQueue.main.async {[weak self] in
             guard let self = self else { return }
             
-            self.currentComponent?.finalizeIfNeeded(with: success.boolValue)
-            self.actionHandler?.currentActionComponent?.cancelIfNeeded()
-            self.actionHandler = nil
-            self.currentComponent = nil
-            
-            self.currentPresenter?.dismiss(animated: true)
-            self.currentPresenter = nil
-            self.currentPaymentComponent = nil
+            self.currentComponent?.finalizeIfNeeded(with: success.boolValue) {
+                self.cleanUp()
+            }
         }
     }
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        let paymentMethod: PaymentMethod
-        do {
-            paymentMethod = try parseFirstPaymentMethod(from: paymentMethodsDict)
-        } catch {
-            return assertionFailure("InstantComponent: \(error.localizedDescription)")
-        }
-
         let parser = RootConfigurationParser(configuration: configuration)
-        guard let clientKey = parser.clientKey else {
-            return assertionFailure("InstantComponent: No clientKey in configuration")
+        let paymentMethod: PaymentMethod
+        let clientKey: String
+        do {
+            paymentMethod = try parseAnyPaymentMethod(from: paymentMethodsDict)
+            clientKey = try fetchClientKey(from: parser)
+        } catch {
+            return sendEvent(error: error)
         }
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
@@ -60,8 +45,8 @@ final internal class InstantComponent: BaseModule {
 
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, paymentData: nil, apiContext: apiContext)
         component.payment = parser.payment
-        currentPaymentComponent = component
         component.delegate = self
+        currentComponent = component
         
         DispatchQueue.main.async {
             component.initiatePayment()
@@ -69,25 +54,19 @@ final internal class InstantComponent: BaseModule {
     }
 
     @objc
-    func handle(_ action: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: action, options: []),
-              let action = try? JSONDecoder().decode(Action.self, from: data)
-        else { return }
-
+    func handle(_ dictionary: NSDictionary) {
+        let action: Action
+        do {
+            action = try parseAction(from: dictionary)
+        } catch {
+            return sendEvent(error: error)
+        }
+        
         DispatchQueue.main.async { [weak self] in
             self?.actionHandler?.handle(action)
         }
     }
 
-}
-
-extension InstantComponent: PresentationDelegate {
-
-    func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
-            self?.present(component)
-        }
-    }
 }
 
 extension InstantComponent: PaymentComponentDelegate {
@@ -105,7 +84,7 @@ extension InstantComponent: PaymentComponentDelegate {
 extension InstantComponent: ActionComponentDelegate {
 
     internal func didFail(with error: Error, from component: ActionComponent) {
-        sendEvent(event: .didFail, body: error.toDictionary)
+        sendEvent(error: error)
     }
 
     internal func didComplete(from component: ActionComponent) {
