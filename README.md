@@ -1,5 +1,5 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v4.8.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
+[![Adyen iOS](https://img.shields.io/badge/ios-v4.9.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
 [![Adyen Android](https://img.shields.io/badge/android-v4.7.1-brightgreen.svg)](https://github.com/Adyen/adyen-android)
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
@@ -100,7 +100,7 @@ public void onNewIntent(Intent intent) {
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {
   super.onActivityResult(requestCode, resultCode, data);
-  AdyenGooglePayComponent.handleState(requestCode, resultCode, data);
+  AdyenGooglePayComponent.handleActivityResult(requestCode, resultCode, data);
 }
 ```
 
