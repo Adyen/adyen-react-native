@@ -127,9 +127,11 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     }
 
     private fun onError(error: Exception) {
-        Log.d(TAG, error.toString())
-        val componentError = if ((error as ComponentException?)?.message == "Payment canceled.") BaseModuleException.Canceled() else error
-        sendErrorEvent(componentError)
+        sendErrorEvent(
+            if ((error as? ComponentException)?.message == "Payment canceled.")
+                BaseModuleException.Canceled()
+            else error
+        )
     }
 
     private fun onSubmit(data: PaymentComponentData<*>) {
