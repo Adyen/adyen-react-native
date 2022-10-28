@@ -9,6 +9,7 @@ import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import androidx.fragment.app.DialogFragment
 import com.adyenreactnativesdk.R
 
@@ -33,6 +34,9 @@ class PendingPaymentDialogFragment() : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireDialog().window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val progress = view.findViewById<ProgressBar>(R.id.progressBar)
+        progress.visibility = if (cancelable == null) INVISIBLE else  VISIBLE
 
         val button = view.findViewById<Button>(R.id.loading_button)
         button.visibility = if (cancelable == null) INVISIBLE else  VISIBLE
