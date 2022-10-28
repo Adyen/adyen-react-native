@@ -99,7 +99,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             listener.onAction(jsonObject)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.InvalidAction())
+            sendErrorEvent(BaseModuleException.InvalidAction(e))
         }
     }
 
@@ -121,7 +121,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
     }
 
-    override fun onCompleated(result: String) {
+    override fun onCompleted(result: String) {
         hide(true, null)
     }
 
@@ -246,7 +246,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 internal interface ReactDropInCallback {
     fun onCancel()
     fun onError(reason: String?)
-    fun onCompleated(result: String)
+    fun onCompleted(result: String)
 }
 
 private class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
@@ -268,7 +268,7 @@ private class DropInCallbackListener : DropInCallback {
         when (dropInResult) {
             is DropInResult.CancelledByUser -> dropInCallback?.onCancel()
             is DropInResult.Error -> dropInCallback?.onError(dropInResult.reason)
-            is DropInResult.Finished -> dropInCallback?.onCompleated(dropInResult.result)
+            is DropInResult.Finished -> dropInCallback?.onCompleted(dropInResult.result)
         }
     }
 }
