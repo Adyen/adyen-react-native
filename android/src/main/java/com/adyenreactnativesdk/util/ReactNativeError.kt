@@ -18,7 +18,7 @@ object ReactNativeError {
 
     private const val MESSAGE_KEY = "message"
     private const val REASON_KEY = "reason"
-    private const val DISCRIPTION_KEY = "discription"
+    private const val DESCRIPTION_KEY = "description"
     private const val RECOVERY_KEY = "recovery"
     private const val ERROR_CODE = "errorCode"
 
@@ -37,7 +37,7 @@ object ReactNativeError {
 
             val stackTrace = error.stackTrace
             if (stackTrace.isNotEmpty()) {
-                putString(DISCRIPTION_KEY, stackTrace.toString())
+                putString(DESCRIPTION_KEY, stackTrace.toString())
             }
 
             (error as? KnownException)?.let {
