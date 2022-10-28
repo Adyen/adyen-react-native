@@ -28,14 +28,16 @@ sealed class BaseModuleException(code: String, message: String, cause: Throwable
         message = "No payment in configuration"
     )
 
-    class InvalidPaymentMethods() : BaseModuleException(
+    class InvalidPaymentMethods(e: Throwable?) : BaseModuleException(
         code = "invalidPaymentMethods",
-        message = "Can not parse paymentMethods or the list is empty"
+        message = "Can not parse paymentMethods or the list is empty",
+        cause = e
     )
 
-    class InvalidAction() : BaseModuleException(
+    class InvalidAction(e: Throwable?) : BaseModuleException(
         code = "invalidAction",
-        message = "Can not parse action"
+        message = "Can not parse action",
+        cause = e
     )
 
     class NoPaymentMethod(type: String) : BaseModuleException(
