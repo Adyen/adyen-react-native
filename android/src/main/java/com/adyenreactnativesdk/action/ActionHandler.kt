@@ -105,8 +105,6 @@ class ActionHandler(
     fun hide(activity: FragmentActivity) {
         dialog.get()?.dismiss()
         dialog.clear()
-        loadedComponent?.removeObservers(activity)
-        loadedComponent?.removeErrorObservers(activity)
         loadedComponent = null
         loadingDialogFragment?.dismiss()
         loadingDialogFragment = null
