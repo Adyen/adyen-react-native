@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react';
-import { AdyenCheckout } from '@adyen/react-native';
+import { AdyenCheckout, ERROR_CODE_CANCELED } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
 import { SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native';
 import { usePaymentMethods } from './PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
-import { ERROR_CODE_CANCELED } from '../../src';
 
 const styles = StyleSheet.create({
   topContentView: {

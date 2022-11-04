@@ -1,4 +1,7 @@
+import { LogBox } from 'react-native';
 import { ENVIRONMENT, CHANNEL, DEVICE_LOCALE } from './Configuration';
+
+LogBox.ignoreLogs(['Require cycle:']);
 
 const serverConfiguration = {
   channel: CHANNEL,
