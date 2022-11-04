@@ -7,7 +7,6 @@
 package com.adyenreactnativesdk;
 
 import com.adyenreactnativesdk.component.applepay.AdyenApplePayMock;
-import com.adyenreactnativesdk.component.card.AdyenCardComponent;
 import com.adyenreactnativesdk.component.dropin.AdyenDropInComponent;
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent;
 import com.adyenreactnativesdk.component.instant.AdyenInstantComponent;
@@ -31,7 +30,6 @@ public class AdyenPaymentPackage implements ReactPackage {
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
         modules.add(new AdyenDropInComponent(reactContext));
-        modules.add(new AdyenCardComponent(reactContext));
         modules.add(new AdyenInstantComponent(reactContext));
         modules.add(new AdyenGooglePayComponent(reactContext));
         modules.add(new AdyenApplePayMock(reactContext));
