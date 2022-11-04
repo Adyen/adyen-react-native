@@ -241,7 +241,7 @@ AdyenDropIn.handle(action);
 ## Documentation
 
 - [Configuration](/docs/Configuration.md)
-- [Error codes](/docs/Error codes.md)
+- [Error codes](/docs/Error%20codes.md)
 
 > :construction: ** Adyen Docs documentation in progress**
 
