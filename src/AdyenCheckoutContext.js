@@ -44,8 +44,7 @@ const AdyenCheckout = ({
 
   const removeEventListeners = useCallback(() => {
     subscriptions.current.forEach((s) => s?.remove?.());
-    console.log('I am cleaning!');
-  }, []);
+  }, [subscriptions]);
 
   const startEventListeners = useCallback(
     (eventEmitter, configuration, nativeComponent) => {
@@ -57,11 +56,9 @@ const AdyenCheckout = ({
           onProvide(data, nativeComponent)
         ),
         eventEmitter.addListener(PAYMENT_COMPLETED_EVENT, () => {
-          removeEventListeners();
           onComplete(nativeComponent);
         }),
         eventEmitter.addListener(PAYMENT_FAILED_EVENT, (error) => {
-          removeEventListeners();
           onFail(error, nativeComponent);
         }),
       ];
