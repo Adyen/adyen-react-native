@@ -53,7 +53,7 @@ public struct CardConfigurationParser {
     }
 
     var kcpVisibility: CardComponent.FieldVisibility {
-        parseVisibility(CardKeys.addressVisibility)
+        parseVisibility(CardKeys.kcpVisibility)
     }
     
     var socialSecurityVisibility: CardComponent.FieldVisibility {
