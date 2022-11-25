@@ -36,8 +36,8 @@
     "release": "release-it",
     "example": "yarn --cwd example",
     "pods": "cd example && pod-install --quiet",
-    "run-ios": "yarn example && cd example && yarn ios",
-    "run-android": "yarn example && cd example && yarn android",
+    "ios": "yarn example && cd example && yarn ios",
+    "android": "yarn example && cd example && yarn android",
     "bootstrap": "git clean -fxd && yarn example && yarn && yarn pods"
   },
   "devDependencies": {
