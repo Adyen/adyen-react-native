@@ -59,7 +59,7 @@ dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.22"
-    implementation "com.adyen.checkout:drop-in:4.7.1"
+    implementation "com.adyen.checkout:drop-in:4.9.0"
     implementation 'com.google.android.material:material:1.7.0'
 
 }
