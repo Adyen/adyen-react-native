@@ -99,7 +99,7 @@ class CardConfigurationParser(config: ReadableMap) {
                 config.hasKey(ADDRESS_VISIBILITY_KEY) -> {
                     val value = config.getString(ADDRESS_VISIBILITY_KEY)!!
                     when (value.lowercase()) {
-                        "postal_code", "postal", "postalcode" -> PostalCode
+                        "postal_code", "postal", "postalcode" -> PostalCode()
                         "full" -> FullAddress(null, emptyList())
                         else -> None
                     }
