@@ -44,4 +44,9 @@ sealed class BaseModuleException(code: String, message: String, cause: Throwable
         code = "noPaymentMethod",
         message = "Can not find payment method of type $type in provided list"
     )
+
+    class NoPaymentMethods(type: Collection<String>) : BaseModuleException(
+        code = "noPaymentMethod",
+        message = "Can not find payment method of types \"${type.joinToString(",")}\" in provided list"
+    )
 }

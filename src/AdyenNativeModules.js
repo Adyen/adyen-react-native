@@ -47,9 +47,9 @@ export function getNativeComponent(name, paymentMethods) {
     case 'adyendropin':
       return { nativeComponent: AdyenDropIn };
     case 'applepay':
-    case 'apple-pay':
       return { nativeComponent: AdyenApplePay };
     case 'paywithgoogle':
+    case 'googlepay':
       return { nativeComponent: AdyenGooglePay };
     default:
       break;

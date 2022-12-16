@@ -10,9 +10,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.checkout.components.model.PaymentMethodsApiResponse
 import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.components.model.payments.response.Action
 import com.adyenreactnativesdk.action.ActionHandler
-import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -50,13 +48,16 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     protected fun getPaymentMethod(
         paymentMethodsResponse: PaymentMethodsApiResponse,
+        paymentMethodNames: Set<String>
+    ): PaymentMethod? {
+        return paymentMethodsResponse.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
+    }
+
+    protected fun getPaymentMethod(
+        paymentMethodsResponse: PaymentMethodsApiResponse,
         paymentMethodName: String
     ): PaymentMethod? {
-        for (currentPaymentMethod in paymentMethodsResponse.paymentMethods ?: emptyList())
-            if (currentPaymentMethod.type == paymentMethodName) {
-                return currentPaymentMethod
-            }
-        return null
+        return paymentMethodsResponse.paymentMethods?.firstOrNull { it.type == paymentMethodName }
     }
 
     protected fun currentLocale(context: Context): Locale {
