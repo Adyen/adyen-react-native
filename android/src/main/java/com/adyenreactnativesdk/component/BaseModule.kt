@@ -50,6 +50,17 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     protected fun getPaymentMethod(
         paymentMethodsResponse: PaymentMethodsApiResponse,
+        paymentMethodNames: Set<String>
+    ): PaymentMethod? {
+        for (currentPaymentMethod in paymentMethodsResponse.paymentMethods ?: emptyList())
+            if (paymentMethodNames.contains(currentPaymentMethod.type)) {
+                return currentPaymentMethod
+            }
+        return null
+    }
+
+    protected fun getPaymentMethod(
+        paymentMethodsResponse: PaymentMethodsApiResponse,
         paymentMethodName: String
     ): PaymentMethod? {
         for (currentPaymentMethod in paymentMethodsResponse.paymentMethods ?: emptyList())

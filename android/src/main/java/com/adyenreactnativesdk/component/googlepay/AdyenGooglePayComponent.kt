@@ -40,9 +40,9 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
 
-        val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEY)
+        val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEYS)
         if (googlePayPaymentMethod == null) {
-            sendErrorEvent(BaseModuleException.NoPaymentMethod(PAYMENT_METHOD_KEY))
+            sendErrorEvent(BaseModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
             return
         }
 
@@ -155,7 +155,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         private const val TAG = "GooglePayComponent"
         private const val COMPONENT_NAME = "AdyenGooglePay"
         private const val GOOGLEPAY_REQUEST_CODE = 1001
-        private const val PAYMENT_METHOD_KEY = "paywithgoogle"
+        private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
 
         private var shared: AdyenGooglePayComponent? = null
 
@@ -166,7 +166,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             }
         }
     }
-
 }
 
 sealed class GooglePayException(code: String, message: String, cause: Throwable? = null) :
