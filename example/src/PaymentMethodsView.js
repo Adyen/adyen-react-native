@@ -27,7 +27,7 @@ const PaymentMethods = () => {
   const platformSpecificPayment =
     Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
   const platformSpecificType =
-    Platform.OS === 'ios' ? 'applepay' : 'googlepay';
+    Platform.OS === 'ios' ? 'applepay' : 'googlepay'; // In some cases 'paywithgoogle' can be in use. Check paymentMethods response first.
 
   const isAvailable = useCallback(type => {
     const paymentMethods = paymentMethodsResponse.paymentMethods;
