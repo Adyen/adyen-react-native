@@ -32,12 +32,12 @@ Add `@adyen/react-native` to your react-native project.
 1. run `pod install`
 2. add return URL handler to your `AppDelegate.m`
   ```objc
-  @import adyen_react_native;
+  #import <adyen-react-native/ADYRedirectComponent.h>
 
   ...
 
   - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-    return [RedirectComponentProxy proccessURL:url];
+    return [ADYRedirectComponent applicationOpenURL:url];
   }
   ```
 
