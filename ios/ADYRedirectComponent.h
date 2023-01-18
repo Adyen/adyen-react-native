@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// - Parameter url: The URL through which the application was opened.
 /// - Returns: A boolean value indicating whether the URL was handled by the redirect component.
-+ (BOOL)applicationOpenURL:(nonnull NSURL *)url;
++ (BOOL)applicationDidOpenURL:(nonnull NSURL *)url;
 
 @end
 

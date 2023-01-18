@@ -37,7 +37,7 @@ Add `@adyen/react-native` to your react-native project.
   ...
 
   - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-    return [ADYRedirectComponent applicationOpenURL:url];
+    return [ADYRedirectComponent applicationDidOpenURL:url];
   }
   ```
 
