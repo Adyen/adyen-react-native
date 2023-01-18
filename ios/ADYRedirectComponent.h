@@ -8,8 +8,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/// Handles any redirect Url whether its an App custom scheme url, or an app universal link.
 @interface ADYRedirectComponent : NSObject
 
+/// This function should be invoked from the application's delegate when the application is opened through a URL.
+///
+/// - Parameter url: The URL through which the application was opened.
+/// - Returns: A boolean value indicating whether the URL was handled by the redirect component.
 + (BOOL)applicationOpenURL:(nonnull NSURL *)url;
 
 @end
