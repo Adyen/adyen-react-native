@@ -9,7 +9,7 @@
 
 @implementation ADYRedirectComponent
 
-+ (BOOL)applicationOpenURL:(nonnull NSURL *)url {
++ (BOOL)applicationDidOpenURL:(nonnull NSURL *)url {
     return [RedirectComponentProxy proccessURL: url];
 }
 
