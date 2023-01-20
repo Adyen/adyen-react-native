@@ -4,7 +4,7 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTRootView.h>
 
-@import adyen_react_native;
+#import <adyen-react-native/ADYRedirectComponent.h>
 
 #ifdef FB_SONARKIT_ENABLED
 #import <FlipperKit/FlipperClient.h>
@@ -62,7 +62,7 @@ static void InitializeFlipper(UIApplication *application) {
 }
 
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-  return [RedirectComponentProxy proccessURL:url];
+  return [ADYRedirectComponent applicationDidOpenURL:url];
 }
 
 @end
