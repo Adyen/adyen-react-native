@@ -22,7 +22,7 @@
 * **hideCvc** - Indicates whether to show the security code field at all. Defaults to false.
 * **addressVisibility** - Indicates the display mode of the billing address form. Options: "none" or "postal". Defaults to "none".
 * **kcpVisibility** - Indicates whether to show the security fields for South Korea issued cards. Options: "show" or "hide". Defaults to "hide".
-* **socialSecurity** - ndicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or "hide". Defaults to "hide".
+* **socialSecurity** - Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or "hide". Defaults to "hide".
 * **supported** - The list of allowed card types. By default uses list of `brands` from payment method. Fallbacks to list of all known cards.
 
 ### ApplePay component
