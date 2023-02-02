@@ -38,6 +38,7 @@ import com.adyen.checkout.voucher.VoucherConfiguration
 import com.adyen.checkout.voucher.VoucherView
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 import com.adyen.checkout.wechatpay.WeChatPayActionConfiguration
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.ui.Cancelable
 import com.adyenreactnativesdk.ui.PendingPaymentDialogFragment
@@ -129,10 +130,8 @@ class ActionHandler(
 
     companion object {
         private val TAG = LogUtil.getTag()
-        private var intentHandlingComponent: WeakReference<IntentHandlingComponent> =
-            WeakReference(null)
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
-        private const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
+        internal const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
 
         internal fun getReturnUrl(context: Context): String {
             return REDIRECT_RESULT_SCHEME + context.packageName
@@ -140,17 +139,10 @@ class ActionHandler(
 
         @JvmStatic
         @Deprecated(
-            message = "This method is deprecated",
-            replaceWith = ReplaceWith("handleIntent(intent)"))
-        fun handle(intent: Intent) {
-            handleIntent(intent)
-        }
-
-        @JvmStatic
+            message = "This method is deprecated on beta-8",
+            replaceWith = ReplaceWith("AdyenCheckout.handleIntent(intent)"))
         fun handleIntent(intent: Intent) {
-            val data = intent.data
-            if (data != null && data.toString().startsWith(REDIRECT_RESULT_SCHEME))
-                intentHandlingComponent.get()?.handleIntent(intent)
+            AdyenCheckout.handleIntent(intent)
         }
 
         private inline fun <reified T : Configuration> getDefaultConfigForAction(
@@ -260,7 +252,7 @@ class ActionHandler(
             }
 
             if (actionComponent is IntentHandlingComponent)
-                intentHandlingComponent = WeakReference(actionComponent)
+                AdyenCheckout.setIntentHandler(actionComponent)
 
             return actionComponent
         }
