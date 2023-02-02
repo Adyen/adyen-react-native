@@ -229,6 +229,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
 
         @JvmStatic
+        @Deprecated(
+            message = "This method is deprecated on beta-8",
+            replaceWith = ReplaceWith("AdyenCheckout.removeLauncherActivity()"))
         fun removeDropInLauncher() {
             AdyenCheckout.removeLauncherActivity();
         }
