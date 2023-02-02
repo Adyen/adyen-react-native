@@ -43,12 +43,20 @@ Add `@adyen/react-native` to your react-native project.
 
 #### Android integration
 
-##### For Drop-In
-
 1. Add `AdyenDropInService` to manifest:
 
 ```xml
 <service android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService" />
+```
+
+2. Provide your Checkout activity to `AdyenCheckout`. This will improve responsiveness of DropIn and standalone native components:
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+  super.onCreate(savedInstanceState);
+  AdyenCheckout.setLauncherActivity(this);
+}
 ```
 
 ##### For standalone components
@@ -74,33 +82,23 @@ defaultConfig {
 </intent-filter>
 ```
 
-3. Provide your Checkout activity as `DropInLauncher`. This will improve responsiveness of DropIn and standalone native components:
-
-```java
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-  super.onCreate(savedInstanceState);
-  AdyenDropInComponent.setDropInLauncher(this);
-}
-```
-
-4. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
+3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
 
 ```java
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    ActionHandler.Companion.handle(intent);
+    AdyenCheckout.Companion.handle(intent);
 }
 ```
 
-5. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
+4. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
 
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {
   super.onActivityResult(requestCode, resultCode, data);
-  AdyenGooglePayComponent.handleActivityResult(requestCode, resultCode, data);
+  AdyenCheckout.handleActivityResult(requestCode, resultCode, data);
 }
 ```
 
@@ -118,9 +116,7 @@ const configuration = {
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
-  reference: 'React Native', // The reference to uniquely identify a payment. Can be send from your backend
-  shopperReference: 'Checkout Shopper', // Your reference to uniquely identify this shopper
-  returnUrl: 'myapp://', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
+  returnUrl: 'myapp://payment', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
 };
 ```
 
