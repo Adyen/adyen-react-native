@@ -131,7 +131,7 @@ class ActionHandler(
     companion object {
         private val TAG = LogUtil.getTag()
         const val ACTION_FRAGMENT_TAG = "ACTION_DIALOG_FRAGMENT"
-        internal const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenRectNativeRedirectScheme + "://"
+        internal const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenReactNativeRedirectScheme + "://"
 
         internal fun getReturnUrl(context: Context): String {
             return REDIRECT_RESULT_SCHEME + context.packageName
