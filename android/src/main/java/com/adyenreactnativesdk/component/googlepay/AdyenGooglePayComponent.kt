@@ -6,6 +6,7 @@ import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
@@ -105,7 +106,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
                 GOOGLEPAY_REQUEST_CODE
             )
 
-            shared = this
+            AdyenCheckout.setGooglePayComponent(this)
             pendingPaymentDialogFragment = dialogFragment
             googlePayComponent = component
         }
@@ -122,7 +123,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             pendingPaymentDialogFragment = null
             googlePayComponent = null
         }
-        shared = null
+        AdyenCheckout.removeGooglePayComponent()
     }
 
     private fun onError(error: Exception) {
@@ -154,16 +155,15 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     companion object {
         private const val TAG = "GooglePayComponent"
         private const val COMPONENT_NAME = "AdyenGooglePay"
-        private const val GOOGLEPAY_REQUEST_CODE = 1001
+        internal const val GOOGLEPAY_REQUEST_CODE = 1001
         private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
 
-        private var shared: AdyenGooglePayComponent? = null
-
         @JvmStatic
+        @Deprecated(
+            message = "This method is deprecated on beta-8",
+            replaceWith = ReplaceWith("AdyenCheckout.handleActivityResult(requestCode, resultCode, data)"))
         fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-            if (requestCode == GOOGLEPAY_REQUEST_CODE) {
-                shared?.handleActivityResult(resultCode, data)
-            }
+            AdyenCheckout.handleActivityResult(requestCode, resultCode, data)
         }
     }
 }
