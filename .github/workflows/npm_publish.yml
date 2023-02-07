@@ -19,6 +19,13 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
+      - name: Update package version with tag
+        run: |
+          sed -i '' "s/  \"version\":.*$/  \"version\": \"${TAG}\",/g" "${PACKAGE_JSON_PATH}"
+        env:
+          TAG: ${{ github.ref }}
+          PACKAGE_JSON_PATH: 'package.json'
+          
       - run: yarn install --frozen-lockfile
       # Build and publish to npm
       - run: npm publish --access public
