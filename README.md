@@ -61,13 +61,13 @@ protected void onCreate(Bundle savedInstanceState) {
 
 ##### For standalone components
 
-1. [Provide `rootProject.ext.adyenRectNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
+1. [Provide `rootProject.ext.adyenReactNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
 To do so, add folowing to your **App's build.gradle** `defaultConfig`
 
 ```groovy
 defaultConfig {
     ...
-    manifestPlaceholders = [redirectScheme: rootProject.ext.adyenRectNativeRedirectScheme]
+    manifestPlaceholders = [redirectScheme: rootProject.ext.adyenReactNativeRedirectScheme]
 }
 ```
 
