@@ -59,9 +59,9 @@ protected void onCreate(Bundle savedInstanceState) {
 }
 ```
 
-3. Make sure the theme of your app is decendent of `Theme.MaterialComponents`.
+3. Adyen Android DropIn require [Material Theming](https://m2.material.io/design/material-theming/overview.htm). Make sure the theme of your app is decendent of `Theme.MaterialComponents`.
 
-In *res/values/styles.xml* set 
+In *res/values/styles.xml* replace `parent` of your application theme:
 
 ```xml
 <style name="MyAppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
