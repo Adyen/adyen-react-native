@@ -118,7 +118,8 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ### Configuration
 
-Example of configuration properties:
+To read more about other configuration, see [Full list](docs\Configuration.md).
+Example of required configuration:
 
 ```javascript
 const configuration = {
@@ -162,52 +163,6 @@ import { AdyenCheckout } from '@adyen/react-native';
 </AdyenCheckout>
 ```
 
-Or use `@adyen/react-native` you can use our helper component `AdyenCheckout` with `AdyenCheckoutContext.Consumer` directly:
-
-```javascript
-import {
-  AdyenCheckout,
-  AdyenCheckoutContext,
-} from '@adyen/react-native';
-
-<AdyenCheckout
-  config={configuration}
-  paymentMethods={paymentMethods}
-  onSubmit={didSubmit}
-  onProvide={didProvide}
-  onFail={didFail}
-  onComplete={didComplete} >
-    <AdyenCheckoutContext.Consumer>
-      {({ start }) => (
-        <Button
-          title="Open DropIn"
-          onPress={() => { start('dropIn'); }}
-        />
-      )}
-    </AdyenCheckoutContext.Consumer>
-</AdyenCheckout>
-```
-
-Or manage native events manually by
-
-```javascript
-import { NativeModules } from 'react-native';
-const { AdyenDropIn } = NativeModules;
-
-<Button
-  title="Checkout"
-  onPress={() => {
-    const eventEmitter = new NativeEventEmitter(AdyenDropIn);
-    this.didSubmitListener = eventEmitter.addListener('PAYMENT_SUBMIT_EVENT', onSubmit);
-    this.didProvideListener = eventEmitter.addListener('PAYMENT_PROVIDE_DETAILS_EVENT', onProvide);
-    this.didCompleteListener = eventEmitter.addListener('PAYMENT_COMPLETED_EVENT', onComplete);
-    this.didFailListener = eventEmitter.addListener('PAYMENT_FAILED_EVENT', onFail);
-
-    AdyenDropIn.open(paymentMethods, configuration);
-  }}
-/>
-```
-
 ### Handling Actions
 
 > :exclamation: Native components only handling actions after payment was **started**(nativeComponent.open) and before it was **hidden**(nativeComponent.hide)
@@ -233,15 +188,6 @@ const handleSubmit = (payload, nativeComponent) => {
   >
     ...
 </AdyenCheckout>
-```
-
-Or call `.handle(action)` on a Native Module you are working with:
-
-```javascript
-import { NativeModules } from 'react-native';
-const { AdyenDropIn } = NativeModules;
-
-AdyenDropIn.handle(action);
 ```
 
 ## Documentation
