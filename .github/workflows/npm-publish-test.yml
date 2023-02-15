@@ -16,7 +16,6 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
       - run: npm whoami
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_ADYEN_REACT_NATIVE_TOKEN}}
