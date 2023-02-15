@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { usePaymentMethods } from './PaymentMethodsProvider';
 
-import { Button, SafeAreaView, Text, TextInput, View } from 'react-native';
+import { Button, SafeAreaView, Text, TextInput, View, useColorScheme } from 'react-native';
 
 const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
+  const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={{ margin: 8 }}>
       <Text>{title}</Text>
@@ -15,7 +16,7 @@ const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
         value={value}
         onChangeText={onChangeText}
         style={{
-          backgroundColor: 'lightgrey',
+          backgroundColor: isDarkMode ? 'grey' : 'lightgrey',
           padding: 8,
           borderRadius: 8,
         }}
