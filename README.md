@@ -44,7 +44,7 @@ yarn add @adyen/react-native`
   
 #### For ApplePay
 
-Follow general [Enabling ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
+Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
 
 ### Android integration
 
