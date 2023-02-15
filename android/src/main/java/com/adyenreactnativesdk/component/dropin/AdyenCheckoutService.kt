@@ -15,7 +15,12 @@ import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInModuleL
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 
-class AdyenDropInService : DropInService(), DropInModuleListener {
+@Deprecated(
+    message = "This class is deprecated on beta-9",
+    replaceWith = ReplaceWith("AdyenCheckoutService"))
+class AdyenDropInService: AdyenCheckoutService() { }
+
+open class AdyenCheckoutService : DropInService(), DropInModuleListener {
     override fun onCreate() {
         super.onCreate()
         DropInServiceProxy.shared.moduleListener = this

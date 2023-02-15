@@ -46,7 +46,7 @@ Add `@adyen/react-native` to your react-native project.
 1. Add `AdyenDropInService` to manifest:
 
 ```xml
-<service android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService" />
+<service android:name="com.adyenreactnativesdk.component.dropin.AdyenCheckoutService" android:exported="false" />
 ```
 
 2. Provide your Checkout activity to `AdyenCheckout`. This will improve responsiveness of DropIn and standalone native components:
@@ -98,7 +98,7 @@ defaultConfig {
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    AdyenCheckout.Companion.handle(intent);
+    AdyenCheckout.handle(intent);
 }
 ```
 

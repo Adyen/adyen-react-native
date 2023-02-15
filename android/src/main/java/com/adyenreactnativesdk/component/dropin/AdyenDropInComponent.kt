@@ -56,7 +56,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             }
         }
 
-        val builder = Builder(reactApplicationContext, AdyenDropInService::class.java, clientKey)
+        val builder = Builder(reactApplicationContext, AdyenCheckoutService::class.java, clientKey)
             .setEnvironment(environment)
 
         parser.locale?.let { builder.setShopperLocale(it) }
