@@ -24,8 +24,9 @@ Drop-in and Components require a [client key][client.key], that should be provid
 ## Installation
 
 Add `@adyen/react-native` to your react-native project.
-
-`$ yarn add @adyen/react-native`
+```bash
+yarn add @adyen/react-native`
+```
 
 ### iOS integration
 
@@ -40,17 +41,19 @@ Add `@adyen/react-native` to your react-native project.
     return [ADYRedirectComponent applicationDidOpenURL:url];
   }
   ```
+  
+#### For ApplePay
 
-#### Android integration
+Follow general [Enabling ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
 
-1. Add `AdyenDropInService` to manifest:
+### Android integration
 
+1. Add `AdyenCheckoutService` to manifest:
 ```xml
 <service android:name="com.adyenreactnativesdk.component.dropin.AdyenCheckoutService" android:exported="false" />
 ```
 
-2. Provide your Checkout activity to `AdyenCheckout`. This will improve responsiveness of DropIn and standalone native components:
-
+2. Provide your Checkout activity to `AdyenCheckout`.
 ```java
 @Override
 protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +75,6 @@ defaultConfig {
 ```
 
 2. Add `intent-filter` to your Checkout activity:
-
 ```xml
 <intent-filter>
     <action android:name="android.intent.action.VIEW" />
@@ -83,7 +85,6 @@ defaultConfig {
 ```
 
 3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
-
 ```java
 @Override
 public void onNewIntent(Intent intent) {
@@ -93,7 +94,6 @@ public void onNewIntent(Intent intent) {
 ```
 
 4. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
-
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -110,7 +110,6 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 To read more about other configuration, see [Full list](docs\Configuration.md).
 Example of required configuration:
-
 ```javascript
 const configuration = {
   environment: 'test', // When you're ready to accept live payments, change the value to one of our live environments.
@@ -124,7 +123,6 @@ const configuration = {
 ### Opening Payment component
 
 To use `@adyen/react-native` you can use our helper component `AdyenCheckout` and helper functions from `useAdyenCheckout` with standalone component:
-
 ```javascript
 import { useAdyenCheckout } from '@adyen/react-native';
 
@@ -138,7 +136,6 @@ const MyChekoutView = () => {
       );
 };
 ```
-
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
 
@@ -159,7 +156,6 @@ import { AdyenCheckout } from '@adyen/react-native';
 Handling of actions on its own is not supported
 
 Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions, use `nativeComponent.handle(action)` from  `onSubmit` callback.
-
 ```javascript
 const handleSubmit = (payload, nativeComponent) => {
   server.makePayment(payload)
