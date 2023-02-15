@@ -1,10 +1,8 @@
 import React, { useCallback } from 'react';
 import { useAdyenCheckout } from '@adyen/react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
 import {
   Button,
   StyleSheet,
-  useColorScheme,
   View,
   Platform,
 } from 'react-native';
@@ -20,10 +18,7 @@ const styles = StyleSheet.create({
 const PaymentMethods = () => {
 
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
-  const isDarkMode = useColorScheme() === 'dark';
-  const contentBackgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.black : Colors.white,
-  };
+
   const platformSpecificPayment =
     Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
   const platformSpecificType =
@@ -35,7 +30,7 @@ const PaymentMethods = () => {
   }, [paymentMethodsResponse]);
 
   return (
-    <View style={[styles.contentView, contentBackgroundStyle]}>
+    <View style={[styles.contentView]}>
       <Button
         title="Open DropIn"
         disabled={paymentMethodsResponse === null}
