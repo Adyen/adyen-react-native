@@ -108,7 +108,7 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ### Configuration
 
-To read more about other configuration, see [Full list](docs\Configuration.md).
+To read more about other configuration, see [full list](/docs/Configuration.md).
 Example of required configuration:
 ```javascript
 const configuration = {
