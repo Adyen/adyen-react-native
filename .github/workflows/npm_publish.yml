@@ -15,23 +15,23 @@ on:
 
 jobs:
   publish-npm:
+    environment: release
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ inputs.version == '' && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v3
-      # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      # Update version in package.json
-      - run: |
+      - name: Update version in package.json
+        run: |
           sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
-      # Build and publish to npm
-      - run: yarn install --frozen-lockfile
-      - run: npm publish --access public
+      - name: Build and publish to npm
+        run: yarn install --frozen-lockfile
+      - name: Upload artifacts
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ADYEN_REACT_NATIVE_TOKEN }}
           CI: true
-      # Upload artifacts
