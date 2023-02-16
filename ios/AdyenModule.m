@@ -49,3 +49,13 @@ RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
                 configuration:(NSDictionary *)configuration)
 
 @end
+
+@interface RCT_EXTERN_MODULE(AdyenCSE, NSObject)
+
+RCT_EXTERN_METHOD(encryptCard:(NSDictionary *)card
+                  publicKey:(NSString *)publicKey)
+
+RCT_EXTERN_METHOD(encryptBin:(NSString *)bin
+                  publicKey:(NSString *)publicKey)
+
+@end
