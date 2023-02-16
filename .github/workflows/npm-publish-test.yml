@@ -10,12 +10,13 @@ on:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: npm whoami
+      - run: npm whoami --registry=https://registry.npmjs.org/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ADYEN_REACT_NATIVE_TOKEN }}
