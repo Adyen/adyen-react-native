@@ -12,8 +12,8 @@ Adyen React Native provides you with the building blocks to create a checkout ex
 
 You can integrate with Adyen React Native in two ways:
 
-* [Drop-in](https://docs.adyen.com/online-payments/react-native/drop-in): React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
-* [Components](https://docs.adyen.com/online-payments/react-native/components): React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combinened with your own payments flow.
+* [Drop-in](adyen-docs-dropin): React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
+* [Components](adyen-docs-components): React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combinened with your own payments flow.
 
 ## Contributing
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
@@ -178,9 +178,10 @@ const handleSubmit = (payload, nativeComponent) => {
 
 ## Documentation
 
-- [Configuration](configuration)
+- [Configuration][configuration]
 - [Error codes](/docs/Error%20codes.md)
-- [Drop-in Documentation](https://docs.adyen.com/online-payments/react-native/drop-in)
+- [Drop-in Documentation][adyen-docs-dropin]
+- [Component Documentation][adyen-docs-components]
 
 ## Support
 If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our [support team](https://www.adyen.help/hc/en-us/requests/new?ticket_form_id=360000705420).    
@@ -190,3 +191,5 @@ MIT license. For more information, see the LICENSE file.
 
 [client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
 [configuration]: /docs/Configuration.md
+[adyen-docs-dropin]: https://docs.adyen.com/online-payments/react-native/drop-in
+[adyen-docs-components]: https://docs.adyen.com/online-payments/react-native/components
