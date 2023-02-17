@@ -44,7 +44,7 @@ export const DEFAULT_CONFIGURATION = {
   },
 };
 
-// For test purpose only! Do not contact Adyen API from your mobile app on LIVE.
+// For test purposes only! Do not call Adyen API from your mobile app on LIVE.
 export const ENVIRONMENT = {
   apiKey: '{YOUR_DEMO_SERVER_API_KEY}',
   url: 'https://checkout-test.adyen.com/v67/',
