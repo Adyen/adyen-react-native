@@ -108,7 +108,7 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ### Configuration
 
-To read more about other configuration, see [full list](configuration).
+To read more about other configuration, see the [full list](configuration).
 Example of required configuration:
 ```javascript
 const configuration = {
@@ -180,8 +180,8 @@ const handleSubmit = (payload, nativeComponent) => {
 
 - [Configuration][configuration]
 - [Error codes](/docs/Error%20codes.md)
-- [Drop-in Documentation][adyen-docs-dropin]
-- [Component Documentation][adyen-docs-components]
+- [Drop-in documentation][adyen-docs-dropin]
+- [Component documentation][adyen-docs-components]
 
 ## Support
 If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our [support team](https://www.adyen.help/hc/en-us/requests/new?ticket_form_id=360000705420).    
