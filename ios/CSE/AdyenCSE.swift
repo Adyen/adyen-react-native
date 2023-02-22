@@ -9,18 +9,37 @@ import Foundation
 import React
 
 @objc(AdyenCSE)
-final internal class AdyenCSE: BaseModule {
+final internal class AdyenCSE: NSObject {
 
     @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() {}
-    override func startObserving() {}
-
-    @objc
-    func encryptCard(_ card: NSDictionary, publicKey: NSString) {
+    func encryptCard(_ payload: NSDictionary,
+                     publicKey: NSString,
+                     resolver: RCTPromiseResolveBlock,
+                     rejecter: RCTPromiseRejectBlock) {
+        do {
+            let unencryptedCard = try Card(from: payload)
+            let encryptedCard = try CardEncryptor.encrypt(card: unencryptedCard, with: publicKey as String)
+            resolver(encryptedCard.jsonDictionary)
+        } catch {
+            rejecter(Constant.errorMessage, nil, error)
+        }
     }
 
     @objc
-    func encryptBin(_ bin: NSString, publicKey: NSString) {
+    func encryptBin(_ bin: NSString,
+                    publicKey: NSString,
+                    resolver: RCTPromiseResolveBlock,
+                    rejecter: RCTPromiseRejectBlock) {
+        let formtedBin = bin.replacingOccurrences(of: " ", with: "")
+        do {
+            let encryptedBin = try CardEncryptor.encrypt(bin: formtedBin as String, with: publicKey as String)
+            resolver(encryptedBin)
+        } catch {
+            rejecter(Constant.errorMessage , nil, error)
+        }
+    }
+
+    private enum Constant {
+        static var errorMessage = "Encryption failed" 
     }
 }
