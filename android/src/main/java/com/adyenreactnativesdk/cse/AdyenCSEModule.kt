@@ -32,7 +32,7 @@ class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaMo
             map.putString(CVV_KEY, encryptedCard.encryptedSecurityCode)
             promise.resolve(map)
         } catch (e: EncryptionException) {
-            promise.reject("Encryption failed", e)
+            promise.reject(ERROR_MESSAGE, e)
         }
     }
 
@@ -42,7 +42,7 @@ class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaMo
             val encryptedBin = CardEncrypter.encryptBin(bin, publicKey)
             promise.resolve(encryptedBin)
         } catch (e: EncryptionException) {
-            promise.reject("Encryption failed", e)
+            promise.reject(ERROR_MESSAGE, e)
         }
     }
 
@@ -53,5 +53,6 @@ class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaMo
         private const val EXPIRY_MONTH_KEY = "expiryMonth"
         private const val EXPIRY_YEAR_KEY = "expiryYear"
         private const val CVV_KEY = "cvv"
+        private const val ERROR_MESSAGE = "Encryption failed"
     }
 }
