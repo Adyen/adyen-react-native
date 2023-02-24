@@ -48,13 +48,17 @@ Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/
 
 ### Android integration
 
-1. Add `AdyenCheckoutService` to manifest:
+1. Add `AdyenCheckoutService` to manifest (`AndroidManifest.xml`):
 ```xml
 <service android:name="com.adyenreactnativesdk.component.dropin.AdyenCheckoutService" android:exported="false" />
 ```
 
-2. Provide your Checkout activity to `AdyenCheckout`.
+2. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
 ```java
+import com.adyenreactnativesdk.AdyenCheckout;
+
+...
+
 @Override
 protected void onCreate(Bundle savedInstanceState) {
   super.onCreate(savedInstanceState);
@@ -89,7 +93,7 @@ defaultConfig {
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    AdyenCheckout.handle(intent);
+    AdyenCheckout.handleIntent(intent);
 }
 ```
 
