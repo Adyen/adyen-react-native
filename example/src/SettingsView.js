@@ -1,7 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { usePaymentMethods } from './PaymentMethodsProvider';
-
-import { Button, SafeAreaView, Text, TextInput, View, useColorScheme } from 'react-native';
+import Styles from './Styles';
+import {
+  Button,
+  SafeAreaView,
+  Text,
+  TextInput,
+  View,
+  useColorScheme,
+} from 'react-native';
 
 const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -93,7 +100,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
 
 const SettingView = ({ navigation }) => {
   return (
-    <SafeAreaView style={[{ flex: 1 }]}>
+    <SafeAreaView style={Styles.page}>
       <SettingFormView navigation={navigation} />
     </SafeAreaView>
   );

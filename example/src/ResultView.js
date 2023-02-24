@@ -1,14 +1,13 @@
 import React from 'react';
-import { SafeAreaView, Text } from "react-native"
+import { SafeAreaView, Text } from 'react-native';
+import Styles from './Styles';
 
 const Result = ({ route }) => {
-    return (
-        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ textAlign: 'center' }}>
-                {route.params.result}
-            </Text>
-        </SafeAreaView>
-    )
-}
+  return (
+    <SafeAreaView style={Styles.page}>
+      <Text>{route.params.result}</Text>
+    </SafeAreaView>
+  );
+};
 
 export default Result;

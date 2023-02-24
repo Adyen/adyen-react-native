@@ -67,7 +67,7 @@ const CheckoutView = ({ navigation }) => {
     );
     nativeComponent.hide(success, { message: result.resultCode });
     navigation.popToTop();
-    navigation.push('ResultPage', { result: result.resultCode });
+    navigation.push('Result', { result: result.resultCode });
   };
 
   const proccessError = (error, nativeComponent) => {

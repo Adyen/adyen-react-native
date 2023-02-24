@@ -70,3 +70,33 @@ internal struct EncodableActionData: Encodable {
         case paymentData
     }
 }
+
+extension EncryptedCard: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try? container.encodeIfPresent(number, forKey: .number)
+        try? container.encodeIfPresent(expiryYear, forKey: .expiryYear)
+        try? container.encodeIfPresent(expiryMonth, forKey: .expiryMonth)
+        try? container.encodeIfPresent(securityCode, forKey: .securityCode)
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case number, expiryYear, expiryMonth
+        case securityCode = "cvv"
+    }
+}
+
+extension Card: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(number: try container.decodeIfPresent(String.self, forKey: .number),
+                  securityCode: try container.decodeIfPresent(String.self, forKey: .securityCode),
+                  expiryMonth: try container.decodeIfPresent(String.self, forKey: .expiryMonth),
+                  expiryYear: try container.decodeIfPresent(String.self, forKey: .expiryYear))
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case number, expiryYear, expiryMonth
+        case securityCode = "cvv"
+    }
+}
