@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { AdyenCheckout, ERROR_CODE_CANCELED } from '@adyen/react-native';
 import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
 import { SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native';
@@ -29,38 +29,41 @@ const CheckoutView = ({ navigation }) => {
     refreshPaymentMethods();
   }, []);
 
-  const didSubmit = (data, nativeComponent, configuration) => {
-    console.log(`didSubmit: ${data.paymentMethod.type}`);
-    fetchPayments(data, configuration)
-      .then((result) => {
-        if (result.action) {
-          console.log('Action!');
-          nativeComponent.handle(result.action);
-        } else {
-          proccessResult(result, nativeComponent);
-        }
-      })
-      .catch((error) => proccessError(error, nativeComponent));
-  };
+  const didSubmit = useCallback(
+    async (data, nativeComponent) => {
+      console.log(`didSubmit: ${data.paymentMethod.type}`);
+      fetchPayments(data, config)
+        .then((result) => {
+          if (result.action) {
+            console.log('Action!');
+            nativeComponent.handle(result.action);
+          } else {
+            proccessResult(result, nativeComponent);
+          }
+        })
+        .catch((error) => proccessError(error, nativeComponent));
+    },
+    [config]
+  );
 
-  const didProvide = (data, nativeComponent) => {
+  const didProvide = useCallback(async (data, nativeComponent) => {
     console.log('didProvide');
     fetchPaymentDetails(data)
       .then((result) => proccessResult(result, nativeComponent))
       .catch((error) => proccessError(error, nativeComponent));
-  };
+  }, []);
 
-  const didComplete = (nativeComponent) => {
+  const didComplete = useCallback(async (nativeComponent) => {
     console.log('didComplete');
     nativeComponent.hide(true, { message: 'Completed' });
-  };
+  }, []);
 
-  const didFail = (error, nativeComponent) => {
+  const didFail = useCallback(async (error, nativeComponent) => {
     console.log(`didFailed: ${error.message}`);
     proccessError(error, nativeComponent);
-  };
+  }, []);
 
-  const proccessResult = (result, nativeComponent) => {
+  const proccessResult = useCallback(async (result, nativeComponent) => {
     let success = isSuccess(result);
     console.log(
       `Payment: ${success ? 'success' : 'failure'} : ${result.resultCode}`
@@ -68,16 +71,16 @@ const CheckoutView = ({ navigation }) => {
     nativeComponent.hide(success, { message: result.resultCode });
     navigation.popToTop();
     navigation.push('Result', { result: result.resultCode });
-  };
+  }, []);
 
-  const proccessError = (error, nativeComponent) => {
+  const proccessError = useCallback(async (error, nativeComponent) => {
     nativeComponent.hide(false, { message: error.message || 'Unknown error' });
     if (error.errorCode == ERROR_CODE_CANCELED) {
       Alert.alert('Canceled');
     } else {
       Alert.alert('Error', error.message);
     }
-  };
+  }, []);
 
   return (
     <SafeAreaView style={[{ flex: 1 }]}>
@@ -85,9 +88,7 @@ const CheckoutView = ({ navigation }) => {
       <AdyenCheckout
         config={config}
         paymentMethods={paymentMethods}
-        onSubmit={(payload, nativeComponent) => {
-          didSubmit(payload, nativeComponent, config);
-        }}
+        onSubmit={didSubmit}
         onProvide={didProvide}
         onFail={didFail}
         onComplete={didComplete}
