@@ -41,7 +41,7 @@ const CseView = () => {
           encryptedSecurityCode: encryptedCard.cvv,
         },
       };
-      let result = await fetchPayments(data, DEFAULT_CONFIGURATION);
+      const result = await fetchPayments(data, DEFAULT_CONFIGURATION);
       if (result.action) {
         Alert.alert('Action');
       } else {
