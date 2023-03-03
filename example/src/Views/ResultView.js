@@ -5,7 +5,9 @@ import Styles from '../Utilities/Styles';
 const Result = ({ route }) => {
   return (
     <SafeAreaView style={Styles.page}>
-      <Text>{route.params.result}</Text>
+      <View style={Styles.content}>
+        <Text>{route.params.result}</Text>
+      </View>
     </SafeAreaView>
   );
 };
