@@ -1,18 +1,15 @@
 import React, { useEffect, useCallback } from 'react';
 import { AdyenCheckout, ERROR_CODE_CANCELED } from '@adyen/react-native';
-import { fetchPayments, fetchPaymentDetails, isSuccess } from './APIClient';
-import { SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native';
-import { usePaymentMethods } from './PaymentMethodsProvider';
+import {
+  fetchPayments,
+  fetchPaymentDetails,
+  isSuccess,
+} from '../../Utilities/APIClient';
+import { SafeAreaView, Alert } from 'react-native';
+import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
-
-const styles = StyleSheet.create({
-  topContentView: {
-    alignItems: 'center',
-    borderRadius: 5,
-    justifyContent: 'center',
-    padding: 16,
-  },
-});
+import Styles from '../../Utilities/Styles';
+import TopView from './TopView';
 
 function getFlagEmoji(countryCode) {
   const codePoints = countryCode
@@ -83,8 +80,8 @@ const CheckoutView = ({ navigation }) => {
   }, []);
 
   return (
-    <SafeAreaView style={[{ flex: 1 }]}>
-      <PaymentMethodsView config={config} paymentMethods={paymentMethods} />
+    <SafeAreaView style={Styles.page}>
+      <TopView />
       <AdyenCheckout
         config={config}
         paymentMethods={paymentMethods}
@@ -96,22 +93,6 @@ const CheckoutView = ({ navigation }) => {
         <PaymentMethods />
       </AdyenCheckout>
     </SafeAreaView>
-  );
-};
-
-const PaymentMethodsView = ({ paymentMethods, config }) => {
-  return (
-    <View style={[styles.topContentView]}>
-      {paymentMethods ? (
-        <Text style={{ textAlign: 'center' }}>
-          {`${config.amount.value} ${config.amount.currency}`}
-          {'\n'}
-          Country: {getFlagEmoji(config.countryCode)}
-        </Text>
-      ) : (
-        <Text>No PaymentMethods</Text>
-      )}
-    </View>
   );
 };
 

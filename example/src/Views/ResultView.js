@@ -1,6 +1,6 @@
 import React from 'react';
 import { SafeAreaView, Text } from 'react-native';
-import Styles from './Styles';
+import Styles from '../Utilities/Styles';
 
 const Result = ({ route }) => {
   return (
