@@ -15,7 +15,7 @@ const PaymentMethods = () => {
       if (!paymentMethodsResponse) {
         return false;
       }
-      const paymentMethods = paymentMethodsResponse.paymentMethods;
+      const { paymentMethods } = paymentMethodsResponse;
       return (
         paymentMethods.length > 0 &&
         paymentMethods.some(
