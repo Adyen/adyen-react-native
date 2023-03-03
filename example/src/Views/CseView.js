@@ -32,7 +32,7 @@ const CseView = () => {
         unencryptedCard,
         PUBLIC_KEY
       );
-      let data = {
+      const data = {
         paymentMethod: {
           type: 'scheme',
           encryptedCardNumber: encryptedCard.number,
