@@ -1,10 +1,5 @@
 import React, { useRef, useCallback, createContext, useEffect } from 'react';
-import {
-  PAYMENT_SUBMIT_EVENT,
-  PAYMENT_PROVIDE_DETAILS_EVENT,
-  PAYMENT_COMPLETED_EVENT,
-  PAYMENT_FAILED_EVENT,
-} from './constants';
+import { Event } from './constants';
 import { getNativeComponent } from './AdyenNativeModules';
 import { NativeEventEmitter } from 'react-native';
 
@@ -49,16 +44,16 @@ const AdyenCheckout = ({
   const startEventListeners = useCallback(
     (eventEmitter, configuration, nativeComponent) => {
       subscriptions.current = [
-        eventEmitter.addListener(PAYMENT_SUBMIT_EVENT, (data) =>
+        eventEmitter.addListener(Event.OnSubmit, (data) =>
           submitPayment(configuration, data, nativeComponent)
         ),
-        eventEmitter.addListener(PAYMENT_PROVIDE_DETAILS_EVENT, (data) =>
+        eventEmitter.addListener(Event.OnProvide, (data) =>
           onProvide(data, nativeComponent)
         ),
-        eventEmitter.addListener(PAYMENT_COMPLETED_EVENT, () => {
+        eventEmitter.addListener(Event.onComplete, () => {
           onComplete(nativeComponent);
         }),
-        eventEmitter.addListener(PAYMENT_FAILED_EVENT, (error) => {
+        eventEmitter.addListener(Event.onFail, (error) => {
           onFail(error, nativeComponent);
         }),
       ];

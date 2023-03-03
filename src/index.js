@@ -29,4 +29,6 @@ export {
   ERROR_CODE_NO_PAYMENT_METHOD,
 } from './constants';
 
+export { Environment, Event, ErrorCode } from './constants';
+
 export { useAdyenCheckout } from './useAdyenCheckout';
