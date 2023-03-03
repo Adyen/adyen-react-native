@@ -21,7 +21,7 @@ const CseView = () => {
   const [cvv, setCvv] = useState('');
 
   const tryEncryptCard = useCallback(async () => {
-    let unencryptedCard = {
+    const unencryptedCard = {
       number: number,
       expiryMonth: expiryMonth,
       expiryYear: expiryYear,
