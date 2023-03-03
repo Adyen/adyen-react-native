@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView, Text } from 'react-native';
+import { SafeAreaView, Text, View } from 'react-native';
 import Styles from '../Utilities/Styles';
 
 const Result = ({ route }) => {
