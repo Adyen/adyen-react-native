@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { AdyenCheckout, ERROR_CODE_CANCELED } from '@adyen/react-native';
+import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
 import {
   fetchPayments,
   fetchPaymentDetails,
@@ -72,7 +72,7 @@ const CheckoutView = ({ navigation }) => {
 
   const proccessError = useCallback(async (error, nativeComponent) => {
     nativeComponent.hide(false, { message: error.message || 'Unknown error' });
-    if (error.errorCode == ERROR_CODE_CANCELED) {
+    if (error.errorCode == ErrorCode.Canceled) {
       Alert.alert('Canceled');
     } else {
       Alert.alert('Error', error.message);

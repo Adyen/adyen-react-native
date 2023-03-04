@@ -1,3 +1,5 @@
+// @ts-check
+
 export {
   AdyenDropIn,
   AdyenApplePay,
@@ -6,11 +8,7 @@ export {
   AdyenCSE,
 } from './AdyenNativeModules';
 
-export {
-  AdyenCheckout,
-  AdyenCheckoutContext,
-  AdyenPaymentProvider,
-} from './AdyenCheckoutContext';
+export { AdyenCheckout, AdyenCheckoutContext } from './AdyenCheckoutContext';
 
 export {
   PAYMENT_COMPLETED_EVENT,

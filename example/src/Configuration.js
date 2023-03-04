@@ -1,4 +1,5 @@
 import { Platform, NativeModules } from 'react-native';
+import { Environment } from '@adyen/react-native';
 
 export const DEVICE_LOCALE = (
   Platform.OS === 'ios'
@@ -13,7 +14,7 @@ export const CHANNEL = Platform.select({
 })();
 
 export const DEFAULT_CONFIGURATION = {
-  environment: 'test',
+  environment: Environment.Test,
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: {

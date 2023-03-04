@@ -4,7 +4,7 @@ import { getNativeComponent } from './AdyenNativeModules';
 import { NativeEventEmitter } from 'react-native';
 
 const AdyenCheckoutContext = createContext({
-  start: () => {},
+  start: (/** @type {string} */ typeName) => {},
   config: {},
   paymentMethods: {},
 });
@@ -42,18 +42,19 @@ const AdyenCheckout = ({
   }, [subscriptions]);
 
   const startEventListeners = useCallback(
-    (eventEmitter, configuration, nativeComponent) => {
+    (configuration, nativeComponent) => {
+      const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
-        eventEmitter.addListener(Event.OnSubmit, (data) =>
+        eventEmitter.addListener(Event.onSubmit, (data) =>
           submitPayment(configuration, data, nativeComponent)
         ),
-        eventEmitter.addListener(Event.OnProvide, (data) =>
+        eventEmitter.addListener(Event.onProvide, (data) =>
           onProvide(data, nativeComponent)
         ),
-        eventEmitter.addListener(Event.onComplete, () => {
+        eventEmitter.addListener(Event.onCompleated, () => {
           onComplete(nativeComponent);
         }),
-        eventEmitter.addListener(Event.onFail, (error) => {
+        eventEmitter.addListener(Event.onFailed, (error) => {
           onFail(error, nativeComponent);
         }),
       ];
@@ -69,15 +70,14 @@ const AdyenCheckout = ({
   );
 
   const start = useCallback(
-    (nativeComponentName) => {
+    (/** @type {string} */ nativeComponentName) => {
       removeEventListeners();
       const { nativeComponent, paymentMethod } = getNativeComponent(
         nativeComponentName,
         paymentMethods
       );
 
-      const eventEmitter = new NativeEventEmitter(nativeComponent);
-      startEventListeners(eventEmitter, config, nativeComponent);
+      startEventListeners(config, nativeComponent);
 
       if (paymentMethod) {
         const singlePaymentMethods = { paymentMethods: [paymentMethod] };
