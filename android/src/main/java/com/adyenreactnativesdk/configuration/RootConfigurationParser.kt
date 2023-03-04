@@ -61,6 +61,8 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 "live-au" -> Environment.AUSTRALIA
                 "live", "live-eu" -> Environment.EUROPE
                 "live-us" -> Environment.UNITED_STATES
+                "live-apse" -> Environment.APSE
+                "live-in" -> Environment.INDIA
                 else -> Environment.TEST
             }
         } else Environment.TEST

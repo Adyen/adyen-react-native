@@ -79,6 +79,7 @@ export const ErrorCode = Object.freeze({
  * @property {string} US
  * @property {string} Australia
  * @property {string} AsiaPacificSouthEast
+ * @property {string} India
  */
 
 /**
@@ -86,8 +87,9 @@ export const ErrorCode = Object.freeze({
  */
 export const Environment = Object.freeze({
   Test: 'test',
-  Europe: 'live',
+  Europe: 'live-eu',
   US: 'live-us',
   Australia: 'live-au',
   AsiaPacificSouthEast: 'live-apse',
+  India: 'live-in',
 });
