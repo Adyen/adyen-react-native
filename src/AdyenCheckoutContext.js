@@ -6,7 +6,7 @@ import { NativeEventEmitter } from 'react-native';
 const AdyenCheckoutContext = createContext({
   start: (/** @type {string} */ typeName) => {},
   config: {},
-  paymentMethods: {},
+  paymentMethods: /** @type {PaymentMethodsResponse} */ undefined,
 });
 
 const AdyenCheckout = ({
