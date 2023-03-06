@@ -1,17 +1,12 @@
 import React, { useRef, useCallback, createContext, useEffect } from 'react';
-import {
-  PAYMENT_SUBMIT_EVENT,
-  PAYMENT_PROVIDE_DETAILS_EVENT,
-  PAYMENT_COMPLETED_EVENT,
-  PAYMENT_FAILED_EVENT,
-} from './constants';
+import { Event } from './constants';
 import { getNativeComponent } from './AdyenNativeModules';
 import { NativeEventEmitter } from 'react-native';
 
 const AdyenCheckoutContext = createContext({
-  start: () => {},
+  start: (/** @type {string} */ typeName) => {},
   config: {},
-  paymentMethods: {},
+  paymentMethods: /** @type {PaymentMethodsResponse} */ undefined,
 });
 
 const AdyenCheckout = ({
@@ -47,18 +42,19 @@ const AdyenCheckout = ({
   }, [subscriptions]);
 
   const startEventListeners = useCallback(
-    (eventEmitter, configuration, nativeComponent) => {
+    (configuration, nativeComponent) => {
+      const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
-        eventEmitter.addListener(PAYMENT_SUBMIT_EVENT, (data) =>
+        eventEmitter.addListener(Event.onSubmit, (data) =>
           submitPayment(configuration, data, nativeComponent)
         ),
-        eventEmitter.addListener(PAYMENT_PROVIDE_DETAILS_EVENT, (data) =>
+        eventEmitter.addListener(Event.onProvide, (data) =>
           onProvide(data, nativeComponent)
         ),
-        eventEmitter.addListener(PAYMENT_COMPLETED_EVENT, () => {
+        eventEmitter.addListener(Event.onCompleated, () => {
           onComplete(nativeComponent);
         }),
-        eventEmitter.addListener(PAYMENT_FAILED_EVENT, (error) => {
+        eventEmitter.addListener(Event.onFailed, (error) => {
           onFail(error, nativeComponent);
         }),
       ];
@@ -74,15 +70,14 @@ const AdyenCheckout = ({
   );
 
   const start = useCallback(
-    (nativeComponentName) => {
+    (/** @type {string} */ nativeComponentName) => {
       removeEventListeners();
       const { nativeComponent, paymentMethod } = getNativeComponent(
         nativeComponentName,
         paymentMethods
       );
 
-      const eventEmitter = new NativeEventEmitter(nativeComponent);
-      startEventListeners(eventEmitter, config, nativeComponent);
+      startEventListeners(config, nativeComponent);
 
       if (paymentMethod) {
         const singlePaymentMethods = { paymentMethods: [paymentMethod] };

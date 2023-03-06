@@ -1,3 +1,5 @@
+// @ts-check
+
 export {
   AdyenDropIn,
   AdyenApplePay,
@@ -6,11 +8,7 @@ export {
   AdyenCSE,
 } from './AdyenNativeModules';
 
-export {
-  AdyenCheckout,
-  AdyenCheckoutContext,
-  AdyenPaymentProvider,
-} from './AdyenCheckoutContext';
+export { AdyenCheckout, AdyenCheckoutContext } from './AdyenCheckoutContext';
 
 export {
   PAYMENT_COMPLETED_EVENT,
@@ -28,5 +26,7 @@ export {
   ERROR_CODE_INVALID_ACTION,
   ERROR_CODE_NO_PAYMENT_METHOD,
 } from './constants';
+
+export { Environment, Event, ErrorCode } from './constants';
 
 export { useAdyenCheckout } from './useAdyenCheckout';
