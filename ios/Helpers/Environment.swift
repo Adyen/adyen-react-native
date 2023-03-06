@@ -8,14 +8,18 @@ import Adyen
 import Foundation
 
 extension Environment {
+    
+    // TODO: remove when updated to v4.10+
+    /// Adyen's Asia Pacific and South East live  environment.
+    static let liveApse = Environment(baseURL: URL(string: "https://checkoutshopper-live-apse.adyen.com/")!)
 
     internal static func parse(_ value: String) -> Environment {
         switch value.lowercased() {
         case "live-au": return .liveAustralia
         case "live", "live-eu": return .liveEurope
         case "live-us": return .liveUnitedStates
-        case "live-apse": .liveApse
-        case "live-in": .liveIndia
+        case "live-apse": return liveApse
+        case "live-in": return .liveIndia
         default:
             return .test
         }
