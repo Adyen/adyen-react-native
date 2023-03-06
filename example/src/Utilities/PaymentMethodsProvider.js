@@ -1,6 +1,6 @@
 import React, { Component, useContext } from 'react';
 import { fetchPaymentMethods } from './APIClient';
-import { DEFAULT_CONFIGURATION } from './Configuration';
+import { DEFAULT_CONFIGURATION } from '../Configuration';
 
 export const PaymentMethodsContext = React.createContext();
 

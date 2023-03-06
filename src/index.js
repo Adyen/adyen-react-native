@@ -1,15 +1,15 @@
 export {
-  AdyenCardComponent,
   AdyenDropIn,
   AdyenApplePay,
   AdyenInstant,
-  AdyenGooglePay
+  AdyenGooglePay,
+  AdyenCSE,
 } from './AdyenNativeModules';
 
 export {
   AdyenCheckout,
   AdyenCheckoutContext,
-  AdyenPaymentProvider
+  AdyenPaymentProvider,
 } from './AdyenCheckoutContext';
 
 export {
@@ -26,7 +26,7 @@ export {
   ERROR_CODE_NO_PAYMENT,
   ERROR_CODE_INVALID_PAYMENT_METHODS,
   ERROR_CODE_INVALID_ACTION,
-  ERROR_CODE_NO_PAYMENT_METHOD
+  ERROR_CODE_NO_PAYMENT_METHOD,
 } from './constants';
 
 export { useAdyenCheckout } from './useAdyenCheckout';

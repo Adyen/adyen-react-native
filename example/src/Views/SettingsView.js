@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { usePaymentMethods } from './PaymentMethodsProvider';
-import Styles from './Styles';
+import { usePaymentMethods } from '../Utilities/PaymentMethodsProvider';
+import Styles from '../Utilities/Styles';
 import {
   Button,
   SafeAreaView,
@@ -13,8 +13,8 @@ import {
 const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
   const isDarkMode = useColorScheme() === 'dark';
   return (
-    <View style={{ margin: 8 }}>
-      <Text>{title}</Text>
+    <View style={Styles.item}>
+      <Text style={Styles.itemTitle}>{title}</Text>
       <TextInput
         {...rest} // Inherit any props passed to it; e.g., multiline, numberOfLines below
         editable
@@ -22,11 +22,7 @@ const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
         placeholder=""
         value={value}
         onChangeText={onChangeText}
-        style={{
-          backgroundColor: isDarkMode ? 'grey' : 'lightgrey',
-          padding: 8,
-          borderRadius: 8,
-        }}
+        style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
       />
     </View>
   );
@@ -93,7 +89,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
         value={shopperLocale}
         onChangeText={setShopperLocale}
       />
-      <Button title="Apply" onPress={handleOnPress} />
+      <Button title="Refresh payment methods" onPress={handleOnPress} />
     </View>
   );
 };

@@ -13,44 +13,16 @@ import {
   DefaultTheme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import SettingView from './SettingsView';
-import CheckoutView from './CheckoutView';
-import Result from './ResultView';
-import CseView from './CSE';
-import PaymentMethodsProvider from './PaymentMethodsProvider';
 
 import { Button, Alert, View, useColorScheme } from 'react-native';
+import PaymentMethodsProvider from './Utilities/PaymentMethodsProvider';
+import CseView from './Views/CseView';
+import SettingView from './Views/SettingsView';
+import Result from './Views/ResultView';
+import CheckoutView from './Views/Checkout/CheckoutView';
+import Home from './Views/HomeView';
 
 const Stack = createNativeStackNavigator();
-
-const Home = ({ navigation }) => {
-  return (
-    <View
-      style={{
-        flex: 1,
-        alignContent: 'center',
-        padding: 40,
-      }}
-    >
-      <View
-        style={{
-          flex: 1,
-          alignContent: 'stretch',
-          justifyContent: 'center',
-        }}
-      >
-        <Button
-          onPress={() => navigation.navigate('CheckoutPage')}
-          title="Checkout"
-        />
-        <Button
-          onPress={() => navigation.navigate('Clientside Encryption')}
-          title="Clientside Encryption"
-        />
-      </View>
-    </View>
-  );
-};
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';

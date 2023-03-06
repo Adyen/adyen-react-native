@@ -15,28 +15,55 @@ export const AdyenDropIn = NativeModules.AdyenDropIn
   ? NativeModules.AdyenDropIn
   : new Proxy(
       {},
-      { get() { throw new Error(LINKING_ERROR); }, }
+      {
+        get() {
+          throw new Error(LINKING_ERROR);
+        },
+      }
     );
 
 export const AdyenInstant = NativeModules.AdyenInstant
   ? NativeModules.AdyenInstant
   : new Proxy(
       {},
-      { get() { throw new Error(LINKING_ERROR); }, }
+      {
+        get() {
+          throw new Error(LINKING_ERROR);
+        },
+      }
     );
 
 export const AdyenApplePay = NativeModules.AdyenApplePay
   ? NativeModules.AdyenApplePay
   : new Proxy(
       {},
-      { get() { throw new Error(LINKING_ERROR); }, }
+      {
+        get() {
+          throw new Error(LINKING_ERROR);
+        },
+      }
     );
 
 export const AdyenGooglePay = NativeModules.AdyenGooglePay
   ? NativeModules.AdyenGooglePay
   : new Proxy(
       {},
-      { get() { throw new Error(LINKING_ERROR); }, }
+      {
+        get() {
+          throw new Error(LINKING_ERROR);
+        },
+      }
+    );
+
+export const AdyenCSE = NativeModules.AdyenCSE
+  ? NativeModules.AdyenCSE
+  : new Proxy(
+      {},
+      {
+        get() {
+          throw new Error(LINKING_ERROR);
+        },
+      }
     );
 
 export function getNativeComponent(name, paymentMethods) {
@@ -55,7 +82,7 @@ export function getNativeComponent(name, paymentMethods) {
       break;
   }
 
-  let paymentMethod = find(paymentMethods, type)
+  const paymentMethod = find(paymentMethods, type);
   if (!paymentMethod) {
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + name);
   }
