@@ -11,14 +11,6 @@ import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
 
-function getFlagEmoji(countryCode) {
-  const codePoints = countryCode
-    .toUpperCase()
-    .split('')
-    .map((char) => 127397 + char.charCodeAt());
-  return String.fromCodePoint(...codePoints);
-}
-
 const CheckoutView = ({ navigation }) => {
   const { config, paymentMethods, refreshPaymentMethods } = usePaymentMethods();
 

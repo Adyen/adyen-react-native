@@ -21,7 +21,7 @@ const CseView = () => {
   const [cvv, setCvv] = useState('');
 
   const tryEncryptCard = useCallback(async () => {
-    let unencryptedCard = {
+    const unencryptedCard = {
       number: number,
       expiryMonth: expiryMonth,
       expiryYear: expiryYear,
@@ -32,7 +32,7 @@ const CseView = () => {
         unencryptedCard,
         PUBLIC_KEY
       );
-      let data = {
+      const data = {
         paymentMethod: {
           type: 'scheme',
           encryptedCardNumber: encryptedCard.number,
@@ -41,7 +41,7 @@ const CseView = () => {
           encryptedSecurityCode: encryptedCard.cvv,
         },
       };
-      let result = await fetchPayments(data, DEFAULT_CONFIGURATION);
+      const result = await fetchPayments(data, DEFAULT_CONFIGURATION);
       if (result.action) {
         Alert.alert('Action');
       } else {
@@ -71,10 +71,7 @@ const CseView = () => {
           <TextInput
             placeholder="1234 5678 9012 3456"
             maxLength={19}
-            onChangeText={(value) => {
-              console.log(`Number: ${value}`);
-              setNumber(value);
-            }}
+            onChangeText={setNumber}
             style={{ alignSelf: 'center' }}
           />
           <View style={Styles.horizontalContent}>

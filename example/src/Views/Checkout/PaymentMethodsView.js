@@ -15,7 +15,7 @@ const PaymentMethods = () => {
       if (!paymentMethodsResponse) {
         return false;
       }
-      const paymentMethods = paymentMethodsResponse.paymentMethods;
+      const { paymentMethods } = paymentMethodsResponse;
       return (
         paymentMethods.length > 0 &&
         paymentMethods.some(
@@ -26,55 +26,55 @@ const PaymentMethods = () => {
     [paymentMethodsResponse]
   );
 
-  const isReady = paymentMethodsResponse === null;
+  const isNotReady = paymentMethodsResponse === null;
 
   return (
     <View style={[Styles.content]}>
       <Button
         title="Open DropIn"
-        disabled={isReady}
+        disabled={isNotReady}
         onPress={() => {
           start('dropin');
         }}
       />
       <Button
         title="Open Card Component"
-        disabled={isReady}
+        disabled={isNotReady}
         onPress={() => {
           start('scheme');
         }}
       />
       <Button
         title="Open iDeal"
-        disabled={isReady || !isAvailable('ideal')}
+        disabled={isNotReady || !isAvailable('ideal')}
         onPress={() => {
           start('ideal');
         }}
       />
       <Button
         title="Open SEPA"
-        disabled={isReady || !isAvailable('sepaDirectDebit')}
+        disabled={isNotReady || !isAvailable('sepaDirectDebit')}
         onPress={() => {
           start('sepaDirectDebit');
         }}
       />
       <Button
         title="Open Klarna"
-        disabled={isReady || !isAvailable('klarna')}
+        disabled={isNotReady || !isAvailable('klarna')}
         onPress={() => {
           start('klarna');
         }}
       />
       <Button
         title="Open Qiwi Wallet"
-        disabled={isReady || !isAvailable('qiwiwallet')}
+        disabled={isNotReady || !isAvailable('qiwiwallet')}
         onPress={() => {
           start('qiwiwallet');
         }}
       />
       <Button
         title={'Open ' + platformSpecificPayment}
-        disabled={isReady || !isAvailable(platformSpecificType)}
+        disabled={isNotReady || !isAvailable(platformSpecificType)}
         onPress={() => {
           start(platformSpecificType);
         }}

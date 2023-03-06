@@ -148,7 +148,7 @@ export function getNativeComponent(name, paymentMethods) {
       break;
   }
 
-  let paymentMethod = find(paymentMethods, type);
+  const paymentMethod = find(paymentMethods, type);
   if (!paymentMethod) {
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + name);
   }
