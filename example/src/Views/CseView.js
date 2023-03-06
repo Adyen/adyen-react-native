@@ -71,10 +71,7 @@ const CseView = () => {
           <TextInput
             placeholder="1234 5678 9012 3456"
             maxLength={19}
-            onChangeText={(value) => {
-              console.log(`Number: ${value}`);
-              setNumber(value);
-            }}
+            onChangeText={setNumber}
             style={{ alignSelf: 'center' }}
           />
           <View style={Styles.horizontalContent}>
