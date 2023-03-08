@@ -1,5 +1,7 @@
+// @ts-check
+
 import React, { useCallback } from 'react';
-import { useAdyenCheckout } from '@adyen/react-native';
+import { useAdyenCheckout } from '../../../../lib/module';
 import { Button, View, Platform } from 'react-native';
 import Styles from '../../Utilities/Styles';
 
@@ -11,7 +13,7 @@ const PaymentMethods = () => {
   const platformSpecificType = Platform.OS === 'ios' ? 'applepay' : 'googlepay'; // In some cases 'paywithgoogle' can be in use. Check paymentMethods response first.
 
   const isAvailable = useCallback(
-    (type) => {
+    (/** @type {string} */ type) => {
       if (!paymentMethodsResponse) {
         return false;
       }

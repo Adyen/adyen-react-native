@@ -1,7 +1,7 @@
 // @ts-check
 
 import React, { useEffect, useCallback } from 'react';
-import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
+import { AdyenCheckout, ErrorCode } from '../../../../lib/module';
 import {
   fetchPayments,
   fetchPaymentDetails,
