@@ -30,9 +30,9 @@ final internal class AdyenCSE: NSObject {
                     publicKey: NSString,
                     resolver: RCTPromiseResolveBlock,
                     rejecter: RCTPromiseRejectBlock) {
-        let formtedBin = bin.replacingOccurrences(of: " ", with: "")
+        let formattedBin = bin.replacingOccurrences(of: " ", with: "")
         do {
-            let encryptedBin = try CardEncryptor.encrypt(bin: formtedBin as String, with: publicKey as String)
+            let encryptedBin = try CardEncryptor.encrypt(bin: formattedBin as String, with: publicKey as String)
             resolver(encryptedBin)
         } catch {
             rejecter(Constant.errorMessage , nil, error)
