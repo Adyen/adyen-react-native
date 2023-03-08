@@ -5,21 +5,26 @@ import { AdyenCheckoutContext } from './AdyenCheckoutContext';
 import { MISSING_CONTEXT_ERROR } from './constants';
 
 /**
- * @callback StartFunction
- * @param {string} typeName - "dropin" or `type` name of a selected payment method.
+ * @callback StartFunction Initiate payment flow for selected payment method.
+ * @param {string} typeName Payment method name. Use "dropin" or `type` name of a selected payment method.
  * @returns {void}
- *
- * @typedef {Object} AdyenCheckoutContextState
- * @property {StartFunction} start -
- * @property {import('./AdyenNativeModules').PaymentMethodsResponse} paymentMethods - JSON response from Adyen API `\paymentMethods`
- * @property {any} config - collection of all nececery configurations
+ /*
+
+ /**
+ * @typedef {Object} AdyenCheckoutContextState State of AdyenCheckout context.
+ * @property {StartFunction} start
+ * @property {import('./AdyenNativeModules').PaymentMethodsResponse} paymentMethods
+ * @property {any} config collection of all necessary configurations
  */
 
 /**
- * Returns AdyenCheckout context.
- * This context allows you to initiate payment with Drop-in or any payment method avaiallbe in `paymentMethods` collection.
+ * @callback GetAdyenCheckoutContextFunction
  * @returns {AdyenCheckoutContextState}
  */
+
+/**
+ * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
+ * @type {GetAdyenCheckoutContextFunction} */
 const useAdyenCheckout = () => {
   const context = useContext(AdyenCheckoutContext);
   if (context === undefined) {

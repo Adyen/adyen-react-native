@@ -4,7 +4,7 @@
  * Find payment method in JSON response or \paymentMethods API
  * @param {{ paymentMethods: any[]; }} paymentMethods Json response from /paymentMethods
  * @param {string} typeName Name of payment method type
- * @returns {{ type: string; }} Payment method object with a specified type
+ * @returns {import("./AdyenNativeModules").PaymentMethod} Payment method object with a specified type
  */
 export function find(paymentMethods, typeName) {
   return paymentMethods.paymentMethods.find(
