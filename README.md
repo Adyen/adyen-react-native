@@ -4,7 +4,7 @@
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
-# Adyen React Native [BETA]
+# Adyen React Native [RELEASE CANDIDATE]
 
 > This project is currently under development. Timelines and scope are still to be defined.
 
@@ -115,8 +115,10 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 To read more about other configuration, see the [full list](configuration).
 Example of required configuration:
 ```javascript
+import { Environment } from '@adyen/react-native';
+
 const configuration = {
-  environment: 'test', // When you're ready to accept live payments, change the value to one of our live environments.
+  environment: Environment.Test, // When you're ready to accept real payments, change the value to a suitable live environment.
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
