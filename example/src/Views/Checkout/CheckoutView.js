@@ -80,9 +80,8 @@ const CheckoutView = ({ navigation }) => {
         config={config}
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
-        onProvide={didProvide}
-        onFail={didFail}
-        onComplete={didComplete}
+        onAdditionalDetails={didProvide}
+        onError={didFail}
       >
         <PaymentMethods />
       </AdyenCheckout>
