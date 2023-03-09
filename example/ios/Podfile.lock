@@ -6,7 +6,7 @@ PODS:
     - Adyen/Core (= 4.10.3)
     - Adyen/DropIn (= 4.10.3)
     - Adyen/Encryption (= 4.10.3)
-  - adyen-react-native (1.0.0-beta.7):
+  - adyen-react-native (1.0.0-local.0):
     - Adyen (= 4.10.3)
     - React-Core
   - Adyen/Actions (4.10.3):
@@ -549,7 +549,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Adyen: 220c6b3dc7f96d0b92e935e8d4ca94204277a088
-  adyen-react-native: f7b19337092bc07847d981d00eda3d710c2291f1
+  adyen-react-native: b71f16c0c33c8e8341806acec59f4f8935db2ba6
   Adyen3DS2: e683a519946e99a78adec8d89459e6eec53b0a4f
   AdyenNetworking: 14567bd00c00ba2e2580a904708c7ba5f010b1f9
   boost: a7c83b31436843459a1961bfd74b96033dc77234

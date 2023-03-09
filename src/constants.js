@@ -30,37 +30,33 @@ export const MISSING_CONTEXT_ERROR =
 /**
  * Collection of events that components can trigger.
  * @typedef {Object} Event
- * @property {string} onSubmit - an event handler, called when the shopper selects the Pay button and payment details are valid.
- * @property {string} onProvide - an event handler, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods.
- * @property {string} onCompleated - an event handler, called when a shopper finishes the flow (Voucher payments only).
- * @property {string} onFailed - an event handler, called when payment about to be terminate.
+ * @property {string} onSubmit Event handler, called when the shopper selects the Pay button and payment details are valid.
+ * @property {string} onAdditionalDetails Event handler, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods.
+ * @property {string} onComplete Event handler, called when a shopper finishes the flow (Voucher payments only).
+ * @property {string} onError Event handler, called when payment about to be terminate.
  */
 
-/**
- * @type {Event}
- */
+/**  @type {Event} */
 export const Event = Object.freeze({
   onSubmit: 'didSubmitCallback',
-  onProvide: 'didProvideCallback',
-  onCompleated: 'didCompleteCallback',
-  onFailed: 'didFailCallback',
+  onAdditionalDetails: 'didProvideCallback',
+  onComplete: 'didCompleteCallback',
+  onError: 'didFailCallback',
 });
 
 /**
  * Collection of errors components can throw.
  * @typedef {Object} ErrorCode
- * @property {string} Canceled - payment was canceled by shopper.
- * @property {string} NotSupported - payment method not supported on current platform..
- * @property {string} NoClientKey - missing or invalid clientKey in configuration.
- * @property {string} NoPayment - missing or invalid amount or country code in configuration.
- * @property {string} InvalidPaymentMethods - can not parse paymentMethods or the list is empty.
- * @property {string} InvalidAction - can not parse action.
- * @property {string} NoPaymentMethod - can not find selected payment method type in provided list.
+ * @property {string} Canceled Payment was canceled by shopper.
+ * @property {string} NotSupported Payment method not supported on current platform..
+ * @property {string} NoClientKey Missing or invalid clientKey in configuration.
+ * @property {string} NoPayment Missing or invalid amount or country code in configuration.
+ * @property {string} InvalidPaymentMethods Can not parse paymentMethods or the list is empty.
+ * @property {string} InvalidAction Can not parse action.
+ * @property {string} NoPaymentMethod Can not find selected payment method type in provided list.
  */
 
-/**
- * @type {ErrorCode}
- */
+/** @type {ErrorCode} */
 export const ErrorCode = Object.freeze({
   Canceled: 'canceledByShopper',
   NotSupported: 'notSupported',
@@ -72,7 +68,7 @@ export const ErrorCode = Object.freeze({
 });
 
 /**
- * Collection of availalble environments.
+ * Collection of available environments.
  * @typedef {Object} Environment
  * @property {string} Test
  * @property {string} Europe
@@ -82,9 +78,7 @@ export const ErrorCode = Object.freeze({
  * @property {string} India
  */
 
-/**
- * @type {Environment}
- */
+/** @type {Environment} */
 export const Environment = Object.freeze({
   Test: 'test',
   Europe: 'live-eu',

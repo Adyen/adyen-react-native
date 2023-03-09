@@ -1,3 +1,5 @@
+// @ts-check
+
 import React, { useEffect, useCallback } from 'react';
 import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
 import {
@@ -27,10 +29,10 @@ const CheckoutView = ({ navigation }) => {
             console.log('Action!');
             nativeComponent.handle(result.action);
           } else {
-            proccessResult(result, nativeComponent);
+            processResult(result, nativeComponent);
           }
         })
-        .catch((error) => proccessError(error, nativeComponent));
+        .catch((error) => processError(error, nativeComponent));
     },
     [config]
   );
@@ -38,8 +40,8 @@ const CheckoutView = ({ navigation }) => {
   const didProvide = useCallback(async (data, nativeComponent) => {
     console.log('didProvide');
     fetchPaymentDetails(data)
-      .then((result) => proccessResult(result, nativeComponent))
-      .catch((error) => proccessError(error, nativeComponent));
+      .then((result) => processResult(result, nativeComponent))
+      .catch((error) => processError(error, nativeComponent));
   }, []);
 
   const didComplete = useCallback(async (nativeComponent) => {
@@ -49,11 +51,11 @@ const CheckoutView = ({ navigation }) => {
 
   const didFail = useCallback(async (error, nativeComponent) => {
     console.log(`didFailed: ${error.message}`);
-    proccessError(error, nativeComponent);
+    processError(error, nativeComponent);
   }, []);
 
-  const proccessResult = useCallback(async (result, nativeComponent) => {
-    let success = isSuccess(result);
+  const processResult = useCallback(async (result, nativeComponent) => {
+    const success = isSuccess(result);
     console.log(
       `Payment: ${success ? 'success' : 'failure'} : ${result.resultCode}`
     );
@@ -62,7 +64,7 @@ const CheckoutView = ({ navigation }) => {
     navigation.push('Result', { result: result.resultCode });
   }, []);
 
-  const proccessError = useCallback(async (error, nativeComponent) => {
+  const processError = useCallback(async (error, nativeComponent) => {
     nativeComponent.hide(false, { message: error.message || 'Unknown error' });
     if (error.errorCode == ErrorCode.Canceled) {
       Alert.alert('Canceled');
@@ -78,9 +80,9 @@ const CheckoutView = ({ navigation }) => {
         config={config}
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
-        onProvide={didProvide}
-        onFail={didFail}
+        onAdditionalDetails={didProvide}
         onComplete={didComplete}
+        onError={didFail}
       >
         <PaymentMethods />
       </AdyenCheckout>

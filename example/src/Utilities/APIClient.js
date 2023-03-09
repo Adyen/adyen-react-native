@@ -23,7 +23,7 @@ const parseConfig = ({
 });
 
 export const fetchPaymentMethods = (configuration) => {
-  let body = {
+  const body = {
     ...parseConfig(configuration),
     ...serverConfiguration,
   };
@@ -33,7 +33,7 @@ export const fetchPaymentMethods = (configuration) => {
 };
 
 export const fetchPayments = (data, configuration) => {
-  let body = {
+  const body = {
     ...data,
     ...parseConfig(configuration),
     ...serverConfiguration,
@@ -77,7 +77,7 @@ export const isSuccess = (result) => {
 };
 
 const fetchFrom = (url, body) => {
-  let request = new Request(url, {
+  const request = new Request(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

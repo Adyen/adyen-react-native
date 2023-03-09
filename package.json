@@ -1,7 +1,7 @@
 {
   "name": "@adyen/react-native",
-  "version": "1.0.0-beta.7",
-  "description": "Wrapps Adyen Checkout SDKs for iOS and Android for convinient use on React Native.",
+  "version": "1.0.0-local.0",
+  "description": "Wraps Adyen Checkout SDKs for iOS and Android for convenient use with React Native.",
   "license": "MIT",
   "author": "Adyen",
   "homepage": "https://adyen.com",
@@ -23,7 +23,6 @@
   "source": "src/index",
   "files": [
     "lib",
-    "src",
     "android",
     "ios",
     "adyen-react-native.podspec",

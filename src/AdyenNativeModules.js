@@ -6,38 +6,27 @@ import { LINKING_ERROR, UNKNOWN_PAYMENT_METHOD_ERROR } from './constants';
 
 /**
  * @typedef {Object} PaymentMethod
- * @property {string} type - The unique payment method code.
- * @property {string} name - The displayable name of this payment method.
- *
+ * @property {string} type The unique payment method code.
+ * @property {string} name The displayable name of this payment method.
+ */
+
+/**
+ * JSON response from Adyen API `\paymentMethods`.
  * @typedef {Object} PaymentMethodsResponse
- * @property {[PaymentMethod & {id: string}]=} storedPaymentMethods - List of all stored payment methods.
- * @property {[PaymentMethod]} paymentMethods - Detailed list of payment methods required to generate payment forms.
+ * @property {any[]=} storedPaymentMethods List of all stored payment methods.
+ * @property {PaymentMethod[]} paymentMethods Detailed list of payment methods required to generate payment forms.
+ */
+
+/**
+ * Generic Native component
+ * @typedef {Object} AdyenComponent
+ * @property {(paymentMethods: PaymentMethodsResponse, configuration: any) => void} open Show component above current screen.
+ * @property {(success: boolean, message: (string | undefined)) => void} hide Dismiss component from screen.
  */
 /**
- * @callback HandleActionFunction
- * @param { {type: string}} action - JSON response from Adyen API `\payments`
- * @returns {void}
- */
-/**
- * @callback HideFunction
- * @param {boolean} success - is payment successfull
- * @param {string=} message - alert pop message to show after DropIn is compleated
- * @returns {void}
- */
-/**
- * @callback OpenFunction
- * @param {PaymentMethodsResponse} paymentMethods - JSON response from Adyen API `\paymentMethods`
- * @param {any} configuration - collection of all nececery configurations
- * @returns {void}
- */
-/**
- * @typedef {Object} AdyenComponent - DropIn Component
- * @property {OpenFunction} open
- * @property {HideFunction} hide
- */
-/**
- * @typedef {Object} AdyenDropIn - DropIn Component
- * @property {HandleActionFunction} handle - component handles action
+ * DropIn Component
+ * @typedef {Object} AdyenDropIn
+ * @property {(action: any) => void} handle Handles action from Adyen API `\payments` response.
  */
 /** @type {AdyenDropIn & AdyenComponent} */
 export const AdyenDropIn = NativeModules.AdyenDropIn
@@ -52,8 +41,8 @@ export const AdyenDropIn = NativeModules.AdyenDropIn
     );
 
 /**
- * @typedef {Object} AdyenInstant - Generic Redirect component
- * @property {HandleActionFunction} handle
+ * @typedef {Object} AdyenInstant Generic Redirect component
+ * @property {(action: any) => void} handle Handles action from Adyen API `\payments` response.
  */
 /** @type {AdyenInstant & AdyenComponent} */
 export const AdyenInstant = NativeModules.AdyenInstant
@@ -67,9 +56,7 @@ export const AdyenInstant = NativeModules.AdyenInstant
       }
     );
 
-/**
- * @typedef {AdyenComponent} AdyenApplePay - Apple Pay component (only availalbe for iOS)
- */
+/** @typedef {AdyenComponent} AdyenApplePay Apple Pay component (only available for iOS) */
 /** @type {AdyenApplePay} */
 export const AdyenApplePay = NativeModules.AdyenApplePay
   ? NativeModules.AdyenApplePay
@@ -82,9 +69,7 @@ export const AdyenApplePay = NativeModules.AdyenApplePay
       }
     );
 
-/**
- * @typedef {AdyenComponent} AdyenGooglePay - Google Pay component (only availalbe for Android)
- */
+/** @typedef {AdyenComponent} AdyenGooglePay Google Pay component (only available for Android) */
 /** @type {AdyenGooglePay} */
 export const AdyenGooglePay = NativeModules.AdyenGooglePay
   ? NativeModules.AdyenGooglePay
@@ -99,26 +84,16 @@ export const AdyenGooglePay = NativeModules.AdyenGooglePay
 
 /**
  * @typedef {Object} Card
- * @property {string} number
- * @property {string} expiryMonth
- * @property {string} expiryYear
- * @property {string} cvv
+ * @property {string} number PAN of card.
+ * @property {string} expiryMonth Month in format MM.
+ * @property {string} expiryYear Year in format YYYY.
+ * @property {string} cvv 3 or 4 digits.
  *
- * @callback EncryptCardFunction
- * @param {Card} payload - unencrypted card object
- * @param {string} publicKey - Public key fro encryption. Could be obtained for your ws_user in Customer Area.
- * @returns {Promise<Card>}
  */
 /**
- * @callback EncryptBINFunction
- * @param {string} binValue - unencrypted BIN value (first 6-11 digits of the card).
- * @param {string} publicKey - Public key fro encryption. Could be obtained for your ws_user in Customer Area.
- * @returns {Promise<String>}
- */
-/**
- * @typedef {Object} AdyenCSE - Generic Redirect component
- * @property {EncryptCardFunction} encryptCard
- * @property {EncryptBINFunction} encryptBin
+ * @typedef {Object} AdyenCSE Encryption helper.
+ * @property {(payload: Card, publicKey: string) => Promise<Card>} encryptCard Method to encrypt card.
+ * @property {(payload: string, publicKey: string) => Promise<string>} encryptBin Method to encrypt BIN(first 6-11 digits of the card).
  */
 /** @type {AdyenCSE} */
 export const AdyenCSE = NativeModules.AdyenCSE
