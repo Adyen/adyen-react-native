@@ -1,12 +1,9 @@
 // @ts-check
 
 import React, { useEffect, useCallback } from 'react';
+// @ts-ignore
 import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
-import {
-  fetchPayments,
-  fetchPaymentDetails,
-  isSuccess,
-} from '../../Utilities/APIClient';
+import ApiClient, { isSuccess } from '../../Utilities/APIClient';
 import { SafeAreaView, Alert } from 'react-native';
 import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
@@ -23,25 +20,28 @@ const CheckoutView = ({ navigation }) => {
   const didSubmit = useCallback(
     async (data, nativeComponent) => {
       console.log(`didSubmit: ${data.paymentMethod.type}`);
-      fetchPayments(data, config)
-        .then((result) => {
-          if (result.action) {
-            console.log('Action!');
-            nativeComponent.handle(result.action);
-          } else {
-            processResult(result, nativeComponent);
-          }
-        })
-        .catch((error) => processError(error, nativeComponent));
+      try {
+        const result = await ApiClient.payments(data, config);
+        if (result.action) {
+          nativeComponent.handle(result.action);
+        } else {
+          processResult(result, nativeComponent);
+        }
+      } catch (error) {
+        processError(error, nativeComponent);
+      }
     },
     [config]
   );
 
   const didProvide = useCallback(async (data, nativeComponent) => {
     console.log('didProvide');
-    fetchPaymentDetails(data)
-      .then((result) => processResult(result, nativeComponent))
-      .catch((error) => processError(error, nativeComponent));
+    try {
+      const result = await ApiClient.paymentDetails(data);
+      processResult(result, nativeComponent);
+    } catch (error) {
+      processError(error, nativeComponent);
+    }
   }, []);
 
   const didComplete = useCallback(async (nativeComponent) => {
@@ -57,7 +57,9 @@ const CheckoutView = ({ navigation }) => {
   const processResult = useCallback(async (result, nativeComponent) => {
     const success = isSuccess(result);
     console.log(
-      `Payment: ${success ? 'success' : 'failure'} : ${result.resultCode}`
+      `Payment: ${success ? 'success' : 'failure'} : ${
+        success ? result.resultCode : JSON.stringify(result)
+      }`
     );
     nativeComponent.hide(success, { message: result.resultCode });
     navigation.popToTop();

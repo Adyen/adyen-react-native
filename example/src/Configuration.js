@@ -22,7 +22,7 @@ export const DEFAULT_CONFIGURATION = {
     value: 1000, // The amount value in minor units.
   },
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
-  returnUrl: 'myapp://', // Only used for iOS
+  returnUrl: 'myapp://payment', // Only used for iOS
   dropin: {
     skipListWhenSinglePaymentMethod: true,
     // showPreselectedStoredPaymentMethod: false
