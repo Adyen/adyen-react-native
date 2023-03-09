@@ -1,5 +1,5 @@
-import React, { Component, useContext } from 'react';
-import { fetchPaymentMethods } from './APIClient';
+import React, { useContext, useState, useCallback } from 'react';
+import ApiClient from './APIClient';
 import { DEFAULT_CONFIGURATION } from '../Configuration';
 
 export const PaymentMethodsContext = React.createContext();
@@ -14,36 +14,39 @@ export const usePaymentMethods = () => {
   return context;
 };
 
-class PaymentMethodsProvider extends Component {
-  state = {
+const PaymentMethodsProvider = (props) => {
+  const [state, setState] = useState({
     config: DEFAULT_CONFIGURATION,
-    paymentMethods: null,
-  };
+    paymentMethods: undefined,
+  });
 
-  render() {
-    return (
-      <PaymentMethodsContext.Provider
-        value={{
-          config: this.state.config,
-          paymentMethods: this.state.paymentMethods,
-          refreshPaymentMethods: (newConfig = this.state.config) => {
-            fetchPaymentMethods(newConfig)
-              .then((paymentMethods) => {
-                this.setState({
-                  config: newConfig,
-                  paymentMethods: paymentMethods,
-                });
-              })
-              .catch((error) => {
-                this.props.onError(error);
-              });
-          },
-        }}
-      >
-        {this.props.children}
-      </PaymentMethodsContext.Provider>
-    );
-  }
-}
+  const refresh = useCallback(
+    async (newConfig = state.config) => {
+      console.log('refreshing pms');
+      try {
+        const paymentMethods = await ApiClient.paymentMethods(newConfig);
+        setState({
+          config: newConfig,
+          paymentMethods: paymentMethods,
+        });
+      } catch (error) {
+        props.onError(error);
+      }
+    },
+    [state]
+  );
+
+  return (
+    <PaymentMethodsContext.Provider
+      value={{
+        config: state.config,
+        paymentMethods: state.paymentMethods,
+        refreshPaymentMethods: refresh,
+      }}
+    >
+      {props.children}
+    </PaymentMethodsContext.Provider>
+  );
+};
 
 export default PaymentMethodsProvider;
