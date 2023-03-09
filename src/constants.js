@@ -87,3 +87,36 @@ export const Environment = Object.freeze({
   AsiaPacificSouthEast: 'live-apse',
   India: 'live-in',
 });
+
+/**
+ * Collection of available result codes that represent payments current state, as well as any actions you should take.
+ * @typedef {Object} ResultCode
+ * @property {string} AuthenticationFinished The payment has been successfully authenticated with 3D Secure.
+ * @property {string} AuthenticationNotRequired The transaction does not require 3D Secure authentication, for example, the issuing bank does not require authentication or the transaction is out of scope.
+ * @property {string} Authorised The payment was successfully authorised.
+ * @property {string} Cancelled The payment was cancelled (by either the shopper or your own system) before processing was completed.
+ * @property {string} ChallengeShopper The issuer requires further shopper interaction before the payment can be authenticated. Returned for 3D Secure 2 transactions.
+ * @property {string} Error There was an error when the payment was being processed. You'll receive a refusalReason in the same response, indicating the cause of the error.
+ * @property {string} IdentifyShopper The issuer requires the shopper's device fingerprint before the payment can be authenticated. Returned for 3D Secure 2 transactions.
+ * @property {string} Pending It's not possible to obtain the final status of the payment at this time. This is common for payments with an asynchronous flow, such as Boleto or iDEAL.
+ * @property {string} PresentToShopper Present the voucher or the QR code to the shopper.
+ * @property {string} Received This is part of the standard payment flow for methods such as SEPA Direct Debit, where it can take some time before the final status of the payment is known.
+ * @property {string} RedirectShopper The shopper needs to be redirected to an external web page or app to complete the payment.
+ * @property {string} Refused The payment was refused. You'll receive a `refusalReason` in the same response that indicates why it was refused.
+ */
+
+/** @type {ResultCode} */
+export const ResultCode = Object.freeze({
+  AuthenticationFinished: 'AuthenticationFinished',
+  AuthenticationNotRequired: 'AuthenticationNotRequired',
+  Authorised: 'Authorised',
+  Cancelled: 'Cancelled',
+  ChallengeShopper: 'ChallengeShopper',
+  Error: 'Error',
+  IdentifyShopper: 'IdentifyShopper',
+  Pending: 'Pending',
+  PresentToShopper: 'PresentToShopper',
+  Received: 'Received',
+  RedirectShopper: 'RedirectShopper',
+  Refused: 'Refused',
+});
