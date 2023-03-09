@@ -14,7 +14,7 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { Button, Alert, View, useColorScheme } from 'react-native';
+import { Button, Alert, useColorScheme } from 'react-native';
 import PaymentMethodsProvider from './Utilities/PaymentMethodsProvider';
 import CseView from './Views/CseView';
 import SettingView from './Views/SettingsView';
