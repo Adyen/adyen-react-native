@@ -2,8 +2,8 @@
 
 import React, { useEffect, useCallback } from 'react';
 // @ts-ignore
-import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
-import ApiClient, { isSuccess } from '../../Utilities/APIClient';
+import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
+import ApiClient from '../../Utilities/APIClient';
 import { SafeAreaView, Alert } from 'react-native';
 import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
@@ -89,6 +89,15 @@ const CheckoutView = ({ navigation }) => {
         <PaymentMethods />
       </AdyenCheckout>
     </SafeAreaView>
+  );
+};
+
+const isSuccess = (result) => {
+  const code = result.resultCode;
+  return (
+    code === ResultCode.Authorised ||
+    code === ResultCode.Received ||
+    code === ResultCode.Pending
   );
 };
 

@@ -94,8 +94,3 @@ const parseConfig = ({
   shopperLocale,
   amount,
 });
-
-export const isSuccess = (result) => {
-  const code = result.resultCode;
-  return code === 'Authorised' || code === 'Received' || code === 'Pending';
-};
