@@ -1,7 +1,7 @@
 // @ts-check
 
 import React, { useCallback } from 'react';
-import { useAdyenCheckout } from '../../../../lib/module';
+import { useAdyenCheckout } from '@adyen/react-native';
 import { Button, View, Platform } from 'react-native';
 import Styles from '../../Utilities/Styles';
 

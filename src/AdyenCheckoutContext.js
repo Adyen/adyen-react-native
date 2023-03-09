@@ -69,8 +69,8 @@ const AdyenCheckout = (props) => {
   const subscriptions = useRef([]);
   const { config, paymentMethods, onSubmit, onComplete, children } = props;
 
-  let onError = props.onError == undefined ? props.onFail : props.onError;
-  let onAdditionalDetails =
+  const onError = props.onError == undefined ? props.onFail : props.onError;
+  const onAdditionalDetails =
     props.onAdditionalDetails == undefined
       ? props.onProvide
       : props.onAdditionalDetails;

@@ -1,7 +1,7 @@
 // @ts-check
 
 import React, { useEffect, useCallback } from 'react';
-import { AdyenCheckout, ErrorCode } from '../../../../lib/module';
+import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
 import {
   fetchPayments,
   fetchPaymentDetails,
@@ -55,7 +55,7 @@ const CheckoutView = ({ navigation }) => {
   }, []);
 
   const processResult = useCallback(async (result, nativeComponent) => {
-    let success = isSuccess(result);
+    const success = isSuccess(result);
     console.log(
       `Payment: ${success ? 'success' : 'failure'} : ${result.resultCode}`
     );
@@ -81,6 +81,7 @@ const CheckoutView = ({ navigation }) => {
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
         onAdditionalDetails={didProvide}
+        onComplete={didComplete}
         onError={didFail}
       >
         <PaymentMethods />
