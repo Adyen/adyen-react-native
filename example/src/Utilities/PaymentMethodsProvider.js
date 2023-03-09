@@ -15,32 +15,28 @@ export const usePaymentMethods = () => {
 };
 
 const PaymentMethodsProvider = (props) => {
-  const [state, setState] = useState({
-    config: DEFAULT_CONFIGURATION,
-    paymentMethods: undefined,
-  });
+  const [config, setConfig] = useState(DEFAULT_CONFIGURATION);
+  const [paymentMethods, setPaymentMethods] = useState(undefined);
 
   const refresh = useCallback(
-    async (newConfig = state.config) => {
+    async (newConfig = config) => {
       console.log('refreshing pms');
       try {
         const paymentMethods = await ApiClient.paymentMethods(newConfig);
-        setState({
-          config: newConfig,
-          paymentMethods: paymentMethods,
-        });
+        setPaymentMethods(paymentMethods);
+        setConfig(config);
       } catch (error) {
         props.onError(error);
       }
     },
-    [state]
+    [config, paymentMethods]
   );
 
   return (
     <PaymentMethodsContext.Provider
       value={{
-        config: state.config,
-        paymentMethods: state.paymentMethods,
+        config: config,
+        paymentMethods: paymentMethods,
         refreshPaymentMethods: refresh,
       }}
     >
