@@ -4,7 +4,7 @@
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
-# Adyen React Native [BETA]
+# Adyen React Native [RELEASE CANDIDATE]
 
 > This project is currently under development. Timelines and scope are still to be defined.
 
@@ -13,7 +13,7 @@ Adyen React Native provides you with the building blocks to create a checkout ex
 You can integrate with Adyen React Native in two ways:
 
 * [Drop-in](adyen-docs-dropin): React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
-* [Components](adyen-docs-components): React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combinened with your own payments flow.
+* [Components](adyen-docs-components): React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combined with your own payments flow.
 
 ## Contributing
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
@@ -69,7 +69,7 @@ protected void onCreate(Bundle savedInstanceState) {
 ##### For standalone components
 
 1. [Provide `rootProject.ext.adyenReactNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
-To do so, add folowing to your **App's build.gradle** `defaultConfig`
+To do so, add following to your **App's build.gradle** `defaultConfig`
 
 ```groovy
 defaultConfig {
@@ -115,8 +115,10 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 To read more about other configuration, see the [full list](configuration).
 Example of required configuration:
 ```javascript
+import { Environment } from '@adyen/react-native';
+
 const configuration = {
-  environment: 'test', // When you're ready to accept live payments, change the value to one of our live environments.
+  environment: Environment.Test, // When you're ready to accept real payments, change the value to a suitable live environment.
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
@@ -130,7 +132,7 @@ To use `@adyen/react-native` you can use our helper component `AdyenCheckout` an
 ```javascript
 import { useAdyenCheckout } from '@adyen/react-native';
 
-const MyChekoutView = () => {
+const MyCheckoutView = () => {
   const { start } = useAdyenCheckout();
 
   return (
@@ -146,11 +148,10 @@ import { AdyenCheckout } from '@adyen/react-native';
 <AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
-  onSubmit={didSubmit}
-  onProvide={didProvide}
-  onFail={didFail}
-  onComplete={didComplete} >
-    <MyChekoutView/>
+  onSubmit={ (paymentData, component) => { /* Call your server to make the `/payments` request */ } }
+  onAdditionalDetails={ (paymentData, component) => { /* Call your server to make the `/payments/details` request */ }}
+  onError={ (error, component) => { /* Handle errors or termination by shopper */ }} >
+    <MyCheckoutView/>
 </AdyenCheckout>
 ```
 
@@ -161,8 +162,8 @@ Handling of actions on its own is not supported
 
 Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions, use `nativeComponent.handle(action)` from  `onSubmit` callback.
 ```javascript
-const handleSubmit = (payload, nativeComponent) => {
-  server.makePayment(payload)
+const handleSubmit = (paymentData, nativeComponent) => {
+  server.makePayment(paymentData)
     .then((result) => {
       if (result.action) {
         nativeComponent.handle(result.action);
