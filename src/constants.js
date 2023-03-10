@@ -1,16 +1,36 @@
 // @ts-check
 
+/** @deprecated Use `Event.onSubmit` */
 export const PAYMENT_SUBMIT_EVENT = 'didSubmitCallback';
+
+/** @deprecated Use `Event.onAdditionalDetails` */
 export const PAYMENT_PROVIDE_DETAILS_EVENT = 'didProvideCallback';
+
+/** @deprecated Use `Event.onComplete` */
 export const PAYMENT_COMPLETED_EVENT = 'didCompleteCallback';
+
+/** @deprecated Use `Event.onError` */
 export const PAYMENT_FAILED_EVENT = 'didFailCallback';
 
+/** @deprecated Use `ErrorCode.Canceled` */
 export const ERROR_CODE_CANCELED = 'canceledByShopper';
+
+/** @deprecated Use `ErrorCode.NotSupported` */
 export const ERROR_CODE_NOT_SUPPORTED = 'notSupported';
+
+/** @deprecated Use `ErrorCode.NoClientKey` */
 export const ERROR_CODE_NO_CLIENT_KEY = 'noClientKey';
+
+/** @deprecated Use `ErrorCode.NoPayment` */
 export const ERROR_CODE_NO_PAYMENT = 'noPayment';
+
+/** @deprecated Use `ErrorCode.InvalidPaymentMethods` */
 export const ERROR_CODE_INVALID_PAYMENT_METHODS = 'invalidPaymentMethods';
+
+/** @deprecated Use `ErrorCode.InvalidAction` */
 export const ERROR_CODE_INVALID_ACTION = 'invalidAction';
+
+/** @deprecated Use `ErrorCode.NoPaymentMethod` */
 export const ERROR_CODE_NO_PAYMENT_METHOD = 'noPaymentMethod';
 
 export const UNKNOWN_PAYMENT_METHOD_ERROR =
@@ -64,7 +84,7 @@ export const ErrorCode = Object.freeze({
   NoPayment: 'noPayment',
   InvalidPaymentMethods: 'invalidPaymentMethods',
   InvalidAction: 'invalidAction',
-  NoPaymentMethod: 'Symbol(noPaymentMethod',
+  NoPaymentMethod: 'noPaymentMethod',
 });
 
 /**
