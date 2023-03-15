@@ -1,6 +1,6 @@
 {
   "name": "@adyen/react-native",
-  "version": "1.0.0-local.0",
+  "version": "1.0.0-local.1",
   "description": "Wraps Adyen Checkout Drop-In and Components for iOS and Android for convenient use with React Native",
   "license": "MIT",
   "author": "Adyen",
@@ -18,13 +18,15 @@
     "payments",
     "components"
   ],
-  "main": "lib/commonjs/index",
-  "module": "lib/module/index",
-  "source": "src/index",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "react-native": "src/index.ts",
+  "types": "lib/types/index.d.ts",
   "files": [
     "lib",
     "android",
     "ios",
+    "src",
     "adyen-react-native.podspec",
     "LICENSE",
     "README"
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@react-native-community/eslint-config": "^3.0.0",
+    "@types/react-native": "^0.71.3",
     "eslint": "^8.0.0",
     "eslint-config-prettier": "^8.0.0",
     "eslint-plugin-prettier": "^4.0.0",
@@ -49,7 +52,8 @@
     "react": "^18.0.0",
     "react-native": "0.70.6",
     "react-native-builder-bob": "^0.20.0",
-    "release-it": "^15.5.0"
+    "release-it": "^15.5.0",
+    "typescript": "^4.9.5"
   },
   "peerDependencies": {
     "react": "*",
