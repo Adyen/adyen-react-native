@@ -1,10 +1,11 @@
 {
   "include": [ "src/**/*" ],
   "compilerOptions": {
+    "jsx": "react",
     "target": "es2016",
     "module": "commonjs",                                
     "rootDir": "./src",                                  
-    "typeRoots": [ "./" ],                                  
+    "typeRoots": [ "./lib/types" ],                                  
     "allowJs": true,                                  
     "checkJs": false,                                  
     "declaration": true,                              

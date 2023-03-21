@@ -2,56 +2,51 @@
 
 import React, { useRef, useCallback, createContext, useEffect } from 'react';
 import { Event } from './constants';
-import {
-  AdyenDropIn,
-  // @ts-ignore
-  AdyenComponent,
-  getNativeComponent,
-  // @ts-ignore
-  PaymentMethodsResponse,
-} from './AdyenNativeModules';
+import { getNativeComponent } from './AdyenNativeModules';
 import { NativeEventEmitter } from 'react-native';
 
 const AdyenCheckoutContext = createContext({
   start: (/** @type {string} */ typeName) => {},
   config: {},
-  paymentMethods: /** @type {PaymentMethodsResponse=} */ undefined,
+  /** @type {import('./AdyenNativeModules').PaymentMethodsResponse=} */
+  paymentMethods: undefined,
 });
 
 /**
- *
+ * Event callback, called when the shopper selects the Pay button and payment details are valid.
  * @callback OnSubmitFunction
  * @param {*}  data Payment details collected by component. Your server should use it to make the Adyen API `/payments` request.
- * @param {AdyenComponent & AdyenDropIn}  nativeComponent Native component that performing payment.
+ * @param {import('./AdyenNativeModules').AdyenComponent & import('./AdyenNativeModules').AdyenActionComponent}  nativeComponent Native component that performing payment.
  * @returns {void}
  */
 
 /**
- *
+ * Event callback, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods.
  * @callback OnAdditionalDetailsFunction
  * @param {*} data Additional payment challenge details.
- * @param {AdyenComponent}  nativeComponent Native component that performing payment.
+ * @param {import('./AdyenNativeModules').AdyenComponent}  nativeComponent Native component that performing payment.
  * @returns {void}
  */
 
 /**
+ * Event callback, called when a shopper finishes the flow (Voucher payments only).
  * @callback OnCompletedFunction
- * @param {AdyenComponent}  nativeComponent Native component that performing payment.
+ * @param {import('./AdyenNativeModules').AdyenComponent}  nativeComponent Native component that performing payment.
  * @returns {void}
  */
 
 /**
- *
+ * Event callback, called when payment about to be terminate.
  * @callback OnErrorFunction
  * @param {{ message: string; errorCode: string; }} error Reason for payment termination.
- * @param {AdyenComponent}  nativeComponent Native component that performing payment.
+ * @param {import('./AdyenNativeModules').AdyenComponent}  nativeComponent Native component that performing payment.
  * @returns {void}
  */
 
 /**
  * @typedef {Object} AdyenCheckoutProp
  * @property {*} config Collection of all necessary configurations
- * @property {PaymentMethodsResponse } paymentMethods JSON response from Adyen API `\paymentMethods`
+ * @property {import('./AdyenNativeModules').PaymentMethodsResponse } paymentMethods JSON response from Adyen API `\paymentMethods`
  * @property {OnSubmitFunction} onSubmit Event callback, called when the shopper selects the Pay button and payment details are valid.
  * @property {OnAdditionalDetailsFunction=} onAdditionalDetails Event callback, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods.
  * @property {OnCompletedFunction=} onComplete Event callback, called when a shopper finishes the flow (Voucher payments only).
@@ -82,7 +77,11 @@ const AdyenCheckout = (props) => {
   }, []);
 
   const submitPayment = useCallback(
-    (configuration, data, nativeComponent) => {
+    (
+      /** @type {{ returnUrl: any; }} */ configuration,
+      /** @type {{ returnUrl: any; }} */ data,
+      /** @type {any} */ nativeComponent
+    ) => {
       const payload = {
         ...data,
         returnUrl: data.returnUrl ?? configuration.returnUrl,
@@ -97,7 +96,10 @@ const AdyenCheckout = (props) => {
   }, [subscriptions]);
 
   const startEventListeners = useCallback(
-    (configuration, nativeComponent) => {
+    (
+      /** @type {any} */ configuration,
+      /** @type {import("react-native").NativeModule & import('./AdyenNativeModules').AdyenComponent} */ nativeComponent
+    ) => {
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
         eventEmitter.addListener(Event.onSubmit, (data) =>
@@ -153,7 +155,6 @@ const AdyenCheckout = (props) => {
       value={{
         start,
         config,
-        // @ts-ignore
         paymentMethods,
       }}
     >

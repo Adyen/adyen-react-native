@@ -18,10 +18,11 @@
     "payments",
     "components"
   ],
-  "main": "lib/commonjs/index.js",
-  "module": "lib/module/index.js",
-  "react-native": "src/index.ts",
-  "types": "lib/types/index.d.ts",
+  "main": "lib/commonjs/index",
+  "module": "lib/module/index",
+  "types": "lib/types/index",
+  "source": "src/index",
+  "react-native": "src/index",
   "files": [
     "lib",
     "android",
@@ -32,14 +33,13 @@
     "README"
   ],
   "scripts": {
-    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
     "prepare": "bob build",
     "release": "release-it",
-    "example": "yarn --cwd example",
     "pods": "cd example && pod-install --quiet",
-    "ios": "yarn example && cd example && yarn ios",
-    "android": "yarn example && cd example && yarn android",
-    "bootstrap": "git clean -fxd && yarn example && yarn && yarn pods"
+    "ios": "cd example && yarn pod && yarn ios",
+    "android": "cd example && yarn android",
+    "bootstrap": "git clean -fxd && yarn && tsc && cd example && yarn"
   },
   "devDependencies": {
     "@react-native-community/eslint-config": "^3.0.0",
@@ -57,7 +57,9 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "@types/react": "*",
+    "@types/react-native": "*"
   },
   "react-native-builder-bob": {
     "source": "src",
