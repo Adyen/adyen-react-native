@@ -1,6 +1,6 @@
 {
   "name": "@adyen/react-native",
-  "version": "1.0.0-local.1",
+  "version": "1.0.0-local.2",
   "description": "Wraps Adyen Checkout Drop-In and Components for iOS and Android for convenient use with React Native",
   "license": "MIT",
   "author": "Adyen",
@@ -34,7 +34,7 @@
   ],
   "scripts": {
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
-    "prepare": "bob build",
+    "prepare": "bob build && tsc",
     "release": "release-it",
     "pods": "cd example && pod-install --quiet",
     "ios": "cd example && yarn pod && yarn ios",
