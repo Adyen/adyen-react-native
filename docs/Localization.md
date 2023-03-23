@@ -17,7 +17,7 @@ Provide a specific locale to `configuration.shopperLocale` for `AdyenCheckout`.
 ### iOS
 
 1. Open your iOS folder in Xcode.
-2. Create new ’Strings’ file with the name “Localizable”. If you are using multiple localisations - make sure you check-in them all for Localizations.string in "File Inspector": your iOS project will have correspondent files for each localization: `(localization).lproj/Localizable.string`.
+2. Create a new ’Strings’ file with the name `Localizable`. If you are using multiple localizations, make sure you check them all in for the `Localizations.string` in "File Inspector". For each localization, your iOS project will have a corresponding file: `(localization).lproj/Localizable.string`.
 3. Override all necessary strings with desired values for all necessary localizations. A list of available strings could be found at https://github.com/Adyen/adyen-ios/blob/develop/Adyen/Assets/Generated/LocalizationKey.swift.
 
 ### Android
