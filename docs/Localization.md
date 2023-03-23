@@ -27,4 +27,34 @@ Provide a specific locale to `configuration.shopperLocale` for `AdyenCheckout`.
 
 ## Adding new localizations
 
-Add new locale in Xcode and Android Studio respectively. Provide a translation for all necessary keys
+Add new locales in Xcode and Android Studio respectively. Provide a translation for all necessary keys.
+
+List of currently avaialble locales:
+
+| Locale |
+| --- |
+| zh-CN |
+| ru-RU |
+| ja-JP |
+| en-US |
+| es-ES |
+| it-IT |
+| da-DK |
+| de-DE |
+| pl-PL |
+| zh-TW |
+| nl-NL |
+| pt-BR |
+| fr-FR |
+| sv-SE |
+| ko |
+| nb-NO |
+| fi |
+| sk-SK |
+| ro-RO |
+| el-GR |
+| hr-HR |
+| hu-HU |
+| cs-CZ |
+| sl-SI |
+| ar |
