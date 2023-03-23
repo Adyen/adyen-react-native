@@ -10,7 +10,7 @@ Not supported.
 
 ### Android
 
-Provide specific locale to `configuration.shopperLocale` for `AdyenCheckout`.
+Provide a specific locale to `configuration.shopperLocale` for `AdyenCheckout`.
 
 ## Overriding default values
 
