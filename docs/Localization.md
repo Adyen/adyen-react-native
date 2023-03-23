@@ -25,6 +25,6 @@ Provide a specific locale to `configuration.shopperLocale` for `AdyenCheckout`.
 1. Open /res/values/strings.xml in "Translations Editor” in Android Studio.
 2. Override all necessary strings with desired values for all your localizations. The list of available strings can be found at https://github.com/search?q=repo%3AAdyen%2Fadyen-android+values%2Fstrings.xml&type=code
 
-## Adding new localization
+## Adding new localizations
 
 Add new locale in Xcode and Android Studio respectively. Provide a translation for all necessary keys
