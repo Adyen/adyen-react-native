@@ -1,6 +1,6 @@
 # Localization
 
-By default, React Native library uses a device's local. To enable necessary translations for iOS, make sure “Localizations” in the project configuration contains all required languages.
+By default, the React Native library uses a device's locale. To enable necessary translations for iOS, make sure “Localizations” in the project configuration contains all required languages.
 
 ## Enforcing specific localization
 
