@@ -1,7 +1,3 @@
-// @ts-check
-
-import { ResultCode } from './constants';
-
 export {
   AdyenDropIn,
   AdyenApplePay,
