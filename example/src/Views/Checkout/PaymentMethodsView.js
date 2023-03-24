@@ -29,7 +29,7 @@ const PaymentMethods = () => {
     [paymentMethodsResponse]
   );
 
-  const isNotReady = paymentMethodsResponse === null;
+  const isNotReady = paymentMethodsResponse == undefined;
 
   return (
     <View style={[Styles.content]}>
