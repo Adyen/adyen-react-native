@@ -1,10 +1,12 @@
 {
-  "include": [ "src/**/*" ],
+  "include": [ "./src/**/*" ],
+  "exclude": [ "./lib/**/*", "./built/**/*" ],
   "compilerOptions": {
     "jsx": "react",
     "target": "es2016",
     "module": "commonjs",                                
-    "rootDir": "./src",                                                              
+    "rootDir": "./src",     
+    "outDir": "./built",                                                      
     "allowJs": true,                                  
     "checkJs": true,                                  
     "declaration": true,                              

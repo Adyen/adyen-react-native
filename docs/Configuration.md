@@ -1,7 +1,7 @@
 # Configuration
 
 ## Root configurations
-* **environment** - Use `test`. Project is currently in **BETA** stage; to do penny-test, change the value to one of our [live environments](https://docs.adyen.com/online-payments/drop-in-web#testing-your-integration).
+* **environment** - Use `test`. When you are ready to go live, change the value to one of our [live environments](https://docs.adyen.com/online-payments/drop-in-web#testing-your-integration).
 * **clientKey** - A public key linked to your API credential, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication).
 * **amount** - Amount to be displayed on the Pay Button. It expects an object with the minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **10$**. For card pre-authorisation set amount to `0` (zero).
 * **countryCode** - The shopper's country code in ISO 3166-1 alpha-2 format. Example: `"NL"` or `"US"`. 
