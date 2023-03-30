@@ -7,7 +7,12 @@ import {
   LINKING_ERROR,
   UNKNOWN_PAYMENT_METHOD_ERROR,
 } from './Core/constants';
-import { Card, PaymentAction, PaymentMethod, PaymentMethodsResponse } from './Core/types';
+import {
+  Card,
+  PaymentAction,
+  PaymentMethod,
+  PaymentMethodsResponse,
+} from './Core/types';
 
 /** Universal interface for Adyen Native payment component */
 interface AdyenComponent {
@@ -15,7 +20,7 @@ interface AdyenComponent {
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
 
   /** Dismiss component from screen. */
-  hide: (success: boolean, message: (string | undefined)) => void;
+  hide: (success: boolean, message: string | undefined) => void;
 }
 
 /** Describes Adyen Component capable of handling action */
@@ -51,56 +56,60 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
 }
 
 /** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
-export const AdyenDropIn: AdyenActionComponent & NativeModule = NativeModules.AdyenDropIn
-  ? NativeModules.AdyenDropIn
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    );
+export const AdyenDropIn: AdyenActionComponent & NativeModule =
+  NativeModules.AdyenDropIn
+    ? NativeModules.AdyenDropIn
+    : new Proxy(
+        {},
+        {
+          get() {
+            throw new Error(LINKING_ERROR);
+          },
+        }
+      );
 
 /** Generic Redirect component */
-export const AdyenInstant: AdyenActionComponent & NativeModule = NativeModules.AdyenInstant
-  ? NativeModules.AdyenInstant
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    );
+export const AdyenInstant: AdyenActionComponent & NativeModule =
+  NativeModules.AdyenInstant
+    ? NativeModules.AdyenInstant
+    : new Proxy(
+        {},
+        {
+          get() {
+            throw new Error(LINKING_ERROR);
+          },
+        }
+      );
 
 /** Apple Pay component (only available for iOS) */
-export const AdyenApplePay: AdyenComponent & NativeModule = NativeModules.AdyenApplePay
-  ? NativeModules.AdyenApplePay
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    );
+export const AdyenApplePay: AdyenComponent & NativeModule =
+  NativeModules.AdyenApplePay
+    ? NativeModules.AdyenApplePay
+    : new Proxy(
+        {},
+        {
+          get() {
+            throw new Error(LINKING_ERROR);
+          },
+        }
+      );
 
 /** Google Pay component (only available for Android) */
-export const AdyenGooglePay: AdyenComponent & NativeModule = NativeModules.AdyenGooglePay
-  ? NativeModules.AdyenGooglePay
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    );
+export const AdyenGooglePay: AdyenComponent & NativeModule =
+  NativeModules.AdyenGooglePay
+    ? NativeModules.AdyenGooglePay
+    : new Proxy(
+        {},
+        {
+          get() {
+            throw new Error(LINKING_ERROR);
+          },
+        }
+      );
 
 /** Describes Adyen Component capable of handling action */
 interface AdyenCSE extends NativeModule {
-  /** Method to encrypt card. */ 
+  /** Method to encrypt card. */
   encryptCard: (payload: Card, publicKey: string) => Promise<Card>;
 
   /** Method to encrypt BIN(first 6-11 digits of the card). */
@@ -119,10 +128,16 @@ export const AdyenCSE: AdyenCSE = NativeModules.AdyenCSE
       }
     );
 
-/** 
- * Get native component capable of handling provided payment method type. 
+/**
+ * Get native component capable of handling provided payment method type.
  */
-export function getNativeComponent(typeName: string, paymentMethods: PaymentMethodsResponse): { nativeComponent: AdyenActionComponent & NativeModule; paymentMethod: PaymentMethod | undefined; } {
+export function getNativeComponent(
+  typeName: string,
+  paymentMethods: PaymentMethodsResponse
+): {
+  nativeComponent: AdyenActionComponent & NativeModule;
+  paymentMethod: PaymentMethod | undefined;
+} {
   const type = typeName.toLowerCase();
   switch (type) {
     case 'dropin':

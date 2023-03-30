@@ -1,4 +1,4 @@
-import { ResultCode } from "./constants";
+import { ResultCode } from './constants';
 
 /**
  * General type for card.
@@ -182,7 +182,7 @@ export interface PaymentMethodsResponse {
 
 export interface PaymentResponse {
   action?: PaymentAction;
-  resultCode: ResultCode ;
+  resultCode: ResultCode;
 }
 
 /**

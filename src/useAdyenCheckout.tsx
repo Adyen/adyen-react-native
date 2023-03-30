@@ -1,7 +1,10 @@
 // @ts-check
 
 import { useContext } from 'react';
-import { AdyenCheckoutContext, AdyenCheckoutContextType } from './AdyenCheckoutContext';
+import {
+  AdyenCheckoutContext,
+  AdyenCheckoutContextType,
+} from './AdyenCheckoutContext';
 import { MISSING_CONTEXT_ERROR } from './Core/constants';
 
 /**
@@ -9,11 +12,10 @@ import { MISSING_CONTEXT_ERROR } from './Core/constants';
  */
 const useAdyenCheckout = (): AdyenCheckoutContextType => {
   const context = useContext(AdyenCheckoutContext);
-  if (context === undefined) {
-    throw new Error(MISSING_CONTEXT_ERROR);
+  if (context != null) {
+    return context!;
   }
-  // @ts-ignore
-  return context;
+  throw new Error(MISSING_CONTEXT_ERROR);
 };
 
 export { useAdyenCheckout };

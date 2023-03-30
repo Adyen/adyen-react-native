@@ -30,7 +30,7 @@ export interface Configuration {
   applepay?: ApplePayConfiguration;
 
   /** Google Pay component configuration. */
-  google?: GooglePayConfiguration
+  google?: GooglePayConfiguration;
 }
 
 export interface DropInConfiguration {
@@ -42,17 +42,17 @@ export interface DropInConfiguration {
 }
 
 /** Collection of values for address field visibility. */
-export enum AddressMode { 
-  full = 'full', 
-  postalCode = 'postalCode', 
-  hidden = 'none'
-};
+export enum AddressMode {
+  full = 'full',
+  postalCode = 'postalCode',
+  hidden = 'none',
+}
 
 /** Collection of values for address field visibility. */
-export enum FieldVisibility { 
-  show = 'show', 
-  hide = 'hide'
-};
+export enum FieldVisibility {
+  show = 'show',
+  hide = 'hide',
+}
 
 export interface CardsConfiguration {
   /**  Determines whether to enable preselected stored payment method view step */
@@ -82,15 +82,15 @@ export interface ApplePayConfiguration {
   allowOnboarding?: boolean;
 }
 
-export enum CardAuthMethod { 
-  panOnly = 'PAN_ONLY', 
-  threeDS = 'CRYPTOGRAM_3DS'
+export enum CardAuthMethod {
+  panOnly = 'PAN_ONLY',
+  threeDS = 'CRYPTOGRAM_3DS',
 }
 
 export enum TotalPriceStatus {
   unknown = 'NOT_CURRENTLY_KNOWN',
   estimated = 'ESTIMATED',
-  final = 'FINAL'
+  final = 'FINAL',
 }
 
 export interface GooglePayConfiguration {

@@ -24,7 +24,7 @@ export enum Event {
   onComplete = 'didCompleteCallback',
   /** Event handler, called when payment about to be terminate. */
   onError = 'didFailCallback',
-};
+}
 
 /** Collection of errors components can throw. */
 export enum ErrorCode {
@@ -44,7 +44,7 @@ export enum ErrorCode {
   notSupportedAction = 'notSupportedAction',
   /** Can not find selected payment method type in provided list. */
   noPaymentMethod = 'noPaymentMethod',
-};
+}
 
 /** Collection of available environments. */
 export enum Environment {
@@ -54,7 +54,7 @@ export enum Environment {
   australia = 'live-au',
   asiaPacificSouthEast = 'live-apse',
   india = 'live-in',
-};
+}
 
 /** Collection of available result codes that represent payments current state, as well as any actions you should take. */
 export enum ResultCode {
@@ -82,4 +82,4 @@ export enum ResultCode {
   redirectShopper = 'RedirectShopper',
   /** The payment was refused. You'll receive a `refusalReason` in the same response that indicates why it was refused. */
   refused = 'Refused',
-};
+}

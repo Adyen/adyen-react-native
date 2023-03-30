@@ -1,6 +1,6 @@
 // @ts-check
 
-import { PaymentMethodsResponse } from "./Core/types";
+import { PaymentMethodsResponse } from './Core/types';
 
 /**
  * Find payment method in JSON response or \paymentMethods API

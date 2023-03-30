@@ -6,7 +6,7 @@ export {
   PaymentAmount,
   Card,
   PaymentResponse,
-  PaymentMethodData
+  PaymentMethodData,
 } from './Core/types';
 
 export {
