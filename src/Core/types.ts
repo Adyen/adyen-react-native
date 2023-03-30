@@ -1,3 +1,5 @@
+import { ResultCode } from "./constants";
+
 /**
  * General type for card.
  */
@@ -180,7 +182,7 @@ export interface PaymentMethodsResponse {
 
 export interface PaymentResponse {
   action?: PaymentAction;
-  resultCode: string;
+  resultCode: ResultCode ;
 }
 
 /**
@@ -198,6 +200,7 @@ export interface Payment {
 
 export interface PaymentMethodData {
   paymentMethod: {
+    type: string;
     [key: string]: any;
     checkoutAttemptId?: string;
   };

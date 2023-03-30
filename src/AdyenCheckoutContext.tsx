@@ -7,12 +7,13 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import { EmitterSubscription } from 'react-native';
+import { EmitterSubscription, NativeModule } from 'react-native';
 import { Event } from './Core/constants';
 import { getNativeComponent, AdyenActionComponent } from './AdyenNativeModules';
 import { NativeEventEmitter } from 'react-native';
-import { PaymentMethodsResponse } from './Core/types';
+import { PaymentMethodData, PaymentMethodsResponse } from './Core/types';
 import { Configuration } from './Core/configuration';
+import { checkPaymentMethodsResponse, checkConfiguration } from './Core/utils';
 
 export interface AdyenCheckoutContextType {
   start: (typeName: string) => void;
@@ -36,13 +37,13 @@ type AdyenCheckoutProps = {
   /** JSON response from Adyen API `\paymentMethods` */
   paymentMethods: PaymentMethodsResponse;
   /** Event callback, called when the shopper selects the Pay button and payment details are valid. */
-  onSubmit: (data: object, component: AdyenActionComponent) => void;
+  onSubmit: (data: PaymentMethodData, component: AdyenActionComponent) => void;
   /** Event callback, called when payment about to be terminate. */
   onError: (error: AdyenError, component: AdyenActionComponent) => void;
   /** Event callback, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods. */
-  onAdditionalDetails: (data: object, component: AdyenActionComponent) => void;
+  onAdditionalDetails?: (data: PaymentMethodData, component: AdyenActionComponent) => void;
   /** Event callback, called when a shopper finishes the flow (Voucher payments only). */
-  onComplete: (component: AdyenActionComponent) => void;
+  onComplete?: (component: AdyenActionComponent) => void;
   /** Inner components */
   children: ReactNode;
 };
@@ -67,7 +68,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const submitPayment = useCallback(
     (
       configuration: Configuration,
-      data: { returnUrl: any },
+      data: any,
       nativeComponent: AdyenActionComponent
     ) => {
       const payload = {
@@ -84,7 +85,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, [subscriptions]);
 
   const startEventListeners = useCallback(
-    (configuration: Configuration, nativeComponent: AdyenActionComponent) => {
+    (configuration: Configuration, nativeComponent: AdyenActionComponent & NativeModule) => {
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
         eventEmitter.addListener(Event.onSubmit, (data) =>
@@ -96,7 +97,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         eventEmitter.addListener(Event.onComplete, () => {
           onComplete?.(nativeComponent);
         }),
-        eventEmitter.addListener(Event.onError, (error) => {
+        eventEmitter.addListener(Event.onError, (error: AdyenError) => {
           onError?.(error, nativeComponent);
         }),
       ];
@@ -118,6 +119,9 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         typeName,
         paymentMethods
       );
+
+      checkPaymentMethodsResponse(paymentMethods);
+      checkConfiguration(config);
 
       startEventListeners(config, nativeComponent);
 

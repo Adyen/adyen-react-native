@@ -10,7 +10,7 @@ import {
 import { Card, PaymentAction, PaymentMethod, PaymentMethodsResponse } from './Core/types';
 
 /** Universal interface for Adyen Native payment component */
-interface AdyenComponent extends NativeModule {
+interface AdyenComponent {
   /** Show component above current screen. */
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
 
@@ -40,7 +40,7 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
     this.nativeModule.removeListeners(count);
   }
   handle(action: PaymentAction) {
-    throw Error(ErrorCode.InvalidAction);
+    throw Error(ErrorCode.notSupportedAction);
   }
   open(paymentMethods: PaymentMethodsResponse, configuration: any) {
     this.nativeModule.open(paymentMethods, configuration);
@@ -51,7 +51,7 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
 }
 
 /** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
-export const AdyenDropIn: AdyenActionComponent = NativeModules.AdyenDropIn
+export const AdyenDropIn: AdyenActionComponent & NativeModule = NativeModules.AdyenDropIn
   ? NativeModules.AdyenDropIn
   : new Proxy(
       {},
@@ -63,7 +63,7 @@ export const AdyenDropIn: AdyenActionComponent = NativeModules.AdyenDropIn
     );
 
 /** Generic Redirect component */
-export const AdyenInstant: AdyenActionComponent = NativeModules.AdyenInstant
+export const AdyenInstant: AdyenActionComponent & NativeModule = NativeModules.AdyenInstant
   ? NativeModules.AdyenInstant
   : new Proxy(
       {},
@@ -75,7 +75,7 @@ export const AdyenInstant: AdyenActionComponent = NativeModules.AdyenInstant
     );
 
 /** Apple Pay component (only available for iOS) */
-export const AdyenApplePay: AdyenComponent = NativeModules.AdyenApplePay
+export const AdyenApplePay: AdyenComponent & NativeModule = NativeModules.AdyenApplePay
   ? NativeModules.AdyenApplePay
   : new Proxy(
       {},
@@ -87,7 +87,7 @@ export const AdyenApplePay: AdyenComponent = NativeModules.AdyenApplePay
     );
 
 /** Google Pay component (only available for Android) */
-export const AdyenGooglePay: AdyenComponent = NativeModules.AdyenGooglePay
+export const AdyenGooglePay: AdyenComponent & NativeModule = NativeModules.AdyenGooglePay
   ? NativeModules.AdyenGooglePay
   : new Proxy(
       {},
@@ -122,7 +122,7 @@ export const AdyenCSE: AdyenCSE = NativeModules.AdyenCSE
 /** 
  * Get native component capable of handling provided payment method type. 
  */
-export function getNativeComponent(typeName: string, paymentMethods: PaymentMethodsResponse): { nativeComponent: AdyenActionComponent; paymentMethod: PaymentMethod | undefined; } {
+export function getNativeComponent(typeName: string, paymentMethods: PaymentMethodsResponse): { nativeComponent: AdyenActionComponent & NativeModule; paymentMethod: PaymentMethod | undefined; } {
   const type = typeName.toLowerCase();
   switch (type) {
     case 'dropin':

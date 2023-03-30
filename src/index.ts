@@ -6,6 +6,7 @@ export {
   PaymentAmount,
   Card,
   PaymentResponse,
+  PaymentMethodData
 } from './Core/types';
 
 export {
@@ -17,10 +18,22 @@ export {
   AdyenActionComponent,
 } from './AdyenNativeModules';
 
-export { AdyenCheckout, AdyenCheckoutContext, AdyenCheckoutProps } from './AdyenCheckoutContext';
+export {
+  AdyenCheckout,
+  AdyenCheckoutContext,
+  AdyenCheckoutProps,
+} from './AdyenCheckoutContext';
 
-export { Environment, Event, ErrorCode, ResultCode, FieldsetVisibility } from './Core/constants';
+export { Environment, Event, ErrorCode, ResultCode } from './Core/constants';
 
-export { Configuration } from './Core/configuration';
+export {
+  Configuration,
+  DropInConfiguration,
+  CardAuthMethod,
+  ApplePayConfiguration,
+  GooglePayConfiguration,
+  AddressMode,
+  FieldVisibility,
+} from './Core/configuration';
 
 export { useAdyenCheckout } from './useAdyenCheckout';
