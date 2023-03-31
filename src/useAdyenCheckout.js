@@ -18,13 +18,8 @@ import { MISSING_CONTEXT_ERROR } from './constants';
  */
 
 /**
- * @callback GetAdyenCheckoutContextFunction
- * @returns {AdyenCheckoutContextState}
- */
-
-/**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
- * @type {GetAdyenCheckoutContextFunction} */
+ * @returns {AdyenCheckoutContextState} */
 const useAdyenCheckout = () => {
   const context = useContext(AdyenCheckoutContext);
   if (context === undefined) {
