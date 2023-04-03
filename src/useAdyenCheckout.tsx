@@ -1,5 +1,3 @@
-// @ts-check
-
 import { useContext } from 'react';
 import {
   AdyenCheckoutContext,
@@ -13,7 +11,7 @@ import { MISSING_CONTEXT_ERROR } from './Core/constants';
 const useAdyenCheckout = (): AdyenCheckoutContextType => {
   const context = useContext(AdyenCheckoutContext);
   if (context != null) {
-    return context!;
+    return context;
   }
   throw new Error(MISSING_CONTEXT_ERROR);
 };

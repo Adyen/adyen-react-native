@@ -1,5 +1,3 @@
-// @ts-check
-
 import { NativeModule, NativeModules } from 'react-native';
 import { find, NATIVE_COMPONENTS } from './ComponentMap';
 import {

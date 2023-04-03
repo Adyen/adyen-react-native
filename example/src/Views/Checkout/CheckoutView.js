@@ -6,7 +6,6 @@ import {
   AdyenCheckout,
   Environment,
   ErrorCode,
-  AddressMode,
   ResultCode,
 } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';

@@ -30,9 +30,9 @@ export const checkPaymentMethodsResponse = (
   }
 };
 
-const countryCodeRegex = new RegExp('^[A-Z]{2}$');
-const currencyCodeRegex = new RegExp('^[A-Z]{3}$');
-const clientKeyRegex = new RegExp('^[a-z]{4,8}_[a-zA-Z0-9]{8,128}$');
+const countryCodeRegex = /^[A-Z]{2}$/;
+const currencyCodeRegex = /^[A-Z]{3}$/;
+const clientKeyRegex = /^[a-z]{4,8}_[a-zA-Z0-9]{8,128}$/;
 
 export const checkConfiguration = (configuration: Configuration) => {
   if (configuration && Platform.OS == 'ios' && !configuration.returnUrl) {

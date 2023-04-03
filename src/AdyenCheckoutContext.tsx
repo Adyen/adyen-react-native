@@ -1,23 +1,25 @@
-// @ts-check
-
 import React, {
   useRef,
   useCallback,
   createContext,
   useEffect,
   ReactNode,
+  useMemo,
 } from 'react';
-import { EmitterSubscription, NativeModule } from 'react-native';
+import {
+  EmitterSubscription,
+  NativeEventEmitter,
+  NativeModule,
+} from 'react-native';
 import { Event } from './Core/constants';
 import { getNativeComponent, AdyenActionComponent } from './AdyenNativeModules';
-import { NativeEventEmitter } from 'react-native';
 import { PaymentMethodData, PaymentMethodsResponse } from './Core/types';
 import { Configuration } from './Core/configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './Core/utils';
 
 export interface AdyenCheckoutContextType {
   start: (typeName: string) => void;
-  config: object;
+  config: Configuration;
   paymentMethods?: PaymentMethodsResponse;
 }
 
@@ -145,14 +147,13 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     [config, paymentMethods, startEventListeners, removeEventListeners]
   );
 
+  const checkoutProviderValues = useMemo(
+    () => ({ start, config, paymentMethods }),
+    [start, config, paymentMethods]
+  );
+
   return (
-    <AdyenCheckoutContext.Provider
-      value={{
-        start,
-        config,
-        paymentMethods,
-      }}
-    >
+    <AdyenCheckoutContext.Provider value={checkoutProviderValues}>
       {children}
     </AdyenCheckoutContext.Provider>
   );

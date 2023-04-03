@@ -1,5 +1,3 @@
-// @ts-check
-
 import { PaymentMethodsResponse } from './Core/types';
 
 /**
