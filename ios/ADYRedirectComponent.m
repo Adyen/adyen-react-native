@@ -5,7 +5,11 @@
 //
 
 #import "ADYRedirectComponent.h"
-#import <adyen_react_native-Swift.h>
+#if __has_include("adyen_react_native-Swift.h")
+#import "adyen_react_native-Swift.h"
+#else
+#import "adyen_react_native/adyen_react_native-Swift.h"
+#endif
 
 @implementation ADYRedirectComponent
 
