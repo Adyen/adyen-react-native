@@ -47,14 +47,13 @@ export enum ErrorCode {
 }
 
 /** Collection of available environments. */
-export enum Environment {
-  test = 'test',
-  europe = 'live-eu',
-  us = 'live-us',
-  australia = 'live-au',
-  asiaPacificSouthEast = 'live-apse',
-  india = 'live-in',
-}
+export type Environment =
+  | 'test'
+  | 'live-eu'
+  | 'live-us'
+  | 'live-au'
+  | 'live-apse'
+  | 'live-in';
 
 /** Collection of available result codes that represent payments current state, as well as any actions you should take. */
 export enum ResultCode {

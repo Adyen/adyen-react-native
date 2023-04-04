@@ -2,12 +2,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 // @ts-ignore
-import {
-  AdyenCheckout,
-  Environment,
-  ErrorCode,
-  ResultCode,
-} from '@adyen/react-native';
+import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
 import { SafeAreaView, Alert } from 'react-native';
 import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
@@ -96,7 +91,7 @@ const CheckoutView = ({ navigation }) => {
       <AdyenCheckout
         config={{
           clientKey: config.clientKey,
-          environment: Environment.test,
+          environment: 'test',
           returnUrl: config.returnUrl,
           amount: { value: 1000, currency: 'EUR' },
           countryCode: 'NL',
