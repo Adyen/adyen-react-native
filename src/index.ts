@@ -22,6 +22,7 @@ export {
   AdyenCheckout,
   AdyenCheckoutContext,
   AdyenCheckoutProps,
+  AdyenError,
 } from './AdyenCheckoutContext';
 
 export { Environment, Event, ErrorCode, ResultCode } from './Core/constants';

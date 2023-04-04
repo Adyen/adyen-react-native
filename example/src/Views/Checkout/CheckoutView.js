@@ -1,10 +1,9 @@
 // @ts-check
 
 import React, { useEffect, useCallback } from 'react';
-// @ts-ignore
+import { SafeAreaView, Alert } from 'react-native';
 import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import { SafeAreaView, Alert } from 'react-native';
 import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
@@ -38,30 +37,47 @@ const CheckoutView = ({ navigation }) => {
     [config]
   );
 
-  const didProvide = useCallback(async (data, nativeComponent) => {
-    console.log('didProvide');
-    try {
-      const result = await ApiClient.paymentDetails(data);
-      processResult(result, nativeComponent);
-    } catch (error) {
+  const didProvide = useCallback(
+    async (
+      /** @type {any} */ data,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      console.log('didProvide');
+      try {
+        const result = await ApiClient.paymentDetails(data);
+        processResult(result, nativeComponent);
+      } catch (error) {
+        processError(error, nativeComponent);
+      }
+    },
+    []
+  );
+
+  const didComplete = useCallback(
+    async (
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      console.log('didComplete');
+      nativeComponent.hide(true, { message: 'Completed' });
+    },
+    []
+  );
+
+  const didFail = useCallback(
+    async (
+      /** @type {import('@adyen/react-native').AdyenError} */ error,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      console.log(`didFailed: ${error.message}`);
       processError(error, nativeComponent);
-    }
-  }, []);
-
-  const didComplete = useCallback(async (nativeComponent) => {
-    console.log('didComplete');
-    nativeComponent.hide(true, { message: 'Completed' });
-  }, []);
-
-  const didFail = useCallback(async (error, nativeComponent) => {
-    console.log(`didFailed: ${error.message}`);
-    processError(error, nativeComponent);
-  }, []);
+    },
+    []
+  );
 
   const processResult = useCallback(
     async (
       /** @type {import('@adyen/react-native').PaymentResponse} */ result,
-      nativeComponent
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       const success = isSuccess(result);
       console.log(
@@ -76,14 +92,22 @@ const CheckoutView = ({ navigation }) => {
     []
   );
 
-  const processError = useCallback(async (error, nativeComponent) => {
-    nativeComponent.hide(false, { message: error.message || 'Unknown error' });
-    if (error.errorCode == ErrorCode.canceled) {
-      Alert.alert('Canceled');
-    } else {
-      Alert.alert('Error', error.message);
-    }
-  }, []);
+  const processError = useCallback(
+    async (
+      /** @type {import('@adyen/react-native').AdyenError} */ error,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      nativeComponent.hide(false, {
+        message: error.message || 'Unknown error',
+      });
+      if (error.errorCode == ErrorCode.canceled) {
+        Alert.alert('Canceled');
+      } else {
+        Alert.alert('Error', error.message);
+      }
+    },
+    []
+  );
 
   return (
     <SafeAreaView style={Styles.page}>

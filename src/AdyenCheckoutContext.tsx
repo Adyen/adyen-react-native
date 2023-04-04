@@ -28,7 +28,7 @@ const AdyenCheckoutContext = createContext<AdyenCheckoutContextType | null>(
 );
 
 /** Reason for payment termination */
-interface AdyenError {
+export interface AdyenError {
   message: string;
   errorCode: string;
 }
