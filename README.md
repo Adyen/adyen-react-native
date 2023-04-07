@@ -12,13 +12,15 @@ Adyen React Native provides you with the building blocks to create a checkout ex
 
 You can integrate with Adyen React Native in two ways:
 
-* [Drop-in](adyen-docs-dropin): React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
-* [Components](adyen-docs-components): React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combined with your own payments flow.
+- [Drop-in](adyen-docs-dropin): React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
+- [Components](adyen-docs-components): React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combined with your own payments flow.
 
 ## Contributing
+
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
 
 ## Requirements
+
 Drop-in and Components require a [client key][client.key], that should be provided in the `Configuration`.
 
 ## Installation
@@ -32,16 +34,16 @@ yarn add @adyen/react-native`
 
 1. run `pod install`
 2. add return URL handler to your `AppDelegate.m`
-  ```objc
-  #import <adyen-react-native/ADYRedirectComponent.h>
+```objc
+#import <adyen-react-native/ADYRedirectComponent.h>
 
-  ...
+...
 
-  - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-    return [ADYRedirectComponent applicationDidOpenURL:url];
-  }
-  ```
-  
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+  return [ADYRedirectComponent applicationDidOpenURL:url];
+}
+```
+
 #### For ApplePay
 
 Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
@@ -69,8 +71,7 @@ protected void onCreate(Bundle savedInstanceState) {
 ##### For standalone components
 
 1. [Provide `rootProject.ext.adyenReactNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
-To do so, add following to your **App's build.gradle** `defaultConfig`
-
+   To do so, add following to your **App's build.gradle** `defaultConfig`
 ```groovy
 defaultConfig {
     ...
@@ -114,11 +115,12 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 To read more about other configuration, see the [full list](configuration).
 Example of required configuration:
-```javascript
-import { Environment } from '@adyen/react-native';
 
-const configuration = {
-  environment: Environment.Test, // When you're ready to accept real payments, change the value to a suitable live environment.
+```typescript
+import { Configuration } from '@adyen/react-native';
+
+const configuration: Configuration = {
+  environment: 'test', // When you're ready to accept real payments, change the value to a suitable live environment.
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
@@ -129,6 +131,7 @@ const configuration = {
 ### Opening Payment component
 
 To use `@adyen/react-native` you can use our helper component `AdyenCheckout` and helper functions from `useAdyenCheckout` with standalone component:
+
 ```javascript
 import { useAdyenCheckout } from '@adyen/react-native';
 
@@ -136,31 +139,42 @@ const MyCheckoutView = () => {
   const { start } = useAdyenCheckout();
 
   return (
-      <Button
-        title="Open DropIn"
-        onPress={() => { start('dropIn'); }} />
-      );
+    <Button
+      title="Open DropIn"
+      onPress={() => {
+        start('dropIn');
+      }}
+    />
+  );
 };
 ```
+
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
 
 <AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
-  onSubmit={ (paymentData, component) => { /* Call your server to make the `/payments` request */ } }
-  onAdditionalDetails={ (paymentData, component) => { /* Call your server to make the `/payments/details` request */ }}
-  onError={ (error, component) => { /* Handle errors or termination by shopper */ }} >
-    <MyCheckoutView/>
-</AdyenCheckout>
+  onSubmit={(paymentData, component) => {
+    /* Call your server to make the `/payments` request */
+  }}
+  onAdditionalDetails={(paymentData, component) => {
+    /* Call your server to make the `/payments/details` request */
+  }}
+  onError={(error, component) => {
+    /* Handle errors or termination by shopper */
+  }}
+>
+  <MyCheckoutView />
+</AdyenCheckout>;
 ```
 
 ### Handling Actions
 
-> :exclamation: Native components only handling actions after payment was **started**(nativeComponent.open) and before it was **hidden**(nativeComponent.hide)
-Handling of actions on its own is not supported
+> :exclamation: Native components only handling actions after payment was **started**(nativeComponent.open) and before it was **hidden**(nativeComponent.hide). Handling of actions on its own is not supported
 
 Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions, use `nativeComponent.handle(action)` from  `onSubmit` callback.
+
 ```javascript
 const handleSubmit = (paymentData, nativeComponent) => {
   server.makePayment(paymentData)
@@ -189,9 +203,11 @@ const handleSubmit = (paymentData, nativeComponent) => {
 - [Component documentation][adyen-docs-components]
 
 ## Support
-If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our [support team](https://www.adyen.help/hc/en-us/requests/new?ticket_form_id=360000705420).    
 
-## License    
+If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our [support team](https://www.adyen.help/hc/en-us/requests/new?ticket_form_id=360000705420).
+
+## License
+
 MIT license. For more information, see the LICENSE file.
 
 [client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
