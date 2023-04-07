@@ -46,15 +46,6 @@ export enum ErrorCode {
   noPaymentMethod = 'noPaymentMethod',
 }
 
-/** Collection of available environments. */
-export type Environment =
-  | 'test'
-  | 'live-eu'
-  | 'live-us'
-  | 'live-au'
-  | 'live-apse'
-  | 'live-in';
-
 /** Collection of available result codes that represent payments current state, as well as any actions you should take. */
 export enum ResultCode {
   /** The payment has been successfully authenticated with 3D Secure. */

@@ -1,5 +1,13 @@
-import { Environment } from './constants';
 import { PaymentAmount } from './types';
+
+/** Collection of available environments. */
+type Environment =
+  | 'test'
+  | 'live-eu'
+  | 'live-us'
+  | 'live-au'
+  | 'live-apse'
+  | 'live-in';
 
 /**
  * General type for AdyenContext configuration. See {@link https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md}
@@ -42,17 +50,10 @@ export interface DropInConfiguration {
 }
 
 /** Collection of values for address field visibility. */
-export enum AddressMode {
-  full = 'full',
-  postalCode = 'postalCode',
-  hidden = 'none',
-}
+type AddressMode = 'full' | 'postalCode' | 'none';
 
 /** Collection of values for address field visibility. */
-export enum FieldVisibility {
-  show = 'show',
-  hide = 'hide',
-}
+type FieldVisibility = 'show' | 'hide';
 
 export interface CardsConfiguration {
   /**  Determines whether to enable preselected stored payment method view step */
@@ -82,16 +83,9 @@ export interface ApplePayConfiguration {
   allowOnboarding?: boolean;
 }
 
-export enum CardAuthMethod {
-  panOnly = 'PAN_ONLY',
-  threeDS = 'CRYPTOGRAM_3DS',
-}
+type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';
 
-export enum TotalPriceStatus {
-  unknown = 'NOT_CURRENTLY_KNOWN',
-  estimated = 'ESTIMATED',
-  final = 'FINAL',
-}
+type TotalPriceStatus = 'NOT_CURRENTLY_KNOWN' | 'ESTIMATED' | 'FINAL';
 
 export interface GooglePayConfiguration {
   /**  The merchant account to be put in the payment token from Google to Adyen. By default uses value from brands. */

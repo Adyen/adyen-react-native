@@ -25,16 +25,13 @@ export {
   AdyenError,
 } from './AdyenCheckoutContext';
 
-export { Environment, Event, ErrorCode, ResultCode } from './Core/constants';
+export { Event, ErrorCode, ResultCode } from './Core/constants';
 
 export {
   Configuration,
   DropInConfiguration,
-  CardAuthMethod,
   ApplePayConfiguration,
   GooglePayConfiguration,
-  AddressMode,
-  FieldVisibility,
 } from './Core/configuration';
 
 export { useAdyenCheckout } from './useAdyenCheckout';
