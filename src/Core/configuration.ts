@@ -35,10 +35,10 @@ export interface Configuration {
 
 export interface DropInConfiguration {
   /**  Determines whether to enable preselected stored payment method view step */
-  showPreselectedStoredPaymentMethod: boolean;
+  showPreselectedStoredPaymentMethod?: boolean;
 
   /** Determines whether to enable skipping payment list step when there is only one non-instant payment method. */
-  skipListWhenSinglePaymentMethod: boolean;
+  skipListWhenSinglePaymentMethod?: boolean;
 }
 
 /** Collection of values for address field visibility. */
@@ -95,23 +95,23 @@ export enum TotalPriceStatus {
 
 export interface GooglePayConfiguration {
   /**  The merchant account to be put in the payment token from Google to Adyen. By default uses value from brands. */
-  merchantAccount: string;
+  merchantAccount?: string;
   /** One or more card networks that you support, also supported by the Google Pay API. */
-  allowedCardNetworks: string[];
+  allowedCardNetworks?: string[];
   /** Fields supported to authenticate a card transaction. */
-  allowedAuthMethods: CardAuthMethod[];
+  allowedAuthMethods?: CardAuthMethod[];
   /** The status of the total price used. Defaults to "FINAL". */
-  totalPriceStatus: TotalPriceStatus;
+  totalPriceStatus?: TotalPriceStatus;
   /** Set to false if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified. */
-  allowPrepaidCards: boolean;
+  allowPrepaidCards?: boolean;
   /** Set to true if you require a billing address. A billing address should only be requested if it's required to process the transaction. */
-  billingAddressRequired: boolean;
+  billingAddressRequired?: boolean;
   /** Set to true to request an email address. */
-  emailRequired: boolean;
+  emailRequired?: boolean;
   /** Set to true to request a full shipping address. */
-  shippingAddressRequired: boolean;
+  shippingAddressRequired?: boolean;
   /** If set to true then the IsReadyToPayResponse object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in allowedPaymentMethods. */
-  existingPaymentMethodRequired: boolean;
+  existingPaymentMethodRequired?: boolean;
   /** The environment to be used by GooglePay. Should be either WalletConstants.ENVIRONMENT_TEST or WalletConstants.ENVIRONMENT_PRODUCTION. By default is using environment from root. */
-  googlePayEnvironment: string;
+  googlePayEnvironment?: string;
 }
