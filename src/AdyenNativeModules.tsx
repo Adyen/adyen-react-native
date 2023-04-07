@@ -18,7 +18,7 @@ interface AdyenComponent {
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
 
   /** Dismiss component from screen. */
-  hide: (success: boolean, message: string | undefined) => void;
+  hide: (success: boolean, option?: { message?: string }) => void;
 }
 
 /** Describes Adyen Component capable of handling action */
@@ -48,8 +48,8 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
   open(paymentMethods: PaymentMethodsResponse, configuration: any) {
     this.nativeModule.open(paymentMethods, configuration);
   }
-  hide(success: boolean, message: string | undefined) {
-    this.nativeModule.hide(success, message);
+  hide(success: boolean, option?: { message?: string }) {
+    this.nativeModule.hide(success, option);
   }
 }
 
