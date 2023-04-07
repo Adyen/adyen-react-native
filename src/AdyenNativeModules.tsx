@@ -12,13 +12,19 @@ import {
   PaymentMethodsResponse,
 } from './Core/types';
 
+/** Options of dismissing the payment component */
+export interface HideOption {
+  /** Alert message after dismiss. Used for Android DropIn and Components only */
+  message?: string;
+}
+
 /** Universal interface for Adyen Native payment component */
 interface AdyenComponent {
   /** Show component above current screen. */
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
 
   /** Dismiss component from screen. */
-  hide: (success: boolean, option?: { message?: string }) => void;
+  hide: (success: boolean, option?: HideOption) => void;
 }
 
 /** Describes Adyen Component capable of handling action */
@@ -31,9 +37,11 @@ export interface AdyenActionComponent extends AdyenComponent {
  *  Wrapper for all Native Modules that do not support Action handling.
  * */
 class AdyenNativeComponentWrapper implements AdyenActionComponent {
+  canHandleAction: boolean;
   nativeModule: NativeModule | any;
-  constructor(nativeModule: NativeModule) {
+  constructor(nativeModule: NativeModule, canHandleAction: boolean = true) {
     this.nativeModule = nativeModule;
+    this.canHandleAction = canHandleAction;
   }
 
   addListener(eventType: string) {
@@ -43,13 +51,22 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
     this.nativeModule.removeListeners(count);
   }
   handle(action: PaymentAction) {
-    throw Error(ErrorCode.notSupportedAction);
+    if (this.canHandleAction) {
+      this.nativeModule.handle(action);
+    } else {
+      throw Error(ErrorCode.notSupportedAction);
+    }
   }
   open(paymentMethods: PaymentMethodsResponse, configuration: any) {
     this.nativeModule.open(paymentMethods, configuration);
   }
   hide(success: boolean, option?: { message?: string }) {
-    this.nativeModule.hide(success, option);
+    console;
+    if (option != null && option.message != null) {
+      this.nativeModule.hide(success, option);
+    } else {
+      this.nativeModule.hide(success, { message: '' });
+    }
   }
 }
 
@@ -141,16 +158,19 @@ export function getNativeComponent(
     case 'dropin':
     case 'drop-in':
     case 'adyendropin':
-      return { nativeComponent: AdyenDropIn, paymentMethod: undefined };
+      return {
+        nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
+        paymentMethod: undefined,
+      };
     case 'applepay':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenApplePay),
+        nativeComponent: new AdyenNativeComponentWrapper(AdyenApplePay, false),
         paymentMethod: undefined,
       };
     case 'paywithgoogle':
     case 'googlepay':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenGooglePay),
+        nativeComponent: new AdyenNativeComponentWrapper(AdyenGooglePay, false),
         paymentMethod: undefined,
       };
     default:
@@ -163,8 +183,14 @@ export function getNativeComponent(
   }
 
   if (NATIVE_COMPONENTS.includes(type)) {
-    return { nativeComponent: AdyenDropIn, paymentMethod: paymentMethod };
+    return {
+      nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
+      paymentMethod: paymentMethod,
+    };
   }
 
-  return { nativeComponent: AdyenInstant, paymentMethod: paymentMethod };
+  return {
+    nativeComponent: new AdyenNativeComponentWrapper(AdyenInstant),
+    paymentMethod: paymentMethod,
+  };
 }

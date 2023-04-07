@@ -16,6 +16,7 @@ export {
   AdyenGooglePay,
   AdyenCSE,
   AdyenActionComponent,
+  HideOption,
 } from './AdyenNativeModules';
 
 export {

@@ -58,7 +58,7 @@ const CheckoutView = ({ navigation }) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       console.log('didComplete');
-      nativeComponent.hide(true, { message: 'Completed' });
+      nativeComponent.hide(true);
     },
     []
   );
@@ -85,7 +85,7 @@ const CheckoutView = ({ navigation }) => {
           success ? result.resultCode : JSON.stringify(result)
         }`
       );
-      nativeComponent.hide(success, { message: result.resultCode });
+      nativeComponent.hide(success);
       navigation.popToTop();
       navigation.push('Result', { result: result.resultCode });
     },
@@ -97,9 +97,7 @@ const CheckoutView = ({ navigation }) => {
       /** @type {import('@adyen/react-native').AdyenError} */ error,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
-      nativeComponent.hide(false, {
-        message: error.message || 'Unknown error',
-      });
+      nativeComponent.hide(false);
       if (error.errorCode == ErrorCode.canceled) {
         Alert.alert('Canceled');
       } else {
@@ -113,13 +111,16 @@ const CheckoutView = ({ navigation }) => {
     <SafeAreaView style={Styles.page}>
       <TopView />
       <AdyenCheckout
-        config={{
-          clientKey: config.clientKey,
-          environment: 'test',
-          returnUrl: config.returnUrl,
-          amount: { value: 1000, currency: 'EUR' },
-          countryCode: 'NL',
-        }}
+        config={
+          /** @type {import('@adyen/react-native').Configuration} */
+          {
+            clientKey: config.clientKey,
+            environment: 'test',
+            returnUrl: config.returnUrl,
+            amount: { value: 1000, currency: 'EUR' },
+            countryCode: 'NL',
+          }
+        }
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
         onAdditionalDetails={didProvide}
