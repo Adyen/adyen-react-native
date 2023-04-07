@@ -40,7 +40,6 @@ export interface PaymentAction {
    * When non-empty, contains a value that you must submit to the /payments/details endpoint. In some cases, required for polling.
    */
   paymentData?: string; // comes from the /payments endpoint
-  authorisationToken?: string; // comes from the /submitThreeDS2Fingerprint endpoint
 
   // Redirect Actions
 
@@ -79,6 +78,11 @@ export interface PaymentAction {
    * A token to pass to the 3DS2 Component to get the fingerprint/challenge.
    */
   token?: string;
+
+  /**
+   * A token needed to authorise a payment. Comes from the /submitThreeDS2Fingerprint endpoint
+   */
+  authorisationToken?: string;
 
   // SDK
 

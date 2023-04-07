@@ -61,7 +61,6 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
     this.nativeModule.open(paymentMethods, configuration);
   }
   hide(success: boolean, option?: { message?: string }) {
-    console;
     if (option != null && option.message != null) {
       this.nativeModule.hide(success, option);
     } else {
