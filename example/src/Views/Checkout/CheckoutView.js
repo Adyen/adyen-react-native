@@ -1,10 +1,9 @@
 // @ts-check
 
 import React, { useEffect, useCallback } from 'react';
-// @ts-ignore
+import { SafeAreaView, Alert } from 'react-native';
 import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import { SafeAreaView, Alert } from 'react-native';
 import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
@@ -18,9 +17,13 @@ const CheckoutView = ({ navigation }) => {
   }, []);
 
   const didSubmit = useCallback(
-    async (data, nativeComponent) => {
+    async (
+      /** @type {import('@adyen/react-native').PaymentMethodData} */ data,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
       console.log(`didSubmit: ${data.paymentMethod.type}`);
       try {
+        /** @type {import('@adyen/react-native').PaymentResponse} */
         const result = await ApiClient.payments(data, config);
         if (result.action) {
           nativeComponent.handle(result.action);
@@ -34,52 +37,90 @@ const CheckoutView = ({ navigation }) => {
     [config]
   );
 
-  const didProvide = useCallback(async (data, nativeComponent) => {
-    console.log('didProvide');
-    try {
-      const result = await ApiClient.paymentDetails(data);
-      processResult(result, nativeComponent);
-    } catch (error) {
+  const didProvide = useCallback(
+    async (
+      /** @type {any} */ data,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      console.log('didProvide');
+      try {
+        const result = await ApiClient.paymentDetails(data);
+        processResult(result, nativeComponent);
+      } catch (error) {
+        processError(error, nativeComponent);
+      }
+    },
+    []
+  );
+
+  const didComplete = useCallback(
+    async (
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      console.log('didComplete');
+      nativeComponent.hide(true);
+    },
+    []
+  );
+
+  const didFail = useCallback(
+    async (
+      /** @type {import('@adyen/react-native').AdyenError} */ error,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      console.log(`didFailed: ${error.message}`);
       processError(error, nativeComponent);
-    }
-  }, []);
+    },
+    []
+  );
 
-  const didComplete = useCallback(async (nativeComponent) => {
-    console.log('didComplete');
-    nativeComponent.hide(true, { message: 'Completed' });
-  }, []);
+  const processResult = useCallback(
+    async (
+      /** @type {import('@adyen/react-native').PaymentResponse} */ result,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      const success = isSuccess(result);
+      console.log(
+        `Payment: ${success ? 'success' : 'failure'} : ${
+          success ? result.resultCode : JSON.stringify(result)
+        }`
+      );
+      nativeComponent.hide(success);
+      navigation.popToTop();
+      navigation.push('Result', { result: result.resultCode });
+    },
+    []
+  );
 
-  const didFail = useCallback(async (error, nativeComponent) => {
-    console.log(`didFailed: ${error.message}`);
-    processError(error, nativeComponent);
-  }, []);
-
-  const processResult = useCallback(async (result, nativeComponent) => {
-    const success = isSuccess(result);
-    console.log(
-      `Payment: ${success ? 'success' : 'failure'} : ${
-        success ? result.resultCode : JSON.stringify(result)
-      }`
-    );
-    nativeComponent.hide(success, { message: result.resultCode });
-    navigation.popToTop();
-    navigation.push('Result', { result: result.resultCode });
-  }, []);
-
-  const processError = useCallback(async (error, nativeComponent) => {
-    nativeComponent.hide(false, { message: error.message || 'Unknown error' });
-    if (error.errorCode == ErrorCode.Canceled) {
-      Alert.alert('Canceled');
-    } else {
-      Alert.alert('Error', error.message);
-    }
-  }, []);
+  const processError = useCallback(
+    async (
+      /** @type {import('@adyen/react-native').AdyenError} */ error,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+    ) => {
+      nativeComponent.hide(false);
+      if (error.errorCode == ErrorCode.canceled) {
+        Alert.alert('Canceled');
+      } else {
+        Alert.alert('Error', error.message);
+      }
+    },
+    []
+  );
 
   return (
     <SafeAreaView style={Styles.page}>
       <TopView />
       <AdyenCheckout
-        config={config}
+        config={
+          /** @type {import('@adyen/react-native').Configuration} */
+          {
+            clientKey: config.clientKey,
+            environment: 'test',
+            returnUrl: config.returnUrl,
+            amount: { value: 1000, currency: 'EUR' },
+            countryCode: 'NL',
+          }
+        }
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
         onAdditionalDetails={didProvide}
@@ -92,12 +133,14 @@ const CheckoutView = ({ navigation }) => {
   );
 };
 
-const isSuccess = (result) => {
+const isSuccess = (
+  /** @type {import('@adyen/react-native').PaymentResponse} */ result
+) => {
   const code = result.resultCode;
   return (
-    code === ResultCode.Authorised ||
-    code === ResultCode.Received ||
-    code === ResultCode.Pending
+    code === ResultCode.authorised ||
+    code === ResultCode.received ||
+    code === ResultCode.pending
   );
 };
 

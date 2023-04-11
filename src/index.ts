@@ -1,30 +1,38 @@
 export {
+  PaymentMethod,
+  PaymentAction,
+  PaymentMethodsResponse,
+  StoredPaymentMethod,
+  PaymentAmount,
+  Card,
+  PaymentResponse,
+  PaymentMethodData,
+} from './Core/types';
+
+export {
   AdyenDropIn,
   AdyenApplePay,
   AdyenInstant,
   AdyenGooglePay,
   AdyenCSE,
+  AdyenActionComponent,
+  HideOption,
 } from './AdyenNativeModules';
 
-export { AdyenCheckout, AdyenCheckoutContext } from './AdyenCheckoutContext';
+export {
+  AdyenCheckout,
+  AdyenCheckoutContext,
+  AdyenCheckoutProps,
+  AdyenError,
+} from './AdyenCheckoutContext';
+
+export { Event, ErrorCode, ResultCode } from './Core/constants';
 
 export {
-  PAYMENT_COMPLETED_EVENT,
-  PAYMENT_SUBMIT_EVENT,
-  PAYMENT_PROVIDE_DETAILS_EVENT,
-  PAYMENT_FAILED_EVENT,
-} from './constants';
-
-export {
-  ERROR_CODE_CANCELED,
-  ERROR_CODE_NOT_SUPPORTED,
-  ERROR_CODE_NO_CLIENT_KEY,
-  ERROR_CODE_NO_PAYMENT,
-  ERROR_CODE_INVALID_PAYMENT_METHODS,
-  ERROR_CODE_INVALID_ACTION,
-  ERROR_CODE_NO_PAYMENT_METHOD,
-} from './constants';
-
-export { Environment, Event, ErrorCode, ResultCode } from './constants';
+  Configuration,
+  DropInConfiguration,
+  ApplePayConfiguration,
+  GooglePayConfiguration,
+} from './Core/configuration';
 
 export { useAdyenCheckout } from './useAdyenCheckout';
