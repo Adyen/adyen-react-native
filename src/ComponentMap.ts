@@ -1,12 +1,9 @@
-// @ts-check
+import { PaymentMethodsResponse } from './Core/types';
 
 /**
  * Find payment method in JSON response or \paymentMethods API
- * @param {{ paymentMethods: any[]; }} paymentMethods Json response from /paymentMethods
- * @param {string} typeName Name of payment method type
- * @returns {import("./AdyenNativeModules").PaymentMethod} Payment method object with a specified type
  */
-export function find(paymentMethods, typeName) {
+export function find(paymentMethods: PaymentMethodsResponse, typeName: string) {
   return paymentMethods.paymentMethods.find(
     (pm) => pm.type.toLowerCase() === mapCreatedComponentType(typeName)
   );
@@ -17,7 +14,7 @@ export function find(paymentMethods, typeName) {
  * @param {string} pmType
  * @returns {string} matching txVariable name or original name
  */
-function mapCreatedComponentType(pmType) {
+function mapCreatedComponentType(pmType: string) {
   // Components created as 'card' need to be matched with paymentMethod response objects with type 'scheme'
   return pmType === 'card' ? 'scheme' : pmType;
 }

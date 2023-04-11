@@ -69,13 +69,6 @@ const PaymentMethods = () => {
         }}
       />
       <Button
-        title="Open Qiwi Wallet"
-        disabled={isNotReady || !isAvailable('qiwiwallet')}
-        onPress={() => {
-          start('qiwiwallet');
-        }}
-      />
-      <Button
         title={'Open ' + platformSpecificPayment}
         disabled={isNotReady || !isAvailable(platformSpecificType)}
         onPress={() => {
