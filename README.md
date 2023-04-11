@@ -25,7 +25,7 @@ Drop-in and Components require a [client key][client.key], that should be provid
 
 Add `@adyen/react-native` to your react-native project.
 ```bash
-yarn add @adyen/react-native`
+yarn add @adyen/react-native
 ```
 
 ### iOS integration
@@ -175,7 +175,7 @@ const handleSubmit = (paymentData, nativeComponent) => {
 
 <AdyenCheckout
   ...
-  onSubmit={ handleSubmit }
+  onSubmit={handleSubmit}
   >
     ...
 </AdyenCheckout>
