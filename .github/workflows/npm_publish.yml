@@ -6,12 +6,18 @@ name: Publish Package
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
   release:
     types: [published]
 
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version == '' && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v3
       # Setup .npmrc file to publish to npm
@@ -19,10 +25,13 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: yarn install --frozen-lockfile
+      # Update version in package.json
+      - run: |
+          sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
       # Build and publish to npm
+      - run: yarn install --frozen-lockfile
       - run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ADYEN_REACT_NATIVE_TOKEN }}
           CI: true
       # Upload artifacts

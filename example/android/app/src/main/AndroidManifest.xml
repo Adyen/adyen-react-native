@@ -32,6 +32,6 @@
             </intent-filter>
         </activity>
 
-        <service android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService" />
+        <service android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService" android:exported="false" />
     </application>
 </manifest>

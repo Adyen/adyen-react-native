@@ -5,18 +5,13 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.adyenreactnativesdk.action.ActionHandler;
-import com.adyenreactnativesdk.component.dropin.AdyenDropInComponent;
+import com.adyenreactnativesdk.AdyenCheckout;
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent;
 import com.facebook.react.ReactActivity;
 
 public class MainActivity extends ReactActivity {
 
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    Log.d("MainActivity", "onCreate");
-    AdyenDropInComponent.setDropInLauncher(this);
-  }
+  private static final String TAG = "MainActivity";
 
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule
@@ -28,16 +23,23 @@ public class MainActivity extends ReactActivity {
   }
 
   @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    Log.d(TAG, "onCreate");
+    AdyenCheckout.setLauncherActivity(this);
+  }
+
+  @Override
   public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    Log.d("MainActivity", "onNewIntent");
-    ActionHandler.handleIntent(intent);
+    Log.d(TAG, "onNewIntent");
+    AdyenCheckout.handleIntent(intent);
   }
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
-    Log.d("MainActivity", "onActivityResult");
-    AdyenGooglePayComponent.handleActivityResult(requestCode, resultCode, data);
+    Log.d(TAG, "onActivityResult");
+    AdyenCheckout.handleActivityResult(requestCode, resultCode, data);
   }
 }

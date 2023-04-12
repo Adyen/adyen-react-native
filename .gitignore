@@ -31,6 +31,8 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 Pods/
+example/ios/Pod
+example/ios/Podfile.lock
 
 # Android/IJ
 .idea
@@ -41,6 +43,9 @@ local.properties
 # node.js
 node_modules/
 npm-debug.log
+
+# yarn
+example/yarn.lock
 
 # Expo
 .expo/*

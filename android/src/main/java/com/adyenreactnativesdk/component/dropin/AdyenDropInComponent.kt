@@ -5,21 +5,16 @@
  */
 package com.adyenreactnativesdk.component.dropin
 
-import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContract
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
-import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropIn.startPayment
-import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
-import com.adyen.checkout.dropin.DropInResult
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
@@ -80,8 +75,8 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
-        dropInCallback.dropInCallback = this
-        dropInLauncher?.let {
+        AdyenCheckout.addDropInListener(this)
+        AdyenCheckout.dropInLauncher?.let {
             startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), resultIntent)
         } ?: run {
             startPayment(currentActivity, paymentMethodsResponse, builder.build(), resultIntent)
@@ -106,7 +101,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     @ReactMethod
     fun hide(success: Boolean, message: ReadableMap?) {
         proxyHideDropInCommand(success, message)
-        dropInCallback.dropInCallback = null
+        AdyenCheckout.removeDropInListener()
     }
 
     override fun onCancel() {
@@ -224,20 +219,21 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
-        private var dropInLauncher: ActivityResultLauncher<Intent>? = null
-        private val dropInCallback = DropInCallbackListener()
 
         @JvmStatic
+        @Deprecated(
+            message = "This method is deprecated on beta-8",
+            replaceWith = ReplaceWith("AdyenCheckout.setLauncherActivity(activity)"))
         fun setDropInLauncher(activity: ActivityResultCaller) {
-            dropInLauncher = activity.registerForActivityResult(
-                ReactDropInResultContract(),
-                dropInCallback::onDropInResult
-            )
+            AdyenCheckout.setLauncherActivity(activity);
         }
 
         @JvmStatic
+        @Deprecated(
+            message = "This method is deprecated on beta-8",
+            replaceWith = ReplaceWith("AdyenCheckout.removeLauncherActivity()"))
         fun removeDropInLauncher() {
-            dropInLauncher = null
+            AdyenCheckout.removeLauncherActivity();
         }
     }
 
@@ -247,30 +243,6 @@ internal interface ReactDropInCallback {
     fun onCancel()
     fun onError(reason: String?)
     fun onCompleted(result: String)
-}
-
-private class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
-    override fun createIntent(context: Context, input: Intent): Intent {
-        return input
-    }
-
-    override fun parseResult(resultCode: Int, intent: Intent?): DropInResult? {
-        return DropIn.handleActivityResult(DropIn.DROP_IN_REQUEST_CODE, resultCode, intent)
-    }
-}
-
-private class DropInCallbackListener : DropInCallback {
-
-    var dropInCallback: ReactDropInCallback? = null
-
-    override fun onDropInResult(dropInResult: DropInResult?) {
-        if (dropInResult == null) return
-        when (dropInResult) {
-            is DropInResult.CancelledByUser -> dropInCallback?.onCancel()
-            is DropInResult.Error -> dropInCallback?.onError(dropInResult.reason)
-            is DropInResult.Finished -> dropInCallback?.onCompleted(dropInResult.result)
-        }
-    }
 }
 
 sealed class DropInException(code: String, message: String, cause: Throwable? = null) :

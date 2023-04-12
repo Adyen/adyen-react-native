@@ -1,6 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
 [![Adyen iOS](https://img.shields.io/badge/ios-v4.10.3-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
-[![Adyen Android](https://img.shields.io/badge/android-v4.7.1-brightgreen.svg)](https://github.com/Adyen/adyen-android)
+[![Adyen Android](https://img.shields.io/badge/android-v4.10.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
@@ -43,23 +43,41 @@ Add `@adyen/react-native` to your react-native project.
 
 #### Android integration
 
-##### For Drop-In
-
 1. Add `AdyenDropInService` to manifest:
 
 ```xml
 <service android:name="com.adyenreactnativesdk.component.dropin.AdyenDropInService" />
 ```
 
+2. Provide your Checkout activity to `AdyenCheckout`. This will improve responsiveness of DropIn and standalone native components:
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+  super.onCreate(savedInstanceState);
+  AdyenCheckout.setLauncherActivity(this);
+}
+```
+
+3. Adyen Android DropIn require [Material Theming](https://m2.material.io/design/material-theming/overview.htm). Make sure the theme of your app is decendent of `Theme.MaterialComponents`.
+
+In *res/values/styles.xml* replace `parent` of your application theme:
+
+```xml
+<style name="MyAppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+..
+</style>
+```
+
 ##### For standalone components
 
-1. [Provide `rootProject.ext.adyenRectNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
+1. [Provide `rootProject.ext.adyenReactNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
 To do so, add folowing to your **App's build.gradle** `defaultConfig`
 
 ```groovy
 defaultConfig {
     ...
-    manifestPlaceholders = [redirectScheme: rootProject.ext.adyenRectNativeRedirectScheme]
+    manifestPlaceholders = [redirectScheme: rootProject.ext.adyenReactNativeRedirectScheme]
 }
 ```
 
@@ -74,33 +92,23 @@ defaultConfig {
 </intent-filter>
 ```
 
-3. Provide your Checkout activity as `DropInLauncher`. This will improve responsiveness of DropIn and standalone native components:
-
-```java
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-  super.onCreate(savedInstanceState);
-  AdyenDropInComponent.setDropInLauncher(this);
-}
-```
-
-4. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
+3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
 
 ```java
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    ActionHandler.Companion.handle(intent);
+    AdyenCheckout.Companion.handle(intent);
 }
 ```
 
-5. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
+4. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
 
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {
   super.onActivityResult(requestCode, resultCode, data);
-  AdyenGooglePayComponent.handleActivityResult(requestCode, resultCode, data);
+  AdyenCheckout.handleActivityResult(requestCode, resultCode, data);
 }
 ```
 
@@ -110,7 +118,8 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ### Configuration
 
-Example of configuration properties:
+To read more about other configuration, see [Full list](docs\Configuration.md).
+Example of required configuration:
 
 ```javascript
 const configuration = {
@@ -118,9 +127,7 @@ const configuration = {
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
-  reference: 'React Native', // The reference to uniquely identify a payment. Can be send from your backend
-  shopperReference: 'Checkout Shopper', // Your reference to uniquely identify this shopper
-  returnUrl: 'myapp://', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
+  returnUrl: 'myapp://payment', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
 };
 ```
 
@@ -156,52 +163,6 @@ import { AdyenCheckout } from '@adyen/react-native';
 </AdyenCheckout>
 ```
 
-Or use `@adyen/react-native` you can use our helper component `AdyenCheckout` with `AdyenCheckoutContext.Consumer` directly:
-
-```javascript
-import {
-  AdyenCheckout,
-  AdyenCheckoutContext,
-} from '@adyen/react-native';
-
-<AdyenCheckout
-  config={configuration}
-  paymentMethods={paymentMethods}
-  onSubmit={didSubmit}
-  onProvide={didProvide}
-  onFail={didFail}
-  onComplete={didComplete} >
-    <AdyenCheckoutContext.Consumer>
-      {({ start }) => (
-        <Button
-          title="Open DropIn"
-          onPress={() => { start('dropIn'); }}
-        />
-      )}
-    </AdyenCheckoutContext.Consumer>
-</AdyenCheckout>
-```
-
-Or manage native events manually by
-
-```javascript
-import { NativeModules } from 'react-native';
-const { AdyenDropIn } = NativeModules;
-
-<Button
-  title="Checkout"
-  onPress={() => {
-    const eventEmitter = new NativeEventEmitter(AdyenDropIn);
-    this.didSubmitListener = eventEmitter.addListener('PAYMENT_SUBMIT_EVENT', onSubmit);
-    this.didProvideListener = eventEmitter.addListener('PAYMENT_PROVIDE_DETAILS_EVENT', onProvide);
-    this.didCompleteListener = eventEmitter.addListener('PAYMENT_COMPLETED_EVENT', onComplete);
-    this.didFailListener = eventEmitter.addListener('PAYMENT_FAILED_EVENT', onFail);
-
-    AdyenDropIn.open(paymentMethods, configuration);
-  }}
-/>
-```
-
 ### Handling Actions
 
 > :exclamation: Native components only handling actions after payment was **started**(nativeComponent.open) and before it was **hidden**(nativeComponent.hide)
@@ -227,15 +188,6 @@ const handleSubmit = (payload, nativeComponent) => {
   >
     ...
 </AdyenCheckout>
-```
-
-Or call `.handle(action)` on a Native Module you are working with:
-
-```javascript
-import { NativeModules } from 'react-native';
-const { AdyenDropIn } = NativeModules;
-
-AdyenDropIn.handle(action);
 ```
 
 ## Documentation
