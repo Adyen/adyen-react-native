@@ -38,7 +38,7 @@ export interface Configuration {
   applepay?: ApplePayConfiguration;
 
   /** Google Pay component configuration. */
-  google?: GooglePayConfiguration;
+  googlepay?: GooglePayConfiguration;
 }
 
 export interface DropInConfiguration {
