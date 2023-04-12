@@ -1,4 +1,4 @@
-// @ts-check
+import { Platform } from 'react-native';
 
 export const UNKNOWN_PAYMENT_METHOD_ERROR =
   'Unknown payment method or native module. \n\n' +
@@ -6,7 +6,6 @@ export const UNKNOWN_PAYMENT_METHOD_ERROR =
 
 export const LINKING_ERROR =
   `The package '@adyen/react-native' doesn't seem to be linked. Make sure: \n\n` +
-  // @ts-ignore
   Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo managed workflow\n';
