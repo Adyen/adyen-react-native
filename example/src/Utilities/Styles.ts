@@ -31,6 +31,7 @@ const Styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
   },
+  slash: { paddingHorizontal: 4, textAlign: 'center' },
   centeredText: { textAlign: 'center' },
   centeredButton: {
     alignItems: 'center',

@@ -13,7 +13,6 @@ import { SettingsScreenProps } from '../@types/navigation';
 import { useNavigation } from '@react-navigation/native';
 import { TextInputProps } from 'react-native/Libraries/Components/TextInput/TextInput';
 import { Configuration } from '@adyen/react-native';
-import styles from '../Utilities/Styles';
 
 type FormTextInputProps = {
   title: string;

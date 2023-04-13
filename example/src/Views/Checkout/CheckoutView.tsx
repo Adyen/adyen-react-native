@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, Alert, ActivityIndicator, Button } from 'react-native';
 import {
   AdyenActionComponent,
   AdyenCheckout,
@@ -18,6 +18,14 @@ import { CheckoutScreenProps } from '../../@types/navigation';
 
 const CheckoutView = ({ navigation }: CheckoutScreenProps) => {
   const { config, paymentMethods, refreshPaymentMethods } = usePaymentMethods();
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Button onPress={() => navigation.navigate('Settings')} title="Edit" />
+      ),
+    });
+  }, []);
 
   useEffect(() => {
     refreshPaymentMethods();

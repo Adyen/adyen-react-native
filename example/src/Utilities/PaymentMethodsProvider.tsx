@@ -1,4 +1,10 @@
-import React, { useContext, useState, useCallback, ReactNode } from 'react';
+import React, {
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useMemo,
+} from 'react';
 import ApiClient from './APIClient';
 import { DEFAULT_CONFIGURATION } from '../Configuration';
 import { Configuration, PaymentMethodsResponse } from '@adyen/react-native';
@@ -38,11 +44,11 @@ const PaymentMethodsProvider = (props: Props) => {
     async (newConfig?: Configuration) => {
       console.log('refreshing pms');
       try {
-        const newPaymentMethods = await ApiClient.paymentMethods();
-        setPaymentMethods(newPaymentMethods);
         if (newConfig) {
           setConfig(newConfig);
         }
+        const newPaymentMethods = await ApiClient.paymentMethods();
+        setPaymentMethods(newPaymentMethods);
       } catch (error) {
         props.onError(error);
       }
@@ -50,13 +56,16 @@ const PaymentMethodsProvider = (props: Props) => {
     [props],
   );
 
+  const value = useMemo(() => {
+    return {
+      config: config,
+      paymentMethods: paymentMethods,
+      refreshPaymentMethods: refresh,
+    };
+  }, [config, paymentMethods, refresh]);
+
   return (
-    <PaymentMethodsContext.Provider
-      value={{
-        config: config,
-        paymentMethods: paymentMethods,
-        refreshPaymentMethods: refresh,
-      }}>
+    <PaymentMethodsContext.Provider value={value}>
       {props.children}
     </PaymentMethodsContext.Provider>
   );

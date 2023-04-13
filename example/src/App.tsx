@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   NavigationContainer,
   DarkTheme,
   DefaultTheme,
+  useNavigation,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -28,19 +29,7 @@ const App = () => {
       <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack.Navigator>
           <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen
-            name="Checkout"
-            component={CheckoutView}
-            options={({ navigation }) => ({
-              title: 'Adyen React Native',
-              headerRight: () => (
-                <Button
-                  onPress={() => navigation.navigate('Settings')}
-                  title="Edit"
-                />
-              ),
-            })}
-          />
+          <Stack.Screen name="Checkout" component={CheckoutView} />
           <Stack.Screen name="Settings" component={SettingView} />
           <Stack.Screen name="Result" component={Result} />
           <Stack.Screen name="CSE" component={CseView} />

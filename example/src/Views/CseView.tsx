@@ -88,7 +88,7 @@ const CseView = ({ navigation, route }: CSEScreenProps) => {
               maxLength={2}
               onChangeText={setExpiryMonth}
             />
-            <Text style={Styles.centeredText}> / </Text>
+            <Text style={Styles.slash}>{`/`}</Text>
             <TextInput
               inputMode={'numeric'}
               placeholder="YYYY"

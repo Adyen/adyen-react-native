@@ -16,14 +16,16 @@ const TopView = () => {
 
   return (
     <View>
-      {paymentMethods ? (
+      {!paymentMethods ? (
         <View style={Styles.horizontalContent}>
           <Text>{`${config.amount?.value ?? 'N/A'} ${
             config.amount?.currency ?? 'N/A'
           }`}</Text>
           <Text>
-            Country:{' '}
-            {config.countryCode ? getFlagEmoji(config.countryCode) : 'N/A'}
+            Country:
+            {config.countryCode
+              ? ` ${getFlagEmoji(config.countryCode)}`
+              : 'N/A'}
           </Text>
         </View>
       ) : (
