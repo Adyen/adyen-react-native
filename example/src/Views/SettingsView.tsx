@@ -9,57 +9,57 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import { SettingsScreenProps } from '../@types/navigation';
+import { useNavigation } from '@react-navigation/native';
+import { TextInputProps } from 'react-native/Libraries/Components/TextInput/TextInput';
+import { Configuration } from '@adyen/react-native';
+import styles from '../Utilities/Styles';
 
-const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
+type FormTextInputProps = {
+  title: string;
+} & TextInputProps;
+const FormTextInput = (props: FormTextInputProps) => {
   const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={Styles.item}>
-      <Text style={Styles.itemTitle}>{title}</Text>
+      <Text style={Styles.itemTitle}>{props.title}</Text>
       <TextInput
-        {...rest} // Inherit any props passed to it; e.g., multiline, numberOfLines below
+        {...props}
         editable
         maxLength={40}
         placeholder=""
-        value={value}
-        onChangeText={onChangeText}
         style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
       />
     </View>
   );
 };
 
-const SettingFormView = ({ navigation: { goBack } }) => {
+const SettingFormView = () => {
+  const navigation = useNavigation();
   const { config, refreshPaymentMethods } = usePaymentMethods();
 
   const [countryCode, setCountryCode] = useState(config.countryCode);
-  const [amount, setAmount] = useState(config.amount.value);
-  const [currency, setCurrency] = useState(config.amount.currency);
-  const [merchantAccount, setMerchantAccount] = useState(
-    config.merchantAccount
-  );
-  const [shopperLocale, setShopperLocale] = useState(config.shopperLocale);
+  const [amount, setAmount] = useState(config.amount?.value ?? 0);
+  const [currency, setCurrency] = useState(config.amount?.currency ?? 'EUR');
 
   const handleOnPress = useCallback(() => {
-    const newConfiguration = {
+    const newConfiguration: Configuration = {
       ...config,
       countryCode: countryCode,
       amount: {
         currency: currency,
         value: amount,
       },
-      merchantAccount: merchantAccount,
-      shopperLocale: shopperLocale,
     };
     refreshPaymentMethods(newConfiguration);
-    goBack();
+    navigation.goBack();
   }, [
+    config,
     countryCode,
     currency,
     amount,
-    merchantAccount,
-    shopperLocale,
     refreshPaymentMethods,
-    config,
+    navigation,
   ]);
 
   return (
@@ -76,28 +76,22 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       />
       <FormTextInput
         title="Amount"
-        value={amount.toString()}
-        onChangeText={setAmount}
+        value={amount?.toString()}
+        inputMode={'numeric'}
+        onChangeText={text => setAmount(Number(text))}
       />
-      <FormTextInput
-        title="Merchant Account"
-        value={merchantAccount}
-        onChangeText={setMerchantAccount}
-      />
-      <FormTextInput
-        title="Shopper locale"
-        value={shopperLocale}
-        onChangeText={setShopperLocale}
-      />
-      <Button title="Refresh payment methods" onPress={handleOnPress} />
+
+      <View style={Styles.centeredButton}>
+        <Button title="Refresh payment methods" onPress={handleOnPress} />
+      </View>
     </View>
   );
 };
 
-const SettingView = ({ navigation }) => {
+const SettingView = ({ navigation, route }: SettingsScreenProps) => {
   return (
     <SafeAreaView style={Styles.page}>
-      <SettingFormView navigation={navigation} />
+      <SettingFormView />
     </SafeAreaView>
   );
 };

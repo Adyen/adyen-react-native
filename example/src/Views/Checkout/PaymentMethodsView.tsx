@@ -1,7 +1,4 @@
-// @ts-check
-
 import React, { useCallback } from 'react';
-// @ts-ignore
 import { useAdyenCheckout } from '@adyen/react-native';
 import { Button, View, Platform } from 'react-native';
 import Styles from '../../Utilities/Styles';
@@ -9,27 +6,21 @@ import Styles from '../../Utilities/Styles';
 const PaymentMethods = () => {
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
 
-  const platformSpecificPayment =
-    Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
-  const platformSpecificType = Platform.OS === 'ios' ? 'applepay' : 'googlepay'; // In some cases 'paywithgoogle' can be in use. Check paymentMethods response first.
-
   const isAvailable = useCallback(
-    (/** @type {string} */ type) => {
+    (type: string) => {
       if (!paymentMethodsResponse) {
         return false;
       }
       const { paymentMethods } = paymentMethodsResponse;
       return (
         paymentMethods.length > 0 &&
-        paymentMethods.some(
-          (pm) => pm.type.toLowerCase() === type.toLowerCase()
-        )
+        paymentMethods.some(pm => pm.type.toLowerCase() === type.toLowerCase())
       );
     },
-    [paymentMethodsResponse]
+    [paymentMethodsResponse],
   );
 
-  const isNotReady = paymentMethodsResponse == undefined;
+  const isNotReady = paymentMethodsResponse === undefined;
 
   return (
     <View style={[Styles.content]}>
@@ -68,13 +59,25 @@ const PaymentMethods = () => {
           start('klarna');
         }}
       />
-      <Button
-        title={'Open ' + platformSpecificPayment}
-        disabled={isNotReady || !isAvailable(platformSpecificType)}
-        onPress={() => {
-          start(platformSpecificType);
-        }}
-      />
+      {Platform.OS !== 'android' && (
+        <Button
+          title={'Open Apple Pay'}
+          disabled={isNotReady || !isAvailable('applepay')}
+          onPress={() => {
+            start('applepay');
+          }}
+        />
+      )}
+      {/* In some cases 'paywithgoogle' can be in use. Check paymentMethods response first. */}
+      {Platform.OS !== 'android' && (
+        <Button
+          title={'Open Google Pay'}
+          disabled={isNotReady || !isAvailable('googlepay')}
+          onPress={() => {
+            start('googlepay');
+          }}
+        />
+      )}
     </View>
   );
 };

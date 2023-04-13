@@ -1,16 +1,19 @@
-// @ts-check
-
-import { LogBox } from 'react-native';
-import { ENVIRONMENT, CHANNEL, DEVICE_LOCALE } from '../Configuration';
-
-LogBox.ignoreLogs(['Require cycle:']);
+import {
+  ENVIRONMENT,
+  CHANNEL,
+  DEVICE_LOCALE,
+  MERCHANT_ACCOUNT,
+} from '../Configuration';
+import { Configuration, PaymentMethodData } from '@adyen/react-native';
 
 class ApiClient {
-  static payments(data, configuration) {
+  static payments(data: PaymentMethodData, config: Configuration) {
     const body = {
       ...data,
-      ...parseConfig(configuration),
-      ...serverConfiguration,
+      amount: config.amount,
+      reference: serverConfiguration.reference,
+      channel: serverConfiguration.channel,
+      merchantAccount: MERCHANT_ACCOUNT,
       additionalData: { allow3DS2: true },
       lineItems: [
         {
@@ -41,14 +44,13 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
   }
 
-  static paymentDetails = (data) => {
+  static paymentDetails = (data: PaymentMethodData) => {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
-  static paymentMethods = (configuration) => {
+  static paymentMethods = () => {
     const body = {
-      ...parseConfig(configuration),
-      ...serverConfiguration,
+      merchantAccount: MERCHANT_ACCOUNT,
     };
 
     console.log('Fetching payment methods');
@@ -56,7 +58,7 @@ class ApiClient {
   };
 
   /** @private */
-  static makeRequest = async (url, body) => {
+  static makeRequest = async (url: string, body: unknown) => {
     const request = new Request(url, {
       method: 'POST',
       headers: {
@@ -68,7 +70,9 @@ class ApiClient {
 
     const response = await fetch(request);
     const payload = await response.json();
-    if (response.ok) return payload;
+    if (response.ok) {
+      return payload;
+    }
     throw new Error(`Network Error ${response.status}:
           ${payload.message || 'Unknown error'}`);
   };
@@ -82,15 +86,3 @@ const serverConfiguration = {
   reference: 'React Native',
   shopperLocale: DEVICE_LOCALE,
 };
-
-const parseConfig = ({
-  merchantAccount,
-  countryCode,
-  shopperLocale,
-  amount,
-}) => ({
-  merchantAccount,
-  countryCode,
-  shopperLocale,
-  amount,
-});

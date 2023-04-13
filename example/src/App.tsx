@@ -1,11 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
 import React from 'react';
 import {
   NavigationContainer,
@@ -21,23 +13,23 @@ import SettingView from './Views/SettingsView';
 import Result from './Views/ResultView';
 import CheckoutView from './Views/Checkout/CheckoutView';
 import Home from './Views/HomeView';
+import { RootStackParamList } from './@types/navigation';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
     <PaymentMethodsProvider
-      onError={(error) => {
+      onError={error => {
         Alert.alert('Payment Methods', error.message || 'Error');
-      }}
-    >
+      }}>
       <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack.Navigator>
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen
-            name="CheckoutPage"
+            name="Checkout"
             component={CheckoutView}
             options={({ navigation }) => ({
               title: 'Adyen React Native',
@@ -51,7 +43,7 @@ const App = () => {
           />
           <Stack.Screen name="Settings" component={SettingView} />
           <Stack.Screen name="Result" component={Result} />
-          <Stack.Screen name="Clientside Encryption" component={CseView} />
+          <Stack.Screen name="CSE" component={CseView} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaymentMethodsProvider>

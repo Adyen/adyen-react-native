@@ -1,4 +1,6 @@
 import { Platform, NativeModules } from 'react-native';
+import { Configuration } from '@adyen/react-native';
+
 export const DEVICE_LOCALE = (
   Platform.OS === 'ios'
     ? NativeModules.SettingsManager.settings.AppleLocale ||
@@ -6,12 +8,10 @@ export const DEVICE_LOCALE = (
     : NativeModules.I18nManager.localeIdentifier
 ).replace('_', '-');
 
-export const CHANNEL = Platform.select({
-  ios: () => 'iOS',
-  android: () => 'Android',
-})();
+export const CHANNEL = Platform.OS === 'android' ? 'Android' : 'iOS';
+export const MERCHANT_ACCOUNT = '{YOUR_MERCHANT_ACCOUNT}';
 
-export const DEFAULT_CONFIGURATION = {
+export const DEFAULT_CONFIGURATION: Configuration = {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
@@ -19,7 +19,6 @@ export const DEFAULT_CONFIGURATION = {
     currency: 'EUR',
     value: 1000, // The amount value in minor units.
   },
-  merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   returnUrl: 'myapp://payment', // Only used for iOS
   dropin: {
     skipListWhenSinglePaymentMethod: true,
@@ -27,7 +26,7 @@ export const DEFAULT_CONFIGURATION = {
   },
   card: {
     holderNameRequired: true,
-    addressVisibility: `postalCode`,
+    addressVisibility: 'postalCode',
     // showStorePaymentField : false,
     // hideCvcStoredCard: true,
     // hideCvc: true,
@@ -38,9 +37,6 @@ export const DEFAULT_CONFIGURATION = {
     //allowOnboarding: true
   },
   googlepay: {},
-  style: {
-    // TODO: add styling
-  },
 };
 
 // For test purposes only! Do not call Adyen API from your mobile app on LIVE.

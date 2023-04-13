@@ -8,9 +8,9 @@ const Styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'stretch',
   },
   horizontalContent: {
+    alignItems: 'center',
     padding: 16,
     justifyContent: 'space-around',
     flexDirection: 'row',
@@ -30,6 +30,11 @@ const Styles = StyleSheet.create({
     backgroundColor: 'lightgrey',
     padding: 8,
     borderRadius: 8,
+  },
+  centeredText: { textAlign: 'center' },
+  centeredButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
