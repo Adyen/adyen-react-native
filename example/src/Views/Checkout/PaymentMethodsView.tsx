@@ -1,84 +1,63 @@
 import React, { useCallback } from 'react';
 import { useAdyenCheckout } from '@adyen/react-native';
-import { Button, View, Platform } from 'react-native';
+import { Button, View, Platform, ScrollView } from 'react-native';
 import Styles from '../../Utilities/Styles';
 
 const PaymentMethods = () => {
-  const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
+  const { start, paymentMethods } = useAdyenCheckout();
 
   const isAvailable = useCallback(
     (type: string) => {
-      if (!paymentMethodsResponse) {
+      if (!paymentMethods) {
         return false;
       }
-      const { paymentMethods } = paymentMethodsResponse;
       return (
-        paymentMethods.length > 0 &&
-        paymentMethods.some(pm => pm.type.toLowerCase() === type.toLowerCase())
+        paymentMethods &&
+        paymentMethods.paymentMethods.some(
+          pm => pm.type.toLowerCase() === type.toLowerCase(),
+        )
       );
     },
-    [paymentMethodsResponse],
+    [paymentMethods],
   );
 
-  const isNotReady = paymentMethodsResponse === undefined;
+  const isNotReady = paymentMethods === undefined;
 
   return (
-    <View style={[Styles.content]}>
-      <Button
-        title="Open DropIn"
-        disabled={isNotReady}
-        onPress={() => {
-          start('dropin');
-        }}
-      />
-      <Button
-        title="Open Card Component"
-        disabled={isNotReady}
-        onPress={() => {
-          start('scheme');
-        }}
-      />
-      <Button
-        title="Open iDeal"
-        disabled={isNotReady || !isAvailable('ideal')}
-        onPress={() => {
-          start('ideal');
-        }}
-      />
-      <Button
-        title="Open SEPA"
-        disabled={isNotReady || !isAvailable('sepaDirectDebit')}
-        onPress={() => {
-          start('sepaDirectDebit');
-        }}
-      />
-      <Button
-        title="Open Klarna"
-        disabled={isNotReady || !isAvailable('klarna')}
-        onPress={() => {
-          start('klarna');
-        }}
-      />
-      {Platform.OS !== 'android' && (
-        <Button
-          title={'Open Apple Pay'}
-          disabled={isNotReady || !isAvailable('applepay')}
-          onPress={() => {
-            start('applepay');
-          }}
-        />
-      )}
-      {/* In some cases 'paywithgoogle' can be in use. Check paymentMethods response first. */}
-      {Platform.OS !== 'android' && (
-        <Button
-          title={'Open Google Pay'}
-          disabled={isNotReady || !isAvailable('googlepay')}
-          onPress={() => {
-            start('googlepay');
-          }}
-        />
-      )}
-    </View>
+    <ScrollView>
+      <View style={Styles.content}>
+        <View style={Styles.item}>
+          <Button
+            title="dropin"
+            disabled={isNotReady}
+            onPress={() => {
+              start('dropin');
+            }}
+          />
+        </View>
+
+        {paymentMethods?.paymentMethods.map((p, i) => {
+          return (
+            <View key={i} style={Styles.item}>
+              <Button
+                title={`${p.type}`}
+                disabled={
+                  isNotReady ||
+                  !isAvailable(p.type) ||
+                  (Platform.OS !== 'ios' && p.type === 'applepay') ||
+                  (Platform.OS !== 'android' && p.type === 'googlepay') ||
+                  /// In some cases 'paywithgoogle' can be in use. Check paymentMethods response first.
+                  (Platform.OS !== 'android' && p.type === 'paywithgoogle')
+                }
+                onPress={() => {
+                  start(p.type);
+                }}
+              />
+            </View>
+          );
+        })}
+      </View>
+    </ScrollView>
   );
 };
 

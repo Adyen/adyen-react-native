@@ -31,11 +31,18 @@ const Styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
   },
+  textLight: {
+    color: 'lightgrey',
+  },
+  textDark: {
+    color: 'grey',
+  },
   slash: { paddingHorizontal: 4, textAlign: 'center' },
   centeredText: { textAlign: 'center' },
   centeredButton: {
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 8,
   },
 });
 

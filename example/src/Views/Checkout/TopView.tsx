@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, useColorScheme } from 'react-native';
 import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
 import Styles from '../../Utilities/Styles';
 
@@ -12,25 +12,29 @@ function getFlagEmoji(countryCode: string) {
 }
 
 const TopView = () => {
+  const isDarkMode = useColorScheme() === 'dark';
   const { config, paymentMethods } = usePaymentMethods();
 
   return (
     <View>
-      {!paymentMethods ? (
+      {paymentMethods && (
         <View style={Styles.horizontalContent}>
-          <Text>{`${config.amount?.value ?? 'N/A'} ${
-            config.amount?.currency ?? 'N/A'
-          }`}</Text>
-          <Text>
+          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>{`${
+            config.amount?.value ?? 'N/A'
+          } ${config.amount?.currency ?? 'N/A'}`}</Text>
+          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
             Country:
             {config.countryCode
               ? ` ${getFlagEmoji(config.countryCode)}`
               : 'N/A'}
           </Text>
         </View>
-      ) : (
+      )}
+      {!paymentMethods && (
         <View style={Styles.horizontalContent}>
-          <Text>No PaymentMethods</Text>
+          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+            No PaymentMethods
+          </Text>
         </View>
       )}
     </View>
