@@ -36,9 +36,9 @@ const PaymentMethods = () => {
           />
         </View>
 
-        {paymentMethods?.paymentMethods.map((p, i) => {
+        {paymentMethods?.paymentMethods.map(p => {
           return (
-            <View key={i} style={Styles.item}>
+            <View key={`${p.type}`} style={Styles.item}>
               <Button
                 title={`${p.type}`}
                 disabled={
