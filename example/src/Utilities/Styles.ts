@@ -22,11 +22,13 @@ const Styles = StyleSheet.create({
     paddingLeft: 4,
   },
   textInputDark: {
+    color: 'white',
     backgroundColor: 'grey',
     padding: 8,
     borderRadius: 8,
   },
   textInputLight: {
+    color: 'black',
     backgroundColor: 'lightgrey',
     padding: 8,
     borderRadius: 8,

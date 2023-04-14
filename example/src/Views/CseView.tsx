@@ -6,6 +6,7 @@ import {
   Text,
   View,
   Alert,
+  useColorScheme,
 } from 'react-native';
 import { AdyenCSE } from '@adyen/react-native';
 import { ENVIRONMENT } from '../Configuration';
@@ -17,6 +18,7 @@ import { usePaymentMethods } from '../Utilities/PaymentMethodsProvider';
 const PUBLIC_KEY = ENVIRONMENT.publicKey;
 
 const CseView = ({ navigation, route }: CSEScreenProps) => {
+  const isDarkMode = useColorScheme() === 'dark';
   const { config } = usePaymentMethods();
 
   const [number, setNumber] = useState('');
@@ -75,6 +77,7 @@ const CseView = ({ navigation, route }: CSEScreenProps) => {
     <SafeAreaView style={Styles.page}>
       <View style={Styles.content}>
         <TextInput
+          style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
           inputMode={'numeric'}
           placeholder={'1234 5678 9012 3456'}
           maxLength={19}
@@ -83,6 +86,7 @@ const CseView = ({ navigation, route }: CSEScreenProps) => {
         <View style={Styles.horizontalContent}>
           <View style={Styles.horizontalContent}>
             <TextInput
+              style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
               inputMode={'numeric'}
               placeholder="MM"
               maxLength={2}
@@ -90,13 +94,20 @@ const CseView = ({ navigation, route }: CSEScreenProps) => {
             />
             <Text style={Styles.slash}>{`/`}</Text>
             <TextInput
+              style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
               inputMode={'numeric'}
               placeholder="YYYY"
               maxLength={4}
               onChangeText={setExpiryYear}
             />
           </View>
-          <TextInput placeholder="123" maxLength={4} onChangeText={setCvv} />
+          <TextInput
+            style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
+            inputMode={'numeric'}
+            placeholder="123"
+            maxLength={4}
+            onChangeText={setCvv}
+          />
         </View>
 
         <Button onPress={() => tryEncryptCard()} title="Pay" />
