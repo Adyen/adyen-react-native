@@ -8,7 +8,6 @@ const Styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'stretch',
   },
   horizontalContent: {
     padding: 16,

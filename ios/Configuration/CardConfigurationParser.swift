@@ -15,8 +15,8 @@ public struct CardConfigurationParser {
             self.dict = [:]
             return
         }
-        if let configuration = configuration[CardKeys.rootKey] as? [String: Any] {
-            self.dict = configuration
+        if let configurationNode = configuration[CardKeys.rootKey] as? [String: Any] {
+            self.dict = configurationNode
         } else {
             self.dict = configuration
         }

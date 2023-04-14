@@ -15,8 +15,8 @@ public struct DropInConfigurationParser {
             self.dict = [:]
             return
         }
-        if let configuration = configuration[DropInKeys.rootKey] as? [String: Any] {
-            self.dict = configuration
+        if let configurationNode = configuration[DropInKeys.rootKey] as? [String: Any] {
+            self.dict = configurationNode
         } else {
             self.dict = configuration
         }

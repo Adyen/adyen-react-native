@@ -24,7 +24,7 @@ const PaymentMethodsProvider = (props) => {
       try {
         const paymentMethods = await ApiClient.paymentMethods(newConfig);
         setPaymentMethods(paymentMethods);
-        setConfig(config);
+        setConfig(newConfig);
       } catch (error) {
         props.onError(error);
       }
