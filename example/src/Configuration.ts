@@ -14,6 +14,7 @@ export const MERCHANT_ACCOUNT = '{YOUR_MERCHANT_ACCOUNT}';
 export const DEFAULT_CONFIGURATION: Configuration = {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
+  shopperLocale: 'nl-NL',
   countryCode: 'NL',
   amount: {
     currency: 'EUR',

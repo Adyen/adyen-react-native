@@ -51,31 +51,33 @@ For Android, this value is automatically overridden by `AdyenCheckout`.
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
+  shopperLocale: 'nl-NL',
   amount: {
     currency: 'EUR',
     value: 1000,
   },
-  merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   returnUrl: 'myapp://',
   dropin: {
     skipListWhenSinglePaymentMethod: true,
-    showPreselectedStoredPaymentMethod: false
+    showPreselectedStoredPaymentMethod: false,
   },
   card: {
     holderNameRequired: true,
-    addressVisibility: `postalCode`,
+    addressVisibility: 'postalCode',
     showStorePaymentField : false,
     hideCvcStoredCard: true,
-    hideCvc: true
+    hideCvc: true,
   },
   applepay: {
-    merchantID: '{YOUR_APPLE_MERCHANT_ID}',
+    merchantID: '{YOUR_APPLE_MERCHANT_ID}', 
     merchantName: '{YOUR_MERCHANT_NAME}',
-    allowOnboarding: true
+    allowOnboarding: true,
   },
-  googlepay: {},
-  style: {
-    // Work in progress
-  },
+  googlepay: {
+    merchantAccount: '{YOUR_GOOGLE_MERCHANT_ID}',
+    allowedCardNetworks: ['AMEX', 'MASTERCARD', 'VISA'],
+    allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
+    totalPriceStatus: 'FINAL',
+  }
 }
 ```

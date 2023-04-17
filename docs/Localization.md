@@ -31,31 +31,31 @@ Add new locales in Xcode and Android Studio respectively. Provide a translation 
 
 List of currently avaialble locales:
 
-| Language | Locale code | Fallback |
-| --- | --- | :---: |
-| Arabic - International | ar | |
-| Chinese - Simplified | zh-CN | |
-| Chinese - Traditional | zh-TW | |
-| Croatian | hr-HR | |
-| Czech | cs-CZ | |
-| Danish | da-DK | |
-| Dutch | nl-NL | |
-| English - US | en-US | ✱ |
-| Finnish | fi-FI | |
-| French | fr-FR | |
-| German | de-DE | |
-| Greek | el-GR | |
-| Hungarian | hu-HU | |
-| Italian | it-IT | |
-| Japanese | ja-JP | |
-| Korean | ko-KR | |
-| Norwegian | no-NO | |
-| Polish | pl-PL | |
-| Portuguese - Brazil | pt-BR | |
-| Portuguese - Portugal | pt-PT | |
-| Romanian | ro-RO | |
-| Russian | ru-RU | |
-| Slovak | sk-SK | |
-| Slovenian | sl-SI | |
-| Spanish | es-ES | |
-| Swedish | sv-SE | |
+| Language               | Locale code | Fallback |
+|------------------------|-------------|:--------:|
+| Arabic - International | ar          |          |
+| Chinese - Simplified   | zh-CN       |          |
+| Chinese - Traditional  | zh-TW       |          |
+| Croatian               | hr-HR       |          |
+| Czech                  | cs-CZ       |          |
+| Danish                 | da-DK       |          |
+| Dutch                  | nl-NL       |          |
+| English - US           | en-US       |    ✱     |
+| Finnish                | fi-FI       |          |
+| French                 | fr-FR       |          |
+| German                 | de-DE       |          |
+| Greek                  | el-GR       |          |
+| Hungarian              | hu-HU       |          |
+| Italian                | it-IT       |          |
+| Japanese               | ja-JP       |          |
+| Korean                 | ko-KR       |          |
+| Norwegian              | no-NO       |          |
+| Polish                 | pl-PL       |          |
+| Portuguese - Brazil    | pt-BR       |          |
+| Portuguese - Portugal  | pt-PT       |          |
+| Romanian               | ro-RO       |          |
+| Russian                | ru-RU       |          |
+| Slovak                 | sk-SK       |          |
+| Slovenian              | sl-SI       |          |
+| Spanish                | es-ES       |          |
+| Swedish                | sv-SE       |          |

@@ -16,6 +16,9 @@ export interface Configuration {
   /** Selected environment */
   environment: Environment;
 
+  /** The shopper's locale code. A valid value is an ISO locale code (e.g. 'nl-NL'). */
+  shopperLocale: string;
+
   /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
   clientKey: string;
 
