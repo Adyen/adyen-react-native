@@ -4,13 +4,13 @@ import React, { useEffect, useCallback } from 'react';
 import { SafeAreaView, Alert } from 'react-native';
 import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
+import { useAppContext } from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
 
 const CheckoutView = ({ navigation }) => {
-  const { config, paymentMethods, refreshPaymentMethods } = usePaymentMethods();
+  const { config, paymentMethods, refreshPaymentMethods } = useAppContext();
 
   useEffect(() => {
     refreshPaymentMethods();

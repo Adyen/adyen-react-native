@@ -15,12 +15,12 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { Button, Alert, useColorScheme } from 'react-native';
-import PaymentMethodsProvider from './Utilities/PaymentMethodsProvider';
 import CseView from './Views/CseView';
 import SettingView from './Views/SettingsView';
 import Result from './Views/ResultView';
 import CheckoutView from './Views/Checkout/CheckoutView';
 import Home from './Views/HomeView';
+import AppContextProvider from './Utilities/AppContext';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,7 +28,7 @@ const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <PaymentMethodsProvider
+    <AppContextProvider
       onError={(error) => {
         Alert.alert('Payment Methods', error.message || 'Error');
       }}
@@ -54,7 +54,7 @@ const App = () => {
           <Stack.Screen name="Clientside Encryption" component={CseView} />
         </Stack.Navigator>
       </NavigationContainer>
-    </PaymentMethodsProvider>
+    </AppContextProvider>
   );
 };
 

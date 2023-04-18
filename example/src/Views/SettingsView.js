@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { usePaymentMethods } from '../Utilities/PaymentMethodsProvider';
+import { useAppContext } from '../Utilities/AppContext';
 import Styles from '../Utilities/Styles';
 import {
   Button,
@@ -29,7 +29,7 @@ const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
 };
 
 const SettingFormView = ({ navigation: { goBack } }) => {
-  const { config, refreshPaymentMethods } = usePaymentMethods();
+  const { config, refreshPaymentMethods } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(config.countryCode);
   const [amount, setAmount] = useState(config.amount.value);
