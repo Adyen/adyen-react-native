@@ -52,18 +52,6 @@ const CseView = () => {
     }
   }, []);
 
-  const tryEncryptBin = useCallback(async () => {
-    try {
-      const encryptBin = await AdyenCSE.encryptBin(
-        '5454 5454 5454 5454',
-        PUBLIC_KEY
-      );
-      console.log(encryptBin);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
   return (
     <SafeAreaView style={Styles.page}>
       <View style={Styles.content}>
