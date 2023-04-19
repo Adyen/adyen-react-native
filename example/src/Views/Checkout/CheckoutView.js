@@ -8,9 +8,11 @@ import { useAppContext } from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
+import { ENVIRONMENT } from '../../Configuration';
 
 const CheckoutView = ({ navigation }) => {
-  const { config, paymentMethods, refreshPaymentMethods } = useAppContext();
+  const { configuration, paymentMethods, refreshPaymentMethods } =
+    useAppContext();
 
   useEffect(() => {
     refreshPaymentMethods();
@@ -24,7 +26,7 @@ const CheckoutView = ({ navigation }) => {
       console.log(`didSubmit: ${data.paymentMethod.type}`);
       try {
         /** @type {import('@adyen/react-native').PaymentResponse} */
-        const result = await ApiClient.payments(data, config);
+        const result = await ApiClient.payments(data, configuration);
         if (result.action) {
           nativeComponent.handle(result.action);
         } else {
@@ -34,7 +36,7 @@ const CheckoutView = ({ navigation }) => {
         processError(error, nativeComponent);
       }
     },
-    [config]
+    [configuration]
   );
 
   const didProvide = useCallback(
@@ -114,11 +116,14 @@ const CheckoutView = ({ navigation }) => {
         config={
           /** @type {import('@adyen/react-native').Configuration} */
           {
-            clientKey: config.clientKey,
-            environment: 'test',
-            returnUrl: config.returnUrl,
-            amount: { value: 1000, currency: 'EUR' },
-            countryCode: 'NL',
+            clientKey: ENVIRONMENT.clientKey,
+            environment: ENVIRONMENT.environment,
+            returnUrl: ENVIRONMENT.returnUrl,
+            amount: {
+              value: configuration.amount,
+              currency: configuration.currency,
+            },
+            countryCode: configuration.countryCode,
           }
         }
         paymentMethods={paymentMethods}

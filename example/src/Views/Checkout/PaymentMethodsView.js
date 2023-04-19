@@ -41,7 +41,7 @@ const PaymentMethods = () => {
       />
       <Button
         title="Open Card Component"
-        disabled={isNotReady}
+        disabled={isNotReady || !isAvailable('scheme')}
         onPress={() => {
           start('scheme');
         }}

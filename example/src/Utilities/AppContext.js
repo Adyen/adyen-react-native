@@ -2,12 +2,11 @@
 
 import React, { useContext, useState, useMemo, createContext } from 'react';
 import ApiClient from './APIClient';
-import { DEFAULT_CONFIGURATION } from '../Configuration';
 
 export const AppContext = createContext({
-  config: DEFAULT_CONFIGURATION,
+  configuration: undefined,
   paymentMethods: undefined,
-  refreshPaymentMethods: (config) => {},
+  refreshPaymentMethods: (configuration) => {},
 });
 
 export const useAppContext = () => {
@@ -19,14 +18,15 @@ export const useAppContext = () => {
 };
 
 const AppContextProvider = (props) => {
-  const [config, setConfig] = useState(DEFAULT_CONFIGURATION);
+  const [config, setConfig] = useState(props.configuration);
   const [paymentMethods, setPaymentMethods] = useState(undefined);
 
-  const refresh = async (config) => {
+  const refresh = async (newConfig = config) => {
     try {
-      const paymentMethods = await ApiClient.paymentMethods(config);
+      console.debug(`Refreshing config: ${JSON.stringify(newConfig)}`);
+      const paymentMethods = await ApiClient.paymentMethods(newConfig);
       setPaymentMethods(paymentMethods);
-      setConfig(config);
+      setConfig(newConfig);
     } catch (error) {
       props.onError(error);
     }
@@ -34,7 +34,7 @@ const AppContextProvider = (props) => {
 
   const appState = useMemo(
     () => ({
-      config: config,
+      configuration: config,
       paymentMethods: paymentMethods,
       refreshPaymentMethods: refresh,
     }),

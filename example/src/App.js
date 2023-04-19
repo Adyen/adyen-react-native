@@ -21,6 +21,7 @@ import Result from './Views/ResultView';
 import CheckoutView from './Views/Checkout/CheckoutView';
 import Home from './Views/HomeView';
 import AppContextProvider from './Utilities/AppContext';
+import { DEFAULT_CONFIGURATION } from './Configuration';
 
 const Stack = createNativeStackNavigator();
 
@@ -29,8 +30,9 @@ const App = () => {
 
   return (
     <AppContextProvider
+      configuration={DEFAULT_CONFIGURATION}
       onError={(error) => {
-        Alert.alert('Payment Methods', error.message || 'Error');
+        Alert.alert('App error', error.message || 'Error');
       }}
     >
       <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>

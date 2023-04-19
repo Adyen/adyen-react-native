@@ -12,14 +12,14 @@ function getFlagEmoji(countryCode) {
 }
 
 const TopView = () => {
-  const { config, paymentMethods } = useAppContext();
+  const { configuration, paymentMethods } = useAppContext();
 
   return (
     <View>
       {paymentMethods ? (
         <View style={Styles.horizontalContent}>
-          <Text>{`${config.amount.value} ${config.amount.currency}`}</Text>
-          <Text>Country: {getFlagEmoji(config.countryCode)}</Text>
+          <Text>{`${configuration.amount} ${configuration.currency}`}</Text>
+          <Text>Country: {getFlagEmoji(configuration.countryCode)}</Text>
         </View>
       ) : (
         <View style={Styles.horizontalContent}>

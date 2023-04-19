@@ -1,3 +1,5 @@
+// @ts-check
+
 import React, { useCallback, useState } from 'react';
 import { useAppContext } from '../Utilities/AppContext';
 import Styles from '../Utilities/Styles';
@@ -29,25 +31,29 @@ const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
 };
 
 const SettingFormView = ({ navigation: { goBack } }) => {
-  const { config, refreshPaymentMethods } = useAppContext();
+  const { configuration, refreshPaymentMethods } = useAppContext();
 
-  const [countryCode, setCountryCode] = useState(config.countryCode);
-  const [amount, setAmount] = useState(config.amount.value);
-  const [currency, setCurrency] = useState(config.amount.currency);
+  const [countryCode, setCountryCode] = useState(configuration.countryCode);
+  const [amount, setAmount] = useState(configuration.amount);
+  const [currency, setCurrency] = useState(configuration.currency);
+  const [merchantName, setMerchantName] = useState(configuration.merchantName);
   const [merchantAccount, setMerchantAccount] = useState(
-    config.merchantAccount
+    configuration.merchantAccount
   );
-  const [shopperLocale, setShopperLocale] = useState(config.shopperLocale);
+  const [shopperReference, setShopperReference] = useState(
+    configuration.shopperReference
+  );
+  const [shopperLocale, setShopperLocale] = useState(
+    configuration.shopperLocale
+  );
 
   const handleOnPress = useCallback(() => {
     const newConfiguration = {
-      ...config,
       countryCode: countryCode,
-      amount: {
-        currency: currency,
-        value: amount,
-      },
+      amount: amount,
+      currency: currency,
       merchantAccount: merchantAccount,
+      merchantName: merchantName,
       shopperLocale: shopperLocale,
     };
     refreshPaymentMethods(newConfiguration);
@@ -58,8 +64,9 @@ const SettingFormView = ({ navigation: { goBack } }) => {
     amount,
     merchantAccount,
     shopperLocale,
+    merchantName,
     refreshPaymentMethods,
-    config,
+    configuration,
   ]);
 
   return (
@@ -85,8 +92,18 @@ const SettingFormView = ({ navigation: { goBack } }) => {
         onChangeText={setMerchantAccount}
       />
       <FormTextInput
+        title="Merchant Name"
+        value={merchantName}
+        onChangeText={setMerchantName}
+      />
+      <FormTextInput
         title="Shopper locale"
         value={shopperLocale}
+        onChangeText={setShopperLocale}
+      />
+      <FormTextInput
+        title="Shopper Reference"
+        value={shopperReference}
         onChangeText={setShopperLocale}
       />
       <Button title="Refresh payment methods" onPress={handleOnPress} />
