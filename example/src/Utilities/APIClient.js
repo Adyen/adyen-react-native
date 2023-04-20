@@ -7,6 +7,7 @@ LogBox.ignoreLogs(['Require cycle:']);
 
 class ApiClient {
   static payments(data, configuration) {
+    console.debug(JSON.stringify(data));
     const body = {
       ...data,
       ...parseConfig(configuration),
@@ -80,15 +81,21 @@ export default ApiClient;
 
 const serverConfiguration = {
   channel: CHANNEL,
-  shopperLocale: DEVICE_LOCALE,
+  reference: 'React Native',
 };
 
 const parseAmount = ({ amount, currency }) => ({
-  amount: { amount: amount, currency: currency },
+  amount: { value: amount, currency: currency },
 });
 
-const parseConfig = ({ merchantAccount, countryCode, shopperReference }) => ({
+const parseConfig = ({
   merchantAccount,
   countryCode,
   shopperReference,
+  shopperLocale,
+}) => ({
+  merchantAccount,
+  countryCode,
+  shopperReference,
+  shopperLocale: shopperLocale,
 });
