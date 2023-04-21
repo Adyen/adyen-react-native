@@ -13,8 +13,8 @@ internal class BaseModule: RCTEventEmitter {
         
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
-    override func stopObserving() { /* Not listening JS events */ }
-    override func startObserving() { /* Not listening JS events */ }
+    override func stopObserving() { /* No JS events expected */ }
+    override func startObserving() { /* No JS events expected */ }
     override open func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
     internal var currentComponent: Component?

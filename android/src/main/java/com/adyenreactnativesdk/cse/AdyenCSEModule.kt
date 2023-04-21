@@ -8,10 +8,10 @@ import com.facebook.react.bridge.*
 class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
 
     @ReactMethod
-    fun addListener(eventName: String?) { /* Not listening JS events */ }
+    fun addListener(eventName: String?) { /* No JS events expected */ }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { /* Not listening JS events */ }
+    fun removeListeners(count: Int?) { /* No JS events expected */ }
     
     override fun getName() = COMPONENT_NAME
 
