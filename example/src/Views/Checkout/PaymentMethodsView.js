@@ -1,7 +1,6 @@
 // @ts-check
 
 import React, { useCallback } from 'react';
-// @ts-ignore
 import { useAdyenCheckout } from '@adyen/react-native';
 import { Button, View, Platform } from 'react-native';
 import Styles from '../../Utilities/Styles';
@@ -42,7 +41,7 @@ const PaymentMethods = () => {
       />
       <Button
         title="Open Card Component"
-        disabled={isNotReady}
+        disabled={isNotReady || !isAvailable('scheme')}
         onPress={() => {
           start('scheme');
         }}

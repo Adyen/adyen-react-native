@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { usePaymentMethods } from '../../Utilities/PaymentMethodsProvider';
+import { useAppContext } from '../../Utilities/AppContext';
 import Styles from '../../Utilities/Styles';
 
 function getFlagEmoji(countryCode) {
@@ -12,14 +12,14 @@ function getFlagEmoji(countryCode) {
 }
 
 const TopView = () => {
-  const { config, paymentMethods } = usePaymentMethods();
+  const { configuration, paymentMethods } = useAppContext();
 
   return (
     <View>
       {paymentMethods ? (
         <View style={Styles.horizontalContent}>
-          <Text>{`${config.amount.value} ${config.amount.currency}`}</Text>
-          <Text>Country: {getFlagEmoji(config.countryCode)}</Text>
+          <Text>{`${configuration.amount} ${configuration.currency}`}</Text>
+          <Text>Country: {getFlagEmoji(configuration.countryCode)}</Text>
         </View>
       ) : (
         <View style={Styles.horizontalContent}>

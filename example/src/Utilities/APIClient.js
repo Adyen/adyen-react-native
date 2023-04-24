@@ -7,6 +7,7 @@ LogBox.ignoreLogs(['Require cycle:']);
 
 class ApiClient {
   static payments(data, configuration) {
+    console.debug(JSON.stringify(data));
     const body = {
       ...data,
       ...parseConfig(configuration),
@@ -48,22 +49,24 @@ class ApiClient {
   static paymentMethods = (configuration) => {
     const body = {
       ...parseConfig(configuration),
+      ...parseAmount(configuration),
       ...serverConfiguration,
     };
-
-    console.log('Fetching payment methods');
     return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
 
   /** @private */
   static makeRequest = async (url, body) => {
+    const bodyJSON = JSON.stringify(body);
+    console.debug(`Request to: ${url}`);
+    console.debug(bodyJSON);
     const request = new Request(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': ENVIRONMENT.apiKey,
       },
-      body: JSON.stringify(body),
+      body: bodyJSON,
     });
 
     const response = await fetch(request);
@@ -78,19 +81,21 @@ export default ApiClient;
 
 const serverConfiguration = {
   channel: CHANNEL,
-  shopperReference: 'Checkout Shopper',
   reference: 'React Native',
-  shopperLocale: DEVICE_LOCALE,
 };
+
+const parseAmount = ({ amount, currency }) => ({
+  amount: { value: amount, currency: currency },
+});
 
 const parseConfig = ({
   merchantAccount,
   countryCode,
+  shopperReference,
   shopperLocale,
-  amount,
 }) => ({
   merchantAccount,
   countryCode,
-  shopperLocale,
-  amount,
+  shopperReference,
+  shopperLocale: shopperLocale,
 });

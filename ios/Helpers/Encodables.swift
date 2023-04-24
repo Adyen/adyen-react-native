@@ -38,7 +38,8 @@ internal struct EncodablePaymentComponentData: Encodable {
         try container.encodeIfPresent(data.deliveryAddress, forKey: .deliveryAddress)
         try container.encodeIfPresent(data.socialSecurityNumber, forKey: .socialSecurityNumber)
         try container.encodeIfPresent(data.order?.compactOrder, forKey: .order)
-        //      try container.encodeIfPresent(data.installments, forKey: .installments)
+        try container.encodeIfPresent(data.installments, forKey: .installments)
+        try container.encodeIfPresent(data.amount, forKey: .amount)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -53,6 +54,7 @@ internal struct EncodablePaymentComponentData: Encodable {
         case socialSecurityNumber
         case order
         case installments
+        case amount
     }
 }
 

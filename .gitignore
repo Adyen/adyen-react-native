@@ -56,3 +56,6 @@ android/keystores/debug.keystore
 
 # yarn
 example/yarn.lock
+
+# Cocoapods
+Podfile.lock

@@ -12,40 +12,22 @@ export const CHANNEL = Platform.select({
 })();
 
 export const DEFAULT_CONFIGURATION = {
-  environment: 'test',
-  clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
-  amount: {
-    currency: 'EUR',
-    value: 1000, // The amount value in minor units.
-  },
+  currency: 'EUR',
+  amount: 1000, // The amount value in minor units.
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
-  returnUrl: 'myapp://payment', // Only used for iOS
-  dropin: {
-    skipListWhenSinglePaymentMethod: true,
-    // showPreselectedStoredPaymentMethod: false
-  },
-  card: {
-    holderNameRequired: true,
-    addressVisibility: `postalCode`,
-    // showStorePaymentField : false,
-    // hideCvcStoredCard: true,
-    // hideCvc: true,
-  },
-  applepay: {
-    merchantID: '{YOUR_APPLE_MERCHANT_ID}',
-    merchantName: '{YOUR_MERCHANT_NAME}',
-    //allowOnboarding: true
-  },
-  googlepay: {},
-  style: {
-    // TODO: add styling
-  },
+  merchantName: 'MyStore',
+  applepayMerchantID: '{YOUR_APPLE_MERCHANT_ID}',
+  shopperLocale: DEVICE_LOCALE,
+  shopperReference: 'Checkout Shopper',
 };
 
 // For test purposes only! Do not call Adyen API from your mobile app on LIVE.
 export const ENVIRONMENT = {
+  environment: 'test',
   apiKey: '{YOUR_DEMO_SERVER_API_KEY}',
   url: 'https://checkout-test.adyen.com/v67/',
   publicKey: '{YOUR_PUBLIC_KEY}',
+  clientKey: '{YOUR_CLIENT_KEY}',
+  returnUrl: 'myapp://payment', // Only used for iOS
 };

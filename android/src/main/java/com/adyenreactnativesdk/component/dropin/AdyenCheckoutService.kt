@@ -56,9 +56,8 @@ open class AdyenCheckoutService : DropInService(), DropInModuleListener {
     }
 
     override fun onFail(map: ReadableMap?) {
-        val message = map?.getString(MESSAGE_KEY)
-        val description = map?.getString(DESCRIPTION_KEY)
-        sendResult(DropInServiceResult.Error(message, description, true))
+        val message = map?.getString(MESSAGE_KEY) ?: ""
+        sendResult(DropInServiceResult.Finished(message)) // just hiding DropIn
     }
 
     override fun onComplete(message: String) {

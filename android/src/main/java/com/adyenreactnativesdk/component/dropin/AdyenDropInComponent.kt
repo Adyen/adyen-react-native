@@ -34,10 +34,10 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     ReactDropInCallback {
 
     @ReactMethod
-    fun addListener(eventName: String?) { }
+    fun addListener(eventName: String?) { /* No JS events expected */ }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { }
+    fun removeListeners(count: Int?) { /* No JS events expected */ }
     
     override fun getName(): String {
         return COMPONENT_NAME
