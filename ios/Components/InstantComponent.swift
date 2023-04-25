@@ -39,7 +39,8 @@ final internal class InstantComponent: BaseModule {
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
 
-        actionHandler = AdyenActionComponent(apiContext: apiContext)
+        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
+        actionHandler = AdyenActionComponent(apiContext: apiContext, style: style)
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
 
