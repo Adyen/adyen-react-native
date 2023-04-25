@@ -45,9 +45,8 @@ const PaymentMethods = () => {
                   isNotReady ||
                   !isAvailable(p.type) ||
                   (Platform.OS !== 'ios' && p.type === 'applepay') ||
-                  (Platform.OS !== 'android' && p.type === 'googlepay') ||
+                  (Platform.OS !== 'android' && ( p.type === 'googlepay' || p.type === 'paywithgoogle' ))
                   /// In some cases 'paywithgoogle' can be in use. Check paymentMethods response first.
-                  (Platform.OS !== 'android' && p.type === 'paywithgoogle')
                 }
                 onPress={() => {
                   start(p.type);
