@@ -11,6 +11,7 @@ class ApiClient {
     const body = {
       ...data,
       ...parseConfig(configuration),
+      ...parseAmount(configuration),
       ...serverConfiguration,
       additionalData: { allow3DS2: true },
       lineItems: [
