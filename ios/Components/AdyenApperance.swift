@@ -10,7 +10,8 @@ import Adyen
 /// Describes class that provides customization to Adyen UI elements.
 public protocol AdyenAppearanceProvider: AnyObject {
     
-    /// Implement this method to applying style to Drop-In and all components. Uses Drop-In Component Style as ubrella style.
+    /// Implement this method to apply the style to the Drop-In and all components.
+    /// Uses Drop-In Component Style as an umbrella style.
     static func createStyle() -> DropInComponent.Style
     
 }

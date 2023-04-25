@@ -14,7 +14,7 @@
 		4385E204EEF12DE79A7120D7 /* libPods-AdyenExample-AdyenExampleTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 61BB7C82FA499FE3CD77B125 /* libPods-AdyenExample-AdyenExampleTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		B6CB27F7E4011E633F2A25A7 /* libPods-AdyenExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 74FF1EDD8A3337F905F9FF61 /* libPods-AdyenExample.a */; };
-		F5C555F429F6C9F5008E7AA8 /* DropoInApperance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C555F329F6C9F5008E7AA8 /* DropoInApperance.swift */; };
+		F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,7 +45,7 @@
 		A1C8461E16734A59CA0E7714 /* Pods-AdyenExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyenExample.release.xcconfig"; path = "Target Support Files/Pods-AdyenExample/Pods-AdyenExample.release.xcconfig"; sourceTree = "<group>"; };
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F5C555F329F6C9F5008E7AA8 /* DropoInApperance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropoInApperance.swift; sourceTree = "<group>"; };
+		F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdyenAppearance.swift; sourceTree = "<group>"; };
 		F6D60E250285EB5A965E4921 /* Pods-AdyenExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyenExample.debug.xcconfig"; path = "Target Support Files/Pods-AdyenExample/Pods-AdyenExample.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -96,7 +96,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
-				F5C555F329F6C9F5008E7AA8 /* DropoInApperance.swift */,
+				F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */,
 			);
 			name = AdyenExample;
 			sourceTree = "<group>";
@@ -417,7 +417,7 @@
 			files = (
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
-				F5C555F429F6C9F5008E7AA8 /* DropoInApperance.swift in Sources */,
+				F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
