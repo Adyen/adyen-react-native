@@ -10,6 +10,7 @@ const Styles = StyleSheet.create({
     justifyContent: 'center',
   },
   horizontalContent: {
+    alignItems: 'center',
     padding: 16,
     justifyContent: 'space-around',
     flexDirection: 'row',
@@ -21,14 +22,29 @@ const Styles = StyleSheet.create({
     paddingLeft: 4,
   },
   textInputDark: {
+    color: 'white',
     backgroundColor: 'grey',
     padding: 8,
     borderRadius: 8,
   },
   textInputLight: {
+    color: 'black',
     backgroundColor: 'lightgrey',
     padding: 8,
     borderRadius: 8,
+  },
+  textLight: {
+    color: 'black',
+  },
+  textDark: {
+    color: 'white',
+  },
+  slash: { paddingHorizontal: 4, textAlign: 'center' },
+  centeredText: { textAlign: 'center' },
+  centeredButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
   },
 });
 
