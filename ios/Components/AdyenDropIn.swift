@@ -11,7 +11,7 @@ import React
 
 @objc(AdyenDropIn)
 final internal class AdyenDropIn: BaseModule {
-
+    
     private var dropInComponent: DropInComponent?
 
     override func supportedEvents() -> [String]! { super.supportedEvents() }
@@ -51,7 +51,7 @@ final internal class AdyenDropIn: BaseModule {
             }
         }
 
-        let dropInComponentStyle = DropInComponent.Style()
+        let dropInComponentStyle = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         configuration: config,
                                         style: dropInComponentStyle)
