@@ -6,7 +6,7 @@ const Result = ({ route }) => {
   return (
     <SafeAreaView style={Styles.page}>
       <View style={Styles.content}>
-        <Text style={{ textAlign: 'center' }}>{route.params.result}</Text>
+        <Text style={Styles.centeredText}>{route.params.result}</Text>
       </View>
     </SafeAreaView>
   );

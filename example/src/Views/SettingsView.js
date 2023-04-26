@@ -84,6 +84,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       <FormTextInput
         title="Amount"
         value={amount.toString()}
+        inputMode={'numeric'}
         onChangeText={setAmount}
       />
       <FormTextInput
@@ -104,9 +105,11 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       <FormTextInput
         title="Shopper Reference"
         value={shopperReference}
-        onChangeText={setShopperLocale}
+        onChangeText={setShopperReference}
       />
-      <Button title="Refresh payment methods" onPress={handleOnPress} />
+      <View style={Styles.centeredButton}>
+        <Button title="Refresh payment methods" onPress={handleOnPress} />
+      </View>
     </View>
   );
 };

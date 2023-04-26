@@ -24,8 +24,8 @@ const AppContextProvider = (props) => {
   const refresh = async (newConfig = config) => {
     try {
       console.debug(`Refreshing config: ${JSON.stringify(newConfig)}`);
-      const paymentMethods = await ApiClient.paymentMethods(newConfig);
-      setPaymentMethods(paymentMethods);
+      const response = await ApiClient.paymentMethods(newConfig);
+      setPaymentMethods(response);
       setConfig(newConfig);
     } catch (error) {
       props.onError(error);

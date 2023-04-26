@@ -1,7 +1,7 @@
 // @ts-check
 
 import { LogBox } from 'react-native';
-import { ENVIRONMENT, CHANNEL, DEVICE_LOCALE } from '../Configuration';
+import { ENVIRONMENT, CHANNEL } from '../Configuration';
 
 LogBox.ignoreLogs(['Require cycle:']);
 
@@ -11,6 +11,7 @@ class ApiClient {
     const body = {
       ...data,
       ...parseConfig(configuration),
+      ...parseAmount(configuration),
       ...serverConfiguration,
       additionalData: { allow3DS2: true },
       lineItems: [
