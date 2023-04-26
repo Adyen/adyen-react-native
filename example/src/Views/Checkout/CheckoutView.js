@@ -100,7 +100,7 @@ const CheckoutView = ({ navigation }) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       nativeComponent.hide(false);
-      if (error.errorCode == ErrorCode.canceled) {
+      if (error.errorCode === ErrorCode.canceled) {
         Alert.alert('Canceled');
       } else {
         Alert.alert('Error', error.message);
