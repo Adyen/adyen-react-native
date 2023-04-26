@@ -24,6 +24,10 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     protected var actionHandler: ActionHandler? = null
 
+    override fun onCatalystInstanceDestroy() {
+        actionHandler?.hide()
+    }
+
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
             .getJSModule(RCTDeviceEventEmitter::class.java)

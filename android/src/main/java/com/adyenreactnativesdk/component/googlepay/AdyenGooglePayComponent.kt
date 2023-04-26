@@ -31,6 +31,10 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         return COMPONENT_NAME
     }
 
+    override fun onCatalystInstanceDestroy() {
+        pendingPaymentDialogFragment?.dismiss()
+    }
+
     @ReactMethod
     fun addListener(eventName: String?) { /* No JS events expected */ }
 
