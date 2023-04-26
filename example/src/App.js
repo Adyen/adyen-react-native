@@ -48,7 +48,9 @@ const App = () => {
             component={CheckoutView}
             options={({ navigation }) => ({
               title: 'Checkout',
-              headerRight: () => <SettingsButton navigation={navigation} />,
+              headerRight: (props) => (
+                <SettingsButton navigation={navigation} {...props} />
+              ),
             })}
           />
           <Stack.Screen name="Settings" component={SettingView} />
@@ -58,7 +60,9 @@ const App = () => {
             component={CseView}
             options={({ navigation }) => ({
               title: 'Clientside Encryption',
-              headerRight: () => <SettingsButton navigation={navigation} />,
+              headerRight: (props) => (
+                <SettingsButton navigation={navigation} {...props} />
+              ),
             })}
           />
         </Stack.Navigator>
