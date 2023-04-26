@@ -16,7 +16,14 @@ const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
   const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={Styles.item}>
-      <Text style={Styles.itemTitle}>{title}</Text>
+      <Text
+        style={[
+          isDarkMode ? Styles.textDark : Styles.textLight,
+          Styles.itemTitle,
+        ]}
+      >
+        {title}
+      </Text>
       <TextInput
         {...rest} // Inherit any props passed to it; e.g., multiline, numberOfLines below
         editable

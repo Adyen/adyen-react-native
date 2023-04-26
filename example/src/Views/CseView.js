@@ -76,7 +76,12 @@ const CseView = () => {
               maxLength={2}
               onChangeText={setExpiryMonth}
             />
-            <Text style={Styles.slash}>{`/`}</Text>
+            <Text
+              style={[
+                isDarkMode ? Styles.textDark : Styles.textLight,
+                Styles.slash,
+              ]}
+            >{`/`}</Text>
             <TextInput
               style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
               inputMode={'numeric'}
