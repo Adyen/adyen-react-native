@@ -14,7 +14,7 @@ import ApiClient from '../Utilities/APIClient';
 import Styles from '../Utilities/Styles';
 import { useAppContext } from '../Utilities/AppContext';
 
-const CseView = () => {
+const CseView = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
   const { configuration } = useAppContext();
@@ -50,12 +50,13 @@ const CseView = () => {
       if (result.action) {
         Alert.alert('Action');
       } else {
-        Alert.alert('Payment accepted', result.resultCode);
+        navigation.popToTop();
+        navigation.push('Result', { result: result.resultCode });
       }
     } catch (e) {
       Alert.alert('Error', e.message);
     }
-  }, [configuration, cvv, expiryMonth, expiryYear, number]);
+  }, [configuration, cvv, expiryMonth, expiryYear, navigation, number]);
 
   return (
     <SafeAreaView style={Styles.page}>
