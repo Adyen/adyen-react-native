@@ -6,14 +6,18 @@ const Home = ({ navigation }) => {
   return (
     <SafeAreaView style={Styles.page}>
       <View style={Styles.content}>
-        <Button
-          onPress={() => navigation.navigate('CheckoutPage')}
-          title="Checkout"
-        />
-        <Button
-          onPress={() => navigation.navigate('Clientside Encryption')}
-          title="Clientside Encryption"
-        />
+        <View style={Styles.item}>
+          <Button
+            onPress={() => navigation.navigate('CheckoutPage')}
+            title="Checkout"
+          />
+        </View>
+        <View style={Styles.item}>
+          <Button
+            onPress={() => navigation.navigate('Clientside Encryption')}
+            title="Clientside Encryption"
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
