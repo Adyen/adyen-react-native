@@ -25,6 +25,11 @@ import { DEFAULT_CONFIGURATION } from './Configuration';
 
 const Stack = createNativeStackNavigator();
 
+const SettingsButton = ({ navigation }) => {
+  return (
+    <Button onPress={() => navigation.navigate('Settings')} title="Edit" />
+  );
+};
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -42,18 +47,20 @@ const App = () => {
             name="CheckoutPage"
             component={CheckoutView}
             options={({ navigation }) => ({
-              title: 'Adyen React Native',
-              headerRight: () => (
-                <Button
-                  onPress={() => navigation.navigate('Settings')}
-                  title="Edit"
-                />
-              ),
+              title: 'Checkout',
+              headerRight: () => <SettingsButton navigation={navigation} />,
             })}
           />
           <Stack.Screen name="Settings" component={SettingView} />
           <Stack.Screen name="Result" component={Result} />
-          <Stack.Screen name="Clientside Encryption" component={CseView} />
+          <Stack.Screen
+            name="Clientside Encryption"
+            component={CseView}
+            options={({ navigation }) => ({
+              title: 'Clientside Encryption',
+              headerRight: () => <SettingsButton navigation={navigation} />,
+            })}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </AppContextProvider>
