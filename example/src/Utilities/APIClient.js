@@ -11,7 +11,7 @@ class ApiClient {
     const body = {
       ...data,
       ...parseConfig(configuration),
-      ...parseAmount(configuration),
+      ...parseAmount(configuration, data),
       ...serverConfiguration,
       additionalData: { allow3DS2: true },
       lineItems: [
@@ -85,8 +85,11 @@ const serverConfiguration = {
   reference: 'React Native',
 };
 
-const parseAmount = ({ amount, currency }) => ({
-  amount: { value: amount, currency: currency },
+const parseAmount = (configuration, data) => ({
+  amount: data?.amount ?? {
+    value: configuration.amount,
+    currency: configuration.currency,
+  },
 });
 
 const parseConfig = ({
