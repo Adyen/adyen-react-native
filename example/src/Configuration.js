@@ -53,7 +53,7 @@ export const DEFAULT_CONFIGURATION = {
     emailRequired: true,
     shippingAddressRequired: true,
     existingPaymentMethodRequired: false,
-    googlePayEnvironment: 'test',
+    googlePayEnvironment: 3, // WalletConstants.ENVIRONMENT_TEST
   },
 };
 

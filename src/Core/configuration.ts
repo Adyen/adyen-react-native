@@ -116,5 +116,5 @@ export interface GooglePayConfiguration {
   /** If set to true then the IsReadyToPayResponse object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in allowedPaymentMethods. */
   existingPaymentMethodRequired?: boolean;
   /** The environment to be used by GooglePay. Should be either WalletConstants.ENVIRONMENT_TEST or WalletConstants.ENVIRONMENT_PRODUCTION. By default is using environment from root. */
-  googlePayEnvironment?: string;
+  googlePayEnvironment?: number;
 }
