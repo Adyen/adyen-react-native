@@ -14,12 +14,17 @@ final internal class AdyenDropIn: BaseModule {
 
     private var dropInComponent: DropInComponent?
 
+    override func invalidate() {
+        hide(false, event: [:])
+    }
+
     override func supportedEvents() -> [String]! { super.supportedEvents() }
+
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            
+
             self.dropInComponent?.finalizeIfNeeded(with: success.boolValue) {
                 self.cleanUp()
                 self.dropInComponent = nil

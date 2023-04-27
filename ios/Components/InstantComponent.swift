@@ -12,13 +12,18 @@ import React
 
 @objc(AdyenInstant)
 final internal class InstantComponent: BaseModule {
+
+    override func invalidate() {
+        hide(false, event: [:])
+    }
+
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async {[weak self] in
             guard let self = self else { return }
-            
+
             self.currentComponent?.finalizeIfNeeded(with: success.boolValue) {
                 self.cleanUp()
             }
@@ -47,7 +52,7 @@ final internal class InstantComponent: BaseModule {
         component.payment = parser.payment
         component.delegate = self
         currentComponent = component
-        
+
         DispatchQueue.main.async {
             component.initiatePayment()
         }
@@ -61,7 +66,7 @@ final internal class InstantComponent: BaseModule {
         } catch {
             return sendEvent(error: error)
         }
-        
+
         DispatchQueue.main.async { [weak self] in
             self?.actionHandler?.handle(action)
         }

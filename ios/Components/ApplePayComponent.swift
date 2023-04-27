@@ -13,7 +13,12 @@ import React
 @objc(AdyenApplePay)
 final internal class ApplePayComponent: BaseModule {
 
+    override func invalidate() {
+        hide(false, event: [:])
+    }
+
     override func supportedEvents() -> [String]! { super.supportedEvents() }
+
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         DispatchQueue.main.async {[weak self] in
@@ -41,7 +46,7 @@ final internal class ApplePayComponent: BaseModule {
         } catch {
             return sendEvent(error: error)
         }
-        
+
 
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
         let applePayComponent: Adyen.ApplePayComponent
