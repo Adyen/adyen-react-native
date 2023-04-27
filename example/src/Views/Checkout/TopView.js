@@ -17,16 +17,20 @@ const TopView = () => {
 
   return (
     <View>
-      {paymentMethods ? (
+      {paymentMethods && (
         <View style={Styles.horizontalContent}>
-          <Text
-            style={isDarkMode ? Styles.textDark : Styles.textLight}
-          >{`${configuration.amount} ${configuration.currency}`}</Text>
+          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>{`${
+            configuration.amount?.value ?? 'N/A'
+          } ${configuration.amount?.currency ?? 'N/A'}`}</Text>
           <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-            Country: {getFlagEmoji(configuration.countryCode)}
+            Country:
+            {configuration.countryCode
+              ? ` ${getFlagEmoji(configuration.countryCode)}`
+              : 'N/A'}
           </Text>
         </View>
-      ) : (
+      )}
+      {!paymentMethods && (
         <View style={Styles.horizontalContent}>
           <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
             No PaymentMethods

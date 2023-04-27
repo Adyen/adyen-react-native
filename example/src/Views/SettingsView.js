@@ -41,8 +41,8 @@ const SettingFormView = ({ navigation: { goBack } }) => {
   const { configuration, refreshPaymentMethods } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
-  const [amount, setAmount] = useState(configuration.amount);
-  const [currency, setCurrency] = useState(configuration.currency);
+  const [amount, setAmount] = useState(configuration.amount?.value);
+  const [currency, setCurrency] = useState(configuration.amount?.currency);
   const [merchantName, setMerchantName] = useState(configuration.merchantName);
   const [merchantAccount, setMerchantAccount] = useState(
     configuration.merchantAccount
@@ -90,7 +90,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       />
       <FormTextInput
         title="Amount"
-        value={amount.toString()}
+        value={amount?.toString()}
         inputMode={'numeric'}
         onChangeText={setAmount}
       />

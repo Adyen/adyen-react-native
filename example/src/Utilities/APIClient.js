@@ -87,8 +87,8 @@ const serverConfiguration = {
 
 const parseAmount = (configuration, data) => ({
   amount: data?.amount ?? {
-    value: configuration.amount,
-    currency: configuration.currency,
+    value: configuration.amount?.value,
+    currency: configuration.amount?.value,
   },
 });
 

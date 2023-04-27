@@ -8,7 +8,6 @@ import { useAppContext } from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
-import { ENVIRONMENT } from '../../Configuration';
 
 const CheckoutView = ({ navigation }) => {
   const { configuration, paymentMethods, refreshPaymentMethods } =
@@ -115,16 +114,7 @@ const CheckoutView = ({ navigation }) => {
       <AdyenCheckout
         config={
           /** @type {import('@adyen/react-native').Configuration} */
-          {
-            clientKey: ENVIRONMENT.clientKey,
-            environment: ENVIRONMENT.environment,
-            returnUrl: ENVIRONMENT.returnUrl,
-            amount: {
-              value: configuration.amount,
-              currency: configuration.currency,
-            },
-            countryCode: configuration.countryCode,
-          }
+          configuration
         }
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}

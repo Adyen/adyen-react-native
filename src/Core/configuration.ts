@@ -16,6 +16,12 @@ export interface Configuration {
   /** Selected environment */
   environment: Environment;
 
+  /** Adyen merchant account. */
+  merchantAccount: string;
+
+  /** Merchant name to be displayed on payment summary item. */
+  merchantName: string;
+
   /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
   clientKey: string;
 
@@ -24,6 +30,9 @@ export interface Configuration {
 
   /** The shopper's country code. A valid value is an ISO two-character country code (e.g. 'NL'). */
   countryCode?: string;
+
+  /** The shopper's locale code. A valid value is an ISO locale code (e.g. 'nl-NL'). */
+  shopperLocale: string;
 
   /** Amount to be displayed on the Pay Button. */
   amount?: PaymentAmount;
