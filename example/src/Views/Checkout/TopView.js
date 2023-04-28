@@ -12,31 +12,55 @@ function getFlagEmoji(countryCode) {
 }
 
 const TopView = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-  const { configuration, paymentMethods } = useAppContext();
+  const { configuration } = useAppContext();
 
   return (
-    <View>
-      {paymentMethods && (
-        <View style={Styles.horizontalContent}>
-          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>{`${
-            configuration.amount?.value ?? 'N/A'
-          } ${configuration.amount?.currency ?? 'N/A'}`}</Text>
-          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-            Country:
-            {configuration.countryCode
-              ? ` ${getFlagEmoji(configuration.countryCode)}`
-              : 'N/A'}
-          </Text>
-        </View>
-      )}
-      {!paymentMethods && (
-        <View style={Styles.horizontalContent}>
-          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-            No PaymentMethods
-          </Text>
-        </View>
-      )}
+    <View style={Styles.horizontalContent}>
+      <AmountView amount={configuration.amount} />
+      <CountryView countryCode={configuration.countryCode} />
+    </View>
+  );
+};
+
+const AmountView = ({ amount }) => {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  if (!amount) {
+    return (
+      <View style={Styles.content}>
+        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+          Amount not defined
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={Styles.content}>
+      <Text
+        style={isDarkMode ? Styles.textDark : Styles.textLight}
+      >{`${amount.value} ${amount.currency}`}</Text>
+    </View>
+  );
+};
+
+const CountryView = ({ countryCode }) => {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  if (!countryCode) {
+    return (
+      <View style={Styles.content}>
+        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+          Country not defined
+        </Text>
+      </View>
+    );
+  }
+  return (
+    <View style={Styles.content}>
+      <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+        {`Country: ${getFlagEmoji(countryCode)}`}
+      </Text>
     </View>
   );
 };

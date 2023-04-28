@@ -2,29 +2,35 @@
 
 import React, { useCallback } from 'react';
 import { useAdyenCheckout } from '@adyen/react-native';
-import { Button, View, Platform, ScrollView } from 'react-native';
+import {
+  Button,
+  View,
+  Platform,
+  ScrollView,
+  Text,
+  useColorScheme,
+} from 'react-native';
 import Styles from '../../Utilities/Styles';
 
 const PaymentMethods = () => {
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
+  const paymentMethods = paymentMethodsResponse?.paymentMethods;
 
   const isAvailable = useCallback(
     (/** @type {string} */ type) => {
-      if (!paymentMethodsResponse) {
-        return false;
-      }
-      const { paymentMethods } = paymentMethodsResponse;
       return (
-        paymentMethods.length > 0 &&
+        paymentMethods &&
         paymentMethods.some(
           (pm) => pm.type.toLowerCase() === type.toLowerCase()
         )
       );
     },
-    [paymentMethodsResponse]
+    [paymentMethods]
   );
 
-  const isNotReady = paymentMethodsResponse === undefined;
+  if (paymentMethods === undefined) {
+    return <NoPaymentMethodsView />;
+  }
 
   return (
     <ScrollView>
@@ -32,14 +38,13 @@ const PaymentMethods = () => {
         <View style={Styles.item}>
           <Button
             title="dropin"
-            disabled={isNotReady}
             onPress={() => {
               start('dropin');
             }}
           />
         </View>
 
-        {paymentMethodsResponse?.paymentMethods.map((p) => {
+        {paymentMethods.map((p) => {
           return (
             <View key={`${p.type}`} style={Styles.item}>
               <Button
@@ -60,6 +65,22 @@ const PaymentMethods = () => {
         })}
       </View>
     </ScrollView>
+  );
+};
+
+const NoPaymentMethodsView = () => {
+  const isDarkMode = useColorScheme() === 'dark';
+  return (
+    <View>
+      <Text
+        style={[
+          Styles.centeredText,
+          isDarkMode ? Styles.textDark : Styles.textLight,
+        ]}
+      >
+        PaymentMethods not defined
+      </Text>
+    </View>
   );
 };
 
