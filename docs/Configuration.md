@@ -56,7 +56,7 @@ For Android, this value is automatically overridden by `AdyenCheckout`.
     value: 1000,
   },
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
-  returnUrl: 'myapp://',
+  returnUrl: 'myapp://adyencheckout',
   dropin: {
     skipListWhenSinglePaymentMethod: true,
     showPreselectedStoredPaymentMethod: false
