@@ -2,8 +2,16 @@
 
 import React, { useCallback } from 'react';
 import { useAdyenCheckout } from '@adyen/react-native';
-import { Button, View, Platform, ScrollView } from 'react-native';
+import {
+  Button,
+  View,
+  ScrollView,
+  TouchableHighlight,
+  Image,
+  Text,
+} from 'react-native';
 import Styles from '../../Utilities/Styles';
+import { ENVIRONMENT } from '../../Configuration';
 
 const PaymentMethods = () => {
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
@@ -40,17 +48,13 @@ const PaymentMethods = () => {
         </View>
 
         {paymentMethodsResponse?.paymentMethods.map((p) => {
+          const iconName = p.type === 'scheme' ? 'card' : p.type;
+          const iconURL = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${iconName}@3x.png`;
           return (
-            <View key={`${p.type}`} style={Styles.item}>
-              <Button
-                title={`${p.type}`}
-                disabled={
-                  !isAvailable(p.type) ||
-                  (Platform.OS !== 'ios' && p.type === 'applepay') ||
-                  /// In some cases 'paywithgoogle' can be in use. Check paymentMethods response first.
-                  (Platform.OS !== 'android' &&
-                    (p.type === 'googlepay' || p.type === 'paywithgoogle'))
-                }
+            <View key={`${p.type + p.name}`}>
+              <PaymentMethodButton
+                title={`${p.name}`}
+                icon={iconURL}
                 onPress={() => {
                   start(p.type);
                 }}
@@ -60,6 +64,23 @@ const PaymentMethods = () => {
         })}
       </View>
     </ScrollView>
+  );
+};
+
+const PaymentMethodButton = (props) => {
+  const { onPress, title, icon } = props;
+
+  return (
+    <TouchableHighlight
+      onPress={onPress}
+      style={Styles.btnClickContain}
+      underlayColor="#042417"
+    >
+      <View style={Styles.btnContainer}>
+        <Image source={{ uri: icon }} style={Styles.btnIcon} />
+        <Text style={Styles.btnText}>{title}</Text>
+      </View>
+    </TouchableHighlight>
   );
 };
 

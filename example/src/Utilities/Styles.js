@@ -46,6 +46,27 @@ const Styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 8,
   },
+  btnClickContain: {
+    backgroundColor: '#009D6E',
+    borderRadius: 5,
+    padding: 5,
+    margin: 5,
+  },
+  btnContainer: {
+    flexDirection: 'row',
+  },
+  btnIcon: {
+    height: 32,
+    width: 46,
+    borderRadius: 4,
+    resizeMode: 'center',
+  },
+  btnText: {
+    fontSize: 18,
+    color: '#FAFAFA',
+    marginLeft: 10,
+    marginTop: 2,
+  },
 });
 
 export default Styles;
