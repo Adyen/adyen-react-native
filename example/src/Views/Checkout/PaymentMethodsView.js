@@ -39,7 +39,7 @@ const PaymentMethods = () => {
       <View style={Styles.content}>
         <View style={Styles.item}>
           <Button
-            title="dropin"
+            title="Drop-in"
             disabled={isNotReady}
             onPress={() => {
               start('dropin');
