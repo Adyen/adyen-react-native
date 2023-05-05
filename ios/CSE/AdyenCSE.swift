@@ -12,6 +12,9 @@ import React
 final internal class AdyenCSE: NSObject {
 
     @objc
+    override static func requiresMainQueueSetup() -> Bool { return false }
+
+    @objc
     func encryptCard(_ payload: NSDictionary,
                      publicKey: NSString,
                      resolver: RCTPromiseResolveBlock,

@@ -12,7 +12,7 @@ import Adyen3DS2
 internal class BaseModule: RCTEventEmitter {
         
     @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
+    override static func requiresMainQueueSetup() -> Bool { return true }
     override func stopObserving() { /* No JS events expected */ }
     override func startObserving() { /* No JS events expected */ }
     override open func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
