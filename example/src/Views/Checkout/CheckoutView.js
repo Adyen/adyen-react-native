@@ -14,6 +14,12 @@ const CheckoutView = ({ navigation }) => {
   const { configuration, paymentMethods, refreshPaymentMethods } =
     useAppContext();
 
+  useEffect(() => {
+    refreshPaymentMethods(configuration).catch((e) => {
+      console.error(e);
+    });
+  }, []);
+
   const didSubmit = useCallback(
     async (
       /** @type {import('@adyen/react-native').PaymentMethodData} */ data,

@@ -13,7 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const AppContext = createContext({
   configuration: undefined,
   paymentMethods: undefined,
-  refreshPaymentMethods: (configuration) => {},
+  refreshPaymentMethods: async (configuration) => {},
 });
 
 export const useAppContext = () => {
@@ -33,26 +33,20 @@ const AppContextProvider = (props) => {
   useEffect(() => {
     AsyncStorage.getItem(storeKey)
       .then((value) => {
-        console.debug(`Stored config: ${value}`);
         if (value) {
+          console.debug(`Stored config: ${value}`);
           const parsed = JSON.parse(value);
           setConfig(parsed);
-          refresh(parsed);
         }
       })
       .catch(props.onError);
   }, []);
 
   const refresh = async (newConfig = config) => {
-    try {
-      const response = await ApiClient.paymentMethods(newConfig);
-      await AsyncStorage.setItem(storeKey, JSON.stringify(newConfig));
-
-      setPaymentMethods(response);
-      setConfig(newConfig);
-    } catch (error) {
-      props.onError(error);
-    }
+    const response = await ApiClient.paymentMethods(newConfig);
+    await AsyncStorage.setItem(storeKey, JSON.stringify(newConfig));
+    setPaymentMethods(response);
+    setConfig(newConfig);
   };
 
   const appState = useMemo(
