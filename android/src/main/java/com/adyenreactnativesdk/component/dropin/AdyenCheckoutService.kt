@@ -6,6 +6,7 @@
 package com.adyenreactnativesdk.component.dropin
 
 import android.util.Log
+import com.adyen.checkout.card.CardComponentState
 import com.adyen.checkout.components.ActionComponentData
 import com.adyen.checkout.components.PaymentComponentState
 import com.adyen.checkout.components.model.payments.response.Action
@@ -14,11 +15,6 @@ import com.adyen.checkout.dropin.service.DropInServiceResult
 import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInModuleListener
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
-
-@Deprecated(
-    message = "This class is deprecated on beta-9",
-    replaceWith = ReplaceWith("AdyenCheckoutService"))
-class AdyenDropInService: AdyenCheckoutService() { }
 
 open class AdyenCheckoutService : DropInService(), DropInModuleListener {
     override fun onCreate() {
@@ -30,12 +26,19 @@ open class AdyenCheckoutService : DropInService(), DropInModuleListener {
         paymentComponentState: PaymentComponentState<*>,
         paymentComponentJson: JSONObject
     ) {
+        if (paymentComponentState is CardComponentState &&
+            paymentComponentJson.getJSONObject(PAYMENT_DETAILS_KEY).isNull(BRAND_KEY)
+        ) {
+            val cardType = paymentComponentState.cardType?.txVariant
+            paymentComponentJson.getJSONObject(PAYMENT_DETAILS_KEY).putOpt(BRAND_KEY, cardType)
+        }
+
         val listener = DropInServiceProxy.shared.serviceListener
         listener?.onDidSubmit(paymentComponentJson)
             ?: Log.e(
                 TAG,
                 "Invalid state: DropInServiceListener is missing"
-            )
+        )
     }
 
     override fun onDetailsCallRequested(
@@ -47,7 +50,7 @@ open class AdyenCheckoutService : DropInService(), DropInModuleListener {
             ?: Log.e(
                 TAG,
                 "Invalid state: DropInServiceListener is missing"
-            )
+        )
     }
 
     override fun onAction(jsonObject: JSONObject) {
@@ -68,5 +71,7 @@ open class AdyenCheckoutService : DropInService(), DropInModuleListener {
         private const val TAG = "AdyenDropInService"
         private const val MESSAGE_KEY = "message"
         private const val DESCRIPTION_KEY = "description"
+        private const val BRAND_KEY = "brand"
+        private const val PAYMENT_DETAILS_KEY = "paymentMethod"
     }
 }
