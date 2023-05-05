@@ -61,6 +61,7 @@ Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/
 2. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
 ```java
 import com.adyenreactnativesdk.AdyenCheckout;
+import android.os.Bundle;
 
 ...
 
