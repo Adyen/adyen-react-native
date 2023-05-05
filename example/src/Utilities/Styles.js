@@ -4,8 +4,13 @@ const Styles = StyleSheet.create({
   page: {
     flex: 1,
   },
-  content: {
+  centeredContent: {
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  content: {
+    alignItems: 'stretch',
     flex: 1,
     justifyContent: 'center',
   },
