@@ -83,6 +83,7 @@ export default ApiClient;
 const serverConfiguration = {
   channel: CHANNEL,
   reference: 'React Native',
+  merchantAccount: ENVIRONMENT.merchantAccount,
 };
 
 const parseAmount = (configuration, data) => ({
@@ -92,14 +93,8 @@ const parseAmount = (configuration, data) => ({
   },
 });
 
-const parseConfig = ({
-  merchantAccount,
+const parseConfig = ({ countryCode, shopperReference, shopperLocale }) => ({
   countryCode,
   shopperReference,
   shopperLocale,
-}) => ({
-  merchantAccount,
-  countryCode,
-  shopperReference,
-  shopperLocale: shopperLocale,
 });
