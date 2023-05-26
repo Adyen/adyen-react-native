@@ -19,4 +19,4 @@ class AdyenAppearance: AdyenAppearanceProvider {
 
 ## Android
 
-Simply override any resources from [Android SDK](https://github.com/Adyen/adyen-android/tree/4.10.0) in local res folder. 
+Locate correspondent resources from [Android SDK](https://github.com/Adyen/adyen-android/tree/4.10.0) and override them in the local `android\app\src\main\res` folder according to your needs.
