@@ -3,7 +3,6 @@
 ## iOS
 
 Create swift class 'AdyenAppearance' extending protocol 'AdyenAppearanceProvider'.
-Please make sure that the name of the class exactly matches.
 SDK will use reflection to find the class with this exact name.
 
 ```swift
