@@ -36,7 +36,7 @@ yarn add @adyen/react-native
 ### iOS integration
 
 1. run `pod install`
-2. add return URL handler to your `AppDelegate.m`
+2. add return URL handler to your `AppDelegate.m(m)`
 ```objc
 #import <adyen-react-native/ADYRedirectComponent.h>
 
@@ -46,6 +46,7 @@ yarn add @adyen/react-native
   return [ADYRedirectComponent applicationDidOpenURL:url];
 }
 ```
+3. If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`_`)
 
 #### For ApplePay
 
@@ -61,6 +62,7 @@ Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/
 2. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
 ```java
 import com.adyenreactnativesdk.AdyenCheckout;
+import android.os.Bundle;
 
 ...
 
