@@ -16,22 +16,6 @@ import { ENVIRONMENT } from '../../Configuration';
 const PaymentMethods = () => {
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
 
-  const isAvailable = useCallback(
-    (/** @type {string} */ type) => {
-      if (!paymentMethodsResponse) {
-        return false;
-      }
-      const { paymentMethods } = paymentMethodsResponse;
-      return (
-        paymentMethods.length > 0 &&
-        paymentMethods.some(
-          (pm) => pm.type.toLowerCase() === type.toLowerCase()
-        )
-      );
-    },
-    [paymentMethodsResponse]
-  );
-
   const isNotReady = paymentMethodsResponse === undefined;
 
   return (
@@ -49,12 +33,11 @@ const PaymentMethods = () => {
 
         {paymentMethodsResponse?.paymentMethods.map((p) => {
           const iconName = p.type === 'scheme' ? 'card' : p.type;
-          const iconURL = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${iconName}@3x.png`;
           return (
             <View key={`${p.type + p.name}`}>
               <PaymentMethodButton
                 title={`${p.name}`}
-                icon={iconURL}
+                icon={iconName}
                 onPress={() => {
                   start(p.type);
                 }}
@@ -69,6 +52,7 @@ const PaymentMethods = () => {
 
 const PaymentMethodButton = (props) => {
   const { onPress, title, icon } = props;
+  const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${icon}@3x.png`;
 
   return (
     <TouchableHighlight
@@ -77,7 +61,7 @@ const PaymentMethodButton = (props) => {
       underlayColor="#042417"
     >
       <View style={Styles.btnContainer}>
-        <Image source={{ uri: icon }} style={Styles.btnIcon} />
+        <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
         <Text style={Styles.btnText}>{title}</Text>
       </View>
     </TouchableHighlight>
