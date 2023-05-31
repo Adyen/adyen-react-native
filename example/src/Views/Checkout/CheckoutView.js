@@ -15,7 +15,9 @@ const CheckoutView = ({ navigation }) => {
     useAppContext();
 
   useEffect(() => {
-    refreshPaymentMethods();
+    refreshPaymentMethods(configuration).catch((e) => {
+      console.error(e);
+    });
   }, []);
 
   const didSubmit = useCallback(
