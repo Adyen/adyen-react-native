@@ -19,7 +19,7 @@ export interface HideOption {
 }
 
 /** Universal interface for Adyen Native payment component */
-interface AdyenComponent {
+export interface AdyenComponent {
   /** Show component above current screen. */
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
 
