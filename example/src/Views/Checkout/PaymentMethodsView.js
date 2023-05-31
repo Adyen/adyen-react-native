@@ -1,28 +1,20 @@
 // @ts-check
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { useAdyenCheckout } from '@adyen/react-native';
-import { Button, View, Platform, ScrollView } from 'react-native';
+import {
+  Button,
+  View,
+  ScrollView,
+  TouchableHighlight,
+  Image,
+  Text,
+} from 'react-native';
 import Styles from '../../Utilities/Styles';
+import { ENVIRONMENT } from '../../Configuration';
 
 const PaymentMethods = () => {
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
-
-  const isAvailable = useCallback(
-    (/** @type {string} */ type) => {
-      if (!paymentMethodsResponse) {
-        return false;
-      }
-      const { paymentMethods } = paymentMethodsResponse;
-      return (
-        paymentMethods.length > 0 &&
-        paymentMethods.some(
-          (pm) => pm.type.toLowerCase() === type.toLowerCase()
-        )
-      );
-    },
-    [paymentMethodsResponse]
-  );
 
   const isNotReady = paymentMethodsResponse === undefined;
 
@@ -31,7 +23,7 @@ const PaymentMethods = () => {
       <View style={Styles.content}>
         <View style={Styles.item}>
           <Button
-            title="dropin"
+            title="Drop-in"
             disabled={isNotReady}
             onPress={() => {
               start('dropin');
@@ -40,17 +32,12 @@ const PaymentMethods = () => {
         </View>
 
         {paymentMethodsResponse?.paymentMethods.map((p) => {
+          const iconName = p.type === 'scheme' ? 'card' : p.type;
           return (
-            <View key={`${p.type}`} style={Styles.item}>
-              <Button
-                title={`${p.type}`}
-                disabled={
-                  !isAvailable(p.type) ||
-                  (Platform.OS !== 'ios' && p.type === 'applepay') ||
-                  /// In some cases 'paywithgoogle' can be in use. Check paymentMethods response first.
-                  (Platform.OS !== 'android' &&
-                    (p.type === 'googlepay' || p.type === 'paywithgoogle'))
-                }
+            <View key={`${p.type + p.name}`}>
+              <PaymentMethodButton
+                title={`${p.name}`}
+                icon={iconName}
                 onPress={() => {
                   start(p.type);
                 }}
@@ -60,6 +47,23 @@ const PaymentMethods = () => {
         })}
       </View>
     </ScrollView>
+  );
+};
+
+const PaymentMethodButton = ({ onPress, title, icon }) => {
+  const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${icon}@3x.png`;
+
+  return (
+    <TouchableHighlight
+      onPress={onPress}
+      style={Styles.btnClickContain}
+      underlayColor="#042417"
+    >
+      <View style={Styles.btnContainer}>
+        <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
+        <Text style={Styles.btnText}>{title}</Text>
+      </View>
+    </TouchableHighlight>
   );
 };
 

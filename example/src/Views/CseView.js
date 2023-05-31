@@ -60,7 +60,7 @@ const CseView = ({ navigation }) => {
 
   return (
     <SafeAreaView style={Styles.page}>
-      <View style={Styles.content}>
+      <View style={Styles.centeredContent}>
         <TextInput
           style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
           inputMode={'numeric'}
