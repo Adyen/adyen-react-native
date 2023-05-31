@@ -50,8 +50,7 @@ const PaymentMethods = () => {
   );
 };
 
-const PaymentMethodButton = (props) => {
-  const { onPress, title, icon } = props;
+const PaymentMethodButton = ({ onPress, title, icon }) => {
   const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${icon}@3x.png`;
 
   return (
