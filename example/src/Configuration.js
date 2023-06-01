@@ -24,6 +24,7 @@ export const DEFAULT_CONFIGURATION = {
 
 // For test purposes only! Do not call Adyen API from your mobile app on LIVE.
 export const ENVIRONMENT = {
+  /** @type {import('@adyen/react-native').Environment} */
   environment: 'test',
   apiKey: '{YOUR_DEMO_SERVER_API_KEY}',
   url: 'https://checkout-test.adyen.com/v67/',

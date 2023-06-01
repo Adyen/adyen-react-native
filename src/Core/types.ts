@@ -197,11 +197,6 @@ export interface PaymentAmount {
   currency: string;
 }
 
-export interface Payment {
-  amount: PaymentAmount;
-  countryCode: string;
-}
-
 export interface PaymentMethodData {
   paymentMethod: {
     type: string;
