@@ -59,15 +59,16 @@ const AmountView = ({ amount, currency, locale }) => {
       });
 
       switch (currency) {
+        case 'JPY':
+        case 'IDR':
+          break;
         case 'BHD':
         case 'KWD':
           amount = amount / 1000;
-        case 'JPY':
-        case 'IDR':
-          amount = amount;
           break;
         default:
           amount = amount / 100;
+          break;
       }
 
       return formatter.format(amount);
