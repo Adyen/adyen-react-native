@@ -1,7 +1,7 @@
 // @ts-check
 
 import React, { useEffect, useCallback } from 'react';
-import { SafeAreaView, Alert } from 'react-native';
+import { SafeAreaView, Alert, View, Text, useColorScheme } from 'react-native';
 import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
 import { useAppContext } from '../../Utilities/AppContext';
@@ -114,28 +114,32 @@ const CheckoutView = ({ navigation }) => {
   return (
     <SafeAreaView style={Styles.page}>
       <TopView />
-      <AdyenCheckout
-        config={
-          /** @type {import('@adyen/react-native').Configuration} */
-          {
-            clientKey: ENVIRONMENT.clientKey,
-            environment: ENVIRONMENT.environment,
-            returnUrl: ENVIRONMENT.returnUrl,
-            amount: {
-              value: configuration.amount,
-              currency: configuration.currency,
-            },
-            countryCode: configuration.countryCode,
+      {paymentMethods ? (
+        <AdyenCheckout
+          config={
+            /** @type {import('@adyen/react-native').Configuration} */
+            {
+              clientKey: ENVIRONMENT.clientKey,
+              environment: ENVIRONMENT.environment,
+              returnUrl: ENVIRONMENT.returnUrl,
+              amount: {
+                value: configuration.amount,
+                currency: configuration.currency,
+              },
+              countryCode: configuration.countryCode,
+            }
           }
-        }
-        paymentMethods={paymentMethods}
-        onSubmit={didSubmit}
-        onAdditionalDetails={didProvide}
-        onComplete={didComplete}
-        onError={didFail}
-      >
-        <PaymentMethods />
-      </AdyenCheckout>
+          paymentMethods={paymentMethods}
+          onSubmit={didSubmit}
+          onAdditionalDetails={didProvide}
+          onComplete={didComplete}
+          onError={didFail}
+        >
+          <PaymentMethods />
+        </AdyenCheckout>
+      ) : (
+        <NoPaymentMethodsView />
+      )}
     </SafeAreaView>
   );
 };
@@ -148,6 +152,22 @@ const isSuccess = (
     code === ResultCode.authorised ||
     code === ResultCode.received ||
     code === ResultCode.pending
+  );
+};
+
+const NoPaymentMethodsView = () => {
+  const isDarkMode = useColorScheme() === 'dark';
+  return (
+    <View>
+      <Text
+        style={[
+          Styles.centeredText,
+          isDarkMode ? Styles.textDark : Styles.textLight,
+        ]}
+      >
+        No Payment methods
+      </Text>
+    </View>
   );
 };
 
