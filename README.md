@@ -170,7 +170,7 @@ import { AdyenCheckout } from '@adyen/react-native';
   }}
   onError={(error, component) => {
     /* Handle errors or termination by shopper */
-   /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
+    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
   }}
 >
   <MyCheckoutView />
