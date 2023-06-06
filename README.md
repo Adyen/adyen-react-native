@@ -162,15 +162,15 @@ import { AdyenCheckout } from '@adyen/react-native';
   paymentMethods={paymentMethods}
   onSubmit={(paymentData, component) => {
     /* Call your server to make the `/payments` request */
-    /* Then call `nativeComponent.handle(response.result)` to dismiss payment UI */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
   }}
   onAdditionalDetails={(paymentData, component) => {
     /* Call your server to make the `/payments/details` request */
-    /* Then call `nativeComponent.hide(response.result)` to dismiss payment UI */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
   }}
   onError={(error, component) => {
     /* Handle errors or termination by shopper */
-    /* Then call `nativeComponent.hide(false)` to dismiss payment UI */
+   /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
   }}
 >
   <MyCheckoutView />
