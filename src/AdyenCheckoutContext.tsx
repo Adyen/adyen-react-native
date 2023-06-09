@@ -16,6 +16,9 @@ import { getNativeComponent, AdyenActionComponent } from './AdyenNativeModules';
 import { PaymentMethodData, PaymentMethodsResponse } from './Core/types';
 import { Configuration } from './Core/configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './Core/utils';
+import Analytics from './Core/Analytics';
+import { useContext } from 'react';
+import { MISSING_CONTEXT_ERROR } from './Core/constants';
 
 export interface AdyenCheckoutContextType {
   start: (typeName: string) => void;
@@ -26,6 +29,17 @@ export interface AdyenCheckoutContextType {
 const AdyenCheckoutContext = createContext<AdyenCheckoutContextType | null>(
   null
 );
+
+/**
+ * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
+ */
+export const useAdyenCheckout = (): AdyenCheckoutContextType => {
+  const context = useContext(AdyenCheckoutContext);
+  if (context != null) {
+    return context;
+  }
+  throw new Error(MISSING_CONTEXT_ERROR);
+};
 
 /** Reason for payment termination */
 export interface AdyenError {
@@ -63,6 +77,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   children,
 }) => {
   const subscriptions = useRef<EmitterSubscription[]>([]);
+  const analytics = useRef<Analytics | null>(null);
 
   useEffect(() => {
     return () => {
@@ -87,6 +102,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 
   const removeEventListeners = useCallback(() => {
     subscriptions.current.forEach((s) => s.remove());
+    analytics.current = null;
   }, [subscriptions]);
 
   const startEventListeners = useCallback(
@@ -102,12 +118,12 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
           onAdditionalDetails?.(data, nativeComponent)
         ),
-        eventEmitter.addListener(Event.onComplete, () => {
-          onComplete?.(nativeComponent);
-        }),
-        eventEmitter.addListener(Event.onError, (error: AdyenError) => {
-          onError?.(error, nativeComponent);
-        }),
+        eventEmitter.addListener(Event.onComplete, () =>
+          onComplete?.(nativeComponent)
+        ),
+        eventEmitter.addListener(Event.onError, (error: AdyenError) =>
+          onError?.(error, nativeComponent)
+        ),
       ];
     },
     [
@@ -123,6 +139,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const start = useCallback(
     (typeName: string) => {
       removeEventListeners();
+      analytics.current = new Analytics(config);
       const { nativeComponent, paymentMethod } = getNativeComponent(
         typeName,
         paymentMethods
@@ -139,12 +156,24 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           ...config,
           dropin: { skipListWhenSinglePaymentMethod: true },
         };
+        analytics.current.send({ component: typeName });
         nativeComponent.open(singlePaymentMethods, singlePaymentConfig);
       } else {
+        analytics.current.send({
+          paymentMethods: paymentMethods?.paymentMethods.map((e) => e.type),
+          component: 'dropin',
+          flavor: 'dropin',
+        });
         nativeComponent.open(paymentMethods, config);
       }
     },
-    [config, paymentMethods, startEventListeners, removeEventListeners]
+    [
+      config,
+      paymentMethods,
+      startEventListeners,
+      removeEventListeners,
+      analytics.current,
+    ]
   );
 
   const checkoutProviderValues = useMemo(

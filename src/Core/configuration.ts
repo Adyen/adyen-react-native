@@ -1,3 +1,4 @@
+import { AnalyticsOptions } from './Analytics/types';
 import { PaymentAmount } from './types';
 
 /** Collection of available environments. */
@@ -13,6 +14,9 @@ export type Environment =
  * General type for AdyenContext configuration. See {@link https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md}
  */
 export interface Configuration {
+  /** Configuration for analytics service */
+  analytics?: AnalyticsOptions;
+
   /** Selected environment */
   environment: Environment;
 
@@ -39,6 +43,13 @@ export interface Configuration {
 
   /** Google Pay component configuration. */
   googlepay?: GooglePayConfiguration;
+
+  /**
+   * The shopper's locale. This is used to enforce the language rendered in the UI.
+   * Not used on iOS.
+   * @defaultValue 'en-US'
+   */
+  locale?: string;
 }
 
 export interface DropInConfiguration {
