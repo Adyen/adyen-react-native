@@ -7,11 +7,6 @@ export interface AnalyticsOptions {
   enabled?: boolean;
 
   /**
-   * Reuse a previous checkoutAttemptId from a previous page
-   */
-  checkoutAttemptId?: string;
-
-  /**
    * Data to be sent along with the event data
    */
   payload?: any;

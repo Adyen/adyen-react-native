@@ -1,6 +1,7 @@
 import { NativeModules, Platform } from 'react-native';
 import { httpPost } from '../Services/https';
 import { AnalyticsProps } from './Analytics';
+let project = require('./../../../package.json');
 
 type Config = Pick<
   AnalyticsProps,
@@ -33,11 +34,16 @@ const logTelemetry = (config: Config) => (event: any) => {
     path: `v2/analytics/log?clientKey=${config.clientKey}`,
   };
 
+  const constants = Platform.constants as any;
   const telemetryEvent = {
     amountValue: config.amount?.value,
     amountCurrency: config.amount?.currency,
+    version: project.version,
     systemVersion: Platform.Version,
-    version: Platform.constants['reactNativeVersion'],
+    deviceModel: Platform.select({
+      android: `${constants.Manufacturer} ${constants.Model}`,
+      ios: constants.interfaceIdiom,
+    }),
     channel: CHANNEL,
     platform: 'react-native',
     locale: config.locale ?? DEVICE_LOCALE,
