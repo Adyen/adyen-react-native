@@ -68,9 +68,8 @@ export function http<T>(options: HttpOptions, data?: any): Promise<T> {
         }
 
         const errorMessage =
-          options.errorMessage || `Service at ${url} is not available`;
+          options.errorMessage ?? `Service at ${url} is not available`;
         handleFetchError(errorMessage, errorLevel);
-        return;
       })
       /**
        * Catch block handles Network error, CORS error, or exception throw by the `handleFetchError`

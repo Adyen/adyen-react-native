@@ -1,7 +1,7 @@
 import { NativeModules, Platform } from 'react-native';
 import { httpPost } from '../Services/https';
 import { AnalyticsProps } from './Analytics';
-let project = require('./../../../package.json');
+const project = require('./../../../package.json');
 
 type Config = Pick<
   AnalyticsProps,

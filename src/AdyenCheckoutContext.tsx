@@ -5,20 +5,19 @@ import React, {
   useEffect,
   ReactNode,
   useMemo,
+  useContext,
 } from 'react';
 import {
   EmitterSubscription,
   NativeEventEmitter,
   NativeModule,
 } from 'react-native';
-import { Event } from './Core/constants';
+import { Event, MISSING_CONTEXT_ERROR } from './Core/constants';
 import { getNativeComponent, AdyenActionComponent } from './AdyenNativeModules';
 import { PaymentMethodData, PaymentMethodsResponse } from './Core/types';
 import { Configuration } from './Core/configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './Core/utils';
 import Analytics from './Core/Analytics';
-import { useContext } from 'react';
-import { MISSING_CONTEXT_ERROR } from './Core/constants';
 
 export interface AdyenCheckoutContextType {
   start: (typeName: string) => void;

@@ -9,20 +9,6 @@ export type AnalyticsProps = Pick<
   'environment' | 'locale' | 'clientKey' | 'analytics' | 'amount'
 >;
 
-/**
- * If the checkout attempt ID was stored more than fifteen minutes ago, then we should request a new ID.
- * More here: COWEB-1099
- */
-function confirmSessionDurationIsMaxFifteenMinutes(
-  checkoutAttemptIdSession: CheckoutAttemptIdSession
-): boolean {
-  if (!checkoutAttemptIdSession?.id) return false;
-
-  const fifteenMinInMs = 1000 * 60 * 15;
-  const fifteenMinAgoTimestamp = Date.now() - fifteenMinInMs;
-  return checkoutAttemptIdSession.timestamp > fifteenMinAgoTimestamp;
-}
-
 class Analytics {
   private static defaultProps = {
     enabled: true,
@@ -58,10 +44,7 @@ class Analytics {
       return;
     }
 
-    if (
-      !this.checkoutAttemptIdSession ||
-      confirmSessionDurationIsMaxFifteenMinutes(this.checkoutAttemptIdSession)
-    ) {
+    if (!this.checkoutAttemptIdSession) {
       // fetch a new checkoutAttemptId if none is already available
       this.collectId()
         .then((checkoutAttemptIdSession) => {
