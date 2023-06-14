@@ -93,11 +93,12 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     ) => {
       const payload = {
         ...data,
+        checkoutAttemptId: analytics.current?.checkoutAttemptIdSession?.id,
         returnUrl: data.returnUrl ?? configuration.returnUrl,
       };
       onSubmit(payload, nativeComponent);
     },
-    [onSubmit]
+    [onSubmit, analytics]
   );
 
   const removeEventListeners = useCallback(() => {
@@ -172,7 +173,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       paymentMethods,
       startEventListeners,
       removeEventListeners,
-      analytics.current,
+      analytics,
     ]
   );
 
