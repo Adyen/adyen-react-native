@@ -86,7 +86,7 @@ export function http<T>(options: HttpOptions, data?: any): Promise<T> {
         }
 
         const errorMessage =
-          options.errorMessage || `Call to ${url} failed. Error= ${error}`;
+          options.errorMessage ?? `Call to ${url} failed. Error= ${error}`;
         handleFetchError(errorMessage, errorLevel);
       })
   );

@@ -37,7 +37,7 @@ const logTelemetry = (config: Config) => (event: any) => {
   const constants = Platform.constants as any;
   const telemetryEvent = {
     amount: {
-      value: config.amount?.value || 0,
+      value: config.amount?.value ?? 0,
       currency: config.amount?.currency,
     },
     version: project.version,

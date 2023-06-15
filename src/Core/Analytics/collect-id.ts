@@ -16,7 +16,7 @@ const collectId = ({ environment, clientKey }: CollectIdProps) => {
   };
 
   return (): Promise<CheckoutAttemptIdSession> => {
-    if (promise) return promise;
+    if (promise) return promise; //NOSONAR
     if (!clientKey) return Promise.reject();
 
     promise = httpPost(options, {})

@@ -49,7 +49,7 @@ class Analytics {
       this.collectId()
         .then((checkoutAttemptIdSession) => {
           this.checkoutAttemptIdSession = checkoutAttemptIdSession;
-          this.queue.run(this.checkoutAttemptIdSession);
+          this.queue.run(this.checkoutAttemptIdSession); //NOSONAR
         })
         .catch((e) => {
           console.warn(
@@ -70,7 +70,7 @@ class Analytics {
     this.queue.add(telemetryTask);
 
     if (this.checkoutAttemptIdSession) {
-      this.queue.run(this.checkoutAttemptIdSession);
+      this.queue.run(this.checkoutAttemptIdSession); //NOSONAR
     }
   }
 }
