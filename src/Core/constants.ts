@@ -11,7 +11,7 @@ export const LINKING_ERROR =
   '- You are not using Expo managed workflow\n';
 
 export const MISSING_CONTEXT_ERROR =
-  'useAdyenCheckout must be used within a AdyenCheckout';
+  'useAdyenCheckout must be used within an AdyenCheckout';
 
 /** Collection of events that components can trigger. */
 export enum Event {

@@ -27,6 +27,7 @@ export {
   AdyenCheckoutProps,
   AdyenError,
   AdyenCheckoutContextType,
+  useAdyenCheckout,
 } from './AdyenCheckoutContext';
 
 export { Event, ErrorCode, ResultCode } from './Core/constants';
@@ -44,5 +45,3 @@ export {
   TotalPriceStatus,
   GooglePayEnvironment,
 } from './Core/configuration';
-
-export { useAdyenCheckout } from './useAdyenCheckout';
