@@ -36,8 +36,10 @@ const logTelemetry = (config: Config) => (event: any) => {
 
   const constants = Platform.constants as any;
   const telemetryEvent = {
-    amountValue: config.amount?.value,
-    amountCurrency: config.amount?.currency,
+    amount: {
+      value: config.amount?.value || 0,
+      currency: config.amount?.currency,
+    },
     version: project.version,
     systemVersion: Platform.Version,
     deviceModel: Platform.select({
