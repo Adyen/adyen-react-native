@@ -90,9 +90,13 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       data: any,
       nativeComponent: AdyenActionComponent
     ) => {
+      const checkoutAttemptId = analytics.current?.checkoutAttemptId;
+      if (data.paymentMethod && checkoutAttemptId) {
+        data.paymentMethod.checkoutAttemptId = checkoutAttemptId;
+      }
+
       const payload = {
         ...data,
-        checkoutAttemptId: analytics.current?.checkoutAttemptIdSession?.id,
         returnUrl: data.returnUrl ?? configuration.returnUrl,
       };
       onSubmit(payload, nativeComponent);
