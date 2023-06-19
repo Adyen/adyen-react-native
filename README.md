@@ -213,8 +213,8 @@ const handleSubmit = (paymentData, nativeComponent) => {
 ## Documentation
 
 - [Configuration][configuration]
-- [Localization][]
-- [UI Customization][]
+- [Localization][localization]
+- [UI Customization][customization]
 - [Error codes](/docs/Error%20codes.md)
 - [Drop-in documentation][adyen-docs-dropin]
 - [Component documentation][adyen-docs-components]
