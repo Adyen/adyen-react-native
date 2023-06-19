@@ -14,7 +14,7 @@
 
 ## Analytics
 
-- **enabled** - Enable/Disable all analytics. Defaults to `true`. ⚠️ This feature only availalbe fron v68 of Adyen API
+- **enabled** - Enable/Disable all analytics. Defaults to `true`. ⚠️ This feature only available from v68 of Adyen API
 - **payload** - Data to be sent along with the event data
 
 ## React Native SDK provides following configurations for components:
