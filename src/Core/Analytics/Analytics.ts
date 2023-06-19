@@ -14,11 +14,15 @@ class Analytics {
     enabled: true,
   };
 
-  public checkoutAttemptIdSession?: CheckoutAttemptIdSession = undefined;
+  private checkoutAttemptIdSession?: CheckoutAttemptIdSession = undefined;
   public props;
   private readonly logTelemetry;
   private readonly queue = new EventsQueue();
   public readonly collectId;
+
+  public get checkoutAttemptId(): string | undefined {
+    return this.checkoutAttemptIdSession?.id;
+  }
 
   constructor({
     clientKey,
