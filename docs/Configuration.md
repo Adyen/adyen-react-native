@@ -21,7 +21,7 @@
 
 ### DropIn component
 
-- **showPreselectedStoredPaymentMethod** - Determines whether to enable preselected stored payment method view step. Defaults to `true`.
+- **showPreselectedStoredPaymentMethod** - Determines whether to enable the preselected stored payment method view step. Defaults to `true`.
 - **skipListWhenSinglePaymentMethod** - Determines whether to enable skipping payment list step when there is only one non-instant payment method. Defaults to `false`.
 
 ### Card component
