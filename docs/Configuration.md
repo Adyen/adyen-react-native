@@ -27,7 +27,7 @@
 ### Card component
 
 - **showStorePaymentField** - Indicates if the field for storing the card payment method should be displayed in the form. Defaults to `true`.
-- **holderNameRequired** - Indicates if the field for entering the holder name should be displayed in the form. Defaults to false.
+- **holderNameRequired** - Indicates if the field for entering the holder name should be displayed in the form. Defaults to `false`.
 - **hideCvcStoredCard** - Indicates whether to show the security code field on a stored card payment. Defaults to false.
 - **hideCvc** - Indicates whether to show the security code field at all. Defaults to false.
 - **addressVisibility** - Indicates the display mode of the billing address form. Options: `"none"`, `"postal"`, `"full"`. Defaults to `"none"`.
