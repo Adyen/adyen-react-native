@@ -7,7 +7,7 @@
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
-# Adyen React Native [RELEASE CANDIDATE]
+# Adyen React Native
 
 > This project is currently under development. Timelines and scope are still to be defined.
 
@@ -46,7 +46,14 @@ yarn add @adyen/react-native
   return [ADYRedirectComponent applicationDidOpenURL:url];
 }
 ```
-3. If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`_`)
+
+> ❕ If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`-`):
+
+```objc
+#import <adyen_react_native/ADYRedirectComponent.h>
+```
+
+3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
 
 #### For ApplePay
 
@@ -129,7 +136,7 @@ const configuration: Configuration = {
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
-  returnUrl: 'myapp://payment', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
+  returnUrl: 'myapp://payment', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. You can also send this property from your backend.
 };
 ```
 
@@ -206,6 +213,8 @@ const handleSubmit = (paymentData, nativeComponent) => {
 ## Documentation
 
 - [Configuration][configuration]
+- [Localization][]
+- [UI Customization][]
 - [Error codes](/docs/Error%20codes.md)
 - [Drop-in documentation][adyen-docs-dropin]
 - [Component documentation][adyen-docs-components]
@@ -220,5 +229,7 @@ MIT license. For more information, see the LICENSE file.
 
 [client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
 [configuration]: /docs/Configuration.md
+[localization]: /docs/Localization.md
+[customization]: /docs/Customization.md
 [adyen-docs-dropin]: https://docs.adyen.com/online-payments/react-native/drop-in
 [adyen-docs-components]: https://docs.adyen.com/online-payments/react-native/components
