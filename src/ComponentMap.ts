@@ -49,6 +49,10 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'econtext_online',
   'econtext_seven_eleven',
   'econtext_stores',
+  'dragonpay_ebanking',
+  'dragonpay_otc_banking',
+  'dragonpay_otc_non_banking',
+  'dragonpay_otc_philippines',
   /** Voucher payment methods that are not yet supported */
 ];
 
