@@ -54,6 +54,26 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'dragonpay_otc_non_banking',
   'dragonpay_otc_philippines',
   /** Voucher payment methods that are not yet supported */
+
+  /** Giftcard payment methods that are not yet supported */
+  'giftcard',
+  'mealVoucher_FR_natixis',
+  'mealVoucher_FR_sodexo',
+  'mealVoucher_FR_groupeup',
+  /** Giftcard payment methods that are not yet supported */
+
+  /** Open Invoice payment methods that are not yet supported */
+  'affirm',
+  'atome',
+  /** Open Invoice payment methods that are not yet supported */
+
+  /** Wallet payment methods that are not yet supported */
+  'cashapp',
+  'clicktopay',
+  'qiwiwallet',
+  'wechatpaySDK',
+  /** Wallet payment methods that are not yet supported */
+  
 ];
 
 export const NATIVE_COMPONENTS = [
@@ -62,25 +82,6 @@ export const NATIVE_COMPONENTS = [
   'scheme',
   'bcmc',
   /** Card */
-
-  /** Wallets */
-  'cashapp',
-  'clicktopay',
-  'qiwiwallet',
-  'wechatpaySDK',
-  /** Wallets */
-
-  /** Open Invoice */
-  'affirm',
-  'atome',
-  'facilypay_3x',
-  'facilypay_4x',
-  'facilypay_6x',
-  'facilypay_10x',
-  'facilypay_12x',
-  'ratepay',
-  'ratepay_directdebit',
-  /** Open Invoice */
 
   /** issuerList */
   'billdesk_online',
@@ -98,8 +99,6 @@ export const NATIVE_COMPONENTS = [
   'onlineBanking_PL',
   'onlineBanking_SK',
   'paybybank',
-  'payu_IN_cashcard',
-  'payu_IN_nb',
   'wallet_IN',
   /** issuerList */
 
@@ -119,13 +118,6 @@ export const NATIVE_COMPONENTS = [
   'upi_qr',
   'upi_collect',
   /** Await */
-
-  /** Giftcard */
-  'giftcard',
-  'mealVoucher_FR_natixis',
-  'mealVoucher_FR_sodexo',
-  'mealVoucher_FR_groupeup',
-  /** Giftcard */
 
   /** Direct debit */
   'ach',
