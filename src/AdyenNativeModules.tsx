@@ -1,9 +1,10 @@
 import { NativeModule, NativeModules } from 'react-native';
-import { find, NATIVE_COMPONENTS } from './ComponentMap';
+import { find, NATIVE_COMPONENTS, UNSUPPORTED_PAYMENT_METHODS } from './ComponentMap';
 import {
   ErrorCode,
   LINKING_ERROR,
   UNKNOWN_PAYMENT_METHOD_ERROR,
+  UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from './Core/constants';
 import {
   Card,
@@ -175,10 +176,14 @@ export function getNativeComponent(
     default:
       break;
   }
-
+  
   const paymentMethod = find(paymentMethods, type);
   if (!paymentMethod) {
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + typeName);
+  }
+
+  if (UNSUPPORTED_PAYMENT_METHODS.includes(type)) {
+    throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
   }
 
   if (NATIVE_COMPONENTS.includes(type)) {
