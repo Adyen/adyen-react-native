@@ -27,6 +27,9 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'wechatpayWeb',
   'afterpay_default',
   'amazonpay',
+  'qiwiwallet',
+  'ratepay',
+  'ratepay_directdebit',
   /** Payment methods that might be interpreted as redirect, but are actually not supported */
 
   /** Voucher payment methods that are not yet supported */
@@ -70,7 +73,6 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   /** Wallet payment methods that are not yet supported */
   'cashapp',
   'clicktopay',
-  'qiwiwallet',
   'wechatpaySDK',
   /** Wallet payment methods that are not yet supported */
   
