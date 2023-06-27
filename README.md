@@ -75,7 +75,7 @@ import android.os.Bundle;
 
 @Override
 protected void onCreate(Bundle savedInstanceState) {
-  super.onCreate(savedInstanceState);
+  super.onCreate(null);
   AdyenCheckout.setLauncherActivity(this);
 }
 ```
