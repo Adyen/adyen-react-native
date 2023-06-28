@@ -9,8 +9,6 @@
 
 # Adyen React Native
 
-> This project is currently under development. Timelines and scope are still to be defined.
-
 Adyen React Native provides you with the building blocks to create a checkout experience for your shoppers, allowing them to pay using the payment method of their choice.
 
 You can integrate with Adyen React Native in two ways:
