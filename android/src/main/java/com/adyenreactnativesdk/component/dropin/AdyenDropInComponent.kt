@@ -184,7 +184,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
                 builder.builderShopperLocale,
                 builder.builderEnvironment,
                 builder.builderClientKey
-            ).build()
+            )
+
+                .build()
         )
     }
 
@@ -219,22 +221,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.setLauncherActivity(activity)"))
-        fun setDropInLauncher(activity: ActivityResultCaller) {
-            AdyenCheckout.setLauncherActivity(activity);
-        }
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.removeLauncherActivity()"))
-        fun removeDropInLauncher() {
-            AdyenCheckout.removeLauncherActivity();
-        }
     }
 
 }

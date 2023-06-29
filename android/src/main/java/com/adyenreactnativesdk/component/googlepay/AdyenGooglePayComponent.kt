@@ -157,14 +157,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         private const val COMPONENT_NAME = "AdyenGooglePay"
         internal const val GOOGLEPAY_REQUEST_CODE = 1001
         private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.handleActivityResult(requestCode, resultCode, data)"))
-        fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-            AdyenCheckout.handleActivityResult(requestCode, resultCode, data)
-        }
     }
 }
 

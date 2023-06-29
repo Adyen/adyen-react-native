@@ -137,14 +137,6 @@ class ActionHandler(
             return REDIRECT_RESULT_SCHEME + context.packageName
         }
 
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.handleIntent(intent)"))
-        fun handleIntent(intent: Intent) {
-            AdyenCheckout.handleIntent(intent)
-        }
-
         private inline fun <reified T : Configuration> getDefaultConfigForAction(
             configuration: ActionHandlerConfiguration
         ): T {
