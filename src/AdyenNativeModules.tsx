@@ -182,11 +182,11 @@ export function getNativeComponent(
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  if (UNSUPPORTED_PAYMENT_METHODS.includes(type)) {
+  if (UNSUPPORTED_PAYMENT_METHODS.includes(typeName)) {
     throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  if (NATIVE_COMPONENTS.includes(type)) {
+  if (NATIVE_COMPONENTS.includes(typeName)) {
     return {
       nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
       paymentMethod: paymentMethod,
