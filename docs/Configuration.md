@@ -35,6 +35,10 @@
 - **socialSecurity** - Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or `"hide"`. Defaults to `"hide"`.
 - **supported** - The list of allowed card types. By default uses list of `brands` from payment method. Fallbacks to list of all known cards.
 
+### 3D Security 2
+
+- **requestorAppUrl** - Alternative `returnURL` value that could be used for 3D Security 2 OOB flow. Always use a [Universal Link](https://developer.apple.com/ios/universal-links/) aka [App Link](https://developer.android.com/training/app-links#android-app-links) if you set ThreeDSRequestorAppURL.
+
 ### ApplePay component
 
 - **merchantID** - The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.
@@ -56,8 +60,9 @@
 
 ## Example
 
-```js
-{
+```ts
+import { Configuration } from '@adyen/react-native';
+const config: Configuration = {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
@@ -79,6 +84,9 @@
     showStorePaymentField : false,
     hideCvcStoredCard: true,
     hideCvc: true
+  },
+  threeDS2: {
+    requestorUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
