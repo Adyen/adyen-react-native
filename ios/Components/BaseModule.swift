@@ -10,6 +10,13 @@ import Adyen
 import Adyen3DS2
 
 internal class BaseModule: RCTEventEmitter {
+    
+#if DEBUG
+    override func invalidate() {
+        super.invalidate()
+        dismiss(false)
+    }
+#endif
         
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
@@ -133,6 +140,16 @@ internal class BaseModule: RCTEventEmitter {
         
         currentPresenter?.dismiss(animated: true)
         currentPresenter = nil
+    }
+    
+    internal func dismiss(_ result: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            self.currentComponent?.finalizeIfNeeded(with: result) {
+                self.cleanUp()
+            }
+        }
     }
     
 }

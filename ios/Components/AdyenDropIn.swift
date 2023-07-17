@@ -11,20 +11,16 @@ import React
 
 @objc(AdyenDropIn)
 final internal class AdyenDropIn: BaseModule {
-    
-    private var dropInComponent: DropInComponent?
 
     override func supportedEvents() -> [String]! { super.supportedEvents() }
+    
+    private var dropInComponent: DropInComponent? {
+        currentComponent as? DropInComponent
+    }
+    
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            
-            self.dropInComponent?.finalizeIfNeeded(with: success.boolValue) {
-                self.cleanUp()
-                self.dropInComponent = nil
-            }
-        }
+        dismiss(success.boolValue)
     }
 
     @objc
@@ -55,8 +51,8 @@ final internal class AdyenDropIn: BaseModule {
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         configuration: config,
                                         style: dropInComponentStyle)
-        dropInComponent = component
-        dropInComponent?.delegate = self
+        currentComponent = component
+        component.delegate = self
         present(component: component)
     }
 
