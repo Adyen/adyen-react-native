@@ -21,7 +21,7 @@ internal class AdyenAppearanceLoader: NSObject {
     private static let expectedClassName = "AdyenAppearance"
     
     static func findStyle() -> Adyen.DropInComponent.Style? {
-        let bundleName = Bundle.main.bundleIdentifier?.components(separatedBy: ".").last ?? ""
+        let bundleName = Bundle.main.infoDictionary?["CFBundleName"] as? String ?? ""
         guard let nsClass = NSClassFromString("\(bundleName).\(expectedClassName)"),
               let appearanceProvider = nsClass as? AdyenAppearanceProvider.Type else {
             adyenPrint("AdyenAppearance: class \("\(bundleName).\(expectedClassName)") not found or does not conform to AdyenAppearanceProvider protocol")
