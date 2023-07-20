@@ -5,7 +5,7 @@ import { PaymentMethodsResponse } from './Core/types';
  */
 export function find(paymentMethods: PaymentMethodsResponse, typeName: string) {
   return paymentMethods.paymentMethods.find(
-    (pm) => pm.type.toLowerCase() === mapCreatedComponentType(typeName)
+    (pm) => pm.type === mapCreatedComponentType(typeName)
   );
 }
 
@@ -81,7 +81,6 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'clicktopay',
   'wechatpaySDK',
   /** Wallet payment methods that are not yet supported */
-  
 ];
 
 export const NATIVE_COMPONENTS = [
@@ -124,4 +123,3 @@ export const NATIVE_COMPONENTS = [
   'sepadirectdebit',
   /** Direct debit */
 ];
-
