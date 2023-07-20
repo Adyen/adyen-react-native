@@ -1,5 +1,9 @@
 import { NativeModule, NativeModules } from 'react-native';
-import { find, NATIVE_COMPONENTS, UNSUPPORTED_PAYMENT_METHODS } from './ComponentMap';
+import {
+  find,
+  NATIVE_COMPONENTS,
+  UNSUPPORTED_PAYMENT_METHODS,
+} from './ComponentMap';
 import {
   ErrorCode,
   LINKING_ERROR,
@@ -153,8 +157,7 @@ export function getNativeComponent(
   nativeComponent: AdyenActionComponent & NativeModule;
   paymentMethod: PaymentMethod | undefined;
 } {
-  const type = typeName.toLowerCase();
-  switch (type) {
+  switch (typeName) {
     case 'dropin':
     case 'drop-in':
     case 'adyendropin':
@@ -176,17 +179,17 @@ export function getNativeComponent(
     default:
       break;
   }
-  
-  const paymentMethod = find(paymentMethods, type);
+
+  const paymentMethod = find(paymentMethods, typeName);
   if (!paymentMethod) {
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  if (UNSUPPORTED_PAYMENT_METHODS.includes(type)) {
+  if (UNSUPPORTED_PAYMENT_METHODS.includes(typeName)) {
     throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  if (NATIVE_COMPONENTS.includes(type)) {
+  if (NATIVE_COMPONENTS.includes(typeName)) {
     return {
       nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
       paymentMethod: paymentMethod,
