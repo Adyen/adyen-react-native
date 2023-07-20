@@ -56,6 +56,12 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'dragonpay_otc_banking',
   'dragonpay_otc_non_banking',
   'dragonpay_otc_philippines',
+  'boletobancario',
+  'boletobancario_bancodobrasil',
+  'boletobancario_bradesco',
+  'boletobancario_hsbc',
+  'boletobancario_itau',
+  'boletobancario_santander',
   /** Voucher payment methods that are not yet supported */
 
   /** Giftcard payment methods that are not yet supported */
@@ -102,15 +108,6 @@ export const NATIVE_COMPONENTS = [
   'paybybank',
   'wallet_IN',
   /** issuerList */
-
-  /** Voucher */
-  'boletobancario',
-  'boletobancario_bancodobrasil',
-  'boletobancario_bradesco',
-  'boletobancario_hsbc',
-  'boletobancario_itau',
-  'boletobancario_santander',
-  /** Voucher */
 
   /** Await */
   'blik',
