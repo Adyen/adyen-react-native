@@ -63,7 +63,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         configureDropIn(builder, configuration)
         configureCards(builder, configuration)
         configureBcmc(builder, configuration)
-        configure3DS(builder)
+        configure3DS(builder, configuration)
 
         val amount = parser.amount
         val countryCode = parser.countryCode
@@ -178,18 +178,23 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         builder.addGooglePayConfiguration(googlePayConfiguration)
     }
 
-    private fun configure3DS(builder: Builder) {
-        builder.add3ds2ActionConfiguration(
-            Adyen3DS2Configuration.Builder(
-                builder.builderShopperLocale,
-                builder.builderEnvironment,
-                builder.builderClientKey
-            ).build()
+    private fun configure3DS(builder: Builder, configuration: ReadableMap) {
+        val threeDS2configuration = Adyen3DS2Configuration.Builder(
+            builder.builderShopperLocale,
+            builder.builderEnvironment,
+            builder.builderClientKey
         )
+
+        var threeDSConfig = configuration.getMap(THREEDS2_KEY)
+        if (threeDSConfig != null && threeDSConfig.hasKey(THREEDS2_REQUESTOR_APP_URL_KEY)) {
+            threeDSConfig.getString(THREEDS2_REQUESTOR_APP_URL_KEY)?.let { threeDS2configuration.setThreeDSRequestorAppURL(it) }
+        }
+
+        builder.add3ds2ActionConfiguration(threeDS2configuration.build())
     }
 
     private fun configureBcmc(builder: Builder, configuration: ReadableMap) {
-        var bcmcConfig = configuration.getMap("bcmc")
+        var bcmcConfig = configuration.getMap(BCMC_KEY)
         if (bcmcConfig == null) {
             bcmcConfig = JavaOnlyMap()
         }
@@ -219,22 +224,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.setLauncherActivity(activity)"))
-        fun setDropInLauncher(activity: ActivityResultCaller) {
-            AdyenCheckout.setLauncherActivity(activity);
-        }
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.removeLauncherActivity()"))
-        fun removeDropInLauncher() {
-            AdyenCheckout.removeLauncherActivity();
-        }
+        private const val BCMC_KEY = "bcmc"
+        private const val THREEDS2_KEY = "threeDS2"
+        private const val THREEDS2_REQUESTOR_APP_URL_KEY = "requestorAppUrl"
     }
 
 }

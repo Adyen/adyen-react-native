@@ -44,6 +44,9 @@ export interface Configuration {
   /** Google Pay component configuration. */
   googlepay?: GooglePayConfiguration;
 
+  /** 3D Secure 2 component configuration. */
+  threeDS2?: ThreeDS2Configuration;
+
   /**
    * The shopper's locale. This is used to enforce the language rendered in the UI.
    * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
@@ -52,6 +55,11 @@ export interface Configuration {
    * @defaultValue null.
    */
   locale?: string;
+}
+
+export interface ThreeDS2Configuration {
+  /**  Alternative `returnURL` value that could be used for 3D Security 2 OOB flow.  */
+  requestorAppUrl?: String;
 }
 
 export interface DropInConfiguration {
