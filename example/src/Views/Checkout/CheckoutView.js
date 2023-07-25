@@ -127,9 +127,6 @@ const CheckoutView = ({ navigation }) => {
                 currency: configuration.currency,
               },
               countryCode: configuration.countryCode,
-              threeDS2: {
-                requestorAppUrl: 'https://google.com',
-              },
             }
           }
           paymentMethods={paymentMethods}

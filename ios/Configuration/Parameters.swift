@@ -52,6 +52,7 @@ internal enum ApplePayKeys: SubConfig {
     static var allowOnboarding = "allowOnboarding"
 }
 
-internal enum StyleKeys: SubConfig {
-    static var rootKey = "style"
+internal enum ThreeDSKey: SubConfig {
+    static var rootKey = "threeDS2"
+    static var requestorAppUrl = "requestorAppUrl"
 }

@@ -86,7 +86,7 @@ const config: Configuration = {
     hideCvc: true
   },
   threeDS2: {
-    requestorUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
+    requestorAppUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
