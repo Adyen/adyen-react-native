@@ -38,8 +38,9 @@
 ### ApplePay component
 
 - **merchantID** - The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.
-- **merchantName** - The merchant name. Used for generation of a collection of `PKPaymentSummaryItem`.
+- **merchantName** - The merchant name. This value will be used to generate a single *PKPaymentSummaryItem* if `summaryItems` is not provided.
 - **allowOnboarding** - The flag to toggle onboarding. If `true`, allow the shopper to add cards to the Apple Pay if non exists yet. If `false`, Apple Pay is disabled when the shopper doesn’t have supported cards on Apple Pay wallet. Default is `false`.
+- **summaryItems** - The line items for this payment. **WARNING**: make sure that the last element of this array contains exact value as `amount`. 
 
 ### GooglePay component
 
@@ -82,8 +83,21 @@
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
-    merchantName: '{YOUR_MERCHANT_NAME}',
-    allowOnboarding: true
+    allowOnboarding: true,
+    summaryItems: [
+                  {
+                    label: 'Item',
+                    value: 1000,
+                  },
+                  {
+                    label: 'Tax',
+                    value: -10,
+                  },
+                  {
+                    label: `{YOUR_MERCHANT_NAME}`,
+                    value: 1000,
+                  },
+                ],
   },
   googlepay: {
     billingAddressRequired: true,
