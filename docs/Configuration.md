@@ -38,8 +38,9 @@
 ### ApplePay component
 
 - **merchantID** - The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.
-- **merchantName** - The merchant name. Used for generation of a collection of `PKPaymentSummaryItem`.
+- **merchantName** - The merchant name. This value will be used to generate a single *PKPaymentSummaryItem* if `summaryItems` is not provided.
 - **allowOnboarding** - The flag to toggle onboarding. If `true`, allow the shopper to add cards to the Apple Pay if non exists yet. If `false`, Apple Pay is disabled when the shopper doesn’t have supported cards on Apple Pay wallet. Default is `false`.
+- **summaryItems** - An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`.
 
 ### GooglePay component
 
@@ -63,7 +64,7 @@
   countryCode: 'NL',
   amount: {
     currency: 'EUR',
-    value: 1000,
+    value: 9840,
   },
   returnUrl: 'myapp://adyencheckout',
   analytics: {
@@ -82,8 +83,25 @@
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
-    merchantName: '{YOUR_MERCHANT_NAME}',
-    allowOnboarding: true
+    allowOnboarding: true,
+    summaryItems: [
+                  {
+                    label: 'Item',
+                    value: 100,
+                  },
+                  {
+                    label: 'Discount',
+                    value: -20,
+                  },
+                  {
+                    label: 'Tax',
+                    value: '18.4',
+                  },
+                  {
+                    label: `{YOUR_MERCHANT_NAME}`,
+                    value: 98.4,
+                  },
+                ],
   },
   googlepay: {
     billingAddressRequired: true,

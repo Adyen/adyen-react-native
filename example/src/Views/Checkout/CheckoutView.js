@@ -127,6 +127,10 @@ const CheckoutView = ({ navigation }) => {
                 currency: configuration.currency,
               },
               countryCode: configuration.countryCode,
+              applepay: {
+                merchantID: ENVIRONMENT.applepayMerchantID,
+                merchantName: configuration.merchantName,
+              },
             }
           }
           paymentMethods={paymentMethods}

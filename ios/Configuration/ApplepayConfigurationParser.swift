@@ -34,20 +34,46 @@ public struct ApplepayConfigurationParser {
     var allowOnboarding: Bool {
         return dict[ApplePayKeys.allowOnboarding] as? Bool ?? false
     }
+    
+    var summaryItems: [PKPaymentSummaryItem]? {
+        guard let items = dict[ApplePayKeys.summaryItems] as? [[String: Any]] else {
+            return nil
+        }
+        
+        var summaryItems = [PKPaymentSummaryItem]()
+        for item in items {
+            if let label = item[ApplePayKeys.summaryItemsLabel] as? String,
+               let value = item[ApplePayKeys.summaryItemsValue] {
+                if let value = value as? String {
+                    summaryItems.append(.init(label: label, amount: NSDecimalNumber(string: value)))
+                } else if let value = value as? Double {
+                    summaryItems.append(.init(label: label, amount: NSDecimalNumber(value: value)))
+                }
+            }
+        }
+        return summaryItems.isEmpty ? nil : summaryItems
+    }
 
     public func buildConfiguration(amount: Amount) throws -> Adyen.ApplePayComponent.Configuration {
         guard let merchantID = merchantID else {
             throw ApplePayError.invalidMerchantID
         }
         
-        guard let merchantName = merchantName else {
-            throw ApplePayError.invalidMerchantName
+        let summaryItems: [PKPaymentSummaryItem]
+        if let summaryItemsFromConfig = self.summaryItems {
+            summaryItems = summaryItemsFromConfig
+        } else {
+            guard let merchantName = merchantName else {
+                throw ApplePayError.invalidMerchantName
+            }
+            
+            let amount = AmountFormatter.decimalAmount(amount.value,
+                                                       currencyCode: amount.currencyCode,
+                                                       localeIdentifier: amount.localeIdentifier)
+            summaryItems = [PKPaymentSummaryItem(label: merchantName, amount: amount)]
+            
         }
-
-        let amount = AmountFormatter.decimalAmount(amount.value,
-                                                   currencyCode: amount.currencyCode,
-                                                   localeIdentifier: amount.localeIdentifier)
-        return .init(summaryItems: [PKPaymentSummaryItem(label: merchantName, amount: amount)],
+        return .init(summaryItems: summaryItems,
                      merchantIdentifier: merchantID,
                      allowOnboarding: allowOnboarding)
     }
@@ -67,7 +93,7 @@ extension ApplepayConfigurationParser {
         var errorDescription: String? {
             switch self {
             case .invalidMerchantName:
-                return "No Apple Pay merchantName in configuration"
+                return "Neither `summaryItems` nor `merchantName` in Apple Pay configuration"
             case .invalidMerchantID:
                 return "No Apple Pay merchantID in configuration"
             }
