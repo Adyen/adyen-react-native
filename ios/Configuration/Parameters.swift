@@ -50,6 +50,9 @@ internal enum ApplePayKeys: SubConfig {
     static var merchantID = "merchantID"
     static var merchantName = "merchantName"
     static var allowOnboarding = "allowOnboarding"
+    static var summaryItems = "summaryItems"
+    static var summaryItemsLabel = "label"
+    static var summaryItemsValue = "value"
 }
 
 internal enum StyleKeys: SubConfig {
