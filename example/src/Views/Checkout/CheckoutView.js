@@ -128,21 +128,8 @@ const CheckoutView = ({ navigation }) => {
               },
               countryCode: configuration.countryCode,
               applepay: {
-                merchantID: configuration.applepayMerchantID,
-                summaryItems: [
-                  {
-                    label: 'Item',
-                    value: 1000,
-                  },
-                  {
-                    label: 'Tax',
-                    value: -10,
-                  },
-                  {
-                    label: configuration.merchantName,
-                    value: configuration.amount,
-                  },
-                ],
+                merchantID: ENVIRONMENT.applepayMerchantID,
+                merchantName: configuration.merchantName,
               },
             }
           }

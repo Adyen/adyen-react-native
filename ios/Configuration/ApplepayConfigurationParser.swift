@@ -43,8 +43,12 @@ public struct ApplepayConfigurationParser {
         var summaryItems = [PKPaymentSummaryItem]()
         for item in items {
             if let label = item[ApplePayKeys.summaryItemsLabel] as? String,
-               let value = item[ApplePayKeys.summaryItemsValue] as? Float {
-                summaryItems.append(.init(label: label, amount: NSDecimalNumber(value: value)))
+               let value = item[ApplePayKeys.summaryItemsValue] {
+                if let value = value as? String {
+                    summaryItems.append(.init(label: label, amount: NSDecimalNumber(string: value)))
+                } else if let value = value as? Double {
+                    summaryItems.append(.init(label: label, amount: NSDecimalNumber(value: value)))
+                }
             }
         }
         return summaryItems.isEmpty ? nil : summaryItems
