@@ -5,7 +5,7 @@ import { PaymentMethodsResponse } from './Core/types';
  */
 export function find(paymentMethods: PaymentMethodsResponse, typeName: string) {
   return paymentMethods.paymentMethods.find(
-    (pm) => pm.type.toLowerCase() === mapCreatedComponentType(typeName)
+    (pm) => pm.type === mapCreatedComponentType(typeName)
   );
 }
 
@@ -56,6 +56,12 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'dragonpay_otc_banking',
   'dragonpay_otc_non_banking',
   'dragonpay_otc_philippines',
+  'boletobancario',
+  'boletobancario_bancodobrasil',
+  'boletobancario_bradesco',
+  'boletobancario_hsbc',
+  'boletobancario_itau',
+  'boletobancario_santander',
   /** Voucher payment methods that are not yet supported */
 
   /** Giftcard payment methods that are not yet supported */
@@ -75,7 +81,6 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'clicktopay',
   'wechatpaySDK',
   /** Wallet payment methods that are not yet supported */
-  
 ];
 
 export const NATIVE_COMPONENTS = [
@@ -104,15 +109,6 @@ export const NATIVE_COMPONENTS = [
   'wallet_IN',
   /** issuerList */
 
-  /** Voucher */
-  'boletobancario',
-  'boletobancario_bancodobrasil',
-  'boletobancario_bradesco',
-  'boletobancario_hsbc',
-  'boletobancario_itau',
-  'boletobancario_santander',
-  /** Voucher */
-
   /** Await */
   'blik',
   'mbway',
@@ -127,4 +123,3 @@ export const NATIVE_COMPONENTS = [
   'sepadirectdebit',
   /** Direct debit */
 ];
-

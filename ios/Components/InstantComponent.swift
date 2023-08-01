@@ -12,17 +12,12 @@ import React
 
 @objc(AdyenInstant)
 final internal class InstantComponent: BaseModule {
+    
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
-        DispatchQueue.main.async {[weak self] in
-            guard let self = self else { return }
-            
-            self.currentComponent?.finalizeIfNeeded(with: success.boolValue) {
-                self.cleanUp()
-            }
-        }
+        dismiss(success.boolValue)
     }
 
     @objc
