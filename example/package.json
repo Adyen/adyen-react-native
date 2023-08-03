@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
-    "ios": "yarn pod && react-native run-ios --simulator 'iPhone 14'",
+    "ios": "yarn pod && react-native run-ios --simulator 'iPhone 14, iOS 16.4'",
     "pod": "cd ios && pod install",
     "start": "react-native start",
     "lint": "eslint ."
   },
   "dependencies": {
+    "@adyen/react-native": "file:../",
     "@react-native-async-storage/async-storage": "^1.18.1",
     "@react-navigation/native": "^6.0.6",
     "@react-navigation/native-stack": "^6.2.5",

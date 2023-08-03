@@ -17,7 +17,7 @@ target 'AdyenExample' do
     # Pods for testing
   end
 
-  pod 'adyen-react-native', :path => '../..'
+  # pod 'adyen-react-native', :path => '../..'
 
   # Enables Flipper.
   #
