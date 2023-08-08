@@ -27,7 +27,7 @@ function isAdyenErrorResponse(data: any): data is AdyenErrorResponse {
   );
 }
 
-export function http<T>(options: HttpOptions, data?: any): Promise<T> {
+export function http<T>(options: HttpOptions, body?: any): Promise<T> {
   const {
     headers = [],
     errorLevel = 'warn',
@@ -48,7 +48,7 @@ export function http<T>(options: HttpOptions, data?: any): Promise<T> {
     },
     redirect: 'follow',
     referrerPolicy: 'no-referrer-when-downgrade',
-    ...(data && { body: JSON.stringify(data) }),
+    ...(body && { body: JSON.stringify(body) }),
   };
 
   const url = `${getURL(environment)}${path}`;

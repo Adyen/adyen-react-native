@@ -17,8 +17,6 @@ target 'AdyenExample' do
     # Pods for testing
   end
 
-  # pod 'adyen-react-native', :path => '../..'
-
   # Enables Flipper.
   #
   # Note that if you have use_frameworks! enabled, Flipper will not work and

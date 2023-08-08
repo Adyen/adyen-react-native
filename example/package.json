@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
-    "ios": "yarn pod && react-native run-ios --simulator 'iPhone 14, iOS 16.4'",
+    "ios": "yarn pod && react-native run-ios --simulator 'iPhone 14'",
     "pod": "cd ios && pod install",
     "start": "react-native start",
     "lint": "eslint ."
