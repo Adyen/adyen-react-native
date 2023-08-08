@@ -93,7 +93,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             listener.onAction(jsonObject)
-        } catch (e: JSONException) {
+        } catch (e: Exception) {
             sendErrorEvent(BaseModuleException.InvalidAction(e))
         }
     }
