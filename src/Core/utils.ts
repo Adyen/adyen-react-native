@@ -35,7 +35,7 @@ const currencyCodeRegex = /^[A-Z]{3}$/;
 const clientKeyRegex = /^[a-z]{4,8}_[a-zA-Z0-9]{8,128}$/;
 
 export const checkConfiguration = (configuration: Configuration) => {
-  if (configuration && Platform.OS == 'ios' && !configuration.returnUrl) {
+  if (configuration && Platform.OS === 'ios' && !configuration.returnUrl) {
     throw new Error(`Parameter returnUrl is required`);
   }
 

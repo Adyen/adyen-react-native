@@ -95,15 +95,15 @@ export interface ApplePayConfiguration {
   /** The flag to toggle onboarding. */
   allowOnboarding?: boolean;
   /** The line items for this payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. */
-  summaryItems?: [ApplePaySummaryItem]
+  summaryItems?: [ApplePaySummaryItem];
 }
 
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
 export interface ApplePaySummaryItem {
   /** A short, localized description of the summary item. */
-  label: String,
+  label: String;
   /** The amount associated with the summary item. */
-  value: Number | String
+  value: Number | String;
 }
 
 export type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';
