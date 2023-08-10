@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		00E356F31AD99517003FC87E /* AdyenExampleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* AdyenExampleTests.m */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		4385E204EEF12DE79A7120D7 /* libPods-AdyenExample-AdyenExampleTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 61BB7C82FA499FE3CD77B125 /* libPods-AdyenExample-AdyenExampleTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948B9B012A83D269003D15B4 /* DropInTest.swift */; };
 		B6CB27F7E4011E633F2A25A7 /* libPods-AdyenExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 74FF1EDD8A3337F905F9FF61 /* libPods-AdyenExample.a */; };
 		F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */; };
 /* End PBXBuildFile section */
@@ -30,7 +30,6 @@
 /* Begin PBXFileReference section */
 		00E356EE1AD99517003FC87E /* AdyenExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AdyenExampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		00E356F21AD99517003FC87E /* AdyenExampleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AdyenExampleTests.m; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* AdyenExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AdyenExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = AdyenExample/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = AdyenExample/AppDelegate.m; sourceTree = "<group>"; };
@@ -42,6 +41,8 @@
 		61BB7C82FA499FE3CD77B125 /* libPods-AdyenExample-AdyenExampleTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdyenExample-AdyenExampleTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		74FF1EDD8A3337F905F9FF61 /* libPods-AdyenExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdyenExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AdyenExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		948B9B002A83D269003D15B4 /* AdyenExampleTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AdyenExampleTests-Bridging-Header.h"; sourceTree = "<group>"; };
+		948B9B012A83D269003D15B4 /* DropInTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropInTest.swift; sourceTree = "<group>"; };
 		A1C8461E16734A59CA0E7714 /* Pods-AdyenExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyenExample.release.xcconfig"; path = "Target Support Files/Pods-AdyenExample/Pods-AdyenExample.release.xcconfig"; sourceTree = "<group>"; };
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -72,8 +73,9 @@
 		00E356EF1AD99517003FC87E /* AdyenExampleTests */ = {
 			isa = PBXGroup;
 			children = (
-				00E356F21AD99517003FC87E /* AdyenExampleTests.m */,
 				00E356F01AD99517003FC87E /* Supporting Files */,
+				948B9B012A83D269003D15B4 /* DropInTest.swift */,
+				948B9B002A83D269003D15B4 /* AdyenExampleTests-Bridging-Header.h */,
 			);
 			path = AdyenExampleTests;
 			sourceTree = "<group>";
@@ -209,6 +211,7 @@
 				TargetAttributes = {
 					00E356ED1AD99517003FC87E = {
 						CreatedOnToolsVersion = 6.2;
+						LastSwiftMigration = 1430;
 						TestTargetID = 13B07F861A680F5B00A75B9A;
 					};
 					13B07F861A680F5B00A75B9A = {
@@ -407,7 +410,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00E356F31AD99517003FC87E /* AdyenExampleTests.m in Sources */,
+				948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -437,6 +440,7 @@
 			baseConfigurationReference = 23C070D30F74D9211A64844B /* Pods-AdyenExample-AdyenExampleTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -455,6 +459,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "AdyenExampleTests/AdyenExampleTests-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AdyenExample.app/AdyenExample";
 			};
 			name = Debug;
@@ -464,6 +471,7 @@
 			baseConfigurationReference = 2FA4EF33534FFA06DCB2903F /* Pods-AdyenExample-AdyenExampleTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = AdyenExampleTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -479,6 +487,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "AdyenExampleTests/AdyenExampleTests-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AdyenExample.app/AdyenExample";
 			};
 			name = Release;
