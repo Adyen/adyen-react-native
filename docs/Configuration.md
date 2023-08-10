@@ -6,7 +6,7 @@
 - **clientKey** - A public key linked to your API credential, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication).
 - **amount** - Amount to be displayed on the Pay Button. It expects an object with the minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **10$**. For card pre-authorisation set the amount to `0` (zero).
 - **countryCode** - The shopper's country code in ISO 3166-1 alpha-2 format. Example: `"NL"` or `"US"`.
-- **shopperLocale** - 🚧 Work in progress. In the current version, this property only localizes payment method names. The default OS's locale is used for localization.
+- **locale** - 🚧 Work in progress. In the current version, this property only localizes payment method names. If no value set, the default device's locale is used.
 - **returnUrl** - For iOS, this is the URL to your app, where the shopper should return, after a redirection. Maximum of 1024 characters. For more information on setting a custom URL scheme for your app, read the [Apple Developer documentation](https://developer.apple.com/documentation/uikit/inter-process_communication/allowing_apps_and_websites_to_link_to_your_content/defining_a_custom_url_scheme_for_your_app).
   For Android, this value is automatically overridden by `AdyenCheckout`.
 
