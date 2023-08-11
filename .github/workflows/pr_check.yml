@@ -1,0 +1,97 @@
+name: Scan PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+
+  setup:
+    name: Checking PR on ${{ inputs.deploy_target }} by @${{ github.actor }}
+    runs-on: mac-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: n1hility/cancel-previous-runs@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'yarn'
+
+    - name: Build dependency
+      run: yarn
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: my-artifact
+        path: lib
+
+  test-iOS: 
+    name: Test iOS
+    needs: setup
+    runs-on: mac-latest
+    steps:
+
+    - uses: actions/download-artifact@master
+      with:
+        name: my-artifact
+        path: lib
+
+    - name: Run Yarn iOS
+      run: yarn ios 
+
+    - name: Build and test iOS
+      run: xcodebuild test -workspace "${workspace}" -scheme "${scheme}" ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+      env:
+        workspace: 'AdyenExample.xcworkspace'
+        params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
+        scheme: 'AdyenExample'
+        destination: 'name=iPhone 14'
+
+    - name: SwiftLint
+      run: |
+        fastlane run swiftlint
+
+  test-Android: 
+    name: Test Android
+    needs: setup
+    runs-on: mac-latest
+    steps:
+
+    - uses: actions/download-artifact@master
+      with:
+        name: my-artifact
+        path: lib
+
+    - name: Run Yarn iOS
+      run: yarn android 
+
+    - name: Build and test iOS
+      run: |
+        echo "TODO: Running Android tests"
+
+  run-sonar:
+    name: Collect Sonar reports
+    needs: [test-Android, test-iOS]
+    runs-on: mac-latest
+    env:
+      sonarToken: ${{ secrets.SONAR_TOKEN }}
+    steps:
+
+    - name: Install Tools
+      run: |
+        brew install sonar-scanner
+    
+    - name: Run Sonar
+      if: ${{ env.sonarToken != 0 }}
+      run: |
+        git fetch --unshallow --no-tags
+        sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  
+
