@@ -8,7 +8,7 @@ jobs:
 
   setup:
     name: Checking PR on ${{ inputs.deploy_target }} by @${{ github.actor }}
-    runs-on: mac-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -32,7 +32,7 @@ jobs:
   test-iOS: 
     name: Test iOS
     needs: setup
-    runs-on: mac-latest
+    runs-on: macos-latest
     steps:
 
     - uses: actions/download-artifact@master
@@ -58,7 +58,7 @@ jobs:
   test-Android: 
     name: Test Android
     needs: setup
-    runs-on: mac-latest
+    runs-on: macos-latest
     steps:
 
     - uses: actions/download-artifact@master
@@ -76,7 +76,7 @@ jobs:
   run-sonar:
     name: Collect Sonar reports
     needs: [test-Android, test-iOS]
-    runs-on: mac-latest
+    runs-on: macos-latest
     env:
       sonarToken: ${{ secrets.SONAR_TOKEN }}
     steps:
