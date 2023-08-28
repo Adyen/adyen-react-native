@@ -28,7 +28,7 @@ jobs:
     - name: Build and test iOS
       run: |
         cd example/ios
-        xcodebuild test -workspace "${workspace}" -scheme "${scheme}" ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+        xcodebuild test -workspace "${workspace}" -scheme "${scheme}" ${params} -destination "${destination}" -quiet | xcpretty --utf --color && exit ${PIPESTATUS[0]}
       env:
         workspace: 'AdyenExample.xcworkspace'
         params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
@@ -50,6 +50,38 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '11'
+        cache: 'gradle'
+
+    - name: AVD cache
+      uses: actions/cache@v3
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: avd-32
+
+    - name: Create AVD and generate snapshot for caching
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 32
+        force-avd-creation: false
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: false
+        script: echo "Generated AVD snapshot for caching."
+
+    - name: Checking AVD
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 32
+        force-avd-creation: false
+        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: true
+        script: |
+          adb kill-server
+          adb start-server    
+          ./gradlew connectedCheck
 
     - name: Build dependency
       run: yarn
@@ -60,7 +92,7 @@ jobs:
 
     - name: Build and test Android
       run: |
-        cd example/android        
+        cd example/android    
         echo "TODO: Running Android tests"
 
   run-sonar:
@@ -84,6 +116,4 @@ jobs:
         sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  
-
+        
