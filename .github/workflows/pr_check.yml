@@ -38,6 +38,11 @@ jobs:
   test-Android: 
     name: Test Android
     runs-on: macos-latest
+    strategy:
+      matrix:
+        api-level: [24, 32]
+        target: [google_apis]
+        arch: [x86_64]
     steps:
 
     - uses: actions/checkout@v3
@@ -59,13 +64,15 @@ jobs:
         path: |
           ~/.android/avd/*
           ~/.android/adb*
-        key: avd-32
+        key: avd-${{ matrix.api-level }}
 
     - name: Create AVD and generate snapshot for caching
       if: steps.avd-cache.outputs.cache-hit != 'true'
       uses: reactivecircus/android-emulator-runner@v2
       with:
-        api-level: 32
+        api-level: ${{ matrix.api-level }}
+        target: ${{ matrix.target }}
+        arch: ${{ matrix.arch }}
         force-avd-creation: false
         emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: false
@@ -74,7 +81,9 @@ jobs:
     - name: Checking AVD
       uses: reactivecircus/android-emulator-runner@v2
       with:
-        api-level: 32
+        api-level: ${{ matrix.api-level }}
+        target: ${{ matrix.target }}
+        arch: ${{ matrix.arch }}
         force-avd-creation: false
         emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: true
