@@ -8,53 +8,43 @@ import XCTest
 import React
 
 final class DropInTest: XCTestCase {
+  private let timeout: TimeInterval! = TimeInterval(exactly: 6)
   
-  private let timeout: TimeInterval! = TimeInterval(exactly: 600)
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testOpenDropIn() throws {
-      let vc = RCTSharedApplication()!.keyWindow!.rootViewController!
-      let timeoutDate = Date(timeIntervalSinceNow: timeout)
-      var success = false
-      var redboxError: String? = nil
-      
-      #if DEBUG
-      RCTLogFunction((level, source, fileName, lineNumber, message) -> {
-        if (level >= RCTLogLevel.error ) {
-          redboxError = message;
-        }
-      })
-      #endif
-      
-      while Date() < timeoutDate && !success {
-        RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.1))
-        RunLoop.main.run(mode: .common, before: Date(timeIntervalSinceNow: 0.1))
-        
-        success = findSubview(in: vc.view, that: {$0.accessibilityLabel == "Checkout"} )
+  override func setUpWithError() throws {
+    // Put setup code here. This method is called before the invocation of each test method in the class.
+  }
+  
+  override func tearDownWithError() throws {
+    // Put teardown code here. This method is called after the invocation of each test method in the class.
+  }
+  
+  func testOpenApp() throws {
+    let vc = RCTSharedApplication()!.keyWindow!.rootViewController!
+    let timeoutDate = Date(timeIntervalSinceNow: timeout)
+    var success = false
+    var redboxError: String? = nil
+    
+#if DEBUG
+    RCTSetLogFunction({ level, source, fileName, lineNumber, message in
+      if (level.rawValue >= RCTLogLevel.error.rawValue ) {
+        redboxError = message;
       }
-      
-      #if DEBUG
-      RCTLogFunction(RCTDefaultLogFunction)
-      #endif
-      
-      XCTAssertNil(redboxError, "RedBox error: \(redboxError!)")
-      XCTAssertTrue(success)
+    })
+#endif
+    
+    while Date() < timeoutDate && !success {
+      wait(for: .milliseconds(100))
+      success = findSubview(in: vc.view, that: {$0.accessibilityLabel == "Checkout"} )
     }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-
+    
+#if DEBUG
+    RCTSetLogFunction(RCTDefaultLogFunction)
+#endif
+    
+    XCTAssertNil(redboxError, "RedBox error: \(redboxError!)")
+    XCTAssertTrue(success)
+  }
+  
   func findSubview(in view: UIView, that predicate: (UIView) -> Bool) -> Bool {
     if predicate(view) {
       return true
@@ -68,5 +58,25 @@ final class DropInTest: XCTestCase {
     
     return false
   }
+  
+}
+
+extension XCTestCase {
+    func wait(for interval: DispatchTimeInterval) {
+        let dummyExpectation = XCTestExpectation(description: "wait for a few seconds.")
+
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + interval) {
+            dummyExpectation.fulfill()
+        }
+
+        wait(for: [dummyExpectation], timeout: 100)
+    }
     
+    func waitFor(predicate: @escaping () -> Bool) {
+        let dummyExpectation = XCTNSPredicateExpectation(predicate: NSPredicate(block: { _, _ in
+            predicate()
+        }), object: nil)
+
+        wait(for: [dummyExpectation], timeout: 100)
+    }
 }
