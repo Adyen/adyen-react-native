@@ -30,7 +30,7 @@ jobs:
     - name: Build and test iOS
       run: |
         cd example/ios
-        xcodebuild test -workspace "${workspace}" -scheme "${scheme}" ${params} -destination "${destination}" -quiet | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+        xcodebuild test -workspace "${workspace}" -scheme "${scheme}" ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
       env:
         workspace: 'AdyenExample.xcworkspace'
         params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
