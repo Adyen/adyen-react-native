@@ -217,5 +217,4 @@ export interface PaymentMethodData {
    * 	Contains passed-throught value for iOS or `adyencheckout://${DeviceInfo.getBundleId()}` for Android
    */
   returnUrl: string;
-  [key: string]: any;
 }
