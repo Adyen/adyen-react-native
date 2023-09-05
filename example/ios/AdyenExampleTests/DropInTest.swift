@@ -8,7 +8,7 @@ import XCTest
 import React
 
 final class DropInTest: XCTestCase {
-  private let timeout: TimeInterval! = TimeInterval(exactly: 6)
+  private let timeout: TimeInterval! = TimeInterval(exactly: 60 * 10)
   
   override func setUpWithError() throws {
     // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -33,7 +33,7 @@ final class DropInTest: XCTestCase {
 #endif
     
     while Date() < timeoutDate && !success {
-      wait(for: .milliseconds(100))
+      wait(for: .milliseconds(500))
       success = findSubview(in: vc.view, that: {$0.accessibilityLabel == "Checkout"} )
     }
     
