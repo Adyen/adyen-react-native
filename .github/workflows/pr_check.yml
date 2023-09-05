@@ -22,6 +22,13 @@ jobs:
     - name: Build dependency
       run: yarn
 
+    - uses: actions/cache@v3
+    with:
+      path: example/ios/Pods
+      key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
+      restore-keys: |
+        ${{ runner.os }}-pods-
+
     - name: Pod install
       run: |
         cd example/ios
@@ -81,6 +88,15 @@ jobs:
         emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: false
         script: echo "Generated AVD snapshot for caching."
+    
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('example/**/*.gradle*', 'example/**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: Checking AVD
       uses: reactivecircus/android-emulator-runner@v2
