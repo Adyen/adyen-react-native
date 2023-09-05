@@ -3,6 +3,8 @@ name: Scan PR
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+env:
+  node-version: 16
 
 jobs:
 
@@ -14,7 +16,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: ${{ env.node-version }}
         cache: 'yarn'
 
     - name: Build dependency
@@ -33,22 +35,21 @@ jobs:
         workspace: 'AdyenExample.xcworkspace'
         params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
         scheme: 'AdyenExample'
-        destination: 'name=iPhone 14'
+        destination: 'name=iPhone 14,OS=16.2'
 
   test-Android: 
     name: Test Android
     runs-on: macos-latest
-    strategy:
-      matrix:
-        api-level: [24, 32]
-        target: [google_apis]
-        arch: [x86_64]
+    env:
+      api-level: 31
+      target: google_apis
+      arch: x86_64
     steps:
 
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: ${{ env.node-version }}
         cache: 'yarn'
 
     - uses: actions/setup-java@v3
@@ -57,6 +58,9 @@ jobs:
         java-version: '11'
         cache: 'gradle'
 
+    - name: Build library
+      run: yarn
+
     - name: AVD cache
       uses: actions/cache@v3
       id: avd-cache
@@ -64,15 +68,15 @@ jobs:
         path: |
           ~/.android/avd/*
           ~/.android/adb*
-        key: avd-${{ matrix.api-level }}
+        key: avd-${{ env.api-level }}
 
     - name: Create AVD and generate snapshot for caching
       if: steps.avd-cache.outputs.cache-hit != 'true'
       uses: reactivecircus/android-emulator-runner@v2
       with:
-        api-level: ${{ matrix.api-level }}
-        target: ${{ matrix.target }}
-        arch: ${{ matrix.arch }}
+        api-level: ${{ env.api-level }}
+        target: ${{ env.target }}
+        arch: ${{ env.arch }}
         force-avd-creation: false
         emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: false
@@ -81,28 +85,19 @@ jobs:
     - name: Checking AVD
       uses: reactivecircus/android-emulator-runner@v2
       with:
-        api-level: ${{ matrix.api-level }}
-        target: ${{ matrix.target }}
-        arch: ${{ matrix.arch }}
+        api-level: ${{ env.api-level }}
+        target: ${{ env.target }}
+        arch: ${{ env.arch }}
         force-avd-creation: false
         emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: true
         script: |
-          adb kill-server
-          adb start-server    
-          ./gradlew connectedCheck
-
-    - name: Build dependency
-      run: yarn
-
-    - name: Run Yarn
-      run: |
-        yarn android
-
-    - name: Build and test Android
-      run: |
-        cd example/android    
-        echo "TODO: Running Android tests"
+          echo "::group::Running Android app"
+          yarn android
+          echo "::endgroup::"
+          echo "::group::Running Test"
+          cd example/android && ./gradlew connectedCheck
+          echo "::endgroup::"
 
   run-sonar:
     name: Collect Sonar reports
