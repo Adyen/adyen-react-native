@@ -23,11 +23,11 @@ jobs:
       run: yarn
 
     - uses: actions/cache@v3
-    with:
-      path: example/ios/Pods
-      key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
-      restore-keys: |
-        ${{ runner.os }}-pods-
+      with:
+        path: example/ios/Pods
+        key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
 
     - name: Pod install
       run: |
