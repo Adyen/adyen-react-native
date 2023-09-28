@@ -7,133 +7,133 @@ env:
   node-version: 16
 
 jobs:
-
-  test-iOS: 
+  test-iOS:
     name: Test iOS
-    runs-on: macos-latest
+    runs-on: macos-13-xl
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
 
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: ${{ env.node-version }}
-        cache: 'yarn'
+      - name: Build dependency
+        run: yarn
 
-    - name: Build dependency
-      run: yarn
+      - uses: actions/cache@v3
+        with:
+          path: example/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
-    - uses: actions/cache@v3
-      with:
-        path: example/ios/Pods
-        key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-pods-
+      - name: Pod install
+        run: |
+          cd example/ios
+          pod install
 
-    - name: Pod install
-      run: |
-        cd example/ios
-        pod install
+      - name: Build and test iOS
+        run: |
+          cd example/ios
+          xcodebuild test -workspace "${workspace}" -scheme "${scheme}" ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+        env:
+          workspace: 'AdyenExample.xcworkspace'
+          params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
+          scheme: 'AdyenExample'
+          destination: 'name=iPhone 14'
 
-    - name: Build and test iOS
-      run: |
-        cd example/ios
-        xcodebuild test -workspace "${workspace}" -scheme "${scheme}" ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
-      env:
-        workspace: 'AdyenExample.xcworkspace'
-        params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
-        scheme: 'AdyenExample'
-        destination: 'name=iPhone 14,OS=16.2'
-
-  test-Android: 
+  test-Android:
     name: Test Android
-    runs-on: macos-latest
+    runs-on: macos-13-xl
     env:
       api-level: 31
       target: google_apis
       arch: x86_64
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
 
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: ${{ env.node-version }}
-        cache: 'yarn'
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+          cache: 'gradle'
 
-    - uses: actions/setup-java@v3
-      with:
-        distribution: 'zulu'
-        java-version: '11'
-        cache: 'gradle'
+      - name: Build library
+        run: yarn
 
-    - name: Build library
-      run: yarn
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ env.api-level }}
 
-    - name: AVD cache
-      uses: actions/cache@v3
-      id: avd-cache
-      with:
-        path: |
-          ~/.android/avd/*
-          ~/.android/adb*
-        key: avd-${{ env.api-level }}
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.api-level }}
+          target: ${{ env.target }}
+          arch: ${{ env.arch }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
 
-    - name: Create AVD and generate snapshot for caching
-      if: steps.avd-cache.outputs.cache-hit != 'true'
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: ${{ env.api-level }}
-        target: ${{ env.target }}
-        arch: ${{ env.arch }}
-        force-avd-creation: false
-        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-        disable-animations: false
-        script: echo "Generated AVD snapshot for caching."
-    
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('example/**/*.gradle*', 'example/**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('example/**/*.gradle*', 'example/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-    - name: Checking AVD
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: ${{ env.api-level }}
-        target: ${{ env.target }}
-        arch: ${{ env.arch }}
-        force-avd-creation: false
-        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-        disable-animations: true
-        script: |
-          echo "::group::Running Android app"
-          yarn android
-          echo "::endgroup::"
-          echo "::group::Running Test"
-          cd example/android && ./gradlew connectedCheck
-          echo "::endgroup::"
+      - name: Checking AVD
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.api-level }}
+          target: ${{ env.target }}
+          arch: ${{ env.arch }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            echo "::group::Running Android app"
+            yarn android
+            echo "::endgroup::"
+            echo "::group::Running Gradle Build"
+            cd example/android && ./gradlew connectedCheck
+            echo "::endgroup::"
 
   run-sonar:
     name: Collect Sonar reports
     needs: [test-Android, test-iOS]
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
-      sonarToken: ${{ secrets.SONAR_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
+      - uses: actions/checkout@v4
+        if: ${{ env.GITHUB_TOKEN != 0 }}
 
-    - uses: actions/checkout@v3
+      - name: Install Tools
+        run: |
+          brew install sonar-scanner
 
-    - name: Install Tools
-      run: |
-        brew install sonar-scanner
-    
-    - name: Run Sonar
-      if: ${{ env.sonarToken != 0 }}
-      run: |
-        git fetch --unshallow --no-tags
-        sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
+      - name: Build Android
+        run: |
+          cd example/android
+          chmod +x gradlew
+          ./gradlew build
+
+      - name: Run Sonar
+        run: |
+          git fetch --unshallow --no-tags
+          sonar-scanner -Dsonar.token=${GITHUB_TOKEN}
