@@ -7,9 +7,9 @@ env:
   node-version: 16
 
 jobs:
-  test-iOS:
-    name: Test iOS
-    runs-on: macos-13-xl
+  build-lib:
+    name: Build Nodes
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -17,7 +17,58 @@ jobs:
           node-version: ${{ env.node-version }}
           cache: 'yarn'
 
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            node_modules
+            example\node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
       - name: Build dependency
+        run: yarn install --frozen-lockfile
+
+      - name: Build Example app
+        run: |
+          cd example
+          yarn install
+
+      - uses: actions/cache/save@v3
+        with:
+          path: |
+            lib
+            node_modules
+            example\node_modules
+          key: ${{ runner.os }}-temp-${{ github.sha }}
+
+  test-iOS:
+    name: Test iOS
+    runs-on: macos-13-xl
+    needs: [build-lib]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
+
+      - uses: actions/cache/restore@v3
+        id: cache
+        with:
+          path: |
+            lib
+            node_modules
+            example\node_modules
+          key: ${{ runner.os }}-temp-${{ github.sha }}
+
+      - name: Build dependency
+        if: steps.cache.outputs.cache-hit != 'true'
         run: yarn
 
       - uses: actions/cache@v3
@@ -44,6 +95,7 @@ jobs:
 
   test-Android:
     name: Test Android
+    needs: [build-lib]
     runs-on: macos-13-xl
     env:
       api-level: 31
@@ -62,7 +114,17 @@ jobs:
           java-version: '11'
           cache: 'gradle'
 
-      - name: Build library
+      - uses: actions/cache/restore@v3
+        id: cache
+        with:
+          path: |
+            lib
+            node_modules
+            example\node_modules
+          key: ${{ runner.os }}-temp-${{ github.sha }}
+
+      - name: Build dependency
+        if: steps.cache.outputs.cache-hit != 'true'
         run: yarn
 
       - name: AVD cache
@@ -114,8 +176,8 @@ jobs:
 
   run-sonar:
     name: Collect Sonar reports
-    needs: [test-Android, test-iOS]
-    runs-on: ubuntu-latest
+    needs: [build-lib]
+    runs-on: macos-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -126,6 +188,15 @@ jobs:
       - name: Install Tools
         run: |
           brew install sonar-scanner
+
+      - uses: actions/cache/restore@v3
+        id: cache
+        with:
+          path: |
+            lib
+            node_modules
+            example\node_modules
+          key: ${{ runner.os }}-temp-${{ github.sha }}
 
       - name: Build Android
         run: |
