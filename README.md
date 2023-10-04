@@ -161,22 +161,28 @@ const MyCheckoutView = () => {
 
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
+import { useCallback } from 'react';
+
+  const onSubmit = useCallback( (data, nativeComponent ) => {
+    /* Call your server to make the `/payments` request */
+    /* When the API request contains `action`, you should call `component.handle(response.action)` to dismiss the payment UI. */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
+  }, [some, dependency]);
+  const onAdditionalDetails = useCallback( (paymentData, component) => {
+    /* Call your server to make the `/payments/details` request */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
+  }, []);
+  const onError = useCallback( (error, component) => {
+    /* Handle errors or termination by shopper */
+    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
+  }, []);
 
 <AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
-  onSubmit={(paymentData, component) => {
-    /* Call your server to make the `/payments` request */
-    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }}
-  onAdditionalDetails={(paymentData, component) => {
-    /* Call your server to make the `/payments/details` request */
-    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }}
-  onError={(error, component) => {
-    /* Handle errors or termination by shopper */
-    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
-  }}
+  onSubmit={onSubmit}
+  onAdditionalDetails={onAdditionalDetails}
+  onError={onError}
 >
   <MyCheckoutView />
 </AdyenCheckout>;
