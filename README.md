@@ -163,10 +163,11 @@ const MyCheckoutView = () => {
 import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
 
-  const didSubmit = useCallback( (data, nativeComponent ) => {
+  const onSubmit = useCallback( (data, nativeComponent ) => {
     /* Call your server to make the `/payments` request */
+    /* When the API request contains `action`, you should call `component.handle(response.action)` to dismiss the payment UI. */
     /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }, [])
+  }, [some, dependency])
   const onAdditionalDetails = useCallback( (paymentData, component) => {
     /* Call your server to make the `/payments/details` request */
     /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
@@ -179,7 +180,7 @@ import { useCallback } from 'react';
 <AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
-  onSubmit={didSubmit}
+  onSubmit={onSubmit}
   onAdditionalDetails={onAdditionalDetails}
   onError={onError}
 >
