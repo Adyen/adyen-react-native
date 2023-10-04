@@ -167,15 +167,15 @@ import { useCallback } from 'react';
     /* Call your server to make the `/payments` request */
     /* When the API request contains `action`, you should call `component.handle(response.action)` to dismiss the payment UI. */
     /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }, [some, dependency])
+  }, [some, dependency]);
   const onAdditionalDetails = useCallback( (paymentData, component) => {
     /* Call your server to make the `/payments/details` request */
     /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }, [])
+  }, []);
   const onError = useCallback( (error, component) => {
     /* Handle errors or termination by shopper */
     /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
-  }, [])
+  }, []);
 
 <AdyenCheckout
   config={configuration}
