@@ -27,9 +27,36 @@ Drop-in and Components require a [client key][client.key], that should be provid
 ## Installation
 
 Add `@adyen/react-native` to your react-native project.
+
 ```bash
 yarn add @adyen/react-native
 ```
+
+### Expo integration (experimental)
+
+> ❕ Please pay attention that this library is not compatible with ExpoGo. You can use it only with **Expo managed workflow**.
+
+1. Add `@expo/config-plugins` to your project:
+
+```bash
+yarn add @expo/config-plugins
+```
+
+2. Add `@adyen/react-native` plugin to your `app.json`:
+
+```json
+{
+  "expo": {
+    "plugins": ["@adyen/react-native"]
+  }
+}
+```
+
+> In case you are facing issues with the plugin, please pre-build your app and investigate the files generated:
+>
+> ```bash
+> npx expo prebuild --clean
+> ```
 
 ### iOS integration
 
