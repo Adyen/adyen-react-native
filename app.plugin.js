@@ -54,8 +54,8 @@ const withAdyenAndroid = (defaultConfig) => {
     async (config) => {
       const mainActivity = config.modResults;
       mainActivity.contents = mainActivity.contents.replace(
-        'import com.facebook.react.ReactRootView;\n',
-        'import com.facebook.react.ReactRootView;\nimport com.adyenreactnativesdk.AdyenCheckout;\n'
+        'public class MainActivity extends ReactActivity {',
+        'import com.adyenreactnativesdk.AdyenCheckout;\n\npublic class MainActivity extends ReactActivity {'
       );
       mainActivity.contents = mainActivity.contents.replace(
         'super.onCreate(null);\n  }',
