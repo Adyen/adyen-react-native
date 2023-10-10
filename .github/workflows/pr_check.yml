@@ -45,7 +45,7 @@ jobs:
             lib
             node_modules
             example/node_modules
-          key: ${{ runner.os }}-temp-${{ github.sha }}
+          key: temp-${{ github.sha }}
 
   test-iOS:
     name: Test iOS
@@ -65,7 +65,7 @@ jobs:
             lib
             node_modules
             example\node_modules
-          key: ${{ runner.os }}-temp-${{ github.sha }}
+          key: temp-${{ github.sha }}
 
       - name: Build dependency
         if: steps.cache.outputs.cache-hit != 'true'
@@ -122,7 +122,7 @@ jobs:
             lib
             node_modules
             example/node_modules
-          key: ${{ runner.os }}-temp-${{ github.sha }}
+          key: temp-${{ github.sha }}
 
       - name: Build dependency
         if: steps.cache.outputs.cache-hit != 'true'
@@ -184,7 +184,7 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        if: ${{ env.GITHUB_TOKEN != 0 }}
+        if: ${{ env.SONAR_TOKEN != 0 }}
 
       - name: Install Tools
         run: |
@@ -196,9 +196,26 @@ jobs:
         with:
           path: |
             lib
-          key: ${{ runner.os }}-temp-${{ github.sha }}
+            node_modules
+            example/node_modules
+          key: temp-${{ github.sha }}
 
       - name: Run Sonar
         run: |
           git fetch --unshallow --no-tags
           sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+  delete-chach:
+    name: Clean up
+    runs-on: ubuntu-latest
+    needs: [run-sonar, test-Android, test-iOS]
+    if: always()
+    steps:
+      - name: Delete temporary cache
+        run: |
+          curl -L \
+           -X DELETE \
+           -H "Accept: application/vnd.github+json" \
+           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+           -H "X-GitHub-Api-Version: 2022-11-28" \
+           https://api.github.com/repos/${{ env.GITHUB_ACTION_REPOSITORY }}/actions/caches/temp-${{ github.sha }}
