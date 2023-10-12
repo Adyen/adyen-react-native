@@ -57,7 +57,7 @@ jobs:
 
   test-iOS:
     name: Test iOS
-    runs-on: macos-13-xlarge
+    runs-on: macos-13-large
     needs: [build-lib]
     env:
       workspace: 'AdyenExample.xcworkspace'
@@ -90,8 +90,7 @@ jobs:
         with:
           path: example/ios/Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
+          restore-keys: ${{ runner.os }}-pods-
 
       - name: Pod install
         working-directory: example/ios
@@ -99,8 +98,7 @@ jobs:
 
       - name: Build and test iOS
         working-directory: example/ios
-        run: |
-          xcodebuild test -workspace ${{ env.workspace }} -scheme ${{ env.scheme }} ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+        run: xcodebuild test -workspace ${{ env.workspace }} -scheme ${{ env.scheme }} ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
         env:
           params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
           destination: 'name=iPhone 14'
@@ -108,20 +106,14 @@ jobs:
       - name: Generate code Coverage
         working-directory: example/ios
         run: |
-          gem install slather
-          slather coverage --sonarqube-xml ${params} ${{ env.scheme }}.xcodeproj
-        env:
-          project: 'AdyenExample.xcodeproj'
-          params: '
-            --workspace ${{ env.workspace }}
-            --build-directory ./DerivedData
-            --output-directory ${{ env.GITHUB_WORKSPACE }}/reports
-            --scheme ${{ env.scheme }}
-            --binary-basename adyen-react-native'
+          mkdir ${{ github.workspace }}/reports
+          xcrun simctl io booted screenshot ${{ github.workspace }}/reports/screenshot.png
+          ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+          sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
 
       - name: SwiftLint
-        working-directory: example/ios
-        run: fastlane run swiftlint output_file:"${{ env.GITHUB_WORKSPACE }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
+        working-directory: ios
+        run: fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
 
       - name: Archive Coverage report
         uses: actions/upload-artifact@v3
@@ -132,11 +124,9 @@ jobs:
   test-Android:
     name: Test Android
     needs: [build-lib]
-    runs-on: macos-13-xlarge
+    runs-on: macos-13
     env:
       api-level: 31
-      target: google_apis
-      arch: x86_64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -168,6 +158,9 @@ jobs:
         if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn
 
+      - name: Gradle cache
+        uses: gradle/gradle-build-action@v2
+        
       - name: AVD cache
         uses: actions/cache@v3
         id: avd-cache
@@ -182,37 +175,25 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.api-level }}
-          target: ${{ env.target }}
-          arch: ${{ env.arch }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('example/**/*.gradle*', 'example/**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Checking AVD
+      - name: Run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.api-level }}
-          target: ${{ env.target }}
-          arch: ${{ env.arch }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
+          working-directory: ./example/android
           script: |
             echo "::group::Running Android app"
             yarn android
             echo "::endgroup::"
             echo "::group::Running Gradle Build"
-            cd example/android && ./gradlew connectedCheck
+            ./gradlew connectedCheck
             echo "::endgroup::"
 
   run-sonar:
@@ -224,16 +205,20 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        if: ${{ env.SONAR_TOKEN != 0 }}
 
       - name: Install Tools
         run: |
           brew install sonar-scanner
 
       - uses: actions/cache/restore@v3
+        id: lib-cache
         with:
           path: lib
           key: temp-lib-${{ github.sha }}
+
+      - name: Build dependency if needed
+        if: steps.lib-cache.outputs.cache-hit != 'true'
+        run: yarn
 
       - name: Download Swift coverage report
         uses: actions/download-artifact@v3
@@ -251,6 +236,7 @@ jobs:
     needs: [run-sonar, test-Android]
     if: always()
     steps:
+      - uses: actions/checkout@v4
       - name: Delete temporary cache
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

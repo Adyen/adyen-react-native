@@ -8,7 +8,7 @@ import XCTest
 import React
 
 final class DropInTest: XCTestCase {
-  private let timeout: TimeInterval! = TimeInterval(exactly: 60 * 10)
+  private let timeout: TimeInterval! = TimeInterval(exactly: 60 * 2)
   
   override func setUpWithError() throws {
     // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -27,28 +27,22 @@ final class DropInTest: XCTestCase {
     let timeoutDate = Date(timeIntervalSinceNow: timeout)
     var success = false
     var redboxError: String? = nil
-    
-//#if DEBUG
-    RCTSetLogFunction({ level, source, fileName, lineNumber, message in
+        RCTSetLogFunction({ level, source, fileName, lineNumber, message in
       if (level.rawValue >= RCTLogLevel.error.rawValue ) {
         redboxError = message;
       }
     })
-//#else
-//    XCTAssert(true, "not in DEBUG")
-//#endif
     
     while Date() < timeoutDate && !success {
-      wait(for: .milliseconds(60 * 1000))
+      wait(for: .seconds(10))
       success = findSubview(in: vc.view, that: {$0.accessibilityLabel == "Checkout"} )
     }
     
-//#if DEBUG
     RCTSetLogFunction(RCTDefaultLogFunction)
-//#endif
     
     XCTAssertNil(redboxError, "RedBox error: \(redboxError!)")
-//    XCTAssertTrue(success, "View Herarchy: \(printSubview(in: vc.view))")
+    // XCTAssertTrue(success, "View Herarchy: \(printSubview(in: vc.view))")
+    // TODO: make a screenshot
     print(printSubview(in: vc.view))
   }
   
@@ -71,7 +65,6 @@ final class DropInTest: XCTestCase {
     printSubview(in: view, bufer: &buffer, tab: "")
     return buffer
   }
-  
   
   private func printSubview(in view: UIView, bufer: inout String, tab: String) {
     bufer.append("\(tab)\(NSStringFromClass(type(of:view.self))) - \(view.accessibilityLabel ?? "")\n")
