@@ -60,10 +60,20 @@ jobs:
     runs-on: macos-13-large
     needs: [build-lib]
     env:
-      workspace: 'AdyenExample.xcworkspace'
-      scheme: 'AdyenExample'
+      workspace: AdyenExample.xcworkspace
+      scheme: AdyenExample
+      device: iPhone 14
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pre-heat iPhone Simulator ${{ env.device }}
+        id: sets-simulator
+        run: |
+          simulator_id=$(xcrun simctl list | grep -E '${{ env.device }}' | grep -Eo '[A-Z0-9-]{36}' | head -n 1)
+          xcrun simctl boot $simulator_id                            
+          open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/
+          echo "id=$simulator_id" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.node-version }}
@@ -79,7 +89,7 @@ jobs:
         with:
           path: |
             node_modules
-            example\node_modules
+            example/node_modules
           key: temp-node-${{ github.sha }}
 
       - name: Build dependency if needed
@@ -98,10 +108,14 @@ jobs:
 
       - name: Build and test iOS
         working-directory: example/ios
-        run: xcodebuild test -workspace ${{ env.workspace }} -scheme ${{ env.scheme }} ${params} -destination "${destination}" | xcpretty --utf --color && exit ${PIPESTATUS[0]}
-        env:
-          params: '-derivedDataPath ./DerivedData -enableCodeCoverage YES'
-          destination: 'name=iPhone 14'
+        run: | 
+          xcodebuild test \
+            -workspace ${{ env.workspace }} \
+            -scheme ${{ env.scheme }} \
+            -destination "id=${{ steps.sets-simulator.outputs.id }}" \
+            -derivedDataPath ./DerivedData \
+            -enableCodeCoverage YES \
+            ${params} | xcpretty --utf --color && exit ${PIPESTATUS[0]}
 
       - name: Generate code Coverage
         working-directory: example/ios
@@ -124,9 +138,10 @@ jobs:
   test-Android:
     name: Test Android
     needs: [build-lib]
-    runs-on: macos-13
+    runs-on: macos-13-large
     env:
-      api-level: 31
+      api-level: 29
+      target: google_apis
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -175,6 +190,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.api-level }}
+          target: ${{ env.target }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -184,10 +200,13 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.api-level }}
+          target: ${{ env.target }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: ./example/android
+          pre-emulator-launch-script: |
+            sdkmanager --list
           script: |
             echo "::group::Running Android app"
             yarn android
@@ -224,6 +243,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: swift-coverage-report
+          path: reports
 
       - name: Run Sonar
         run: |
