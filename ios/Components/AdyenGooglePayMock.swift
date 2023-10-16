@@ -4,9 +4,9 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
+import Adyen
 import React
 import UIKit
-import Adyen
 
 @objc(AdyenGooglePay)
 internal class AdyenGooglePayMock: BaseModule {
@@ -15,6 +15,6 @@ internal class AdyenGooglePayMock: BaseModule {
     
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        return sendEvent(error: NativeModuleError.notSupported)
+        sendEvent(error: NativeModuleError.notSupported)
     }
 }

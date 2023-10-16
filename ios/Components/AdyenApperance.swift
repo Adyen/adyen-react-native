@@ -4,8 +4,8 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Foundation
 import Adyen
+import Foundation
 
 /// Describes class that provides customization to Adyen UI elements.
 public protocol AdyenAppearanceProvider: AnyObject {
@@ -24,7 +24,7 @@ internal class AdyenAppearanceLoader: NSObject {
     static func findStyle() -> Adyen.DropInComponent.Style? {
         let appearanceProviders = Bundle.allBundles
             .compactMap { $0.infoDictionary?[bundleExecutableKey] as? String }
-            .map { $0.replacingOccurrences(of: " ", with: "_")}
+            .map { $0.replacingOccurrences(of: " ", with: "_") }
             .compactMap { NSClassFromString("\($0).\(expectedClassName)") }
             .compactMap { $0 as? AdyenAppearanceProvider.Type }
         

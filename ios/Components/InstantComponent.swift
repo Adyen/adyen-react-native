@@ -4,14 +4,13 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-
 import Adyen
 import Foundation
 import PassKit
 import React
 
 @objc(AdyenInstant)
-final internal class InstantComponent: BaseModule {
+internal final class InstantComponent: BaseModule {
     
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 

@@ -91,10 +91,10 @@ extension EncryptedCard: Encodable {
 extension Card: Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(number: try container.decodeIfPresent(String.self, forKey: .number),
-                  securityCode: try container.decodeIfPresent(String.self, forKey: .securityCode),
-                  expiryMonth: try container.decodeIfPresent(String.self, forKey: .expiryMonth),
-                  expiryYear: try container.decodeIfPresent(String.self, forKey: .expiryYear))
+        try self.init(number: container.decodeIfPresent(String.self, forKey: .number),
+                      securityCode: container.decodeIfPresent(String.self, forKey: .securityCode),
+                      expiryMonth: container.decodeIfPresent(String.self, forKey: .expiryMonth),
+                      expiryYear: container.decodeIfPresent(String.self, forKey: .expiryYear))
     }
     
     private enum CodingKeys: String, CodingKey {

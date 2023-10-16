@@ -8,7 +8,7 @@ import Adyen
 
 public struct CardConfigurationParser {
 
-    private var dict: [String:Any]
+    private var dict: [String: Any]
 
     public init(configuration: NSDictionary) {
         guard let configuration = configuration as? [String: Any] else {
@@ -74,14 +74,14 @@ public struct CardConfigurationParser {
         var storedConfiguration = StoredCardConfiguration()
         storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
 
-        return  .init(showsHolderNameField: showsHolderNameField,
-                      showsStorePaymentMethodField: showsStorePaymentMethodField,
-                      showsSecurityCodeField: showsSecurityCodeField,
-                      koreanAuthenticationMode: kcpVisibility,
-                      socialSecurityNumberMode: socialSecurityVisibility,
-                      billingAddressMode: addressVisibility,
-                      storedCardConfiguration: storedConfiguration,
-                      allowedCardTypes: allowedCardTypes)
+        return .init(showsHolderNameField: showsHolderNameField,
+                     showsStorePaymentMethodField: showsStorePaymentMethodField,
+                     showsSecurityCodeField: showsSecurityCodeField,
+                     koreanAuthenticationMode: kcpVisibility,
+                     socialSecurityNumberMode: socialSecurityVisibility,
+                     billingAddressMode: addressVisibility,
+                     storedCardConfiguration: storedConfiguration,
+                     allowedCardTypes: allowedCardTypes)
     }
     
     private func parseVisibility(_ key: String) -> CardComponent.FieldVisibility {
