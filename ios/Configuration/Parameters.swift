@@ -28,7 +28,7 @@ internal enum Keys {
 }
 
 internal enum DropInKeys: SubConfig {
-    static var rootKey = "dropin";
+    static var rootKey = "dropin"
     static var showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod"
     static var skipListWhenSinglePaymentMethod = "skipListWhenSinglePaymentMethod"
 }

@@ -8,7 +8,7 @@ import Adyen
 
 public struct RootConfigurationParser {
 
-    private var configuration: [String:Any]
+    private var configuration: [String: Any]
 
     public init(configuration: NSDictionary) {
         guard let configuration = configuration as? [String: Any] else {
@@ -26,7 +26,7 @@ public struct RootConfigurationParser {
     }
 
     public var clientKey: String? {
-        return configuration[Keys.clientKey] as? String
+        configuration[Keys.clientKey] as? String
     }
 
     public var amount: Amount? {

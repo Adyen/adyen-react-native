@@ -9,7 +9,7 @@ import PassKit
 
 public struct ApplepayConfigurationParser {
 
-    private var dict: [String:Any]
+    private var dict: [String: Any]
 
     public init(configuration: NSDictionary) {
         guard let configuration = configuration as? [String: Any] else {
@@ -24,15 +24,15 @@ public struct ApplepayConfigurationParser {
     }
 
     var merchantID: String? {
-        return dict[ApplePayKeys.merchantID] as? String
+        dict[ApplePayKeys.merchantID] as? String
     }
 
     var merchantName: String? {
-        return dict[ApplePayKeys.merchantName] as? String
+        dict[ApplePayKeys.merchantName] as? String
     }
 
     var allowOnboarding: Bool {
-        return dict[ApplePayKeys.allowOnboarding] as? Bool ?? false
+        dict[ApplePayKeys.allowOnboarding] as? Bool ?? false
     }
     
     var summaryItems: [PKPaymentSummaryItem]? {
@@ -55,7 +55,7 @@ public struct ApplepayConfigurationParser {
     }
 
     public func buildConfiguration(amount: Amount) throws -> Adyen.ApplePayComponent.Configuration {
-        guard let merchantID = merchantID else {
+        guard let merchantID else {
             throw ApplePayError.invalidMerchantID
         }
         
@@ -63,7 +63,7 @@ public struct ApplepayConfigurationParser {
         if let summaryItemsFromConfig = self.summaryItems {
             summaryItems = summaryItemsFromConfig
         } else {
-            guard let merchantName = merchantName else {
+            guard let merchantName else {
                 throw ApplePayError.invalidMerchantName
             }
             
@@ -101,4 +101,3 @@ extension ApplepayConfigurationParser {
     }
     
 }
-

@@ -9,7 +9,7 @@ import Foundation
 import React
 
 @objc(AdyenCSE)
-final internal class AdyenCSE: NSObject {
+internal final class AdyenCSE: NSObject {
     
     @objc
     static func requiresMainQueueSetup() -> Bool { true }
@@ -38,11 +38,11 @@ final internal class AdyenCSE: NSObject {
             let encryptedBin = try CardEncryptor.encrypt(bin: formattedBin as String, with: publicKey as String)
             resolver(encryptedBin)
         } catch {
-            rejecter(Constant.errorMessage , nil, error)
+            rejecter(Constant.errorMessage, nil, error)
         }
     }
     
     private enum Constant {
-        static var errorMessage = "Encryption failed" 
+        static var errorMessage = "Encryption failed"
     }
 }

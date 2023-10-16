@@ -8,7 +8,7 @@ import Adyen
 
 public struct DropInConfigurationParser {
 
-    private var dict: [String:Any]
+    private var dict: [String: Any]
 
     public init(configuration: NSDictionary) {
         guard let configuration = configuration as? [String: Any] else {
@@ -37,9 +37,9 @@ public struct DropInConfigurationParser {
     }
 
     public func configuration(apiContext: APIContext) -> DropInComponent.Configuration {
-        return .init(apiContext: apiContext,
-                     allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
-                     allowPreselectedPaymentView: showPreselectedStoredPaymentMethod)
+        .init(apiContext: apiContext,
+              allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
+              allowPreselectedPaymentView: showPreselectedStoredPaymentMethod)
     }
 
 }

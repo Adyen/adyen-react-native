@@ -4,74 +4,74 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import XCTest
 import React
+import XCTest
 
 final class DropInTest: XCTestCase {
-  private let timeout: TimeInterval! = TimeInterval(exactly: 60 * 2)
+    private let timeout: TimeInterval! = TimeInterval(exactly: 60 * 2)
   
-  override func setUpWithError() throws {
-    // Put setup code here. This method is called before the invocation of each test method in the class.
-  }
-  
-  override func tearDownWithError() throws {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
-  }
-  
-  func testForTest() {
-    XCTAssert(true, "Test are running")
-  }
-  
-  func testCheckNoErrorsWhenOpenApp() throws {
-    let vc = RCTSharedApplication()!.keyWindow!.rootViewController!
-    let timeoutDate = Date(timeIntervalSinceNow: timeout)
-    var success = false
-    var redboxError: String? = nil
-        RCTSetLogFunction({ level, source, fileName, lineNumber, message in
-      if (level.rawValue >= RCTLogLevel.error.rawValue ) {
-        redboxError = message;
-      }
-    })
-    
-    while Date() < timeoutDate && !success {
-      wait(for: .seconds(10))
-      success = findSubview(in: vc.view, that: {$0.accessibilityLabel == "Checkout"} )
+    override func setUpWithError() throws {
+        // Put setup code here. This method is called before the invocation of each test method in the class.
     }
-    
-    RCTSetLogFunction(RCTDefaultLogFunction)
-    
-    XCTAssertNil(redboxError, "RedBox error: \(redboxError!)")
-    // XCTAssertTrue(success, "View Herarchy: \(printSubview(in: vc.view))")
-    // TODO: make a screenshot
-    print(printSubview(in: vc.view))
-  }
   
-  func findSubview(in view: UIView, that predicate: (UIView) -> Bool) -> Bool {
-    if predicate(view) {
-      return true
+    override func tearDownWithError() throws {
+        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
-    
-    for subview in view.subviews {
-      if findSubview(in: subview, that: predicate) {
-        return true
-      }
-    }
-    
-    return false
-  }
   
-  func printSubview(in view: UIView) -> String {
-    var buffer = ""
-    printSubview(in: view, bufer: &buffer, tab: "")
-    return buffer
-  }
-  
-  private func printSubview(in view: UIView, bufer: inout String, tab: String) {
-    bufer.append("\(tab)\(NSStringFromClass(type(of:view.self))) - \(view.accessibilityLabel ?? "")\n")
-    for subview in view.subviews {
-      printSubview(in: subview, bufer: &bufer, tab: tab + " ")
+    func testForTest() {
+        XCTAssert(true, "Test are running")
     }
-  }
+  
+    func testCheckNoErrorsWhenOpenApp() throws {
+        let vc = RCTSharedApplication()!.keyWindow!.rootViewController!
+        let timeoutDate = Date(timeIntervalSinceNow: timeout)
+        var success = false
+        var redboxError: String? = nil
+        RCTSetLogFunction { level, source, fileName, lineNumber, message in
+            if level.rawValue >= RCTLogLevel.error.rawValue {
+                redboxError = message
+            }
+        }
+    
+        while Date() < timeoutDate, !success {
+            wait(for: .seconds(10))
+            success = findSubview(in: vc.view, that: { $0.accessibilityLabel == "Checkout" })
+        }
+    
+        RCTSetLogFunction(RCTDefaultLogFunction)
+    
+        XCTAssertNil(redboxError, "RedBox error: \(redboxError!)")
+        // XCTAssertTrue(success, "View Herarchy: \(printSubview(in: vc.view))")
+        // TODO: make a screenshot
+        print(printSubview(in: vc.view))
+    }
+  
+    func findSubview(in view: UIView, that predicate: (UIView) -> Bool) -> Bool {
+        if predicate(view) {
+            return true
+        }
+    
+        for subview in view.subviews {
+            if findSubview(in: subview, that: predicate) {
+                return true
+            }
+        }
+    
+        return false
+    }
+  
+    func printSubview(in view: UIView) -> String {
+        var buffer = ""
+        printSubview(in: view, bufer: &buffer, tab: "")
+        return buffer
+    }
+  
+    private func printSubview(in view: UIView, bufer: inout String, tab: String) {
+        bufer.append("\(tab)\(NSStringFromClass(type(of: view.self))) - \(view.accessibilityLabel ?? "")\n")
+        for subview in view.subviews {
+            printSubview(in: subview, bufer: &bufer, tab: tab + " ")
+        }
+    }
   
 }
 
