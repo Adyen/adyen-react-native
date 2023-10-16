@@ -17,17 +17,18 @@ export const DEFAULT_CONFIGURATION = {
   amount: 1000, // The amount value in minor units.
   merchantAccount: '{YOUR_MERCHANT_ACCOUNT}',
   merchantName: 'MyStore',
-  applepayMerchantID: '{YOUR_APPLE_MERCHANT_ID}',
   shopperLocale: DEVICE_LOCALE,
   shopperReference: 'Checkout Shopper',
 };
 
 // For test purposes only! Do not call Adyen API from your mobile app on LIVE.
 export const ENVIRONMENT = {
+  /** @type {import('@adyen/react-native').Environment} */
   environment: 'test',
   apiKey: '{YOUR_DEMO_SERVER_API_KEY}',
-  url: 'https://checkout-test.adyen.com/v67/',
+  url: 'https://checkout-test.adyen.com/v70/',
   publicKey: '{YOUR_PUBLIC_KEY}',
   clientKey: '{YOUR_CLIENT_KEY}',
   returnUrl: 'myapp://payment', // Only used for iOS
+  applepayMerchantID: '{YOUR_APPLE_MERCHANT_ID}',
 };

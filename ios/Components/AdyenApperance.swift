@@ -19,16 +19,19 @@ public protocol AdyenAppearanceProvider: AnyObject {
 internal class AdyenAppearanceLoader: NSObject {
     
     private static let expectedClassName = "AdyenAppearance"
+    private static let bundleExecutableKey = "CFBundleExecutable"
     
     static func findStyle() -> Adyen.DropInComponent.Style? {
-        let bundleName = Bundle.main.bundleIdentifier?.components(separatedBy: ".").last ?? ""
-        guard let nsClass = NSClassFromString("\(bundleName).\(expectedClassName)"),
-              let appearanceProvider = nsClass as? AdyenAppearanceProvider.Type else {
-            adyenPrint("AdyenAppearance: class \("\(bundleName).\(expectedClassName)") not found or does not conform to AdyenAppearanceProvider protocol")
+        let appearanceProviders = Bundle.allBundles
+            .compactMap { $0.infoDictionary?[bundleExecutableKey] as? String }
+            .map { $0.replacingOccurrences(of: " ", with: "_")}
+            .compactMap { NSClassFromString("\($0).\(expectedClassName)") }
+            .compactMap { $0 as? AdyenAppearanceProvider.Type }
+        
+        guard let appearanceProvider = appearanceProviders.first else {
+            adyenPrint("AdyenAppearance: class not linked or does not conform to AdyenAppearanceProvider protocol")
             return nil
         }
         return appearanceProvider.createStyle()
     }
 }
-
-

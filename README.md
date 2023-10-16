@@ -7,9 +7,7 @@
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
-# Adyen React Native [RELEASE CANDIDATE]
-
-> This project is currently under development. Timelines and scope are still to be defined.
+# Adyen React Native
 
 Adyen React Native provides you with the building blocks to create a checkout experience for your shoppers, allowing them to pay using the payment method of their choice.
 
@@ -46,7 +44,14 @@ yarn add @adyen/react-native
   return [ADYRedirectComponent applicationDidOpenURL:url];
 }
 ```
-3. If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`_`)
+
+> ❕ If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`-`):
+
+```objc
+#import <adyen_react_native/ADYRedirectComponent.h>
+```
+
+3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
 
 #### For ApplePay
 
@@ -68,7 +73,7 @@ import android.os.Bundle;
 
 @Override
 protected void onCreate(Bundle savedInstanceState) {
-  super.onCreate(savedInstanceState);
+  super.onCreate(null);
   AdyenCheckout.setLauncherActivity(this);
 }
 ```
@@ -129,7 +134,7 @@ const configuration: Configuration = {
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
-  returnUrl: 'myapp://payment', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. Can be send from your backend
+  returnUrl: 'myapp://payment', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. You can also send this property from your backend.
 };
 ```
 
@@ -156,19 +161,28 @@ const MyCheckoutView = () => {
 
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
+import { useCallback } from 'react';
+
+  const onSubmit = useCallback( (data, nativeComponent ) => {
+    /* Call your server to make the `/payments` request */
+    /* When the API request contains `action`, you should call `component.handle(response.action)` to dismiss the payment UI. */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
+  }, [some, dependency]);
+  const onAdditionalDetails = useCallback( (paymentData, component) => {
+    /* Call your server to make the `/payments/details` request */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
+  }, []);
+  const onError = useCallback( (error, component) => {
+    /* Handle errors or termination by shopper */
+    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
+  }, []);
 
 <AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
-  onSubmit={(paymentData, component) => {
-    /* Call your server to make the `/payments` request */
-  }}
-  onAdditionalDetails={(paymentData, component) => {
-    /* Call your server to make the `/payments/details` request */
-  }}
-  onError={(error, component) => {
-    /* Handle errors or termination by shopper */
-  }}
+  onSubmit={onSubmit}
+  onAdditionalDetails={onAdditionalDetails}
+  onError={onError}
 >
   <MyCheckoutView />
 </AdyenCheckout>;
@@ -183,11 +197,11 @@ Some payment methods require additional action from the shopper such as: to scan
 ```javascript
 const handleSubmit = (paymentData, nativeComponent) => {
   server.makePayment(paymentData)
-    .then((result) => {
-      if (result.action) {
-        nativeComponent.handle(result.action);
+    .then((response) => {
+      if (response.action) {
+        nativeComponent.handle(response.action);
       } else {
-        // process result
+        nativeComponent.hide(response.result);
       }
     });
 };
@@ -203,6 +217,8 @@ const handleSubmit = (paymentData, nativeComponent) => {
 ## Documentation
 
 - [Configuration][configuration]
+- [Localization][localization]
+- [UI Customization][customization]
 - [Error codes](/docs/Error%20codes.md)
 - [Drop-in documentation][adyen-docs-dropin]
 - [Component documentation][adyen-docs-components]
@@ -217,5 +233,7 @@ MIT license. For more information, see the LICENSE file.
 
 [client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
 [configuration]: /docs/Configuration.md
+[localization]: /docs/Localization.md
+[customization]: /docs/Customization.md
 [adyen-docs-dropin]: https://docs.adyen.com/online-payments/react-native/drop-in
 [adyen-docs-components]: https://docs.adyen.com/online-payments/react-native/components

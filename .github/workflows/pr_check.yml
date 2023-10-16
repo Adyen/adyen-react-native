@@ -1,0 +1,265 @@
+name: Scan PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - develop
+env:
+  node-version: 16
+
+jobs:
+  build-lib:
+    name: Build Nodes
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            node_modules
+            example/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Build library
+        run: yarn install --frozen-lockfile
+
+      - name: Build Example app
+        working-directory: example
+        run: yarn install
+
+      - name: Archive library
+        uses: actions/cache/save@v3
+        with:
+          path: lib
+          key: temp-lib-${{ github.sha }}
+
+      - name: Archive Node Modules
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            node_modules
+            example/node_modules
+          key: temp-node-${{ github.sha }}
+
+  test-iOS:
+    name: Test iOS
+    runs-on: macos-13-large
+    needs: [build-lib]
+    env:
+      workspace: AdyenExample.xcworkspace
+      scheme: AdyenExample
+      device: iPhone 14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pre-heat iPhone Simulator ${{ env.device }}
+        id: sets-simulator
+        run: |
+          simulator_id=$(xcrun simctl list | grep -E '${{ env.device }}' | grep -Eo '[A-Z0-9-]{36}' | head -n 1)
+          xcrun simctl boot $simulator_id                            
+          open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/
+          echo "id=$simulator_id" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
+
+      - uses: actions/cache/restore@v3
+        with:
+          path: lib
+          key: temp-lib-${{ github.sha }}
+
+      - uses: actions/cache/restore@v3
+        id: yarn-cache
+        with:
+          path: |
+            node_modules
+            example/node_modules
+          key: temp-node-${{ github.sha }}
+
+      - name: Build dependency if needed
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn
+
+      - uses: actions/cache@v3
+        with:
+          path: example/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-pods-
+
+      - name: Pod install
+        working-directory: example/ios
+        run: pod install
+
+      - name: Build and test iOS
+        working-directory: example/ios
+        run: | 
+          xcodebuild test \
+            -workspace ${{ env.workspace }} \
+            -scheme ${{ env.scheme }} \
+            -destination "id=${{ steps.sets-simulator.outputs.id }}" \
+            -derivedDataPath ./DerivedData \
+            -enableCodeCoverage YES \
+            ${params} | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+
+      - name: Generate code Coverage
+        working-directory: example/ios
+        run: |
+          mkdir ${{ github.workspace }}/reports
+          xcrun simctl io booted screenshot ${{ github.workspace }}/reports/screenshot.png
+          ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+          sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+
+      - name: SwiftLint
+        working-directory: ios
+        run: fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
+
+      - name: Archive Coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: swift-coverage-report
+          path: reports
+
+  test-Android:
+    name: Test Android
+    needs: [build-lib]
+    runs-on: macos-13-large
+    env:
+      api-level: 29
+      target: google_apis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
+
+      - name: Setup Java 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+          cache: 'gradle'
+
+      - uses: actions/cache/restore@v3
+        with:
+          path: lib
+          key: temp-lib-${{ github.sha }}
+
+      - uses: actions/cache/restore@v3
+        id: yarn-cache
+        with:
+          path: |
+            node_modules
+            example\node_modules
+          key: temp-node-${{ github.sha }}
+
+      - name: Build dependency if needed
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn
+
+      - name: Gradle cache
+        uses: gradle/gradle-build-action@v2
+        
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ env.api-level }}
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.api-level }}
+          target: ${{ env.target }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.api-level }}
+          target: ${{ env.target }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: ./example/android
+          pre-emulator-launch-script: |
+            sdkmanager --list
+          script: |
+            echo "::group::Running Android app"
+            yarn android
+            echo "::endgroup::"
+            echo "::group::Running Gradle Build"
+            ./gradlew connectedCheck
+            echo "::endgroup::"
+
+  run-sonar:
+    name: Collect Sonar reports
+    needs: [build-lib, test-iOS]
+    runs-on: macos-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Tools
+        run: |
+          brew install sonar-scanner
+
+      - uses: actions/cache/restore@v3
+        id: lib-cache
+        with:
+          path: lib
+          key: temp-lib-${{ github.sha }}
+
+      - name: Build dependency if needed
+        if: steps.lib-cache.outputs.cache-hit != 'true'
+        run: yarn
+
+      - name: Download Swift coverage report
+        uses: actions/download-artifact@v3
+        with:
+          name: swift-coverage-report
+          path: reports
+
+      - name: Run Sonar
+        run: |
+          git fetch --unshallow --no-tags
+          sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+  delete-chach:
+    name: Clean up
+    runs-on: ubuntu-latest
+    needs: [run-sonar, test-Android]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete temporary cache
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh cache delete temp-lib-${{ github.sha }}
+          gh cache delete temp-node-${{ github.sha }}

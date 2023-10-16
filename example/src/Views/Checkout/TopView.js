@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, useColorScheme } from 'react-native';
 import { useAppContext } from '../../Utilities/AppContext';
 import Styles from '../../Utilities/Styles';
@@ -12,27 +12,85 @@ function getFlagEmoji(countryCode) {
 }
 
 const TopView = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-  const { configuration, paymentMethods } = useAppContext();
+  const { configuration } = useAppContext();
 
   return (
-    <View>
-      {paymentMethods ? (
-        <View style={Styles.horizontalContent}>
-          <Text
-            style={isDarkMode ? Styles.textDark : Styles.textLight}
-          >{`${configuration.amount} ${configuration.currency}`}</Text>
-          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-            Country: {getFlagEmoji(configuration.countryCode)}
-          </Text>
-        </View>
-      ) : (
-        <View style={Styles.horizontalContent}>
-          <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-            No PaymentMethods
-          </Text>
-        </View>
-      )}
+    <View style={Styles.horizontalContent}>
+      <AmountView
+        amount={configuration.amount}
+        currency={configuration.currency}
+        locale={configuration.shopperLocale}
+      />
+      <CountryView countryCode={configuration.countryCode} />
+    </View>
+  );
+};
+
+const CountryView = ({ countryCode }) => {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  if (!countryCode) {
+    return (
+      <View style={Styles.centeredContent}>
+        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+          Country not defined
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={Styles.centeredContent}>
+      <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+        {`Country: ${getFlagEmoji(countryCode)}`}
+      </Text>
+    </View>
+  );
+};
+
+const AmountView = ({ amount, currency, locale }) => {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  const formatMinorUnits = useCallback(
+    (amount) => {
+      const formatter = new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency,
+      });
+
+      switch (currency) {
+        case 'JPY':
+        case 'IDR':
+          break;
+        case 'BHD':
+        case 'KWD':
+          amount = amount / 1000;
+          break;
+        default:
+          amount = amount / 100;
+          break;
+      }
+
+      return formatter.format(amount);
+    },
+    [locale, currency]
+  );
+
+  if (!amount) {
+    return (
+      <View style={Styles.centeredContent}>
+        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+          Amount not defined
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={Styles.centeredContent}>
+      <Text
+        style={isDarkMode ? Styles.textDark : Styles.textLight}
+      >{`${formatMinorUnits(amount)}`}</Text>
     </View>
   );
 };

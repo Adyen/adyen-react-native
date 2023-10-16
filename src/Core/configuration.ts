@@ -1,7 +1,8 @@
+import { AnalyticsOptions } from './Analytics/types';
 import { PaymentAmount } from './types';
 
 /** Collection of available environments. */
-type Environment =
+export type Environment =
   | 'test'
   | 'live-eu'
   | 'live-us'
@@ -13,6 +14,9 @@ type Environment =
  * General type for AdyenContext configuration. See {@link https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md}
  */
 export interface Configuration {
+  /** Configuration for analytics service */
+  analytics?: AnalyticsOptions;
+
   /** Selected environment */
   environment: Environment;
 
@@ -39,6 +43,15 @@ export interface Configuration {
 
   /** Google Pay component configuration. */
   googlepay?: GooglePayConfiguration;
+
+  /**
+   * The shopper's locale. This is used to enforce the language rendered in the UI.
+   * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
+   * Fallback locale is 'en-US'.
+   * @todo not implemented on on iOS.
+   * @defaultValue null.
+   */
+  locale?: string;
 }
 
 export interface DropInConfiguration {
@@ -50,10 +63,10 @@ export interface DropInConfiguration {
 }
 
 /** Collection of values for address field visibility. */
-type AddressMode = 'full' | 'postalCode' | 'none';
+export type AddressMode = 'full' | 'postalCode' | 'none';
 
 /** Collection of values for address field visibility. */
-type FieldVisibility = 'show' | 'hide';
+export type FieldVisibility = 'show' | 'hide';
 
 export interface CardsConfiguration {
   /**  Determines whether to enable preselected stored payment method view step */
@@ -77,15 +90,30 @@ export interface CardsConfiguration {
 export interface ApplePayConfiguration {
   /**  The merchant identifier for apple pay. */
   merchantID: string;
-  /** The merchant name.  */
-  merchantName: string;
+  /** The merchant name. This value will be used to generate a single *PKPaymentSummaryItem* if `summaryItems` is not provided. */
+  merchantName?: string;
   /** The flag to toggle onboarding. */
   allowOnboarding?: boolean;
+  /** The line items for this payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. */
+  summaryItems?: [ApplePaySummaryItem];
 }
 
-type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';
+/** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
+export interface ApplePaySummaryItem {
+  /** A short, localized description of the summary item. */
+  label: String;
+  /** The amount associated with the summary item. */
+  value: Number | String;
+}
 
-type TotalPriceStatus = 'NOT_CURRENTLY_KNOWN' | 'ESTIMATED' | 'FINAL';
+export type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';
+
+export type TotalPriceStatus = 'NOT_CURRENTLY_KNOWN' | 'ESTIMATED' | 'FINAL';
+
+export enum GooglePayEnvironment {
+  Test = 3,
+  Production = 1,
+}
 
 export interface GooglePayConfiguration {
   /**  The merchant account to be put in the payment token from Google to Adyen. By default uses value from brands. */
@@ -106,6 +134,6 @@ export interface GooglePayConfiguration {
   shippingAddressRequired?: boolean;
   /** If set to true then the IsReadyToPayResponse object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in allowedPaymentMethods. */
   existingPaymentMethodRequired?: boolean;
-  /** The environment to be used by GooglePay. Should be either WalletConstants.ENVIRONMENT_TEST or WalletConstants.ENVIRONMENT_PRODUCTION. By default is using environment from root. */
-  googlePayEnvironment?: string;
+  /** The environment to be used by GooglePay. Should be either WalletConstants.ENVIRONMENT_TEST (3) or WalletConstants.ENVIRONMENT_PRODUCTION (1). By default is using environment from root. */
+  googlePayEnvironment?: GooglePayEnvironment;
 }

@@ -4,6 +4,8 @@ export const UNKNOWN_PAYMENT_METHOD_ERROR =
   'Unknown payment method or native module. \n\n' +
   'Make sure your paymentMethods response contains: ';
 
+export const UNSUPPORTED_PAYMENT_METHOD_ERROR = 'Unsupported payment method: ';
+
 export const LINKING_ERROR =
   `The package '@adyen/react-native' doesn't seem to be linked. Make sure: \n\n` +
   Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
@@ -11,7 +13,7 @@ export const LINKING_ERROR =
   '- You are not using Expo managed workflow\n';
 
 export const MISSING_CONTEXT_ERROR =
-  'useAdyenCheckout must be used within a AdyenCheckout';
+  'useAdyenCheckout must be used within an AdyenCheckout';
 
 /** Collection of events that components can trigger. */
 export enum Event {

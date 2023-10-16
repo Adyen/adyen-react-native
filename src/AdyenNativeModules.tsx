@@ -1,9 +1,14 @@
 import { NativeModule, NativeModules } from 'react-native';
-import { find, NATIVE_COMPONENTS } from './ComponentMap';
+import {
+  find,
+  NATIVE_COMPONENTS,
+  UNSUPPORTED_PAYMENT_METHODS,
+} from './ComponentMap';
 import {
   ErrorCode,
   LINKING_ERROR,
   UNKNOWN_PAYMENT_METHOD_ERROR,
+  UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from './Core/constants';
 import {
   Card,
@@ -19,7 +24,7 @@ export interface HideOption {
 }
 
 /** Universal interface for Adyen Native payment component */
-interface AdyenComponent {
+export interface AdyenComponent {
   /** Show component above current screen. */
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
 
@@ -152,8 +157,7 @@ export function getNativeComponent(
   nativeComponent: AdyenActionComponent & NativeModule;
   paymentMethod: PaymentMethod | undefined;
 } {
-  const type = typeName.toLowerCase();
-  switch (type) {
+  switch (typeName) {
     case 'dropin':
     case 'drop-in':
     case 'adyendropin':
@@ -176,12 +180,16 @@ export function getNativeComponent(
       break;
   }
 
-  const paymentMethod = find(paymentMethods, type);
+  const paymentMethod = find(paymentMethods, typeName);
   if (!paymentMethod) {
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  if (NATIVE_COMPONENTS.includes(type)) {
+  if (UNSUPPORTED_PAYMENT_METHODS.includes(typeName)) {
+    throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
+  }
+
+  if (NATIVE_COMPONENTS.includes(typeName)) {
     return {
       nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
       paymentMethod: paymentMethod,

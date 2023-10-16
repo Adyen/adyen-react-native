@@ -15,8 +15,14 @@ import { ENVIRONMENT } from '../../Configuration';
 
 const PaymentMethods = () => {
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
+  const regularPaymentMethods = paymentMethodsResponse?.paymentMethods;
 
   const isNotReady = paymentMethodsResponse === undefined;
+
+  if (regularPaymentMethods === undefined) {
+    console.error(`No regular payment menthods in 'paymentMethodsResponse'`);
+    return <View />;
+  }
 
   return (
     <ScrollView>
@@ -31,7 +37,9 @@ const PaymentMethods = () => {
           />
         </View>
 
-        {paymentMethodsResponse?.paymentMethods.map((p) => {
+        <View style={{ height: 16 }} />
+
+        {regularPaymentMethods.map((p) => {
           const iconName = p.type === 'scheme' ? 'card' : p.type;
           return (
             <View key={`${p.type + p.name}`}>

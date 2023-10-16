@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const AppContext = createContext({
   configuration: {},
+  /** @type {import('@adyen/react-native').PaymentMethodsResponse | undefined } */
   paymentMethods: undefined,
   refreshPaymentMethods: async (configuration) => {},
 });

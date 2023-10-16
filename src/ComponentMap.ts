@@ -5,7 +5,7 @@ import { PaymentMethodsResponse } from './Core/types';
  */
 export function find(paymentMethods: PaymentMethodsResponse, typeName: string) {
   return paymentMethods.paymentMethods.find(
-    (pm) => pm.type.toLowerCase() === mapCreatedComponentType(typeName)
+    (pm) => pm.type === mapCreatedComponentType(typeName)
   );
 }
 
@@ -19,67 +19,107 @@ function mapCreatedComponentType(pmType: string) {
   return pmType === 'card' ? 'scheme' : pmType;
 }
 
+export const UNSUPPORTED_PAYMENT_METHODS = [
+  /** Payment methods that might be interpreted as redirect, but are actually not supported */
+  'bcmc_mobile_QR',
+  'wechatpayMiniProgram',
+  'wechatpayQR',
+  'wechatpayWeb',
+  'afterpay_default',
+  'amazonpay',
+  'qiwiwallet',
+  'ratepay',
+  'ratepay_directdebit',
+  /** Payment methods that might be interpreted as redirect, but are actually not supported */
+
+  /** Voucher payment methods that are not yet supported */
+  'doku',
+  'doku_alfamart',
+  'doku_permata_lite_atm',
+  'doku_indomaret',
+  'doku_atm_mandiri_va',
+  'doku_sinarmas_va',
+  'doku_mandiri_va',
+  'doku_cimb_va',
+  'doku_danamon_va',
+  'doku_bri_va',
+  'doku_bni_va',
+  'doku_bca_va',
+  'doku_wallet',
+  'oxxo',
+  'multibanco',
+  'econtext_atm',
+  'econtext_online',
+  'econtext_seven_eleven',
+  'econtext_stores',
+  'dragonpay_ebanking',
+  'dragonpay_otc_banking',
+  'dragonpay_otc_non_banking',
+  'dragonpay_otc_philippines',
+  'boletobancario',
+  'boletobancario_bancodobrasil',
+  'boletobancario_bradesco',
+  'boletobancario_hsbc',
+  'boletobancario_itau',
+  'boletobancario_santander',
+  /** Voucher payment methods that are not yet supported */
+
+  /** Giftcard payment methods that are not yet supported */
+  'giftcard',
+  'mealVoucher_FR_natixis',
+  'mealVoucher_FR_sodexo',
+  'mealVoucher_FR_groupeup',
+  /** Giftcard payment methods that are not yet supported */
+
+  /** Open Invoice payment methods that are not yet supported */
+  'affirm',
+  'atome',
+  /** Open Invoice payment methods that are not yet supported */
+
+  /** Wallet payment methods that are not yet supported */
+  'cashapp',
+  'clicktopay',
+  'wechatpaySDK',
+  /** Wallet payment methods that are not yet supported */
+];
+
 export const NATIVE_COMPONENTS = [
+  /** Card */
   'card',
   'scheme',
-  'ideal',
+  'bcmc',
+  /** Card */
+
+  /** issuerList */
+  'billdesk_online',
+  'billdesk_wallet',
+  'dotpay',
   'entercash',
   'eps',
-  'dotpay',
-  'openbanking_uk',
-  'openbankinguk',
-  'molpay_ebanking_fpx_my',
-  'molpayebankingfpxmy',
-  'molpay_ebanking_th',
-  'molpayebankingth',
-  'molpay_ebanking_vn',
-  'molpayebankingvn',
-  'sepadirectdebit',
-  'bcmc',
-  'bcmc_mobile_qr',
-  'bcmcmobileqr',
-  'bcmc_mobile',
-  'bcmcmobile',
-  'wechatpayminiprogram',
-  'wechatminiprogram',
-  'wechatpayqr',
-  'wechatqr',
-  'qiwiwallet',
-  'qiwiwallet',
-  'wechatpayweb',
-  'wechatpayweb',
-  'wechatpaysdk',
-  'wechatpaysdk',
-  'mbway',
-  'mbway',
+  'ideal',
+  'molpay_ebanking_fpx_MY',
+  'molpay_ebanking_TH',
+  'molpay_ebanking_VN',
+  'onlineBanking',
+  'onlineBanking_CZ',
+  'onlinebanking_IN',
+  'onlineBanking_PL',
+  'onlineBanking_SK',
+  'paybybank',
+  'wallet_IN',
+  /** issuerList */
+
+  /** Await */
   'blik',
-  'afterpay_default',
-  'afterpay',
-  'androidpay',
-  'amazonpay',
-  'doku_wallet',
-  'dokuwallet',
-  'doku_alfamart',
-  'dokualfamart',
-  'doku_indomaret',
-  'dokuindomaret',
-  'giftcard',
-  'doku',
-  'econtext_seven_eleven',
-  'econtextseveneleven',
-  'econtext_stores',
-  'econtextstores',
-  'econtext_atm',
-  'econtextatm',
-  'econtext_online',
-  'econtextonline',
-  'boletobancario_santander',
-  'boleto',
-  'affirm',
-  'oxxo',
-  'directdebit_gb',
-  'bacsdirectdebit',
+  'mbway',
+  'upi',
+  'upi_qr',
+  'upi_collect',
+  /** Await */
+
+  /** Direct debit */
   'ach',
-  'achdirectdebit',
-  'multibanco',
+  'directdebit_GB',
+  'sepadirectdebit',
+  /** Direct debit */
 ];
