@@ -4,19 +4,19 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import React
-import UIKit
 import Adyen
 import Adyen3DS2
+import React
+import UIKit
 
 internal class BaseModule: RCTEventEmitter {
     
-#if DEBUG
-    override func invalidate() {
-        super.invalidate()
-        dismiss(false)
-    }
-#endif
+    #if DEBUG
+        override func invalidate() {
+            super.invalidate()
+            dismiss(false)
+        }
+    #endif
         
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
@@ -28,9 +28,11 @@ internal class BaseModule: RCTEventEmitter {
     internal var currentPaymentComponent: PaymentComponent? {
         currentComponent as? PaymentComponent
     }
+
     internal var currentPresentableComponent: PresentableComponent? {
         currentComponent as? PresentableComponent
     }
+
     internal var currentPresenter: UIViewController?
     internal var actionHandler: AdyenActionComponent?
     
@@ -144,7 +146,7 @@ internal class BaseModule: RCTEventEmitter {
     
     internal func dismiss(_ result: Bool) {
         DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             
             self.currentComponent?.finalizeIfNeeded(with: result) {
                 self.cleanUp()
@@ -179,7 +181,7 @@ extension BaseModule {
                 return "invalidPaymentMethods"
             case .invalidAction:
                 return "invalidAction"
-            case .paymentMethodNotFound(_):
+            case .paymentMethodNotFound:
                 return "noPaymentMethod"
             }
         }
@@ -205,7 +207,6 @@ extension BaseModule {
     }
     
 }
-
 
 extension BaseModule: PresentationDelegate {
     

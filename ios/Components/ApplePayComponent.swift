@@ -4,14 +4,13 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-
 import Adyen
 import Foundation
 import PassKit
 import React
 
 @objc(AdyenApplePay)
-final internal class ApplePayComponent: BaseModule {
+internal final class ApplePayComponent: BaseModule {
     
     override func supportedEvents() -> [String]! { super.supportedEvents() }
 
@@ -37,14 +36,13 @@ final internal class ApplePayComponent: BaseModule {
             return sendEvent(error: error)
         }
         
-
         let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
         let applePayComponent: Adyen.ApplePayComponent
         do {
             applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,
-                                                        apiContext: apiContext,
-                                                        payment: payment,
-                                                        configuration: applepayConfig)
+                                                            apiContext: apiContext,
+                                                            payment: payment,
+                                                            configuration: applepayConfig)
         } catch {
             return sendEvent(error: error)
         }

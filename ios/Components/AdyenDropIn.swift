@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenDropIn)
-final internal class AdyenDropIn: BaseModule {
+internal final class AdyenDropIn: BaseModule {
 
     override func supportedEvents() -> [String]! { super.supportedEvents() }
     
