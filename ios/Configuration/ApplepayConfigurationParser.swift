@@ -179,7 +179,7 @@ public struct ApplepayConfigurationParser {
 
 extension ApplepayConfigurationParser {
     
-    internal enum ApplePayError: String, LocalizedError, KnownError {
+    public enum ApplePayError: String, LocalizedError, KnownError {
         case invalidMerchantName
         case invalidMerchantID
         
@@ -187,7 +187,7 @@ extension ApplepayConfigurationParser {
             self.rawValue
         }
         
-        var errorDescription: String? {
+        public var errorDescription: String? {
             switch self {
             case .invalidMerchantName:
                 return "Neither `summaryItems` nor `merchantName` in Apple Pay configuration"
