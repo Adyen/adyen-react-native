@@ -41,6 +41,9 @@
 - **merchantName** - The merchant name. This value will be used to generate a single *PKPaymentSummaryItem* if `summaryItems` is not provided.
 - **allowOnboarding** - The flag to toggle onboarding. If `true`, allow the shopper to add cards to the Apple Pay if non exists yet. If `false`, Apple Pay is disabled when the shopper doesn’t have supported cards on Apple Pay wallet. Default is `false`.
 - **summaryItems** - An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`.
+- **requiredShippingContactFields** - A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default. 
+- **requiredBillingContactFields** - A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default.
+- **billingContact** - Billing contact information for the user. Coresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact)
 
 ### GooglePay component
 
@@ -102,6 +105,24 @@
                     value: 98.4,
                   },
                 ],
+    billingContact: {
+      phoneNumber: "123-456-7890",
+      emailAddress: "example@email.com",
+      givenName: "John",
+      familyName: "Doe",
+      phoneticGivenName: 'John',
+      phoneticFamilyName: 'Doe'
+      addressLines: ["123 Main St", "Apt 4B"],
+      subLocality: "Suburb",
+      locality: "City",
+      postalCode: "12345",
+      subAdministrativeArea: "County",
+      administrativeArea: "State",
+      country: "Country",
+      countryCode: "US"
+    },
+    requiredBillingContactFields: [ 'name', 'postalAddress' ],
+    requiredShippingContactFields: [ 'name', 'postalAddress' ]
   },
   googlepay: {
     billingAddressRequired: true,
