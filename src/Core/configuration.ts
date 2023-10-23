@@ -95,17 +95,14 @@ export interface ApplePayConfiguration {
   /** The flag to toggle onboarding. */
   allowOnboarding?: boolean;
   /** The line items for this payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. */
-  summaryItems?: [ApplePaySummaryItem];
+  summaryItems?: ApplePaySummaryItem[];
   /** A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default. */
-  requiredShippingContactFields?: ApplePayAddressFields;
+  requiredShippingContactFields?: ApplePayAddressFields[];
   /** A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default. */
-  requiredBillingContactFields?: ApplePayAddressFields;
+  requiredBillingContactFields?: ApplePayAddressFields[];
   /** Billing contact information for the user. */
   billingContact?: ApplePayPaymentContact;
 }
-
-/** A complete list of valid shipping types. */
-export type ApplePayShippingType = 'shipping' | 'delivery' | 'storePickup' | 'servicePickup';
 
 /** Collection of values for address field visibility. */
 export type ApplePayAddressFields = 'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email';
@@ -137,7 +134,7 @@ export interface ApplePayPaymentContact {
   /** The phonetic spelling of the contact’s family name. */
   phoneticFamilyName?: string;
   /** The street portion of the address for the contact. */
-  addressLines?: [string];
+  addressLines?: string[];
   /** Additional information associated with the location, typically defined at the city or town level (such as district or neighborhood), in a postal address. */
   subLocality?: string;
   /** The city for the contact. */
