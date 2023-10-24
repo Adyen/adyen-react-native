@@ -55,7 +55,7 @@ internal final class ApplePayComponent: BaseModule {
 extension ApplePayComponent: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        guard let appleData = data as? ApplePayDetails else {
+        guard let appleData = data.paymentMethod as? ApplePayDetails else {
             adyenPrint("ApplePayComponent do not response with ApplePayDetails")
             return
         }

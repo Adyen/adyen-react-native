@@ -78,7 +78,7 @@ extension AdyenDropIn: DropInComponentDelegate {
                    for paymentMethod: PaymentMethod,
                    from component: DropInComponent) {
         let response: SubmitData
-        if let appleData = data as? ApplePayDetails {
+        if let appleData = data.paymentMethod as? ApplePayDetails {
             response = SubmitData(paymentData: data.jsonObject, extra: appleData.extraData)
         } else {
             response = SubmitData(paymentData: data.jsonObject, extra: nil)

@@ -32,7 +32,16 @@ public struct ApplepayConfigurationParser {
     }
 
     var allowOnboarding: Bool {
-        dict[ApplePayKeys.allowOnboarding] as? Bool ?? false
+        if let bool = dict[ApplePayKeys.allowOnboarding] as? Bool {
+            return bool
+        }
+        if let string = dict[ApplePayKeys.allowOnboarding] as? String {
+            return string.lowercased() == "true"
+        }
+        if let number = dict[ApplePayKeys.allowOnboarding] as? NSNumber {
+            return number.boolValue
+        }
+        return false
     }
         
     var requiredShippingContactFields: Set<PKContactField> {
@@ -200,12 +209,19 @@ extension ApplepayConfigurationParser {
 
 extension PKContactField {
     
+    /// 'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email'
     static func fromString(_ rawValue: String) -> PKContactField {
         switch rawValue {
-        case "email":
+        case "email", "emailAddress":
             return .emailAddress
-        case "phone":
+        case "phone", "phoneNumber":
             return .phoneNumber
+        case "post", "postalAddress":
+            return .postalAddress
+        case "name":
+            return .name
+        case "phoneticName":
+            return .phoneticName
         default:
             return PKContactField(rawValue: rawValue)
         }

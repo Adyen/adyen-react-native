@@ -132,23 +132,23 @@ const CheckoutView = ({ navigation }) => {
                 merchantID: ENVIRONMENT.applepayMerchantID,
                 merchantName: configuration.merchantName,
                 billingContact: {
-                  phoneNumber: 'phoneNumber',
-                  emailAddress: 'emailAddress',
+                  phoneNumber: '+1 41231232',
+                  emailAddress: 'emailAddress@test.com',
                   givenName: 'name',
                   familyName: 'familyName',
                   addressLines: ['addressLines1'],
                   locality: 'locality',
                   subLocality: 'subLocality',
                   subAdministrativeArea: 'subAdministrativeArea',
-                  postalCode: 'postalCode',
+                  postalCode: '123143',
                   administrativeArea: 'administrativeArea',
                   country: 'country',
                   countryCode: 'countryCode',
                   phoneticGivenName: 'phoneticName',
                   phoneticFamilyName: 'phoneticFamilyName'
                 },
-                requiredBillingContactFields: [ 'name', 'postalAddress' ],
-                requiredShippingContactFields: [ 'name', 'postalAddress' ]
+                requiredBillingContactFields: [ 'phoneticName', 'postalAddress', 'phone', 'email' ],
+                requiredShippingContactFields: [ 'name', 'phone', 'email' ]
               },
             }
           }
