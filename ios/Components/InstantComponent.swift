@@ -12,7 +12,7 @@ import React
 @objc(AdyenInstant)
 internal final class InstantComponent: BaseModule {
     
-    override func supportedEvents() -> [String]! { super.supportedEvents() }
+    override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
@@ -67,7 +67,8 @@ internal final class InstantComponent: BaseModule {
 extension InstantComponent: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        sendEvent(event: .didSubmit, body: data.jsonObject)
+        let response = SubmitData(paymentData: data.jsonObject, extra: nil)
+        sendEvent(event: .didSubmit, body: response.jsonDictionary)
     }
 
     internal func didFail(with error: Error, from component: PaymentComponent) {

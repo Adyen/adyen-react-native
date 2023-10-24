@@ -12,7 +12,7 @@ import React
 @objc(AdyenApplePay)
 internal final class ApplePayComponent: BaseModule {
     
-    override func supportedEvents() -> [String]! { super.supportedEvents() }
+    override func supportedEvents() -> [String]! { [ Events.didSubmit.rawValue, Events.didFail.rawValue ] }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
@@ -55,11 +55,27 @@ internal final class ApplePayComponent: BaseModule {
 extension ApplePayComponent: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        sendEvent(event: .didSubmit, body: data.jsonObject)
+        guard let appleData = data as? ApplePayDetails else {
+            adyenPrint("ApplePayComponent do not response with ApplePayDetails")
+            return
+        }
+        let response = SubmitData(paymentData: data.jsonObject, extra: appleData.extraData)
+        sendEvent(event: .didSubmit, body: response.jsonDictionary)
     }
 
     internal func didFail(with error: Error, from component: PaymentComponent) {
         sendEvent(error: error)
     }
 
+}
+
+extension ApplePayDetails {
+    
+    internal var extraData: [String : Any] {
+        return [
+            "billingContact": self.billingContact,
+            "network": self.network,
+            "shippingContact": self.shippingContact
+        ]
+    }
 }

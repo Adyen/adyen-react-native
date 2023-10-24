@@ -7,24 +7,6 @@
 import Adyen
 import Foundation
 
-internal extension PaymentComponentData {
-    var jsonObject: [String: Any] {
-        EncodablePaymentComponentData(data: self).jsonDictionary
-    }
-}
-
-internal extension PaymentMethod {
-    var jsonObject: [String: Any] {
-        EncodablePaymentMethod(paymentMethod: self).jsonDictionary
-    }
-}
-
-internal extension ActionComponentData {
-    var jsonObject: [String: Any] {
-        EncodableActionData(data: self).jsonDictionary
-    }
-}
-
 internal extension Encodable {
     var jsonDictionary: [String: Any] {
         guard let data = try? JSONEncoder().encode(self),
