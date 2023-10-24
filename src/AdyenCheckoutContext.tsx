@@ -145,16 +145,26 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
             response.extra
           )
         ),
-        eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
-          onAdditionalDetails?.(data, nativeComponent)
-        ),
-        eventEmitter.addListener(Event.onComplete, () =>
-          onComplete?.(nativeComponent)
-        ),
         eventEmitter.addListener(Event.onError, (error: AdyenError) =>
           onError?.(error, nativeComponent)
         ),
       ];
+
+      if (nativeComponent.events.includes(Event.onAdditionalDetails)) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
+            onAdditionalDetails?.(data, nativeComponent)
+          )
+        );
+      }
+
+      if (nativeComponent.events.includes(Event.onComplete)) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onComplete, () =>
+            onComplete?.(nativeComponent)
+          )
+        );
+      }
     },
     [
       submitPayment,
