@@ -67,7 +67,7 @@
   countryCode: 'NL',
   amount: {
     currency: 'EUR',
-    value: 9840,
+    value: 9800,
   },
   returnUrl: 'myapp://adyencheckout',
   analytics: {
@@ -94,7 +94,7 @@
                   },
                   {
                     label: 'Discount',
-                    value: -20,
+                    value: -20.4,
                   },
                   {
                     label: 'Tax',
@@ -102,7 +102,7 @@
                   },
                   {
                     label: `{YOUR_MERCHANT_NAME}`,
-                    value: 98.4,
+                    value: '98',
                   },
                 ],
     billingContact: {
@@ -121,11 +121,13 @@
       country: "Country",
       countryCode: "US"
     },
-    requiredBillingContactFields: [ 'name', 'postalAddress' ],
-    requiredShippingContactFields: [ 'name', 'postalAddress' ]
+    requiredBillingContactFields: [ 'phoneticName', 'postalAddress' ],
+    requiredShippingContactFields: [ 'name', 'phone', 'email', 'postalAddress' ]
   },
   googlepay: {
     billingAddressRequired: true,
+    shippingAddressRequired: true,
+    emailRequired: true
   }
 }
 ```

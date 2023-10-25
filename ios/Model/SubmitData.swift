@@ -10,10 +10,15 @@ internal struct SubmitData {
     let paymentData: [String : Any]
     let extra: [String : Any]?
 
-    var jsonDictionary: [String: Any] {
+    var jsonObject: [String: Any] {
         [
-            "paymentData": paymentData,
-            "extra": extra
+            Key.paymentData: paymentData,
+            Key.extra: extra
         ]
+    }
+    
+    private enum Key {
+        static let paymentData = "paymentData"
+        static let extra = "extra"
     }
 }

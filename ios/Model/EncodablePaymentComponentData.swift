@@ -45,6 +45,6 @@ internal struct EncodablePaymentComponentData: Encodable {
 
 internal extension PaymentComponentData {
     var jsonObject: [String: Any] {
-        EncodablePaymentComponentData(data: self).jsonDictionary
+        EncodablePaymentComponentData(data: self).jsonObject
     }
 }

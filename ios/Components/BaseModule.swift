@@ -79,7 +79,7 @@ internal class BaseModule: RCTEventEmitter {
         } else {
             errorToSend = error
         }
-        sendEvent(withName: Events.didFail.rawValue, body: errorToSend.toDictionary)
+        sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
     
     internal func parsePaymentMethods(from dicionary: NSDictionary) throws -> PaymentMethods {

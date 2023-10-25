@@ -68,11 +68,11 @@ extension InstantComponent: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
         let response = SubmitData(paymentData: data.jsonObject, extra: nil)
-        sendEvent(event: .didSubmit, body: response.jsonDictionary)
+        sendEvent(event: .didSubmit, body: response.jsonObject)
     }
 
     internal func didFail(with error: Error, from component: PaymentComponent) {
-        sendEvent(event: .didFail, body: error.toDictionary)
+        sendEvent(event: .didFail, body: error.jsonObject)
     }
 
 }

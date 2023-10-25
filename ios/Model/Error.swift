@@ -10,7 +10,7 @@ internal protocol KnownError: Error {
     var errorCode: String { get }
 }
 
-internal enum Parameter {
+internal enum Key {
     static let message = "message"
     static let errorCode = "errorCode"
     static let reason = "reason"
@@ -20,17 +20,17 @@ internal enum Parameter {
 
 internal extension Swift.Error {
 
-    var toDictionary: [String: Any] {
-        var dict = [Parameter.message: self.localizedDescription]
+    var jsonObject: [String: Any] {
+        var dict = [Key.message: self.localizedDescription]
 
         if let localized = self as? LocalizedError {
-            dict[Parameter.reason] = localized.failureReason
-            dict[Parameter.description] = localized.errorDescription
-            dict[Parameter.recovery] = localized.recoverySuggestion
+            dict[Key.reason] = localized.failureReason
+            dict[Key.description] = localized.errorDescription
+            dict[Key.recovery] = localized.recoverySuggestion
         }
 
         if let knownError = self as? KnownError {
-            dict[Parameter.errorCode] = knownError.errorCode
+            dict[Key.errorCode] = knownError.errorCode
         }
 
         return dict

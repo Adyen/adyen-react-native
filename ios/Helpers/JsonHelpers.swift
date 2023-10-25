@@ -8,7 +8,7 @@ import Adyen
 import Foundation
 
 internal extension Encodable {
-    var jsonDictionary: [String: Any] {
+    var jsonObject: [String: Any] {
         guard let data = try? JSONEncoder().encode(self),
               let object = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
             return [:]
@@ -19,8 +19,8 @@ internal extension Encodable {
 }
 
 internal extension Decodable {
-    init(from jsonDictionary: NSDictionary) throws {
-        let data = try JSONSerialization.data(withJSONObject: jsonDictionary, options: [])
+    init(from jsonObject: NSDictionary) throws {
+        let data = try JSONSerialization.data(withJSONObject: jsonObject, options: [])
         self = try JSONDecoder().decode(Self.self, from: data)
     }
 }

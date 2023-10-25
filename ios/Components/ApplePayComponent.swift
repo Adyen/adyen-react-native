@@ -60,7 +60,7 @@ extension ApplePayComponent: PaymentComponentDelegate {
             return
         }
         let response = SubmitData(paymentData: data.jsonObject, extra: appleData.extraData)
-        sendEvent(event: .didSubmit, body: response.jsonDictionary)
+        sendEvent(event: .didSubmit, body: response.jsonObject)
     }
 
     internal func didFail(with error: Error, from component: PaymentComponent) {
@@ -70,12 +70,55 @@ extension ApplePayComponent: PaymentComponentDelegate {
 }
 
 extension ApplePayDetails {
+
+    private enum Key {
+        static let billingContact = "billingContact"
+        static let network = "network"
+        static let shippingContact = "shippingContact"
+    }
     
     internal var extraData: [String : Any] {
         return [
-            "billingContact": self.billingContact,
-            "network": self.network,
-            "shippingContact": self.shippingContact
+            Key.billingContact: self.billingContact?.jsonObject,
+            Key.network: self.network,
+            Key.shippingContact: self.shippingContact?.jsonObject
         ]
+    }
+}
+
+extension PKContact {
+    var jsonObject: [String: Any] {
+        var dictionary: [String: Any] = [:]
+        
+        if let email = self.emailAddress {
+            dictionary[ApplePayKeys.PKContactKeys.emailAddress] = email
+        }
+        
+        if let phoneNumber = self.phoneNumber {
+            dictionary[ApplePayKeys.PKContactKeys.phoneNumber] = phoneNumber.stringValue
+        }
+        
+        if let name = self.name {
+            dictionary[ApplePayKeys.PKContactKeys.givenName] = name.givenName
+            dictionary[ApplePayKeys.PKContactKeys.familyName] = name.familyName
+        }
+        
+        if let name = self.name?.phoneticRepresentation {
+            dictionary[ApplePayKeys.PKContactKeys.phoneticGivenName] = name.givenName
+            dictionary[ApplePayKeys.PKContactKeys.phoneticFamilyName] = name.familyName
+        }
+
+        if let postalAddress = self.postalAddress {
+            dictionary[ApplePayKeys.PKContactKeys.addressLines] = postalAddress.street
+            dictionary[ApplePayKeys.PKContactKeys.subLocality] = postalAddress.subLocality
+            dictionary[ApplePayKeys.PKContactKeys.locality] = postalAddress.city
+            dictionary[ApplePayKeys.PKContactKeys.postalCode] = postalAddress.postalCode
+            dictionary[ApplePayKeys.PKContactKeys.subAdministrativeArea] = postalAddress.subAdministrativeArea
+            dictionary[ApplePayKeys.PKContactKeys.administrativeArea] = postalAddress.state
+            dictionary[ApplePayKeys.PKContactKeys.country] = postalAddress.country
+            dictionary[ApplePayKeys.PKContactKeys.countryCode] = postalAddress.isoCountryCode
+        }
+        
+        return dictionary
     }
 }

@@ -24,6 +24,6 @@ internal struct EncodableActionData: Encodable {
 
 internal extension ActionComponentData {
     var jsonObject: [String: Any] {
-        EncodableActionData(data: self).jsonDictionary
+        EncodableActionData(data: self).jsonObject
     }
 }

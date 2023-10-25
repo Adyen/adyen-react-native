@@ -83,7 +83,7 @@ extension AdyenDropIn: DropInComponentDelegate {
         } else {
             response = SubmitData(paymentData: data.jsonObject, extra: nil)
         }
-        sendEvent(event: .didSubmit, body: response.jsonDictionary)
+        sendEvent(event: .didSubmit, body: response.jsonObject)
     }
 
     func didProvide(_ data: ActionComponentData, from component: DropInComponent) {

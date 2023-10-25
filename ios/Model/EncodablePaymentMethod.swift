@@ -24,6 +24,6 @@ internal struct EncodablePaymentMethod: Encodable {
 
 internal extension PaymentMethod {
     var jsonObject: [String: Any] {
-        EncodablePaymentMethod(paymentMethod: self).jsonDictionary
+        EncodablePaymentMethod(paymentMethod: self).jsonObject
     }
 }
