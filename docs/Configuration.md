@@ -38,10 +38,10 @@
 ### ApplePay component
 
 - **merchantID** - The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.
-- **merchantName** - The merchant name. This value will be used to generate a single *PKPaymentSummaryItem* if `summaryItems` is not provided.
+- **merchantName** - The merchant name. This value will be used to generate a single _PKPaymentSummaryItem_ if `summaryItems` is not provided.
 - **allowOnboarding** - The flag to toggle onboarding. If `true`, allow the shopper to add cards to the Apple Pay if non exists yet. If `false`, Apple Pay is disabled when the shopper doesn’t have supported cards on Apple Pay wallet. Default is `false`.
 - **summaryItems** - An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`.
-- **requiredShippingContactFields** - A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default. 
+- **requiredShippingContactFields** - A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default.
 - **requiredBillingContactFields** - A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default.
 - **billingContact** - Billing contact information for the user. Coresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact)
 
@@ -53,8 +53,18 @@
 - **totalPriceStatus** - The status of the total price used. Defaults to `"FINAL"`.
 - **allowPrepaidCards** - Set to `false` if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified.
 - **billingAddressRequired** - Set to `true` if you require a billing address. A billing address should only be requested if it's required to process the transaction.
+- **billingAddressParameters** - Set billing address parameters:
+
+  - **format** - Billing address format required to complete the transaction. _MIN_: Name, country code, and postal code (default)._FULL_: Name, street address, locality, region, country code, and postal code.
+  - **phoneNumberRequired** - Set to true if a phone number is required for the provided shipping address.
+
 - **emailRequired** - Set to `true` to request an email address.
 - **shippingAddressRequired** - Set to `true` to request a full shipping address.
+- **shippingAddressParameters** - Set shiping address parameters.
+
+  - **allowedCountryCodes** - ISO 3166-1 alpha-2 country code values of the countries where shipping is allowed. If this object isn't specified, all shipping address countries are allowed.
+  - **phoneNumberRequired** - Set to true if a phone number is required for the provided shipping address.
+
 - **existingPaymentMethodRequired** - If set to `true` then the **IsReadyToPayResponse** object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in **allowedPaymentMethods**.
 - **googlePayEnvironment** - The environment to be used by GooglePay. Should be either `WalletConstants.ENVIRONMENT_TEST` or `WalletConstants.ENVIRONMENT_PRODUCTION`. By default is using **environment** from the root.
 
@@ -126,7 +136,15 @@
   },
   googlepay: {
     billingAddressRequired: true,
+    billingAddressParameters: {
+      format: 'FULL',
+      phoneNumberRequired: true
+    }
     shippingAddressRequired: true,
+    shippingAddressParameters: {
+      allowedCountryCodes: ['US', 'MX'],
+      phoneNumberRequired: true
+    }
     emailRequired: true
   }
 }

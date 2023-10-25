@@ -6,6 +6,11 @@ import com.facebook.react.bridge.ReadableMap
 import com.adyen.checkout.googlepay.util.AllowedCardNetworks
 import com.google.android.gms.wallet.WalletConstants
 import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.googlepay.model.BillingAddressParameters
+import com.adyen.checkout.googlepay.model.ShippingAddressParameters
+import com.adyenreactnativesdk.component.dropin.AdyenCheckoutService
+import com.adyenreactnativesdk.util.ReactNativeJson
+import org.json.JSONException
 import java.util.*
 
 class GooglePayConfigurationParser(config: ReadableMap) {
@@ -23,6 +28,8 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         const val SHIPPING_ADDRESS_REQUIRED_KEY = "shippingAddressRequired"
         const val EXISTING_PAYMENT_METHOD_REQUIRED_KEY = "existingPaymentMethodRequired"
         const val GOOGLEPAY_ENVIRONMENT_KEY = "googlePayEnvironment"
+        const val BILLING_ADDRESS_PARAMETERS_KEY = "shippingAddressParameters"
+        const val SHIPPING_ADDRESS_PARAMETERS_KEY = "billingAddressParameters"
     }
 
     private var config: ReadableMap
@@ -34,6 +41,28 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             this.config = config
         }
     }
+
+    private val shippingAddressParameters: ShippingAddressParameters?
+        get() {
+            try {
+                val map = config.getMap(SHIPPING_ADDRESS_PARAMETERS_KEY)
+                return ShippingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+            } catch (e: JSONException) {
+                Log.w(TAG, e.message ?:S "Unable to parse shippingAddressParameters")
+                return null
+            }
+        }
+
+    private val billingAddressParameters: BillingAddressParameters?
+        get() {
+            try {
+                val map = config.getMap(BILLING_ADDRESS_PARAMETERS_KEY)
+                return BillingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+            } catch (e: JSONException) {
+                Log.w(TAG, e.message ?: "Unable to parse billingAddressParameters")
+                return null
+            }
+        }
 
     private val allowedCardNetworks: List<String>
         get() {
@@ -106,6 +135,13 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         if (config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
             builder.setTotalPriceStatus(config.getString(TOTAL_PRICE_STATUS_KEY))
         }
+        if (config.hasKey(BILLING_ADDRESS_PARAMETERS_KEY)) {
+            builder.setBillingAddressParameters(billingAddressParameters)
+        }
+        if (config.hasKey(SHIPPING_ADDRESS_PARAMETERS_KEY)) {
+            builder.setShippingAddressParameters(shippingAddressParameters)
+        }
+
         return builder.build()
     }
 
