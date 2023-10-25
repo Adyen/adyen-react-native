@@ -133,12 +133,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     override fun onDidProvide(jsonObject: JSONObject) {
-        try {
-            val map = ReactNativeJson.convertJsonToMap(jsonObject)
-            sendEvent(DID_PROVIDE, map)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
-        }
+        sendEvent(DID_PROVIDE, jsonObject)
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {

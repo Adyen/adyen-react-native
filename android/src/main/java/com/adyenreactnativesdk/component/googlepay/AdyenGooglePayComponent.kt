@@ -5,12 +5,14 @@ import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
 import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.googlepay.GooglePayComponent
+import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
+import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.ui.PendingPaymentDialogFragment
@@ -21,6 +23,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import org.json.JSONException
+import org.json.JSONObject
 
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {
 
@@ -95,7 +98,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
             )
             component.observe(dialogFragment) { googlePayComponentState ->
                 if (googlePayComponentState?.isValid == true) {
-                    onSubmit(googlePayComponentState.data)
+                    onSubmit(googlePayComponentState.data, googlePayComponentState)
                 }
             }
             component.observeErrors(dialogFragment) { componentError ->
@@ -134,18 +137,19 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         )
     }
 
-    private fun onSubmit(data: PaymentComponentData<*>) {
+    private fun onSubmit(data: PaymentComponentData<*>, state: GooglePayComponentState) {
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
-        try {
-            val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            map.putString(
-                AdyenConstants.PARAMETER_RETURN_URL,
-                ActionHandler.getReturnUrl(reactApplicationContext)
-            )
-            sendEvent(DID_SUBMIT, map)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
+        jsonObject.put(
+            AdyenConstants.PARAMETER_RETURN_URL,
+            ActionHandler.getReturnUrl(reactApplicationContext)
+        )
+
+        var extra: JSONObject? = null
+        state.paymentData?.let {
+            extra = JSONObject(it.toJson())
         }
+        val submitMap = SubmitMap(jsonObject, extra)
+        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
 
     fun handleActivityResult(resultCode: Int, data: Intent?) {
@@ -157,14 +161,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         private const val COMPONENT_NAME = "AdyenGooglePay"
         internal const val GOOGLEPAY_REQUEST_CODE = 1001
         private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.handleActivityResult(requestCode, resultCode, data)"))
-        fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-            AdyenCheckout.handleActivityResult(requestCode, resultCode, data)
-        }
     }
 }
 
