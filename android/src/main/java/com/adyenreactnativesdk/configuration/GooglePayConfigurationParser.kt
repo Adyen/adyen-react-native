@@ -48,7 +48,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
                 val map = config.getMap(SHIPPING_ADDRESS_PARAMETERS_KEY)
                 return ShippingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
             } catch (e: JSONException) {
-                Log.w(TAG, e.message ?:S "Unable to parse shippingAddressParameters")
+                Log.w(TAG, e.message ?: "Unable to parse shippingAddressParameters")
                 return null
             }
         }

@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.model
+package com.adyenreactnativesdk.component.model
 
 import org.json.JSONObject
 
@@ -11,7 +11,7 @@ data class SubmitMap(val paymentData: JSONObject, val extra: JSONObject?) {
     }
 
     companion object {
-        private const val PAYMENT_DATA_KEY = "paymentData"
-        private const val EXTRA_KEY = "extra"
+        const val PAYMENT_DATA_KEY = "paymentData"
+        const val EXTRA_KEY = "extra"
     }
 }
