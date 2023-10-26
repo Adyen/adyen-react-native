@@ -73,20 +73,32 @@ public struct ApplepayConfigurationParser {
             contact.emailAddress = emailAddress
         }
         
+        var name = PersonNameComponents()
+        var nameUodated = false
         if let givenName = dictionary[ApplePayKeys.PKContactKeys.givenName] as? String {
-            contact.name?.givenName = givenName
+            name.givenName = givenName
+            nameUodated = true
         }
         
         if let familyName = dictionary[ApplePayKeys.PKContactKeys.familyName] as? String {
-            contact.name?.familyName = familyName
+            name.familyName = familyName
+            nameUodated = true
         }
         
         if let phoneticGivenName = dictionary[ApplePayKeys.PKContactKeys.phoneticGivenName] as? String {
-            contact.name?.phoneticRepresentation?.givenName = phoneticGivenName
+            name.phoneticRepresentation = PersonNameComponents()
+            name.phoneticRepresentation?.givenName = phoneticGivenName
+            nameUodated = true
         }
         
         if let phoneticFamilyName = dictionary[ApplePayKeys.PKContactKeys.phoneticFamilyName] as? String {
-            contact.name?.phoneticRepresentation?.familyName = phoneticFamilyName
+            name.phoneticRepresentation = name.phoneticRepresentation ?? PersonNameComponents()
+            name.phoneticRepresentation?.familyName = phoneticFamilyName
+            nameUodated = true
+        }
+        
+        if nameUodated {
+            contact.name = name
         }
         
         let postalAddress = CNMutablePostalAddress()
@@ -149,8 +161,8 @@ public struct ApplepayConfigurationParser {
                let value = item[ApplePayKeys.summaryItemsValue] ?? item[ApplePayKeys.deprecated_summaryItemsValue] {
                 if let value = value as? String {
                     summaryItems.append(.init(label: label, amount: NSDecimalNumber(string: value)))
-                } else if let value = value as? Double {
-                    summaryItems.append(.init(label: label, amount: NSDecimalNumber(value: value)))
+                } else if let value = value as? NSNumber {
+                    summaryItems.append(.init(label: label, amount: NSDecimalNumber(decimal: value.decimalValue)))
                 }
             }
         }
