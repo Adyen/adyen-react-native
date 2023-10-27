@@ -45,17 +45,17 @@ public struct ApplepayConfigurationParser {
     }
         
     var requiredShippingContactFields: Set<PKContactField> {
-        guard let requredFields = dict[ApplePayKeys.requiredShippingContactFields] as? [String] else {
+        guard let requiredFields = dict[ApplePayKeys.requiredShippingContactFields] as? [String] else {
             return []
         }
-        return Set<PKContactField>(requredFields.compactMap { PKContactField.fromString($0) })
+        return Set<PKContactField>(requiredFields.compactMap { PKContactField.fromString($0) })
     }
     
     var requiredBillingContactFields: Set<PKContactField> {
-        guard let requredFields = dict[ApplePayKeys.requiredBillingContactFields] as? [String] else {
+        guard let requiredFields = dict[ApplePayKeys.requiredBillingContactFields] as? [String] else {
             return []
         }
-        return Set<PKContactField>(requredFields.compactMap { PKContactField.fromString($0) })
+        return Set<PKContactField>(requiredFields.compactMap { PKContactField.fromString($0) })
     }
     
     var billingContact: PKContact? {
