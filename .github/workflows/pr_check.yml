@@ -63,6 +63,7 @@ jobs:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
       device: iPhone 14
+      buildFolder: ./DerivedData
     steps:
       - uses: actions/checkout@v4
 
@@ -112,9 +113,8 @@ jobs:
       - name: Pod install
         working-directory: example/ios
         run: |
-          lsof -t -i:8081 && kill $(lsof -t -i:8081)
-          yarn ios --udid "${{ steps.sets-simulator.outputs.id }}"
-          xcrun simctl io booted screenshot ${{ github.workspace }}/reports/screenshot_before.png
+          pod install
+          npx react-native build-ios --udid "${{ steps.sets-simulator.outputs.id }}" --buildFolder ${{ env.buildFolder }} --mode Debug
 
       - name: Build and test iOS
         working-directory: example/ios
@@ -123,7 +123,7 @@ jobs:
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
             -destination "id=${{ steps.sets-simulator.outputs.id }}" \
-            -derivedDataPath ./DerivedData \
+            -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES | xcpretty --utf --color && exit ${PIPESTATUS[0]}
 
       - name: Generate code Coverage
@@ -131,7 +131,7 @@ jobs:
         run: |
           xcrun simctl io booted screenshot ${{ github.workspace }}/reports/screenshot_after.png
           ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
-          sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+          sed -i '' "s#example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
 
       - name: SwiftLint
         working-directory: ios
