@@ -107,16 +107,7 @@ jobs:
         working-directory: example/ios
         run: pod install
 
-      - name: Make reports folder
-        run: mkdir reports
-
-      - name: Pod install
-        working-directory: example/ios
-        run: |
-          pod install
-          npx react-native build-ios --udid "${{ steps.sets-simulator.outputs.id }}" --buildFolder ${{ env.buildFolder }} --mode Debug
-
-      - name: Build and test iOS
+      - name: Run tests
         working-directory: example/ios
         run: | 
           xcodebuild test \
@@ -129,9 +120,9 @@ jobs:
       - name: Generate code Coverage
         working-directory: example/ios
         run: |
-          xcrun simctl io booted screenshot ${{ github.workspace }}/reports/screenshot_after.png
+          mkdir ${{ github.workspace }}/reports
           ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
-          sed -i '' "s#example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+          sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
 
       - name: SwiftLint
         working-directory: ios
