@@ -95,15 +95,60 @@ export interface ApplePayConfiguration {
   /** The flag to toggle onboarding. */
   allowOnboarding?: boolean;
   /** The line items for this payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. */
-  summaryItems?: [ApplePaySummaryItem];
+  summaryItems?: ApplePaySummaryItem[];
+  /** A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default. */
+  requiredShippingContactFields?: ApplePayAddressFields[];
+  /** A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default. */
+  requiredBillingContactFields?: ApplePayAddressFields[];
+  /** Billing contact information for the user. */
+  billingContact?: ApplePayPaymentContact;
 }
+
+/** Collection of values for address field visibility. */
+export type ApplePayAddressFields = 'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email';
 
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
 export interface ApplePaySummaryItem {
   /** A short, localized description of the summary item. */
-  label: String;
+  label: string;
+  /**
+   * @deprecated This property will be removed
+   */
+  value: Number | string;
   /** The amount associated with the summary item. */
-  value: Number | String;
+  amount: Number | string;
+}
+
+/** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
+export interface ApplePayPaymentContact {
+  /** A phone number for the contact. */
+  phoneNumber?: string;
+  /** An email address for the contact. */
+  emailAddress?: string;
+  /** The contact’s given name. */
+  givenName?: string;
+  /** The contact’s family name. */
+  familyName?: string;
+  /** The phonetic spelling of the contact’s given name. */
+  phoneticGivenName?: string;
+  /** The phonetic spelling of the contact’s family name. */
+  phoneticFamilyName?: string;
+  /** The street portion of the address for the contact. */
+  addressLines?: string[];
+  /** Additional information associated with the location, typically defined at the city or town level (such as district or neighborhood), in a postal address. */
+  subLocality?: string;
+  /** The city for the contact. */
+  locality?: string;
+  /** The zip code or postal code, where applicable, for the contact. */
+  postalCode?: string;
+  /** The zip code or postal code, where applicable, for the contact. */
+  subAdministrativeArea?: string;
+  /** The subadministrative area (such as a county or other region) in a postal address. */
+  administrativeArea?: string;
+  /** The state for the contact. */
+  country?: string;
+  /** The contact’s two-letter ISO 3166 country code. */
+  countryCode?: string;
 }
 
 export type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';

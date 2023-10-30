@@ -19,6 +19,7 @@ import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
 import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInServiceListener
+import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
@@ -121,24 +122,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     override fun onDidSubmit(jsonObject: JSONObject) {
-        val map: WritableMap = try {
-            ReactNativeJson.convertJsonToMap(jsonObject)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
-            return
-        }
         val context = reactApplicationContext
-        map.putString(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
-        sendEvent(DID_SUBMIT, map)
+        jsonObject.getJSONObject(SubmitMap.PAYMENT_DATA_KEY)
+            .put(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
+        sendEvent(DID_SUBMIT, jsonObject)
     }
 
     override fun onDidProvide(jsonObject: JSONObject) {
-        try {
-            val map = ReactNativeJson.convertJsonToMap(jsonObject)
-            sendEvent(DID_PROVIDE, map)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
-        }
+        sendEvent(DID_PROVIDE, jsonObject)
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {

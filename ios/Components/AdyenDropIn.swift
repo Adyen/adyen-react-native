@@ -12,8 +12,8 @@ import React
 @objc(AdyenDropIn)
 internal final class AdyenDropIn: BaseModule {
 
-    override func supportedEvents() -> [String]! { super.supportedEvents() }
-    
+    override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+
     private var dropInComponent: DropInComponent? {
         currentComponent as? DropInComponent
     }
@@ -77,7 +77,13 @@ extension AdyenDropIn: DropInComponentDelegate {
     func didSubmit(_ data: PaymentComponentData,
                    for paymentMethod: PaymentMethod,
                    from component: DropInComponent) {
-        sendEvent(event: .didSubmit, body: data.jsonObject)
+        let response: SubmitData
+        if let appleData = data.paymentMethod as? ApplePayDetails {
+            response = SubmitData(paymentData: data.jsonObject, extra: appleData.extraData)
+        } else {
+            response = SubmitData(paymentData: data.jsonObject, extra: nil)
+        }
+        sendEvent(event: .didSubmit, body: response.jsonObject)
     }
 
     func didProvide(_ data: ActionComponentData, from component: DropInComponent) {

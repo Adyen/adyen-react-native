@@ -12,6 +12,7 @@
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		4385E204EEF12DE79A7120D7 /* libPods-AdyenExample-AdyenExampleTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 61BB7C82FA499FE3CD77B125 /* libPods-AdyenExample-AdyenExampleTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */; };
 		948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948B9B012A83D269003D15B4 /* DropInTest.swift */; };
 		B6CB27F7E4011E633F2A25A7 /* libPods-AdyenExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 74FF1EDD8A3337F905F9FF61 /* libPods-AdyenExample.a */; };
 		F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */; };
@@ -41,6 +42,7 @@
 		61BB7C82FA499FE3CD77B125 /* libPods-AdyenExample-AdyenExampleTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdyenExample-AdyenExampleTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		74FF1EDD8A3337F905F9FF61 /* libPods-AdyenExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdyenExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AdyenExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ApplePayConfigurationTests.swift; sourceTree = "<group>"; };
 		948B9B002A83D269003D15B4 /* AdyenExampleTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AdyenExampleTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		948B9B012A83D269003D15B4 /* DropInTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropInTest.swift; sourceTree = "<group>"; };
 		A1C8461E16734A59CA0E7714 /* Pods-AdyenExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyenExample.release.xcconfig"; path = "Target Support Files/Pods-AdyenExample/Pods-AdyenExample.release.xcconfig"; sourceTree = "<group>"; };
@@ -73,6 +75,7 @@
 		00E356EF1AD99517003FC87E /* AdyenExampleTests */ = {
 			isa = PBXGroup;
 			children = (
+				945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */,
 				00E356F01AD99517003FC87E /* Supporting Files */,
 				948B9B012A83D269003D15B4 /* DropInTest.swift */,
 				948B9B002A83D269003D15B4 /* AdyenExampleTests-Bridging-Header.h */,
@@ -410,6 +413,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */,
 				948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -503,7 +507,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AdyenExample/AdyenExample.entitlements;
-								CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = B2NYSS5932;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = AdyenExample/Info.plist;
@@ -519,7 +523,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.adyen.example.AdyenExample;
 				PRODUCT_NAME = AdyenExample;
-								SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -532,7 +536,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AdyenExample/AdyenExample.entitlements;
-								CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = B2NYSS5932;
 				INFOPLIST_FILE = AdyenExample/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
@@ -547,7 +551,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.adyen.example.AdyenExample;
 				PRODUCT_NAME = AdyenExample;
-								SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;

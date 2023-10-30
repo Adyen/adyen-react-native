@@ -12,7 +12,9 @@ import com.adyen.checkout.components.PaymentComponentState
 import com.adyen.checkout.components.model.payments.response.Action
 import com.adyen.checkout.dropin.service.DropInService
 import com.adyen.checkout.dropin.service.DropInServiceResult
+import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInModuleListener
+import com.adyenreactnativesdk.component.model.SubmitMap
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 
@@ -33,8 +35,15 @@ open class AdyenCheckoutService : DropInService(), DropInModuleListener {
             paymentComponentJson.getJSONObject(PAYMENT_DETAILS_KEY).putOpt(BRAND_KEY, cardType)
         }
 
+        var extra: JSONObject? = null
+        if (paymentComponentState is GooglePayComponentState) {
+            paymentComponentState.paymentData?.let {
+                extra = JSONObject(it.toJson())
+            }
+        }
+        val submitMap = SubmitMap(paymentComponentJson, extra)
         val listener = DropInServiceProxy.shared.serviceListener
-        listener?.onDidSubmit(paymentComponentJson)
+        listener?.onDidSubmit(submitMap.toJSONObject())
             ?: Log.e(
                 TAG,
                 "Invalid state: DropInServiceListener is missing"

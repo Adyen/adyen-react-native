@@ -18,6 +18,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.json.JSONException
+import org.json.JSONObject
 import java.util.*
 
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
@@ -28,6 +29,16 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         reactApplicationContext
             .getJSModule(RCTDeviceEventEmitter::class.java)
             .emit(eventName, map)
+    }
+
+    protected fun sendEvent(eventName: String, jsonObject: JSONObject) {
+        try {
+            reactApplicationContext
+                .getJSModule(RCTDeviceEventEmitter::class.java)
+                .emit(eventName, ReactNativeJson.convertJsonToMap(jsonObject))
+        } catch (e: JSONException) {
+            sendErrorEvent(e)
+        }
     }
 
     protected fun sendErrorEvent(error: Exception) {
