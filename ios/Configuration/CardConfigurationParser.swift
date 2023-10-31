@@ -68,12 +68,16 @@ public struct CardConfigurationParser {
         return strings.map { CardType(rawValue: $0) }
     }
     
+    var billingAddressCountryCodes: [String]? {
+        return dict[CardKeys.billingAddressCountryCodes] as? [String]
+    }
+    
     // TODO: add installmentConfiguration: InstallmentConfiguration?
     
     public var configuration: CardComponent.Configuration {
         var storedConfiguration = StoredCardConfiguration()
         storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
-
+        
         return .init(showsHolderNameField: showsHolderNameField,
                      showsStorePaymentMethodField: showsStorePaymentMethodField,
                      showsSecurityCodeField: showsSecurityCodeField,
@@ -81,7 +85,8 @@ public struct CardConfigurationParser {
                      socialSecurityNumberMode: socialSecurityVisibility,
                      billingAddressMode: addressVisibility,
                      storedCardConfiguration: storedConfiguration,
-                     allowedCardTypes: allowedCardTypes)
+                     allowedCardTypes: allowedCardTypes,
+                     billingAddressCountryCodes: billingAddressCountryCodes)
     }
     
     private func parseVisibility(_ key: String) -> CardComponent.FieldVisibility {
