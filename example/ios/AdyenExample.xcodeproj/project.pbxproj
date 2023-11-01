@@ -14,6 +14,7 @@
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */; };
 		948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948B9B012A83D269003D15B4 /* DropInTest.swift */; };
+		94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */; };
 		B6CB27F7E4011E633F2A25A7 /* libPods-AdyenExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 74FF1EDD8A3337F905F9FF61 /* libPods-AdyenExample.a */; };
 		F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */; };
 /* End PBXBuildFile section */
@@ -45,6 +46,7 @@
 		945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ApplePayConfigurationTests.swift; sourceTree = "<group>"; };
 		948B9B002A83D269003D15B4 /* AdyenExampleTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AdyenExampleTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		948B9B012A83D269003D15B4 /* DropInTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropInTest.swift; sourceTree = "<group>"; };
+		94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardConfigurationTests.swift; sourceTree = "<group>"; };
 		A1C8461E16734A59CA0E7714 /* Pods-AdyenExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyenExample.release.xcconfig"; path = "Target Support Files/Pods-AdyenExample/Pods-AdyenExample.release.xcconfig"; sourceTree = "<group>"; };
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -75,9 +77,10 @@
 		00E356EF1AD99517003FC87E /* AdyenExampleTests */ = {
 			isa = PBXGroup;
 			children = (
-				945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */,
 				00E356F01AD99517003FC87E /* Supporting Files */,
+				945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */,
 				948B9B012A83D269003D15B4 /* DropInTest.swift */,
+				94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */,
 				948B9B002A83D269003D15B4 /* AdyenExampleTests-Bridging-Header.h */,
 			);
 			path = AdyenExampleTests;
@@ -413,6 +416,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */,
 				945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */,
 				948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */,
 			);
