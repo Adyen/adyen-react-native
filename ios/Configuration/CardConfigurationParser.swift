@@ -61,15 +61,18 @@ public struct CardConfigurationParser {
     }
     
     var allowedCardTypes: [CardType]? {
-        guard let strings = dict[CardKeys.allowedCardTypes] as? [String] else {
+        guard let strings = dict[CardKeys.allowedCardTypes] as? [String], !strings.isEmpty else {
             return nil
         }
         
         return strings.map { CardType(rawValue: $0) }
     }
-    
+
     var billingAddressCountryCodes: [String]? {
-        return dict[CardKeys.billingAddressCountryCodes] as? [String]
+        guard let strings = dict[CardKeys.billingAddressCountryCodes] as? [String], !strings.isEmpty else {
+            return nil
+        }
+        return strings
     }
     
     // TODO: add installmentConfiguration: InstallmentConfiguration?
