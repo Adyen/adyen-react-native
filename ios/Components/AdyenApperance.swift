@@ -25,6 +25,7 @@ internal class AdyenAppearanceLoader: NSObject {
         let appearanceProviders = Bundle.allBundles
             .compactMap { $0.infoDictionary?[bundleExecutableKey] as? String }
             .map { $0.replacingOccurrences(of: " ", with: "_") }
+            .map { $0.replacingOccurrences(of: "-", with: "_") }
             .compactMap { NSClassFromString("\($0).\(expectedClassName)") }
             .compactMap { $0 as? AdyenAppearanceProvider.Type }
         
