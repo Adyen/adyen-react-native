@@ -16,7 +16,7 @@ import com.adyen.checkout.card.data.CardType
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
 import java.util.ArrayList
 
-class CardConfigurationParser(config: ReadableMap) {
+class CardConfigurationParser(config: ReadableMap, private val countryCode: String?) {
 
     companion object {
         const val TAG = "CardConfigurationParser"
@@ -29,6 +29,7 @@ class CardConfigurationParser(config: ReadableMap) {
         const val KCP_VISIBILITY_KEY = "kcpVisibility"
         const val SOCIAL_SECURITY_VISIBILITY_KEY = "socialSecurity"
         const val SUPPORTED_CARD_TYPES_KEY = "supported"
+        const val SUPPORTED_COUNTRY_LIST_KEY = "allowedAddressCountryCodes"
     }
 
     private var config: ReadableMap
@@ -82,6 +83,11 @@ class CardConfigurationParser(config: ReadableMap) {
             config.getBoolean(HIDE_CVC_KEY)
         } else false
 
+    private val supportedCountries: List<String>
+        get() = if (config.hasKey(SUPPORTED_COUNTRY_LIST_KEY)) {
+            config.getArray(SUPPORTED_COUNTRY_LIST_KEY)?.toArrayList() as? List<String> ?: emptyList()
+        } else emptyList()
+
     private val kcpVisibility: KCPAuthVisibility
         get() {
             return if (config.hasKey(KCP_VISIBILITY_KEY)) {
@@ -100,7 +106,7 @@ class CardConfigurationParser(config: ReadableMap) {
                     val value = config.getString(ADDRESS_VISIBILITY_KEY)!!
                     when (value.lowercase()) {
                         "postal_code", "postal", "postalcode" -> PostalCode()
-                        "full" -> FullAddress(null, emptyList())
+                        "full" -> FullAddress(countryCode, supportedCountries)
                         else -> None
                     }
                 }

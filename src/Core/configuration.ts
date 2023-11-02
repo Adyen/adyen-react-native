@@ -85,6 +85,8 @@ export interface CardsConfiguration {
   socialSecurity?: FieldVisibility;
   /** The list of allowed card types. By default uses list of brands from payment method. Fallbacks to list of all known cards. */
   supported?: string[];
+  /** List of ISO 3166-1 alpha-2 country code values. */
+  allowedAddressCountryCodes?: string[];
 }
 
 export interface ApplePayConfiguration {

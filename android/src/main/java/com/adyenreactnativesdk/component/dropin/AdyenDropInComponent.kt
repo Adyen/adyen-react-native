@@ -62,7 +62,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
         parser.locale?.let { builder.setShopperLocale(it) }
         configureDropIn(builder, configuration)
-        configureCards(builder, configuration)
         configureBcmc(builder, configuration)
         configure3DS(builder)
 
@@ -72,6 +71,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             builder.setAmount(amount)
             configureGooglePay(builder, configuration, countryCode)
         }
+        configureCards(builder, configuration, countryCode)
         val currentActivity = reactApplicationContext.currentActivity
         val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -184,7 +184,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         if (bcmcConfig == null) {
             bcmcConfig = JavaOnlyMap()
         }
-        val parser = CardConfigurationParser(bcmcConfig)
+        val parser = CardConfigurationParser(bcmcConfig, null)
         val bcmcBuilder = BcmcConfiguration.Builder(
             builder.builderShopperLocale,
             builder.builderEnvironment,
@@ -193,8 +193,8 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder))
     }
 
-    private fun configureCards(builder: Builder, configuration: ReadableMap) {
-        val parser = CardConfigurationParser(configuration)
+    private fun configureCards(builder: Builder, configuration: ReadableMap, countryCode: String?) {
+        val parser = CardConfigurationParser(configuration, countryCode)
         val cardBuilder = CardConfiguration.Builder(
             builder.builderShopperLocale,
             builder.builderEnvironment,

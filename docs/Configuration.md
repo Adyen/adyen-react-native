@@ -26,12 +26,13 @@
 
 ### Card component
 
-- `showStorePaymentField` - Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**.
-- `holderNameRequired` - Indicates if the field for entering the holder name should be displayed in the form. Defaults to **false**.
-- `hideCvcStoredCard` - Indicates whether to show the security code field on a stored card payment. Defaults to false.
-- `hideCvc` - Indicates whether to show the security code field at all. Defaults to false.
 - `addressVisibility` - Indicates the display mode of the billing address form. Options: **"none"**, **"postal"**, **"full"**. Defaults to **"none"**.
+- `allowedAddressCountryCodes` - List of ISO 3166-1 alpha-2 country code values to control country picker options in full address form.
+- `hideCvc` - Indicates whether to show the security code field at all. Defaults to false.
+- `hideCvcStoredCard` - Indicates whether to show the security code field on a stored card payment. Defaults to false.
+- `holderNameRequired` - Indicates if the field for entering the holder name should be displayed in the form. Defaults to **false**.
 - `kcpVisibility` - Indicates whether to show the security fields for South Korea issued cards. Options: **"show"** or **"hide"**. Defaults to **"hide"**.
+- `showStorePaymentField` - Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**.
 - `socialSecurity` - Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**.
 - `supported` - The list of allowed card types. By default uses list of `brands` from payment method. Fallbacks to list of all known cards.
 
@@ -54,15 +55,19 @@
 - `allowPrepaidCards` - Set to **false** if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified.
 - `billingAddressRequired` - Set to **true** if you require a billing address. A billing address should only be requested if it's required to process the transaction.
 - `billingAddressParameters` - Set billing address parameters:
-  - `format` - Billing address format required to complete the transaction. 
+
+  - `format` - Billing address format required to complete the transaction.
+    
     Possible values:
-      MIN (default): Name, country code, and postal code.
+      MIN *(default)*: Name, country code, and postal code.
       FULL: Name, street address, locality, region, country code, and postal code.
+
   - `phoneNumberRequired` - Set to true if a phone number is required for the provided shipping address.
 
 - `emailRequired` - Set to **true** to request an email address.
 - `shippingAddressRequired` - Set to **true** to request a full shipping address.
 - `shippingAddressParameters` - Set shipping address parameters.
+
   - `allowedCountryCodes` - List of ISO 3166-1 alpha-2 country code values of the countries where shipping is allowed. If this object isn't specified, all shipping address countries are allowed.
   - `phoneNumberRequired` - Set to true if a phone number is required for the provided shipping address.
 
@@ -93,7 +98,8 @@
     addressVisibility: 'postalCode',
     showStorePaymentField : false,
     hideCvcStoredCard: true,
-    hideCvc: true
+    hideCvc: true,
+    allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL']
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',

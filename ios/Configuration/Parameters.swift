@@ -43,6 +43,7 @@ internal enum CardKeys: SubConfig {
     static var kcpVisibility = "kcpVisibility"
     static var socialSecurity = "socialSecurity"
     static var allowedCardTypes = "supported"
+    static var billingAddressCountryCodes = "allowedAddressCountryCodes"
 }
 
 internal enum ApplePayKeys: SubConfig {
