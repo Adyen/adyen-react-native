@@ -192,6 +192,7 @@ export function getNativeComponent(
 } {
   switch (typeName) {
     case 'dropin':
+    case 'dropIn':
     case 'drop-in':
     case 'adyendropin':
       return {
