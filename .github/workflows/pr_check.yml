@@ -7,7 +7,7 @@ on:
     branches:
       - develop
 env:
-  node-version: 16
+  node-version: 20
 
 jobs:
   build-lib:
@@ -109,7 +109,7 @@ jobs:
 
       - name: Run tests
         working-directory: example/ios
-        run: | 
+        run: |
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
@@ -174,7 +174,7 @@ jobs:
 
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
-        
+
       - name: AVD cache
         uses: actions/cache@v3
         id: avd-cache
