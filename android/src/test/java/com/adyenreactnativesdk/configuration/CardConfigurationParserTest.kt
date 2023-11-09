@@ -33,7 +33,7 @@ class CardConfigurationParserTest {
         val config = WritableMapMock()
         config.putBoolean(CardConfigurationParser.HOLDER_NAME_REQUIRED_KEY, true)
         val cardParser = CardConfigurationParser(config, "US")
-        assert(cardParser.holderNameRequired)
+        assertTrue(cardParser.holderNameRequired)
     }
 
     @Test
