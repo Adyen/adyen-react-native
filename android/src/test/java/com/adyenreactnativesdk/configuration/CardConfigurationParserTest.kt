@@ -8,11 +8,14 @@ import com.adyen.checkout.card.data.CardType
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.*
 import org.junit.Test
+import org.mockito.MockedStatic
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
 class CardConfigurationParserTest {
+
+    private var mockStatic: MockedStatic<Log>? = null
 
     @Test
     fun testGetConfiguration() {
@@ -77,7 +80,7 @@ class CardConfigurationParserTest {
 
     @Test
     fun testGetSupportedCardTypes() {
-        Mockito.mockStatic(Log::class.java)
+        mockStatic = Mockito.mockStatic(Log::class.java)
         var wrong_cards_count = 0
         `when`(Log.w(Mockito.eq(CardConfigurationParser.TAG), Mockito.anyString())).thenReturn(wrong_cards_count++)
         val config = WritableMapMock()
@@ -87,6 +90,7 @@ class CardConfigurationParserTest {
         val cardParser = CardConfigurationParser(config, "US")
         assertArrayEquals(cardParser.supportedCardTypes, arrayOf(CardType.MASTERCARD, CardType.VISA, CardType.MAESTRO))
         assertEquals(wrong_cards_count, 1)
+        mockStatic?.close()
     }
 
     @Test
