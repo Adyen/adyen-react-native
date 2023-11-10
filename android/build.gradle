@@ -19,6 +19,8 @@ buildscript {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'jacoco'
+apply from: "$project.rootDir/jacoco.gradle"
 
 android {
     compileSdkVersion safeExtGet('compileSdkVersion', 31)

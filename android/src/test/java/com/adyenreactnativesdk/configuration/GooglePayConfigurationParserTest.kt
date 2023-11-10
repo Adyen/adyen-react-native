@@ -3,10 +3,13 @@ package com.adyenreactnativesdk.configuration
 import com.adyen.checkout.core.api.Environment
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.anyString
+import org.mockito.Mockito.eq
+import android.util.Log
 
 class GooglePayConfigurationParserTest {
 
@@ -20,12 +23,16 @@ class GooglePayConfigurationParserTest {
 
     @Test
     fun getAllowedCardNetworks() {
+        mockStatic(Log::class.java)
+        var wrong_cards_count = 0
+        `when`(Log.w(eq("GooglePayConfigParser"), anyString())).thenReturn(wrong_cards_count++)
         val config = WritableMapMock()
         val mockArray = mock(ReadableArray::class.java)
         `when`(mockArray.toArrayList()).thenReturn(arrayListOf("MASTERCARD", "visa", "Amex", "wrong_value"))
         config.putArray(GooglePayConfigurationParser.ALLOWED_CARD_NETWORKS_KEY, mockArray)
         val googlepayParser = GooglePayConfigurationParser(config)
         assertEquals(googlepayParser.allowedCardNetworks, listOf("MASTERCARD", "VISA", "AMEX"))
+        assertEquals(wrong_cards_count, 1)
     }
 
     @Test

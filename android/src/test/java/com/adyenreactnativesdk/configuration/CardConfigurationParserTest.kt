@@ -1,5 +1,6 @@
 package com.adyenreactnativesdk.configuration
 
+import android.util.Log
 import com.adyen.checkout.card.AddressConfiguration
 import com.adyen.checkout.card.KCPAuthVisibility
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
@@ -7,6 +8,7 @@ import com.adyen.checkout.card.data.CardType
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.*
 import org.junit.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
@@ -75,12 +77,16 @@ class CardConfigurationParserTest {
 
     @Test
     fun testGetSupportedCardTypes() {
+        Mockito.mockStatic(Log::class.java)
+        var wrong_cards_count = 0
+        `when`(Log.w(Mockito.eq(CardConfigurationParser.TAG), Mockito.anyString())).thenReturn(wrong_cards_count++)
         val config = WritableMapMock()
         val mockArray = mock(ReadableArray::class.java)
         `when`(mockArray.toArrayList()).thenReturn(arrayListOf("mc", "visa", "maestro", "wrong_value"))
         config.putArray(CardConfigurationParser.SUPPORTED_CARD_TYPES_KEY, mockArray)
         val cardParser = CardConfigurationParser(config, "US")
-        assertEquals(cardParser.supportedCardTypes, listOf(CardType.MASTERCARD, CardType.VISA, CardType.MAESTRO))
+        assertArrayEquals(cardParser.supportedCardTypes, arrayOf(CardType.MASTERCARD, CardType.VISA, CardType.MAESTRO))
+        assertEquals(wrong_cards_count, 1)
     }
 
     @Test

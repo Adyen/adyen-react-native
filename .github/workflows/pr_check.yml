@@ -148,13 +148,6 @@ jobs:
           node-version: ${{ env.node-version }}
           cache: 'yarn'
 
-      - name: Setup Java 11
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-          cache: 'gradle'
-
       - uses: actions/cache/restore@v3
         with:
           path: lib
@@ -212,6 +205,9 @@ jobs:
             echo "::endgroup::"
             echo "::group::Running Gradle Build"
             ./gradlew connectedCheck
+            echo "::endgroup::"
+            echo "::group::Running Tests"
+            ./gradlew clean :adyen_react-native:testDebugUnitTest
             echo "::endgroup::"
 
   run-sonar:
