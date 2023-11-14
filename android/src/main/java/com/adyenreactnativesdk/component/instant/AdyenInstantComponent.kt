@@ -77,7 +77,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         appCompatActivity.runOnUiThread {
-            actionHandler?.hide(appCompatActivity)
+            actionHandler?.hide()
             actionHandler = null
             AdyenCheckout.removeIntentHandler()
         }

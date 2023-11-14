@@ -103,7 +103,7 @@ class ActionHandler(
         }
     }
 
-    fun hide(activity: FragmentActivity) {
+    fun hide() {
         dialog.get()?.dismiss()
         dialog.clear()
         loadedComponent = null
