@@ -22,7 +22,7 @@ internal final class AdyenCSE: NSObject {
         do {
             let unencryptedCard = try Card(from: payload)
             let encryptedCard = try CardEncryptor.encrypt(card: unencryptedCard, with: publicKey as String)
-            resolver(encryptedCard.jsonDictionary)
+            resolver(encryptedCard.jsonObject)
         } catch {
             rejecter(Constant.errorMessage, nil, error)
         }

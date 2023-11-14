@@ -22,7 +22,7 @@ internal class BaseModule: RCTEventEmitter {
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() { /* No JS events expected */ }
     override func startObserving() { /* No JS events expected */ }
-    override open func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+    override open func supportedEvents() -> [String]! { [] }
 
     internal var currentComponent: Component?
     internal var currentPaymentComponent: PaymentComponent? {
@@ -79,7 +79,7 @@ internal class BaseModule: RCTEventEmitter {
         } else {
             errorToSend = error
         }
-        sendEvent(withName: Events.didFail.rawValue, body: errorToSend.toDictionary)
+        sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
     
     internal func parsePaymentMethods(from dicionary: NSDictionary) throws -> PaymentMethods {

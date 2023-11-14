@@ -19,6 +19,7 @@ import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
 import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInServiceListener
+import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
@@ -61,7 +62,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
         parser.locale?.let { builder.setShopperLocale(it) }
         configureDropIn(builder, configuration)
-        configureCards(builder, configuration)
         configureBcmc(builder, configuration)
         configure3DS(builder)
 
@@ -71,6 +71,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             builder.setAmount(amount)
             configureGooglePay(builder, configuration, countryCode)
         }
+        configureCards(builder, configuration, countryCode)
         val currentActivity = reactApplicationContext.currentActivity
         val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -121,24 +122,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     override fun onDidSubmit(jsonObject: JSONObject) {
-        val map: WritableMap = try {
-            ReactNativeJson.convertJsonToMap(jsonObject)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
-            return
-        }
         val context = reactApplicationContext
-        map.putString(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
-        sendEvent(DID_SUBMIT, map)
+        jsonObject.getJSONObject(SubmitMap.PAYMENT_DATA_KEY)
+            .put(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
+        sendEvent(DID_SUBMIT, jsonObject)
     }
 
     override fun onDidProvide(jsonObject: JSONObject) {
-        try {
-            val map = ReactNativeJson.convertJsonToMap(jsonObject)
-            sendEvent(DID_PROVIDE, map)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
-        }
+        sendEvent(DID_PROVIDE, jsonObject)
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
@@ -193,7 +184,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         if (bcmcConfig == null) {
             bcmcConfig = JavaOnlyMap()
         }
-        val parser = CardConfigurationParser(bcmcConfig)
+        val parser = CardConfigurationParser(bcmcConfig, null)
         val bcmcBuilder = BcmcConfiguration.Builder(
             builder.builderShopperLocale,
             builder.builderEnvironment,
@@ -202,8 +193,8 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder))
     }
 
-    private fun configureCards(builder: Builder, configuration: ReadableMap) {
-        val parser = CardConfigurationParser(configuration)
+    private fun configureCards(builder: Builder, configuration: ReadableMap, countryCode: String?) {
+        val parser = CardConfigurationParser(configuration, countryCode)
         val cardBuilder = CardConfiguration.Builder(
             builder.builderShopperLocale,
             builder.builderEnvironment,

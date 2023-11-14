@@ -23,9 +23,16 @@ const CheckoutView = ({ navigation }) => {
   const didSubmit = useCallback(
     async (
       /** @type {import('@adyen/react-native').PaymentMethodData} */ data,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
+      /** @type any */ extra
     ) => {
-      console.log(`didSubmit: ${data.paymentMethod.type}`);
+      console.log(
+        `didSubmit: ${data.paymentMethod.type} with extra: ${JSON.stringify(
+          extra,
+          null,
+          ' '
+        )}`
+      );
       try {
         /** @type {import('@adyen/react-native').PaymentResponse} */
         const result = await ApiClient.payments(data, configuration);
@@ -130,6 +137,26 @@ const CheckoutView = ({ navigation }) => {
               applepay: {
                 merchantID: ENVIRONMENT.applepayMerchantID,
                 merchantName: configuration.merchantName,
+                requiredBillingContactFields: ['phoneticName', 'postalAddress'],
+                requiredShippingContactFields: [
+                  'name',
+                  'phone',
+                  'email',
+                  'postalAddress',
+                ],
+              },
+              googlepay: {
+                billingAddressRequired: true,
+                billingAddressParameters: {
+                  format: 'FULL',
+                  phoneNumberRequired: true,
+                },
+                shippingAddressRequired: true,
+                shippingAddressParameters: {
+                  allowedCountryCodes: ['US', 'MX'],
+                  phoneNumberRequired: true,
+                },
+                emailRequired: true,
               },
             }
           }

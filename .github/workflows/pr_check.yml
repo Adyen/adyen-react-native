@@ -7,7 +7,7 @@ on:
     branches:
       - develop
 env:
-  node-version: 16
+  node-version: 20
 
 jobs:
   build-lib:
@@ -63,6 +63,7 @@ jobs:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
       device: iPhone 14
+      buildFolder: ./DerivedData
     steps:
       - uses: actions/checkout@v4
 
@@ -106,22 +107,20 @@ jobs:
         working-directory: example/ios
         run: pod install
 
-      - name: Build and test iOS
+      - name: Run tests
         working-directory: example/ios
-        run: | 
+        run: |
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
             -destination "id=${{ steps.sets-simulator.outputs.id }}" \
-            -derivedDataPath ./DerivedData \
-            -enableCodeCoverage YES \
-            ${params} | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+            -derivedDataPath ${{ env.buildFolder }} \
+            -enableCodeCoverage YES | xcpretty --utf --color && exit ${PIPESTATUS[0]}
 
       - name: Generate code Coverage
         working-directory: example/ios
         run: |
           mkdir ${{ github.workspace }}/reports
-          xcrun simctl io booted screenshot ${{ github.workspace }}/reports/screenshot.png
           ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
           sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
 
@@ -149,13 +148,6 @@ jobs:
           node-version: ${{ env.node-version }}
           cache: 'yarn'
 
-      - name: Setup Java 11
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-          cache: 'gradle'
-
       - uses: actions/cache/restore@v3
         with:
           path: lib
@@ -175,7 +167,7 @@ jobs:
 
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
-        
+
       - name: AVD cache
         uses: actions/cache@v3
         id: avd-cache
@@ -213,6 +205,9 @@ jobs:
             echo "::endgroup::"
             echo "::group::Running Gradle Build"
             ./gradlew connectedCheck
+            echo "::endgroup::"
+            echo "::group::Running Tests"
+            ./gradlew clean :adyen_react-native:testDebugUnitTest
             echo "::endgroup::"
 
   run-sonar:

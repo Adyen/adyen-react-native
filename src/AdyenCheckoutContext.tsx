@@ -51,16 +51,36 @@ type AdyenCheckoutProps = {
   config: Configuration;
   /** JSON response from Adyen API `\paymentMethods` */
   paymentMethods: PaymentMethodsResponse;
-  /** Event callback, called when the shopper selects the Pay button and payment details are valid. */
-  onSubmit: (data: PaymentMethodData, component: AdyenActionComponent) => void;
-  /** Event callback, called when payment about to be terminate. */
+  /**
+   * Event callback, called when the shopper selects the Pay button and payment details are valid.
+   * @param data - The payment method data.
+   * @param component - The Adyen payment component.
+   * @param extra - Additional data (optional).
+   */
+  onSubmit: (
+    data: PaymentMethodData,
+    component: AdyenActionComponent,
+    extra?: any
+  ) => void;
+  /**
+   * Event callback, called when payment about to be terminate.
+   * @param data - The payment method data.
+   * @param component - The Adyen payment component.
+   */
   onError: (error: AdyenError, component: AdyenActionComponent) => void;
-  /** Event callback, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods. */
+  /**
+   * Event callback, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods.
+   * @param data - The payment method data.
+   * @param component - The Adyen payment component.
+   */
   onAdditionalDetails?: (
     data: PaymentMethodData,
     component: AdyenActionComponent
   ) => void;
-  /** Event callback, called when a shopper finishes the flow (Voucher payments only). */
+  /**
+   * Event callback, called when a shopper finishes the flow (Voucher payments only).
+   * @param component - The Adyen payment component.
+   */
   onComplete?: (component: AdyenActionComponent) => void;
   /** Inner components */
   children: ReactNode;
@@ -88,7 +108,8 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     (
       configuration: Configuration,
       data: any,
-      nativeComponent: AdyenActionComponent
+      nativeComponent: AdyenActionComponent,
+      extra: any
     ) => {
       const checkoutAttemptId = analytics.current?.checkoutAttemptId;
       if (data.paymentMethod && checkoutAttemptId) {
@@ -99,7 +120,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         ...data,
         returnUrl: data.returnUrl ?? configuration.returnUrl,
       };
-      onSubmit(payload, nativeComponent);
+      onSubmit(payload, nativeComponent, extra);
     },
     [onSubmit, analytics]
   );
@@ -116,19 +137,34 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     ) => {
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
-        eventEmitter.addListener(Event.onSubmit, (data) =>
-          submitPayment(configuration, data, nativeComponent)
-        ),
-        eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
-          onAdditionalDetails?.(data, nativeComponent)
-        ),
-        eventEmitter.addListener(Event.onComplete, () =>
-          onComplete?.(nativeComponent)
+        eventEmitter.addListener(Event.onSubmit, (response) =>
+          submitPayment(
+            configuration,
+            response.paymentData,
+            nativeComponent,
+            response.extra
+          )
         ),
         eventEmitter.addListener(Event.onError, (error: AdyenError) =>
           onError?.(error, nativeComponent)
         ),
       ];
+
+      if (nativeComponent.events.includes(Event.onAdditionalDetails)) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
+            onAdditionalDetails?.(data, nativeComponent)
+          )
+        );
+      }
+
+      if (nativeComponent.events.includes(Event.onComplete)) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onComplete, () =>
+            onComplete?.(nativeComponent)
+          )
+        );
+      }
     },
     [
       submitPayment,

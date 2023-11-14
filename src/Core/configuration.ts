@@ -85,6 +85,8 @@ export interface CardsConfiguration {
   socialSecurity?: FieldVisibility;
   /** The list of allowed card types. By default uses list of brands from payment method. Fallbacks to list of all known cards. */
   supported?: string[];
+  /** List of ISO 3166-1 alpha-2 country code values. */
+  allowedAddressCountryCodes?: string[];
 }
 
 export interface ApplePayConfiguration {
@@ -95,15 +97,65 @@ export interface ApplePayConfiguration {
   /** The flag to toggle onboarding. */
   allowOnboarding?: boolean;
   /** The line items for this payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. */
-  summaryItems?: [ApplePaySummaryItem];
+  summaryItems?: ApplePaySummaryItem[];
+  /** A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default. */
+  requiredShippingContactFields?: ApplePayAddressFields[];
+  /** A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default. */
+  requiredBillingContactFields?: ApplePayAddressFields[];
+  /** Billing contact information for the user. */
+  billingContact?: ApplePayPaymentContact;
 }
+
+/** Collection of values for address field visibility. */
+export type ApplePayAddressFields =
+  | 'postalAddress'
+  | 'name'
+  | 'phoneticName'
+  | 'phone'
+  | 'email';
 
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
 export interface ApplePaySummaryItem {
   /** A short, localized description of the summary item. */
-  label: String;
+  label: string;
+  /**
+   * @deprecated This property will be removed
+   */
+  value: Number | string;
   /** The amount associated with the summary item. */
-  value: Number | String;
+  amount: Number | string;
+}
+
+/** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
+export interface ApplePayPaymentContact {
+  /** A phone number for the contact. */
+  phoneNumber?: string;
+  /** An email address for the contact. */
+  emailAddress?: string;
+  /** The contact’s given name. */
+  givenName?: string;
+  /** The contact’s family name. */
+  familyName?: string;
+  /** The phonetic spelling of the contact’s given name. */
+  phoneticGivenName?: string;
+  /** The phonetic spelling of the contact’s family name. */
+  phoneticFamilyName?: string;
+  /** The street portion of the address for the contact. */
+  addressLines?: string[];
+  /** Additional information associated with the location, typically defined at the city or town level (such as district or neighborhood), in a postal address. */
+  subLocality?: string;
+  /** The city for the contact. */
+  locality?: string;
+  /** The zip code or postal code, where applicable, for the contact. */
+  postalCode?: string;
+  /** The zip code or postal code, where applicable, for the contact. */
+  subAdministrativeArea?: string;
+  /** The subadministrative area (such as a county or other region) in a postal address. */
+  administrativeArea?: string;
+  /** The state for the contact. */
+  country?: string;
+  /** The contact’s two-letter ISO 3166 country code. */
+  countryCode?: string;
 }
 
 export type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';
@@ -113,6 +165,28 @@ export type TotalPriceStatus = 'NOT_CURRENTLY_KNOWN' | 'ESTIMATED' | 'FINAL';
 export enum GooglePayEnvironment {
   Test = 3,
   Production = 1,
+}
+
+export type GooglePayBillingAddressFormat = 'MIN' | 'FULL';
+
+/** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
+export interface GooglePayBillingAddressParameters {
+  /** Billing address format required to complete the transaction.
+   *
+   * MIN: Name, country code, and postal code (default).
+   * FULL: Name, street address, locality, region, country code, and postal code.
+   */
+  format?: GooglePayBillingAddressFormat;
+  /** Set to true if a phone number is required for the provided shipping address. */
+  phoneNumberRequired?: boolean;
+}
+
+/** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
+export interface GooglePayShippingAddressParameters {
+  /** ISO 3166-1 alpha-2 country code values of the countries where shipping is allowed. If this object isn't specified, all shipping address countries are allowed. */
+  allowedCountryCodes?: [string];
+  /** Set to true if a phone number is required for the provided shipping address. */
+  phoneNumberRequired?: boolean;
 }
 
 export interface GooglePayConfiguration {
@@ -128,10 +202,14 @@ export interface GooglePayConfiguration {
   allowPrepaidCards?: boolean;
   /** Set to true if you require a billing address. A billing address should only be requested if it's required to process the transaction. */
   billingAddressRequired?: boolean;
+  /** The expected fields returned if billingAddressRequired is set to true. */
+  billingAddressParameters?: GooglePayBillingAddressParameters;
   /** Set to true to request an email address. */
   emailRequired?: boolean;
   /** Set to true to request a full shipping address. */
   shippingAddressRequired?: boolean;
+  /** The expected fields returned if shippingAddressRequired is set to true. */
+  shippingAddressParameters?: GooglePayShippingAddressParameters;
   /** If set to true then the IsReadyToPayResponse object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in allowedPaymentMethods. */
   existingPaymentMethodRequired?: boolean;
   /** The environment to be used by GooglePay. Should be either WalletConstants.ENVIRONMENT_TEST (3) or WalletConstants.ENVIRONMENT_PRODUCTION (1). By default is using environment from root. */

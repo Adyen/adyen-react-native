@@ -19,6 +19,8 @@ buildscript {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'jacoco'
+apply from: "$project.rootDir/jacoco.gradle"
 
 android {
     compileSdkVersion safeExtGet('compileSdkVersion', 31)
@@ -59,7 +61,11 @@ dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.22"
-    implementation "com.adyen.checkout:drop-in:4.12.1"
+    implementation "com.adyen.checkout:drop-in:4.13.3"
     implementation 'com.google.android.material:material:1.7.0'
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
+
+    //Tests
+    testImplementation "junit:junit:4.13.2"
+    testImplementation 'org.mockito:mockito-core:5.1.0'
 }

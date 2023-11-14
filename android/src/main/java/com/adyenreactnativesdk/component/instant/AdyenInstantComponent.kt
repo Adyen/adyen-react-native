@@ -11,6 +11,7 @@ import com.adyenreactnativesdk.action.ActionHandlerConfiguration
 import com.adyenreactnativesdk.action.ActionHandlingInterface
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.ui.PaymentComponentListener
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
@@ -18,7 +19,6 @@ import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.WritableMap
 import org.json.JSONException
 
 class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context),
@@ -89,23 +89,14 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
 
     override fun onSubmit(data: PaymentComponentData<*>) {
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
-        try {
-            val map: WritableMap = ReactNativeJson.convertJsonToMap(jsonObject)
-            map.putString(AdyenConstants.PARAMETER_RETURN_URL, ActionHandler.getReturnUrl(reactApplicationContext))
-            sendEvent(DID_SUBMIT, map)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
-        }
+        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, ActionHandler.getReturnUrl(reactApplicationContext))
+        val submitMap = SubmitMap(jsonObject, null)
+        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
 
     override fun provide(actionComponentData: ActionComponentData) {
         val jsonObject = ActionComponentData.SERIALIZER.serialize(actionComponentData)
-        try {
-            val map = ReactNativeJson.convertJsonToMap(jsonObject)
-            sendEvent(DID_PROVIDE, map)
-        } catch (e: JSONException) {
-            sendErrorEvent(e)
-        }
+        sendEvent(DID_PROVIDE, jsonObject)
     }
 
     override fun onClose() {
