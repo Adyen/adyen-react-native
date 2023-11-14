@@ -99,8 +99,12 @@ defaultConfig {
 </intent-filter>
 ```
 
-3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
+3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.java`:
 ```java
+import android.content.Intent;
+
+...
+
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
@@ -108,7 +112,7 @@ public void onNewIntent(Intent intent) {
 }
 ```
 
-4. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
+4. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.java`:
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {
