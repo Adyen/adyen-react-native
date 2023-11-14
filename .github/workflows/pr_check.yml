@@ -7,7 +7,7 @@ on:
     branches:
       - develop
 env:
-  node-version: 16
+  node-version: 20
 
 jobs:
   build-lib:
@@ -109,7 +109,7 @@ jobs:
 
       - name: Run tests
         working-directory: example/ios
-        run: | 
+        run: |
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
@@ -148,13 +148,6 @@ jobs:
           node-version: ${{ env.node-version }}
           cache: 'yarn'
 
-      - name: Setup Java 11
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-          cache: 'gradle'
-
       - uses: actions/cache/restore@v3
         with:
           path: lib
@@ -174,7 +167,7 @@ jobs:
 
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
-        
+
       - name: AVD cache
         uses: actions/cache@v3
         id: avd-cache
@@ -212,6 +205,9 @@ jobs:
             echo "::endgroup::"
             echo "::group::Running Gradle Build"
             ./gradlew connectedCheck
+            echo "::endgroup::"
+            echo "::group::Running Tests"
+            ./gradlew clean :adyen_react-native:testDebugUnitTest
             echo "::endgroup::"
 
   run-sonar:
