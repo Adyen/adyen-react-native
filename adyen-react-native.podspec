@@ -10,12 +10,12 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
-  s.platform     = :ios, "11.0"
+  s.platform     = :ios, "12.0"
   s.source       = { :git => "https://github.com/Adyen/adyen-react-native.git", :tag => "#{s.version}" }
   s.source_files = "ios/**/*.{h,m,swift}"
 
 
   s.dependency "React-Core"
-  s.dependency "Adyen", '4.10.4'
+  s.dependency "Adyen", '4.11.1'
 
 end
