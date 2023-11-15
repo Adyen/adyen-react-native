@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ inputs.version == '' && github.ref_name || inputs.version }}
+      NODE-VERSION: 20
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
-          registry-url: https://registry.npmjs.org/
+          node-version: ${{ env.NODE-VERSION }}
       - name: Update version in package.json
         run: |
           sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
