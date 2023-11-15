@@ -21,10 +21,6 @@ jobs:
       VERSION: ${{ inputs.version == '' && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          registry-url: https://registry.npmjs.org/
       - name: Update version in package.json
         run: |
           sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
