@@ -27,9 +27,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE-VERSION }}
-      - name: Update version in package.json
-        run: |
-          sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
+      # - name: Update version in package.json
+      #   run: |
+      #     sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
       - name: Build and publish to npm
         run: yarn install --frozen-lockfile
       - name: Upload artifacts
