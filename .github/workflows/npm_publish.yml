@@ -25,6 +25,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE-VERSION }}
+          registry-url: https://registry.npmjs.org/
       - name: Update version in package.json
         run: |
           sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
