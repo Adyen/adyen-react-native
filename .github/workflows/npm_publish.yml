@@ -12,6 +12,8 @@ on:
         required: true
   release:
     types: [published]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   publish-npm:
@@ -31,7 +33,7 @@ jobs:
       - name: Build and publish to npm
         run: yarn install --frozen-lockfile
       - name: Upload artifacts
-        run: npm publish --access public
+        run: npm whoami  #npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ADYEN_REACT_NATIVE_TOKEN }}
           CI: true
