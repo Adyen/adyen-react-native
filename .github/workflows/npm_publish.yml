@@ -37,5 +37,5 @@ jobs:
         run: npm whoami  #npm publish --access public
         
         env:
-          NODE_AUTH_TOKEN: some_random_value #${{ secrets.NPM_ADYEN_REACT_NATIVE_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ADYEN_REACT_NATIVE_TOKEN }}
           CI: true
