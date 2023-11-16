@@ -27,6 +27,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE-VERSION }}
+          registry-url: https://registry.npmjs.org/
       # - name: Update version in package.json
       #   run: |
       #     sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
@@ -34,6 +35,7 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Upload artifacts
         run: npm whoami  #npm publish --access public
+        
         env:
           NODE_AUTH_TOKEN: some_random_value #${{ secrets.NPM_ADYEN_REACT_NATIVE_TOKEN }}
           CI: true
