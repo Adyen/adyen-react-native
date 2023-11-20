@@ -76,14 +76,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
         configureCards(builder, configuration, countryCode)
         val currentActivity = reactApplicationContext.currentActivity
-        val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        // val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
+        // resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
         AdyenCheckout.addDropInListener(this)
         AdyenCheckout.dropInLauncher?.let {
-            startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), resultIntent)
+            startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
         } ?: run {
-            startPayment(currentActivity, paymentMethodsResponse, builder.build(), resultIntent)
+            startPayment(currentActivity, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
         }
     }
 
