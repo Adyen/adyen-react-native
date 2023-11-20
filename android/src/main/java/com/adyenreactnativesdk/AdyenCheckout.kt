@@ -5,7 +5,7 @@ import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
-import com.adyen.checkout.components.base.IntentHandlingComponent
+import com.adyen.checkout.components.core.internal.IntentHandlingComponent
 import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
@@ -27,6 +27,7 @@ object AdyenCheckout {
     @JvmStatic
     internal fun addDropInListener(callback: ReactDropInCallback) {
         dropInCallback.callback = WeakReference(callback)
+//        DropIn.registerForDropInResult(dropInLauncher, callback)
     }
 
     @JvmStatic
@@ -40,10 +41,7 @@ object AdyenCheckout {
      */
     @JvmStatic
     fun setLauncherActivity(activity: ActivityResultCaller) {
-        dropInLauncher = activity.registerForActivityResult(
-            ReactDropInResultContract(),
-            dropInCallback::onDropInResult
-        )
+//        dropInLauncher = activity
     }
 
     /**
@@ -100,16 +98,6 @@ object AdyenCheckout {
     @JvmStatic
     internal fun removeGooglePayComponent() {
         googleComponent.clear()
-    }
-}
-
-private class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
-    override fun createIntent(context: Context, input: Intent): Intent {
-        return input
-    }
-
-    override fun parseResult(resultCode: Int, intent: Intent?): DropInResult? {
-        return DropIn.handleActivityResult(DropIn.DROP_IN_REQUEST_CODE, resultCode, intent)
     }
 }
 

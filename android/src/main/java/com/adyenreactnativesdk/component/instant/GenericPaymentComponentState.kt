@@ -1,13 +1,13 @@
 package com.adyenreactnativesdk.component.instant
 
-import com.adyen.checkout.components.model.payments.request.PaymentComponentData
-import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
+import com.adyen.checkout.components.core.PaymentComponentData
+import com.adyen.checkout.components.core.paymentmethod.PaymentMethodDetails
 
-data class GenericPaymentComponentState<PaymentMethodDetailsT : PaymentMethodDetails?>(
+data class GenericPaymentComponentState<T : PaymentMethodDetails?>(
     /**
      * @return The data that was collected by the component.
      */
-    val data: PaymentComponentData<PaymentMethodDetailsT>,
+    val data: PaymentComponentData<T>,
     /**
      * @return If the component UI data is valid.
      */

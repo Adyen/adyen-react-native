@@ -11,6 +11,7 @@ import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.dropin.DropIn.startPayment
+import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
@@ -57,10 +58,12 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             }
         }
 
-        val builder = Builder(reactApplicationContext, AdyenCheckoutService::class.java, clientKey)
-            .setEnvironment(environment)
-
-        parser.locale?.let { builder.setShopperLocale(it) }
+        val builder: Builder
+        if (parser.locale != null) {
+            builder = Builder(parser.locale, reactApplicationContext, environment, clientKey)
+        } else {
+            builder = Builder(reactApplicationContext, environment, clientKey)
+        }
         configureDropIn(builder, configuration)
         configureBcmc(builder, configuration)
         configure3DS(builder)
