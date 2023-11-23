@@ -128,7 +128,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const removeEventListeners = useCallback(() => {
     subscriptions.current.forEach((s) => s.remove());
     analytics.current = null;
-  }, [subscriptions]);
+  }, [subscriptions, analytics]);
 
   const startEventListeners = useCallback(
     (
@@ -166,14 +166,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
     },
-    [
-      submitPayment,
-      removeEventListeners,
-      onAdditionalDetails,
-      onComplete,
-      onError,
-      subscriptions,
-    ]
+    [submitPayment, onAdditionalDetails, onComplete, onError, subscriptions]
   );
 
   const start = useCallback(

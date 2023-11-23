@@ -184,7 +184,6 @@ export interface PaymentMethodsResponse {
   storedPaymentMethods?: StoredPaymentMethod[];
 }
 
-
 /**
  * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#responses-200 API Explorer /payments response}
  */
