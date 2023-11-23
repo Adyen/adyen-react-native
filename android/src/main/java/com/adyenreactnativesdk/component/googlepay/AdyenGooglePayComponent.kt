@@ -1,34 +1,27 @@
 package com.adyenreactnativesdk.component.googlepay
 
 import android.content.Intent
-import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.components.model.payments.request.PaymentComponentData
+import com.adyen.checkout.components.core.ComponentAvailableCallback
+import com.adyen.checkout.components.core.PaymentComponentData
+import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
-import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
-import com.adyenreactnativesdk.ui.PendingPaymentDialogFragment
 import com.adyenreactnativesdk.util.AdyenConstants
-import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.WritableMap
-import org.json.JSONException
 import org.json.JSONObject
 
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {
-
-    private var googlePayComponent: GooglePayComponent? = null
-    private var pendingPaymentDialogFragment: PendingPaymentDialogFragment? = null
 
     override fun getName(): String {
         return COMPONENT_NAME
@@ -76,56 +69,30 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         )
             .setCountryCode(countryCode)
             .setAmount(amount)
-        val googlePayConfiguration = parser.getConfiguration(configBuilder)
+        val googlePayConfiguration: GooglePayConfiguration = parser.getConfiguration(configBuilder)
 
-        GooglePayComponent.PROVIDER.isAvailable(
-            appCompatActivity.application,
-            googlePayPaymentMethod,
-            googlePayConfiguration
-        ) { isAvailable: Boolean, paymentMethod: PaymentMethod, _: GooglePayConfiguration? ->
-            if (!isAvailable) {
-                sendErrorEvent(GooglePayException.NotSupported())
-                return@isAvailable
-            }
+        val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
+        GooglePayComponent.run {
+            PROVIDER.isAvailable(appCompatActivity.application, payPaymentMethod, googlePayConfiguration,
+                object : ComponentAvailableCallback {
+                    override fun onAvailabilityResult(
+                        isAvailable: Boolean,
+                        paymentMethod: PaymentMethod
+                    ) {
+                        if (!isAvailable) {
+                            sendErrorEvent(GooglePayException.NotSupported())
+                            return
+                        }
 
-            val dialogFragment = PendingPaymentDialogFragment.newInstance()
-            dialogFragment.showNow(appCompatActivity.supportFragmentManager, TAG)
-
-            val component = GooglePayComponent.PROVIDER.get(
-                dialogFragment,
-                paymentMethod,
-                googlePayConfiguration
-            )
-            component.observe(dialogFragment) { googlePayComponentState ->
-                if (googlePayComponentState?.isValid == true) {
-                    onSubmit(googlePayComponentState.data, googlePayComponentState)
-                }
-            }
-            component.observeErrors(dialogFragment) { componentError ->
-                onError(componentError.exception)
-            }
-            component.startGooglePayScreen(
-                appCompatActivity,
-                GOOGLEPAY_REQUEST_CODE
-            )
-
-            AdyenCheckout.setGooglePayComponent(this)
-            pendingPaymentDialogFragment = dialogFragment
-            googlePayComponent = component
+                        GooglePayFragment.show(appCompatActivity.supportFragmentManager, googlePayConfiguration, paymentMethod)
+                    }
+                })
         }
     }
 
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
-        appCompatActivity.runOnUiThread {
-            pendingPaymentDialogFragment?.let {
-                googlePayComponent?.removeObservers(it)
-                googlePayComponent?.removeErrorObservers(it)
-            }
-            pendingPaymentDialogFragment?.dismiss()
-            pendingPaymentDialogFragment = null
-            googlePayComponent = null
-        }
+        GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
         AdyenCheckout.removeGooglePayComponent()
     }
 
@@ -139,10 +106,8 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
 
     private fun onSubmit(data: PaymentComponentData<*>, state: GooglePayComponentState) {
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
-        jsonObject.put(
-            AdyenConstants.PARAMETER_RETURN_URL,
-            ActionHandler.getReturnUrl(reactApplicationContext)
-        )
+        val returnUrl = getReturnUrl(reactApplicationContext)
+        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
 
         var extra: JSONObject? = null
         state.paymentData?.let {
@@ -152,9 +117,9 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
 
-    fun handleActivityResult(resultCode: Int, data: Intent?) {
-        googlePayComponent?.handleActivityResult(resultCode, data)
-    }
+//    fun handleActivityResult(resultCode: Int, data: Intent?) {
+//        googlePayComponent?.handleActivityResult(resultCode, data)
+//    }
 
     companion object {
         private const val TAG = "GooglePayComponent"

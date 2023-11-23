@@ -6,13 +6,14 @@
  * Created by josephj on 30/1/2023.
  */
 
-package com.adyenreactnativesdk.component.instant
+package com.adyenreactnativesdk.component.model
 
 import com.adyen.checkout.components.core.ComponentCallback
+import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.instant.InstantComponentState
+import com.adyen.checkout.googlepay.GooglePayComponentState
 
-internal data class InstantComponentData(
+data class ComponentData<TState: PaymentComponentState<*>>(
     val paymentMethod: PaymentMethod,
-    val callback: ComponentCallback<InstantComponentState>,
+    val callback: ComponentCallback<TState>,
 )

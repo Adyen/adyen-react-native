@@ -5,13 +5,11 @@
  */
 package com.adyenreactnativesdk.component.dropin
 
-import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.dropin.DropIn.startPayment
-import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
@@ -19,7 +17,7 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
-import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInServiceListener
+import com.adyenreactnativesdk.component.dropin.CheckoutProxy.ComponentEventListener
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
@@ -28,11 +26,10 @@ import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.*
-import org.json.JSONException
 import org.json.JSONObject
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
-    DropInServiceListener,
+    ComponentEventListener,
     ReactDropInCallback {
 
     @ReactMethod
@@ -89,7 +86,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
     @ReactMethod
     fun handle(actionMap: ReadableMap?) {
-        val listener = DropInServiceProxy.shared.moduleListener
+        val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
             sendErrorEvent(DropInException.NoModuleListener())
             return
@@ -124,19 +121,19 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         hide(true, null)
     }
 
-    override fun onDidSubmit(jsonObject: JSONObject) {
+    override fun onSubmit(jsonObject: JSONObject) {
         val context = reactApplicationContext
         jsonObject.getJSONObject(SubmitMap.PAYMENT_DATA_KEY)
             .put(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
         sendEvent(DID_SUBMIT, jsonObject)
     }
 
-    override fun onDidProvide(jsonObject: JSONObject) {
+    override fun onAdditionalData(jsonObject: JSONObject) {
         sendEvent(DID_PROVIDE, jsonObject)
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
-        val listener = DropInServiceProxy.shared.moduleListener
+        val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
             sendErrorEvent(DropInException.NoModuleListener())
             return
@@ -207,7 +204,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     }
 
     init {
-        DropInServiceProxy.shared.serviceListener = this
+        CheckoutProxy.shared.componentListener = this
     }
 
     companion object {

@@ -6,13 +6,13 @@
  * Created by ozgur on 3/1/2023.
  */
 
-package com.adyenreactnativesdk.component.instant
+package com.adyenreactnativesdk.component.model
 
 import com.adyen.checkout.components.core.action.Action
 
-internal sealed class InstantEvent {
+internal sealed class ComponentEvent {
 
-    data class PaymentResult(val result: String) : InstantEvent()
+    data class PaymentResult(val result: String) : ComponentEvent()
 
-    data class AdditionalAction(val action: Action) : InstantEvent()
+    data class AdditionalAction(val action: Action) : ComponentEvent()
 }

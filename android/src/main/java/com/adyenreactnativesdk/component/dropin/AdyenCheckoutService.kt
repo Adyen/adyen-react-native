@@ -15,16 +15,16 @@ import com.adyen.checkout.dropin.DropInService
 import com.adyen.checkout.dropin.DropInServiceResult
 
 import com.adyen.checkout.googlepay.GooglePayComponentState
-import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInModuleListener
+import com.adyenreactnativesdk.component.dropin.CheckoutProxy.ModuleEventListener
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 
-open class AdyenCheckoutService : DropInService(), DropInModuleListener {
+open class AdyenCheckoutService : DropInService(), ModuleEventListener {
 
     override fun onCreate() {
         super.onCreate()
-        DropInServiceProxy.shared.moduleListener = this
+        CheckoutProxy.shared.moduleListener = this
     }
 
     override fun onSubmit(state: PaymentComponentState<*>) {
@@ -36,8 +36,8 @@ open class AdyenCheckoutService : DropInService(), DropInModuleListener {
         }
         val paymentComponentJson = PaymentComponentData.SERIALIZER.serialize(state.data)
         val submitMap = SubmitMap(paymentComponentJson, extra)
-        val listener = DropInServiceProxy.shared.serviceListener
-        listener?.onDidSubmit(submitMap.toJSONObject())
+        val listener = CheckoutProxy.shared.componentListener
+        listener?.onSubmit(submitMap.toJSONObject())
             ?: Log.e(
                 TAG,
                 "Invalid state: DropInServiceListener is missing"
@@ -45,9 +45,9 @@ open class AdyenCheckoutService : DropInService(), DropInModuleListener {
     }
 
     override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
-        val listener = DropInServiceProxy.shared.serviceListener
+        val listener = CheckoutProxy.shared.componentListener
         val actionComponentJson = ActionComponentData.SERIALIZER.serialize(actionComponentData)
-        listener?.onDidProvide(actionComponentJson)
+        listener?.onAdditionalData(actionComponentJson)
             ?: Log.e(
                 TAG,
                 "Invalid state: DropInServiceListener is missing"

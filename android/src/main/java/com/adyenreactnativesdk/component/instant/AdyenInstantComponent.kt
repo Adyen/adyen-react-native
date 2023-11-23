@@ -1,27 +1,24 @@
 package com.adyenreactnativesdk.component.instant
 
-import android.content.Context
-import com.adyen.checkout.components.core.ActionComponentData
-import com.adyen.checkout.components.core.ComponentCallback
-import com.adyen.checkout.components.core.ComponentError
-import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.instant.InstantComponentState
+import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyenreactnativesdk.component.dropin.CheckoutProxy
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.adyenreactnativesdk.BuildConfig
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
+import org.json.JSONObject
 
-class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context), ComponentCallback<InstantComponentState> {
+class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
 
     override fun getName(): String {
         return COMPONENT_NAME
@@ -58,6 +55,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         val instantPaymentConfiguration = InstantPaymentConfiguration.Builder(shopperLocale, environment, clientKey)
             .setAmount(amount)
             .build()
+        CheckoutProxy.shared.componentListener = this
         InstantFragment.show(appCompatActivity.supportFragmentManager, instantPaymentConfiguration, type)
     }
 
@@ -74,36 +72,27 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
 
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
-        appCompatActivity.runOnUiThread {
-            InstantFragment.hide(appCompatActivity.supportFragmentManager)
-            AdyenCheckout.removeIntentHandler()
-        }
+        InstantFragment.hide(appCompatActivity.supportFragmentManager)
+        AdyenCheckout.removeIntentHandler()
     }
 
-    override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
-        val jsonObject = ActionComponentData.SERIALIZER.serialize(actionComponentData)
-        sendEvent(DID_PROVIDE, jsonObject)
+    companion object {
+        private const val COMPONENT_NAME = "AdyenInstant"
     }
 
-    override fun onError(componentError: ComponentError) {
-        sendErrorEvent(componentError.exception)
-    }
-
-    override fun onSubmit(state: InstantComponentState) {
-        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
+    override fun onSubmit(jsonObject: JSONObject) {
         val returnUrl = getReturnUrl(reactApplicationContext)
         jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
         val submitMap = SubmitMap(jsonObject, null)
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
 
-    companion object {
-        private const val TAG = "InstantComponent"
-        private const val COMPONENT_NAME = "AdyenInstant"
-        internal const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenReactNativeRedirectScheme + "://"
-        internal fun getReturnUrl(context: Context): String {
-            return REDIRECT_RESULT_SCHEME + context.packageName
-        }
+    override fun onAdditionalData(jsonObject: JSONObject) {
+        sendEvent(DID_PROVIDE, jsonObject)
+    }
+
+    override fun onException(exception: CheckoutException) {
+        sendErrorEvent(exception)
     }
 
 }
