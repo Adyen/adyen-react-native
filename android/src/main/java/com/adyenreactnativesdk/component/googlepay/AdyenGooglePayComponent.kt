@@ -3,7 +3,10 @@ package com.adyenreactnativesdk.component.googlepay
 import android.content.Intent
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentComponentData
+import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
+import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
+import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
@@ -12,6 +15,8 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
+import com.adyenreactnativesdk.component.dropin.CheckoutProxy
+import com.adyenreactnativesdk.component.instant.InstantFragment
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
@@ -21,7 +26,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 
-class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context) {
+class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
 
     override fun getName(): String {
         return COMPONENT_NAME
@@ -73,6 +78,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
 
         val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
         GooglePayComponent.run {
+            val googleComponent = this
             PROVIDER.isAvailable(appCompatActivity.application, payPaymentMethod, googlePayConfiguration,
                 object : ComponentAvailableCallback {
                     override fun onAvailabilityResult(
@@ -84,6 +90,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
                             return
                         }
 
+                        AdyenCheckout.setActivityResultHandlingComponent(googleComponent as ActivityResultHandlingComponent)
                         GooglePayFragment.show(appCompatActivity.supportFragmentManager, googlePayConfiguration, paymentMethod)
                     }
                 })
@@ -93,7 +100,8 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
-        AdyenCheckout.removeGooglePayComponent()
+        AdyenCheckout.removeActivityResultHandlingComponent()
+        CheckoutProxy.shared.componentListener = null
     }
 
     private fun onError(error: Exception) {
@@ -104,28 +112,37 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         )
     }
 
-    private fun onSubmit(data: PaymentComponentData<*>, state: GooglePayComponentState) {
-        val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
-        val returnUrl = getReturnUrl(reactApplicationContext)
-        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
-
-        var extra: JSONObject? = null
-        state.paymentData?.let {
-            extra = JSONObject(it.toJson())
-        }
-        val submitMap = SubmitMap(jsonObject, extra)
-        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
+    fun handleActivityResult(resultCode: Int, data: Intent?) {
+        GooglePayFragment.handleActivityResult(appCompatActivity.supportFragmentManager, resultCode, data)
     }
-
-//    fun handleActivityResult(resultCode: Int, data: Intent?) {
-//        googlePayComponent?.handleActivityResult(resultCode, data)
-//    }
 
     companion object {
         private const val TAG = "GooglePayComponent"
         private const val COMPONENT_NAME = "AdyenGooglePay"
         internal const val GOOGLEPAY_REQUEST_CODE = 1001
         private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
+    }
+
+    override fun onSubmit(state: PaymentComponentState<*>) {
+        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
+        val returnUrl = getReturnUrl(reactApplicationContext)
+        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
+        var extra: JSONObject? = null
+        if (state is GooglePayComponentState) {
+            state.paymentData?.let {
+                extra = JSONObject(it.toJson())
+            }
+        }
+        val submitMap = SubmitMap(jsonObject, extra)
+        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
+    }
+
+    override fun onAdditionalData(jsonObject: JSONObject) {
+        sendEvent(DID_PROVIDE, jsonObject)
+    }
+
+    override fun onException(exception: CheckoutException) {
+        sendErrorEvent(exception)
     }
 }
 

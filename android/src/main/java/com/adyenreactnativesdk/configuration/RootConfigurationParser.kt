@@ -6,10 +6,9 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
+import com.adyen.checkout.components.core.Amount
 import com.facebook.react.bridge.ReadableMap
-import com.adyen.checkout.components.model.payments.Amount
-import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyen.checkout.core.Environment
 import com.adyenreactnativesdk.util.ReactNativeJson
 import java.util.*
 

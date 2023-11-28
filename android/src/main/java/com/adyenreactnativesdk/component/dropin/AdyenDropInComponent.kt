@@ -9,8 +9,12 @@ import androidx.activity.result.ActivityResultCaller
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
+import com.adyen.checkout.components.core.PaymentComponentData
+import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyen.checkout.core.Environment
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
+import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.AdyenCheckout
@@ -27,6 +31,7 @@ import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.*
 import org.json.JSONObject
+import java.util.Locale
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
     ComponentEventListener,
@@ -46,20 +51,17 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) {
         val paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
         val parser = RootConfigurationParser(configuration)
-        val environment = parser.environment
-        val clientKey: String
-        parser.clientKey.let {
-            clientKey = if (it != null) it else {
-                sendErrorEvent(BaseModuleException.NoClientKey())
-                return
-            }
+        val clientKey = parser.clientKey
+        if(clientKey == null) {
+            sendErrorEvent(BaseModuleException.NoClientKey())
+            return
         }
 
-        val builder: Builder
-        if (parser.locale != null) {
-            builder = Builder(parser.locale, reactApplicationContext, environment, clientKey)
+        val locale = parser.locale
+        val builder = if (locale != null) {
+            Builder(locale, parser.environment, clientKey)
         } else {
-            builder = Builder(reactApplicationContext, environment, clientKey)
+            Builder(reactApplicationContext, parser.environment, clientKey)
         }
         configureDropIn(builder, configuration)
         configureBcmc(builder, configuration)
@@ -76,12 +78,13 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         // val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
         // resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
-        AdyenCheckout.addDropInListener(this)
-        AdyenCheckout.dropInLauncher?.let {
-            startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
-        } ?: run {
-            startPayment(currentActivity, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
-        }
+//        AdyenCheckout.addDropInListener(this)
+//        AdyenCheckout.dropInLauncher?.let {
+//            startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
+//        } ?: run {
+//            startPayment(currentActivity, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
+//        }
+
     }
 
     @ReactMethod
@@ -121,11 +124,19 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         hide(true, null)
     }
 
-    override fun onSubmit(jsonObject: JSONObject) {
-        val context = reactApplicationContext
+    override fun onSubmit(state: PaymentComponentState<*>) {
+        var extra: JSONObject? = null
+        if (state is GooglePayComponentState) {
+            state.paymentData?.let {
+                extra = JSONObject(it.toJson())
+            }
+        }
+        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
+        val returnUrl = RedirectComponent.getReturnUrl(reactApplicationContext)
         jsonObject.getJSONObject(SubmitMap.PAYMENT_DATA_KEY)
-            .put(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
-        sendEvent(DID_SUBMIT, jsonObject)
+            .put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
+        val submitMap = SubmitMap(jsonObject, extra)
+        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
 
     override fun onAdditionalData(jsonObject: JSONObject) {
@@ -172,7 +183,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     private fun configure3DS(builder: Builder) {
         builder.add3ds2ActionConfiguration(
             Adyen3DS2Configuration.Builder(
-                builder.builderShopperLocale,
+                builder.shopperLocale,
                 builder.builderEnvironment,
                 builder.builderClientKey
             ).build()
@@ -210,22 +221,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.setLauncherActivity(activity)"))
-        fun setDropInLauncher(activity: ActivityResultCaller) {
-            AdyenCheckout.setLauncherActivity(activity);
-        }
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.removeLauncherActivity()"))
-        fun removeDropInLauncher() {
-            AdyenCheckout.removeLauncherActivity();
-        }
     }
 
 }

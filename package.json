@@ -45,7 +45,6 @@
     "@tsconfig/react-native": "^2.0.3",
     "@types/jest": "^29.5.0",
     "@types/react": "^18.0.29",
-    "@types/react-native": "^0.71.3",
     "@types/react-test-renderer": "^18.0.0",
     "eslint": "^8.0.0",
     "pod-install": "^0.1.30",
@@ -57,7 +56,6 @@
   },
   "peerDependencies": {
     "@types/react": "*",
-    "@types/react-native": "*",
     "react": "*",
     "react-native": "*"
   },

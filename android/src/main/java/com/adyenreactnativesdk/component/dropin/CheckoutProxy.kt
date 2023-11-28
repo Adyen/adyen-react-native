@@ -5,6 +5,7 @@
  */
 package com.adyenreactnativesdk.component.dropin
 
+import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.core.exception.CheckoutException
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
@@ -27,7 +28,7 @@ class CheckoutProxy private constructor() {
         }
 
     interface ComponentEventListener {
-        fun onSubmit(jsonObject: JSONObject)
+        fun onSubmit(state: PaymentComponentState<*>)
         fun onAdditionalData(jsonObject: JSONObject)
         fun onException(exception: CheckoutException)
     }

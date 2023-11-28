@@ -1,17 +1,14 @@
 package com.adyenreactnativesdk
 
-import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContract
+import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
 import com.adyen.checkout.components.core.internal.IntentHandlingComponent
-import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
-import com.adyenreactnativesdk.action.ActionHandler
 import com.adyenreactnativesdk.component.dropin.ReactDropInCallback
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
+import com.adyenreactnativesdk.util.AdyenConstants
 import java.lang.ref.WeakReference
 
 /**
@@ -19,21 +16,8 @@ import java.lang.ref.WeakReference
  */
 object AdyenCheckout {
     private const val TAG = "AdyenCheckout"
-    internal var dropInLauncher: ActivityResultLauncher<Intent>? = null
-    private val dropInCallback = DropInCallbackListener()
     private var intentHandlingComponent: WeakReference<IntentHandlingComponent> = WeakReference(null)
-    private var googleComponent: WeakReference<AdyenGooglePayComponent> = WeakReference(null)
-
-    @JvmStatic
-    internal fun addDropInListener(callback: ReactDropInCallback) {
-        dropInCallback.callback = WeakReference(callback)
-//        DropIn.registerForDropInResult(dropInLauncher, callback)
-    }
-
-    @JvmStatic
-    internal fun removeDropInListener() {
-        dropInCallback.callback.clear()
-    }
+    private var activityResultHandlingComponent: WeakReference<ActivityResultHandlingComponent> = WeakReference(null)
 
     /**
      * Persist a reference to Activity that will present DropIn or Component
@@ -45,14 +29,6 @@ object AdyenCheckout {
     }
 
     /**
-     * Release a reference to current Activity that presenting DropIn or Component
-     */
-    @JvmStatic
-    fun removeLauncherActivity() {
-        dropInLauncher = null
-    }
-
-    /**
      * Allow Adyen Components to process intents.
      * @param intent  received redirect intent
      * @return  `true` when intent could be handled by AdyenCheckout
@@ -61,7 +37,7 @@ object AdyenCheckout {
     fun handleIntent(intent: Intent): Boolean {
         val data = intent.data
         val handler = intentHandlingComponent.get()
-        return if (data != null && handler != null && data.toString().startsWith(ActionHandler.REDIRECT_RESULT_SCHEME)) {
+        return if (data != null && handler != null && data.toString().startsWith(AdyenConstants.PARAMETER_RETURN_URL)) {
             handler.handleIntent(intent)
             true
         } else false
@@ -86,18 +62,18 @@ object AdyenCheckout {
     @JvmStatic
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == AdyenGooglePayComponent.GOOGLEPAY_REQUEST_CODE) {
-            googleComponent.get()?.handleActivityResult(resultCode, data)
+            activityResultHandlingComponent.get()?.handleActivityResult(resultCode, data)
         }
     }
 
     @JvmStatic
-    internal fun setGooglePayComponent(component: AdyenGooglePayComponent) {
-        googleComponent = WeakReference(component)
+    internal fun setActivityResultHandlingComponent(component: ActivityResultHandlingComponent) {
+        activityResultHandlingComponent = WeakReference(component)
     }
 
     @JvmStatic
-    internal fun removeGooglePayComponent() {
-        googleComponent.clear()
+    internal fun removeActivityResultHandlingComponent() {
+        activityResultHandlingComponent.clear()
     }
 }
 

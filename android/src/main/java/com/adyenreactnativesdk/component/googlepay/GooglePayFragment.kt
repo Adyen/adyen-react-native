@@ -8,6 +8,7 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
+import android.content.Intent
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
@@ -50,6 +51,11 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
 
         fun hide(fragmentManager: FragmentManager) {
             hide(fragmentManager, TAG)
+        }
+
+        fun handleActivityResult(fragmentManager: FragmentManager, resultCode: Int, data: Intent?) {
+            val fragment = fragmentManager.findFragmentByTag(TAG) as GenericFragment<GooglePayComponent, *>
+            fragment.component?.handleActivityResult(resultCode, data)
         }
 
     }

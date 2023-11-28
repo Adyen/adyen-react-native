@@ -40,8 +40,7 @@ class GenericViewModel<TState : PaymentComponentState<*>, TComponentData: Compon
 
     override fun onSubmit(state: TState) {
         _viewState.tryEmit(ComponentViewState.Loading)
-        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
-        CheckoutProxy.shared.componentListener?.let { it.onSubmit(jsonObject) } ?: {
+        CheckoutProxy.shared.componentListener?.let { it.onSubmit(state) } ?: {
             Log.e(TAG, "CheckoutProxy.shared.componentListener is null")
         }
     }

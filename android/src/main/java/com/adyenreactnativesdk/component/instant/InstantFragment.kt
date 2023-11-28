@@ -11,9 +11,12 @@ package com.adyenreactnativesdk.component.instant
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
+import com.adyen.checkout.components.core.internal.IntentHandlingComponent
 import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.instant.InstantPaymentConfiguration
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment
 
@@ -29,6 +32,7 @@ class InstantFragment(private val configuration: InstantPaymentConfiguration) :
         )
 
         this.component = instantPaymentComponent
+        AdyenCheckout.setIntentHandler(instantPaymentComponent as IntentHandlingComponent)
         binding.componentView.attach(instantPaymentComponent, viewLifecycleOwner)
     }
 

@@ -1,5 +1,7 @@
 package com.adyenreactnativesdk.component.instant
 
+import com.adyen.checkout.components.core.PaymentComponentData
+import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.instant.InstantPaymentConfiguration
@@ -74,13 +76,15 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     fun hide(success: Boolean?, message: ReadableMap?) {
         InstantFragment.hide(appCompatActivity.supportFragmentManager)
         AdyenCheckout.removeIntentHandler()
+        CheckoutProxy.shared.componentListener = null
     }
 
     companion object {
         private const val COMPONENT_NAME = "AdyenInstant"
     }
 
-    override fun onSubmit(jsonObject: JSONObject) {
+    override fun onSubmit(state: PaymentComponentState<*>) {
+        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
         val returnUrl = getReturnUrl(reactApplicationContext)
         jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
         val submitMap = SubmitMap(jsonObject, null)

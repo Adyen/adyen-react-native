@@ -28,16 +28,8 @@ open class AdyenCheckoutService : DropInService(), ModuleEventListener {
     }
 
     override fun onSubmit(state: PaymentComponentState<*>) {
-        var extra: JSONObject? = null
-        if (state is GooglePayComponentState) {
-            state.paymentData?.let {
-                extra = JSONObject(it.toJson())
-            }
-        }
-        val paymentComponentJson = PaymentComponentData.SERIALIZER.serialize(state.data)
-        val submitMap = SubmitMap(paymentComponentJson, extra)
         val listener = CheckoutProxy.shared.componentListener
-        listener?.onSubmit(submitMap.toJSONObject())
+        listener?.onSubmit(state)
             ?: Log.e(
                 TAG,
                 "Invalid state: DropInServiceListener is missing"
