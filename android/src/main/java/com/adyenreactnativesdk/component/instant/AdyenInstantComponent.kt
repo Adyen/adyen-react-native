@@ -55,10 +55,11 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
         val shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
         val instantPaymentConfiguration = InstantPaymentConfiguration.Builder(shopperLocale, environment, clientKey)
-            .setAmount(amount)
-            .build()
+        amount?.let {
+            instantPaymentConfiguration.setAmount(it)
+        }
         CheckoutProxy.shared.componentListener = this
-        InstantFragment.show(appCompatActivity.supportFragmentManager, instantPaymentConfiguration, type)
+        InstantFragment.show(appCompatActivity.supportFragmentManager, instantPaymentConfiguration.build(), type)
     }
 
     @ReactMethod

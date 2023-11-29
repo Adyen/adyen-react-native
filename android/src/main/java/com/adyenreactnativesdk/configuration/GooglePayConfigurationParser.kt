@@ -1,13 +1,12 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.adyen.checkout.core.api.Environment
+import com.adyen.checkout.core.Environment
+import com.adyen.checkout.googlepay.BillingAddressParameters
 import com.facebook.react.bridge.ReadableMap
-import com.adyen.checkout.googlepay.util.AllowedCardNetworks
 import com.google.android.gms.wallet.WalletConstants
 import com.adyen.checkout.googlepay.GooglePayConfiguration
-import com.adyen.checkout.googlepay.model.BillingAddressParameters
-import com.adyen.checkout.googlepay.model.ShippingAddressParameters
+import com.adyen.checkout.googlepay.ShippingAddressParameters
 import com.adyenreactnativesdk.component.dropin.AdyenCheckoutService
 import com.adyenreactnativesdk.util.ReactNativeJson
 import org.json.JSONException
@@ -30,6 +29,15 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         const val GOOGLEPAY_ENVIRONMENT_KEY = "googlePayEnvironment"
         const val BILLING_ADDRESS_PARAMETERS_KEY = "shippingAddressParameters"
         const val SHIPPING_ADDRESS_PARAMETERS_KEY = "billingAddressParameters"
+
+        const val AMEX = "AMEX"
+        const val DISCOVER = "DISCOVER"
+        const val INTERAC = "INTERAC"
+        const val JCB = "JCB"
+        const val MASTERCARD = "MASTERCARD"
+        const val VISA = "VISA"
+
+        val availableCardNetworks: Set<String> = setOf(AMEX, DISCOVER, INTERAC, JCB, MASTERCARD, VISA)
     }
 
     private var config: ReadableMap
@@ -69,10 +77,9 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             val list: List<Any> =
                 config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList() ?: emptyList()
             val strings: MutableList<String> = ArrayList(list.size)
-            val allowedCardNetworks: Set<String> =
-                HashSet(AllowedCardNetworks.getAllAllowedCardNetworks())
+
             for (cardNetwork in list.map { it.toString().toUpperCase(Locale.ROOT) }) {
-                if (allowedCardNetworks.contains(cardNetwork)) {
+                if (availableCardNetworks.contains(cardNetwork)) {
                     strings.add(cardNetwork)
                 } else {
                     Log.w(TAG, "skipping brand $cardNetwork, as it is not an allowed card network.")
@@ -102,8 +109,8 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         }
     }
 
-    fun getConfiguration(builder: GooglePayConfiguration.Builder): GooglePayConfiguration {
-        builder.setGooglePayEnvironment(getGooglePayEnvironment(builder.builderEnvironment))
+    fun getConfiguration(builder: GooglePayConfiguration.Builder, environment: Environment): GooglePayConfiguration {
+        builder.setGooglePayEnvironment(getGooglePayEnvironment(environment))
         if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
             builder.setAllowedAuthMethods(allowedAuthMethods)
         }
@@ -133,7 +140,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             config.getString(MERCHANT_ACCOUNT_KEY)?.let { builder.setMerchantAccount(it) }
         }
         if (config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
-            builder.setTotalPriceStatus(config.getString(TOTAL_PRICE_STATUS_KEY))
+            config.getString(TOTAL_PRICE_STATUS_KEY)?.let { builder.setTotalPriceStatus(it) }
         }
         if (config.hasKey(BILLING_ADDRESS_PARAMETERS_KEY)) {
             builder.setBillingAddressParameters(billingAddressParameters)

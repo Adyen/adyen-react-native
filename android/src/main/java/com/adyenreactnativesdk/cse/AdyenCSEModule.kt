@@ -1,8 +1,8 @@
 package com.adyenreactnativesdk.cse
 
 import com.adyen.checkout.cse.CardEncrypter
+import com.adyen.checkout.cse.EncryptionException
 import com.adyen.checkout.cse.UnencryptedCard
-import com.adyen.checkout.cse.exception.EncryptionException
 import com.facebook.react.bridge.*
 
 class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
@@ -19,8 +19,11 @@ class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaMo
     fun encryptCard(card: ReadableMap, publicKey: String, promise: Promise) {
         val unencryptedCardBuilder = UnencryptedCard.Builder()
         card.getString(NUMBER_KEY)?.let { unencryptedCardBuilder.setNumber(it) }
-        card.getString(EXPIRY_MONTH_KEY)?.let { unencryptedCardBuilder.setExpiryMonth(it) }
-        card.getString(EXPIRY_YEAR_KEY)?.let { unencryptedCardBuilder.setExpiryYear(it) }
+        val month = card.getString(EXPIRY_MONTH_KEY)
+        val year = card.getString(EXPIRY_YEAR_KEY)
+        if (month != null && year != null) {
+            unencryptedCardBuilder.setExpiryDate(month, year)
+        }
         card.getString(CVV_KEY)?.let { unencryptedCardBuilder.setCvc(it) }
 
         try {

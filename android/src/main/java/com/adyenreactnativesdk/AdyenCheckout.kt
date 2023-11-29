@@ -2,10 +2,12 @@ package com.adyenreactnativesdk
 
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
+import androidx.activity.result.ActivityResultLauncher
 import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
 import com.adyen.checkout.components.core.internal.IntentHandlingComponent
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
+import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
 import com.adyenreactnativesdk.component.dropin.ReactDropInCallback
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
 import com.adyenreactnativesdk.util.AdyenConstants
@@ -18,6 +20,19 @@ object AdyenCheckout {
     private const val TAG = "AdyenCheckout"
     private var intentHandlingComponent: WeakReference<IntentHandlingComponent> = WeakReference(null)
     private var activityResultHandlingComponent: WeakReference<ActivityResultHandlingComponent> = WeakReference(null)
+    private val dropInCallback = DropInCallbackListener()
+    internal var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>? = null
+
+
+    @JvmStatic
+    internal fun addDropInListener(callback: ReactDropInCallback) {
+        dropInCallback.callback = WeakReference(callback)
+    }
+
+    @JvmStatic
+    internal fun removeDropInListener() {
+        dropInCallback.callback.clear()
+    }
 
     /**
      * Persist a reference to Activity that will present DropIn or Component

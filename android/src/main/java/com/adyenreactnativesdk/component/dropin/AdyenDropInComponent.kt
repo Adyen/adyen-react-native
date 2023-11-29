@@ -5,13 +5,15 @@
  */
 package com.adyenreactnativesdk.component.dropin
 
-import androidx.activity.result.ActivityResultCaller
+import android.os.Build
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
+import com.adyen.checkout.components.core.Amount
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.core.Environment
+import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayComponentState
@@ -37,6 +39,10 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     ComponentEventListener,
     ReactDropInCallback {
 
+    private lateinit var environment: Environment
+    private lateinit var clientKey: String
+    private lateinit var locale: Locale
+
     @ReactMethod
     fun addListener(eventName: String?) { /* No JS events expected */ }
 
@@ -57,12 +63,12 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             return
         }
 
-        val locale = parser.locale
-        val builder = if (locale != null) {
-            Builder(locale, parser.environment, clientKey)
+        locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+             reactApplicationContext.resources.configuration.locales[0]
         } else {
-            Builder(reactApplicationContext, parser.environment, clientKey)
+            reactApplicationContext.resources.configuration.locale
         }
+        val builder = Builder(locale, parser.environment, clientKey)
         configureDropIn(builder, configuration)
         configureBcmc(builder, configuration)
         configure3DS(builder)
@@ -71,20 +77,17 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         val countryCode = parser.countryCode
         if (amount != null && countryCode != null) {
             builder.setAmount(amount)
-            configureGooglePay(builder, configuration, countryCode)
+            configureGooglePay(builder, configuration, countryCode, amount)
         }
         configureCards(builder, configuration, countryCode)
-        val currentActivity = reactApplicationContext.currentActivity
-        // val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
-        // resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
-//        AdyenCheckout.addDropInListener(this)
-//        AdyenCheckout.dropInLauncher?.let {
-//            startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
-//        } ?: run {
-//            startPayment(currentActivity, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
-//        }
+        AdyenCheckout.addDropInListener(this)
+        AdyenCheckout.dropInLauncher?.let {
+            startPayment(reactApplicationContext, it, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
+        } ?: run {
 
+            return
+        }
     }
 
     @ReactMethod
@@ -143,6 +146,10 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         sendEvent(DID_PROVIDE, jsonObject)
     }
 
+    override fun onException(exception: CheckoutException) {
+        sendErrorEvent(exception)
+    }
+
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
         val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
@@ -166,26 +173,27 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     private fun configureGooglePay(
         builder: Builder,
         configuration: ReadableMap,
-        countryCode: String
+        countryCode: String,
+        amount: Amount
     ) {
         val parser = GooglePayConfigurationParser(configuration)
         val configBuilder = GooglePayConfiguration.Builder(
-            builder.builderShopperLocale,
-            builder.builderEnvironment,
-            builder.builderClientKey
+            locale,
+            environment,
+            clientKey
         )
             .setCountryCode(countryCode)
-            .setAmount(builder.amount)
-        val googlePayConfiguration = parser.getConfiguration(configBuilder)
+            .setAmount(amount)
+        val googlePayConfiguration = parser.getConfiguration(configBuilder, environment)
         builder.addGooglePayConfiguration(googlePayConfiguration)
     }
 
     private fun configure3DS(builder: Builder) {
         builder.add3ds2ActionConfiguration(
             Adyen3DS2Configuration.Builder(
-                builder.shopperLocale,
-                builder.builderEnvironment,
-                builder.builderClientKey
+                locale,
+                environment,
+                clientKey
             ).build()
         )
     }
@@ -197,9 +205,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
         val parser = CardConfigurationParser(bcmcConfig, null)
         val bcmcBuilder = BcmcConfiguration.Builder(
-            builder.builderShopperLocale,
-            builder.builderEnvironment,
-            builder.builderClientKey
+            locale,
+            environment,
+            clientKey
         )
         builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder))
     }
@@ -207,9 +215,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     private fun configureCards(builder: Builder, configuration: ReadableMap, countryCode: String?) {
         val parser = CardConfigurationParser(configuration, countryCode)
         val cardBuilder = CardConfiguration.Builder(
-            builder.builderShopperLocale,
-            builder.builderEnvironment,
-            builder.builderClientKey
+            locale,
+            environment,
+            clientKey
         )
         builder.addCardConfiguration(parser.getConfiguration(cardBuilder))
     }

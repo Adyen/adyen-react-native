@@ -15,6 +15,8 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.ui.core.AdyenComponentView
+import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment
 
@@ -29,13 +31,8 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
             viewModel
         )
         this.component = component
-        binding.componentView.attach(component, viewLifecycleOwner)
+        view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, this)
     }
-
-    //        component.startGooglePayScreen()
-//            appCompatActivity,
-//            AdyenGooglePayComponent.GOOGLEPAY_REQUEST_CODE
-//        )
 
     companion object {
 

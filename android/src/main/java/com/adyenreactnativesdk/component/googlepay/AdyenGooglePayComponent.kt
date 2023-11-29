@@ -74,7 +74,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         )
             .setCountryCode(countryCode)
             .setAmount(amount)
-        val googlePayConfiguration: GooglePayConfiguration = parser.getConfiguration(configBuilder)
+        val googlePayConfiguration: GooglePayConfiguration = parser.getConfiguration(configBuilder, environment)
 
         val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
         GooglePayComponent.run {

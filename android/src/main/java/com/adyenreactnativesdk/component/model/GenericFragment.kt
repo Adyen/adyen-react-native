@@ -24,17 +24,14 @@ import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.PaymentComponent
-import com.adyenreactnativesdk.databinding.FragmentInstantBinding
+import com.adyen.checkout.ui.core.AdyenComponentView
+import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
 abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>() :
     BottomSheetDialogFragment()  where TComponent : PaymentComponent,
                    TComponent : ActionHandlingComponent {
-
-    private var _binding: FragmentInstantBinding? = null
-    val binding: FragmentInstantBinding
-        get() = requireNotNull(_binding)
 
     var component: TComponent? = null
 
@@ -45,13 +42,11 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>() 
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentInstantBinding.inflate(inflater, container, false)
-        return binding.root
+        return inflater.inflate(R.layout.fragment_instant, container)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.instantComponentDataFlow.collect(::setupComponent) }
@@ -85,26 +80,24 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>() 
     }
 
     private fun onViewState(viewState: ComponentViewState) {
-        when (viewState) {
-            is ComponentViewState.Error -> {
-                binding.errorView.isVisible = true
-                binding.errorView.text = viewState.errorMessage
-                binding.progressIndicator.isVisible = false
-                binding.componentContainer.isVisible = false
-            }
-
-            is ComponentViewState.Loading -> {
-                binding.progressIndicator.isVisible = true
-                binding.errorView.isVisible = false
-                binding.componentContainer.isVisible = false
-            }
-
-            is ComponentViewState.ShowComponent -> {
-                binding.progressIndicator.isVisible = false
-                binding.errorView.isVisible = false
-                binding.componentContainer.isVisible = true
-            }
-        }
+//        when (viewState) {
+//            is ComponentViewState.Error -> {
+//                binding.progressIndicator.isVisible = false
+//                binding.componentContainer.isVisible = false
+//            }
+//
+//            is ComponentViewState.Loading -> {
+//                binding.progressIndicator.isVisible = true
+//                binding.errorView.isVisible = false
+//                binding.componentContainer.isVisible = false
+//            }
+//
+//            is ComponentViewState.ShowComponent -> {
+//                binding.progressIndicator.isVisible = false
+//                binding.errorView.isVisible = false
+//                binding.componentContainer.isVisible = true
+//            }
+//        }
     }
 
     private fun onAction(action: Action) {
@@ -114,7 +107,6 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>() 
     override fun onDestroyView() {
         super.onDestroyView()
         component = null
-        _binding = null
     }
 
     companion object {

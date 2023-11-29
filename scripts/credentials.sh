@@ -5,6 +5,8 @@ CONFIG_PATH=$(find . -name Configuration.js)
 
 echo "Config file found $CONFIG_PATH"
 
+source ~/.bash_profile
+
 # client Key
 sed -i '' "s/{YOUR_CLIENT_KEY}/$CLIENT_KEY/g" $CONFIG_PATH
 

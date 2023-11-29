@@ -11,8 +11,8 @@ import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.AddressConfiguration
 import com.adyen.checkout.card.AddressConfiguration.*
+import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.KCPAuthVisibility
-import com.adyen.checkout.card.data.CardType
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
 import java.util.ArrayList
 
