@@ -90,7 +90,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
                             return
                         }
 
-                        AdyenCheckout.setActivityResultHandlingComponent(googleComponent as ActivityResultHandlingComponent)
                         GooglePayFragment.show(appCompatActivity.supportFragmentManager, googlePayConfiguration, paymentMethod)
                     }
                 })

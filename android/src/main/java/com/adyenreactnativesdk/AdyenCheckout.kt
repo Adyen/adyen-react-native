@@ -3,8 +3,10 @@ package com.adyenreactnativesdk
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
+import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
 import com.adyen.checkout.components.core.internal.IntentHandlingComponent
+import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
 import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
@@ -18,7 +20,7 @@ import java.lang.ref.WeakReference
  */
 object AdyenCheckout {
     private const val TAG = "AdyenCheckout"
-    private var intentHandlingComponent: WeakReference<IntentHandlingComponent> = WeakReference(null)
+    private var intentHandlingComponent: WeakReference<ActionHandlingComponent> = WeakReference(null)
     private var activityResultHandlingComponent: WeakReference<ActivityResultHandlingComponent> = WeakReference(null)
     private val dropInCallback = DropInCallbackListener()
     internal var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>? = null
@@ -40,7 +42,9 @@ object AdyenCheckout {
      */
     @JvmStatic
     fun setLauncherActivity(activity: ActivityResultCaller) {
-//        dropInLauncher = activity
+        dropInLauncher = DropIn.registerForDropInResult(
+            activity, dropInCallback
+        )
     }
 
     /**
@@ -59,7 +63,7 @@ object AdyenCheckout {
     }
 
     @JvmStatic
-    internal fun setIntentHandler(component: IntentHandlingComponent) {
+    internal fun setIntentHandler(component: ActionHandlingComponent) {
         intentHandlingComponent = WeakReference(component)
     }
 

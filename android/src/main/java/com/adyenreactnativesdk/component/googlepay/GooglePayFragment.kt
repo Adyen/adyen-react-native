@@ -16,12 +16,13 @@ import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.ui.core.AdyenComponentView
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment
 
 class GooglePayFragment(private val configuration: GooglePayConfiguration, private val paymentMethod: PaymentMethod) :
-    GenericFragment<GooglePayComponent, GooglePayComponentState>() {
+    GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod) {
 
     override fun setupComponent(componentData: ComponentData<GooglePayComponentState>) {
         val component = GooglePayComponent.PROVIDER.get(
@@ -31,6 +32,7 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
             viewModel
         )
         this.component = component
+        AdyenCheckout.setActivityResultHandlingComponent(component)
         view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, this)
     }
 

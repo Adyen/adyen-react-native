@@ -36,8 +36,8 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
         val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods ?: return
 
-        val type = paymentMethods.firstOrNull()?.type
-        if (type == null) {
+        val paymentMethod = paymentMethods.firstOrNull()
+        if (paymentMethod?.type == null) {
             sendErrorEvent(BaseModuleException.InvalidPaymentMethods(null))
             return
         }
@@ -59,7 +59,7 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
             instantPaymentConfiguration.setAmount(it)
         }
         CheckoutProxy.shared.componentListener = this
-        InstantFragment.show(appCompatActivity.supportFragmentManager, instantPaymentConfiguration.build(), type)
+        InstantFragment.show(appCompatActivity.supportFragmentManager, instantPaymentConfiguration.build(), paymentMethod)
     }
 
     @ReactMethod

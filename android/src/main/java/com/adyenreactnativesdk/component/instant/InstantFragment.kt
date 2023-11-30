@@ -10,9 +10,8 @@ package com.adyenreactnativesdk.component.instant
 
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
+import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
-import com.adyen.checkout.components.core.internal.IntentHandlingComponent
 import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.instant.InstantPaymentConfiguration
@@ -22,8 +21,11 @@ import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment
 
-class InstantFragment(private val configuration: InstantPaymentConfiguration) :
-    GenericFragment<InstantPaymentComponent, InstantComponentState>() {
+class InstantFragment(
+    private val configuration: InstantPaymentConfiguration,
+    val paymentMethod: PaymentMethod
+) :
+    GenericFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod) {
 
     override fun setupComponent(componentData: ComponentData<InstantComponentState>) {
         val instantPaymentComponent = InstantPaymentComponent.PROVIDER.get(
@@ -34,7 +36,7 @@ class InstantFragment(private val configuration: InstantPaymentConfiguration) :
         )
 
         this.component = instantPaymentComponent
-        AdyenCheckout.setIntentHandler(instantPaymentComponent as IntentHandlingComponent)
+        AdyenCheckout.setIntentHandler(instantPaymentComponent)
         view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(instantPaymentComponent, viewLifecycleOwner)
     }
 
@@ -42,10 +44,10 @@ class InstantFragment(private val configuration: InstantPaymentConfiguration) :
         private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
         internal const val TAG = "InstantFragment"
 
-        fun show(fragmentManager: FragmentManager, configuration: InstantPaymentConfiguration, paymentMethodType: String) {
-            InstantFragment(configuration).apply {
+        fun show(fragmentManager: FragmentManager, configuration: InstantPaymentConfiguration, paymentMethod: PaymentMethod) {
+            InstantFragment(configuration, paymentMethod).apply {
                 arguments = bundleOf(
-                    PAYMENT_METHOD_TYPE_EXTRA to paymentMethodType
+                    PAYMENT_METHOD_TYPE_EXTRA to paymentMethod.type
                 )
             }.show(fragmentManager, TAG)
         }

@@ -48,7 +48,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
 
     @ReactMethod
     fun removeListeners(count: Int?) { /* No JS events expected */ }
-    
+
     override fun getName(): String {
         return COMPONENT_NAME
     }
@@ -62,13 +62,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             sendErrorEvent(BaseModuleException.NoClientKey())
             return
         }
-
-        locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        this.environment = parser.environment
+        this.clientKey = clientKey
+        this.locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
              reactApplicationContext.resources.configuration.locales[0]
         } else {
             reactApplicationContext.resources.configuration.locale
         }
-        val builder = Builder(locale, parser.environment, clientKey)
+        val builder = Builder(locale, environment, clientKey)
         configureDropIn(builder, configuration)
         configureBcmc(builder, configuration)
         configure3DS(builder)
@@ -85,7 +86,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         AdyenCheckout.dropInLauncher?.let {
             startPayment(reactApplicationContext, it, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
         } ?: run {
-
             return
         }
     }
@@ -136,7 +136,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
         val returnUrl = RedirectComponent.getReturnUrl(reactApplicationContext)
-        jsonObject.getJSONObject(SubmitMap.PAYMENT_DATA_KEY)
+        jsonObject
             .put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
         val submitMap = SubmitMap(jsonObject, extra)
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())

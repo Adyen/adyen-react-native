@@ -14,24 +14,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
+import com.adyen.checkout.components.core.ActionComponentData
+import com.adyen.checkout.components.core.ComponentCallback
+import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.PaymentComponent
-import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
-abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>() :
-    BottomSheetDialogFragment()  where TComponent : PaymentComponent,
-                   TComponent : ActionHandlingComponent {
+abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(private val paymentMethod: PaymentMethod) :
+    BottomSheetDialogFragment() where TComponent : PaymentComponent,
+                                                              TComponent : ActionHandlingComponent {
 
     var component: TComponent? = null
 
@@ -49,11 +51,13 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>() 
         super.onViewCreated(view, savedInstanceState)
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { viewModel.instantComponentDataFlow.collect(::setupComponent) }
+                launch { viewModel.componentDataFlow.collect(::setupComponent) }
                 launch { viewModel.events.collect(::onEvent) }
                 launch { viewModel.viewState.collect(::onViewState) }
             }
         }
+
+        viewModel.startPayment(paymentMethod)
     }
 
     fun onNewIntent(intent: Intent) {
@@ -119,5 +123,17 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>() 
             val fragment = fragmentManager.findFragmentByTag(tag) as BottomSheetDialogFragment
             fragment.dismiss()
         }
+    }
+
+    fun onAdditionalDetails(actionComponentData: ActionComponentData) {
+        TODO("Not yet implemented")
+    }
+
+    fun onError(componentError: ComponentError) {
+        TODO("Not yet implemented")
+    }
+
+    fun onSubmit(state: Any) {
+        TODO("Not yet implemented")
     }
 }
