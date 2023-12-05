@@ -56,3 +56,6 @@ android/keystores/debug.keystore
 
 # yarn
 example/yarn.lock
+
+# NPM
+example/package-lock.json

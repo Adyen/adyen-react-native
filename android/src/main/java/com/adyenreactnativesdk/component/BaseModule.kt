@@ -10,6 +10,8 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.core.exception.CancellationException
+import com.adyen.checkout.core.exception.CheckoutException
 import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
@@ -21,7 +23,8 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.util.Locale
 
-abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
+abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context),
+    CheckoutProxy.ComponentEventListener {
 
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
@@ -83,6 +86,18 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             return currentActivity as AppCompatActivity?
                 ?: throw Exception("Not an AppCompact Activity")
         }
+
+    override fun onException(exception: CheckoutException) {
+        if (exception is CancellationException || exception.message == "Payment canceled.") {
+            sendErrorEvent(BaseModuleException.Canceled())
+        } else {
+            sendErrorEvent(exception)
+        }
+    }
+
+    override fun onAdditionalData(jsonObject: JSONObject) {
+        sendEvent(DID_PROVIDE, jsonObject)
+    }
 
     companion object {
         const val DID_COMPLETE = "didCompleteCallback"

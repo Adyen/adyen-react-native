@@ -15,8 +15,8 @@ import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.ui.core.AdyenComponentView
-import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment
 

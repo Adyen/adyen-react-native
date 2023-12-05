@@ -5,8 +5,6 @@ import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.core.exception.CheckoutException
-import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
@@ -114,14 +112,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         CheckoutProxy.shared.componentListener = null
     }
 
-    private fun onError(error: Exception) {
-        sendErrorEvent(
-            if ((error as? ComponentException)?.message == "Payment canceled.")
-                BaseModuleException.Canceled()
-            else error
-        )
-    }
-
     companion object {
         private const val COMPONENT_NAME = "AdyenGooglePay"
         internal const val GOOGLEPAY_REQUEST_CODE = 1001
@@ -142,13 +132,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
 
-    override fun onAdditionalData(jsonObject: JSONObject) {
-        sendEvent(DID_PROVIDE, jsonObject)
-    }
-
-    override fun onException(exception: CheckoutException) {
-        sendErrorEvent(exception)
-    }
 }
 
 sealed class GooglePayException(code: String, message: String, cause: Throwable? = null) :

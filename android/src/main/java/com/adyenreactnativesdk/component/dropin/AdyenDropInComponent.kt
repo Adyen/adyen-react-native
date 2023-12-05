@@ -14,7 +14,6 @@ import com.adyen.checkout.components.core.Amount
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.core.Environment
-import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayComponentState
@@ -24,7 +23,6 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.CheckoutProxy
-import com.adyenreactnativesdk.component.CheckoutProxy.ComponentEventListener
 import com.adyenreactnativesdk.component.KnownException
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
@@ -41,7 +39,6 @@ import org.json.JSONObject
 import java.util.Locale
 
 class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
-    ComponentEventListener,
     ReactDropInCallback {
 
     private lateinit var environment: Environment
@@ -159,14 +156,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             .put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
         val submitMap = SubmitMap(jsonObject, extra)
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())
-    }
-
-    override fun onAdditionalData(jsonObject: JSONObject) {
-        sendEvent(DID_PROVIDE, jsonObject)
-    }
-
-    override fun onException(exception: CheckoutException) {
-        sendErrorEvent(exception)
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {

@@ -3,7 +3,6 @@ package com.adyenreactnativesdk.component.instant
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
@@ -17,7 +16,6 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
-import org.json.JSONObject
 
 class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
 
@@ -89,14 +87,6 @@ class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(cont
         jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
         val submitMap = SubmitMap(jsonObject, null)
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())
-    }
-
-    override fun onAdditionalData(jsonObject: JSONObject) {
-        sendEvent(DID_PROVIDE, jsonObject)
-    }
-
-    override fun onException(exception: CheckoutException) {
-        sendErrorEvent(exception)
     }
 
 }
