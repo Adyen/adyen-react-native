@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.component
+package com.adyenreactnativesdk
 
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
@@ -9,6 +9,7 @@ import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
 import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
+import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.dropin.ReactDropInCallback
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
 import java.lang.ref.WeakReference

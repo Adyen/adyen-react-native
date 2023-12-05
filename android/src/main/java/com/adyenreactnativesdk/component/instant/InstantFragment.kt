@@ -16,7 +16,7 @@ import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyen.checkout.ui.core.AdyenComponentView
-import com.adyenreactnativesdk.component.AdyenCheckout
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment

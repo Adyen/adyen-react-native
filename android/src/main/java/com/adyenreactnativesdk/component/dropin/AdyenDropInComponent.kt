@@ -20,7 +20,7 @@ import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
-import com.adyenreactnativesdk.component.AdyenCheckout
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.CheckoutProxy

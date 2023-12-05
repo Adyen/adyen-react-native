@@ -5,7 +5,7 @@ import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.instant.InstantPaymentConfiguration
-import com.adyenreactnativesdk.component.AdyenCheckout
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.CheckoutProxy
