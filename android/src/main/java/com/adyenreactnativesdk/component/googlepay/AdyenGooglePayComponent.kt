@@ -9,10 +9,10 @@ import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
-import com.adyenreactnativesdk.component.BaseModule
-import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.BaseModuleException
 import com.adyenreactnativesdk.component.CheckoutProxy
-import com.adyenreactnativesdk.component.KnownException
+import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser

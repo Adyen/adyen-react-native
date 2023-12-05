@@ -18,8 +18,8 @@ import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
-import com.adyenreactnativesdk.component.model.ComponentData
-import com.adyenreactnativesdk.component.model.GenericFragment
+import com.adyenreactnativesdk.component.base.ComponentData
+import com.adyenreactnativesdk.component.base.GenericFragment
 
 class InstantFragment(
     private val configuration: InstantPaymentConfiguration,

@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.component
+package com.adyenreactnativesdk.component.base
 
 open class KnownException @JvmOverloads constructor(
     val code: String,

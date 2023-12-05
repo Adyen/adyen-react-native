@@ -3,7 +3,7 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
-package com.adyenreactnativesdk.component
+package com.adyenreactnativesdk.component.base
 
 import android.content.Context
 import android.os.Build
@@ -13,6 +13,7 @@ import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyenreactnativesdk.BuildConfig
+import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext

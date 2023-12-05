@@ -6,7 +6,7 @@
  * Created by ozgur on 3/1/2023.
  */
 
-package com.adyenreactnativesdk.component.model
+package com.adyenreactnativesdk.component.base
 
 import android.os.Bundle
 import android.view.LayoutInflater

@@ -17,8 +17,8 @@ import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
-import com.adyenreactnativesdk.component.model.ComponentData
-import com.adyenreactnativesdk.component.model.GenericFragment
+import com.adyenreactnativesdk.component.base.ComponentData
+import com.adyenreactnativesdk.component.base.GenericFragment
 
 class GooglePayFragment(private val configuration: GooglePayConfiguration, private val paymentMethod: PaymentMethod) :
     GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod) {

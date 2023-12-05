@@ -5,7 +5,7 @@
  */
 package com.adyenreactnativesdk.util
 
-import com.adyenreactnativesdk.component.KnownException
+import com.adyenreactnativesdk.component.base.KnownException
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableNativeMap
 

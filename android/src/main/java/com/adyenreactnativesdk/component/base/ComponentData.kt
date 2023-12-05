@@ -6,7 +6,7 @@
  * Created by josephj on 30/1/2023.
  */
 
-package com.adyenreactnativesdk.component.model
+package com.adyenreactnativesdk.component.base
 
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentComponentState
