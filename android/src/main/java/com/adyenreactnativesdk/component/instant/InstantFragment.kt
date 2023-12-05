@@ -16,28 +16,28 @@ import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyen.checkout.ui.core.AdyenComponentView
-import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.component.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment
 
 class InstantFragment(
     private val configuration: InstantPaymentConfiguration,
-    val paymentMethod: PaymentMethod
+    paymentMethod: PaymentMethod
 ) :
     GenericFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod) {
 
     override fun setupComponent(componentData: ComponentData<InstantComponentState>) {
-        val instantPaymentComponent = InstantPaymentComponent.PROVIDER.get(
+        val component = InstantPaymentComponent.PROVIDER.get(
             this,
             componentData.paymentMethod,
             configuration,
             componentData.callback,
         )
 
-        this.component = instantPaymentComponent
-        AdyenCheckout.setIntentHandler(instantPaymentComponent)
-        view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(instantPaymentComponent, viewLifecycleOwner)
+        this.component = component
+        AdyenCheckout.setIntentHandler(component)
+        view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, viewLifecycleOwner)
     }
 
     companion object {
@@ -61,4 +61,6 @@ class InstantFragment(
         }
 
     }
+
+    override fun runComponent() { /* No action needed */ }
 }

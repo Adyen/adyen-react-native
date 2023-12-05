@@ -17,7 +17,7 @@ import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
-import com.adyenreactnativesdk.component.dropin.CheckoutProxy
+import com.adyenreactnativesdk.component.CheckoutProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,20 +31,12 @@ class GenericViewModel<TState : PaymentComponentState<*>, TComponentData: Compon
     val componentDataFlow: Flow<TComponentData> =
         _componentDataFlow.filterNotNull()
 
-    private val _viewState = MutableStateFlow<ComponentViewState>(ComponentViewState.Loading)
-    val viewState: Flow<ComponentViewState> = _viewState
-
     private val _events = MutableSharedFlow<ComponentEvent>()
     internal val events: Flow<ComponentEvent> = _events
 
-    fun startPayment(componentData: TComponentData?) {
-        viewModelScope.launch {
-            _componentDataFlow.emit(componentData)
-        }
-    }
+    private var componentStarted: Boolean = false
 
     override fun onSubmit(state: TState) {
-        _viewState.tryEmit(ComponentViewState.Loading)
         CheckoutProxy.shared.componentListener?.let { it.onSubmit(state) } ?: {
             Log.e(TAG, "CheckoutProxy.shared.componentListener is null")
         }
@@ -58,7 +50,6 @@ class GenericViewModel<TState : PaymentComponentState<*>, TComponentData: Compon
     }
 
     override fun onError(componentError: ComponentError) {
-        viewModelScope.launch { _events.emit(ComponentEvent.PaymentResult("Failed: ${componentError.errorMessage}")) }
         CheckoutProxy.shared.componentListener?.let { it.onException(componentError.exception) } ?: {
             Log.e(TAG, "CheckoutProxy.shared.componentListener is null")
         }
@@ -66,7 +57,6 @@ class GenericViewModel<TState : PaymentComponentState<*>, TComponentData: Compon
 
     fun handle(action: Action) {
         viewModelScope.launch(Dispatchers.IO) {
-            _viewState.tryEmit(ComponentViewState.ShowComponent)
             _events.emit(ComponentEvent.AdditionalAction(action))
         }
     }
@@ -76,6 +66,15 @@ class GenericViewModel<TState : PaymentComponentState<*>, TComponentData: Compon
         viewModelScope.launch(Dispatchers.IO) {
             val componentData = ComponentData(paymentMethod, callback)
             _componentDataFlow.emit(componentData as TComponentData)
+        }
+    }
+
+    fun componentStarted() {
+        if (!componentStarted) {
+            componentStarted = true
+            viewModelScope.launch(Dispatchers.IO) {
+                _events.emit(ComponentEvent.ComponentCreated)
+            }
         }
     }
 

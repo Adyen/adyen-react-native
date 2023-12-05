@@ -1,9 +1,4 @@
-/*
- * Copyright (c) 2021 Adyen N.V.
- *
- * This file is open source and available under the MIT license. See the LICENSE file for more info.
- */
-package com.adyenreactnativesdk.component.dropin
+package com.adyenreactnativesdk.component
 
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.core.exception.CheckoutException

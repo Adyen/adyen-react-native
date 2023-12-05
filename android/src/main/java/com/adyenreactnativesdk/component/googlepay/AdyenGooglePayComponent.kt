@@ -1,29 +1,29 @@
 package com.adyenreactnativesdk.component.googlepay
 
-import android.content.Intent
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
+import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.exception.ComponentException
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
-import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.component.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.KnownException
-import com.adyenreactnativesdk.component.dropin.CheckoutProxy
-import com.adyenreactnativesdk.component.instant.InstantFragment
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
+import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import org.json.JSONException
 import org.json.JSONObject
 
 class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
@@ -77,8 +77,8 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         val googlePayConfiguration: GooglePayConfiguration = parser.getConfiguration(configBuilder, environment)
 
         val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
+        CheckoutProxy.shared.componentListener = this
         GooglePayComponent.run {
-            val googleComponent = this
             PROVIDER.isAvailable(appCompatActivity.application, payPaymentMethod, googlePayConfiguration,
                 object : ComponentAvailableCallback {
                     override fun onAvailabilityResult(
@@ -89,7 +89,6 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
                             sendErrorEvent(GooglePayException.NotSupported())
                             return
                         }
-
                         GooglePayFragment.show(appCompatActivity.supportFragmentManager, googlePayConfiguration, paymentMethod)
                     }
                 })
@@ -97,9 +96,21 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
     }
 
     @ReactMethod
+    fun handle(actionMap: ReadableMap?) {
+        try {
+            val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
+            val action = Action.SERIALIZER.deserialize(jsonObject)
+            GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
+        } catch (e: JSONException) {
+            sendErrorEvent(BaseModuleException.InvalidAction(e))
+        }
+    }
+
+    @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
         AdyenCheckout.removeActivityResultHandlingComponent()
+        AdyenCheckout.removeIntentHandler()
         CheckoutProxy.shared.componentListener = null
     }
 
@@ -111,12 +122,7 @@ class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(co
         )
     }
 
-    fun handleActivityResult(resultCode: Int, data: Intent?) {
-        GooglePayFragment.handleActivityResult(appCompatActivity.supportFragmentManager, resultCode, data)
-    }
-
     companion object {
-        private const val TAG = "GooglePayComponent"
         private const val COMPONENT_NAME = "AdyenGooglePay"
         internal const val GOOGLEPAY_REQUEST_CODE = 1001
         private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")

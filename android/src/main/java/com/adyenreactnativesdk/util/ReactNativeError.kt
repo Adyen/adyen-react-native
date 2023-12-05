@@ -5,14 +5,9 @@
  */
 package com.adyenreactnativesdk.util
 
-import android.util.Log
-import com.adyenreactnativesdk.component.BaseModuleException
 import com.adyenreactnativesdk.component.KnownException
-import com.adyenreactnativesdk.component.dropin.DropInException
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
-import java.lang.Exception
 
 object ReactNativeError {
 

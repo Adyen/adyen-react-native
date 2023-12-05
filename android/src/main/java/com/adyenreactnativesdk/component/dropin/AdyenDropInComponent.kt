@@ -6,6 +6,7 @@
 package com.adyenreactnativesdk.component.dropin
 
 import android.os.Build
+import android.util.Log
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
@@ -19,11 +20,12 @@ import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
-import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.component.AdyenCheckout
 import com.adyenreactnativesdk.component.BaseModule
 import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.component.CheckoutProxy.ComponentEventListener
 import com.adyenreactnativesdk.component.KnownException
-import com.adyenreactnativesdk.component.dropin.CheckoutProxy.ComponentEventListener
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
@@ -31,7 +33,10 @@ import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.facebook.react.bridge.*
+import com.facebook.react.bridge.JavaOnlyMap
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 import java.util.Locale
 
@@ -58,14 +63,14 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         val paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
         val parser = RootConfigurationParser(configuration)
         val clientKey = parser.clientKey
-        if(clientKey == null) {
+        if (clientKey == null) {
             sendErrorEvent(BaseModuleException.NoClientKey())
             return
         }
         this.environment = parser.environment
         this.clientKey = clientKey
         this.locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-             reactApplicationContext.resources.configuration.locales[0]
+            reactApplicationContext.resources.configuration.locales[0]
         } else {
             reactApplicationContext.resources.configuration.locale
         }
@@ -73,6 +78,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         configureDropIn(builder, configuration)
         configureBcmc(builder, configuration)
         configure3DS(builder)
+        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
 
         val amount = parser.amount
         val countryCode = parser.countryCode
@@ -82,10 +88,22 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
         configureCards(builder, configuration, countryCode)
 
+        CheckoutProxy.shared.componentListener = this
         AdyenCheckout.addDropInListener(this)
         AdyenCheckout.dropInLauncher?.let {
-            startPayment(reactApplicationContext, it, paymentMethodsResponse, builder.build(), AdyenCheckoutService::class.java)
+            startPayment(
+                reactApplicationContext,
+                it,
+                paymentMethodsResponse,
+                builder.build(),
+                AdyenCheckoutService::class.java
+            )
         } ?: run {
+            Log.e(
+                TAG,
+                "Invalid state: dropInLauncher not set. " +
+                        "Call AdyenCheckout.setLauncherActivity(this) on MainActivity.onCreate()"
+            )
             return
         }
     }
@@ -109,6 +127,7 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     fun hide(success: Boolean, message: ReadableMap?) {
         proxyHideDropInCommand(success, message)
         AdyenCheckout.removeDropInListener()
+        CheckoutProxy.shared.componentListener = null
     }
 
     override fun onCancel() {
@@ -220,10 +239,6 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
             clientKey
         )
         builder.addCardConfiguration(parser.getConfiguration(cardBuilder))
-    }
-
-    init {
-        CheckoutProxy.shared.componentListener = this
     }
 
     companion object {

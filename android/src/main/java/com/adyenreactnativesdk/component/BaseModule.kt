@@ -19,7 +19,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.json.JSONException
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
 

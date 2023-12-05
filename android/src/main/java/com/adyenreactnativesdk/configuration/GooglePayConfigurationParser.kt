@@ -3,14 +3,13 @@ package com.adyenreactnativesdk.configuration
 import android.util.Log
 import com.adyen.checkout.core.Environment
 import com.adyen.checkout.googlepay.BillingAddressParameters
-import com.facebook.react.bridge.ReadableMap
-import com.google.android.gms.wallet.WalletConstants
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.googlepay.ShippingAddressParameters
-import com.adyenreactnativesdk.component.dropin.AdyenCheckoutService
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.ReadableMap
+import com.google.android.gms.wallet.WalletConstants
 import org.json.JSONException
-import java.util.*
+import java.util.Locale
 
 class GooglePayConfigurationParser(config: ReadableMap) {
 
@@ -148,6 +147,8 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         if (config.hasKey(SHIPPING_ADDRESS_PARAMETERS_KEY)) {
             builder.setShippingAddressParameters(shippingAddressParameters)
         }
+
+        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
 
         return builder.build()
     }

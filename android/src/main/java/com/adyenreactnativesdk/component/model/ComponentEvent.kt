@@ -11,8 +11,6 @@ package com.adyenreactnativesdk.component.model
 import com.adyen.checkout.components.core.action.Action
 
 internal sealed class ComponentEvent {
-
-    data class PaymentResult(val result: String) : ComponentEvent()
-
+    data object ComponentCreated : ComponentEvent()
     data class AdditionalAction(val action: Action) : ComponentEvent()
 }

@@ -8,7 +8,6 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
-import android.content.Intent
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
@@ -16,8 +15,8 @@ import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.ui.core.AdyenComponentView
-import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
+import com.adyenreactnativesdk.component.AdyenCheckout
 import com.adyenreactnativesdk.component.model.ComponentData
 import com.adyenreactnativesdk.component.model.GenericFragment
 
@@ -32,8 +31,10 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
             viewModel
         )
         this.component = component
+        AdyenCheckout.setIntentHandler(component)
         AdyenCheckout.setActivityResultHandlingComponent(component)
         view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, this)
+        viewModel.componentStarted()
     }
 
     companion object {
@@ -52,10 +53,9 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
             hide(fragmentManager, TAG)
         }
 
-        fun handleActivityResult(fragmentManager: FragmentManager, resultCode: Int, data: Intent?) {
-            val fragment = fragmentManager.findFragmentByTag(TAG) as GenericFragment<GooglePayComponent, *>
-            fragment.component?.handleActivityResult(resultCode, data)
-        }
+    }
 
+    override fun runComponent() {
+        component?.startGooglePayScreen(requireActivity(), AdyenGooglePayComponent.GOOGLEPAY_REQUEST_CODE)
     }
 }

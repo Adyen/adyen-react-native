@@ -11,7 +11,6 @@ package com.adyenreactnativesdk.component.model
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.googlepay.GooglePayComponentState
 
 data class ComponentData<TState: PaymentComponentState<*>>(
     val paymentMethod: PaymentMethod,

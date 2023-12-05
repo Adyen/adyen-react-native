@@ -7,10 +7,10 @@ package com.adyenreactnativesdk.configuration
 
 import android.util.Log
 import com.adyen.checkout.components.core.Amount
-import com.facebook.react.bridge.ReadableMap
 import com.adyen.checkout.core.Environment
 import com.adyenreactnativesdk.util.ReactNativeJson
-import java.util.*
+import com.facebook.react.bridge.ReadableMap
+import java.util.Locale
 
 class RootConfigurationParser(private val config: ReadableMap) {
 

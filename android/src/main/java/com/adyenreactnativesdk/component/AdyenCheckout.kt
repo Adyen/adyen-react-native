@@ -1,30 +1,26 @@
-package com.adyenreactnativesdk
+package com.adyenreactnativesdk.component
 
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
-import com.adyen.checkout.components.core.internal.IntentHandlingComponent
 import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
 import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
 import com.adyenreactnativesdk.component.dropin.ReactDropInCallback
 import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
-import com.adyenreactnativesdk.util.AdyenConstants
 import java.lang.ref.WeakReference
 
 /**
  * Umbrella class for setting DropIn and Component specific parameters
  */
 object AdyenCheckout {
-    private const val TAG = "AdyenCheckout"
     private var intentHandlingComponent: WeakReference<ActionHandlingComponent> = WeakReference(null)
     private var activityResultHandlingComponent: WeakReference<ActivityResultHandlingComponent> = WeakReference(null)
     private val dropInCallback = DropInCallbackListener()
     internal var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>? = null
-
 
     @JvmStatic
     internal fun addDropInListener(callback: ReactDropInCallback) {
@@ -56,7 +52,7 @@ object AdyenCheckout {
     fun handleIntent(intent: Intent): Boolean {
         val data = intent.data
         val handler = intentHandlingComponent.get()
-        return if (data != null && handler != null && data.toString().startsWith(AdyenConstants.PARAMETER_RETURN_URL)) {
+        return if (data != null && handler != null && data.toString().startsWith(BaseModule.REDIRECT_RESULT_SCHEME)) {
             handler.handleIntent(intent)
             true
         } else false
@@ -98,12 +94,12 @@ object AdyenCheckout {
 
 private class DropInCallbackListener : DropInCallback {
 
-    internal var callback: WeakReference<ReactDropInCallback> =
+    var callback: WeakReference<ReactDropInCallback> =
         WeakReference(null)
 
     override fun onDropInResult(dropInResult: DropInResult?) {
         if (dropInResult == null ) return
-        val callback = callback.get()?.let {
+        callback.get()?.let {
             when (dropInResult) {
                 is DropInResult.CancelledByUser -> it.onCancel()
                 is DropInResult.Error -> it.onError(dropInResult.reason)
