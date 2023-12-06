@@ -6,7 +6,7 @@
 
 package com.adyenreactnativesdk
 
-import com.adyenreactnativesdk.component.applepay.AdyenApplePayModuleMock
+import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
 import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import com.adyenreactnativesdk.component.instant.InstantModule
@@ -26,7 +26,7 @@ class AdyenPaymentPackage : ReactPackage {
         modules.add(DropInModule(reactContext))
         modules.add(InstantModule(reactContext))
         modules.add(GooglePayModule(reactContext))
-        modules.add(AdyenApplePayModuleMock(reactContext))
+        modules.add(ApplePayModuleMock(reactContext))
         modules.add(AdyenCSEModule(reactContext))
         return modules
     }
