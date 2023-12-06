@@ -49,4 +49,14 @@ sealed class BaseModuleException(code: String, message: String, cause: Throwable
         code = "noPaymentMethod",
         message = "Can not find payment method of types \"${type.joinToString(",")}\" in provided list"
     )
+
+    class NoModuleListener : BaseModuleException(
+        code = "noModuleListener",
+        message = "Invalid state: DropInModuleListener is missing"
+    )
+
+    class Unknown(reason: String?) : BaseModuleException(
+        code = "unknown",
+        message = if (reason.isNullOrEmpty()) "reason unknown" else reason
+    )
 }

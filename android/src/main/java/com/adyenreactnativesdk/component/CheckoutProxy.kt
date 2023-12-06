@@ -22,12 +22,14 @@ class CheckoutProxy private constructor() {
             _moduleListener = WeakReference(value)
         }
 
+    /** All events coming from Android SDK */
     interface ComponentEventListener {
         fun onSubmit(state: PaymentComponentState<*>)
         fun onAdditionalData(jsonObject: JSONObject)
         fun onException(exception: CheckoutException)
     }
 
+    /** All events coming from React Native */
     interface ModuleEventListener {
         fun onAction(jsonObject: JSONObject)
         fun onFail(map: ReadableMap?)

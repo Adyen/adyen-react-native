@@ -8,12 +8,17 @@ package com.adyenreactnativesdk.component.base
 import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
+import com.adyen.checkout.components.core.PaymentComponentData
+import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.checkout.core.exception.CheckoutException
+import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.component.model.SubmitMap
+import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -66,13 +71,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         return paymentMethodsResponse.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
     }
 
-    protected fun getPaymentMethod(
-        paymentMethodsResponse: PaymentMethodsApiResponse,
-        paymentMethodName: String
-    ): PaymentMethod? {
-        return paymentMethodsResponse.paymentMethods?.firstOrNull { it.type == paymentMethodName }
-    }
-
     protected fun currentLocale(context: Context): Locale {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             context.resources.configuration.locales.get(0)
@@ -87,6 +85,24 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             return currentActivity as AppCompatActivity?
                 ?: throw Exception("Not an AppCompact Activity")
         }
+
+    open fun getRedirectUrl(): String {
+        return getReturnUrl(reactApplicationContext)
+    }
+
+    override fun onSubmit(state: PaymentComponentState<*>) {
+        var extra: JSONObject? = null
+        if (state is GooglePayComponentState) {
+            state.paymentData?.let {
+                extra = JSONObject(it.toJson())
+            }
+        }
+        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
+        jsonObject
+            .put(AdyenConstants.PARAMETER_RETURN_URL, getRedirectUrl())
+        val submitMap = SubmitMap(jsonObject, extra)
+        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
+    }
 
     override fun onException(exception: CheckoutException) {
         if (exception is CancellationException || exception.message == "Payment canceled.") {

@@ -1,28 +1,22 @@
 package com.adyenreactnativesdk.component.googlepay
 
 import com.adyen.checkout.components.core.ComponentAvailableCallback
-import com.adyen.checkout.components.core.PaymentComponentData
-import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
-import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.BaseModuleException
 import com.adyenreactnativesdk.component.base.KnownException
-import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
-import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
-import org.json.JSONObject
 
 class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
 
@@ -117,21 +111,6 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
         internal const val GOOGLEPAY_REQUEST_CODE = 1001
         private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
     }
-
-    override fun onSubmit(state: PaymentComponentState<*>) {
-        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
-        val returnUrl = getReturnUrl(reactApplicationContext)
-        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
-        var extra: JSONObject? = null
-        if (state is GooglePayComponentState) {
-            state.paymentData?.let {
-                extra = JSONObject(it.toJson())
-            }
-        }
-        val submitMap = SubmitMap(jsonObject, extra)
-        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
-    }
-
 }
 
 sealed class GooglePayException(code: String, message: String, cause: Throwable? = null) :

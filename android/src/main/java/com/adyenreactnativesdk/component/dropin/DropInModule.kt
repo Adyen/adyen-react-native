@@ -11,20 +11,15 @@ import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.components.core.Amount
-import com.adyen.checkout.components.core.PaymentComponentData
-import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.core.Environment
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
-import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.BaseModuleException
-import com.adyenreactnativesdk.component.base.KnownException
-import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
@@ -35,7 +30,6 @@ import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import org.json.JSONObject
 import java.util.Locale
 
 class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
@@ -109,7 +103,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     fun handle(actionMap: ReadableMap?) {
         val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(DropInException.NoModuleListener())
+            sendErrorEvent(BaseModuleException.NoModuleListener())
             return
         }
         try {
@@ -127,15 +121,19 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         CheckoutProxy.shared.componentListener = null
     }
 
+    override fun getRedirectUrl(): String {
+        return RedirectComponent.getReturnUrl(reactApplicationContext)
+    }
+
     override fun onCancel() {
         sendErrorEvent(BaseModuleException.Canceled())
     }
 
     override fun onError(reason: String?) {
-        if (reason == "Challenge canceled.") { // for canceled 3DS
+        if (reason == THREEDS_CANCELED_MESSAGE) { // for canceled 3DS
             sendErrorEvent(BaseModuleException.Canceled())
         } else {
-            sendErrorEvent(DropInException.Unknown(reason))
+            sendErrorEvent(BaseModuleException.Unknown(reason))
         }
     }
 
@@ -143,25 +141,10 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         hide(true, null)
     }
 
-    override fun onSubmit(state: PaymentComponentState<*>) {
-        var extra: JSONObject? = null
-        if (state is GooglePayComponentState) {
-            state.paymentData?.let {
-                extra = JSONObject(it.toJson())
-            }
-        }
-        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
-        val returnUrl = RedirectComponent.getReturnUrl(reactApplicationContext)
-        jsonObject
-            .put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
-        val submitMap = SubmitMap(jsonObject, extra)
-        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
-    }
-
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
         val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(DropInException.NoModuleListener())
+            sendErrorEvent(BaseModuleException.NoModuleListener())
             return
         }
         val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
@@ -233,6 +216,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
+        private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
     }
 
 }
@@ -241,17 +225,4 @@ internal interface ReactDropInCallback {
     fun onCancel()
     fun onError(reason: String?)
     fun onCompleted(result: String)
-}
-
-sealed class DropInException(code: String, message: String, cause: Throwable? = null) :
-    KnownException(code = code, errorMessage = message, cause) {
-    class NoModuleListener : DropInException(
-        code = "noModulListener",
-        message = "Invalid state: DropInModuleListener is missing"
-    )
-
-    class Unknown(reason: String?) : DropInException(
-        code = "unknown",
-        message = if (reason.isNullOrEmpty()) "reason unknown" else reason
-    )
 }

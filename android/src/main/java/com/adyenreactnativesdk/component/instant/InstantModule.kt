@@ -1,16 +1,12 @@
 package com.adyenreactnativesdk.component.instant
 
-import com.adyen.checkout.components.core.PaymentComponentData
-import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.BaseModuleException
-import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
-import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -79,14 +75,6 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
 
     companion object {
         private const val COMPONENT_NAME = "AdyenInstant"
-    }
-
-    override fun onSubmit(state: PaymentComponentState<*>) {
-        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
-        val returnUrl = getReturnUrl(reactApplicationContext)
-        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, returnUrl)
-        val submitMap = SubmitMap(jsonObject, null)
-        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
 
 }
