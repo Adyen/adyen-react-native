@@ -38,20 +38,20 @@ class GenericViewModel<TState : PaymentComponentState<*>, TComponentData: Compon
 
     override fun onSubmit(state: TState) {
         CheckoutProxy.shared.componentListener?.let { it.onSubmit(state) } ?: {
-            Log.e(TAG, "CheckoutProxy.shared.componentListener is null")
+            Log.e(TAG, COMPONENT_LISTENER_IS_NULL)
         }
     }
 
     override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
         val jsonObject = ActionComponentData.SERIALIZER.serialize(actionComponentData)
         CheckoutProxy.shared.componentListener?.let { it.onAdditionalData(jsonObject) } ?: {
-            Log.e(TAG, "CheckoutProxy.shared.componentListener is null")
+            Log.e(TAG, COMPONENT_LISTENER_IS_NULL)
         }
     }
 
     override fun onError(componentError: ComponentError) {
         CheckoutProxy.shared.componentListener?.let { it.onException(componentError.exception) } ?: {
-            Log.e(TAG, "CheckoutProxy.shared.componentListener is null")
+            Log.e(TAG, COMPONENT_LISTENER_IS_NULL)
         }
     }
 
@@ -79,6 +79,7 @@ class GenericViewModel<TState : PaymentComponentState<*>, TComponentData: Compon
     }
 
     companion object {
+        private const val COMPONENT_LISTENER_IS_NULL = "CheckoutProxy.shared.componentListener is null"
         private const val TAG = "GenericViewModel"
     }
 }

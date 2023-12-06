@@ -59,7 +59,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
             PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.InvalidPaymentMethods(e))
+            sendErrorEvent(ModuleException.InvalidPaymentMethods(e))
             return null
         }
     }
@@ -106,7 +106,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     override fun onException(exception: CheckoutException) {
         if (exception is CancellationException || exception.message == "Payment canceled.") {
-            sendErrorEvent(BaseModuleException.Canceled())
+            sendErrorEvent(ModuleException.Canceled())
         } else {
             sendErrorEvent(exception)
         }

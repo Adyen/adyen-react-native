@@ -8,7 +8,7 @@ import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
-import com.adyenreactnativesdk.component.base.BaseModuleException
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
@@ -36,7 +36,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
 
         val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEYS)
         if (googlePayPaymentMethod == null) {
-            sendErrorEvent(BaseModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
+            sendErrorEvent(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
             return
         }
 
@@ -46,7 +46,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
         val clientKey: String
         rootParser.clientKey.let {
             clientKey = if (it != null) it else {
-                sendErrorEvent(BaseModuleException.NoClientKey())
+                sendErrorEvent(ModuleException.NoClientKey())
                 return
             }
         }
@@ -54,7 +54,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
         val amount = rootParser.amount
         val countryCode = rootParser.countryCode
         if (amount == null || countryCode == null) {
-            sendErrorEvent(BaseModuleException.NoPayment())
+            sendErrorEvent(ModuleException.NoPayment())
             return
         }
 
@@ -94,7 +94,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
             val action = Action.SERIALIZER.deserialize(jsonObject)
             GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.InvalidAction(e))
+            sendErrorEvent(ModuleException.InvalidAction(e))
         }
     }
 

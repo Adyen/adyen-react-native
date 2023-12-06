@@ -5,7 +5,7 @@ import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
-import com.adyenreactnativesdk.component.base.BaseModuleException
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -31,7 +31,7 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
 
         val paymentMethod = paymentMethods.firstOrNull()
         if (paymentMethod?.type == null) {
-            sendErrorEvent(BaseModuleException.InvalidPaymentMethods(null))
+            sendErrorEvent(ModuleException.InvalidPaymentMethods(null))
             return
         }
 
@@ -40,7 +40,7 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
         val amount = config.amount
         val clientKey = config.clientKey.let {
             if (it != null) it else {
-                sendErrorEvent(BaseModuleException.NoClientKey())
+                sendErrorEvent(ModuleException.NoClientKey())
                 return
             }
         }
@@ -62,7 +62,7 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
             val action = Action.SERIALIZER.deserialize(jsonObject)
             InstantFragment.handle(appCompatActivity.supportFragmentManager, action)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.InvalidAction(e))
+            sendErrorEvent(ModuleException.InvalidAction(e))
         }
     }
 

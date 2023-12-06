@@ -19,7 +19,7 @@ import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
-import com.adyenreactnativesdk.component.base.BaseModuleException
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
@@ -55,7 +55,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         val parser = RootConfigurationParser(configuration)
         val clientKey = parser.clientKey
         if (clientKey == null) {
-            sendErrorEvent(BaseModuleException.NoClientKey())
+            sendErrorEvent(ModuleException.NoClientKey())
             return
         }
         this.environment = parser.environment
@@ -103,14 +103,14 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     fun handle(actionMap: ReadableMap?) {
         val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(BaseModuleException.NoModuleListener())
+            sendErrorEvent(ModuleException.NoModuleListener())
             return
         }
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             listener.onAction(jsonObject)
         } catch (e: Exception) {
-            sendErrorEvent(BaseModuleException.InvalidAction(e))
+            sendErrorEvent(ModuleException.InvalidAction(e))
         }
     }
 
@@ -126,14 +126,14 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     }
 
     override fun onCancel() {
-        sendErrorEvent(BaseModuleException.Canceled())
+        sendErrorEvent(ModuleException.Canceled())
     }
 
     override fun onError(reason: String?) {
         if (reason == THREEDS_CANCELED_MESSAGE) { // for canceled 3DS
-            sendErrorEvent(BaseModuleException.Canceled())
+            sendErrorEvent(ModuleException.Canceled())
         } else {
-            sendErrorEvent(BaseModuleException.Unknown(reason))
+            sendErrorEvent(ModuleException.Unknown(reason))
         }
     }
 
@@ -144,7 +144,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
         val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(BaseModuleException.NoModuleListener())
+            sendErrorEvent(ModuleException.NoModuleListener())
             return
         }
         val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)

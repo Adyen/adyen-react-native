@@ -2,7 +2,7 @@ package com.adyenreactnativesdk.component.applepay
 
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyenreactnativesdk.component.base.BaseModule
-import com.adyenreactnativesdk.component.base.BaseModuleException
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
@@ -27,6 +27,6 @@ class AdyenApplePayModuleMock(context: ReactApplicationContext?) : BaseModule(co
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        sendErrorEvent(BaseModuleException.NotSupported())
+        sendErrorEvent(ModuleException.NotSupported())
     }
 }
