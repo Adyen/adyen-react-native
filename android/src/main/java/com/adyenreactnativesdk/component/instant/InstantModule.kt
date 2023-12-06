@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.component.instant
 
 import com.adyen.checkout.components.core.action.Action

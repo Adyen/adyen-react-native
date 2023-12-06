@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.component.googlepay
 
 import com.adyen.checkout.components.core.ComponentAvailableCallback
@@ -8,8 +14,8 @@ import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
-import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.KnownException
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeJson
