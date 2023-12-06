@@ -11,7 +11,7 @@ import com.adyen.checkout.dropin.DropInResult
 import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.dropin.ReactDropInCallback
-import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
+import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import java.lang.ref.WeakReference
 
 /**
@@ -77,7 +77,7 @@ object AdyenCheckout {
      */
     @JvmStatic
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == AdyenGooglePayComponent.GOOGLEPAY_REQUEST_CODE) {
+        if (requestCode == GooglePayModule.GOOGLEPAY_REQUEST_CODE) {
             activityResultHandlingComponent.get()?.handleActivityResult(resultCode, data)
         }
     }

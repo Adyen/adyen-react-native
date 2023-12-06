@@ -8,7 +8,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 
-class AdyenApplePayMock(context: ReactApplicationContext?) : BaseModule(context) {
+class AdyenApplePayModuleMock(context: ReactApplicationContext?) : BaseModule(context) {
     override fun getName(): String {
         return COMPONENT_NAME
     }

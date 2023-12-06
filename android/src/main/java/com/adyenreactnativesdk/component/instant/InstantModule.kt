@@ -5,9 +5,9 @@ import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.BaseModuleException
-import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
@@ -17,7 +17,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 
-class AdyenInstantComponent(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
+class InstantModule(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
 
     override fun getName(): String {
         return COMPONENT_NAME

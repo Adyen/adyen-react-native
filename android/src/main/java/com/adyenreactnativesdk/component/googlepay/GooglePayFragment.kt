@@ -56,6 +56,6 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
     }
 
     override fun runComponent() {
-        component?.startGooglePayScreen(requireActivity(), AdyenGooglePayComponent.GOOGLEPAY_REQUEST_CODE)
+        component?.startGooglePayScreen(requireActivity(), GooglePayModule.GOOGLEPAY_REQUEST_CODE)
     }
 }

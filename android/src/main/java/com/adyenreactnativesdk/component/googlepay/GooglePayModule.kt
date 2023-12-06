@@ -9,9 +9,9 @@ import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.BaseModuleException
-import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
@@ -24,7 +24,7 @@ import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 import org.json.JSONObject
 
-class AdyenGooglePayComponent(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
+class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
 
     override fun getName(): String {
         return COMPONENT_NAME

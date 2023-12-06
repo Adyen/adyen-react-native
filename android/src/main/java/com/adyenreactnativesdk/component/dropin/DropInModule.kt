@@ -38,7 +38,7 @@ import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 import java.util.Locale
 
-class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
+class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     ReactDropInCallback {
 
     private lateinit var environment: Environment

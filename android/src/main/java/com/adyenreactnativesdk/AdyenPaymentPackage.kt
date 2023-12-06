@@ -5,10 +5,10 @@
  */
 package com.adyenreactnativesdk
 
-import com.adyenreactnativesdk.component.applepay.AdyenApplePayMock
-import com.adyenreactnativesdk.component.dropin.AdyenDropInComponent
-import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
-import com.adyenreactnativesdk.component.instant.AdyenInstantComponent
+import com.adyenreactnativesdk.component.applepay.AdyenApplePayModuleMock
+import com.adyenreactnativesdk.component.dropin.DropInModule
+import com.adyenreactnativesdk.component.googlepay.GooglePayModule
+import com.adyenreactnativesdk.component.instant.InstantModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
@@ -22,10 +22,10 @@ class AdyenPaymentPackage : ReactPackage {
 
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
         val modules: MutableList<NativeModule> = ArrayList()
-        modules.add(AdyenDropInComponent(reactContext))
-        modules.add(AdyenInstantComponent(reactContext))
-        modules.add(AdyenGooglePayComponent(reactContext))
-        modules.add(AdyenApplePayMock(reactContext))
+        modules.add(DropInModule(reactContext))
+        modules.add(InstantModule(reactContext))
+        modules.add(GooglePayModule(reactContext))
+        modules.add(AdyenApplePayModuleMock(reactContext))
         modules.add(AdyenCSEModule(reactContext))
         return modules
     }
