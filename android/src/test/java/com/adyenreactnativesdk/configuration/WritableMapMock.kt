@@ -6,7 +6,6 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableMapKeySetIterator
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
-import java.util.HashMap
 
 class WritableMapMock: WritableMap {
 

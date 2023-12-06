@@ -1,7 +1,7 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.adyen.checkout.core.api.Environment
+import com.adyen.checkout.core.Environment
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -11,7 +11,6 @@ import org.mockito.Mockito.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.`when`
-
 
 class GooglePayConfigurationParserTest {
 

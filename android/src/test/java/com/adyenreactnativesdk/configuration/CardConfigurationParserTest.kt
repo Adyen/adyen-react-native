@@ -2,11 +2,15 @@ package com.adyenreactnativesdk.configuration
 
 import android.util.Log
 import com.adyen.checkout.card.AddressConfiguration
+import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.KCPAuthVisibility
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
-import com.adyen.checkout.card.data.CardType
 import com.facebook.react.bridge.ReadableArray
-import org.junit.Assert.*
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.MockedStatic
 import org.mockito.Mockito
@@ -46,6 +50,8 @@ class CardConfigurationParserTest {
 
         // WHEN
         val cardParser = CardConfigurationParser(config, "US")
+
+        // THEN
         assertTrue(cardParser.holderNameRequired)
     }
 
@@ -83,6 +89,8 @@ class CardConfigurationParserTest {
 
         // WHEN
         val cardParser = CardConfigurationParser(config, "US")
+
+        // THEN
         assertTrue(cardParser.addressVisibility is AddressConfiguration.PostalCode)
     }
 
