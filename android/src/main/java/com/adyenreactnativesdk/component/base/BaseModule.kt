@@ -3,14 +3,23 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
-package com.adyenreactnativesdk.component
+
+package com.adyenreactnativesdk.component.base
 
 import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
-import com.adyen.checkout.components.model.PaymentMethodsApiResponse
-import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
-import com.adyenreactnativesdk.action.ActionHandler
+import com.adyen.checkout.components.core.PaymentComponentData
+import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyen.checkout.components.core.PaymentMethod
+import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.core.exception.CancellationException
+import com.adyen.checkout.core.exception.CheckoutException
+import com.adyen.checkout.googlepay.GooglePayComponentState
+import com.adyenreactnativesdk.BuildConfig
+import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.component.model.SubmitMap
+import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -19,11 +28,10 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.json.JSONException
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 
-abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
-
-    protected var actionHandler: ActionHandler? = null
+abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context),
+    CheckoutProxy.ComponentEventListener {
 
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
@@ -52,7 +60,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
             PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
         } catch (e: JSONException) {
-            sendErrorEvent(BaseModuleException.InvalidPaymentMethods(e))
+            sendErrorEvent(ModuleException.InvalidPaymentMethods(e))
             return null
         }
     }
@@ -62,13 +70,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         paymentMethodNames: Set<String>
     ): PaymentMethod? {
         return paymentMethodsResponse.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
-    }
-
-    protected fun getPaymentMethod(
-        paymentMethodsResponse: PaymentMethodsApiResponse,
-        paymentMethodName: String
-    ): PaymentMethod? {
-        return paymentMethodsResponse.paymentMethods?.firstOrNull { it.type == paymentMethodName }
     }
 
     protected fun currentLocale(context: Context): Locale {
@@ -86,10 +87,45 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
                 ?: throw Exception("Not an AppCompact Activity")
         }
 
+    open fun getRedirectUrl(): String {
+        return getReturnUrl(reactApplicationContext)
+    }
+
+    override fun onSubmit(state: PaymentComponentState<*>) {
+        var extra: JSONObject? = null
+        if (state is GooglePayComponentState) {
+            state.paymentData?.let {
+                extra = JSONObject(it.toJson())
+            }
+        }
+        val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
+        jsonObject
+            .put(AdyenConstants.PARAMETER_RETURN_URL, getRedirectUrl())
+        val submitMap = SubmitMap(jsonObject, extra)
+        sendEvent(DID_SUBMIT, submitMap.toJSONObject())
+    }
+
+    override fun onException(exception: CheckoutException) {
+        if (exception is CancellationException || exception.message == "Payment canceled.") {
+            sendErrorEvent(ModuleException.Canceled())
+        } else {
+            sendErrorEvent(exception)
+        }
+    }
+
+    override fun onAdditionalData(jsonObject: JSONObject) {
+        sendEvent(DID_PROVIDE, jsonObject)
+    }
+
     companion object {
         const val DID_COMPLETE = "didCompleteCallback"
         const val DID_PROVIDE = "didProvideCallback"
         const val DID_FAILED = "didFailCallback"
         const val DID_SUBMIT = "didSubmitCallback"
+
+        const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenReactNativeRedirectScheme + "://"
+        fun getReturnUrl(context: Context): String {
+            return REDIRECT_RESULT_SCHEME + context.packageName
+        }
     }
 }

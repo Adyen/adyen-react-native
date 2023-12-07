@@ -60,7 +60,6 @@ class ApiClient {
   static makeRequest = async (url, body) => {
     const bodyJSON = JSON.stringify(body);
     console.debug(`Request to: ${url}`);
-    console.debug(bodyJSON);
     const request = new Request(url, {
       method: 'POST',
       headers: {
@@ -71,8 +70,11 @@ class ApiClient {
     });
 
     const response = await fetch(request);
+    const pspReference = response.headers.get("pspreference");
+    console.debug(`PSP Reference - ${pspReference}`);
     const payload = await response.json();
     if (response.ok) return payload;
+    console.warn(`Error - ${JSON.stringify(payload, null, ' ')}`);
     throw new Error(`Network Error ${response.status}:
           ${payload.message || 'Unknown error'}`);
   };

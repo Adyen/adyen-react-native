@@ -1,28 +1,33 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk
 
-import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContract
-import com.adyen.checkout.components.base.IntentHandlingComponent
+import com.adyen.checkout.action.core.internal.ActionHandlingComponent
+import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
 import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
-import com.adyenreactnativesdk.action.ActionHandler
+import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
+import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.dropin.ReactDropInCallback
-import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
+import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import java.lang.ref.WeakReference
 
 /**
  * Umbrella class for setting DropIn and Component specific parameters
  */
 object AdyenCheckout {
-    private const val TAG = "AdyenCheckout"
-    internal var dropInLauncher: ActivityResultLauncher<Intent>? = null
+    private var intentHandlingComponent: WeakReference<ActionHandlingComponent> = WeakReference(null)
+    private var activityResultHandlingComponent: WeakReference<ActivityResultHandlingComponent> = WeakReference(null)
     private val dropInCallback = DropInCallbackListener()
-    private var intentHandlingComponent: WeakReference<IntentHandlingComponent> = WeakReference(null)
-    private var googleComponent: WeakReference<AdyenGooglePayComponent> = WeakReference(null)
+    internal var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>? = null
 
     @JvmStatic
     internal fun addDropInListener(callback: ReactDropInCallback) {
@@ -40,18 +45,9 @@ object AdyenCheckout {
      */
     @JvmStatic
     fun setLauncherActivity(activity: ActivityResultCaller) {
-        dropInLauncher = activity.registerForActivityResult(
-            ReactDropInResultContract(),
-            dropInCallback::onDropInResult
+        dropInLauncher = DropIn.registerForDropInResult(
+            activity, dropInCallback
         )
-    }
-
-    /**
-     * Release a reference to current Activity that presenting DropIn or Component
-     */
-    @JvmStatic
-    fun removeLauncherActivity() {
-        dropInLauncher = null
     }
 
     /**
@@ -63,14 +59,14 @@ object AdyenCheckout {
     fun handleIntent(intent: Intent): Boolean {
         val data = intent.data
         val handler = intentHandlingComponent.get()
-        return if (data != null && handler != null && data.toString().startsWith(ActionHandler.REDIRECT_RESULT_SCHEME)) {
+        return if (data != null && handler != null && data.toString().startsWith(BaseModule.REDIRECT_RESULT_SCHEME)) {
             handler.handleIntent(intent)
             true
         } else false
     }
 
     @JvmStatic
-    internal fun setIntentHandler(component: IntentHandlingComponent) {
+    internal fun setIntentHandler(component: ActionHandlingComponent) {
         intentHandlingComponent = WeakReference(component)
     }
 
@@ -87,40 +83,30 @@ object AdyenCheckout {
      */
     @JvmStatic
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == AdyenGooglePayComponent.GOOGLEPAY_REQUEST_CODE) {
-            googleComponent.get()?.handleActivityResult(resultCode, data)
+        if (requestCode == GooglePayModule.GOOGLEPAY_REQUEST_CODE) {
+            activityResultHandlingComponent.get()?.handleActivityResult(resultCode, data)
         }
     }
 
     @JvmStatic
-    internal fun setGooglePayComponent(component: AdyenGooglePayComponent) {
-        googleComponent = WeakReference(component)
+    internal fun setActivityResultHandlingComponent(component: ActivityResultHandlingComponent) {
+        activityResultHandlingComponent = WeakReference(component)
     }
 
     @JvmStatic
-    internal fun removeGooglePayComponent() {
-        googleComponent.clear()
-    }
-}
-
-private class ReactDropInResultContract : ActivityResultContract<Intent, DropInResult?>() {
-    override fun createIntent(context: Context, input: Intent): Intent {
-        return input
-    }
-
-    override fun parseResult(resultCode: Int, intent: Intent?): DropInResult? {
-        return DropIn.handleActivityResult(DropIn.DROP_IN_REQUEST_CODE, resultCode, intent)
+    internal fun removeActivityResultHandlingComponent() {
+        activityResultHandlingComponent.clear()
     }
 }
 
 private class DropInCallbackListener : DropInCallback {
 
-    internal var callback: WeakReference<ReactDropInCallback> =
+    var callback: WeakReference<ReactDropInCallback> =
         WeakReference(null)
 
     override fun onDropInResult(dropInResult: DropInResult?) {
         if (dropInResult == null ) return
-        val callback = callback.get()?.let {
+        callback.get()?.let {
             when (dropInResult) {
                 is DropInResult.CancelledByUser -> it.onCancel()
                 is DropInResult.Error -> it.onError(dropInResult.reason)

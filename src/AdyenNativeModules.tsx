@@ -58,7 +58,7 @@ export interface AdyenActionComponent extends AdyenComponent {
   /**
    * List of events supported by component
    */
-  events: string[]
+  events: string[];
 }
 
 /**
@@ -68,15 +68,19 @@ export interface AdyenActionComponent extends AdyenComponent {
 class AdyenNativeComponentWrapper implements AdyenActionComponent {
   canHandleAction: boolean;
   nativeModule: NativeModule | any;
-  constructor(nativeModule: NativeModule, canHandleAction: boolean = true, events: string[] = []) {
+  constructor(
+    nativeModule: NativeModule,
+    canHandleAction: boolean = true,
+    events: string[] = []
+  ) {
     this.nativeModule = nativeModule;
     this.canHandleAction = canHandleAction;
     this.events = [Event.onError, ErrorCode.canceled];
 
-    events?.forEach((element) => this.events.push(element) );
+    events?.forEach((element) => this.events.push(element));
 
     if (canHandleAction) {
-      this.events.push(Event.onAdditionalDetails)
+      this.events.push(Event.onAdditionalDetails);
     }
   }
 
@@ -196,7 +200,9 @@ export function getNativeComponent(
     case 'drop-in':
     case 'adyendropin':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn, true, [Event.onComplete]),
+        nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn, true, [
+          Event.onComplete,
+        ]),
         paymentMethod: undefined,
       };
     case 'applepay':
@@ -225,7 +231,9 @@ export function getNativeComponent(
 
   if (NATIVE_COMPONENTS.includes(typeName)) {
     return {
-      nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn, true, [Event.onComplete]),
+      nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn, true, [
+        Event.onComplete,
+      ]),
       paymentMethod: paymentMethod,
     };
   }

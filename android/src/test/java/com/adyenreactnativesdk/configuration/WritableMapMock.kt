@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.configuration
 
 import com.facebook.react.bridge.Dynamic
@@ -6,7 +12,6 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableMapKeySetIterator
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
-import java.util.HashMap
 
 class WritableMapMock: WritableMap {
 

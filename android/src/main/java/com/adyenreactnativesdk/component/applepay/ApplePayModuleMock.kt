@@ -1,14 +1,18 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.component.applepay
 
-import com.adyenreactnativesdk.component.BaseModule
-import com.adyenreactnativesdk.component.BaseModuleException
-import com.adyenreactnativesdk.component.instant.AdyenInstantComponent
+import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import java.lang.RuntimeException
 
-class AdyenApplePayMock(context: ReactApplicationContext?) : BaseModule(context) {
+class ApplePayModuleMock(context: ReactApplicationContext?) : BaseModule(context) {
     override fun getName(): String {
         return COMPONENT_NAME
     }
@@ -19,6 +23,6 @@ class AdyenApplePayMock(context: ReactApplicationContext?) : BaseModule(context)
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        sendErrorEvent(BaseModuleException.NotSupported())
+        sendErrorEvent(ModuleException.NotSupported())
     }
 }

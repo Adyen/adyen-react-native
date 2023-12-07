@@ -45,11 +45,8 @@
     "@tsconfig/react-native": "^2.0.3",
     "@types/jest": "^29.5.0",
     "@types/react": "^18.0.29",
-    "@types/react-native": "^0.71.3",
     "@types/react-test-renderer": "^18.0.0",
     "eslint": "^8.0.0",
-    "eslint-config-prettier": "^8.0.0",
-    "eslint-plugin-prettier": "^4.0.0",
     "pod-install": "^0.1.30",
     "prettier": "^2.0.5",
     "react": "^18.2.0",
@@ -59,7 +56,6 @@
   },
   "peerDependencies": {
     "@types/react": "*",
-    "@types/react-native": "*",
     "react": "*",
     "react-native": "*"
   },

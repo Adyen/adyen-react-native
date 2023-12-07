@@ -3,43 +3,49 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
+
 package com.adyenreactnativesdk.component.dropin
 
-import android.content.Intent
-import androidx.activity.result.ActivityResultCaller
+import android.os.Build
+import android.util.Log
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
+import com.adyen.checkout.components.core.Amount
+import com.adyen.checkout.core.Environment
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.AdyenCheckout
-import com.adyenreactnativesdk.component.BaseModule
-import com.adyenreactnativesdk.component.BaseModuleException
-import com.adyenreactnativesdk.component.KnownException
-import com.adyenreactnativesdk.component.dropin.DropInServiceProxy.DropInServiceListener
-import com.adyenreactnativesdk.component.model.SubmitMap
+import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.facebook.react.bridge.*
-import org.json.JSONException
-import org.json.JSONObject
+import com.facebook.react.bridge.JavaOnlyMap
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
+import java.util.Locale
 
-class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(context),
-    DropInServiceListener,
+class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     ReactDropInCallback {
+
+    private lateinit var environment: Environment
+    private lateinit var clientKey: String
+    private lateinit var locale: Locale
 
     @ReactMethod
     fun addListener(eventName: String?) { /* No JS events expected */ }
 
     @ReactMethod
     fun removeListeners(count: Int?) { /* No JS events expected */ }
-    
+
     override fun getName(): String {
         return COMPONENT_NAME
     }
@@ -48,54 +54,64 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) {
         val paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
         val parser = RootConfigurationParser(configuration)
-        val environment = parser.environment
-        val clientKey: String
-        parser.clientKey.let {
-            clientKey = if (it != null) it else {
-                sendErrorEvent(BaseModuleException.NoClientKey())
-                return
-            }
+        val clientKey = parser.clientKey
+        if (clientKey == null) {
+            sendErrorEvent(ModuleException.NoClientKey())
+            return
         }
-
-        val builder = Builder(reactApplicationContext, AdyenCheckoutService::class.java, clientKey)
-            .setEnvironment(environment)
-
-        parser.locale?.let { builder.setShopperLocale(it) }
+        this.environment = parser.environment
+        this.clientKey = clientKey
+        this.locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            reactApplicationContext.resources.configuration.locales[0]
+        } else {
+            reactApplicationContext.resources.configuration.locale
+        }
+        val builder = Builder(locale, environment, clientKey)
         configureDropIn(builder, configuration)
         configureBcmc(builder, configuration)
         configure3DS(builder)
+        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
 
         val amount = parser.amount
         val countryCode = parser.countryCode
         if (amount != null && countryCode != null) {
             builder.setAmount(amount)
-            configureGooglePay(builder, configuration, countryCode)
+            configureGooglePay(builder, configuration, countryCode, amount)
         }
         configureCards(builder, configuration, countryCode)
-        val currentActivity = reactApplicationContext.currentActivity
-        val resultIntent = Intent(currentActivity, currentActivity!!.javaClass)
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
+        CheckoutProxy.shared.componentListener = this
         AdyenCheckout.addDropInListener(this)
         AdyenCheckout.dropInLauncher?.let {
-            startPayment(currentActivity, it, paymentMethodsResponse, builder.build(), resultIntent)
+            startPayment(
+                reactApplicationContext,
+                it,
+                paymentMethodsResponse,
+                builder.build(),
+                AdyenCheckoutService::class.java
+            )
         } ?: run {
-            startPayment(currentActivity, paymentMethodsResponse, builder.build(), resultIntent)
+            Log.e(
+                TAG,
+                "Invalid state: dropInLauncher not set. " +
+                        "Call AdyenCheckout.setLauncherActivity(this) on MainActivity.onCreate()"
+            )
+            return
         }
     }
 
     @ReactMethod
     fun handle(actionMap: ReadableMap?) {
-        val listener = DropInServiceProxy.shared.moduleListener
+        val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(DropInException.NoModuleListener())
+            sendErrorEvent(ModuleException.NoModuleListener())
             return
         }
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             listener.onAction(jsonObject)
         } catch (e: Exception) {
-            sendErrorEvent(BaseModuleException.InvalidAction(e))
+            sendErrorEvent(ModuleException.InvalidAction(e))
         }
     }
 
@@ -103,17 +119,22 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     fun hide(success: Boolean, message: ReadableMap?) {
         proxyHideDropInCommand(success, message)
         AdyenCheckout.removeDropInListener()
+        CheckoutProxy.shared.componentListener = null
+    }
+
+    override fun getRedirectUrl(): String {
+        return RedirectComponent.getReturnUrl(reactApplicationContext)
     }
 
     override fun onCancel() {
-        sendErrorEvent(BaseModuleException.Canceled())
+        sendErrorEvent(ModuleException.Canceled())
     }
 
     override fun onError(reason: String?) {
-        if (reason == "Challenge canceled.") { // for canceled 3DS
-            sendErrorEvent(BaseModuleException.Canceled())
+        if (reason == THREEDS_CANCELED_MESSAGE) { // for canceled 3DS
+            sendErrorEvent(ModuleException.Canceled())
         } else {
-            sendErrorEvent(DropInException.Unknown(reason))
+            sendErrorEvent(ModuleException.Unknown(reason))
         }
     }
 
@@ -121,21 +142,10 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         hide(true, null)
     }
 
-    override fun onDidSubmit(jsonObject: JSONObject) {
-        val context = reactApplicationContext
-        jsonObject.getJSONObject(SubmitMap.PAYMENT_DATA_KEY)
-            .put(AdyenConstants.PARAMETER_RETURN_URL, RedirectComponent.getReturnUrl(context))
-        sendEvent(DID_SUBMIT, jsonObject)
-    }
-
-    override fun onDidProvide(jsonObject: JSONObject) {
-        sendEvent(DID_PROVIDE, jsonObject)
-    }
-
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
-        val listener = DropInServiceProxy.shared.moduleListener
+        val listener = CheckoutProxy.shared.moduleListener
         if (listener == null) {
-            sendErrorEvent(DropInException.NoModuleListener())
+            sendErrorEvent(ModuleException.NoModuleListener())
             return
         }
         val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
@@ -155,26 +165,27 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     private fun configureGooglePay(
         builder: Builder,
         configuration: ReadableMap,
-        countryCode: String
+        countryCode: String,
+        amount: Amount
     ) {
         val parser = GooglePayConfigurationParser(configuration)
         val configBuilder = GooglePayConfiguration.Builder(
-            builder.builderShopperLocale,
-            builder.builderEnvironment,
-            builder.builderClientKey
+            locale,
+            environment,
+            clientKey
         )
             .setCountryCode(countryCode)
-            .setAmount(builder.amount)
-        val googlePayConfiguration = parser.getConfiguration(configBuilder)
+            .setAmount(amount)
+        val googlePayConfiguration = parser.getConfiguration(configBuilder, environment)
         builder.addGooglePayConfiguration(googlePayConfiguration)
     }
 
     private fun configure3DS(builder: Builder) {
         builder.add3ds2ActionConfiguration(
             Adyen3DS2Configuration.Builder(
-                builder.builderShopperLocale,
-                builder.builderEnvironment,
-                builder.builderClientKey
+                locale,
+                environment,
+                clientKey
             ).build()
         )
     }
@@ -186,9 +197,9 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
         }
         val parser = CardConfigurationParser(bcmcConfig, null)
         val bcmcBuilder = BcmcConfiguration.Builder(
-            builder.builderShopperLocale,
-            builder.builderEnvironment,
-            builder.builderClientKey
+            locale,
+            environment,
+            clientKey
         )
         builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder))
     }
@@ -196,36 +207,17 @@ class AdyenDropInComponent(context: ReactApplicationContext?) : BaseModule(conte
     private fun configureCards(builder: Builder, configuration: ReadableMap, countryCode: String?) {
         val parser = CardConfigurationParser(configuration, countryCode)
         val cardBuilder = CardConfiguration.Builder(
-            builder.builderShopperLocale,
-            builder.builderEnvironment,
-            builder.builderClientKey
+            locale,
+            environment,
+            clientKey
         )
         builder.addCardConfiguration(parser.getConfiguration(cardBuilder))
-    }
-
-    init {
-        DropInServiceProxy.shared.serviceListener = this
     }
 
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.setLauncherActivity(activity)"))
-        fun setDropInLauncher(activity: ActivityResultCaller) {
-            AdyenCheckout.setLauncherActivity(activity);
-        }
-
-        @JvmStatic
-        @Deprecated(
-            message = "This method is deprecated on beta-8",
-            replaceWith = ReplaceWith("AdyenCheckout.removeLauncherActivity()"))
-        fun removeDropInLauncher() {
-            AdyenCheckout.removeLauncherActivity();
-        }
+        private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
     }
 
 }
@@ -234,17 +226,4 @@ internal interface ReactDropInCallback {
     fun onCancel()
     fun onError(reason: String?)
     fun onCompleted(result: String)
-}
-
-sealed class DropInException(code: String, message: String, cause: Throwable? = null) :
-    KnownException(code = code, errorMessage = message, cause) {
-    class NoModuleListener : DropInException(
-        code = "noModulListener",
-        message = "Invalid state: DropInModuleListener is missing"
-    )
-
-    class Unknown(reason: String?) : DropInException(
-        code = "unknown",
-        message = if (reason.isNullOrEmpty()) "reason unknown" else reason
-    )
 }

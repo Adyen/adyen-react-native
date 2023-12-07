@@ -1,9 +1,20 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.cse
 
 import com.adyen.checkout.cse.CardEncrypter
+import com.adyen.checkout.cse.EncryptionException
 import com.adyen.checkout.cse.UnencryptedCard
-import com.adyen.checkout.cse.exception.EncryptionException
-import com.facebook.react.bridge.*
+import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableNativeMap
 
 class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
 
@@ -19,8 +30,11 @@ class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaMo
     fun encryptCard(card: ReadableMap, publicKey: String, promise: Promise) {
         val unencryptedCardBuilder = UnencryptedCard.Builder()
         card.getString(NUMBER_KEY)?.let { unencryptedCardBuilder.setNumber(it) }
-        card.getString(EXPIRY_MONTH_KEY)?.let { unencryptedCardBuilder.setExpiryMonth(it) }
-        card.getString(EXPIRY_YEAR_KEY)?.let { unencryptedCardBuilder.setExpiryYear(it) }
+        val month = card.getString(EXPIRY_MONTH_KEY)
+        val year = card.getString(EXPIRY_YEAR_KEY)
+        if (month != null && year != null) {
+            unencryptedCardBuilder.setExpiryDate(month, year)
+        }
         card.getString(CVV_KEY)?.let { unencryptedCardBuilder.setCvc(it) }
 
         try {

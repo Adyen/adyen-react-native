@@ -6,15 +6,16 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.facebook.react.bridge.ReadableMap
-import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.AddressConfiguration
-import com.adyen.checkout.card.AddressConfiguration.*
+import com.adyen.checkout.card.AddressConfiguration.FullAddress
+import com.adyen.checkout.card.AddressConfiguration.None
+import com.adyen.checkout.card.AddressConfiguration.PostalCode
+import com.adyen.checkout.card.CardConfiguration
+import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.KCPAuthVisibility
-import com.adyen.checkout.card.data.CardType
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
-import java.util.ArrayList
+import com.facebook.react.bridge.ReadableMap
 
 class CardConfigurationParser(config: ReadableMap, private val countryCode: String?) {
 
