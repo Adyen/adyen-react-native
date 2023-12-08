@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenApplePay)
-internal final class ApplePayComponent: BaseModule {
+internal final class ApplePayModule: BaseModule {
     
     override func supportedEvents() -> [String]! { [ Events.didSubmit.rawValue, Events.didFail.rawValue ] }
 
@@ -37,7 +37,9 @@ internal final class ApplePayComponent: BaseModule {
         }
         
         guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
-        let context = AdyenContext(apiContext: apiContext, payment: payment, analyticsConfiguration: AnalyticsConfiguration())
+
+        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
+        let context = AdyenContext(apiContext: apiContext, payment: payment)
         let applePayComponent: Adyen.ApplePayComponent
         do {
             applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,
@@ -52,7 +54,7 @@ internal final class ApplePayComponent: BaseModule {
 
 }
 
-extension ApplePayComponent: PaymentComponentDelegate {
+extension ApplePayModule: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
         let applePayDetails = data.paymentMethod as? ApplePayDetails

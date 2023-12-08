@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenInstant)
-internal final class InstantComponent: BaseModule {
+internal final class InstantModule: BaseModule {
     
     override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
@@ -32,7 +32,9 @@ internal final class InstantComponent: BaseModule {
         }
 
         guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
-        let context = AdyenContext(apiContext: apiContext, payment: nil, analyticsConfiguration: AnalyticsConfiguration())
+
+        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
+        let context = AdyenContext(apiContext: apiContext, payment: nil)
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
         actionHandler = AdyenActionComponent(context: context, configuration: .init(style: style))
@@ -64,7 +66,7 @@ internal final class InstantComponent: BaseModule {
 
 }
 
-extension InstantComponent: PaymentComponentDelegate {
+extension InstantModule: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
         let response = SubmitData(paymentData: data.jsonObject, extra: nil)
@@ -77,7 +79,7 @@ extension InstantComponent: PaymentComponentDelegate {
 
 }
 
-extension InstantComponent: ActionComponentDelegate {
+extension InstantModule: ActionComponentDelegate {
 
     internal func didFail(with error: Error, from component: ActionComponent) {
         sendEvent(error: error)

@@ -9,7 +9,7 @@ import React
 import UIKit
 
 @objc(AdyenGooglePay)
-internal class AdyenGooglePayMock: BaseModule {
+internal class GooglePayModuleMock: BaseModule {
     
     override func supportedEvents() -> [String]! { [Events.didFail.rawValue] }
     

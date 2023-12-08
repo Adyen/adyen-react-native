@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenDropIn)
-internal final class AdyenDropIn: BaseModule {
+internal final class DropInModule: BaseModule {
 
     override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
@@ -35,6 +35,8 @@ internal final class AdyenDropIn: BaseModule {
             return sendEvent(error: error)
         }
 
+        AdyenLogging.isEnabled = true
+
         guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
         let config = DropInConfigurationParser(configuration: configuration).configuration
         config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
@@ -45,7 +47,9 @@ internal final class AdyenDropIn: BaseModule {
             (try? ApplepayConfigurationParser(configuration: configuration).buildConfiguration(payment: payment)).map {
                 config.applePay = $0
             }
-            context = AdyenContext(apiContext: apiContext, payment: payment, analyticsConfiguration: AnalyticsConfiguration())
+
+            // TODO: add analyticsConfiguration: AnalyticsConfiguration()
+            context = AdyenContext(apiContext: apiContext, payment: payment)
         } else {
             context = AdyenContext(apiContext: apiContext, payment: nil, analyticsConfiguration: AnalyticsConfiguration())
         }
@@ -75,7 +79,7 @@ internal final class AdyenDropIn: BaseModule {
 
 }
 
-extension AdyenDropIn: DropInComponentDelegate {
+extension DropInModule: DropInComponentDelegate {
     func didSubmit(_ data: Adyen.PaymentComponentData, from component: Adyen.PaymentComponent, in dropInComponent: Adyen.AnyDropInComponent) {
         let response: SubmitData
         if let appleData = data.paymentMethod as? ApplePayDetails {
