@@ -50,12 +50,12 @@ final class CardConfigurationTests: XCTestCase {
 
     func testFullAddressVisibility() throws {
         let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "full"]])
-      XCTAssertEqual(sut.configuration.billingAddressMode, .full)
+      XCTAssertEqual(sut.configuration.billingAddress.mode, .full)
     }
   
   func testPostalAddressVisibility() throws {
       let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "postal"]])
-    XCTAssertEqual(sut.configuration.billingAddressMode, .postalCode)
+    XCTAssertEqual(sut.configuration.billingAddress.mode, .postalCode)
   }
 
     func testHideKcpVisibility() throws {
@@ -85,7 +85,25 @@ final class CardConfigurationTests: XCTestCase {
 
     func testBillingAddressCountryCodes() throws {
         let sut = CardConfigurationParser(configuration: ["card": ["allowedAddressCountryCodes": ["GB", "US"]]])
-      XCTAssertEqual(sut.configuration.billingAddressCountryCodes?.count, 2)
+      XCTAssertEqual(sut.configuration.billingAddress.countryCodes?.count, 2)
     }
+
+}
+
+
+extension CardComponent.AddressFormType: Equatable {
+
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    switch (lhs, rhs) {
+    case (.full, .full):
+      return true
+    case (.none, .none):
+      return true
+    case (.postalCode, .postalCode):
+      return true
+    default:
+      return false
+    }
+  }
 
 }

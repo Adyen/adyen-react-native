@@ -170,10 +170,15 @@ public struct ApplepayConfigurationParser {
     }
 
     public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
+        let paymentRequest = try buildPaymentRequest(payment: payment)
+        return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
+    }
+
+    internal func buildPaymentRequest(payment: Payment) throws -> PKPaymentRequest {
         guard let merchantID else {
             throw ApplePayError.invalidMerchantID
         }
-        
+
         let summaryItems: [PKPaymentSummaryItem]
         if let summaryItemsFromConfig = self.summaryItems {
             summaryItems = summaryItemsFromConfig
@@ -181,13 +186,13 @@ public struct ApplepayConfigurationParser {
             guard let merchantName else {
                 throw ApplePayError.invalidMerchantName
             }
-            
+
             let amount = AmountFormatter.decimalAmount(payment.amount.value,
                                                        currencyCode: payment.amount.currencyCode,
                                                        localeIdentifier: payment.amount.localeIdentifier)
             summaryItems = [PKPaymentSummaryItem(label: merchantName, amount: amount)]
         }
-        
+
         let paymentRequest = PKPaymentRequest()
         paymentRequest.merchantIdentifier = merchantID
         paymentRequest.paymentSummaryItems = summaryItems
@@ -197,7 +202,8 @@ public struct ApplepayConfigurationParser {
         paymentRequest.requiredShippingContactFields = requiredShippingContactFields
         paymentRequest.requiredBillingContactFields = requiredBillingContactFields
         paymentRequest.merchantCapabilities = [.threeDSecure]
-        return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
+
+        return paymentRequest
     }
 }
 

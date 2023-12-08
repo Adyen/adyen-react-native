@@ -6,13 +6,14 @@
 
 import XCTest
 import Adyen
-import adyen_react_native
+@testable import adyen_react_native
 import PassKit
 
 final class ApplePayConfigurationTests: XCTestCase {
   
   let mockAmount = Amount(value: 1000, currencyCode: "USD", localeIdentifier: "en-US")
-  
+  lazy var  mockPayment = Payment(amount: mockAmount, countryCode: "US")
+
   func testNewDictionary() throws {
     let sut = ApplepayConfigurationParser(configuration: NSDictionary())
     XCTAssertNotNil(sut)
@@ -28,7 +29,7 @@ final class ApplePayConfigurationTests: XCTestCase {
     XCTAssertNotNil(sut)
     
     let expectation = self.expectation(description: "Expect throw")
-    XCTAssertThrowsError(try sut.buildConfiguration(amount: mockAmount)) { error in
+    XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
       XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantID.localizedDescription)
       expectation.fulfill()
     }
@@ -39,7 +40,7 @@ final class ApplePayConfigurationTests: XCTestCase {
   func testWrongSubDictionary() throws {
     let sut = ApplepayConfigurationParser(configuration: ["applepay": "some value"])
     let expectation = self.expectation(description: "Expect throw")
-    XCTAssertThrowsError(try sut.buildConfiguration(amount: mockAmount)) { error in
+    XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
       XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantID.localizedDescription)
       expectation.fulfill()
     }
@@ -56,7 +57,7 @@ final class ApplePayConfigurationTests: XCTestCase {
     ])
     
     let expectation = self.expectation(description: "Expect throw")
-    XCTAssertThrowsError(try sut.buildConfiguration(amount: mockAmount)) { error in
+    XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
       XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantName.localizedDescription)
       expectation.fulfill()
     }
@@ -72,10 +73,10 @@ final class ApplePayConfigurationTests: XCTestCase {
           "merchantName": "SomeName"
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertNotNil(config.merchantIdentifier)
-    XCTAssertNotNil(config.summaryItems)
-    XCTAssertEqual(config.summaryItems.count, 1)
+    let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+    XCTAssertNotNil(paymentRequest.merchantIdentifier)
+    XCTAssertNotNil(paymentRequest.paymentSummaryItems)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems.count, 1)
   }
   
   func testMinimalValidDictionaryValuesWithNoSubDirectory() throws {
@@ -83,10 +84,10 @@ final class ApplePayConfigurationTests: XCTestCase {
       "merchantID": "merchant.com.adyen.test",
       "merchantName": "SomeName"
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertNotNil(config.merchantIdentifier)
-    XCTAssertNotNil(config.summaryItems)
-    XCTAssertEqual(config.summaryItems.count, 1)
+    let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+    XCTAssertNotNil(paymentRequest.merchantIdentifier)
+    XCTAssertNotNil(paymentRequest.paymentSummaryItems)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems.count, 1)
   }
   
   func testCorrectSummaryItems() throws {
@@ -114,14 +115,14 @@ final class ApplePayConfigurationTests: XCTestCase {
           ]
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertNotNil(config.merchantIdentifier)
-    XCTAssertNotNil(config.summaryItems)
-    XCTAssertEqual(config.summaryItems.count, 4)
-    XCTAssertEqual(config.summaryItems[0].amount, 70.20)
-    XCTAssertEqual(config.summaryItems[1].amount, 20)
-    XCTAssertEqual(config.summaryItems[2].amount, 10)
-    XCTAssertEqual(config.summaryItems[3].amount, 100.50)
+    let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+    XCTAssertNotNil(paymentRequest.merchantIdentifier)
+    XCTAssertNotNil(paymentRequest.paymentSummaryItems)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems.count, 4)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems[0].amount, 70.20)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems[1].amount, 20)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems[2].amount, 10)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems[3].amount, 100.50)
   }
   
   func testInvalidSummaryItemsThrows() throws {
@@ -132,7 +133,7 @@ final class ApplePayConfigurationTests: XCTestCase {
                                                             ]
                                                          ])
     let expectation = self.expectation(description: "Expect throw")
-    XCTAssertThrowsError(try sut.buildConfiguration(amount: mockAmount)) { error in
+    XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
       XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantName.localizedDescription)
       expectation.fulfill()
     }
@@ -149,8 +150,7 @@ final class ApplePayConfigurationTests: XCTestCase {
           "allowOnboarding": true
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertTrue(config.allowOnboarding)
+    XCTAssertTrue(sut.allowOnboarding)
   }
   
   func testAllowOnboardingStringValue() throws {
@@ -162,8 +162,7 @@ final class ApplePayConfigurationTests: XCTestCase {
           "allowOnboarding": "true"
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertTrue(config.allowOnboarding)
+    XCTAssertTrue(sut.allowOnboarding)
   }
   
   func testAllowOnboardingNumericValue() throws {
@@ -175,8 +174,7 @@ final class ApplePayConfigurationTests: XCTestCase {
           "allowOnboarding": 1
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertTrue(config.allowOnboarding)
+    XCTAssertTrue(sut.allowOnboarding)
   }
   
   func testBillingAddress() throws {
@@ -204,7 +202,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         ]
     ])
     
-    let contact = try XCTUnwrap(sut.buildConfiguration(amount: mockAmount).billingContact)
+    let contact = try XCTUnwrap(sut.billingContact)
     XCTAssertEqual(contact.phoneNumber?.stringValue, "123-456-7890")
     XCTAssertEqual(contact.emailAddress, "example@email.com")
     XCTAssertEqual(contact.name?.givenName, "John")
@@ -235,7 +233,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         ]
     ])
     
-    let contact = try XCTUnwrap(sut.buildConfiguration(amount: mockAmount).billingContact)
+    let contact = try XCTUnwrap(sut.billingContact)
     XCTAssertEqual(contact.phoneNumber?.stringValue, "123-456-7890")
     XCTAssertNil(contact.emailAddress)
     XCTAssertEqual(contact.name?.givenName, "John")
@@ -259,7 +257,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         ]
     ])
     
-    let contact = try XCTUnwrap(sut.buildConfiguration(amount: mockAmount).billingContact)
+    let contact = try XCTUnwrap(sut.billingContact)
     XCTAssertNil(contact.phoneNumber)
     XCTAssertEqual(contact.emailAddress, "example@email.com")
     XCTAssertNil(contact.name?.givenName)
@@ -277,8 +275,8 @@ final class ApplePayConfigurationTests: XCTestCase {
           "requiredBillingContactFields": []
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertEqual(config.requiredBillingContactFields.count, 0)
+    let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+    XCTAssertEqual(paymentRequest.requiredBillingContactFields.count, 0)
   }
   
   func testRequiredBillingFileds() throws {
@@ -290,11 +288,11 @@ final class ApplePayConfigurationTests: XCTestCase {
           "requiredBillingContactFields": ["emailAddress", "phoneNumber", "postalAddress"]
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertEqual(config.requiredBillingContactFields.count, 3)
-    XCTAssertTrue(config.requiredBillingContactFields.contains(.phoneNumber))
-    XCTAssertTrue(config.requiredBillingContactFields.contains(.emailAddress))
-    XCTAssertTrue(config.requiredBillingContactFields.contains(.postalAddress))
+    let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+    XCTAssertEqual(paymentRequest.requiredBillingContactFields.count, 3)
+    XCTAssertTrue(paymentRequest.requiredBillingContactFields.contains(.phoneNumber))
+    XCTAssertTrue(paymentRequest.requiredBillingContactFields.contains(.emailAddress))
+    XCTAssertTrue(paymentRequest.requiredBillingContactFields.contains(.postalAddress))
   }
   
   func testRequiredShippingFileds() throws {
@@ -306,13 +304,13 @@ final class ApplePayConfigurationTests: XCTestCase {
           "requiredShippingContactFields": ["email", "phone", "phoneticName", "name", "post"]
         ]
     ])
-    let config = try sut.buildConfiguration(amount: mockAmount)
-    XCTAssertEqual(config.requiredShippingContactFields.count, 5)
-    XCTAssertTrue(config.requiredShippingContactFields.contains(.phoneNumber))
-    XCTAssertTrue(config.requiredShippingContactFields.contains(.emailAddress))
-    XCTAssertTrue(config.requiredShippingContactFields.contains(.name))
-    XCTAssertTrue(config.requiredShippingContactFields.contains(.phoneticName))
-    XCTAssertTrue(config.requiredShippingContactFields.contains(.postalAddress))
+    let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+    XCTAssertEqual(paymentRequest.requiredShippingContactFields.count, 5)
+    XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.phoneNumber))
+    XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.emailAddress))
+    XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.name))
+    XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.phoneticName))
+    XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.postalAddress))
   }
   
   // 'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email';
