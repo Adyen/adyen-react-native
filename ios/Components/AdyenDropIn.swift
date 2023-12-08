@@ -35,22 +35,25 @@ internal final class AdyenDropIn: BaseModule {
             return sendEvent(error: error)
         }
 
-        let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
+        guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
+        let config = DropInConfigurationParser(configuration: configuration).configuration
+        config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
+        config.style = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
 
-        let config = DropInConfigurationParser(configuration: configuration).configuration(apiContext: apiContext)
-        config.card = CardConfigurationParser(configuration: configuration).configuration
-
+        let context: AdyenContext
         if let payment = parser.payment {
-            config.payment = payment
-            (try? ApplepayConfigurationParser(configuration: configuration).buildConfiguration(amount: payment.amount)).map {
+            (try? ApplepayConfigurationParser(configuration: configuration).buildConfiguration(payment: payment)).map {
                 config.applePay = $0
             }
+            context = AdyenContext(apiContext: apiContext, payment: payment, analyticsConfiguration: AnalyticsConfiguration())
+        } else {
+            context = AdyenContext(apiContext: apiContext, payment: nil, analyticsConfiguration: AnalyticsConfiguration())
         }
 
-        let dropInComponentStyle = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
+
         let component = DropInComponent(paymentMethods: paymentMethods,
-                                        configuration: config,
-                                        style: dropInComponentStyle)
+                                        context: context,
+                                        configuration: config)
         currentComponent = component
         component.delegate = self
         present(component: component)
@@ -73,10 +76,7 @@ internal final class AdyenDropIn: BaseModule {
 }
 
 extension AdyenDropIn: DropInComponentDelegate {
-
-    func didSubmit(_ data: PaymentComponentData,
-                   for paymentMethod: PaymentMethod,
-                   from component: DropInComponent) {
+    func didSubmit(_ data: Adyen.PaymentComponentData, from component: Adyen.PaymentComponent, in dropInComponent: Adyen.AnyDropInComponent) {
         let response: SubmitData
         if let appleData = data.paymentMethod as? ApplePayDetails {
             response = SubmitData(paymentData: data.jsonObject, extra: appleData.extraData)
@@ -85,17 +85,24 @@ extension AdyenDropIn: DropInComponentDelegate {
         }
         sendEvent(event: .didSubmit, body: response.jsonObject)
     }
-
-    func didProvide(_ data: ActionComponentData, from component: DropInComponent) {
-        sendEvent(event: .didProvide, body: data.jsonObject)
-    }
-
-    func didComplete(from component: DropInComponent) {
-        sendEvent(event: .didComplete, body: nil)
-    }
-
-    func didFail(with error: Error, from component: DropInComponent) {
+    
+    func didFail(with error: Error, from component: Adyen.PaymentComponent, in dropInComponent: Adyen.AnyDropInComponent) {
         sendEvent(error: error)
     }
-
+    
+    func didProvide(_ data: Adyen.ActionComponentData, from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
+        sendEvent(event: .didProvide, body: data.jsonObject)
+    }
+    
+    func didComplete(from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
+        sendEvent(event: .didComplete, body: nil)
+    }
+    
+    func didFail(with error: Error, from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
+        sendEvent(error: error)
+    }
+    
+    func didFail(with error: Error, from dropInComponent: Adyen.AnyDropInComponent) {
+        sendEvent(error: error)
+    }
 }

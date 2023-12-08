@@ -80,18 +80,46 @@ public struct CardConfigurationParser {
     public var configuration: CardComponent.Configuration {
         var storedConfiguration = StoredCardConfiguration()
         storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
-        
+
+        var billingAddressConfiguration = BillingAddressConfiguration()
+        billingAddressConfiguration.countryCodes = billingAddressCountryCodes
+        billingAddressConfiguration.mode = addressVisibility
+
+        var soredCardConfiguration = StoredCardConfiguration()
+        return .init(style: FormComponentStyle(),
+                     shopperInformation: nil,
+                     localizationParameters: nil,
+                     showsHolderNameField: showsHolderNameField,
+                     showsStorePaymentMethodField: showsStorePaymentMethodField,
+                     showsSecurityCodeField: showsSecurityCodeField,
+                     koreanAuthenticationMode: kcpVisibility,
+                     socialSecurityNumberMode: socialSecurityVisibility,
+                     storedCardConfiguration: soredCardConfiguration,
+                     allowedCardTypes: allowedCardTypes,
+                     installmentConfiguration:nil,
+                     billingAddress: billingAddressConfiguration )
+    }
+
+    public var dropinConfiguration: DropInComponent.Card {
+        var storedConfiguration = StoredCardConfiguration()
+        storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
+
+        var billingAddressConfiguration = BillingAddressConfiguration()
+        billingAddressConfiguration.countryCodes = billingAddressCountryCodes
+        billingAddressConfiguration.mode = addressVisibility
+
+        var soredCardConfiguration = StoredCardConfiguration()
         return .init(showsHolderNameField: showsHolderNameField,
                      showsStorePaymentMethodField: showsStorePaymentMethodField,
                      showsSecurityCodeField: showsSecurityCodeField,
                      koreanAuthenticationMode: kcpVisibility,
                      socialSecurityNumberMode: socialSecurityVisibility,
-                     billingAddressMode: addressVisibility,
-                     storedCardConfiguration: storedConfiguration,
+                     storedCardConfiguration: soredCardConfiguration,
                      allowedCardTypes: allowedCardTypes,
-                     billingAddressCountryCodes: billingAddressCountryCodes)
+                     installmentConfiguration:nil,
+                     billingAddress: billingAddressConfiguration )
     }
-    
+
     private func parseVisibility(_ key: String) -> CardComponent.FieldVisibility {
         guard let value = dict[key] as? String else {
             return .hide

@@ -13,7 +13,7 @@
 .VolumeIcon.icns
 
 # Xcode
-build/
+[bB]uild/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -31,6 +31,7 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 Pods/
+*.xcode.env
 
 # Android/IJ
 .idea

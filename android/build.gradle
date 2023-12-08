@@ -3,16 +3,17 @@ def safeExtGet(prop, fallback) {
 }
 
 buildscript {
-      rootProject.ext.adyenReactNativeRedirectScheme = "adyenreactnative"
+    rootProject.ext.adyenReactNativeRedirectScheme = "adyenreactnative"
+    ext.kotlin_version = rootProject.ext.has('kotlin_version') ? rootProject.ext.get('kotlin_version') : '1.9.10'
 
-      repositories {
-          google()
-          jcenter()
-      }
+    repositories {
+        google()
+        jcenter()
+    }
 
-      dependencies {
-          classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-      }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
 }
 
 apply plugin: 'com.android.library'

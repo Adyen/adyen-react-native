@@ -31,17 +31,17 @@ internal final class ApplePayComponent: BaseModule {
             paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: ApplePayPaymentMethod.self)
             clientKey = try fetchClientKey(from: parser)
             payment = try fetchPayment(from: parser)
-            applepayConfig = try applePayParser.buildConfiguration(amount: payment.amount)
+            applepayConfig = try applePayParser.buildConfiguration(payment: payment)
         } catch {
             return sendEvent(error: error)
         }
         
-        let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
+        guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
+        let context = AdyenContext(apiContext: apiContext, payment: payment, analyticsConfiguration: AnalyticsConfiguration())
         let applePayComponent: Adyen.ApplePayComponent
         do {
             applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,
-                                                            apiContext: apiContext,
-                                                            payment: payment,
+                                                            context: context,
                                                             configuration: applepayConfig)
         } catch {
             return sendEvent(error: error)

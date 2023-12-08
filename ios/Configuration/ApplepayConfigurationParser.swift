@@ -169,7 +169,7 @@ public struct ApplepayConfigurationParser {
         return summaryItems.isEmpty ? nil : summaryItems
     }
 
-    public func buildConfiguration(amount: Amount) throws -> Adyen.ApplePayComponent.Configuration {
+    public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
         guard let merchantID else {
             throw ApplePayError.invalidMerchantID
         }
@@ -182,19 +182,22 @@ public struct ApplepayConfigurationParser {
                 throw ApplePayError.invalidMerchantName
             }
             
-            let amount = AmountFormatter.decimalAmount(amount.value,
-                                                       currencyCode: amount.currencyCode,
-                                                       localeIdentifier: amount.localeIdentifier)
+            let amount = AmountFormatter.decimalAmount(payment.amount.value,
+                                                       currencyCode: payment.amount.currencyCode,
+                                                       localeIdentifier: payment.amount.localeIdentifier)
             summaryItems = [PKPaymentSummaryItem(label: merchantName, amount: amount)]
         }
         
-        return .init(summaryItems: summaryItems,
-                     merchantIdentifier: merchantID,
-                     requiredBillingContactFields: requiredBillingContactFields,
-                     requiredShippingContactFields: requiredShippingContactFields,
-                     billingContact: billingContact,
-                     allowOnboarding: allowOnboarding
-        )
+        let paymentRequest = PKPaymentRequest()
+        paymentRequest.merchantIdentifier = merchantID
+        paymentRequest.paymentSummaryItems = summaryItems
+        paymentRequest.countryCode = payment.countryCode
+        paymentRequest.currencyCode = payment.amount.currencyCode
+        paymentRequest.billingContact = billingContact
+        paymentRequest.requiredShippingContactFields = requiredShippingContactFields
+        paymentRequest.requiredBillingContactFields = requiredBillingContactFields
+        paymentRequest.merchantCapabilities = [.threeDSecure]
+        return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
     }
 }
 
