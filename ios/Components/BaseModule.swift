@@ -10,14 +10,14 @@ import React
 import UIKit
 
 internal class BaseModule: RCTEventEmitter {
-    
+
     #if DEBUG
         override func invalidate() {
             super.invalidate()
             dismiss(false)
         }
     #endif
-        
+
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() { /* No JS events expected */ }
@@ -35,7 +35,7 @@ internal class BaseModule: RCTEventEmitter {
 
     internal var currentPresenter: UIViewController?
     internal var actionHandler: AdyenActionComponent?
-    
+
     internal func present(_ component: PresentableComponent) {
         if let paymentComponent = component as? PaymentComponent {
             paymentComponent.delegate = self as? PaymentComponentDelegate
@@ -63,11 +63,11 @@ internal class BaseModule: RCTEventEmitter {
         currentComponent?.cancelIfNeeded()
         sendEvent(error: NativeModuleError.canceled)
     }
-        
+
     internal func sendEvent(event: Events, body: Any!) {
         sendEvent(withName: event.rawValue, body: body)
     }
-    
+
     internal func sendEvent(error: Swift.Error) {
         let errorToSend: Error
         if let componentError = (error as? ComponentError), componentError == ComponentError.cancelled {
@@ -81,17 +81,17 @@ internal class BaseModule: RCTEventEmitter {
         }
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
-    
+
     internal func parsePaymentMethods(from dicionary: NSDictionary) throws -> PaymentMethods {
         guard let data = try? JSONSerialization.data(withJSONObject: dicionary, options: []),
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
         else {
             throw NativeModuleError.invalidPaymentMethods
         }
-        
+
         return paymentMethods
     }
-    
+
     internal func parseAction(from dicionary: NSDictionary) throws -> Action {
         guard let data = try? JSONSerialization.data(withJSONObject: dicionary, options: []),
               let action = try? JSONDecoder().decode(Action.self, from: data)
@@ -100,64 +100,64 @@ internal class BaseModule: RCTEventEmitter {
         }
         return action
     }
-    
+
     internal func fetchClientKey(from parser: RootConfigurationParser) throws -> String {
         guard let clientKey = parser.clientKey else {
             throw NativeModuleError.noClientKey
         }
         return clientKey
     }
-    
+
     internal func fetchPayment(from parser: RootConfigurationParser) throws -> Payment {
         guard let payment = parser.payment else {
             throw NativeModuleError.noPayment
         }
         return payment
     }
-    
+
     internal func parsePaymentMethod<T: PaymentMethod>(from dicionary: NSDictionary, for type: T.Type) throws -> T {
         let paymentMethods = try parsePaymentMethods(from: dicionary)
-        
+
         guard let paymentMethod = paymentMethods.paymentMethod(ofType: type) else {
             throw NativeModuleError.paymentMethodNotFound(type)
         }
-        
+
         return paymentMethod
     }
-    
+
     internal func parseAnyPaymentMethod(from dicionary: NSDictionary) throws -> PaymentMethod {
         let paymentMethods = try parsePaymentMethods(from: dicionary)
-        
+
         guard let paymentMethod = paymentMethods.regular.first else {
             throw NativeModuleError.invalidPaymentMethods
         }
-        
+
         return paymentMethod
     }
-    
+
     internal func cleanUp() {
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
-        
+
         currentPresenter?.dismiss(animated: true)
         currentPresenter = nil
     }
-    
+
     internal func dismiss(_ result: Bool) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            
+
             self.currentComponent?.finalizeIfNeeded(with: result) {
                 self.cleanUp()
             }
         }
     }
-    
+
 }
 
 extension BaseModule {
-    
+
     enum NativeModuleError: LocalizedError, KnownError {
         case canceled
         case noClientKey
@@ -166,7 +166,7 @@ extension BaseModule {
         case invalidPaymentMethods
         case invalidAction
         case paymentMethodNotFound(PaymentMethod.Type)
-        
+
         var errorCode: String {
             switch self {
             case .canceled:
@@ -185,7 +185,7 @@ extension BaseModule {
                 return "noPaymentMethod"
             }
         }
-        
+
         var errorDescription: String? {
             switch self {
             case .canceled:
@@ -205,15 +205,15 @@ extension BaseModule {
             }
         }
     }
-    
+
 }
 
 extension BaseModule: PresentationDelegate {
-    
+
     internal func present(component: PresentableComponent) {
         DispatchQueue.main.async { [weak self] in
             self?.present(component)
         }
     }
-    
+
 }

@@ -10,19 +10,19 @@ import PassKit
 import XCTest
 
 final class CardConfigurationTests: XCTestCase {
-  
+
     let mockAmount = Amount(value: 1000, currencyCode: "USD", localeIdentifier: "en-US")
 
     func testNewDictionary() throws {
         let sut = CardConfigurationParser(configuration: NSDictionary())
         XCTAssertNotNil(sut.configuration)
     }
-  
+
     func testEmptyDictionary() throws {
         let sut = CardConfigurationParser(configuration: [:])
         XCTAssertNotNil(sut.configuration)
     }
-  
+
     func testEmptySubDictionary() throws {
         let sut = CardConfigurationParser(configuration: ["card": [:]])
         XCTAssertNotNil(sut.configuration)
@@ -52,7 +52,7 @@ final class CardConfigurationTests: XCTestCase {
         let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "full"]])
       XCTAssertEqual(sut.configuration.billingAddress.mode, .full)
     }
-  
+
   func testPostalAddressVisibility() throws {
       let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "postal"]])
     XCTAssertEqual(sut.configuration.billingAddress.mode, .postalCode)
@@ -62,7 +62,7 @@ final class CardConfigurationTests: XCTestCase {
         let sut = CardConfigurationParser(configuration: ["card": ["kcpVisibility": "hide"]])
       XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .hide)
     }
-  
+
   func testShowKcpVisibility() throws {
       let sut = CardConfigurationParser(configuration: ["card": ["kcpVisibility": "show"]])
     XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .show)
@@ -72,7 +72,7 @@ final class CardConfigurationTests: XCTestCase {
         let sut = CardConfigurationParser(configuration: ["card": ["socialSecurity": "hide"]])
       XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .hide)
     }
-  
+
   func testShowSocialSecurity() throws {
       let sut = CardConfigurationParser(configuration: ["card": ["socialSecurity": "show"]])
     XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .show)
@@ -89,7 +89,6 @@ final class CardConfigurationTests: XCTestCase {
     }
 
 }
-
 
 extension CardComponent.AddressFormType: Equatable {
 

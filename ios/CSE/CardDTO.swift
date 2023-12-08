@@ -15,7 +15,7 @@ extension EncryptedCard: Encodable {
         try? container.encodeIfPresent(expiryMonth, forKey: .expiryMonth)
         try? container.encodeIfPresent(securityCode, forKey: .securityCode)
     }
-    
+
     private enum CodingKeys: String, CodingKey {
         case number, expiryYear, expiryMonth
         case securityCode = "cvv"
@@ -30,7 +30,7 @@ extension Card: Decodable {
                       expiryMonth: container.decodeIfPresent(String.self, forKey: .expiryMonth),
                       expiryYear: container.decodeIfPresent(String.self, forKey: .expiryYear))
     }
-    
+
     private enum CodingKeys: String, CodingKey {
         case number, expiryYear, expiryMonth
         case securityCode = "cvv"

@@ -11,7 +11,7 @@ import React
 
 @objc(AdyenInstant)
 internal final class InstantModule: BaseModule {
-    
+
     override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
     @objc
@@ -44,7 +44,7 @@ internal final class InstantModule: BaseModule {
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
         component.delegate = self
         currentComponent = component
-        
+
         DispatchQueue.main.async {
             component.initiatePayment()
         }
@@ -58,7 +58,7 @@ internal final class InstantModule: BaseModule {
         } catch {
             return sendEvent(error: error)
         }
-        
+
         DispatchQueue.main.async { [weak self] in
             self?.actionHandler?.handle(action)
         }

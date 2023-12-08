@@ -55,16 +55,16 @@ public struct CardConfigurationParser {
     var kcpVisibility: CardComponent.FieldVisibility {
         parseVisibility(CardKeys.kcpVisibility)
     }
-    
+
     var socialSecurityVisibility: CardComponent.FieldVisibility {
         parseVisibility(CardKeys.socialSecurity)
     }
-    
+
     var allowedCardTypes: [CardType]? {
         guard let strings = dict[CardKeys.allowedCardTypes] as? [String], !strings.isEmpty else {
             return nil
         }
-        
+
         return strings.map { CardType(rawValue: $0) }
     }
 
@@ -74,9 +74,9 @@ public struct CardConfigurationParser {
         }
         return strings
     }
-    
+
     // TODO: add installmentConfiguration: InstallmentConfiguration?
-    
+
     public var configuration: CardComponent.Configuration {
         var storedConfiguration = StoredCardConfiguration()
         storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
@@ -96,7 +96,7 @@ public struct CardConfigurationParser {
                      socialSecurityNumberMode: socialSecurityVisibility,
                      storedCardConfiguration: soredCardConfiguration,
                      allowedCardTypes: allowedCardTypes,
-                     installmentConfiguration:nil,
+                     installmentConfiguration: nil,
                      billingAddress: billingAddressConfiguration )
     }
 
@@ -116,7 +116,7 @@ public struct CardConfigurationParser {
                      socialSecurityNumberMode: socialSecurityVisibility,
                      storedCardConfiguration: soredCardConfiguration,
                      allowedCardTypes: allowedCardTypes,
-                     installmentConfiguration:nil,
+                     installmentConfiguration: nil,
                      billingAddress: billingAddressConfiguration )
     }
 

@@ -17,7 +17,7 @@ internal final class DropInModule: BaseModule {
     private var dropInComponent: DropInComponent? {
         currentComponent as? DropInComponent
     }
-    
+
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         dismiss(success.boolValue)
@@ -35,8 +35,6 @@ internal final class DropInModule: BaseModule {
             return sendEvent(error: error)
         }
 
-        AdyenLogging.isEnabled = true
-
         guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
         let config = DropInConfigurationParser(configuration: configuration).configuration
         config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
@@ -53,7 +51,6 @@ internal final class DropInModule: BaseModule {
         } else {
             context = AdyenContext(apiContext: apiContext, payment: nil, analyticsConfiguration: AnalyticsConfiguration())
         }
-
 
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         context: context,
@@ -89,23 +86,23 @@ extension DropInModule: DropInComponentDelegate {
         }
         sendEvent(event: .didSubmit, body: response.jsonObject)
     }
-    
+
     func didFail(with error: Error, from component: Adyen.PaymentComponent, in dropInComponent: Adyen.AnyDropInComponent) {
         sendEvent(error: error)
     }
-    
+
     func didProvide(_ data: Adyen.ActionComponentData, from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
         sendEvent(event: .didProvide, body: data.jsonObject)
     }
-    
+
     func didComplete(from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
         sendEvent(event: .didComplete, body: nil)
     }
-    
+
     func didFail(with error: Error, from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
         sendEvent(error: error)
     }
-    
+
     func didFail(with error: Error, from dropInComponent: Adyen.AnyDropInComponent) {
         sendEvent(error: error)
     }

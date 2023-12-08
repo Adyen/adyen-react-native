@@ -10,10 +10,10 @@ import React
 
 @objc(AdyenCSE)
 internal final class AdyenCSE: NSObject {
-    
+
     @objc
     static func requiresMainQueueSetup() -> Bool { true }
-    
+
     @objc
     func encryptCard(_ payload: NSDictionary,
                      publicKey: NSString,
@@ -27,7 +27,7 @@ internal final class AdyenCSE: NSObject {
             rejecter(Constant.errorMessage, nil, error)
         }
     }
-    
+
     @objc
     func encryptBin(_ bin: NSString,
                     publicKey: NSString,
@@ -41,7 +41,7 @@ internal final class AdyenCSE: NSObject {
             rejecter(Constant.errorMessage, nil, error)
         }
     }
-    
+
     private enum Constant {
         static var errorMessage = "Encryption failed"
     }

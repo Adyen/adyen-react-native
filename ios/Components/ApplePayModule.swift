@@ -11,7 +11,7 @@ import React
 
 @objc(AdyenApplePay)
 internal final class ApplePayModule: BaseModule {
-    
+
     override func supportedEvents() -> [String]! { [ Events.didSubmit.rawValue, Events.didFail.rawValue ] }
 
     @objc
@@ -35,7 +35,7 @@ internal final class ApplePayModule: BaseModule {
         } catch {
             return sendEvent(error: error)
         }
-        
+
         guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
 
         // TODO: add analyticsConfiguration: AnalyticsConfiguration()
@@ -75,8 +75,8 @@ extension ApplePayDetails {
         static let network = "network"
         static let shippingContact = "shippingContact"
     }
-    
-    internal var extraData: [String : Any] {
+
+    internal var extraData: [String: Any] {
         return [
             Key.billingContact: self.billingContact?.jsonObject,
             Key.network: self.network,
@@ -88,20 +88,20 @@ extension ApplePayDetails {
 extension PKContact {
     var jsonObject: [String: Any] {
         var dictionary: [String: Any] = [:]
-        
+
         if let email = self.emailAddress {
             dictionary[ApplePayKeys.PKContactKeys.emailAddress] = email
         }
-        
+
         if let phoneNumber = self.phoneNumber {
             dictionary[ApplePayKeys.PKContactKeys.phoneNumber] = phoneNumber.stringValue
         }
-        
+
         if let name = self.name {
             dictionary[ApplePayKeys.PKContactKeys.givenName] = name.givenName
             dictionary[ApplePayKeys.PKContactKeys.familyName] = name.familyName
         }
-        
+
         if let name = self.name?.phoneticRepresentation {
             dictionary[ApplePayKeys.PKContactKeys.phoneticGivenName] = name.givenName
             dictionary[ApplePayKeys.PKContactKeys.phoneticFamilyName] = name.familyName
@@ -117,7 +117,7 @@ extension PKContact {
             dictionary[ApplePayKeys.PKContactKeys.country] = postalAddress.country
             dictionary[ApplePayKeys.PKContactKeys.countryCode] = postalAddress.isoCountryCode
         }
-        
+
         return dictionary
     }
 }

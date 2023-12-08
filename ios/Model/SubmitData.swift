@@ -7,8 +7,8 @@
 import Foundation
 
 internal struct SubmitData {
-    let paymentData: [String : Any]
-    let extra: [String : Any]?
+    let paymentData: [String: Any]
+    let extra: [String: Any]?
 
     var jsonObject: [String: Any] {
         [
@@ -16,7 +16,7 @@ internal struct SubmitData {
             Key.extra: extra
         ]
     }
-    
+
     private enum Key {
         static let paymentData = "paymentData"
         static let extra = "extra"
