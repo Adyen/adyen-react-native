@@ -10,8 +10,8 @@ import PassKit
 import React
 
 @objc(AdyenInstant)
-internal final class InstantComponent: BaseModule {
-    
+internal final class InstantModule: BaseModule {
+
     override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
     @objc
@@ -31,18 +31,20 @@ internal final class InstantComponent: BaseModule {
             return sendEvent(error: error)
         }
 
-        let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
+        guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
+
+        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
+        let context = AdyenContext(apiContext: apiContext, payment: nil)
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        actionHandler = AdyenActionComponent(apiContext: apiContext, style: style)
+        actionHandler = AdyenActionComponent(context: context, configuration: .init(style: style))
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
 
-        let component = InstantPaymentComponent(paymentMethod: paymentMethod, paymentData: nil, apiContext: apiContext)
-        component.payment = parser.payment
+        let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
         component.delegate = self
         currentComponent = component
-        
+
         DispatchQueue.main.async {
             component.initiatePayment()
         }
@@ -56,7 +58,7 @@ internal final class InstantComponent: BaseModule {
         } catch {
             return sendEvent(error: error)
         }
-        
+
         DispatchQueue.main.async { [weak self] in
             self?.actionHandler?.handle(action)
         }
@@ -64,7 +66,7 @@ internal final class InstantComponent: BaseModule {
 
 }
 
-extension InstantComponent: PaymentComponentDelegate {
+extension InstantModule: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
         let response = SubmitData(paymentData: data.jsonObject, extra: nil)
@@ -77,7 +79,7 @@ extension InstantComponent: PaymentComponentDelegate {
 
 }
 
-extension InstantComponent: ActionComponentDelegate {
+extension InstantModule: ActionComponentDelegate {
 
     internal func didFail(with error: Error, from component: ActionComponent) {
         sendEvent(error: error)

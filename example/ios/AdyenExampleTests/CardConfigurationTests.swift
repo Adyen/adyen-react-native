@@ -10,19 +10,19 @@ import PassKit
 import XCTest
 
 final class CardConfigurationTests: XCTestCase {
-  
+
     let mockAmount = Amount(value: 1000, currencyCode: "USD", localeIdentifier: "en-US")
 
     func testNewDictionary() throws {
         let sut = CardConfigurationParser(configuration: NSDictionary())
         XCTAssertNotNil(sut.configuration)
     }
-  
+
     func testEmptyDictionary() throws {
         let sut = CardConfigurationParser(configuration: [:])
         XCTAssertNotNil(sut.configuration)
     }
-  
+
     func testEmptySubDictionary() throws {
         let sut = CardConfigurationParser(configuration: ["card": [:]])
         XCTAssertNotNil(sut.configuration)
@@ -50,19 +50,19 @@ final class CardConfigurationTests: XCTestCase {
 
     func testFullAddressVisibility() throws {
         let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "full"]])
-      XCTAssertEqual(sut.configuration.billingAddressMode, .full)
+      XCTAssertEqual(sut.configuration.billingAddress.mode, .full)
     }
-  
+
   func testPostalAddressVisibility() throws {
       let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "postal"]])
-    XCTAssertEqual(sut.configuration.billingAddressMode, .postalCode)
+    XCTAssertEqual(sut.configuration.billingAddress.mode, .postalCode)
   }
 
     func testHideKcpVisibility() throws {
         let sut = CardConfigurationParser(configuration: ["card": ["kcpVisibility": "hide"]])
       XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .hide)
     }
-  
+
   func testShowKcpVisibility() throws {
       let sut = CardConfigurationParser(configuration: ["card": ["kcpVisibility": "show"]])
     XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .show)
@@ -72,7 +72,7 @@ final class CardConfigurationTests: XCTestCase {
         let sut = CardConfigurationParser(configuration: ["card": ["socialSecurity": "hide"]])
       XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .hide)
     }
-  
+
   func testShowSocialSecurity() throws {
       let sut = CardConfigurationParser(configuration: ["card": ["socialSecurity": "show"]])
     XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .show)
@@ -85,7 +85,24 @@ final class CardConfigurationTests: XCTestCase {
 
     func testBillingAddressCountryCodes() throws {
         let sut = CardConfigurationParser(configuration: ["card": ["allowedAddressCountryCodes": ["GB", "US"]]])
-      XCTAssertEqual(sut.configuration.billingAddressCountryCodes?.count, 2)
+      XCTAssertEqual(sut.configuration.billingAddress.countryCodes?.count, 2)
     }
+
+}
+
+extension CardComponent.AddressFormType: Equatable {
+
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    switch (lhs, rhs) {
+    case (.full, .full):
+      return true
+    case (.none, .none):
+      return true
+    case (.postalCode, .postalCode):
+      return true
+    default:
+      return false
+    }
+  }
 
 }

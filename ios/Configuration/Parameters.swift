@@ -58,7 +58,7 @@ internal enum ApplePayKeys: SubConfig {
     static var requiredBillingContactFields = "requiredBillingContactFields"
     static var requiredShippingContactFields = "requiredShippingContactFields"
     static var billingContact = "billingContact"
-    
+
     enum PKContactKeys {
         static var phoneNumber = "phoneNumber"
         static var emailAddress = "emailAddress"

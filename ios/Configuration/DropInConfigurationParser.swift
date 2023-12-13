@@ -36,9 +36,8 @@ public struct DropInConfigurationParser {
         return value
     }
 
-    public func configuration(apiContext: APIContext) -> DropInComponent.Configuration {
-        .init(apiContext: apiContext,
-              allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
+    public var configuration: DropInComponent.Configuration {
+        .init(allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
               allowPreselectedPaymentView: showPreselectedStoredPaymentMethod)
     }
 

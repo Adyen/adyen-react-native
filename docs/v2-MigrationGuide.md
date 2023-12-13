@@ -2,9 +2,8 @@
 
 ## Breacking changes
 
-* Merchant's app theme must be decendent of `Theme.MaterialComponents` to operate with "instant" payment components (ex. Paypal, Klarna)
+* Merchant's app theme must be decendent of `Theme.MaterialComponents` to operate with "instant" payment components (ex. Paypal, Klarna). Example:
 ```xml
-<style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar"> 
 ```
 

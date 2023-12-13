@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "F964E966-C83B-45AD-9979-827BCA3DBB35",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:Pods\/Pods.xcodeproj",
+          "identifier" : "AAD28DD7969F9D87A63AC862A9B80294",
+          "name" : "adyen-react-native"
+        }
+      ]
+    },
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:AdyenExample.xcodeproj",
+      "identifier" : "13B07F861A680F5B00A75B9A",
+      "name" : "AdyenExample"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:AdyenExample.xcodeproj",
+        "identifier" : "00E356ED1AD99517003FC87E",
+        "name" : "AdyenExampleTests"
+      }
+    }
+  ],
+  "version" : 1
+}

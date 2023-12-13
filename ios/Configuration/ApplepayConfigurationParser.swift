@@ -43,118 +43,118 @@ public struct ApplepayConfigurationParser {
         }
         return false
     }
-        
+
     var requiredShippingContactFields: Set<PKContactField> {
         guard let requiredFields = dict[ApplePayKeys.requiredShippingContactFields] as? [String] else {
             return []
         }
         return Set<PKContactField>(requiredFields.compactMap { PKContactField.fromString($0) })
     }
-    
+
     var requiredBillingContactFields: Set<PKContactField> {
         guard let requiredFields = dict[ApplePayKeys.requiredBillingContactFields] as? [String] else {
             return []
         }
         return Set<PKContactField>(requiredFields.compactMap { PKContactField.fromString($0) })
     }
-    
+
     var billingContact: PKContact? {
         guard let dictionary = dict[ApplePayKeys.billingContact] as? [String: Any] else {
             return nil
         }
-        
+
         let contact = PKContact()
-        
+
         if let phoneNumber = dictionary[ApplePayKeys.PKContactKeys.phoneNumber] as? String {
             contact.phoneNumber = CNPhoneNumber(stringValue: phoneNumber)
         }
-        
+
         if let emailAddress = dictionary[ApplePayKeys.PKContactKeys.emailAddress] as? String {
             contact.emailAddress = emailAddress
         }
-        
+
         var name = PersonNameComponents()
         var nameUodated = false
         if let givenName = dictionary[ApplePayKeys.PKContactKeys.givenName] as? String {
             name.givenName = givenName
             nameUodated = true
         }
-        
+
         if let familyName = dictionary[ApplePayKeys.PKContactKeys.familyName] as? String {
             name.familyName = familyName
             nameUodated = true
         }
-        
+
         if let phoneticGivenName = dictionary[ApplePayKeys.PKContactKeys.phoneticGivenName] as? String {
             name.phoneticRepresentation = PersonNameComponents()
             name.phoneticRepresentation?.givenName = phoneticGivenName
             nameUodated = true
         }
-        
+
         if let phoneticFamilyName = dictionary[ApplePayKeys.PKContactKeys.phoneticFamilyName] as? String {
             name.phoneticRepresentation = name.phoneticRepresentation ?? PersonNameComponents()
             name.phoneticRepresentation?.familyName = phoneticFamilyName
             nameUodated = true
         }
-        
+
         if nameUodated {
             contact.name = name
         }
-        
+
         let postalAddress = CNMutablePostalAddress()
         var postalAddressUpdated = false
         if let addressLines = dictionary[ApplePayKeys.PKContactKeys.addressLines] as? [String] {
             postalAddress.street = addressLines.joined(separator: "\n")
             postalAddressUpdated = true
         }
-        
+
         if let subLocality = dictionary[ApplePayKeys.PKContactKeys.subLocality] as? String {
             postalAddress.subLocality = subLocality
             postalAddressUpdated = true
         }
-        
+
         if let locality = dictionary[ApplePayKeys.PKContactKeys.locality] as? String {
             postalAddress.city = locality
             postalAddressUpdated = true
         }
-        
+
         if let postalCode = dictionary[ApplePayKeys.PKContactKeys.postalCode] as? String {
             postalAddress.postalCode = postalCode
             postalAddressUpdated = true
         }
-        
+
         if let subAdministrativeArea = dictionary[ApplePayKeys.PKContactKeys.subAdministrativeArea] as? String {
             postalAddress.subAdministrativeArea = subAdministrativeArea
             postalAddressUpdated = true
         }
-        
+
         if let administrativeArea = dictionary[ApplePayKeys.PKContactKeys.administrativeArea] as? String {
             postalAddress.state = administrativeArea
             postalAddressUpdated = true
         }
-        
+
         if let country = dictionary[ApplePayKeys.PKContactKeys.country] as? String {
             postalAddress.country = country
             postalAddressUpdated = true
         }
-        
+
         if let countryCode = dictionary[ApplePayKeys.PKContactKeys.countryCode] as? String {
             postalAddress.isoCountryCode = countryCode
             postalAddressUpdated = true
         }
-        
+
         if postalAddressUpdated {
             contact.postalAddress = postalAddress
         }
-        
+
         return contact
     }
-    
+
     var summaryItems: [PKPaymentSummaryItem]? {
         guard let items = dict[ApplePayKeys.summaryItems] as? [[String: Any]] else {
             return nil
         }
-        
+
         var summaryItems = [PKPaymentSummaryItem]()
         for item in items {
             if let label = item[ApplePayKeys.summaryItemsLabel] as? String,
@@ -169,11 +169,16 @@ public struct ApplepayConfigurationParser {
         return summaryItems.isEmpty ? nil : summaryItems
     }
 
-    public func buildConfiguration(amount: Amount) throws -> Adyen.ApplePayComponent.Configuration {
+    public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
+        let paymentRequest = try buildPaymentRequest(payment: payment)
+        return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
+    }
+
+    internal func buildPaymentRequest(payment: Payment) throws -> PKPaymentRequest {
         guard let merchantID else {
             throw ApplePayError.invalidMerchantID
         }
-        
+
         let summaryItems: [PKPaymentSummaryItem]
         if let summaryItemsFromConfig = self.summaryItems {
             summaryItems = summaryItemsFromConfig
@@ -181,33 +186,37 @@ public struct ApplepayConfigurationParser {
             guard let merchantName else {
                 throw ApplePayError.invalidMerchantName
             }
-            
-            let amount = AmountFormatter.decimalAmount(amount.value,
-                                                       currencyCode: amount.currencyCode,
-                                                       localeIdentifier: amount.localeIdentifier)
+
+            let amount = AmountFormatter.decimalAmount(payment.amount.value,
+                                                       currencyCode: payment.amount.currencyCode,
+                                                       localeIdentifier: payment.amount.localeIdentifier)
             summaryItems = [PKPaymentSummaryItem(label: merchantName, amount: amount)]
         }
-        
-        return .init(summaryItems: summaryItems,
-                     merchantIdentifier: merchantID,
-                     requiredBillingContactFields: requiredBillingContactFields,
-                     requiredShippingContactFields: requiredShippingContactFields,
-                     billingContact: billingContact,
-                     allowOnboarding: allowOnboarding
-        )
+
+        let paymentRequest = PKPaymentRequest()
+        paymentRequest.merchantIdentifier = merchantID
+        paymentRequest.paymentSummaryItems = summaryItems
+        paymentRequest.countryCode = payment.countryCode
+        paymentRequest.currencyCode = payment.amount.currencyCode
+        paymentRequest.billingContact = billingContact
+        paymentRequest.requiredShippingContactFields = requiredShippingContactFields
+        paymentRequest.requiredBillingContactFields = requiredBillingContactFields
+        paymentRequest.merchantCapabilities = [.capability3DS]
+
+        return paymentRequest
     }
 }
 
 extension ApplepayConfigurationParser {
-    
+
     public enum ApplePayError: String, LocalizedError, KnownError {
         case invalidMerchantName
         case invalidMerchantID
-        
+
         var errorCode: String {
             self.rawValue
         }
-        
+
         public var errorDescription: String? {
             switch self {
             case .invalidMerchantName:
@@ -220,7 +229,7 @@ extension ApplepayConfigurationParser {
 }
 
 extension PKContactField {
-    
+
     /// 'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email'
     static func fromString(_ rawValue: String) -> PKContactField {
         switch rawValue {

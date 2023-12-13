@@ -10,8 +10,8 @@ import PassKit
 import React
 
 @objc(AdyenApplePay)
-internal final class ApplePayComponent: BaseModule {
-    
+internal final class ApplePayModule: BaseModule {
+
     override func supportedEvents() -> [String]! { [ Events.didSubmit.rawValue, Events.didFail.rawValue ] }
 
     @objc
@@ -31,17 +31,19 @@ internal final class ApplePayComponent: BaseModule {
             paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: ApplePayPaymentMethod.self)
             clientKey = try fetchClientKey(from: parser)
             payment = try fetchPayment(from: parser)
-            applepayConfig = try applePayParser.buildConfiguration(amount: payment.amount)
+            applepayConfig = try applePayParser.buildConfiguration(payment: payment)
         } catch {
             return sendEvent(error: error)
         }
-        
-        let apiContext = APIContext(environment: parser.environment, clientKey: clientKey)
+
+        guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
+
+        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
+        let context = AdyenContext(apiContext: apiContext, payment: payment)
         let applePayComponent: Adyen.ApplePayComponent
         do {
             applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,
-                                                            apiContext: apiContext,
-                                                            payment: payment,
+                                                            context: context,
                                                             configuration: applepayConfig)
         } catch {
             return sendEvent(error: error)
@@ -52,7 +54,7 @@ internal final class ApplePayComponent: BaseModule {
 
 }
 
-extension ApplePayComponent: PaymentComponentDelegate {
+extension ApplePayModule: PaymentComponentDelegate {
 
     internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
         let applePayDetails = data.paymentMethod as? ApplePayDetails
@@ -73,8 +75,8 @@ extension ApplePayDetails {
         static let network = "network"
         static let shippingContact = "shippingContact"
     }
-    
-    internal var extraData: [String : Any] {
+
+    internal var extraData: [String: Any] {
         return [
             Key.billingContact: self.billingContact?.jsonObject,
             Key.network: self.network,
@@ -86,20 +88,20 @@ extension ApplePayDetails {
 extension PKContact {
     var jsonObject: [String: Any] {
         var dictionary: [String: Any] = [:]
-        
+
         if let email = self.emailAddress {
             dictionary[ApplePayKeys.PKContactKeys.emailAddress] = email
         }
-        
+
         if let phoneNumber = self.phoneNumber {
             dictionary[ApplePayKeys.PKContactKeys.phoneNumber] = phoneNumber.stringValue
         }
-        
+
         if let name = self.name {
             dictionary[ApplePayKeys.PKContactKeys.givenName] = name.givenName
             dictionary[ApplePayKeys.PKContactKeys.familyName] = name.familyName
         }
-        
+
         if let name = self.name?.phoneticRepresentation {
             dictionary[ApplePayKeys.PKContactKeys.phoneticGivenName] = name.givenName
             dictionary[ApplePayKeys.PKContactKeys.phoneticFamilyName] = name.familyName
@@ -115,7 +117,7 @@ extension PKContact {
             dictionary[ApplePayKeys.PKContactKeys.country] = postalAddress.country
             dictionary[ApplePayKeys.PKContactKeys.countryCode] = postalAddress.isoCountryCode
         }
-        
+
         return dictionary
     }
 }
