@@ -201,7 +201,7 @@ public struct ApplepayConfigurationParser {
         paymentRequest.billingContact = billingContact
         paymentRequest.requiredShippingContactFields = requiredShippingContactFields
         paymentRequest.requiredBillingContactFields = requiredBillingContactFields
-        paymentRequest.merchantCapabilities = [.threeDSecure]
+        paymentRequest.merchantCapabilities = [.capability3DS]
 
         return paymentRequest
     }
