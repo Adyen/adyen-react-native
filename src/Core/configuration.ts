@@ -184,7 +184,7 @@ export interface GooglePayBillingAddressParameters {
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
 export interface GooglePayShippingAddressParameters {
   /** ISO 3166-1 alpha-2 country code values of the countries where shipping is allowed. If this object isn't specified, all shipping address countries are allowed. */
-  allowedCountryCodes?: [string];
+  allowedCountryCodes?: string[];
   /** Set to true if a phone number is required for the provided shipping address. */
   phoneNumberRequired?: boolean;
 }

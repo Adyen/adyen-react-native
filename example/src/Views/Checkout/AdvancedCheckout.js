@@ -1,18 +1,17 @@
 // @ts-check
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, View, Text, useColorScheme } from 'react-native';
 import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import { useAppContext } from '../../Utilities/AppContext';
+import { checkoutConfiguration, useAppContext } from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
-import { ENVIRONMENT } from '../../Configuration';
 
-const CheckoutView = ({ navigation }) => {
-  const { configuration, paymentMethods, refreshPaymentMethods } =
-    useAppContext();
+const AdvancedCheckout = ({ navigation }) => {
+  const { configuration } = useAppContext();
+  const [paymentMethods, setPaymentMethods] = useState(undefined);
 
   useEffect(() => {
     refreshPaymentMethods(configuration).catch((e) => {
@@ -20,13 +19,18 @@ const CheckoutView = ({ navigation }) => {
     });
   }, []);
 
+  const refreshPaymentMethods = async (configuration) => {
+    const paymentMethods = await ApiClient.paymentMethods(configuration);
+    setPaymentMethods(paymentMethods)
+  };
+
   const didSubmit = useCallback(
     async (
       /** @type {import('@adyen/react-native').PaymentMethodData} */ data,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
       /** @type any */ extra
     ) => {
-      console.log(
+      console.debug(
         `didSubmit: ${data.paymentMethod.type} with extra: ${JSON.stringify(
           extra,
           null,
@@ -53,7 +57,7 @@ const CheckoutView = ({ navigation }) => {
       /** @type {any} */ data,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
-      console.log('didProvide');
+      console.debug('didProvide');
       try {
         const result = await ApiClient.paymentDetails(data);
         processResult(result, nativeComponent);
@@ -66,6 +70,7 @@ const CheckoutView = ({ navigation }) => {
 
   const didComplete = useCallback(
     async (
+      result,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       console.log('didComplete');
@@ -123,43 +128,7 @@ const CheckoutView = ({ navigation }) => {
       <TopView />
       {paymentMethods ? (
         <AdyenCheckout
-          config={
-            /** @type {import('@adyen/react-native').Configuration} */
-            {
-              clientKey: ENVIRONMENT.clientKey,
-              environment: ENVIRONMENT.environment,
-              returnUrl: ENVIRONMENT.returnUrl,
-              amount: {
-                value: configuration.amount,
-                currency: configuration.currency,
-              },
-              countryCode: configuration.countryCode,
-              applepay: {
-                merchantID: ENVIRONMENT.applepayMerchantID,
-                merchantName: configuration.merchantName,
-                requiredBillingContactFields: ['phoneticName', 'postalAddress'],
-                requiredShippingContactFields: [
-                  'name',
-                  'phone',
-                  'email',
-                  'postalAddress',
-                ],
-              },
-              googlepay: {
-                billingAddressRequired: true,
-                billingAddressParameters: {
-                  format: 'FULL',
-                  phoneNumberRequired: true,
-                },
-                shippingAddressRequired: true,
-                shippingAddressParameters: {
-                  allowedCountryCodes: ['US', 'MX'],
-                  phoneNumberRequired: true,
-                },
-                emailRequired: true,
-              },
-            }
-          }
+          config={checkoutConfiguration(configuration)}
           paymentMethods={paymentMethods}
           onSubmit={didSubmit}
           onAdditionalDetails={didProvide}
@@ -202,4 +171,4 @@ const NoPaymentMethodsView = () => {
   );
 };
 
-export default CheckoutView;
+export default AdvancedCheckout;

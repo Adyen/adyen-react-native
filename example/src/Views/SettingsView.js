@@ -11,6 +11,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import { ENVIRONMENT } from '../Configuration';
 
 const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -38,7 +39,7 @@ const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
 };
 
 const SettingFormView = ({ navigation: { goBack } }) => {
-  const { configuration, refreshPaymentMethods } = useAppContext();
+  const { configuration, save } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
   const [amount, setAmount] = useState(configuration.amount);
@@ -62,8 +63,9 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       merchantAccount: merchantAccount,
       merchantName: merchantName,
       shopperLocale: shopperLocale,
+      shopperReference: shopperReference,
     };
-    refreshPaymentMethods(newConfiguration);
+    save(newConfiguration)
     goBack();
   }, [
     countryCode,
@@ -72,8 +74,8 @@ const SettingFormView = ({ navigation: { goBack } }) => {
     merchantAccount,
     shopperLocale,
     merchantName,
-    refreshPaymentMethods,
     configuration,
+    shopperReference
   ]);
 
   return (
@@ -115,7 +117,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
         onChangeText={setShopperReference}
       />
       <View style={Styles.centeredButton}>
-        <Button title="Refresh payment methods" onPress={handleOnPress} />
+        <Button title="Save payment methods" onPress={handleOnPress} />
       </View>
     </View>
   );

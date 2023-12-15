@@ -8,6 +8,8 @@ export {
   PaymentResponse,
   PaymentMethodData,
   PaymentMethodGroup,
+  AdyenError,
+  Session
 } from './Core/types';
 
 export {
@@ -25,7 +27,6 @@ export {
   AdyenCheckout,
   AdyenCheckoutContext,
   AdyenCheckoutProps,
-  AdyenError,
   AdyenCheckoutContextType,
   useAdyenCheckout,
 } from './AdyenCheckoutContext';

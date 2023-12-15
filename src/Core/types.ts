@@ -217,3 +217,17 @@ export interface PaymentMethodData {
    */
   returnUrl: string;
 }
+
+/**
+ * Session container
+ */
+export interface Session {
+  paymentMethods: PaymentMethodsResponse;
+  context: any;
+}
+
+/** Reason for payment termination */
+export interface AdyenError {
+  message: string;
+  errorCode: string;
+}

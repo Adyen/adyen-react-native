@@ -13,31 +13,7 @@ class ApiClient {
       ...parseConfig(configuration),
       ...parseAmount(configuration, data),
       ...serverConfiguration,
-      additionalData: { allow3DS2: true },
-      lineItems: [
-        {
-          quantity: '1',
-          amountExcludingTax: '331',
-          taxPercentage: '2100',
-          description: 'Shoes',
-          id: 'Item #1',
-          taxAmount: '69',
-          amountIncludingTax: '400',
-          productUrl: 'URL_TO_PURCHASED_ITEM',
-          imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
-        },
-        {
-          quantity: '2',
-          amountExcludingTax: '248',
-          taxPercentage: '2100',
-          description: 'Socks',
-          id: 'Item #2',
-          taxAmount: '52',
-          amountIncludingTax: '300',
-          productUrl: 'URL_TO_PURCHASED_ITEM',
-          imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
-        },
-      ],
+      ...paymentConfiguration
     };
 
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
@@ -45,6 +21,16 @@ class ApiClient {
 
   static paymentDetails = (data) => {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
+  };
+
+  static requestSssion = (configuration) => {
+    const body = {
+      ...parseConfig(configuration),
+      ...parseAmount(configuration),
+      ...serverConfiguration,
+      ...paymentConfiguration
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
   static paymentMethods = (configuration) => {
@@ -85,6 +71,35 @@ export default ApiClient;
 const serverConfiguration = {
   channel: CHANNEL,
   reference: 'React Native',
+};
+
+const paymentConfiguration = {
+  additionalData: { allow3DS2: true },
+  lineItems: [
+    {
+      quantity: '1',
+      amountExcludingTax: '331',
+      taxPercentage: '2100',
+      description: 'Shoes',
+      id: 'Item #1',
+      taxAmount: '69',
+      amountIncludingTax: '400',
+      productUrl: 'URL_TO_PURCHASED_ITEM',
+      imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
+    },
+    {
+      quantity: '2',
+      amountExcludingTax: '248',
+      taxPercentage: '2100',
+      description: 'Socks',
+      id: 'Item #2',
+      taxAmount: '52',
+      amountIncludingTax: '300',
+      productUrl: 'URL_TO_PURCHASED_ITEM',
+      imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
+    },
+  ],
+  recurringProcessingModel: 'CardOnFile'
 };
 
 const parseAmount = (configuration, data) => ({

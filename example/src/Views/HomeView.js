@@ -1,23 +1,24 @@
 import React from 'react';
 import { SafeAreaView, View, Button } from 'react-native';
 import Styles from '../Utilities/Styles';
+import { Page } from '../App';
 
 const Home = ({ navigation }) => {
   return (
     <SafeAreaView style={Styles.page}>
       <View style={Styles.content}>
-        <View style={Styles.item}>
           <Button
-            onPress={() => navigation.navigate('CheckoutPage')}
+            onPress={() => navigation.navigate(Page.SessionsCheckout)}
             title="Checkout"
           />
-        </View>
-        <View style={Styles.item}>
           <Button
-            onPress={() => navigation.navigate('Clientside Encryption')}
-            title="Clientside Encryption"
+            onPress={() => navigation.navigate(Page.AdvancedCheckout)}
+            title="Advanced case"
           />
-        </View>
+          <Button
+            onPress={() => navigation.navigate(Page.CustomCard)}
+            title="Custom Card Integration"
+          />
       </View>
     </SafeAreaView>
   );
