@@ -16,6 +16,7 @@ import {
   PaymentAction,
   PaymentMethod,
   PaymentMethodsResponse,
+  SessionResponse,
 } from './Core/types';
 
 /**
@@ -59,6 +60,19 @@ export interface AdyenActionComponent extends AdyenComponent {
    * List of events supported by component
    */
   events: string[];
+}
+
+/** Collection of android helper methods */
+export interface SessionHelperModule {
+  /**
+   * Provides return URL for current application. 
+   */
+  getReturnURL: () => Promise<string>;
+
+  /**
+   * Provides paymentMethods for sessionData and SessionID. 
+   */
+  createSession: (session: any, configuration: any) => Promise<SessionResponse>;
 }
 
 /**
@@ -154,6 +168,19 @@ export const AdyenApplePay: AdyenComponent & NativeModule =
 export const AdyenGooglePay: AdyenComponent & NativeModule =
   NativeModules.AdyenGooglePay
     ? NativeModules.AdyenGooglePay
+    : new Proxy(
+        {},
+        {
+          get() {
+            throw new Error(LINKING_ERROR);
+          },
+        }
+      );
+
+/** Collection of session helper methods */
+export const SessionHelper: SessionHelperModule =
+  NativeModules.SessionHelper
+    ? NativeModules.SessionHelper
     : new Proxy(
         {},
         {

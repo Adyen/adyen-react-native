@@ -9,7 +9,6 @@ export {
   PaymentMethodData,
   PaymentMethodGroup,
   AdyenError,
-  Session
 } from './Core/types';
 
 export {
@@ -21,6 +20,7 @@ export {
   AdyenComponent,
   AdyenActionComponent,
   HideOption,
+  SessionHelper,
 } from './AdyenNativeModules';
 
 export {

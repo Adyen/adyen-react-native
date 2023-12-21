@@ -28,6 +28,7 @@ class AdyenPaymentPackage : ReactPackage {
         modules.add(GooglePayModule(reactContext))
         modules.add(ApplePayModuleMock(reactContext))
         modules.add(AdyenCSEModule(reactContext))
+        modules.add(SessionHelperModule(reactContext))
         return modules
     }
 }

@@ -8,7 +8,9 @@ package com.adyenreactnativesdk.component.googlepay
 
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentMethod
+import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
@@ -38,41 +40,20 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
+        val googlePayConfiguration: GooglePayConfiguration
+        val paymentMethodsResponse: PaymentMethodsApiResponse
+        try {
+            paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
+            googlePayConfiguration = parseConfiguration(configuration) as GooglePayConfiguration
+        } catch (e: java.lang.Exception) {
+            return sendErrorEvent(e)
+        }
 
-        val googlePayPaymentMethod = getPaymentMethod(paymentMethods, PAYMENT_METHOD_KEYS)
+        val googlePayPaymentMethod = getPaymentMethod(paymentMethodsResponse, PAYMENT_METHOD_KEYS)
         if (googlePayPaymentMethod == null) {
             sendErrorEvent(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
             return
         }
-
-        val rootParser = RootConfigurationParser(configuration)
-        val environment = rootParser.environment
-        val shopperLocale = rootParser.locale ?: currentLocale(reactApplicationContext)
-        val clientKey: String
-        rootParser.clientKey.let {
-            clientKey = if (it != null) it else {
-                sendErrorEvent(ModuleException.NoClientKey())
-                return
-            }
-        }
-
-        val amount = rootParser.amount
-        val countryCode = rootParser.countryCode
-        if (amount == null || countryCode == null) {
-            sendErrorEvent(ModuleException.NoPayment())
-            return
-        }
-
-        val parser = GooglePayConfigurationParser(configuration)
-        val configBuilder = GooglePayConfiguration.Builder(
-            shopperLocale,
-            environment,
-            clientKey
-        )
-            .setCountryCode(countryCode)
-            .setAmount(amount)
-        val googlePayConfiguration: GooglePayConfiguration = parser.getConfiguration(configBuilder, environment)
 
         val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
         CheckoutProxy.shared.componentListener = this
@@ -110,6 +91,34 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
         AdyenCheckout.removeActivityResultHandlingComponent()
         AdyenCheckout.removeIntentHandler()
         CheckoutProxy.shared.componentListener = null
+    }
+
+    override fun parseConfiguration(json: ReadableMap): Configuration {
+        val rootParser = RootConfigurationParser(json)
+        val environment = rootParser.environment
+        val shopperLocale = rootParser.locale ?: currentLocale(reactApplicationContext)
+        val clientKey: String
+        rootParser.clientKey.let {
+            clientKey = if (it != null) it else {
+                throw ModuleException.NoClientKey()
+            }
+        }
+
+        val amount = rootParser.amount
+        val countryCode = rootParser.countryCode
+        if (amount == null || countryCode == null) {
+            throw ModuleException.NoPayment()
+        }
+
+        val parser = GooglePayConfigurationParser(json)
+        val configBuilder = GooglePayConfiguration.Builder(
+            shopperLocale,
+            environment,
+            clientKey
+        )
+            .setCountryCode(countryCode)
+            .setAmount(amount)
+        return parser.getConfiguration(configBuilder, environment)
     }
 
     companion object {

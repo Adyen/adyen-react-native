@@ -23,12 +23,13 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
-  static requestSssion = (configuration) => {
+  static requestSesion = (configuration, returnUrl) => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
       ...serverConfiguration,
-      ...paymentConfiguration
+      ...paymentConfiguration,
+      returnUrl: returnUrl
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
@@ -62,7 +63,7 @@ class ApiClient {
     if (response.ok) return payload;
     console.warn(`Error - ${JSON.stringify(payload, null, ' ')}`);
     throw new Error(`Network Error ${response.status}:
-          ${payload.message || 'Unknown error'}`);
+          ${payload.message ?? JSON.stringify(payload)}`);
   };
 }
 

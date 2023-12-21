@@ -57,7 +57,7 @@ const App = () => {
             name={Page.SessionsCheckout}
             component={SessionsCheckout}
             options={({ navigation }) => ({
-              title: 'Advanced',
+              title: 'Sessions',
               headerRight: (props) => (
                 <SettingsButton navigation={navigation} {...props} />
               ),
@@ -67,7 +67,7 @@ const App = () => {
             name={Page.AdvancedCheckout}
             component={AdvancedCheckout}
             options={({ navigation }) => ({
-              title: 'Sessions',
+              title: 'Advanced',
               headerRight: (props) => (
                 <SettingsButton navigation={navigation} {...props} />
               ),

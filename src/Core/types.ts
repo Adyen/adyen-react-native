@@ -219,11 +219,19 @@ export interface PaymentMethodData {
 }
 
 /**
+ * Session configuration
+ */
+export interface SessionConfiguration {
+  sessionID: string,
+  sessionData: string
+}
+
+/**
  * Session container
  */
-export interface Session {
+export interface SessionResponse {
   paymentMethods: PaymentMethodsResponse;
-  context: any;
+  [key: string]: any;
 }
 
 /** Reason for payment termination */

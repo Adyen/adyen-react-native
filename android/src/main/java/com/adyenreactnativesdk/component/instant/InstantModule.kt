@@ -6,7 +6,9 @@
 
 package com.adyenreactnativesdk.component.instant
 
+import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
@@ -33,32 +35,24 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val paymentMethods = getPaymentMethodsApiResponse(paymentMethodsData)?.paymentMethods ?: return
-
-        val paymentMethod = paymentMethods.firstOrNull()
-        if (paymentMethod?.type == null) {
-            sendErrorEvent(ModuleException.InvalidPaymentMethods(null))
-            return
+        val instantPaymentConfiguration: InstantPaymentConfiguration
+        val paymentMethod: PaymentMethod
+        try {
+            instantPaymentConfiguration =
+                parseConfiguration(configuration) as InstantPaymentConfiguration
+            paymentMethod =
+                getPaymentMethodsApiResponse(paymentMethodsData).paymentMethods?.firstOrNull()
+                    ?: throw ModuleException.InvalidPaymentMethods(null)
+        } catch (e: Exception) {
+            return sendErrorEvent(e)
         }
 
-        val config = RootConfigurationParser(configuration)
-        val environment = config.environment
-        val amount = config.amount
-        val clientKey = config.clientKey.let {
-            if (it != null) it else {
-                sendErrorEvent(ModuleException.NoClientKey())
-                return
-            }
-        }
-
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
-        val shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
-        val instantPaymentConfiguration = InstantPaymentConfiguration.Builder(shopperLocale, environment, clientKey)
-        amount?.let {
-            instantPaymentConfiguration.setAmount(it)
-        }
         CheckoutProxy.shared.componentListener = this
-        InstantFragment.show(appCompatActivity.supportFragmentManager, instantPaymentConfiguration.build(), paymentMethod)
+        InstantFragment.show(
+            appCompatActivity.supportFragmentManager,
+            instantPaymentConfiguration,
+            paymentMethod
+        )
     }
 
     @ReactMethod
@@ -77,6 +71,25 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
         InstantFragment.hide(appCompatActivity.supportFragmentManager)
         AdyenCheckout.removeIntentHandler()
         CheckoutProxy.shared.componentListener = null
+    }
+
+    override fun parseConfiguration(json: ReadableMap): Configuration {
+        val config = RootConfigurationParser(json)
+        val environment = config.environment
+        val amount = config.amount
+        val clientKey = config.clientKey.let {
+            if (it != null) it else {
+                throw ModuleException.NoClientKey()
+            }
+        }
+
+        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
+        val shopperLocale = config.locale ?: currentLocale(reactApplicationContext)
+        val instantPaymentConfiguration = InstantPaymentConfiguration.Builder(shopperLocale, environment, clientKey)
+        amount?.let {
+            instantPaymentConfiguration.setAmount(it)
+        }
+        return instantPaymentConfiguration.build()
     }
 
     companion object {

@@ -15,6 +15,9 @@ class AdyenCheckoutError extends Error {
 
     /** Generic error. */
     ERROR: 'ERROR',
+
+    /** Error while requesting new session from sessionData */
+    SESSION_ERROR: 'SESSION_ERROR'
   };
 
   public cause: unknown;

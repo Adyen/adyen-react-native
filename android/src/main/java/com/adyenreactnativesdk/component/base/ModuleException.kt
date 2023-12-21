@@ -65,4 +65,9 @@ sealed class ModuleException(code: String, message: String, cause: Throwable? = 
         code = "unknown",
         message = if (reason.isNullOrEmpty()) "Reason unknown" else reason
     )
+
+    class SessionError : ModuleException(
+        code = "session",
+        message = "Something went wrong while starting session"
+    )
 }

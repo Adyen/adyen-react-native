@@ -7,13 +7,15 @@
 package com.adyenreactnativesdk.component.dropin
 
 import android.os.Build
-import android.util.Log
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.components.core.Amount
+import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.core.Environment
 import com.adyen.checkout.dropin.DropIn.startPayment
+import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
@@ -52,51 +54,37 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) {
-        val paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
-        val parser = RootConfigurationParser(configuration)
-        val clientKey = parser.clientKey
-        if (clientKey == null) {
-            sendErrorEvent(ModuleException.NoClientKey())
-            return
+        val dropInConfiguration: DropInConfiguration
+        val paymentMethodsResponse: PaymentMethodsApiResponse
+        try {
+            paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
+            dropInConfiguration = parseConfiguration(configuration) as DropInConfiguration
+        } catch (e: java.lang.Exception) {
+            return sendErrorEvent(e)
         }
-        this.environment = parser.environment
-        this.clientKey = clientKey
-        this.locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            reactApplicationContext.resources.configuration.locales[0]
-        } else {
-            reactApplicationContext.resources.configuration.locale
-        }
-        val builder = Builder(locale, environment, clientKey)
-        configureDropIn(builder, configuration)
-        configureBcmc(builder, configuration)
-        configure3DS(builder)
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
-
-        val amount = parser.amount
-        val countryCode = parser.countryCode
-        if (amount != null && countryCode != null) {
-            builder.setAmount(amount)
-            configureGooglePay(builder, configuration, countryCode, amount)
-        }
-        configureCards(builder, configuration, countryCode)
 
         CheckoutProxy.shared.componentListener = this
         AdyenCheckout.addDropInListener(this)
-        AdyenCheckout.dropInLauncher?.let {
-            startPayment(
-                reactApplicationContext,
-                it,
-                paymentMethodsResponse,
-                builder.build(),
-                AdyenCheckoutService::class.java
-            )
-        } ?: run {
-            Log.e(
-                TAG,
-                "Invalid state: dropInLauncher not set. " +
-                        "Call AdyenCheckout.setLauncherActivity(this) on MainActivity.onCreate()"
-            )
-            return
+        val session = BaseModule.session
+        if (session != null) {
+            AdyenCheckout.dropInSessionLauncher?.let {
+                startPayment(
+                    reactApplicationContext,
+                    it,
+                    session,
+                    dropInConfiguration,
+                )
+            }
+        } else {
+            AdyenCheckout.dropInLauncher?.let {
+                startPayment(
+                    reactApplicationContext,
+                    it,
+                    paymentMethodsResponse,
+                    dropInConfiguration,
+                    AdyenCheckoutService::class.java
+                )
+            }
         }
     }
 
@@ -117,9 +105,38 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
 
     @ReactMethod
     fun hide(success: Boolean, message: ReadableMap?) {
-        proxyHideDropInCommand(success, message)
+        if (session == null) {
+            proxyHideDropInCommand(success, message)
+        }
         AdyenCheckout.removeDropInListener()
         CheckoutProxy.shared.componentListener = null
+    }
+
+    override fun parseConfiguration(json: ReadableMap): Configuration {
+        val parser = RootConfigurationParser(json)
+        val clientKey = parser.clientKey ?: throw ModuleException.NoClientKey()
+        this.environment = parser.environment
+        this.clientKey = clientKey
+        this.locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            reactApplicationContext.resources.configuration.locales[0]
+        } else {
+            reactApplicationContext.resources.configuration.locale
+        }
+        val builder = Builder(locale, environment, clientKey)
+        configureDropIn(builder, json)
+        configureBcmc(builder, json)
+        configure3DS(builder)
+        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
+
+        val amount = parser.amount
+        val countryCode = parser.countryCode
+        if (amount != null && countryCode != null) {
+            builder.setAmount(amount)
+            configureGooglePay(builder, json, countryCode, amount)
+        }
+        configureCards(builder, json, countryCode)
+
+        return builder.build()
     }
 
     override fun getRedirectUrl(): String {

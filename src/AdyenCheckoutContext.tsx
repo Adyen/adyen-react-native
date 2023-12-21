@@ -6,18 +6,28 @@ import React, {
   useMemo,
   useContext,
   ReactNode,
+  useState,
 } from 'react';
 import {
   EmitterSubscription,
   NativeEventEmitter,
   NativeModule,
-  NativeModules,
 } from 'react-native';
-import { Event, MISSING_CONTEXT_ERROR } from './Core/constants';
-import { getNativeComponent, AdyenActionComponent, AdyenComponent } from './AdyenNativeModules';
-import { AdyenError, PaymentMethodsResponse, Session } from './Core/types';
-import { Configuration } from './Core/configuration';
-import { checkPaymentMethodsResponse, checkConfiguration } from './Core/utils';
+import {Event, MISSING_CONTEXT_ERROR} from './Core/constants';
+import {
+  getNativeComponent,
+  AdyenActionComponent,
+  AdyenComponent,
+  SessionHelper,
+} from './AdyenNativeModules';
+import {
+  AdyenError,
+  PaymentMethodsResponse,
+  SessionConfiguration,
+  SessionResponse,
+} from './Core/types';
+import {Configuration} from './Core/configuration';
+import {checkPaymentMethodsResponse, checkConfiguration} from './Core/utils';
 import Analytics from './Core/Analytics';
 
 /**
@@ -30,7 +40,7 @@ interface AdyenCheckoutContextType {
 }
 
 const AdyenCheckoutContext = createContext<AdyenCheckoutContextType | null>(
-  null
+  null,
 );
 
 /**
@@ -52,10 +62,8 @@ type AdyenCheckoutProps = {
   config: Configuration;
   /** JSON response from Adyen API `\paymentMethods` */
   paymentMethods?: PaymentMethodsResponse;
-  /** The payment session data. */
-  sessionData?: String;
-  /** A unique identifier of the session. */
-  sessionID?: String;
+  /** The payment session data from backend response. */
+  session?: SessionConfiguration;
   /**
    * Event callback, called when the shopper selects the Pay button and payment details are valid.
    * @param data - The payment method data.
@@ -65,7 +73,7 @@ type AdyenCheckoutProps = {
   onSubmit?: (
     data: PaymentMethodData,
     component: AdyenActionComponent,
-    extra?: any
+    extra?: any,
   ) => void;
   /**
    * Event callback, called when payment about to be terminate.
@@ -80,7 +88,7 @@ type AdyenCheckoutProps = {
    */
   onAdditionalDetails?: (
     data: PaymentMethodData,
-    component: AdyenActionComponent
+    component: AdyenActionComponent,
   ) => void;
   /**
    * Event callback, called when a shopper finishes the flow (Voucher payments only).
@@ -91,12 +99,10 @@ type AdyenCheckoutProps = {
   children: ReactNode;
 };
 
-
 const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   config,
   paymentMethods,
-  sessionID,
-  sessionData,
+  session,
   onSubmit,
   onError,
   onAdditionalDetails,
@@ -105,7 +111,9 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 }) => {
   const subscriptions = useRef<EmitterSubscription[]>([]);
   const analytics = useRef<Analytics | null>(null);
-  const session = useRef<Session | null>(null);
+  const [sessionStorage, setSession] = useState<SessionResponse | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     return () => {
@@ -113,12 +121,18 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (session) {
+      createSession();
+    }
+  }, [session]);
+
   const submitPayment = useCallback(
     (
       configuration: Configuration,
       data: any,
       nativeComponent: AdyenActionComponent,
-      extra: any
+      extra: any,
     ) => {
       const checkoutAttemptId = analytics.current?.checkoutAttemptId;
       if (data.paymentMethod && checkoutAttemptId) {
@@ -131,7 +145,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       };
       onSubmit?.(payload, nativeComponent, extra);
     },
-    [onSubmit, analytics]
+    [onSubmit, analytics],
   );
 
   const removeEventListeners = useCallback(() => {
@@ -142,7 +156,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const startEventListeners = useCallback(
     (
       configuration: Configuration,
-      nativeComponent: AdyenActionComponent & NativeModule
+      nativeComponent: AdyenActionComponent & NativeModule,
     ) => {
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
@@ -151,31 +165,34 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
             configuration,
             response.paymentData,
             nativeComponent,
-            response.extra
-          )
+            response.extra,
+          ),
         ),
-        eventEmitter.addListener(Event.onError, (error: AdyenError) =>
-          onError?.(error, nativeComponent)
+        eventEmitter.addListener(
+          Event.onError,
+          (error: AdyenError) => onError?.(error, nativeComponent),
         ),
       ];
 
       if (nativeComponent.events.includes(Event.onAdditionalDetails)) {
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
-            onAdditionalDetails?.(data, nativeComponent)
-          )
+          eventEmitter.addListener(
+            Event.onAdditionalDetails,
+            (data) => onAdditionalDetails?.(data, nativeComponent),
+          ),
         );
       }
 
       if (nativeComponent.events.includes(Event.onComplete)) {
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onComplete, (data) =>
-            onComplete?.(JSON.stringify(data), nativeComponent) // TODO: provide result for voucher 
-          )
+          eventEmitter.addListener(
+            Event.onComplete,
+            (data) => onComplete?.(JSON.stringify(data), nativeComponent), // TODO: provide result for voucher
+          ),
         );
       }
     },
-    [submitPayment, onAdditionalDetails, onComplete, onError, subscriptions]
+    [submitPayment, onAdditionalDetails, onComplete, onError, subscriptions],
   );
 
   const start = useCallback(
@@ -183,11 +200,13 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       removeEventListeners();
       analytics.current = new Analytics(config);
 
-      const currentPaymentMethods = checkPaymentMethodsResponse(paymentMethods ?? session.current?.paymentMethods);
+      const currentPaymentMethods = checkPaymentMethodsResponse(
+        paymentMethods ?? sessionStorage?.paymentMethods,
+      );
 
-      const { nativeComponent, paymentMethod } = getNativeComponent(
+      const {nativeComponent, paymentMethod} = getNativeComponent(
         typeName,
-        currentPaymentMethods
+        currentPaymentMethods,
       );
 
       checkConfiguration(config);
@@ -195,12 +214,12 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       startEventListeners(config, nativeComponent);
 
       if (paymentMethod) {
-        const singlePaymentMethods = { paymentMethods: [paymentMethod] };
+        const singlePaymentMethods = {paymentMethods: [paymentMethod]};
         const singlePaymentConfig = {
           ...config,
-          dropin: { skipListWhenSinglePaymentMethod: true },
+          dropin: {skipListWhenSinglePaymentMethod: true},
         };
-        analytics.current.send({ component: typeName });
+        analytics.current.send({component: typeName});
         nativeComponent.open(singlePaymentMethods, singlePaymentConfig);
       } else {
         analytics.current.send({
@@ -214,23 +233,32 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     [
       config,
       paymentMethods,
-      session,
+      sessionStorage,
       startEventListeners,
       removeEventListeners,
       analytics,
-    ]
+    ],
   );
 
   const createSession = useCallback(async () => {
-    const clientKey = config.clientKey;
-    const environment = config.environment;
-    const newSession = await NativeModules.AdyenSession.createSession(sessionID, sessionData, clientKey, environment);
-    session.current = newSession;
-  }, [sessionID, sessionData, config]);
+    try {
+      const sessionResponse = await SessionHelper.createSession(
+        session,
+        config,
+      );
+      setSession(sessionResponse);
+    } catch (error) {
+      console.error('Setting up session: ' + error);
+    }
+  }, [session, config, onError]);
 
   const checkoutProviderValues = useMemo(
-    () => ({ start, createSession, config, paymentMethods }),
-    [start, createSession, config, paymentMethods ?? session.current?.paymentMethods]
+    () => ({
+      start,
+      config,
+      paymentMethods: paymentMethods ?? sessionStorage?.paymentMethods,
+    }),
+    [start, config, paymentMethods, sessionStorage],
   );
 
   return (
@@ -240,4 +268,9 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   );
 };
 
-export { AdyenCheckoutContextType, AdyenCheckoutContext, AdyenCheckout, AdyenCheckoutProps, useAdyenCheckout };
+export {
+  AdyenCheckoutContextType,
+  AdyenCheckout,
+  AdyenCheckoutProps,
+  useAdyenCheckout,
+};
