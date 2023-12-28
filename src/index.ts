@@ -25,7 +25,6 @@ export {
 
 export {
   AdyenCheckout,
-  AdyenCheckoutContext,
   AdyenCheckoutProps,
   AdyenCheckoutContextType,
   useAdyenCheckout,

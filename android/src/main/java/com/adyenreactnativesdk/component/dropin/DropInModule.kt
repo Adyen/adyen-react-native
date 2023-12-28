@@ -13,7 +13,6 @@ import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.components.core.Amount
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.internal.Configuration
-import com.adyen.checkout.core.Environment
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
@@ -33,14 +32,9 @@ import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import java.util.Locale
 
 class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     ReactDropInCallback {
-
-    private lateinit var environment: Environment
-    private lateinit var clientKey: String
-    private lateinit var locale: Locale
 
     @ReactMethod
     fun addListener(eventName: String?) { /* No JS events expected */ }
@@ -67,6 +61,11 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         AdyenCheckout.addDropInListener(this)
         val session = BaseModule.session
         if (session != null) {
+            if (dropInConfiguration.skipListWhenSinglePaymentMethod && paymentMethodsResponse.paymentMethods?.size == 1) {
+                session.sessionSetupResponse.paymentMethodsApiResponse?.paymentMethods = paymentMethodsResponse.paymentMethods
+                session.sessionSetupResponse.paymentMethodsApiResponse?.storedPaymentMethods = null
+            }
+            AdyenCheckout.setIntentHandler(this)
             AdyenCheckout.dropInSessionLauncher?.let {
                 startPayment(
                     reactApplicationContext,
@@ -109,6 +108,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
             proxyHideDropInCommand(success, message)
         }
         AdyenCheckout.removeDropInListener()
+        AdyenCheckout.removeIntentHandler()
         CheckoutProxy.shared.componentListener = null
     }
 
@@ -156,6 +156,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     }
 
     override fun onCompleted(result: String) {
+        // TODO: check voucher's use-case
         hide(true, null)
     }
 
@@ -236,7 +237,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         private const val COMPONENT_NAME = "AdyenDropIn"
         private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
     }
-
 }
 
 internal interface ReactDropInCallback {

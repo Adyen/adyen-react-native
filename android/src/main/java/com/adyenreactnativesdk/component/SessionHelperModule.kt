@@ -1,11 +1,8 @@
 package com.adyenreactnativesdk.component
 
 import com.adyen.checkout.components.core.internal.Configuration
-import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.component.base.BaseModule
-import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -22,6 +19,10 @@ class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(contex
 
     @ReactMethod
     fun removeListeners(count: Int?) { /* No JS events expected */ }
+
+    override fun parseConfiguration(json: ReadableMap): Configuration {
+        throw NotImplementedError("This Module have no configuration")
+    }
 
     override fun getName(): String {
         return "SessionHelper"
@@ -41,14 +42,7 @@ class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(contex
 
     @ReactMethod
     fun getReturnURL(promise: Promise) {
-        promise.resolve(RedirectComponent.getReturnUrl(reactApplicationContext) + "/session")
-    }
-
-    override fun parseConfiguration(json: ReadableMap): Configuration {
-        val config = RootConfigurationParser(json)
-        val environment = config.environment
-        val clientKey = config.clientKey ?: throw ModuleException.NoClientKey()
-        return DropInConfiguration.Builder(this.reactApplicationContext, environment, clientKey).build()
+        promise.resolve(RedirectComponent.getReturnUrl(reactApplicationContext))
     }
 
 }

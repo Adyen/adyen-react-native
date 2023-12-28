@@ -4,14 +4,12 @@ import React, {useEffect, useCallback, useState} from 'react';
 import {
   SafeAreaView,
   Alert,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import {
   AdyenCheckout,
   ErrorCode,
   ResultCode,
-  SessionHelper,
 } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
 import {checkoutConfiguration, useAppContext} from '../../Utilities/AppContext';
@@ -31,15 +29,7 @@ const SessionsCheckout = ({navigation}) => {
   }, []);
 
   const refreshSession = async (configuration) => {
-    let returnUrl = await Platform.select({
-      default: () =>
-        new Promise((resolve) => {
-          resolve(ENVIRONMENT.returnUrl);
-        }),
-      android: () => SessionHelper.getReturnURL(),
-    })();
-
-    const session = await ApiClient.requestSesion(configuration, returnUrl);
+    const session = await ApiClient.requestSesion(configuration, ENVIRONMENT.returnUrl);
     setSession(session);
   };
 
@@ -49,7 +39,7 @@ const SessionsCheckout = ({navigation}) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
       nativeComponent,
     ) => {
-      console.log('didComplete');
+      console.log(`didComplete : ${JSON.stringify(result, null, ' ')}`);
       processResult(result, nativeComponent);
     },
     [],
@@ -78,7 +68,7 @@ const SessionsCheckout = ({navigation}) => {
       const success = isSuccess(result);
       console.log(
         `Payment: ${success ? 'success' : 'failure'} : ${
-          success ? result.resultCode : JSON.stringify(result)
+          success ? result.resultCode : JSON.stringify(result, null, ' ')
         }`,
       );
       nativeComponent.hide(success);

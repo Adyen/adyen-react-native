@@ -39,7 +39,7 @@ const AdvancedCheckout = ({ navigation }) => {
       );
       try {
         /** @type {import('@adyen/react-native').PaymentResponse} */
-        const result = await ApiClient.payments(data, configuration);
+        const result = await ApiClient.payments(data, configuration, data.returnUrl);
         if (result.action) {
           nativeComponent.handle(result.action);
         } else {

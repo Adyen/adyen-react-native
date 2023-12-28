@@ -6,22 +6,32 @@
 
 package com.adyenreactnativesdk.component.base
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
+import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.Configuration
+import com.adyen.checkout.core.Environment
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.checkout.core.exception.CheckoutException
+import com.adyen.checkout.core.internal.data.api.HttpClientFactory
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.CheckoutSessionProvider
 import com.adyen.checkout.sessions.core.CheckoutSessionResult
 import com.adyen.checkout.sessions.core.SessionModel
 import com.adyen.checkout.sessions.core.SessionSetupResponse
+import com.adyen.checkout.sessions.core.internal.data.api.SessionService
+import com.adyen.checkout.sessions.core.internal.data.model.SessionDetailsRequest
+import com.adyen.checkout.sessions.core.internal.data.model.SessionDetailsResponse
+import com.adyen.checkout.ui.core.internal.DefaultRedirectHandler
 import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.model.SubmitMap
@@ -33,12 +43,20 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.Locale
 
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context),
-    CheckoutProxy.ComponentEventListener {
+    CheckoutProxy.ComponentEventListener, ActionHandlingComponent {
+
+    lateinit var environment: Environment
+    lateinit var clientKey: String
+    lateinit var locale: Locale
 
     protected fun sendEvent(eventName: String, map: ReadableMap?) {
         reactApplicationContext
@@ -154,6 +172,44 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         sendEvent(DID_PROVIDE, jsonObject)
     }
 
+    override fun canHandleAction(action: Action): Boolean {
+        throw NotImplementedError("This is base class")
+    }
+
+    override fun handleAction(action: Action, activity: Activity) {
+        throw NotImplementedError("This is base class")
+    }
+
+    override fun handleIntent(intent: Intent) {
+        val redirectHandler = DefaultRedirectHandler()
+        val json = redirectHandler.parseRedirectResult(intent.data)
+        val httpClient = HttpClientFactory.getHttpClient(environment)
+        val sessionService = SessionService(httpClient)
+
+        val myPluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        myPluginScope.launch {
+            session?.let {
+                val request = SessionDetailsRequest(
+                    sessionData = it.sessionSetupResponse.sessionData,
+                    paymentData = null,
+                    details = json
+                )
+                val response = sessionService.submitDetails(
+                    request = request,
+                    sessionId = it.sessionSetupResponse.id,
+                    clientKey = clientKey
+                )
+
+                val jsonObject = SessionDetailsResponse.SERIALIZER.serialize(response)
+                sendEvent(DID_COMPLETE, jsonObject)
+            }
+        }
+    }
+
+    override fun setOnRedirectListener(listener: () -> Unit) {
+        throw NotImplementedError("This is base class")
+    }
+
     companion object {
         const val DID_COMPLETE = "didCompleteCallback"
         const val DID_PROVIDE = "didProvideCallback"
@@ -163,7 +219,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         @JvmStatic
         protected var session: CheckoutSession? = null
 
-        const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenReactNativeRedirectScheme + "://"
+        private const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenReactNativeRedirectScheme + "://"
         fun getReturnUrl(context: Context): String {
             return REDIRECT_RESULT_SCHEME + context.packageName
         }

@@ -6,14 +6,15 @@ import { ENVIRONMENT, CHANNEL } from '../Configuration';
 LogBox.ignoreLogs(['Require cycle:']);
 
 class ApiClient {
-  static payments(data, configuration) {
+  static payments(data, configuration, returnUrl) {
     console.debug(JSON.stringify(data));
     const body = {
       ...data,
       ...parseConfig(configuration),
       ...parseAmount(configuration, data),
       ...serverConfiguration,
-      ...paymentConfiguration
+      ...paymentConfiguration,
+      returnUrl: returnUrl
     };
 
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
@@ -47,6 +48,7 @@ class ApiClient {
   static makeRequest = async (url, body) => {
     const bodyJSON = JSON.stringify(body);
     console.debug(`Request to: ${url}`);
+    console.debug(`== ${bodyJSON}`);
     const request = new Request(url, {
       method: 'POST',
       headers: {

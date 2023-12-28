@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk
 
+import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
 import com.adyenreactnativesdk.component.googlepay.GooglePayModule

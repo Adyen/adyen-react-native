@@ -18,7 +18,6 @@ import com.adyen.checkout.dropin.SessionDropInCallback
 import com.adyen.checkout.dropin.SessionDropInResult
 import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
 import com.adyen.checkout.dropin.internal.ui.model.SessionDropInResultContractParams
-import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.dropin.ReactDropInCallback
 import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import java.lang.ref.WeakReference
@@ -66,7 +65,7 @@ object AdyenCheckout {
     fun handleIntent(intent: Intent): Boolean {
         val data = intent.data
         val handler = intentHandlingComponent.get()
-        return if (data != null && handler != null && data.toString().startsWith(BaseModule.REDIRECT_RESULT_SCHEME)) {
+        return if (data != null && handler != null) {
             handler.handleIntent(intent)
             true
         } else false

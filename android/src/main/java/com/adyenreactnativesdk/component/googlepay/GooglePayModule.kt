@@ -95,13 +95,10 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
 
     override fun parseConfiguration(json: ReadableMap): Configuration {
         val rootParser = RootConfigurationParser(json)
-        val environment = rootParser.environment
-        val shopperLocale = rootParser.locale ?: currentLocale(reactApplicationContext)
-        val clientKey: String
+        this.environment = rootParser.environment
+        this.locale = rootParser.locale ?: currentLocale(reactApplicationContext)
         rootParser.clientKey.let {
-            clientKey = if (it != null) it else {
-                throw ModuleException.NoClientKey()
-            }
+            this.clientKey = it ?: throw ModuleException.NoClientKey()
         }
 
         val amount = rootParser.amount
@@ -112,7 +109,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
 
         val parser = GooglePayConfigurationParser(json)
         val configBuilder = GooglePayConfiguration.Builder(
-            shopperLocale,
+            locale,
             environment,
             clientKey
         )

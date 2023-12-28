@@ -30,7 +30,6 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'qiwiwallet',
   'ratepay',
   'ratepay_directdebit',
-  /** Payment methods that might be interpreted as redirect, but are actually not supported */
 
   /** Voucher payment methods that are not yet supported */
   'doku',
@@ -62,25 +61,21 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'boletobancario_hsbc',
   'boletobancario_itau',
   'boletobancario_santander',
-  /** Voucher payment methods that are not yet supported */
 
   /** Giftcard payment methods that are not yet supported */
   'giftcard',
   'mealVoucher_FR_natixis',
   'mealVoucher_FR_sodexo',
   'mealVoucher_FR_groupeup',
-  /** Giftcard payment methods that are not yet supported */
 
   /** Open Invoice payment methods that are not yet supported */
   'affirm',
   'atome',
-  /** Open Invoice payment methods that are not yet supported */
 
   /** Wallet payment methods that are not yet supported */
   'cashapp',
   'clicktopay',
   'wechatpaySDK',
-  /** Wallet payment methods that are not yet supported */
 ];
 
 export const NATIVE_COMPONENTS = [
