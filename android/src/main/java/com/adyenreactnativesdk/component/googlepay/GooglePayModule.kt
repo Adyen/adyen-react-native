@@ -102,7 +102,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
     override fun parseConfiguration(json: ReadableMap): Configuration {
         val config = setupRootConfig(json)
 
-        val amount = config.amount
+        val amount = config.amount ?: session?.sessionSetupResponse?.amount
         val countryCode = config.countryCode
         if (amount == null || countryCode == null) {
             throw ModuleException.NoPayment()

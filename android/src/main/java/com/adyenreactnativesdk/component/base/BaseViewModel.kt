@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 
 internal interface ViewModelInterface<TState : PaymentComponentState<*>> {
     fun startPayment(paymentMethod: PaymentMethod, session: CheckoutSession?)
-    fun handle(action: Action)
+    fun onAction(action: Action)
     fun componentStarted()
 
     val events: Flow<ComponentEvent>
@@ -41,7 +41,7 @@ abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData :
     private val _events = MutableSharedFlow<ComponentEvent>()
     override val events: Flow<ComponentEvent> = _events
 
-    override fun handle(action: Action) {
+    override fun onAction(action: Action) {
         viewModelScope.launch(Dispatchers.IO) {
             _events.emit(ComponentEvent.AdditionalAction(action))
         }

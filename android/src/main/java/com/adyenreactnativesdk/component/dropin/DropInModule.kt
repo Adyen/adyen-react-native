@@ -17,6 +17,7 @@ import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
+import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
@@ -60,10 +61,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         AdyenCheckout.addDropInListener(this)
         val session = session
         if (session != null) {
-            if (dropInConfiguration.skipListWhenSinglePaymentMethod && paymentMethodsResponse.paymentMethods?.size == 1) {
-                session.sessionSetupResponse.paymentMethodsApiResponse?.paymentMethods = paymentMethodsResponse.paymentMethods
-                session.sessionSetupResponse.paymentMethodsApiResponse?.storedPaymentMethods = null
-            }
+            preparePaymentMethods(dropInConfiguration, paymentMethodsResponse, session)
             AdyenCheckout.setIntentHandler(this)
             AdyenCheckout.dropInSessionLauncher?.let {
                 startPayment(
@@ -83,6 +81,18 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
                     AdyenCheckoutService::class.java
                 )
             }
+        }
+    }
+
+    private fun preparePaymentMethods(
+        dropInConfiguration: DropInConfiguration,
+        paymentMethodsResponse: PaymentMethodsApiResponse,
+        session: CheckoutSession
+    ) {
+        if (dropInConfiguration.skipListWhenSinglePaymentMethod && paymentMethodsResponse.paymentMethods?.size == 1) {
+            session.sessionSetupResponse.paymentMethodsApiResponse?.paymentMethods =
+                paymentMethodsResponse.paymentMethods
+            session.sessionSetupResponse.paymentMethodsApiResponse?.storedPaymentMethods = null
         }
     }
 

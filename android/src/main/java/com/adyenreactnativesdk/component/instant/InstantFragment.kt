@@ -7,6 +7,7 @@
 
 package com.adyenreactnativesdk.component.instant
 
+import android.util.Log
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.PaymentMethod
@@ -20,6 +21,7 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.GenericFragment
+import com.adyenreactnativesdk.component.base.ModuleException
 
 class InstantFragment(
     private val configuration: InstantPaymentConfiguration,
@@ -30,35 +32,40 @@ class InstantFragment(
 
     override fun setupComponent(componentData: ComponentData<InstantComponentState>) {
         val session = session
-        val component = if (session == null) componentData.callback?.let {
+        val component = (if (session == null) componentData.callback?.let {
             InstantPaymentComponent.PROVIDER.get(
                 this,
                 componentData.paymentMethod,
                 configuration,
                 it,
             )
-        } else {
-            componentData.sessioncallback?.let {
-                InstantPaymentComponent.PROVIDER.get(
-                    this,
-                    session,
-                    componentData.paymentMethod,
-                    configuration,
-                    it
-                )
-            }
-        } ?: return
+        } else componentData.sessionCallback?.let {
+            InstantPaymentComponent.PROVIDER.get(
+                this,
+                session,
+                componentData.paymentMethod,
+                configuration,
+                it
+            )
+        }) ?: throw ModuleException.Unknown("ViewModel callback is inconsistent")
 
         this.component = component
         AdyenCheckout.setIntentHandler(component)
-        view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, viewLifecycleOwner)
+        view?.findViewById<AdyenComponentView>(R.id.component_view)
+            ?.attach(component, this)
+            ?: { Log.e(TAG, FRAGMENT_ERROR) }
     }
 
     companion object {
         private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
         internal const val TAG = "InstantFragment"
 
-        fun show(fragmentManager: FragmentManager, configuration: InstantPaymentConfiguration, paymentMethod: PaymentMethod, session: CheckoutSession?) {
+        fun show(
+            fragmentManager: FragmentManager,
+            configuration: InstantPaymentConfiguration,
+            paymentMethod: PaymentMethod,
+            session: CheckoutSession?
+        ) {
             InstantFragment(configuration, paymentMethod, session).apply {
                 arguments = bundleOf(
                     PAYMENT_METHOD_TYPE_EXTRA to paymentMethod.type
@@ -76,5 +83,6 @@ class InstantFragment(
 
     }
 
-    override fun runComponent() { /* No action needed */ }
+    override fun runComponent() { /* No action needed */
+    }
 }

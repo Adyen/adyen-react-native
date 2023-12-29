@@ -11,5 +11,4 @@ import com.adyen.checkout.components.core.action.Action
 sealed class ComponentEvent {
     data object ComponentCreated : ComponentEvent()
     data class AdditionalAction(val action: Action) : ComponentEvent()
-    data class PaymentResult(val result: String) : ComponentEvent()
 }

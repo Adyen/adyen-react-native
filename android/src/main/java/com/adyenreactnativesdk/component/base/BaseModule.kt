@@ -121,7 +121,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
                 is CheckoutSessionResult.Success -> result.checkoutSession
                 is CheckoutSessionResult.Error -> {
                     promise.reject(ModuleException.SessionError())
-                    null
+                    return
                 }
             }
 
@@ -144,12 +144,10 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     override fun onSubmit(state: PaymentComponentState<*>) {
-        var extra: JSONObject? = null
-        if (state is GooglePayComponentState) {
-            state.paymentData?.let {
-                extra = JSONObject(it.toJson())
-            }
-        }
+        val extra =
+            if (state is GooglePayComponentState) state.paymentData?.let {
+                JSONObject(it.toJson())
+            } else null
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
         jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, getRedirectUrl())
         val submitMap = SubmitMap(jsonObject, extra)
@@ -195,21 +193,23 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         val httpClient = HttpClientFactory.getHttpClient(environment)
         val sessionService = SessionService(httpClient)
 
-        val myPluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-        myPluginScope.launch {
-            session?.let {
-                val request = SessionDetailsRequest(
-                    sessionData = it.sessionSetupResponse.sessionData,
-                    paymentData = null,
-                    details = json
-                )
-                val response = sessionService.submitDetails(
-                    request = request, sessionId = it.sessionSetupResponse.id, clientKey = clientKey
-                )
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+            .launch {
+                session?.let {
+                    val request = SessionDetailsRequest(
+                        sessionData = it.sessionSetupResponse.sessionData,
+                        paymentData = null,
+                        details = json
+                    )
+                    val response = sessionService.submitDetails(
+                        request = request,
+                        sessionId = it.sessionSetupResponse.id,
+                        clientKey = clientKey
+                    )
 
-                sendFinishEvent(response)
+                    sendFinishEvent(response)
+                }
             }
-        }
     }
 
     override fun setOnRedirectListener(listener: () -> Unit) {

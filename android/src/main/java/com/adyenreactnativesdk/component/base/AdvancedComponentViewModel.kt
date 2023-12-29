@@ -17,7 +17,7 @@ class AdvancedComponentViewModel<TState : PaymentComponentState<*>, TComponentDa
     override fun startPayment(paymentMethod: PaymentMethod, session: CheckoutSession?) {
         val callback = this
         viewModelScope.launch(Dispatchers.IO) {
-            val componentData = ComponentData(null, paymentMethod, null, callback)
+            val componentData = ComponentData(paymentMethod, null, callback)
             emitData(componentData)
         }
     }

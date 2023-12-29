@@ -7,7 +7,6 @@
 package com.adyenreactnativesdk.component.base
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,8 +25,9 @@ import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
-abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(private val paymentMethod: PaymentMethod,
-                                                                              protected var session: CheckoutSession? = null
+abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(
+    private val paymentMethod: PaymentMethod,
+    protected var session: CheckoutSession? = null
 ) :
     BottomSheetDialogFragment() where TComponent : PaymentComponent,
                                       TComponent : ActionHandlingComponent {
@@ -75,10 +75,6 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(pr
             is ComponentEvent.ComponentCreated -> {
                 runComponent()
             }
-
-            is ComponentEvent.PaymentResult -> {
-                Log.d("GenericFragment", "PaymentResult")
-            }
         }
     }
 
@@ -88,9 +84,11 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(pr
     }
 
     companion object {
+        const val FRAGMENT_ERROR = "Not able to find AdyenComponentView in `component_view` fragment"
+
         fun handle(fragmentManager: FragmentManager, action: Action, tag: String) {
             val fragment = fragmentManager.findFragmentByTag(tag) as GenericFragment<*, *>
-            fragment.viewModel.handle(action)
+            fragment.viewModel.onAction(action)
         }
 
         fun hide(fragmentManager: FragmentManager, tag: String) {
