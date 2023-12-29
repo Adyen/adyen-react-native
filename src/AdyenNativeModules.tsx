@@ -84,17 +84,23 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
   nativeModule: NativeModule | any;
   constructor(
     nativeModule: NativeModule,
+    canHandlePayment: boolean = true,
     canHandleAction: boolean = true,
     events: string[] = []
   ) {
     this.nativeModule = nativeModule;
     this.canHandleAction = canHandleAction;
-    this.events = [Event.onError, ErrorCode.canceled];
+    this.events = [Event.onError];
 
     events?.forEach((element) => this.events.push(element));
 
     if (canHandleAction) {
       this.events.push(Event.onAdditionalDetails);
+    }
+
+    if (canHandlePayment) {
+      this.events.push(Event.onSubmit);
+      this.events.push(Event.onComplete);
     }
   }
 
@@ -117,7 +123,7 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
     this.nativeModule.open(paymentMethods, configuration);
   }
   hide(success: boolean, option?: { message?: string }) {
-    if (option != null && option.message != null) {
+    if (option && option.message) {
       this.nativeModule.hide(success, option);
     } else {
       this.nativeModule.hide(success, { message: '' });
@@ -227,14 +233,12 @@ export function getNativeComponent(
     case 'drop-in':
     case 'adyendropin':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn, true, [
-          Event.onComplete,
-        ]),
+        nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
         paymentMethod: undefined,
       };
     case 'applepay':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenApplePay, false),
+        nativeComponent: new AdyenNativeComponentWrapper(AdyenApplePay, true, false),
         paymentMethod: undefined,
       };
     case 'paywithgoogle':
@@ -258,9 +262,7 @@ export function getNativeComponent(
 
   if (NATIVE_COMPONENTS.includes(typeName)) {
     return {
-      nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn, true, [
-        Event.onComplete,
-      ]),
+      nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
       paymentMethod: paymentMethod,
     };
   }

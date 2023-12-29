@@ -12,14 +12,19 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.GenericFragment
 
-class GooglePayFragment(private val configuration: GooglePayConfiguration, private val paymentMethod: PaymentMethod) :
-    GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod) {
+class GooglePayFragment(
+    private val configuration: GooglePayConfiguration,
+    paymentMethod: PaymentMethod,
+    session: CheckoutSession?
+) :
+    GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod, session) {
 
     override fun setupComponent(componentData: ComponentData<GooglePayComponentState>) {
         val session = session
@@ -46,15 +51,26 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
         AdyenCheckout.setActivityResultHandlingComponent(component)
         view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, this)
 
-        viewModel.componentStarted()
+        if (!componentCreated) {
+            componentCreated = true
+            viewModel.componentStarted()
+        }
     }
 
     companion object {
 
         internal const val TAG = "GooglePayFragment"
 
-        fun show(fragmentManager: FragmentManager, configuration: GooglePayConfiguration, paymentMethod: PaymentMethod) {
-            GooglePayFragment(configuration, paymentMethod).show(fragmentManager, TAG)
+        private var componentCreated = false
+
+        fun show(
+            fragmentManager: FragmentManager,
+            configuration: GooglePayConfiguration,
+            paymentMethod: PaymentMethod,
+            session: CheckoutSession?
+        ) {
+            componentCreated = false
+            GooglePayFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
         }
 
         fun handle(fragmentManager: FragmentManager, action: Action) {

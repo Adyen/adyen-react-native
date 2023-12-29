@@ -57,7 +57,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
     val environment: Environment
         get() = if (config.hasKey(ENVIRONMENT_KEY)) {
             val environment = config.getString(ENVIRONMENT_KEY)!!
-            when (environment.toLowerCase(Locale.ROOT)) {
+            when (environment.lowercase(Locale.ROOT)) {
                 "live-au" -> Environment.AUSTRALIA
                 "live", "live-eu" -> Environment.EUROPE
                 "live-us" -> Environment.UNITED_STATES

@@ -24,17 +24,20 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 
-class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
+class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
+    CheckoutProxy.ComponentEventListener {
 
     override fun getName(): String {
         return COMPONENT_NAME
     }
 
     @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */ }
+    fun addListener(eventName: String?) { /* No JS events expected */
+    }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */ }
+    fun removeListeners(count: Int?) { /* No JS events expected */
+    }
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
@@ -56,7 +59,9 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
         val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
         CheckoutProxy.shared.componentListener = this
         GooglePayComponent.run {
-            PROVIDER.isAvailable(appCompatActivity.application, payPaymentMethod, googlePayConfiguration,
+            PROVIDER.isAvailable(appCompatActivity.application,
+                payPaymentMethod,
+                googlePayConfiguration,
                 object : ComponentAvailableCallback {
                     override fun onAvailabilityResult(
                         isAvailable: Boolean,
@@ -66,7 +71,12 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
                             sendErrorEvent(GooglePayException.NotSupported())
                             return
                         }
-                        GooglePayFragment.show(appCompatActivity.supportFragmentManager, googlePayConfiguration, paymentMethod)
+                        GooglePayFragment.show(
+                            appCompatActivity.supportFragmentManager,
+                            googlePayConfiguration,
+                            paymentMethod,
+                            session
+                        )
                     }
                 })
         }

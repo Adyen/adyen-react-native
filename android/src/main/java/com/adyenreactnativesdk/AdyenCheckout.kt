@@ -126,7 +126,7 @@ private class DropInCallbackListener : DropInCallback, SessionDropInCallback {
             when (sessionDropInResult) {
                 is SessionDropInResult.CancelledByUser -> it.onCancel()
                 is SessionDropInResult.Error -> it.onError(sessionDropInResult.reason)
-                is SessionDropInResult.Finished -> it.onCompleted(sessionDropInResult.result.toString())
+                is SessionDropInResult.Finished -> it.onFinished(sessionDropInResult.result)
                 null -> return
             }
         }

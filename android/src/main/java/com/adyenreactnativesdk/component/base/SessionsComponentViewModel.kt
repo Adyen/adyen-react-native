@@ -12,7 +12,7 @@ import com.adyenreactnativesdk.component.CheckoutProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class SessionsComponentViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>>() :
+class SessionsComponentViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>> :
     BaseViewModel<TState, TComponentData>(),
     SessionComponentCallback<TState> {
 

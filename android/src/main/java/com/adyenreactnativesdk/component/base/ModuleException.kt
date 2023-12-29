@@ -14,22 +14,22 @@ open class KnownException @JvmOverloads constructor(
 
 sealed class ModuleException(code: String, message: String, cause: Throwable? = null) :
     KnownException(code = code, errorMessage = message, cause) {
-    class Canceled() : ModuleException(
+    class Canceled : ModuleException(
         code = "canceledByShopper",
         message = "Payment canceled by shopper"
     )
 
-    class NotSupported() : ModuleException(
+    class NotSupported : ModuleException(
         code = "notSupported",
         message = "Not supported on Android"
     )
 
-    class NoClientKey() : ModuleException(
+    class NoClientKey : ModuleException(
         code = "noClientKey",
         message = "No clientKey in configuration"
     )
 
-    class NoPayment() : ModuleException(
+    class NoPayment : ModuleException(
         code = "noPayment",
         message = "No payment in configuration"
     )

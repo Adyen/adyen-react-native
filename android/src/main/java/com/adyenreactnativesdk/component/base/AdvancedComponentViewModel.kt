@@ -11,7 +11,7 @@ import com.adyenreactnativesdk.component.CheckoutProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class AdvancedComponentViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>>() :
+class AdvancedComponentViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>> :
     BaseViewModel<TState, TComponentData>(), ComponentCallback<TState> {
 
     override fun startPayment(paymentMethod: PaymentMethod, session: CheckoutSession?) {

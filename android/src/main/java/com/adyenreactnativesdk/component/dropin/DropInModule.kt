@@ -17,6 +17,7 @@ import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
+import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
@@ -234,4 +235,5 @@ internal interface ReactDropInCallback {
     fun onCancel()
     fun onError(reason: String?)
     fun onCompleted(result: String)
+    fun onFinished(result: SessionPaymentResult)
 }

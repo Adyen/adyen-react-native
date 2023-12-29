@@ -90,11 +90,12 @@ const SessionsCheckout = ({navigation}) => {
       nativeComponent.hide(false);
       if (error.errorCode === ErrorCode.canceled) {
         Alert.alert('Canceled');
+        refreshSession(configuration)
       } else {
         Alert.alert('Error', error.message);
       }
     },
-    [],
+    [configuration],
   );
 
   return (

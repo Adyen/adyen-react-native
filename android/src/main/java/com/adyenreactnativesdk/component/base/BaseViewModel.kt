@@ -34,8 +34,6 @@ internal interface ViewModelInterface<TState : PaymentComponentState<*>> {
 abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>> :
     ViewModel(), ViewModelInterface<TState> {
 
-    private var componentStarted: Boolean = false
-
     private val _componentDataFlow = MutableStateFlow<TComponentData?>(null)
     override val componentDataFlow: Flow<TComponentData> =
         _componentDataFlow.filterNotNull()
@@ -50,11 +48,8 @@ abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData :
     }
 
     override fun componentStarted() {
-        if (!componentStarted) {
-            componentStarted = true
-            viewModelScope.launch(Dispatchers.IO) {
-                _events.emit(ComponentEvent.ComponentCreated)
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            _events.emit(ComponentEvent.ComponentCreated)
         }
     }
 

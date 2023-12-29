@@ -37,15 +37,15 @@ class WritableMapMock: WritableMap {
         return map.getValue(p0) as Int
     }
 
-    override fun getString(p0: String): String? {
+    override fun getString(p0: String): String {
         return map.getValue(p0) as String
     }
 
-    override fun getArray(p0: String): ReadableArray? {
+    override fun getArray(p0: String): ReadableArray {
         return map.getValue(p0) as ReadableArray
     }
 
-    override fun getMap(p0: String): ReadableMap? {
+    override fun getMap(p0: String): ReadableMap {
         return map.getValue(p0) as ReadableMap
     }
 
