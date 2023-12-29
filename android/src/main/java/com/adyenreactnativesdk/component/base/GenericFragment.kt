@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk.component.base
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,17 +21,26 @@ import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.PaymentComponent
+import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
-abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(private val paymentMethod: PaymentMethod) :
+abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(private val paymentMethod: PaymentMethod,
+                                                                              protected var session: CheckoutSession? = null
+) :
     BottomSheetDialogFragment() where TComponent : PaymentComponent,
                                       TComponent : ActionHandlingComponent {
 
     var component: TComponent? = null
 
-    internal val viewModel: GenericViewModel<TState, ComponentData<TState>> by viewModels()
+    private val advancedViewModel: AdvancedComponentViewModel<TState, ComponentData<TState>> by viewModels()
+    private val sessionViewModel: SessionsComponentViewModel<TState, ComponentData<TState>> by viewModels()
+
+    internal val viewModel: ViewModelInterface<TState>
+        get() {
+            return if (session == null) advancedViewModel else sessionViewModel
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,7 +59,7 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(pr
             }
         }
 
-        viewModel.startPayment(paymentMethod)
+        viewModel.startPayment(paymentMethod, session)
     }
 
     abstract fun setupComponent(componentData: ComponentData<TState>)
@@ -64,6 +74,10 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(pr
 
             is ComponentEvent.ComponentCreated -> {
                 runComponent()
+            }
+
+            is ComponentEvent.PaymentResult -> {
+                Log.d("GenericFragment", "PaymentResult")
             }
         }
     }

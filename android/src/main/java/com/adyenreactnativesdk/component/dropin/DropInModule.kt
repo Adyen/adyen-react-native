@@ -6,7 +6,6 @@
 
 package com.adyenreactnativesdk.component.dropin
 
-import android.os.Build
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
@@ -25,7 +24,6 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
-import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.JavaOnlyMap
@@ -59,7 +57,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
 
         CheckoutProxy.shared.componentListener = this
         AdyenCheckout.addDropInListener(this)
-        val session = BaseModule.session
+        val session = session
         if (session != null) {
             if (dropInConfiguration.skipListWhenSinglePaymentMethod && paymentMethodsResponse.paymentMethods?.size == 1) {
                 session.sessionSetupResponse.paymentMethodsApiResponse?.paymentMethods = paymentMethodsResponse.paymentMethods
@@ -107,29 +105,22 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         if (session == null) {
             proxyHideDropInCommand(success, message)
         }
-        AdyenCheckout.removeDropInListener()
-        AdyenCheckout.removeIntentHandler()
-        CheckoutProxy.shared.componentListener = null
+
+        cleanup()
     }
 
     override fun parseConfiguration(json: ReadableMap): Configuration {
-        val parser = RootConfigurationParser(json)
-        val clientKey = parser.clientKey ?: throw ModuleException.NoClientKey()
-        this.environment = parser.environment
-        this.clientKey = clientKey
-        this.locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            reactApplicationContext.resources.configuration.locales[0]
-        } else {
-            reactApplicationContext.resources.configuration.locale
-        }
+        val config = setupRootConfig(json)
+
         val builder = Builder(locale, environment, clientKey)
         configureDropIn(builder, json)
         configureBcmc(builder, json)
         configure3DS(builder)
+
         // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
 
-        val amount = parser.amount
-        val countryCode = parser.countryCode
+        val amount = config.amount
+        val countryCode = config.countryCode
         if (amount != null && countryCode != null) {
             builder.setAmount(amount)
             configureGooglePay(builder, json, countryCode, amount)

@@ -13,13 +13,11 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayConfiguration
-import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
-import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -87,22 +85,15 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
 
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
+        cleanup()
         GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
-        AdyenCheckout.removeActivityResultHandlingComponent()
-        AdyenCheckout.removeIntentHandler()
-        CheckoutProxy.shared.componentListener = null
     }
 
     override fun parseConfiguration(json: ReadableMap): Configuration {
-        val rootParser = RootConfigurationParser(json)
-        this.environment = rootParser.environment
-        this.locale = rootParser.locale ?: currentLocale(reactApplicationContext)
-        rootParser.clientKey.let {
-            this.clientKey = it ?: throw ModuleException.NoClientKey()
-        }
+        val config = setupRootConfig(json)
 
-        val amount = rootParser.amount
-        val countryCode = rootParser.countryCode
+        val amount = config.amount
+        val countryCode = config.countryCode
         if (amount == null || countryCode == null) {
             throw ModuleException.NoPayment()
         }
@@ -115,6 +106,8 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context), 
         )
             .setCountryCode(countryCode)
             .setAmount(amount)
+        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
+
         return parser.getConfiguration(configBuilder, environment)
     }
 

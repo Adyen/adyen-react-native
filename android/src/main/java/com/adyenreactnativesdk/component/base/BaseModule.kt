@@ -27,14 +27,17 @@ import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.CheckoutSessionProvider
 import com.adyen.checkout.sessions.core.CheckoutSessionResult
 import com.adyen.checkout.sessions.core.SessionModel
+import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyen.checkout.sessions.core.SessionSetupResponse
 import com.adyen.checkout.sessions.core.internal.data.api.SessionService
 import com.adyen.checkout.sessions.core.internal.data.model.SessionDetailsRequest
 import com.adyen.checkout.sessions.core.internal.data.model.SessionDetailsResponse
 import com.adyen.checkout.ui.core.internal.DefaultRedirectHandler
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.model.SubmitMap
+import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
@@ -58,16 +61,9 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     lateinit var clientKey: String
     lateinit var locale: Locale
 
-    protected fun sendEvent(eventName: String, map: ReadableMap?) {
-        reactApplicationContext
-            .getJSModule(RCTDeviceEventEmitter::class.java)
-            .emit(eventName, map)
-    }
-
-    protected fun sendEvent(eventName: String, jsonObject: JSONObject) {
+    private fun sendEvent(eventName: String, jsonObject: JSONObject) {
         try {
-            reactApplicationContext
-                .getJSModule(RCTDeviceEventEmitter::class.java)
+            reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
                 .emit(eventName, ReactNativeJson.convertJsonToMap(jsonObject))
         } catch (e: JSONException) {
             sendErrorEvent(e)
@@ -75,9 +71,13 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     protected fun sendErrorEvent(error: Exception) {
-        reactApplicationContext
-            .getJSModule(RCTDeviceEventEmitter::class.java)
+        reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
             .emit(DID_FAILED, ReactNativeError.mapError(error))
+    }
+
+    private fun sendFinishEvent(result: SessionDetailsResponse) {
+        val jsonObject = SessionDetailsResponse.SERIALIZER.serialize(result)
+        sendEvent(DID_COMPLETE, jsonObject)
     }
 
     protected fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse {
@@ -90,13 +90,12 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     protected fun getPaymentMethod(
-        paymentMethodsResponse: PaymentMethodsApiResponse,
-        paymentMethodNames: Set<String>
+        paymentMethodsResponse: PaymentMethodsApiResponse, paymentMethodNames: Set<String>
     ): PaymentMethod? {
         return paymentMethodsResponse.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
     }
 
-    protected fun currentLocale(context: Context): Locale {
+    private fun currentLocale(context: Context): Locale {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             context.resources.configuration.locales.get(0)
         } else {
@@ -112,9 +111,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         }
 
     open suspend fun createSessionAsync(
-        sessionModelJSON: ReadableMap,
-        configurationJSON: ReadableMap,
-        promise: Promise
+        sessionModelJSON: ReadableMap, configurationJSON: ReadableMap, promise: Promise
     ) {
         val sessionModel = parseSessionModel(sessionModelJSON)
         val configuration = parseConfiguration(configurationJSON)
@@ -154,8 +151,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             }
         }
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
-        jsonObject
-            .put(AdyenConstants.PARAMETER_RETURN_URL, getRedirectUrl())
+        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, getRedirectUrl())
         val submitMap = SubmitMap(jsonObject, extra)
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
@@ -166,6 +162,19 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         } else {
             sendErrorEvent(exception)
         }
+    }
+
+    override fun onFinished(result: SessionPaymentResult) {
+        sendFinishEvent(
+            SessionDetailsResponse(
+                result.sessionData ?: "",
+                "",
+                result.resultCode,
+                null,
+                result.sessionResult,
+                result.order
+            )
+        )
     }
 
     override fun onAdditionalData(jsonObject: JSONObject) {
@@ -195,19 +204,32 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
                     details = json
                 )
                 val response = sessionService.submitDetails(
-                    request = request,
-                    sessionId = it.sessionSetupResponse.id,
-                    clientKey = clientKey
+                    request = request, sessionId = it.sessionSetupResponse.id, clientKey = clientKey
                 )
 
-                val jsonObject = SessionDetailsResponse.SERIALIZER.serialize(response)
-                sendEvent(DID_COMPLETE, jsonObject)
+                sendFinishEvent(response)
             }
         }
     }
 
     override fun setOnRedirectListener(listener: () -> Unit) {
         throw NotImplementedError("This is base class")
+    }
+
+    protected fun setupRootConfig(json: ReadableMap): RootConfigurationParser {
+        val config = RootConfigurationParser(json)
+        this.environment = config.environment
+        this.clientKey = config.clientKey ?: throw ModuleException.NoClientKey()
+        this.locale = config.locale ?: currentLocale(reactApplicationContext)
+        return config
+    }
+
+    protected fun cleanup() {
+        session = null
+        AdyenCheckout.removeActivityResultHandlingComponent()
+        AdyenCheckout.removeIntentHandler()
+        AdyenCheckout.removeDropInListener()
+        CheckoutProxy.shared.componentListener = null
     }
 
     companion object {
@@ -219,7 +241,9 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         @JvmStatic
         protected var session: CheckoutSession? = null
 
-        private const val REDIRECT_RESULT_SCHEME = BuildConfig.adyenReactNativeRedirectScheme + "://"
+        private const val REDIRECT_RESULT_SCHEME =
+            BuildConfig.adyenReactNativeRedirectScheme + "://"
+
         fun getReturnUrl(context: Context): String {
             return REDIRECT_RESULT_SCHEME + context.packageName
         }

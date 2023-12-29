@@ -8,6 +8,7 @@ package com.adyenreactnativesdk.component
 
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.core.exception.CheckoutException
+import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 import java.lang.ref.WeakReference
@@ -33,6 +34,7 @@ class CheckoutProxy private constructor() {
         fun onSubmit(state: PaymentComponentState<*>)
         fun onAdditionalData(jsonObject: JSONObject)
         fun onException(exception: CheckoutException)
+        fun onFinished(result: SessionPaymentResult)
     }
 
     /** All events coming from React Native */

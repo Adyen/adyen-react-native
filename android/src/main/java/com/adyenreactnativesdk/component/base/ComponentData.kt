@@ -9,8 +9,13 @@ package com.adyenreactnativesdk.component.base
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
+import com.adyen.checkout.sessions.core.CheckoutSession
+import com.adyen.checkout.sessions.core.SessionComponentCallback
 
 data class ComponentData<TState: PaymentComponentState<*>>(
+    val checkoutSession: CheckoutSession?,
     val paymentMethod: PaymentMethod,
-    val callback: ComponentCallback<TState>,
+    val sessioncallback: SessionComponentCallback<TState>?,
+    val callback: ComponentCallback<TState>?,
 )
+

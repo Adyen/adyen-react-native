@@ -22,16 +22,30 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
     GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod) {
 
     override fun setupComponent(componentData: ComponentData<GooglePayComponentState>) {
-        val component = GooglePayComponent.PROVIDER.get(
-            this,
-            paymentMethod,
-            configuration,
-            viewModel
-        )
+        val session = session
+        val component = if (session == null) componentData.callback?.let {
+            GooglePayComponent.PROVIDER.get(
+                this,
+                componentData.paymentMethod,
+                configuration,
+                it,
+            )
+        } else {
+            componentData.sessioncallback?.let {
+                GooglePayComponent.PROVIDER.get(
+                    this,
+                    session,
+                    componentData.paymentMethod,
+                    configuration,
+                    it
+                )
+            }
+        } ?: return
         this.component = component
         AdyenCheckout.setIntentHandler(component)
         AdyenCheckout.setActivityResultHandlingComponent(component)
         view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, this)
+
         viewModel.componentStarted()
     }
 

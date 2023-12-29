@@ -14,6 +14,7 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.instant.InstantPaymentConfiguration
+import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
@@ -22,17 +23,31 @@ import com.adyenreactnativesdk.component.base.GenericFragment
 
 class InstantFragment(
     private val configuration: InstantPaymentConfiguration,
-    paymentMethod: PaymentMethod
+    paymentMethod: PaymentMethod,
+    session: CheckoutSession?
 ) :
-    GenericFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod) {
+    GenericFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod, session) {
 
     override fun setupComponent(componentData: ComponentData<InstantComponentState>) {
-        val component = InstantPaymentComponent.PROVIDER.get(
-            this,
-            componentData.paymentMethod,
-            configuration,
-            componentData.callback,
-        )
+        val session = session
+        val component = if (session == null) componentData.callback?.let {
+            InstantPaymentComponent.PROVIDER.get(
+                this,
+                componentData.paymentMethod,
+                configuration,
+                it,
+            )
+        } else {
+            componentData.sessioncallback?.let {
+                InstantPaymentComponent.PROVIDER.get(
+                    this,
+                    session,
+                    componentData.paymentMethod,
+                    configuration,
+                    it
+                )
+            }
+        } ?: return
 
         this.component = component
         AdyenCheckout.setIntentHandler(component)
@@ -43,8 +58,8 @@ class InstantFragment(
         private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
         internal const val TAG = "InstantFragment"
 
-        fun show(fragmentManager: FragmentManager, configuration: InstantPaymentConfiguration, paymentMethod: PaymentMethod) {
-            InstantFragment(configuration, paymentMethod).apply {
+        fun show(fragmentManager: FragmentManager, configuration: InstantPaymentConfiguration, paymentMethod: PaymentMethod, session: CheckoutSession?) {
+            InstantFragment(configuration, paymentMethod, session).apply {
                 arguments = bundleOf(
                     PAYMENT_METHOD_TYPE_EXTRA to paymentMethod.type
                 )
