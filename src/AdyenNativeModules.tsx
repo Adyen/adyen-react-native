@@ -123,7 +123,7 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
     this.nativeModule.open(paymentMethods, configuration);
   }
   hide(success: boolean, option?: { message?: string }) {
-    if (option && option.message) {
+    if (option?.message) {
       this.nativeModule.hide(success, option);
     } else {
       this.nativeModule.hide(success, { message: '' });
