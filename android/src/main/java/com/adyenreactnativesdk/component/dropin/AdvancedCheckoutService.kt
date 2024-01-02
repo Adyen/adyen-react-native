@@ -17,7 +17,7 @@ import com.adyenreactnativesdk.component.CheckoutProxy.ModuleEventListener
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
 
-open class AdyenCheckoutService : DropInService(), ModuleEventListener {
+open class AdvancedCheckoutService : DropInService(), ModuleEventListener {
 
     override fun onCreate() {
         super.onCreate()

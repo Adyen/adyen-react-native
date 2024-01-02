@@ -70,4 +70,14 @@ sealed class ModuleException(code: String, message: String, cause: Throwable? = 
         code = "session",
         message = "Something went wrong while starting session"
     )
+
+    class NoActivity : ModuleException(
+        code = "noActivity",
+        message = "Launcher not registered. Please call AdyenCheckout.setLauncherActivity() on MainActivity.onCreate()"
+    )
+
+    class WrongFlow : ModuleException(
+        code = "noActivity",
+        message = "ViewModel callback is inconsistent"
+    )
 }

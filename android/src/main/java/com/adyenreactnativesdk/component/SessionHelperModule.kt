@@ -1,5 +1,6 @@
 package com.adyenreactnativesdk.component
 
+import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
@@ -9,9 +10,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(context) {
@@ -44,8 +43,7 @@ class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(contex
         configurationJSON: ReadableMap,
         promise: Promise
     ) {
-        val myPluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-        myPluginScope.launch {
+        appCompatActivity.lifecycleScope.launch(Dispatchers.IO) {
             super.createSessionAsync(sessionModelJSON, configurationJSON, promise)
         }
     }

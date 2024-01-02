@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
@@ -46,9 +47,6 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.json.JSONObject
@@ -193,7 +191,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         val httpClient = HttpClientFactory.getHttpClient(environment)
         val sessionService = SessionService(httpClient)
 
-        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        appCompatActivity.lifecycleScope
             .launch {
                 session?.let {
                     val request = SessionDetailsRequest(

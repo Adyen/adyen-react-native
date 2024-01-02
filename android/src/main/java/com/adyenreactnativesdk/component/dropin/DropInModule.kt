@@ -69,18 +69,20 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
                     it,
                     session,
                     dropInConfiguration,
+                    SessionCheckoutService::class.java
                 )
-            }
+            } ?: throw ModuleException.NoActivity()
         } else {
+
             AdyenCheckout.dropInLauncher?.let {
                 startPayment(
                     reactApplicationContext,
                     it,
                     paymentMethodsResponse,
                     dropInConfiguration,
-                    AdyenCheckoutService::class.java
+                    AdvancedCheckoutService::class.java
                 )
-            }
+            } ?: throw ModuleException.NoActivity()
         }
     }
 

@@ -45,7 +45,7 @@ class GooglePayFragment(
                 configuration,
                 it
             )
-        }) ?: throw ModuleException.Unknown("ViewModel callback is inconsistent")
+        }) ?: throw ModuleException.WrongFlow()
 
         this.component = component
         AdyenCheckout.setIntentHandler(component)
