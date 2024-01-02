@@ -16,10 +16,20 @@ import kotlinx.coroutines.launch
 class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(context) {
 
     @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */ }
+    fun addListener(eventName: String?) { /* No JS events expected */
+    }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */ }
+    fun removeListeners(count: Int?) { /* No JS events expected */
+    }
+
+    @ReactMethod
+    fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) { /* No UI */
+    }
+
+    @ReactMethod
+    fun hide(success: Boolean, message: ReadableMap?) { /* No UI */
+    }
 
     override fun parseConfiguration(json: ReadableMap): Configuration {
         val config = setupRootConfig(json)

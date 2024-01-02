@@ -248,7 +248,10 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       );
       setSession(sessionResponse);
     } catch (error) {
-      console.error('Setting up session: ' + error);
+      onError({
+        message: JSON.stringify(error),
+        errorCode: 'session'
+      }, SessionHelper)
     }
   }, [session, config, onError]);
 

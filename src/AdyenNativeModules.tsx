@@ -63,7 +63,7 @@ export interface AdyenActionComponent extends AdyenComponent {
 }
 
 /** Collection of android helper methods */
-export interface SessionHelperModule {
+export interface SessionHelperModule extends AdyenComponent {
   /**
    * Provides return URL for current application. 
    */
