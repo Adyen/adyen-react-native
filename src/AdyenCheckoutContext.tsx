@@ -248,24 +248,24 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       );
       setSession(sessionResponse);
     } catch (error) {
-      onError({
-        message: JSON.stringify(error),
-        errorCode: 'session'
-      }, SessionHelper)
+      onError(
+        {
+          message: JSON.stringify(error),
+          errorCode: 'sessionError',
+        },
+        SessionHelper,
+      );
     }
   }, [session, config, onError]);
 
-  const checkoutProviderValues = useMemo(
-    () => ({
-      start,
-      config,
-      paymentMethods: paymentMethods ?? sessionStorage?.paymentMethods,
-    }),
-    [start, config, paymentMethods, sessionStorage],
-  );
-
   return (
-    <AdyenCheckoutContext.Provider value={checkoutProviderValues}>
+    <AdyenCheckoutContext.Provider
+      value={{
+        start,
+        config,
+        paymentMethods: paymentMethods ?? sessionStorage?.paymentMethods,
+      }}
+    >
       {children}
     </AdyenCheckoutContext.Provider>
   );
