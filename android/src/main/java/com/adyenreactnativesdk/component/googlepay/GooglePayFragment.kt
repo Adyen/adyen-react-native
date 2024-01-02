@@ -54,17 +54,14 @@ class GooglePayFragment(
             ?.attach(component, this)
             ?: { Log.e(TAG, FRAGMENT_ERROR) }
 
-        if (!componentCreated) {
-            componentCreated = true
-            viewModel.componentStarted()
-        }
+        viewModel.componentStarted()
     }
 
     companion object {
 
         internal const val TAG = "GooglePayFragment"
 
-        private var componentCreated = false
+        private var googlePayScreenVisible = false
 
         fun show(
             fragmentManager: FragmentManager,
@@ -72,7 +69,7 @@ class GooglePayFragment(
             paymentMethod: PaymentMethod,
             session: CheckoutSession?
         ) {
-            componentCreated = false
+            googlePayScreenVisible = false
             GooglePayFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
         }
 
@@ -87,6 +84,12 @@ class GooglePayFragment(
     }
 
     override fun runComponent() {
-        component?.startGooglePayScreen(requireActivity(), GooglePayModule.GOOGLEPAY_REQUEST_CODE)
+        if (!googlePayScreenVisible) {
+            component?.startGooglePayScreen(
+                requireActivity(),
+                GooglePayModule.GOOGLEPAY_REQUEST_CODE
+            )
+            googlePayScreenVisible = true
+        }
     }
 }
