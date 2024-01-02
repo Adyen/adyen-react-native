@@ -199,11 +199,17 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
                         paymentData = null,
                         details = json
                     )
-                    val response = sessionService.submitDetails(
-                        request = request,
-                        sessionId = it.sessionSetupResponse.id,
-                        clientKey = clientKey
-                    )
+                    var response: SessionDetailsResponse
+                    try {
+                        response = sessionService.submitDetails(
+                            request = request,
+                            sessionId = it.sessionSetupResponse.id,
+                            clientKey = clientKey
+                        )
+                    } catch (e: java.lang.Exception) {
+                        sendErrorEvent(e)
+                        return@launch
+                    }
 
                     sendFinishEvent(response)
                 }
