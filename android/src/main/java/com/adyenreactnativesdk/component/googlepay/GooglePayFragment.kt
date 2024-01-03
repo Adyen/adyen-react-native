@@ -6,32 +6,54 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
+import android.util.Log
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.GenericFragment
+import com.adyenreactnativesdk.component.base.ModuleException
 
-class GooglePayFragment(private val configuration: GooglePayConfiguration, private val paymentMethod: PaymentMethod) :
-    GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod) {
+class GooglePayFragment(
+    private val configuration: GooglePayConfiguration,
+    paymentMethod: PaymentMethod,
+    session: CheckoutSession?
+) :
+    GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod, session) {
 
     override fun setupComponent(componentData: ComponentData<GooglePayComponentState>) {
-        val component = GooglePayComponent.PROVIDER.get(
-            this,
-            paymentMethod,
-            configuration,
-            viewModel
-        )
+        val session = session
+        val component = (if (session == null) componentData.callback?.let {
+            GooglePayComponent.PROVIDER.get(
+                this,
+                componentData.paymentMethod,
+                configuration,
+                it,
+            )
+        } else componentData.sessionCallback?.let {
+            GooglePayComponent.PROVIDER.get(
+                this,
+                session,
+                componentData.paymentMethod,
+                configuration,
+                it
+            )
+        }) ?: throw ModuleException.WrongFlow()
+
         this.component = component
         AdyenCheckout.setIntentHandler(component)
         AdyenCheckout.setActivityResultHandlingComponent(component)
-        view?.findViewById<AdyenComponentView>(R.id.component_view)?.attach(component, this)
+        view?.findViewById<AdyenComponentView>(R.id.component_view)
+            ?.attach(component, this)
+            ?: { Log.e(TAG, FRAGMENT_ERROR) }
+
         viewModel.componentStarted()
     }
 
@@ -39,8 +61,16 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
 
         internal const val TAG = "GooglePayFragment"
 
-        fun show(fragmentManager: FragmentManager, configuration: GooglePayConfiguration, paymentMethod: PaymentMethod) {
-            GooglePayFragment(configuration, paymentMethod).show(fragmentManager, TAG)
+        private var googlePayScreenVisible = false
+
+        fun show(
+            fragmentManager: FragmentManager,
+            configuration: GooglePayConfiguration,
+            paymentMethod: PaymentMethod,
+            session: CheckoutSession?
+        ) {
+            googlePayScreenVisible = false
+            GooglePayFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
         }
 
         fun handle(fragmentManager: FragmentManager, action: Action) {
@@ -54,6 +84,12 @@ class GooglePayFragment(private val configuration: GooglePayConfiguration, priva
     }
 
     override fun runComponent() {
-        component?.startGooglePayScreen(requireActivity(), GooglePayModule.GOOGLEPAY_REQUEST_CODE)
+        if (!googlePayScreenVisible) {
+            component?.startGooglePayScreen(
+                requireActivity(),
+                GooglePayModule.GOOGLEPAY_REQUEST_CODE
+            )
+            googlePayScreenVisible = true
+        }
     }
 }

@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk
 
+import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
 import com.adyenreactnativesdk.component.googlepay.GooglePayModule
@@ -28,6 +29,7 @@ class AdyenPaymentPackage : ReactPackage {
         modules.add(GooglePayModule(reactContext))
         modules.add(ApplePayModuleMock(reactContext))
         modules.add(AdyenCSEModule(reactContext))
+        modules.add(SessionHelperModule(reactContext))
         return modules
     }
 }

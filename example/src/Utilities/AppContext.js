@@ -7,15 +7,50 @@ import React, {
   createContext,
   useEffect,
 } from 'react';
-import ApiClient from './APIClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ENVIRONMENT } from '../Configuration';
 
 export const AppContext = createContext({
   configuration: {},
-  /** @type {import('@adyen/react-native').PaymentMethodsResponse | undefined } */
-  paymentMethods: undefined,
-  refreshPaymentMethods: async (configuration) => {},
+  save: async (configuration) => { },
 });
+
+export const checkoutConfiguration = (config) => {
+  return {
+    clientKey: ENVIRONMENT.clientKey,
+    environment: ENVIRONMENT.environment,
+    returnUrl: ENVIRONMENT.returnUrl,
+    amount: {
+      value: config.amount,
+      currency: config.currency,
+    },
+    countryCode: config.countryCode,
+    applepay: {
+      merchantID: ENVIRONMENT.applepayMerchantID,
+      merchantName: config.merchantName,
+      requiredBillingContactFields: ['phoneticName', 'postalAddress'],
+      requiredShippingContactFields: [
+        'name',
+        'phone',
+        'email',
+        'postalAddress',
+      ],
+    },
+    googlepay: {
+      billingAddressRequired: true,
+      billingAddressParameters: {
+        format: 'FULL',
+        phoneNumberRequired: true,
+      },
+      shippingAddressRequired: true,
+      shippingAddressParameters: {
+        allowedCountryCodes: ['US', 'MX',],
+        phoneNumberRequired: true,
+      },
+      emailRequired: true,
+    }
+  }
+};
 
 export const useAppContext = () => {
   const context = useContext(AppContext);
@@ -29,7 +64,6 @@ const storeKey = '@config_storage';
 
 const AppContextProvider = (props) => {
   const [config, setConfig] = useState(props.configuration);
-  const [paymentMethods, setPaymentMethods] = useState(undefined);
 
   useEffect(() => {
     AsyncStorage.getItem(storeKey)
@@ -43,20 +77,18 @@ const AppContextProvider = (props) => {
       .catch(props.onError);
   }, []);
 
-  const refresh = async (newConfig = config) => {
-    const response = await ApiClient.paymentMethods(newConfig);
+  const saveConfiguration = async (newConfig = config) => {
     await AsyncStorage.setItem(storeKey, JSON.stringify(newConfig));
-    setPaymentMethods(response);
+
     setConfig(newConfig);
   };
 
   const appState = useMemo(
     () => ({
       configuration: config,
-      paymentMethods: paymentMethods,
-      refreshPaymentMethods: refresh,
+      save: saveConfiguration
     }),
-    [config, paymentMethods]
+    [config]
   );
 
   return (

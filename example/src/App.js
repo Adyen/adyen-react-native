@@ -18,7 +18,8 @@ import { Button, Alert, useColorScheme } from 'react-native';
 import CseView from './Views/CseView';
 import SettingView from './Views/SettingsView';
 import Result from './Views/ResultView';
-import CheckoutView from './Views/Checkout/CheckoutView';
+import SessionsCheckout from './Views/Checkout/SessionsCheckout';
+import AdvancedCheckout from './Views/Checkout/AdvancedCheckout';
 import Home from './Views/HomeView';
 import AppContextProvider from './Utilities/AppContext';
 import { DEFAULT_CONFIGURATION } from './Configuration';
@@ -27,9 +28,18 @@ const Stack = createNativeStackNavigator();
 
 const SettingsButton = ({ navigation }) => {
   return (
-    <Button onPress={() => navigation.navigate('Settings')} title="Edit" />
+    <Button onPress={() => navigation.navigate(Page.Settings)} title="Edit" />
   );
 };
+
+export const Page = {
+  SessionsCheckout: 'SessionsCheckout', 
+  AdvancedCheckout: 'AdvancedCheckout', 
+  Settings: 'Settings', 
+  CustomCard: 'CustomCard',
+  Result: 'Result'
+}
+
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -44,22 +54,32 @@ const App = () => {
         <Stack.Navigator>
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen
-            name="CheckoutPage"
-            component={CheckoutView}
+            name={Page.SessionsCheckout}
+            component={SessionsCheckout}
             options={({ navigation }) => ({
-              title: 'Checkout',
+              title: 'Sessions',
               headerRight: (props) => (
                 <SettingsButton navigation={navigation} {...props} />
               ),
             })}
           />
-          <Stack.Screen name="Settings" component={SettingView} />
-          <Stack.Screen name="Result" component={Result} />
           <Stack.Screen
-            name="Clientside Encryption"
+            name={Page.AdvancedCheckout}
+            component={AdvancedCheckout}
+            options={({ navigation }) => ({
+              title: 'Advanced',
+              headerRight: (props) => (
+                <SettingsButton navigation={navigation} {...props} />
+              ),
+            })}
+          />
+          <Stack.Screen name={Page.Settings} component={SettingView} />
+          <Stack.Screen name={Page.Result} component={Result} />
+          <Stack.Screen
+            name={Page.CustomCard}
             component={CseView}
             options={({ navigation }) => ({
-              title: 'Clientside Encryption',
+              title: 'Custom Card Integration',
               headerRight: (props) => (
                 <SettingsButton navigation={navigation} {...props} />
               ),

@@ -83,7 +83,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
                 config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList() ?: emptyList()
             val strings: MutableList<String> = ArrayList(list.size)
 
-            for (cardNetwork in list.map { it.toString().toUpperCase(Locale.ROOT) }) {
+            for (cardNetwork in list.map { it.toString().uppercase(Locale.ROOT) }) {
                 if (availableCardNetworks.contains(cardNetwork)) {
                     strings.add(cardNetwork)
                 } else {

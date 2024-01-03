@@ -8,6 +8,7 @@ export {
   PaymentResponse,
   PaymentMethodData,
   PaymentMethodGroup,
+  AdyenError,
 } from './Core/types';
 
 export {
@@ -19,13 +20,12 @@ export {
   AdyenComponent,
   AdyenActionComponent,
   HideOption,
+  SessionHelper,
 } from './AdyenNativeModules';
 
 export {
   AdyenCheckout,
-  AdyenCheckoutContext,
   AdyenCheckoutProps,
-  AdyenError,
   AdyenCheckoutContextType,
   useAdyenCheckout,
 } from './AdyenCheckoutContext';

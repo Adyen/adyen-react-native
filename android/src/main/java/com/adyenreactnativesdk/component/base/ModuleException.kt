@@ -14,22 +14,22 @@ open class KnownException @JvmOverloads constructor(
 
 sealed class ModuleException(code: String, message: String, cause: Throwable? = null) :
     KnownException(code = code, errorMessage = message, cause) {
-    class Canceled() : ModuleException(
+    class Canceled : ModuleException(
         code = "canceledByShopper",
         message = "Payment canceled by shopper"
     )
 
-    class NotSupported() : ModuleException(
+    class NotSupported : ModuleException(
         code = "notSupported",
         message = "Not supported on Android"
     )
 
-    class NoClientKey() : ModuleException(
+    class NoClientKey : ModuleException(
         code = "noClientKey",
         message = "No clientKey in configuration"
     )
 
-    class NoPayment() : ModuleException(
+    class NoPayment : ModuleException(
         code = "noPayment",
         message = "No payment in configuration"
     )
@@ -64,5 +64,20 @@ sealed class ModuleException(code: String, message: String, cause: Throwable? = 
     class Unknown(reason: String?) : ModuleException(
         code = "unknown",
         message = if (reason.isNullOrEmpty()) "Reason unknown" else reason
+    )
+
+    class SessionError : ModuleException(
+        code = "session",
+        message = "Something went wrong while starting session"
+    )
+
+    class NoActivity : ModuleException(
+        code = "noActivity",
+        message = "Launcher not registered. Please call AdyenCheckout.setLauncherActivity() on MainActivity.onCreate()"
+    )
+
+    class WrongFlow : ModuleException(
+        code = "noActivity",
+        message = "ViewModel callback is inconsistent"
     )
 }

@@ -6,17 +6,19 @@
 
 package com.adyenreactnativesdk.component.dropin
 
-import android.os.Build
-import android.util.Log
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.components.core.Amount
-import com.adyen.checkout.core.Environment
+import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.dropin.DropIn.startPayment
+import com.adyen.checkout.dropin.DropInConfiguration
 import com.adyen.checkout.dropin.DropInConfiguration.Builder
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
+import com.adyen.checkout.sessions.core.CheckoutSession
+import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
@@ -24,21 +26,16 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
-import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import java.util.Locale
+import org.json.JSONObject
 
 class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     ReactDropInCallback {
-
-    private lateinit var environment: Environment
-    private lateinit var clientKey: String
-    private lateinit var locale: Locale
 
     @ReactMethod
     fun addListener(eventName: String?) { /* No JS events expected */ }
@@ -52,51 +49,53 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) {
-        val paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData) ?: return
-        val parser = RootConfigurationParser(configuration)
-        val clientKey = parser.clientKey
-        if (clientKey == null) {
-            sendErrorEvent(ModuleException.NoClientKey())
-            return
+        val dropInConfiguration: DropInConfiguration
+        val paymentMethodsResponse: PaymentMethodsApiResponse
+        try {
+            paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
+            dropInConfiguration = parseConfiguration(configuration) as DropInConfiguration
+        } catch (e: java.lang.Exception) {
+            return sendErrorEvent(e)
         }
-        this.environment = parser.environment
-        this.clientKey = clientKey
-        this.locale = parser.locale ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            reactApplicationContext.resources.configuration.locales[0]
-        } else {
-            reactApplicationContext.resources.configuration.locale
-        }
-        val builder = Builder(locale, environment, clientKey)
-        configureDropIn(builder, configuration)
-        configureBcmc(builder, configuration)
-        configure3DS(builder)
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
-
-        val amount = parser.amount
-        val countryCode = parser.countryCode
-        if (amount != null && countryCode != null) {
-            builder.setAmount(amount)
-            configureGooglePay(builder, configuration, countryCode, amount)
-        }
-        configureCards(builder, configuration, countryCode)
 
         CheckoutProxy.shared.componentListener = this
         AdyenCheckout.addDropInListener(this)
-        AdyenCheckout.dropInLauncher?.let {
-            startPayment(
-                reactApplicationContext,
-                it,
-                paymentMethodsResponse,
-                builder.build(),
-                AdyenCheckoutService::class.java
-            )
-        } ?: run {
-            Log.e(
-                TAG,
-                "Invalid state: dropInLauncher not set. " +
-                        "Call AdyenCheckout.setLauncherActivity(this) on MainActivity.onCreate()"
-            )
-            return
+        val session = session
+        if (session != null) {
+            preparePaymentMethods(dropInConfiguration, paymentMethodsResponse, session)
+            AdyenCheckout.setIntentHandler(this)
+            AdyenCheckout.dropInSessionLauncher?.let {
+                startPayment(
+                    reactApplicationContext,
+                    it,
+                    session,
+                    dropInConfiguration,
+                    SessionCheckoutService::class.java
+                )
+            } ?: throw ModuleException.NoActivity()
+        } else {
+
+            AdyenCheckout.dropInLauncher?.let {
+                startPayment(
+                    reactApplicationContext,
+                    it,
+                    paymentMethodsResponse,
+                    dropInConfiguration,
+                    AdvancedCheckoutService::class.java
+                )
+            } ?: throw ModuleException.NoActivity()
+        }
+    }
+
+    private fun preparePaymentMethods(
+        dropInConfiguration: DropInConfiguration,
+        paymentMethodsResponse: PaymentMethodsApiResponse,
+        session: CheckoutSession
+    ) {
+        if (dropInConfiguration.skipListWhenSinglePaymentMethod && paymentMethodsResponse.paymentMethods?.size == 1) {
+            session.sessionSetupResponse.paymentMethodsApiResponse?.paymentMethods =
+                paymentMethodsResponse.paymentMethods
+            session.sessionSetupResponse.paymentMethodsApiResponse?.storedPaymentMethods = null
         }
     }
 
@@ -117,9 +116,32 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
 
     @ReactMethod
     fun hide(success: Boolean, message: ReadableMap?) {
-        proxyHideDropInCommand(success, message)
-        AdyenCheckout.removeDropInListener()
-        CheckoutProxy.shared.componentListener = null
+        if (session == null) {
+            proxyHideDropInCommand(success, message)
+        }
+
+        cleanup()
+    }
+
+    override fun parseConfiguration(json: ReadableMap): Configuration {
+        val config = setupRootConfig(json)
+
+        val builder = Builder(locale, environment, clientKey)
+        configureDropIn(builder, json)
+        configureBcmc(builder, json)
+        configure3DS(builder)
+
+        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
+
+        val amount = config.amount
+        val countryCode = config.countryCode
+        if (amount != null && countryCode != null) {
+            builder.setAmount(amount)
+            configureGooglePay(builder, json, countryCode, amount)
+        }
+        configureCards(builder, json, countryCode)
+
+        return builder.build()
     }
 
     override fun getRedirectUrl(): String {
@@ -139,7 +161,8 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     }
 
     override fun onCompleted(result: String) {
-        hide(true, null)
+        var jsonObject = JSONObject("{\"resultCode\": ${RESULT_CODE_PRESENTED}}")
+        sendEvent(DID_COMPLETE, jsonObject)
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {
@@ -219,11 +242,11 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         private const val COMPONENT_NAME = "AdyenDropIn"
         private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
     }
-
 }
 
 internal interface ReactDropInCallback {
     fun onCancel()
     fun onError(reason: String?)
     fun onCompleted(result: String)
+    fun onFinished(result: SessionPaymentResult)
 }

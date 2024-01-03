@@ -6,38 +6,15 @@ import { ENVIRONMENT, CHANNEL } from '../Configuration';
 LogBox.ignoreLogs(['Require cycle:']);
 
 class ApiClient {
-  static payments(data, configuration) {
+  static payments(data, configuration, returnUrl) {
     console.debug(JSON.stringify(data));
     const body = {
       ...data,
       ...parseConfig(configuration),
       ...parseAmount(configuration, data),
       ...serverConfiguration,
-      additionalData: { allow3DS2: true },
-      lineItems: [
-        {
-          quantity: '1',
-          amountExcludingTax: '331',
-          taxPercentage: '2100',
-          description: 'Shoes',
-          id: 'Item #1',
-          taxAmount: '69',
-          amountIncludingTax: '400',
-          productUrl: 'URL_TO_PURCHASED_ITEM',
-          imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
-        },
-        {
-          quantity: '2',
-          amountExcludingTax: '248',
-          taxPercentage: '2100',
-          description: 'Socks',
-          id: 'Item #2',
-          taxAmount: '52',
-          amountIncludingTax: '300',
-          productUrl: 'URL_TO_PURCHASED_ITEM',
-          imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
-        },
-      ],
+      ...paymentConfiguration,
+      returnUrl: returnUrl
     };
 
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
@@ -45,6 +22,17 @@ class ApiClient {
 
   static paymentDetails = (data) => {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
+  };
+
+  static requestSesion = (configuration, returnUrl) => {
+    const body = {
+      ...parseConfig(configuration),
+      ...parseAmount(configuration),
+      ...serverConfiguration,
+      ...paymentConfiguration,
+      returnUrl: returnUrl
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
   static paymentMethods = (configuration) => {
@@ -60,6 +48,7 @@ class ApiClient {
   static makeRequest = async (url, body) => {
     const bodyJSON = JSON.stringify(body);
     console.debug(`Request to: ${url}`);
+    console.debug(`== ${bodyJSON}`);
     const request = new Request(url, {
       method: 'POST',
       headers: {
@@ -76,7 +65,7 @@ class ApiClient {
     if (response.ok) return payload;
     console.warn(`Error - ${JSON.stringify(payload, null, ' ')}`);
     throw new Error(`Network Error ${response.status}:
-          ${payload.message || 'Unknown error'}`);
+          ${payload.message ?? JSON.stringify(payload)}`);
   };
 }
 
@@ -85,6 +74,35 @@ export default ApiClient;
 const serverConfiguration = {
   channel: CHANNEL,
   reference: 'React Native',
+};
+
+const paymentConfiguration = {
+  additionalData: { allow3DS2: true },
+  lineItems: [
+    {
+      quantity: '1',
+      amountExcludingTax: '331',
+      taxPercentage: '2100',
+      description: 'Shoes',
+      id: 'Item #1',
+      taxAmount: '69',
+      amountIncludingTax: '400',
+      productUrl: 'URL_TO_PURCHASED_ITEM',
+      imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
+    },
+    {
+      quantity: '2',
+      amountExcludingTax: '248',
+      taxPercentage: '2100',
+      description: 'Socks',
+      id: 'Item #2',
+      taxAmount: '52',
+      amountIncludingTax: '300',
+      productUrl: 'URL_TO_PURCHASED_ITEM',
+      imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
+    },
+  ],
+  recurringProcessingModel: 'CardOnFile'
 };
 
 const parseAmount = (configuration, data) => ({
