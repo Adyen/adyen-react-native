@@ -1,7 +1,7 @@
 // @ts-check
 
 import React, { useEffect, useCallback, useState } from 'react';
-import { SafeAreaView, Alert, View, Text, useColorScheme } from 'react-native';
+import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { AdyenCheckout, ErrorCode, ResultCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
 import { checkoutConfiguration, useAppContext } from '../../Utilities/AppContext';
@@ -138,7 +138,7 @@ const AdvancedCheckout = ({ navigation }) => {
           <PaymentMethods />
         </AdyenCheckout>
       ) : (
-        <NoPaymentMethodsView />
+        <ActivityIndicator size='large' style={Styles.page} />
       )}
     </SafeAreaView>
   );
@@ -153,22 +153,6 @@ const isSuccess = (
     code === ResultCode.received ||
     code === ResultCode.pending || 
     code === ResultCode.presentToShopper;
-};
-
-const NoPaymentMethodsView = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View>
-      <Text
-        style={[
-          Styles.centeredText,
-          isDarkMode ? Styles.textDark : Styles.textLight,
-        ]}
-      >
-        No Payment methods
-      </Text>
-    </View>
-  );
 };
 
 export default AdvancedCheckout;
