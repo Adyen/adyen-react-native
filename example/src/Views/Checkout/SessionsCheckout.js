@@ -39,7 +39,7 @@ const SessionsCheckout = ({navigation}) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
       nativeComponent,
     ) => {
-      console.log(`didComplete : ${JSON.stringify(result, null, ' ')}`);
+      console.log(`didComplete :`);
       processResult(result, nativeComponent);
     },
     [],
@@ -122,11 +122,10 @@ const isSuccess = (
   result,
 ) => {
   const code = result.resultCode;
-  return (
-    code === ResultCode.authorised ||
+  return code === ResultCode.authorised ||
     code === ResultCode.received ||
-    code === ResultCode.pending
-  );
+    code === ResultCode.pending || 
+    code === ResultCode.presentToShopper;
 };
 
 export default SessionsCheckout;

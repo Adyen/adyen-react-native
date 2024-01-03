@@ -186,7 +186,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         subscriptions.current.push(
           eventEmitter.addListener(
             Event.onComplete,
-            (data) => onComplete?.(data, nativeComponent), // TODO: provide result for voucher
+            (data) => onComplete?.(data, nativeComponent),
           ),
         );
       }

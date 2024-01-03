@@ -32,6 +32,7 @@ import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import org.json.JSONObject
 
 class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     ReactDropInCallback {
@@ -160,8 +161,8 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     }
 
     override fun onCompleted(result: String) {
-        // TODO: check voucher's use-case
-        hide(true, null)
+        var jsonObject = JSONObject("{\"resultCode\": ${RESULT_CODE_PRESENTED}}")
+        sendEvent(DID_COMPLETE, jsonObject)
     }
 
     private fun proxyHideDropInCommand(success: Boolean, message: ReadableMap?) {

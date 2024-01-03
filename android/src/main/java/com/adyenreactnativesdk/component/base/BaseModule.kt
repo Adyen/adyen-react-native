@@ -59,7 +59,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     lateinit var clientKey: String
     lateinit var locale: Locale
 
-    private fun sendEvent(eventName: String, jsonObject: JSONObject) {
+    internal fun sendEvent(eventName: String, jsonObject: JSONObject) {
         try {
             reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
                 .emit(eventName, ReactNativeJson.convertJsonToMap(jsonObject))
@@ -161,11 +161,15 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     override fun onFinished(result: SessionPaymentResult) {
+        val resultCode = if (result.resultCode == VOUCHER_RESULT_CODE)
+            RESULT_CODE_PRESENTED
+        else
+            result.resultCode
         sendFinishEvent(
             SessionDetailsResponse(
                 result.sessionData ?: "",
                 "",
-                result.resultCode,
+                resultCode,
                 null,
                 result.sessionResult,
                 result.order
@@ -241,6 +245,8 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_PROVIDE = "didProvideCallback"
         const val DID_FAILED = "didFailCallback"
         const val DID_SUBMIT = "didSubmitCallback"
+        const val RESULT_CODE_PRESENTED = "PresentToShopper"
+        private const val VOUCHER_RESULT_CODE = "finish_with_action";
 
         @JvmStatic
         protected var session: CheckoutSession? = null

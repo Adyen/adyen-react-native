@@ -21,7 +21,6 @@ function mapCreatedComponentType(pmType: string) {
 
 export const UNSUPPORTED_PAYMENT_METHODS = [
   /** Payment methods that might be interpreted as redirect, but are actually not supported */
-  'bcmc_mobile_QR',
   'wechatpayMiniProgram',
   'wechatpayQR',
   'wechatpayWeb',
@@ -30,6 +29,7 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'qiwiwallet',
   'ratepay',
   'ratepay_directdebit',
+  'bcmc_mobile_QR',
 
   /** Voucher payment methods that are not yet supported */
   'doku',
@@ -55,12 +55,6 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'dragonpay_otc_banking',
   'dragonpay_otc_non_banking',
   'dragonpay_otc_philippines',
-  'boletobancario',
-  'boletobancario_bancodobrasil',
-  'boletobancario_bradesco',
-  'boletobancario_hsbc',
-  'boletobancario_itau',
-  'boletobancario_santander',
 
   /** Giftcard payment methods that are not yet supported */
   'giftcard',
@@ -83,7 +77,6 @@ export const NATIVE_COMPONENTS = [
   'card',
   'scheme',
   'bcmc',
-  /** Card */
 
   /** issuerList */
   'billdesk_online',
@@ -102,7 +95,6 @@ export const NATIVE_COMPONENTS = [
   'onlineBanking_SK',
   'paybybank',
   'wallet_IN',
-  /** issuerList */
 
   /** Await */
   'blik',
@@ -110,11 +102,18 @@ export const NATIVE_COMPONENTS = [
   'upi',
   'upi_qr',
   'upi_collect',
-  /** Await */
 
   /** Direct debit */
   'ach',
   'directdebit_GB',
   'sepadirectdebit',
-  /** Direct debit */
+
+  /** Voucher payment methods that are not yet supported */
+  'boletobancario',
+  'boletobancario_bancodobrasil',
+  'boletobancario_bradesco',
+  'boletobancario_hsbc',
+  'boletobancario_itau',
+  'boletobancario_santander',
+  'primeiropay_boleto'
 ];

@@ -74,7 +74,7 @@ const AdvancedCheckout = ({ navigation }) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       console.log('didComplete');
-      nativeComponent.hide(true);
+      processResult(result, nativeComponent);
     },
     []
   );
@@ -145,14 +145,14 @@ const AdvancedCheckout = ({ navigation }) => {
 };
 
 const isSuccess = (
-  /** @type {import('@adyen/react-native').PaymentResponse} */ result
+  /** @type {import('@adyen/react-native').PaymentResponse} */
+  result,
 ) => {
   const code = result.resultCode;
-  return (
-    code === ResultCode.authorised ||
+  return code === ResultCode.authorised ||
     code === ResultCode.received ||
-    code === ResultCode.pending
-  );
+    code === ResultCode.pending || 
+    code === ResultCode.presentToShopper;
 };
 
 const NoPaymentMethodsView = () => {
