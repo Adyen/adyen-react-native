@@ -36,6 +36,7 @@ internal final class ApplePayModule: BaseModule {
             return sendEvent(error: error)
         }
 
+        currentComponent = applePayComponent
         SessionHelperModule.sessionListener = self
         applePayComponent.delegate = BaseModule.session ?? self
         present(component: applePayComponent)

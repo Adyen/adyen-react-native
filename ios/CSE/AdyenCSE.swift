@@ -38,7 +38,7 @@ internal final class AdyenCSE: NSObject {
             let encryptedBin = try CardEncryptor.encrypt(bin: formattedBin as String, with: publicKey as String)
             resolver(encryptedBin)
         } catch {
-            rejecter(Constant.errorMessage, nil, error)
+            rejecter("AdyenCSE", Constant.errorMessage, error)
         }
     }
 

@@ -239,23 +239,22 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     ],
   );
 
-  const createSession = useCallback(async () => {
-    try {
-      const sessionResponse = await SessionHelper.createSession(
-        session,
-        config,
-      );
-      setSession(sessionResponse);
-    } catch (error) {
-      onError(
-        {
-          message: JSON.stringify(error),
-          errorCode: 'sessionError',
-        },
-        SessionHelper,
-      );
-    }
+  const createSession = useCallback(() => {
+    SessionHelper.createSession(session, config)
+      .then((sessionResponse) => {
+        setSession(sessionResponse);
+      })
+      .catch((e) => {
+        onError(
+          {
+            message: JSON.stringify(e),
+            errorCode: 'sessionError',
+          },
+          SessionHelper,
+        );
+      });
   }, [session, config, onError]);
+  
 
   return (
     <AdyenCheckoutContext.Provider
