@@ -111,7 +111,7 @@ const SessionsCheckout = ({navigation}) => {
           <PaymentMethods />
         </AdyenCheckout>
       ) : (
-        <ActivityIndicator style={Styles.content} />
+        <ActivityIndicator size='large' style={Styles.page} />
       )}
     </SafeAreaView>
   );

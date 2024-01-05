@@ -13,7 +13,6 @@ const Styles = StyleSheet.create({
     alignItems: 'stretch',
     flex: 1,
     justifyContent: 'center',
-    gap: 8
   },
   horizontalContent: {
     alignItems: 'center',
@@ -56,8 +55,9 @@ const Styles = StyleSheet.create({
     backgroundColor: '#009D6E',
     borderRadius: 5,
     padding: 8,
+    marginVertical: 4,
     marginLeft: 8,
-    marginRight: 8
+    marginRight: 8,
   },
   btnContainer: {
     flexDirection: 'row',

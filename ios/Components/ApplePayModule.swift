@@ -12,7 +12,7 @@ import React
 @objc(AdyenApplePay)
 internal final class ApplePayModule: BaseModule {
 
-    override func supportedEvents() -> [String]! { [ Events.didSubmit.rawValue, Events.didFail.rawValue ] }
+    override func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
@@ -23,25 +23,12 @@ internal final class ApplePayModule: BaseModule {
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         let parser = RootConfigurationParser(configuration: configuration)
         let applePayParser = ApplepayConfigurationParser(configuration: configuration)
-        let paymentMethod: ApplePayPaymentMethod
-        let clientKey: String
-        let payment: Payment
-        let applepayConfig: Adyen.ApplePayComponent.Configuration
+        let applePayComponent: ApplePayComponent
         do {
-            paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: ApplePayPaymentMethod.self)
-            clientKey = try fetchClientKey(from: parser)
-            payment = try fetchPayment(from: parser)
-            applepayConfig = try applePayParser.buildConfiguration(payment: payment)
-        } catch {
-            return sendEvent(error: error)
-        }
-
-        guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
-
-        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
-        let context = AdyenContext(apiContext: apiContext, payment: payment)
-        let applePayComponent: Adyen.ApplePayComponent
-        do {
+            let paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: ApplePayPaymentMethod.self)
+            let context = try parser.fetchContext()
+            guard let payment = context.payment else { throw NativeModuleError.noPayment }
+            let applepayConfig = try applePayParser.buildConfiguration(payment: payment)
             applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,
                                                             context: context,
                                                             configuration: applepayConfig)
@@ -49,6 +36,9 @@ internal final class ApplePayModule: BaseModule {
             return sendEvent(error: error)
         }
 
+        currentComponent = applePayComponent
+        SessionHelperModule.sessionListener = self
+        applePayComponent.delegate = BaseModule.session ?? self
         present(component: applePayComponent)
     }
 

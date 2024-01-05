@@ -11,6 +11,8 @@ import UIKit
 
 internal class BaseModule: RCTEventEmitter {
 
+    internal static var session: AdyenSession?
+
     #if DEBUG
         override func invalidate() {
             super.invalidate()
@@ -33,22 +35,18 @@ internal class BaseModule: RCTEventEmitter {
         currentComponent as? PresentableComponent
     }
 
-    internal var currentPresenter: UIViewController?
+    internal static var currentPresenter: UIViewController?
     internal var actionHandler: AdyenActionComponent?
 
     internal func present(_ component: PresentableComponent) {
-        if let paymentComponent = component as? PaymentComponent {
-            paymentComponent.delegate = self as? PaymentComponentDelegate
+        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else { return sendEvent(error: NativeModuleError.notKeyWindow)}
+
+        defer {
+            BaseModule.currentPresenter = presenter
         }
 
-        if let actionComponent = component as? ActionComponent {
-            actionComponent.delegate = self as? ActionComponentDelegate
-        }
-
-        currentComponent = component
-        currentPresenter = UIViewController.topPresenter
         guard component.requiresModalPresentation else {
-            currentPresenter?.present(component.viewController, animated: true)
+            presenter.present(component.viewController, animated: true)
             return
         }
 
@@ -56,7 +54,7 @@ internal class BaseModule: RCTEventEmitter {
         component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
                                                                            target: self,
                                                                            action: #selector(cancelDidPress))
-        currentPresenter?.present(navigation, animated: true)
+       presenter.present(navigation, animated: true)
     }
 
     @objc private func cancelDidPress() {
@@ -136,12 +134,15 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     internal func cleanUp() {
+        BaseModule.session = nil
+        SessionHelperModule.sessionListener = nil
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
 
-        currentPresenter?.dismiss(animated: true)
-        currentPresenter = nil
+        BaseModule.currentPresenter?.dismiss(animated: true) {
+            BaseModule.currentPresenter = nil
+        }
     }
 
     internal func dismiss(_ result: Bool) {
@@ -165,6 +166,7 @@ extension BaseModule {
         case notSupported
         case invalidPaymentMethods
         case invalidAction
+        case notKeyWindow
         case paymentMethodNotFound(PaymentMethod.Type)
 
         var errorCode: String {
@@ -183,6 +185,8 @@ extension BaseModule {
                 return "invalidAction"
             case .paymentMethodNotFound:
                 return "noPaymentMethod"
+            case .notKeyWindow:
+                return "notKeyWindow"
             }
         }
 
@@ -202,6 +206,8 @@ extension BaseModule {
                 return "Can not parse action"
             case let .paymentMethodNotFound(type):
                 return "Can not find payment method of type \(type) in provided list"
+            case .notKeyWindow:
+                return "Can not find root ViewController"
             }
         }
     }
@@ -216,4 +222,25 @@ extension BaseModule: PresentationDelegate {
         }
     }
 
+}
+
+extension BaseModule: SessionResultListener {
+    func didComplete(with result: Adyen.AdyenSessionResult) {
+        sendEvent(event: Events.didComplete, body: result.jsonObject )
+    }
+
+    func didFail(with error: Error) {
+        sendEvent(error: error)
+    }
+}
+
+extension AdyenSessionResult: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.resultCode.rawValue, forKey: .resultCode)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case resultCode
+    }
 }

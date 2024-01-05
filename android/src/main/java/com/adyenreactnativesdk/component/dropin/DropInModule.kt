@@ -43,9 +43,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     @ReactMethod
     fun removeListeners(count: Int?) { /* No JS events expected */ }
 
-    override fun getName(): String {
-        return COMPONENT_NAME
-    }
+    override fun getName(): String = COMPONENT_NAME
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) {

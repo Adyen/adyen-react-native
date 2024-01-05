@@ -12,9 +12,9 @@ import {
   DarkTheme,
   DefaultTheme,
 } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import { Button, Alert, useColorScheme } from 'react-native';
+import {Button, Alert, useColorScheme} from 'react-native';
 import CseView from './Views/CseView';
 import SettingView from './Views/SettingsView';
 import Result from './Views/ResultView';
@@ -22,23 +22,24 @@ import SessionsCheckout from './Views/Checkout/SessionsCheckout';
 import AdvancedCheckout from './Views/Checkout/AdvancedCheckout';
 import Home from './Views/HomeView';
 import AppContextProvider from './Utilities/AppContext';
-import { DEFAULT_CONFIGURATION } from './Configuration';
+import {DEFAULT_CONFIGURATION} from './Configuration';
 
 const Stack = createNativeStackNavigator();
 
-const SettingsButton = ({ navigation }) => {
+const SettingsButton = ({navigation}) => {
   return (
     <Button onPress={() => navigation.navigate(Page.Settings)} title="Edit" />
   );
 };
 
 export const Page = {
-  SessionsCheckout: 'SessionsCheckout', 
-  AdvancedCheckout: 'AdvancedCheckout', 
-  Settings: 'Settings', 
+  Home: 'Home',
+  SessionsCheckout: 'SessionsCheckout',
+  AdvancedCheckout: 'AdvancedCheckout',
+  Settings: 'Settings',
   CustomCard: 'CustomCard',
-  Result: 'Result'
-}
+  Result: 'Result',
+};
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -52,39 +53,28 @@ const App = () => {
     >
       <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack.Navigator>
-          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen
+            name={Page.Home}
+            component={Home}
+            options={({navigation}) => ({
+              headerRight: () => (
+                <SettingsButton navigation={navigation} />
+              ),
+            })}
+          />
           <Stack.Screen
             name={Page.SessionsCheckout}
             component={SessionsCheckout}
-            options={({ navigation }) => ({
-              title: 'Sessions',
-              headerRight: (props) => (
-                <SettingsButton navigation={navigation} {...props} />
-              ),
-            })}
+            options={() => ({title: 'Sessions Checkout' })}
           />
           <Stack.Screen
             name={Page.AdvancedCheckout}
             component={AdvancedCheckout}
-            options={({ navigation }) => ({
-              title: 'Advanced',
-              headerRight: (props) => (
-                <SettingsButton navigation={navigation} {...props} />
-              ),
-            })}
+            options={() => ({title: 'Advanced Checkout' })}
           />
           <Stack.Screen name={Page.Settings} component={SettingView} />
           <Stack.Screen name={Page.Result} component={Result} />
-          <Stack.Screen
-            name={Page.CustomCard}
-            component={CseView}
-            options={({ navigation }) => ({
-              title: 'Custom Card Integration',
-              headerRight: (props) => (
-                <SettingsButton navigation={navigation} {...props} />
-              ),
-            })}
-          />
+          <Stack.Screen name={Page.CustomCard} component={CseView} />
         </Stack.Navigator>
       </NavigationContainer>
     </AppContextProvider>

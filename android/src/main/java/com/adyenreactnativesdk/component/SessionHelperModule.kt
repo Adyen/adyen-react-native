@@ -39,9 +39,7 @@ class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(contex
         return builder.build()
     }
 
-    override fun getName(): String {
-        return "SessionHelper"
-    }
+    override fun getName(): String = COMPONENT_NAME
 
     override fun onFinished(result: SessionPaymentResult) {
         throw NotImplementedError("This Module have no events")
@@ -61,6 +59,10 @@ class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(contex
     @ReactMethod
     fun getReturnURL(promise: Promise) {
         promise.resolve(RedirectComponent.getReturnUrl(reactApplicationContext))
+    }
+
+    companion object {
+        private const val COMPONENT_NAME = "SessionHelper"
     }
 
 }

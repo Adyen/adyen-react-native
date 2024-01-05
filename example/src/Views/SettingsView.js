@@ -117,7 +117,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
         onChangeText={setShopperReference}
       />
       <View style={Styles.centeredButton}>
-        <Button title="Save payment methods" onPress={handleOnPress} />
+        <Button title="Save" onPress={handleOnPress} />
       </View>
     </View>
   );
