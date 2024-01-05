@@ -38,7 +38,6 @@ struct SessionDTO {
     }
 }
 
-
 extension PaymentMethods {
     var jsonObject: [String: Any] {
         var dict = [String: Any]()

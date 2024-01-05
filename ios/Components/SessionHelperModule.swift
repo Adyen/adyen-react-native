@@ -30,7 +30,6 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
 
     override public func supportedEvents() -> [String]! { [Events.didComplete.rawValue, Events.didFail.rawValue] }
 
-
     @objc
     func createSession(_ sessionModelJSON: NSDictionary,
                        configuration: NSDictionary,
@@ -67,7 +66,5 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
     func hide(_ success: NSNumber, event: NSDictionary) {
         dismiss(success.boolValue)
     }
-
-
 
 }

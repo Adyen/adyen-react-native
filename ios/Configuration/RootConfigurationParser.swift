@@ -67,7 +67,7 @@ extension RootConfigurationParser {
             throw BaseModule.NativeModuleError.noClientKey
         }
         let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
-        
+
         // TODO: add analyticsConfiguration: AnalyticsConfiguration()
         return AdyenContext(apiContext: apiContext, payment: self.payment)
     }
