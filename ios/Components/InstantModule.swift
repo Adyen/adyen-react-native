@@ -23,26 +23,22 @@ internal final class InstantModule: BaseModule {
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         let parser = RootConfigurationParser(configuration: configuration)
         let paymentMethod: PaymentMethod
-        let clientKey: String
+        let context: AdyenContext
         do {
             paymentMethod = try parseAnyPaymentMethod(from: paymentMethodsDict)
-            clientKey = try fetchClientKey(from: parser)
+            context = try parser.fetchContext()
         } catch {
             return sendEvent(error: error)
         }
-
-        guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
-
-        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
-        let context = AdyenContext(apiContext: apiContext, payment: nil)
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
         actionHandler = AdyenActionComponent(context: context, configuration: .init(style: style))
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
 
+        SessionHelperModule.sessionListener = self
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
-        component.delegate = self
+        component.delegate = BaseModule.session ?? self
         currentComponent = component
 
         DispatchQueue.main.async {

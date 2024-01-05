@@ -27,36 +27,31 @@ internal final class DropInModule: BaseModule {
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         let parser = RootConfigurationParser(configuration: configuration)
         let paymentMethods: PaymentMethods
-        let clientKey: String
+        let context: AdyenContext
         do {
             paymentMethods = try parsePaymentMethods(from: paymentMethodsDict)
-            clientKey = try fetchClientKey(from: parser)
+            context = try parser.fetchContext()
         } catch {
             return sendEvent(error: error)
         }
 
-        guard let apiContext = try? APIContext(environment: parser.environment, clientKey: clientKey) else { return }
         let config = DropInConfigurationParser(configuration: configuration).configuration
         config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
         config.style = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
 
-        let context: AdyenContext
-        if let payment = parser.payment {
+        if let payment = context.payment {
             (try? ApplepayConfigurationParser(configuration: configuration).buildConfiguration(payment: payment)).map {
                 config.applePay = $0
             }
-
-            // TODO: add analyticsConfiguration: AnalyticsConfiguration()
-            context = AdyenContext(apiContext: apiContext, payment: payment)
-        } else {
-            context = AdyenContext(apiContext: apiContext, payment: nil, analyticsConfiguration: AnalyticsConfiguration())
         }
 
+        SessionHelperModule.sessionListener = self
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         context: context,
                                         configuration: config)
         currentComponent = component
-        component.delegate = self
+        component.delegate = BaseModule.session ?? self
+        component.partialPaymentDelegate = BaseModule.session
         present(component: component)
     }
 

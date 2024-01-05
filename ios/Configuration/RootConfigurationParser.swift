@@ -59,3 +59,16 @@ public struct RootConfigurationParser {
     }
 
 }
+
+extension RootConfigurationParser {
+
+    internal func fetchContext() throws -> AdyenContext {
+        guard let clientKey = self.clientKey else {
+            throw BaseModule.NativeModuleError.noClientKey
+        }
+        let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
+        
+        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
+        return AdyenContext(apiContext: apiContext, payment: self.payment)
+    }
+}
