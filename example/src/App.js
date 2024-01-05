@@ -57,7 +57,6 @@ const App = () => {
             name={Page.Home}
             component={Home}
             options={({navigation}) => ({
-              title: 'Sessions',
               headerRight: () => (
                 <SettingsButton navigation={navigation} />
               ),
@@ -66,10 +65,12 @@ const App = () => {
           <Stack.Screen
             name={Page.SessionsCheckout}
             component={SessionsCheckout}
+            options={() => ({title: 'Sessions Checkout' })}
           />
           <Stack.Screen
             name={Page.AdvancedCheckout}
             component={AdvancedCheckout}
+            options={() => ({title: 'Advanced Checkout' })}
           />
           <Stack.Screen name={Page.Settings} component={SettingView} />
           <Stack.Screen name={Page.Result} component={Result} />

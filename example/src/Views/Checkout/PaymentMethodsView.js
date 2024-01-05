@@ -9,6 +9,7 @@ import {
   TouchableHighlight,
   Image,
   Text,
+  useColorScheme,
 } from 'react-native';
 import Styles from '../../Utilities/Styles';
 import { ENVIRONMENT } from '../../Configuration';
@@ -19,6 +20,7 @@ const PaymentMethods = () => {
   const storedPaymentMethods = paymentMethodsResponse?.storedPaymentMethods;
 
   const isNotReady = paymentMethodsResponse === undefined;
+  const isDarkMode = useColorScheme() === 'dark';
 
   const subtitle = (/** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm) => {
     switch (pm.type) {
@@ -44,7 +46,7 @@ const PaymentMethods = () => {
 
         {storedPaymentMethods ? (
           <View>
-            <Text> Stored payments </Text>
+            <Text style={isDarkMode ? Styles.textDark : Styles.textLight}> Stored payments </Text>
             {storedPaymentMethods.map((p) => {
               const iconName = p.type === 'scheme' ? 'card' : p.type;
               return (
@@ -63,7 +65,7 @@ const PaymentMethods = () => {
           </View>
         ) : (<View />)}
 
-        <Text> Components </Text>
+        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}> Components </Text>
         {regularPaymentMethods.map((p) => {
           const iconName = p.type === 'scheme' ? 'card' : p.type;
           return (
