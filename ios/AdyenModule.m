@@ -1,8 +1,8 @@
-    //
-    // Copyright (c) 2021 Adyen N.V.
-    //
-    // This file is open source and available under the MIT license. See the LICENSE file for more info.
-    //
+//
+// Copyright (c) 2021 Adyen N.V.
+//
+// This file is open source and available under the MIT license. See the LICENSE file for more info.
+//
 
 
 #import <React/RCTBridgeModule.h>
@@ -42,7 +42,7 @@ RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
 
 @end
 
-    // Mock to prevent NativeModule check failure
+// Mock to prevent NativeModule check failure
 @interface RCT_EXTERN_MODULE(AdyenGooglePay, NSObject)
 
 RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
