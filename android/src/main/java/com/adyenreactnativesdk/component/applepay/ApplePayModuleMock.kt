@@ -19,9 +19,7 @@ class ApplePayModuleMock(context: ReactApplicationContext?) : BaseModule(context
         throw MethodNotImplementedException("This method is not implemented for Android")
     }
 
-    override fun getName(): String {
-        return COMPONENT_NAME
-    }
+    override fun getName(): String = COMPONENT_NAME
 
     companion object {
         private const val COMPONENT_NAME = "AdyenApplePay"

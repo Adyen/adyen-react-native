@@ -21,9 +21,7 @@ import org.json.JSONException
 
 class InstantModule(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
 
-    override fun getName(): String {
-        return COMPONENT_NAME
-    }
+    override fun getName(): String = COMPONENT_NAME
 
     @ReactMethod
     fun addListener(eventName: String?) { /* No JS events expected */ }
