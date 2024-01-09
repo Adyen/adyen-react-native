@@ -80,32 +80,32 @@ extension PKContact {
         var dictionary: [String: Any] = [:]
 
         if let email = self.emailAddress {
-            dictionary[ApplePayKeys.PKContactKeys.emailAddress] = email
+            dictionary[ApplePayKeys.Contact.emailAddress] = email
         }
 
         if let phoneNumber = self.phoneNumber {
-            dictionary[ApplePayKeys.PKContactKeys.phoneNumber] = phoneNumber.stringValue
+            dictionary[ApplePayKeys.Contact.phoneNumber] = phoneNumber.stringValue
         }
 
         if let name = self.name {
-            dictionary[ApplePayKeys.PKContactKeys.givenName] = name.givenName
-            dictionary[ApplePayKeys.PKContactKeys.familyName] = name.familyName
+            dictionary[ApplePayKeys.Contact.givenName] = name.givenName
+            dictionary[ApplePayKeys.Contact.familyName] = name.familyName
         }
 
         if let name = self.name?.phoneticRepresentation {
-            dictionary[ApplePayKeys.PKContactKeys.phoneticGivenName] = name.givenName
-            dictionary[ApplePayKeys.PKContactKeys.phoneticFamilyName] = name.familyName
+            dictionary[ApplePayKeys.Contact.phoneticGivenName] = name.givenName
+            dictionary[ApplePayKeys.Contact.phoneticFamilyName] = name.familyName
         }
 
         if let postalAddress = self.postalAddress {
-            dictionary[ApplePayKeys.PKContactKeys.addressLines] = postalAddress.street
-            dictionary[ApplePayKeys.PKContactKeys.subLocality] = postalAddress.subLocality
-            dictionary[ApplePayKeys.PKContactKeys.locality] = postalAddress.city
-            dictionary[ApplePayKeys.PKContactKeys.postalCode] = postalAddress.postalCode
-            dictionary[ApplePayKeys.PKContactKeys.subAdministrativeArea] = postalAddress.subAdministrativeArea
-            dictionary[ApplePayKeys.PKContactKeys.administrativeArea] = postalAddress.state
-            dictionary[ApplePayKeys.PKContactKeys.country] = postalAddress.country
-            dictionary[ApplePayKeys.PKContactKeys.countryCode] = postalAddress.isoCountryCode
+            dictionary[ApplePayKeys.Contact.addressLines] = postalAddress.street
+            dictionary[ApplePayKeys.Contact.subLocality] = postalAddress.subLocality
+            dictionary[ApplePayKeys.Contact.locality] = postalAddress.city
+            dictionary[ApplePayKeys.Contact.postalCode] = postalAddress.postalCode
+            dictionary[ApplePayKeys.Contact.subAdministrativeArea] = postalAddress.subAdministrativeArea
+            dictionary[ApplePayKeys.Contact.administrativeArea] = postalAddress.state
+            dictionary[ApplePayKeys.Contact.country] = postalAddress.country
+            dictionary[ApplePayKeys.Contact.countryCode] = postalAddress.isoCountryCode
         }
 
         return dictionary
