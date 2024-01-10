@@ -63,91 +63,7 @@ public struct ApplepayConfigurationParser {
             return nil
         }
 
-        let contact = PKContact()
-
-        if let phoneNumber = dictionary[ApplePayKeys.Contact.phoneNumber] as? String {
-            contact.phoneNumber = CNPhoneNumber(stringValue: phoneNumber)
-        }
-
-        if let emailAddress = dictionary[ApplePayKeys.Contact.emailAddress] as? String {
-            contact.emailAddress = emailAddress
-        }
-
-        var name = PersonNameComponents()
-        var nameUodated = false
-        if let givenName = dictionary[ApplePayKeys.Contact.givenName] as? String {
-            name.givenName = givenName
-            nameUodated = true
-        }
-
-        if let familyName = dictionary[ApplePayKeys.Contact.familyName] as? String {
-            name.familyName = familyName
-            nameUodated = true
-        }
-
-        if let phoneticGivenName = dictionary[ApplePayKeys.Contact.phoneticGivenName] as? String {
-            name.phoneticRepresentation = PersonNameComponents()
-            name.phoneticRepresentation?.givenName = phoneticGivenName
-            nameUodated = true
-        }
-
-        if let phoneticFamilyName = dictionary[ApplePayKeys.Contact.phoneticFamilyName] as? String {
-            name.phoneticRepresentation = name.phoneticRepresentation ?? PersonNameComponents()
-            name.phoneticRepresentation?.familyName = phoneticFamilyName
-            nameUodated = true
-        }
-
-        if nameUodated {
-            contact.name = name
-        }
-
-        let postalAddress = CNMutablePostalAddress()
-        var postalAddressUpdated = false
-        if let addressLines = dictionary[ApplePayKeys.Contact.addressLines] as? [String] {
-            postalAddress.street = addressLines.joined(separator: "\n")
-            postalAddressUpdated = true
-        }
-
-        if let subLocality = dictionary[ApplePayKeys.Contact.subLocality] as? String {
-            postalAddress.subLocality = subLocality
-            postalAddressUpdated = true
-        }
-
-        if let locality = dictionary[ApplePayKeys.Contact.locality] as? String {
-            postalAddress.city = locality
-            postalAddressUpdated = true
-        }
-
-        if let postalCode = dictionary[ApplePayKeys.Contact.postalCode] as? String {
-            postalAddress.postalCode = postalCode
-            postalAddressUpdated = true
-        }
-
-        if let subAdministrativeArea = dictionary[ApplePayKeys.Contact.subAdministrativeArea] as? String {
-            postalAddress.subAdministrativeArea = subAdministrativeArea
-            postalAddressUpdated = true
-        }
-
-        if let administrativeArea = dictionary[ApplePayKeys.Contact.administrativeArea] as? String {
-            postalAddress.state = administrativeArea
-            postalAddressUpdated = true
-        }
-
-        if let country = dictionary[ApplePayKeys.Contact.country] as? String {
-            postalAddress.country = country
-            postalAddressUpdated = true
-        }
-
-        if let countryCode = dictionary[ApplePayKeys.Contact.countryCode] as? String {
-            postalAddress.isoCountryCode = countryCode
-            postalAddressUpdated = true
-        }
-
-        if postalAddressUpdated {
-            contact.postalAddress = postalAddress
-        }
-
-        return contact
+        return PKContact(dictionary)
     }
 
     var shippingContact: PKContact? {
@@ -155,91 +71,7 @@ public struct ApplepayConfigurationParser {
             return nil
         }
 
-        let contact = PKContact()
-
-        if let phoneNumber = dictionary[ApplePayKeys.Contact.phoneNumber] as? String {
-            contact.phoneNumber = CNPhoneNumber(stringValue: phoneNumber)
-        }
-
-        if let emailAddress = dictionary[ApplePayKeys.Contact.emailAddress] as? String {
-            contact.emailAddress = emailAddress
-        }
-
-        var name = PersonNameComponents()
-        var nameUodated = false
-        if let givenName = dictionary[ApplePayKeys.Contact.givenName] as? String {
-            name.givenName = givenName
-            nameUodated = true
-        }
-
-        if let familyName = dictionary[ApplePayKeys.Contact.familyName] as? String {
-            name.familyName = familyName
-            nameUodated = true
-        }
-
-        if let phoneticGivenName = dictionary[ApplePayKeys.Contact.phoneticGivenName] as? String {
-            name.phoneticRepresentation = PersonNameComponents()
-            name.phoneticRepresentation?.givenName = phoneticGivenName
-            nameUodated = true
-        }
-
-        if let phoneticFamilyName = dictionary[ApplePayKeys.Contact.phoneticFamilyName] as? String {
-            name.phoneticRepresentation = name.phoneticRepresentation ?? PersonNameComponents()
-            name.phoneticRepresentation?.familyName = phoneticFamilyName
-            nameUodated = true
-        }
-
-        if nameUodated {
-            contact.name = name
-        }
-
-        let postalAddress = CNMutablePostalAddress()
-        var postalAddressUpdated = false
-        if let addressLines = dictionary[ApplePayKeys.Contact.addressLines] as? [String] {
-            postalAddress.street = addressLines.joined(separator: "\n")
-            postalAddressUpdated = true
-        }
-
-        if let subLocality = dictionary[ApplePayKeys.Contact.subLocality] as? String {
-            postalAddress.subLocality = subLocality
-            postalAddressUpdated = true
-        }
-
-        if let locality = dictionary[ApplePayKeys.Contact.locality] as? String {
-            postalAddress.city = locality
-            postalAddressUpdated = true
-        }
-
-        if let postalCode = dictionary[ApplePayKeys.Contact.postalCode] as? String {
-            postalAddress.postalCode = postalCode
-            postalAddressUpdated = true
-        }
-
-        if let subAdministrativeArea = dictionary[ApplePayKeys.Contact.subAdministrativeArea] as? String {
-            postalAddress.subAdministrativeArea = subAdministrativeArea
-            postalAddressUpdated = true
-        }
-
-        if let administrativeArea = dictionary[ApplePayKeys.Contact.administrativeArea] as? String {
-            postalAddress.state = administrativeArea
-            postalAddressUpdated = true
-        }
-
-        if let country = dictionary[ApplePayKeys.Contact.country] as? String {
-            postalAddress.country = country
-            postalAddressUpdated = true
-        }
-
-        if let countryCode = dictionary[ApplePayKeys.Contact.countryCode] as? String {
-            postalAddress.isoCountryCode = countryCode
-            postalAddressUpdated = true
-        }
-
-        if postalAddressUpdated {
-            contact.postalAddress = postalAddress
-        }
-
-        return contact
+        return PKContact(dictionary)
     }
 
     var summaryItems: [PKPaymentSummaryItem]? {
@@ -247,26 +79,7 @@ public struct ApplepayConfigurationParser {
             return nil
         }
 
-        var summaryItems = [PKPaymentSummaryItem]()
-        for item in items {
-            if let label = item[ApplePayKeys.SummeryItem.label] as? String,
-               let value = item[ApplePayKeys.SummeryItem.amount] {
-                let amount: NSDecimalNumber
-                if let value = value as? String {
-                    amount = NSDecimalNumber(string: value)
-                } else if let value = value as? NSNumber {
-                    amount = NSDecimalNumber(decimal: value.decimalValue)
-                } else {
-                    continue
-                }
-                if let typeRaw = item[ApplePayKeys.SummeryItem.type] as? String,
-                   let type = ApplePayPaymentSummaryItemType(rawValue: typeRaw)?.toAppleType {
-                    summaryItems.append(.init(label: label, amount: amount, type: type))
-                } else {
-                    summaryItems.append(.init(label: label, amount: amount))
-                }
-            }
-        }
+        var summaryItems = items.compactMap(PKPaymentSummaryItem.init)
         return summaryItems.isEmpty ? nil : summaryItems
     }
 
@@ -287,47 +100,7 @@ public struct ApplepayConfigurationParser {
             return nil
         }
 
-        var shippingMethods = [PKShippingMethod]()
-        for item in items {
-            if let label = item[ApplePayKeys.SummeryItem.label] as? String,
-               let amounRaw = item[ApplePayKeys.SummeryItem.amount] {
-                let amount: NSDecimalNumber
-                if let value = amounRaw as? String {
-                    amount = NSDecimalNumber(string: value)
-                } else if let value = amounRaw as? NSNumber {
-                    amount = NSDecimalNumber(decimal: value.decimalValue)
-                } else {
-                    continue
-                }
-
-                let shippingMethod: PKShippingMethod
-                if let typeRaw = item[ApplePayKeys.SummeryItem.type] as? String,
-                   let type = ApplePayPaymentSummaryItemType(rawValue: typeRaw)?.toAppleType {
-                    shippingMethod = .init(label: label, amount: amount, type: type)
-                } else {
-                    shippingMethod = .init(label: label, amount: amount)
-                }
-
-                if let detail = item[ApplePayKeys.ShippingMethod.detail] as? String {
-                    shippingMethod.detail = detail
-                }
-
-                if let identifier = item[ApplePayKeys.ShippingMethod.identifier] as? String {
-                    shippingMethod.identifier = identifier
-                }
-
-                if #available(iOS 15.0, *),
-                   let startRaw = item[ApplePayKeys.ShippingMethod.startDate] as? String,
-                   let startDate = ISO8601DateFormatter().date(from: startRaw),
-                   let endRaw = item[ApplePayKeys.ShippingMethod.endDate] as? String,
-                   let endDate = ISO8601DateFormatter().date(from: endRaw) {
-                    shippingMethod.dateComponentsRange = .init(start: startDate.toComponents,
-                                                               end: endDate.toComponents)
-                }
-
-                shippingMethods.append(shippingMethod)
-            }
-        }
+        var shippingMethods = items.compactMap(PKShippingMethod.initiate)
         return shippingMethods.isEmpty ? nil : shippingMethods
     }
 
@@ -370,6 +143,163 @@ public struct ApplepayConfigurationParser {
         paymentRequest.shippingMethods = shippingMethods
 
         return paymentRequest
+    }
+}
+
+extension PKPaymentSummaryItem {
+    convenience init?(_ dictionary: [String : Any]) {
+        guard let label = dictionary[ApplePayKeys.SummeryItem.label] as? String,
+              let value = dictionary[ApplePayKeys.SummeryItem.amount] else {
+            return nil
+        }
+        let amount: NSDecimalNumber
+        if let value = value as? String {
+            amount = NSDecimalNumber(string: value)
+        } else if let value = value as? NSNumber {
+            amount = NSDecimalNumber(decimal: value.decimalValue)
+        } else {
+            return nil
+        }
+        if let typeRaw = dictionary[ApplePayKeys.SummeryItem.type] as? String,
+           let type = ApplePayPaymentSummaryItemType(rawValue: typeRaw)?.toAppleType {
+            self.init(label: label, amount: amount, type: type)
+        } else {
+            self.init(label: label, amount: amount)
+        }
+    }
+}
+
+extension PKShippingMethod {
+    static func initiate(_ dictionary: [String : Any]) -> PKShippingMethod? {
+        guard let label = dictionary[ApplePayKeys.SummeryItem.label] as? String,
+              let amounRaw = dictionary[ApplePayKeys.SummeryItem.amount] else {
+            return nil
+        }
+
+        let amount: NSDecimalNumber
+        if let value = amounRaw as? String {
+            amount = NSDecimalNumber(string: value)
+        } else if let value = amounRaw as? NSNumber {
+            amount = NSDecimalNumber(decimal: value.decimalValue)
+        } else {
+            return nil
+        }
+
+        let this: PKShippingMethod
+        if let typeRaw = dictionary[ApplePayKeys.SummeryItem.type] as? String,
+           let type = ApplePayPaymentSummaryItemType(rawValue: typeRaw)?.toAppleType {
+            this = PKShippingMethod(label: label, amount: amount, type: type)
+        } else {
+            this = PKShippingMethod(label: label, amount: amount)
+        }
+
+        if let detail = dictionary[ApplePayKeys.ShippingMethod.detail] as? String {
+            this.detail = detail
+        }
+
+        if let identifier = dictionary[ApplePayKeys.ShippingMethod.identifier] as? String {
+            this.identifier = identifier
+        }
+
+        if #available(iOS 15.0, *) {
+            if let startRaw = dictionary[ApplePayKeys.ShippingMethod.startDate] as? String,
+               let startDate = iso8601Formatter.date(from: startRaw),
+               let endRaw = dictionary[ApplePayKeys.ShippingMethod.endDate] as? String,
+               let endDate = iso8601Formatter.date(from: endRaw) {
+                this.dateComponentsRange = .init(start: startDate.toComponents,
+                                                 end: endDate.toComponents)
+            }
+        }
+
+        return this
+    }
+}
+
+extension PKContact {
+    convenience init?(_ dictionary: [String : Any]) {
+        self.init()
+
+        if let phoneNumber = dictionary[ApplePayKeys.Contact.phoneNumber] as? String {
+            self.phoneNumber = CNPhoneNumber(stringValue: phoneNumber)
+        }
+
+        if let emailAddress = dictionary[ApplePayKeys.Contact.emailAddress] as? String {
+            self.emailAddress = emailAddress
+        }
+
+        var name = PersonNameComponents()
+        var nameUodated = false
+        if let givenName = dictionary[ApplePayKeys.Contact.givenName] as? String {
+            name.givenName = givenName
+            nameUodated = true
+        }
+
+        if let familyName = dictionary[ApplePayKeys.Contact.familyName] as? String {
+            name.familyName = familyName
+            nameUodated = true
+        }
+
+        if let phoneticGivenName = dictionary[ApplePayKeys.Contact.phoneticGivenName] as? String {
+            name.phoneticRepresentation = PersonNameComponents()
+            name.phoneticRepresentation?.givenName = phoneticGivenName
+            nameUodated = true
+        }
+
+        if let phoneticFamilyName = dictionary[ApplePayKeys.Contact.phoneticFamilyName] as? String {
+            name.phoneticRepresentation = name.phoneticRepresentation ?? PersonNameComponents()
+            name.phoneticRepresentation?.familyName = phoneticFamilyName
+            nameUodated = true
+        }
+
+        if nameUodated {
+            self.name = name
+        }
+
+        let postalAddress = CNMutablePostalAddress()
+        var postalAddressUpdated = false
+        if let addressLines = dictionary[ApplePayKeys.Contact.addressLines] as? [String] {
+            postalAddress.street = addressLines.joined(separator: "\n")
+            postalAddressUpdated = true
+        }
+
+        if let subLocality = dictionary[ApplePayKeys.Contact.subLocality] as? String {
+            postalAddress.subLocality = subLocality
+            postalAddressUpdated = true
+        }
+
+        if let locality = dictionary[ApplePayKeys.Contact.locality] as? String {
+            postalAddress.city = locality
+            postalAddressUpdated = true
+        }
+
+        if let postalCode = dictionary[ApplePayKeys.Contact.postalCode] as? String {
+            postalAddress.postalCode = postalCode
+            postalAddressUpdated = true
+        }
+
+        if let subAdministrativeArea = dictionary[ApplePayKeys.Contact.subAdministrativeArea] as? String {
+            postalAddress.subAdministrativeArea = subAdministrativeArea
+            postalAddressUpdated = true
+        }
+
+        if let administrativeArea = dictionary[ApplePayKeys.Contact.administrativeArea] as? String {
+            postalAddress.state = administrativeArea
+            postalAddressUpdated = true
+        }
+
+        if let country = dictionary[ApplePayKeys.Contact.country] as? String {
+            postalAddress.country = country
+            postalAddressUpdated = true
+        }
+
+        if let countryCode = dictionary[ApplePayKeys.Contact.countryCode] as? String {
+            postalAddress.isoCountryCode = countryCode
+            postalAddressUpdated = true
+        }
+
+        if postalAddressUpdated {
+            self.postalAddress = postalAddress
+        }
     }
 }
 

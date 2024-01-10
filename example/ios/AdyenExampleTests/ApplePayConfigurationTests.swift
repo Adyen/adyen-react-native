@@ -410,8 +410,8 @@ final class ApplePayConfigurationTests: XCTestCase {
                                                       "type": "pending",
                                                       "detail": "Detail 1",
                                                       "identifier": "Identifier 1",
-                                                      "startDate": "2025-01-01T00:00:00Z",
-                                                      "endDate": "2025-01-02T00:00:00Z",
+                                                      "startDate": "2025-01-01",
+                                                      "endDate": "2025-01-02",
                                                     ],
                                                     [
                                                       "label": "Label 2",
@@ -436,6 +436,11 @@ final class ApplePayConfigurationTests: XCTestCase {
     XCTAssertEqual(shippingMethod.type, .pending)
     XCTAssertEqual(shippingMethod.detail, "Detail 1")
     XCTAssertEqual(shippingMethod.identifier, "Identifier 1")
+    if #available(iOS 15.0, *) {
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.year, 2025)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.month, 1)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.day, 1)
+    }
 
     shippingMethod = shippingMethods![1]
     XCTAssertEqual(shippingMethod.label, "Label 2")
@@ -443,7 +448,20 @@ final class ApplePayConfigurationTests: XCTestCase {
     XCTAssertEqual(shippingMethod.type, .final)
     XCTAssertEqual(shippingMethod.detail, "Detail 2")
     XCTAssertEqual(shippingMethod.identifier, "Identifier 2")
+    if #available(iOS 15.0, *) {
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.year, 2025)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.month, 3)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.day, 10)
+    }
   }
 
+  func testIso8610Formatter() {
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00Z"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00.000"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00+00:00"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2024-01-10T05:38:30−07:00"))
+  }
 
 }

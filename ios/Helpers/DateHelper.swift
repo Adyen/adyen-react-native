@@ -9,6 +9,12 @@ import Foundation
 
 extension Date {
     var toComponents: DateComponents {
-        Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: self)
+        Calendar.current.dateComponents([.calendar, .year, .month, .day], from: self)
     }
 }
+
+var iso8601Formatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withFullDate]
+    return formatter
+}()
