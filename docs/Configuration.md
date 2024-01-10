@@ -44,11 +44,11 @@
 - `summaryItems` - An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`.
 - `requiredShippingContactFields` - A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default.
 - `requiredBillingContactFields` - A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default.
-- `billingContact` - Billing contact information for the user. Coresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
-- `shippingContact` -  Shipping contact information for the user. Coresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
-- `shippingType` - Indicates the display mode for the shipping (e.g, "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Coresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype).
+- `billingContact` - Billing contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
+- `shippingContact` -  Shipping contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
+- `shippingType` - Indicates the display mode for the shipping (e.g, "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Corresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype).
 - `supportedCountries` - A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.
-- `shippingMethods` - The list of shipping methods available for a payment request. Coresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods). 
+- `shippingMethods` - The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods). 
 
 ### GooglePay component
 
