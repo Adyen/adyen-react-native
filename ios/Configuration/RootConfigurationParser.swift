@@ -8,7 +8,7 @@ import Adyen
 
 public struct RootConfigurationParser {
 
-    private var configuration: [String:Any]
+    private var configuration: [String: Any]
 
     public init(configuration: NSDictionary) {
         guard let configuration = configuration as? [String: Any] else {
@@ -26,7 +26,7 @@ public struct RootConfigurationParser {
     }
 
     public var clientKey: String? {
-        return configuration[Keys.clientKey] as? String
+        configuration[Keys.clientKey] as? String
     }
 
     public var amount: Amount? {
@@ -58,4 +58,17 @@ public struct RootConfigurationParser {
         return Locale(identifier: shopperLocaleString)
     }
 
+}
+
+extension RootConfigurationParser {
+
+    internal func fetchContext() throws -> AdyenContext {
+        guard let clientKey = self.clientKey else {
+            throw BaseModule.NativeModuleError.noClientKey
+        }
+        let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
+
+        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
+        return AdyenContext(apiContext: apiContext, payment: self.payment)
+    }
 }

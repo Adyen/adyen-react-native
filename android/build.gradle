@@ -3,18 +3,17 @@ def safeExtGet(prop, fallback) {
 }
 
 buildscript {
+    rootProject.ext.adyenReactNativeRedirectScheme = "adyenreactnative"
+    ext.kotlin_version = rootProject.ext.has('kotlin_version') ? rootProject.ext.get('kotlin_version') : '1.9.10'
 
-      rootProject.ext.adyenReactNativeRedirectScheme = "adyenreactnative"
+    repositories {
+        google()
+        jcenter()
+    }
 
-      repositories {
-          google()
-          jcenter()
-      }
-
-      dependencies {
-          classpath 'com.android.tools.build:gradle:7.3.1'
-          classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.22"
-      }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
 }
 
 apply plugin: 'com.android.library'
@@ -58,8 +57,11 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.22"
-    implementation "com.adyen.checkout:drop-in:4.12.1"
+    implementation "com.adyen.checkout:drop-in:5.0.1"
     implementation 'com.google.android.material:material:1.7.0'
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0"
+
+    //Tests
+    testImplementation "junit:junit:4.13.2"
+    testImplementation 'org.mockito:mockito-core:5.1.0'
 }

@@ -1,7 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v4.10.3-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
-[![Adyen Android](https://img.shields.io/badge/android-v4.10.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
-
+[![Adyen iOS](https://img.shields.io/badge/ios-v4.11.1-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/4.11.1)
+[![Adyen Android](https://img.shields.io/badge/android-v4.13.3-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/4.13.3)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
 
@@ -126,8 +125,12 @@ defaultConfig {
 </intent-filter>
 ```
 
-3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
+3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.java`:
 ```java
+import android.content.Intent;
+
+...
+
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
@@ -135,7 +138,7 @@ public void onNewIntent(Intent intent) {
 }
 ```
 
-4. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
+4. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.java`:
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {

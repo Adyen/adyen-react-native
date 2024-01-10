@@ -28,7 +28,7 @@ internal enum Keys {
 }
 
 internal enum DropInKeys: SubConfig {
-    static var rootKey = "dropin";
+    static var rootKey = "dropin"
     static var showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod"
     static var skipListWhenSinglePaymentMethod = "skipListWhenSinglePaymentMethod"
 }
@@ -43,6 +43,7 @@ internal enum CardKeys: SubConfig {
     static var kcpVisibility = "kcpVisibility"
     static var socialSecurity = "socialSecurity"
     static var allowedCardTypes = "supported"
+    static var billingAddressCountryCodes = "allowedAddressCountryCodes"
 }
 
 internal enum ApplePayKeys: SubConfig {
@@ -52,7 +53,28 @@ internal enum ApplePayKeys: SubConfig {
     static var allowOnboarding = "allowOnboarding"
     static var summaryItems = "summaryItems"
     static var summaryItemsLabel = "label"
+    static var deprecated_summaryItemsValue = "amount"
     static var summaryItemsValue = "value"
+    static var requiredBillingContactFields = "requiredBillingContactFields"
+    static var requiredShippingContactFields = "requiredShippingContactFields"
+    static var billingContact = "billingContact"
+
+    enum PKContactKeys {
+        static var phoneNumber = "phoneNumber"
+        static var emailAddress = "emailAddress"
+        static var givenName = "givenName"
+        static var familyName = "familyName"
+        static var phoneticGivenName = "phoneticGivenName"
+        static var phoneticFamilyName = "phoneticFamilyName"
+        static var addressLines = "addressLines"
+        static var subLocality = "subLocality"
+        static var locality = "locality"
+        static var postalCode = "postalCode"
+        static var subAdministrativeArea = "subAdministrativeArea"
+        static var administrativeArea = "administrativeArea"
+        static var country = "country"
+        static var countryCode = "countryCode"
+    }
 }
 
 internal enum StyleKeys: SubConfig {

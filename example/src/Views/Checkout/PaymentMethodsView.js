@@ -9,25 +9,32 @@ import {
   TouchableHighlight,
   Image,
   Text,
+  useColorScheme,
 } from 'react-native';
 import Styles from '../../Utilities/Styles';
 import { ENVIRONMENT } from '../../Configuration';
 
 const PaymentMethods = () => {
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
-  const regularPaymentMethods = paymentMethodsResponse?.paymentMethods;
+  const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
+  const storedPaymentMethods = paymentMethodsResponse?.storedPaymentMethods;
 
   const isNotReady = paymentMethodsResponse === undefined;
+  const isDarkMode = useColorScheme() === 'dark';
 
-  if (regularPaymentMethods === undefined) {
-    console.error(`No regular payment menthods in 'paymentMethodsResponse'`);
-    return <View />;
+  const subtitle = (/** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm) => {
+    switch (pm.type) {
+      case 'scheme':
+        return `**** **** **** ${pm['lastFour']} (exp ${pm['expiryMonth']}/${pm['expiryYear']})`
+      default:
+        return `${pm.id}`
+    }
   }
 
   return (
     <ScrollView>
       <View style={Styles.content}>
-        <View style={Styles.item}>
+        <View>
           <Button
             title="Drop-in"
             disabled={isNotReady}
@@ -37,14 +44,35 @@ const PaymentMethods = () => {
           />
         </View>
 
-        <View style={{ height: 16 }} />
+        {storedPaymentMethods ? (
+          <View>
+            <Text style={isDarkMode ? Styles.textDark : Styles.textLight}> Stored payments </Text>
+            {storedPaymentMethods.map((p) => {
+              const iconName = p.type === 'scheme' ? 'card' : p.type;
+              return (
+                <View key={`${p.type + p.name}`}>
+                  <PaymentMethodButton
+                    title={`${p.name}`}
+                    subtitle={subtitle(p)}
+                    icon={iconName}
+                    onPress={() => {
+                      start(p.id);
+                    }}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        ) : (<View />)}
 
+        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}> Components </Text>
         {regularPaymentMethods.map((p) => {
           const iconName = p.type === 'scheme' ? 'card' : p.type;
           return (
             <View key={`${p.type + p.name}`}>
               <PaymentMethodButton
                 title={`${p.name}`}
+                subtitle={undefined}
                 icon={iconName}
                 onPress={() => {
                   start(p.type);
@@ -58,7 +86,7 @@ const PaymentMethods = () => {
   );
 };
 
-const PaymentMethodButton = ({ onPress, title, icon }) => {
+const PaymentMethodButton = ({ onPress, title, subtitle, icon }) => {
   const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${icon}@3x.png`;
 
   return (
@@ -69,7 +97,10 @@ const PaymentMethodButton = ({ onPress, title, icon }) => {
     >
       <View style={Styles.btnContainer}>
         <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
-        <Text style={Styles.btnText}>{title}</Text>
+        <View style={Styles.content}>
+          <Text style={Styles.btnText}>{title}</Text>
+          {subtitle ? (<Text style={Styles.btnText}>{subtitle}</Text>) : (<View />)}
+        </View>
       </View>
     </TouchableHighlight>
   );

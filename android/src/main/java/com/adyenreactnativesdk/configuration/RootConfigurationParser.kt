@@ -3,15 +3,15 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
+
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.facebook.react.bridge.ReadableMap
-import com.adyen.checkout.components.model.payments.Amount
-import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyen.checkout.components.core.Amount
+import com.adyen.checkout.core.Environment
 import com.adyenreactnativesdk.util.ReactNativeJson
-import java.util.*
+import com.facebook.react.bridge.ReadableMap
+import java.util.Locale
 
 class RootConfigurationParser(private val config: ReadableMap) {
 
@@ -57,7 +57,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
     val environment: Environment
         get() = if (config.hasKey(ENVIRONMENT_KEY)) {
             val environment = config.getString(ENVIRONMENT_KEY)!!
-            when (environment.toLowerCase(Locale.ROOT)) {
+            when (environment.lowercase(Locale.ROOT)) {
                 "live-au" -> Environment.AUSTRALIA
                 "live", "live-eu" -> Environment.EUROPE
                 "live-us" -> Environment.UNITED_STATES

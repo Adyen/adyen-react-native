@@ -1,4 +1,4 @@
-import { NativeModule, NativeModules } from 'react-native';
+import {NativeModule, NativeModules} from 'react-native';
 import {
   find,
   NATIVE_COMPONENTS,
@@ -6,6 +6,7 @@ import {
 } from './ComponentMap';
 import {
   ErrorCode,
+  Event,
   LINKING_ERROR,
   UNKNOWN_PAYMENT_METHOD_ERROR,
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
@@ -15,26 +16,70 @@ import {
   PaymentAction,
   PaymentMethod,
   PaymentMethodsResponse,
+  SessionResponse,
 } from './Core/types';
 
-/** Options of dismissing the payment component */
+/**
+ * Options for dismissing the payment component.
+ */
 export interface HideOption {
   /** Alert message after dismiss. Used for Android DropIn and Components only */
   message?: string;
 }
 
-/** Universal interface for Adyen Native payment component */
+/**
+ * Universal interface for an Adyen Native payment component.
+ */
 export interface AdyenComponent {
-  /** Show component above current screen. */
+  /**
+   * Show the component above the current screen.
+   * @param paymentMethods - The available payment methods.
+   * @param configuration - The configuration for the component.
+   */
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
 
-  /** Dismiss component from screen. */
+  /**
+   * Dismiss the component from the screen.
+   * @param success - Indicates whether the component was dismissed successfully.
+   * @param option - Additional options for dismissing the component (optional).
+   */
   hide: (success: boolean, option?: HideOption) => void;
 }
 
-/** Describes Adyen Component capable of handling action */
+/**
+ * Describes an Adyen Component capable of handling payment actions.
+ */
 export interface AdyenActionComponent extends AdyenComponent {
+  /**
+   * Handle a payment action received by the component.
+   * @param action - The payment action to be handled.
+   */
   handle: (action: PaymentAction) => void;
+
+  /**
+   * List of events supported by component
+   */
+  events: string[];
+}
+
+/** Collection of android helper methods */
+export interface SessionHelperModule extends AdyenComponent {
+  /**
+   * Provides return URL for current application.
+   */
+  getReturnURL: () => Promise<string>;
+
+  /**
+   * Provides paymentMethods for sessionData and SessionID.
+   */
+  createSession: (session: any, configuration: any) => Promise<SessionResponse>;
+}
+
+interface AdyenNativeComponentWrapperProps {
+  nativeModule: NativeModule;
+  canHandlePayment?: boolean;
+  canHandleAction?: boolean;
+  events?: string[];
 }
 
 /**
@@ -44,10 +89,29 @@ export interface AdyenActionComponent extends AdyenComponent {
 class AdyenNativeComponentWrapper implements AdyenActionComponent {
   canHandleAction: boolean;
   nativeModule: NativeModule | any;
-  constructor(nativeModule: NativeModule, canHandleAction: boolean = true) {
+  constructor({
+    nativeModule,
+    canHandlePayment = true,
+    canHandleAction = true,
+    events,
+  }: AdyenNativeComponentWrapperProps) {
     this.nativeModule = nativeModule;
     this.canHandleAction = canHandleAction;
+    this.events = [Event.onError];
+
+    events?.forEach((element) => this.events.push(element));
+
+    if (canHandleAction) {
+      this.events.push(Event.onAdditionalDetails);
+    }
+
+    if (canHandlePayment) {
+      this.events.push(Event.onSubmit);
+      this.events.push(Event.onComplete);
+    }
   }
+
+  events: string[];
 
   addListener(eventType: string) {
     this.nativeModule.addListener(eventType);
@@ -65,11 +129,11 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
   open(paymentMethods: PaymentMethodsResponse, configuration: any) {
     this.nativeModule.open(paymentMethods, configuration);
   }
-  hide(success: boolean, option?: { message?: string }) {
-    if (option != null && option.message != null) {
+  hide(success: boolean, option?: {message?: string}) {
+    if (option?.message) {
       this.nativeModule.hide(success, option);
     } else {
-      this.nativeModule.hide(success, { message: '' });
+      this.nativeModule.hide(success, {message: ''});
     }
   }
 }
@@ -84,7 +148,7 @@ export const AdyenDropIn: AdyenActionComponent & NativeModule =
           get() {
             throw new Error(LINKING_ERROR);
           },
-        }
+        },
       );
 
 /** Generic Redirect component */
@@ -97,7 +161,7 @@ export const AdyenInstant: AdyenActionComponent & NativeModule =
           get() {
             throw new Error(LINKING_ERROR);
           },
-        }
+        },
       );
 
 /** Apple Pay component (only available for iOS) */
@@ -110,7 +174,7 @@ export const AdyenApplePay: AdyenComponent & NativeModule =
           get() {
             throw new Error(LINKING_ERROR);
           },
-        }
+        },
       );
 
 /** Google Pay component (only available for Android) */
@@ -123,8 +187,20 @@ export const AdyenGooglePay: AdyenComponent & NativeModule =
           get() {
             throw new Error(LINKING_ERROR);
           },
-        }
+        },
       );
+
+/** Collection of session helper methods */
+export const SessionHelper: SessionHelperModule = NativeModules.SessionHelper
+  ? NativeModules.SessionHelper
+  : new Proxy(
+      {},
+      {
+        get() {
+          throw new Error(LINKING_ERROR);
+        },
+      },
+    );
 
 /** Describes Adyen Component capable of handling action */
 interface AdyenCSE extends NativeModule {
@@ -144,7 +220,7 @@ export const AdyenCSE: AdyenCSE = NativeModules.AdyenCSE
         get() {
           throw new Error(LINKING_ERROR);
         },
-      }
+      },
     );
 
 /**
@@ -152,28 +228,36 @@ export const AdyenCSE: AdyenCSE = NativeModules.AdyenCSE
  */
 export function getNativeComponent(
   typeName: string,
-  paymentMethods: PaymentMethodsResponse
+  paymentMethods: PaymentMethodsResponse,
 ): {
   nativeComponent: AdyenActionComponent & NativeModule;
   paymentMethod: PaymentMethod | undefined;
 } {
   switch (typeName) {
     case 'dropin':
+    case 'dropIn':
     case 'drop-in':
     case 'adyendropin':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
+        nativeComponent: new AdyenNativeComponentWrapper({
+          nativeModule: AdyenDropIn,
+        }),
         paymentMethod: undefined,
       };
     case 'applepay':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenApplePay, false),
+        nativeComponent: new AdyenNativeComponentWrapper({
+          nativeModule: AdyenApplePay,
+          canHandleAction: false,
+        }),
         paymentMethod: undefined,
       };
     case 'paywithgoogle':
     case 'googlepay':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper(AdyenGooglePay, false),
+        nativeComponent: new AdyenNativeComponentWrapper({
+          nativeModule: AdyenGooglePay,
+        }),
         paymentMethod: undefined,
       };
     default:
@@ -191,13 +275,17 @@ export function getNativeComponent(
 
   if (NATIVE_COMPONENTS.includes(typeName)) {
     return {
-      nativeComponent: new AdyenNativeComponentWrapper(AdyenDropIn),
+      nativeComponent: new AdyenNativeComponentWrapper({
+        nativeModule: AdyenDropIn,
+      }),
       paymentMethod: paymentMethod,
     };
   }
 
   return {
-    nativeComponent: new AdyenNativeComponentWrapper(AdyenInstant),
+    nativeComponent: new AdyenNativeComponentWrapper({
+      nativeModule: AdyenInstant,
+    }),
     paymentMethod: paymentMethod,
   };
 }

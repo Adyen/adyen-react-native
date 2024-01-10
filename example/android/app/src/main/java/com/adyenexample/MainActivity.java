@@ -4,9 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.adyenreactnativesdk.action.ActionHandler;
 import com.adyenreactnativesdk.AdyenCheckout;
-import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent;
 import com.facebook.react.ReactActivity;
 
 public class MainActivity extends ReactActivity {
