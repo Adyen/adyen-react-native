@@ -174,8 +174,8 @@ const configuration = {
         detail: "Arrives super fast",
         amount: "10.00",
         identifier: "SuperShip",
-        startDate: "2022-02-01T00:00:00Z",
-        endDate: "2022-02-10T00:00:00Z"
+        startDate: "2022-02-01",
+        endDate: "2022-02-10"
       },
     ],
     requiredBillingContactFields: ['phoneticName', 'postalAddress'],
