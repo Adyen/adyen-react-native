@@ -35,13 +35,7 @@ yarn add @adyen/react-native
 
 > ❕ Please pay attention that this library is not compatible with ExpoGo. You can use it only with **Expo managed workflow**.
 
-1. Add `@expo/config-plugins` to your project:
-
-```bash
-yarn add @expo/config-plugins
-```
-
-2. Add `@adyen/react-native` plugin to your `app.json`:
+Add `@adyen/react-native` plugin to your `app.json`:
 
 ```json
 {
