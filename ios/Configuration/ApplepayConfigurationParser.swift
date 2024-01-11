@@ -84,7 +84,7 @@ public struct ApplepayConfigurationParser {
     }
 
     var shippingType: PKShippingType? {
-        guard let type = dict[ApplePayKeys.shippingType] as? String else {  return nil }
+        guard let type = dict[ApplePayKeys.shippingType] as? String else { return nil }
         return ApplePayShippingType(rawValue: type)?.toAppleType
     }
 
@@ -147,7 +147,7 @@ public struct ApplepayConfigurationParser {
 }
 
 extension PKPaymentSummaryItem {
-    convenience init?(_ dictionary: [String : Any]) {
+    convenience init?(_ dictionary: [String: Any]) {
         guard let label = dictionary[ApplePayKeys.SummeryItem.label] as? String,
               let value = dictionary[ApplePayKeys.SummeryItem.amount] else {
             return nil
@@ -170,7 +170,7 @@ extension PKPaymentSummaryItem {
 }
 
 extension PKShippingMethod {
-    static func initiate(_ dictionary: [String : Any]) -> PKShippingMethod? {
+    static func initiate(_ dictionary: [String: Any]) -> PKShippingMethod? {
         guard let label = dictionary[ApplePayKeys.SummeryItem.label] as? String,
               let amounRaw = dictionary[ApplePayKeys.SummeryItem.amount] else {
             return nil
@@ -201,14 +201,13 @@ extension PKShippingMethod {
             this.identifier = identifier
         }
 
-        if #available(iOS 15.0, *) {
-            if let startRaw = dictionary[ApplePayKeys.ShippingMethod.startDate] as? String,
-               let startDate = iso8601Formatter.date(from: startRaw),
-               let endRaw = dictionary[ApplePayKeys.ShippingMethod.endDate] as? String,
-               let endDate = iso8601Formatter.date(from: endRaw) {
-                this.dateComponentsRange = .init(start: startDate.toComponents,
-                                                 end: endDate.toComponents)
-            }
+        if #available(iOS 15.0, *),
+           let startRaw = dictionary[ApplePayKeys.ShippingMethod.startDate] as? String,
+           let startDate = iso8601Formatter.date(from: startRaw),
+           let endRaw = dictionary[ApplePayKeys.ShippingMethod.endDate] as? String,
+           let endDate = iso8601Formatter.date(from: endRaw) {
+            this.dateComponentsRange = .init(start: startDate.toComponents,
+                                             end: endDate.toComponents)
         }
 
         return this
@@ -216,7 +215,7 @@ extension PKShippingMethod {
 }
 
 extension PKContact {
-    convenience init?(_ dictionary: [String : Any]) {
+    convenience init?(_ dictionary: [String: Any]) {
         self.init()
 
         if let phoneNumber = dictionary[ApplePayKeys.Contact.phoneNumber] as? String {

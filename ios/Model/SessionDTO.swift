@@ -4,8 +4,8 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Foundation
 import Adyen
+import Foundation
 
 struct SessionDTO {
     let id: String
@@ -41,8 +41,8 @@ struct SessionDTO {
 extension PaymentMethods {
     var jsonObject: [String: Any] {
         var dict = [String: Any]()
-        dict["storedPaymentMethods"] = self.stored.map { $0.jsonObject }
-        dict["paymentMethods"] = self.regular.map { $0.jsonObject }
+        dict["storedPaymentMethods"] = self.stored.map(\.jsonObject)
+        dict["paymentMethods"] = self.regular.map(\.jsonObject)
         return dict
     }
 }

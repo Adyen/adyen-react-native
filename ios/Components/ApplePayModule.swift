@@ -67,7 +67,7 @@ extension ApplePayDetails {
     }
 
     internal var extraData: [String: Any] {
-        return [
+        [
             Key.billingContact: self.billingContact?.jsonObject,
             Key.network: self.network,
             Key.shippingContact: self.shippingContact?.jsonObject
