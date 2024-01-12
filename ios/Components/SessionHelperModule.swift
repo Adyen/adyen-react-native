@@ -4,8 +4,8 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import UIKit
 import Adyen
+import UIKit
 
 protocol SessionResultListener {
     func didComplete(with result: Adyen.AdyenSessionResult)
@@ -25,8 +25,7 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
         SessionHelperModule.sessionListener?.didFail(with: error)
     }
 
-    func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {
-    }
+    func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {}
 
     override public func supportedEvents() -> [String]! { [Events.didComplete.rawValue, Events.didFail.rawValue] }
 
