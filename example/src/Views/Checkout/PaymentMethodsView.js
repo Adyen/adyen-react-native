@@ -50,7 +50,7 @@ const PaymentMethods = () => {
             {storedPaymentMethods.map((p) => {
               const iconName = p.type === 'scheme' ? 'card' : p.type;
               return (
-                <View key={`${p.type + p.name}`}>
+                <View key={`stored-payment-method-${p.id}`}>
                   <PaymentMethodButton
                     title={`${p.name}`}
                     subtitle={subtitle(p)}
@@ -69,7 +69,7 @@ const PaymentMethods = () => {
         {regularPaymentMethods.map((p) => {
           const iconName = p.type === 'scheme' ? 'card' : p.type;
           return (
-            <View key={`${p.type + p.name}`}>
+            <View key={`regular-payment-method-${p.id}`}>
               <PaymentMethodButton
                 title={`${p.name}`}
                 subtitle={undefined}
