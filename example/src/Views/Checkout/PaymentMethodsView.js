@@ -69,7 +69,7 @@ const PaymentMethods = () => {
         {regularPaymentMethods.map((p) => {
           const iconName = p.type === 'scheme' ? 'card' : p.type;
           return (
-            <View key={`regular-payment-method-${p.id}`}>
+            <View key={`${p.type + p.name}`}>
               <PaymentMethodButton
                 title={`${p.name}`}
                 subtitle={undefined}
