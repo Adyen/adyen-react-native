@@ -30,7 +30,7 @@ internal extension PaymentMethod {
 
         if let it = self as? StoredPaymentMethod {
             dict["id"] = it.identifier
-            dict["supportedShopperInteractions"] = it.supportedShopperInteractions.map { $0.rawValue }
+            dict["supportedShopperInteractions"] = it.supportedShopperInteractions.map(\.rawValue)
         }
         if let it = self as? IssuerListPaymentMethod {
             dict["issuers"] = it.issuers.map { ["id": $0.identifier, "name": $0.name] }
@@ -49,7 +49,7 @@ internal extension PaymentMethod {
             dict["brands"] = it.brand
         }
         if let it = self as? CardPaymentMethod {
-            dict["brands"] = it.brands.map { $0.rawValue }
+            dict["brands"] = it.brands.map(\.rawValue)
         }
 
         return dict

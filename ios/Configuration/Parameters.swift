@@ -52,14 +52,15 @@ internal enum ApplePayKeys: SubConfig {
     static var merchantName = "merchantName"
     static var allowOnboarding = "allowOnboarding"
     static var summaryItems = "summaryItems"
-    static var summaryItemsLabel = "label"
-    static var deprecated_summaryItemsValue = "amount"
-    static var summaryItemsValue = "value"
     static var requiredBillingContactFields = "requiredBillingContactFields"
     static var requiredShippingContactFields = "requiredShippingContactFields"
     static var billingContact = "billingContact"
+    static var shippingContact = "shippingContact"
+    static var shippingType = "shippingType"
+    static var supportedCountries = "supportedCountries"
+    static var shippingMethods = "shippingMethods"
 
-    enum PKContactKeys {
+    enum Contact {
         static var phoneNumber = "phoneNumber"
         static var emailAddress = "emailAddress"
         static var givenName = "givenName"
@@ -74,6 +75,20 @@ internal enum ApplePayKeys: SubConfig {
         static var administrativeArea = "administrativeArea"
         static var country = "country"
         static var countryCode = "countryCode"
+    }
+
+    enum SummeryItem {
+        static var label = "label"
+        static var amount = "amount"
+        static var type = "type"
+    }
+
+    enum ShippingMethod {
+        static var identifier = "identifier"
+        static var detail = "detail"
+        static var dateComponentsRange = "dateComponentsRange"
+        static var startDate = "startDate"
+        static var endDate = "endDate"
     }
 }
 

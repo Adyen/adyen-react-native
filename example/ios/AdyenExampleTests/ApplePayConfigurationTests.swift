@@ -98,15 +98,17 @@ final class ApplePayConfigurationTests: XCTestCase {
           "summaryItems": [
             [
               "label": "Item 1",
-              "amount": "70.20"
+              "amount": "70.20",
+              "type": "pending"
             ],
             [
-              "label": "Item 1",
-              "value": "20"
+              "label": "Item 2",
+              "amount": "-20",
+              "type": "final"
             ],
             [
-              "label": "Item 1",
-              "value": 10
+              "label": "Item 3",
+              "amount": 10
             ],
             [
               "label": "Total",
@@ -120,7 +122,9 @@ final class ApplePayConfigurationTests: XCTestCase {
     XCTAssertNotNil(paymentRequest.paymentSummaryItems)
     XCTAssertEqual(paymentRequest.paymentSummaryItems.count, 4)
     XCTAssertEqual(paymentRequest.paymentSummaryItems[0].amount, 70.20)
-    XCTAssertEqual(paymentRequest.paymentSummaryItems[1].amount, 20)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems[0].type, .pending)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems[1].amount, -20)
+    XCTAssertEqual(paymentRequest.paymentSummaryItems[1].type, .final)
     XCTAssertEqual(paymentRequest.paymentSummaryItems[2].amount, 10)
     XCTAssertEqual(paymentRequest.paymentSummaryItems[3].amount, 100.50)
   }
@@ -203,6 +207,48 @@ final class ApplePayConfigurationTests: XCTestCase {
     ])
 
     let contact = try XCTUnwrap(sut.billingContact)
+    XCTAssertEqual(contact.phoneNumber?.stringValue, "123-456-7890")
+    XCTAssertEqual(contact.emailAddress, "example@email.com")
+    XCTAssertEqual(contact.name?.givenName, "John")
+    XCTAssertEqual(contact.name?.familyName, "Doe")
+    XCTAssertEqual(contact.name?.phoneticRepresentation?.givenName, "John")
+    XCTAssertEqual(contact.name?.phoneticRepresentation?.familyName, "Doe")
+    XCTAssertEqual(contact.postalAddress?.street, "123 Main St\nApt 4B")
+    XCTAssertEqual(contact.postalAddress?.subLocality, "Suburb")
+    XCTAssertEqual(contact.postalAddress?.city, "City")
+    XCTAssertEqual(contact.postalAddress?.postalCode, "12345")
+    XCTAssertEqual(contact.postalAddress?.subAdministrativeArea, "County")
+    XCTAssertEqual(contact.postalAddress?.state, "State")
+    XCTAssertEqual(contact.postalAddress?.country, "Country")
+    XCTAssertEqual(contact.postalAddress?.isoCountryCode, "US")
+  }
+
+  func testShippingAddress() throws {
+    let sut = ApplepayConfigurationParser(configuration: [
+      "applepay":
+        [
+          "merchantID": "merchant.com.adyen.test",
+          "merchantName": "SomeName",
+          "shippingContact": [
+            "phoneNumber": "123-456-7890",
+            "emailAddress": "example@email.com",
+            "givenName": "John",
+            "familyName": "Doe",
+            "phoneticGivenName": "John",
+            "phoneticFamilyName": "Doe",
+            "addressLines": ["123 Main St", "Apt 4B"],
+            "subLocality": "Suburb",
+            "locality": "City",
+            "postalCode": "12345",
+            "subAdministrativeArea": "County",
+            "administrativeArea": "State",
+            "country": "Country",
+            "countryCode": "US"
+          ]
+        ]
+    ])
+
+    let contact = try XCTUnwrap(sut.shippingContact)
     XCTAssertEqual(contact.phoneNumber?.stringValue, "123-456-7890")
     XCTAssertEqual(contact.emailAddress, "example@email.com")
     XCTAssertEqual(contact.name?.givenName, "John")
@@ -323,6 +369,99 @@ final class ApplePayConfigurationTests: XCTestCase {
     XCTAssertEqual(PKContactField.init(rawValue: "post"), PKContactField.postalAddress)
     XCTAssertEqual(PKContactField.init(rawValue: "phoneticName"), PKContactField.phoneticName)
     XCTAssertEqual(PKContactField.init(rawValue: "name"), PKContactField.name)
+  }
+
+  func testShippingTypeWithValidConfiguration() {
+    let parser = ApplepayConfigurationParser(configuration:
+                                              ["applepay":
+                                                [
+                                                  "merchantID": "merchant.com.adyen.test",
+                                                  "merchantName": "SomeName",
+                                                  "shippingType": "servicePickup"
+                                                ]
+                                              ]
+    )
+    XCTAssertEqual(parser.shippingType, PKShippingType.servicePickup)
+  }
+
+    func testSupportedCountriesWithValidConfiguration() {
+      let parser = ApplepayConfigurationParser(configuration:
+                                                ["applepay":
+                                                  [
+                                                    "merchantID": "merchant.com.adyen.test",
+                                                    "merchantName": "SomeName",
+                                                    "supportedCountries": ["US", "CA"]
+                                                  ]
+                                                ]
+      )        
+      XCTAssertEqual(parser.supportedCountries, Set(["US", "CA"]))
+    }
+
+  func testShippingMethodsWithValidConfiguration() {
+    let parser = ApplepayConfigurationParser(configuration:
+                                              ["applepay":
+                                                [
+                                                  "merchantID": "merchant.com.adyen.test",
+                                                  "merchantName": "SomeName 1",
+                                                  "shippingMethods": [
+                                                    [
+                                                      "label": "Label 1",
+                                                      "amount": 10.1,
+                                                      "type": "pending",
+                                                      "detail": "Detail 1",
+                                                      "identifier": "Identifier 1",
+                                                      "startDate": "2025-01-01",
+                                                      "endDate": "2025-01-02",
+                                                    ],
+                                                    [
+                                                      "label": "Label 2",
+                                                      "amount": "10.1",
+                                                      "detail": "Detail 2",
+                                                      "identifier": "Identifier 2",
+                                                      "startDate": "2025-02-05T00:00:00Z",
+                                                      "endDate": "2025-03-10T00:00:00Z",
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+    )
+
+    let shippingMethods = parser.shippingMethods
+    XCTAssertNotNil(shippingMethods)
+    XCTAssertEqual(shippingMethods?.count, 2)
+
+    var shippingMethod = shippingMethods![0]
+    XCTAssertEqual(shippingMethod.label, "Label 1")
+    XCTAssertEqual(shippingMethod.amount, NSDecimalNumber(string: "10.1"))
+    XCTAssertEqual(shippingMethod.type, .pending)
+    XCTAssertEqual(shippingMethod.detail, "Detail 1")
+    XCTAssertEqual(shippingMethod.identifier, "Identifier 1")
+    if #available(iOS 15.0, *) {
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.year, 2025)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.month, 1)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.day, 1)
+    }
+
+    shippingMethod = shippingMethods![1]
+    XCTAssertEqual(shippingMethod.label, "Label 2")
+    XCTAssertEqual(shippingMethod.amount, NSDecimalNumber(string: "10.1"))
+    XCTAssertEqual(shippingMethod.type, .final)
+    XCTAssertEqual(shippingMethod.detail, "Detail 2")
+    XCTAssertEqual(shippingMethod.identifier, "Identifier 2")
+    if #available(iOS 15.0, *) {
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.year, 2025)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.month, 3)
+      XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.day, 10)
+    }
+  }
+
+  func testIso8610Formatter() {
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00Z"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00.000"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00+00:00"))
+    XCTAssertNotNil(iso8601Formatter.date(from: "2024-01-10T05:38:30−07:00"))
   }
 
 }

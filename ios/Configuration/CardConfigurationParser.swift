@@ -97,7 +97,7 @@ public struct CardConfigurationParser {
                      storedCardConfiguration: soredCardConfiguration,
                      allowedCardTypes: allowedCardTypes,
                      installmentConfiguration: nil,
-                     billingAddress: billingAddressConfiguration )
+                     billingAddress: billingAddressConfiguration)
     }
 
     public var dropinConfiguration: DropInComponent.Card {
@@ -117,7 +117,7 @@ public struct CardConfigurationParser {
                      storedCardConfiguration: soredCardConfiguration,
                      allowedCardTypes: allowedCardTypes,
                      installmentConfiguration: nil,
-                     billingAddress: billingAddressConfiguration )
+                     billingAddress: billingAddressConfiguration)
     }
 
     private func parseVisibility(_ key: String) -> CardComponent.FieldVisibility {
