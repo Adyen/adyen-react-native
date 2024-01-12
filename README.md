@@ -167,7 +167,7 @@ import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
 
   const onSubmit = useCallback( (data, nativeComponent ) => {
-    /* Call your server to make the `/payments` request */
+    /* Call your server to make the `/payments` request, make sure you pass `returnUrl:data.returnUrl` to make redirect flow work cross platform */
     /* When the API request contains `action`, you should call `component.handle(response.action)` to dismiss the payment UI. */
     /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
   }, [some, dependency]);
