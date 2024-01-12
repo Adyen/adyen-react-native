@@ -44,7 +44,11 @@
 - `summaryItems` - An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`.
 - `requiredShippingContactFields` - A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default.
 - `requiredBillingContactFields` - A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default.
-- `billingContact` - Billing contact information for the user. Coresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact)
+- `billingContact` - Billing contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
+- `shippingContact` -  Shipping contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
+- `shippingType` - Indicates the display mode for the shipping (e.g, "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Corresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype).
+- `supportedCountries` - A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.
+- `shippingMethods` - The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods). 
 
 ### GooglePay component
 
@@ -77,7 +81,7 @@
 ## Example
 
 ```js
-{
+const configuration = {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
@@ -87,72 +91,109 @@
   },
   returnUrl: 'myapp://adyencheckout',
   analytics: {
-    enable: true
-  }
+    enable: true,
+  },
   dropin: {
     skipListWhenSinglePaymentMethod: true,
-    showPreselectedStoredPaymentMethod: false
+    showPreselectedStoredPaymentMethod: false,
   },
   card: {
     holderNameRequired: true,
     addressVisibility: 'postalCode',
-    showStorePaymentField : false,
+    showStorePaymentField: false,
     hideCvcStoredCard: true,
     hideCvc: true,
-    allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL']
+    allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL'],
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
     allowOnboarding: true,
     summaryItems: [
-                  {
-                    label: 'Item',
-                    value: 100,
-                  },
-                  {
-                    label: 'Discount',
-                    value: -20.4,
-                  },
-                  {
-                    label: 'Tax',
-                    value: '18.4',
-                  },
-                  {
-                    label: `{YOUR_MERCHANT_NAME}`,
-                    value: '98',
-                  },
-                ],
+      {
+        label: 'Item',
+        amount: 100,
+        type: 'pending',
+      },
+      {
+        label: 'Discount',
+        amount: -20.4,
+        type: 'final',
+      },
+      {
+        label: 'Tax',
+        amount: '18.4',
+      },
+      {
+        label: `{YOUR_MERCHANT_NAME}`,
+        amount: '98',
+      },
+    ],
     billingContact: {
-      phoneNumber: "123-456-7890",
-      emailAddress: "example@email.com",
-      givenName: "John",
-      familyName: "Doe",
+      phoneNumber: '123-456-7890',
+      emailAddress: 'example@email.com',
+      givenName: 'John',
+      familyName: 'Doe',
       phoneticGivenName: 'John',
-      phoneticFamilyName: 'Doe'
-      addressLines: ["123 Main St", "Apt 4B"],
-      subLocality: "Suburb",
-      locality: "City",
-      postalCode: "12345",
-      subAdministrativeArea: "County",
-      administrativeArea: "State",
-      country: "Country",
-      countryCode: "US"
+      phoneticFamilyName: 'Doe',
+      addressLines: ['123 Main St', 'Apt 4B'],
+      subLocality: 'Suburb',
+      locality: 'City',
+      postalCode: '12345',
+      subAdministrativeArea: 'County',
+      administrativeArea: 'State',
+      country: 'Country',
+      countryCode: 'US',
     },
-    requiredBillingContactFields: [ 'phoneticName', 'postalAddress' ],
-    requiredShippingContactFields: [ 'name', 'phone', 'email', 'postalAddress' ]
+    shippingContact: {
+      phoneNumber: '123-456-7890',
+      emailAddress: 'example@email.com',
+      givenName: 'John',
+      familyName: 'Doe',
+      phoneticGivenName: 'John',
+      phoneticFamilyName: 'Doe',
+      addressLines: ['123 Main St', 'Apt 4B'],
+      subLocality: 'Suburb',
+      locality: 'City',
+      postalCode: '12345',
+      subAdministrativeArea: 'County',
+      administrativeArea: 'State',
+      country: 'Country',
+      countryCode: 'US',
+    },
+    shippingType: 'storePickup',
+    supportedCountries: ['US', 'UK', 'CA', 'NL'],
+    shippingMethods: [
+      {
+        label: "Free Shipping",
+        detail: "Arrives in 5 to 7 days",
+        amount: "0.00",
+        identifier: "FreeShip",
+      },
+      {
+        label: "Super Shipping",
+        detail: "Arrives super fast",
+        amount: "10.00",
+        identifier: "SuperShip",
+        startDate: "2022-02-01",
+        endDate: "2022-02-10"
+      },
+    ],
+    requiredBillingContactFields: ['phoneticName', 'postalAddress'],
+    requiredShippingContactFields: ['name', 'phone', 'email', 'postalAddress'],
   },
   googlepay: {
     billingAddressRequired: true,
     billingAddressParameters: {
       format: 'FULL',
-      phoneNumberRequired: true
-    }
+      phoneNumberRequired: true,
+    },
     shippingAddressRequired: true,
     shippingAddressParameters: {
-      allowedCountryCodes: ['US', 'MX'],
-      phoneNumberRequired: true
-    }
-    emailRequired: true
-  }
-}
+      allowedCountryCodes: ['US', 'UK', 'CA', 'NL'],
+      phoneNumberRequired: true,
+    },
+    emailRequired: true,
+  },
+};
+
 ```

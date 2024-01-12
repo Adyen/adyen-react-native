@@ -1,5 +1,5 @@
-import { AnalyticsOptions } from './Analytics/types';
-import { PaymentAmount } from './types';
+import {AnalyticsOptions} from './Analytics/types';
+import {PaymentAmount} from './types';
 
 /** Collection of available environments. */
 export type Environment =
@@ -104,7 +104,22 @@ export interface ApplePayConfiguration {
   requiredBillingContactFields?: ApplePayAddressFields[];
   /** Billing contact information for the user. */
   billingContact?: ApplePayPaymentContact;
+  /** Shipping contact information for the user. */
+  shippingContact?: ApplePayPaymentContact;
+  /** An optional value that indicates how to ship purchased items. The default value is shipping. */
+  shippingType?: ApplePayShippingType;
+  /** A list of two-letter country codes for limiting payment to cards from specific countries or regions. */
+  supportedCountries?: string[];
+  /** The list of shipping methods available for a payment request. */
+  shippingMethods?: ApplePayShippingMethod[];
 }
+
+/** Collection of values for address field visibility. */
+export type ApplePayShippingType =
+  | 'shipping'
+  | 'delivery'
+  | 'storePickup'
+  | 'servicePickup';
 
 /** Collection of values for address field visibility. */
 export type ApplePayAddressFields =
@@ -118,12 +133,27 @@ export type ApplePayAddressFields =
 export interface ApplePaySummaryItem {
   /** A short, localized description of the summary item. */
   label: string;
-  /**
-   * @deprecated This property will be removed
-   */
-  value: Number | string;
   /** The amount associated with the summary item. */
   amount: Number | string;
+  /** The summary item’s type that indicates whether the amount is final. */
+  type?: 'pending' | 'final';
+}
+
+export interface ApplePayShippingMethod {
+  /** A short, localized description of the summary item. */
+  label: string;
+  /** The amount associated with the summary item. */
+  amount: Number | string;
+  /** The summary item’s type that indicates whether the amount is final. */
+  type?: 'pending' | 'final';
+  /** A client-defined value used to identify this shipping method. */
+  identifier?: string;
+  /** Additional description of the shipping method. */
+  detail?: string;
+  /** The start date of expected delivery range in ISO 8601 date format (ex. 2025-04-21). */
+  startDate?: string;
+  /** The end date of expected delivery range in ISO 8601 date format (ex. 2025-04-21). */
+  endDate?: string;
 }
 
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */

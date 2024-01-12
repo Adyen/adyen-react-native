@@ -39,7 +39,7 @@ internal class BaseModule: RCTEventEmitter {
     internal var actionHandler: AdyenActionComponent?
 
     internal func present(_ component: PresentableComponent) {
-        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else { return sendEvent(error: NativeModuleError.notKeyWindow)}
+        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else { return sendEvent(error: NativeModuleError.notKeyWindow) }
 
         defer {
             BaseModule.currentPresenter = presenter
@@ -54,7 +54,7 @@ internal class BaseModule: RCTEventEmitter {
         component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
                                                                            target: self,
                                                                            action: #selector(cancelDidPress))
-       presenter.present(navigation, animated: true)
+        presenter.present(navigation, animated: true)
     }
 
     @objc private func cancelDidPress() {
@@ -226,7 +226,7 @@ extension BaseModule: PresentationDelegate {
 
 extension BaseModule: SessionResultListener {
     func didComplete(with result: Adyen.AdyenSessionResult) {
-        sendEvent(event: Events.didComplete, body: result.jsonObject )
+        sendEvent(event: Events.didComplete, body: result.jsonObject)
     }
 
     func didFail(with error: Error) {
