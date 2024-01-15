@@ -14,21 +14,21 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
 
     @objc override public func supportedEvents() -> [String]! { [] }
 
-    @objc override func constantsToExport() -> [AnyHashable : Any]! {
+    @objc override func constantsToExport() -> [AnyHashable: Any]! {
         [Constant.threeDS2SdkVersionName: threeDS2SdkVersion]
     }
 
     private var resolver: RCTPromiseResolveBlock?
     private var rejecter: RCTPromiseRejectBlock?
-    
+
     func didProvide(_ data: Adyen.ActionComponentData, from component: Adyen.ActionComponent) {
         resolver?(data.jsonObject)
     }
-    
+
     func didComplete(from component: Adyen.ActionComponent) {
         resolver?(nil)
     }
-    
+
     func didFail(with error: Error, from component: Adyen.ActionComponent) {
         let errorToSend = checkErrorType(error)
         if let error = error as? NativeModuleError {
@@ -52,11 +52,9 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
             context = try parser.fetchContext()
         } catch NativeModuleError.invalidAction {
             return reject(with: NativeModuleError.invalidAction)
-        }
-        catch NativeModuleError.noClientKey {
+        } catch NativeModuleError.noClientKey {
             return reject(with: NativeModuleError.noClientKey)
-        }
-        catch {
+        } catch {
             return rejecter(Constant.parsingErrorCode, error.localizedDescription, error)
         }
 

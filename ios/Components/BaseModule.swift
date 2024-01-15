@@ -72,7 +72,7 @@ internal class BaseModule: RCTEventEmitter {
         }
         return error
     }
-    
+
     internal func sendEvent(error: Swift.Error) {
         let errorToSend = checkErrorType(error)
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
