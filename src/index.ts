@@ -17,6 +17,7 @@ export {
   AdyenInstant,
   AdyenGooglePay,
   AdyenCSE,
+  AdyenAction,
   AdyenComponent,
   AdyenActionComponent,
   HideOption,
@@ -33,6 +34,7 @@ export {
 export { Event, ErrorCode, ResultCode } from './Core/constants';
 
 export {
+  BaseConfiguration,
   Configuration,
   Environment,
   DropInConfiguration,

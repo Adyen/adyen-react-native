@@ -8,11 +8,13 @@ import {
   Alert,
   useColorScheme,
 } from 'react-native';
-import { AdyenCSE } from '@adyen/react-native';
+import { AdyenCSE, AdyenAction } from '@adyen/react-native';
 import { ENVIRONMENT } from '../Configuration';
 import ApiClient from '../Utilities/APIClient';
 import Styles from '../Utilities/Styles';
-import { useAppContext } from '../Utilities/AppContext';
+import { useAppContext, checkoutConfiguration } from '../Utilities/AppContext';
+
+const { threeDS2SdkVersion } = AdyenAction.getConstants();
 
 const CseView = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -43,20 +45,27 @@ const CseView = ({ navigation }) => {
           encryptedExpiryMonth: encryptedCard.expiryMonth,
           encryptedExpiryYear: encryptedCard.expiryYear,
           encryptedSecurityCode: encryptedCard.cvv,
+          threeDS2SdkVersion: threeDS2SdkVersion,
         },
       };
 
-      const result = await ApiClient.payments(data, configuration);
+      var result = await ApiClient.payments(data, configuration, "myapp://payments");
       if (result.action) {
-        Alert.alert('Action');
-      } else {
-        navigation.popToTop();
-        navigation.push('Result', { result: result.resultCode });
+        const actionConfiguration = checkoutConfiguration(configuration);
+        const data = await AdyenAction.handle(result.action, actionConfiguration);
+        result = await ApiClient.paymentDetails(data);
       }
+      handleResult(navigation, result);
     } catch (e) {
-      Alert.alert('Error', e.message);
+      console.error(e);
+      Alert.alert('Error', JSON.stringify(e));
     }
   }, [configuration, cvv, expiryMonth, expiryYear, navigation, number]);
+
+  function handleResult(navigation, result) {
+    navigation.popToTop();
+    navigation.push('Result', { result: result.resultCode });
+  }
 
   return (
     <SafeAreaView style={Styles.page}>
@@ -107,3 +116,4 @@ const CseView = ({ navigation }) => {
 };
 
 export default CseView;
+

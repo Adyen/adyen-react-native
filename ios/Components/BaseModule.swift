@@ -66,18 +66,21 @@ internal class BaseModule: RCTEventEmitter {
         sendEvent(withName: event.rawValue, body: body)
     }
 
-    internal func sendEvent(error: Swift.Error) {
-        let errorToSend: Error
+    internal func checkErrorType(_ error: Error) -> (exception: Error, message:  String) {
         if let componentError = (error as? ComponentError), componentError == ComponentError.cancelled {
-            errorToSend = NativeModuleError.canceled
+            return (NativeModuleError.canceled, "Canceled")
         } else if
             (error as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError",
             (error as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue {
-            errorToSend = NativeModuleError.canceled
+            return (NativeModuleError.canceled, "Canceled")
         } else {
-            errorToSend = error
+            return (error, "Component Error")
         }
-        sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
+    }
+    
+    internal func sendEvent(error: Swift.Error) {
+        let errorToSend = checkErrorType(error)
+        sendEvent(withName: Events.didFail.rawValue, body: errorToSend.exception.jsonObject)
     }
 
     internal func parsePaymentMethods(from dicionary: NSDictionary) throws -> PaymentMethods {

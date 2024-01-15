@@ -10,10 +10,7 @@ export type Environment =
   | 'live-apse'
   | 'live-in';
 
-/**
- * General type for AdyenContext configuration. See {@link https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md}
- */
-export interface Configuration {
+export interface BaseConfiguration {
   /** Configuration for analytics service */
   analytics?: AnalyticsOptions;
 
@@ -22,6 +19,21 @@ export interface Configuration {
 
   /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
   clientKey: string;
+
+  /**
+  * The shopper's locale. This is used to enforce the language rendered in the UI.
+  * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
+  * Fallback locale is 'en-US'.
+  * @todo not implemented on on iOS.
+  * @defaultValue null.
+  */
+  locale?: string;
+}
+
+/**
+ * General type for AdyenContext configuration. See {@link https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md}
+ */
+export interface Configuration extends BaseConfiguration {
 
   /** Return URL to be called after payment is completed. */
   returnUrl: string;
@@ -43,15 +55,6 @@ export interface Configuration {
 
   /** Google Pay component configuration. */
   googlepay?: GooglePayConfiguration;
-
-  /**
-   * The shopper's locale. This is used to enforce the language rendered in the UI.
-   * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
-   * Fallback locale is 'en-US'.
-   * @todo not implemented on on iOS.
-   * @defaultValue null.
-   */
-  locale?: string;
 }
 
 export interface DropInConfiguration {
