@@ -13,6 +13,7 @@ import { ENVIRONMENT } from '../Configuration';
 import ApiClient from '../Utilities/APIClient';
 import Styles from '../Utilities/Styles';
 import { useAppContext, checkoutConfiguration } from '../Utilities/AppContext';
+import { isSuccess } from '../Utilities/Helpers';
 
 const { threeDS2SdkVersion } = AdyenAction.getConstants();
 
@@ -57,12 +58,12 @@ const CseView = ({ navigation }) => {
       }
       handleResult(navigation, result);
     } catch (e) {
-      console.error(e);
-      Alert.alert('Error', JSON.stringify(e));
+      Alert.alert('Error', e.message);
     }
   }, [configuration, cvv, expiryMonth, expiryYear, navigation, number]);
 
   function handleResult(navigation, result) {
+    AdyenAction.hide(isSuccess(result.resultCode))
     navigation.popToTop();
     navigation.push('Result', { result: result.resultCode });
   }
