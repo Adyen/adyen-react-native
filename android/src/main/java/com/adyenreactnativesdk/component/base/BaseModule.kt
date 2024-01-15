@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
+import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
@@ -153,7 +154,10 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     override fun onException(exception: CheckoutException) {
-        if (exception is CancellationException || exception.message == "Payment canceled.") {
+        if (exception is CancellationException ||
+            exception is Cancelled3DS2Exception ||
+            exception.message == "Payment canceled."
+        ) {
             sendErrorEvent(ModuleException.Canceled())
         } else {
             sendErrorEvent(exception)

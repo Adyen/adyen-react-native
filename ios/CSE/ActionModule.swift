@@ -31,7 +31,10 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
     
     func didFail(with error: Error, from component: Adyen.ActionComponent) {
         let errorToSend = checkErrorType(error)
-        rejecter?(Constant.moduleName, errorToSend.message, errorToSend.exception)
+        if let error = error as? NativeModuleError {
+            return reject(with: error)
+        }
+        rejecter?(Constant.componentError, error.localizedDescription, error)
     }
 
     @objc
@@ -45,10 +48,16 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
         let parser = RootConfigurationParser(configuration: configuration)
         let context: AdyenContext
         do {
-            context = try parser.fetchContext()
             action = try parseAction(from: actionJson)
-        } catch {
-            return rejecter(Constant.moduleName, "Parsing error", error)
+            context = try parser.fetchContext()
+        } catch NativeModuleError.invalidAction {
+            return reject(with: NativeModuleError.invalidAction)
+        }
+        catch NativeModuleError.noClientKey {
+            return reject(with: NativeModuleError.noClientKey)
+        }
+        catch {
+            return rejecter(Constant.parsingErrorCode, error.localizedDescription, error)
         }
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
@@ -72,5 +81,11 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
     private enum Constant {
         static var moduleName = "ActionModule"
         static var threeDS2SdkVersionName = "threeDS2SdkVersion"
+        static var parsingErrorCode = "parsingError"
+        static var componentError = "actionError"
+    }
+
+    func reject(with error: NativeModuleError) {
+        rejecter?(error.errorCode, error.errorDescription, error)
     }
 }
