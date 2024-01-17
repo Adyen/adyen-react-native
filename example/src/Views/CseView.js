@@ -50,7 +50,7 @@ const CseView = ({ navigation }) => {
         },
       };
 
-      var result = await ApiClient.payments(data, configuration, "myapp://payments");
+      var result = await ApiClient.payments(data, configuration, ENVIRONMENT.returnUrl);
       if (result.action) {
         const actionConfiguration = checkoutConfiguration(configuration);
         const data = await AdyenAction.handle(result.action, actionConfiguration);
@@ -58,6 +58,7 @@ const CseView = ({ navigation }) => {
       }
       handleResult(navigation, result);
     } catch (e) {
+      AdyenAction.hide(isSuccess(false))
       Alert.alert('Error', e.message);
     }
   }, [configuration, cvv, expiryMonth, expiryYear, navigation, number]);

@@ -1,7 +1,5 @@
 package com.adyenreactnativesdk.cse
 
-import androidx.lifecycle.lifecycleScope
-import com.adyen.checkout.action.core.GenericActionComponent
 import com.adyen.checkout.action.core.GenericActionConfiguration
 import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
 import com.adyen.checkout.components.core.ActionComponentCallback
@@ -11,7 +9,6 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.threeds2.ThreeDS2Service
-import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
@@ -20,9 +17,9 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import kotlinx.coroutines.launch
 
-class ActionModule(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener, ActionComponentCallback {
+class ActionModule(context: ReactApplicationContext?) : BaseModule(context),
+    CheckoutProxy.ComponentEventListener, ActionComponentCallback {
 
     private var promise: Promise? = null
 
@@ -32,10 +29,12 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context), Che
         hashMapOf(THREEDS_VERSION_NAME to THREEDS_VERSION)
 
     @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */ }
+    fun addListener(eventName: String?) { /* No JS events expected */
+    }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */ }
+    fun removeListeners(count: Int?) { /* No JS events expected */
+    }
 
     @ReactMethod
     fun handle(actionMap: ReadableMap, configuration: ReadableMap, promise: Promise) {
@@ -49,25 +48,21 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context), Che
         } catch (e: ModuleException) {
             promise.reject(e.code, e.message, e)
             return
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             promise.reject(PARSING_ERROR, e.message, e)
             return
         }
-        try {
-            var callback = this
-            appCompatActivity.lifecycleScope.launch {
-                val component = GenericActionComponent.PROVIDER.get(appCompatActivity, config as GenericActionConfiguration, callback, TAG)
-                component.handleAction(action, appCompatActivity)
-                AdyenCheckout.setIntentHandler(component)
-            }
-        } catch (e: Exception) {
-            promise.reject(COMPONENT_ERROR, e.message, e)
-        }
+        ActionFragment.show(
+            appCompatActivity.supportFragmentManager,
+            config as GenericActionConfiguration,
+            this,
+            action
+        )
     }
 
     @ReactMethod
     fun hide(success: Boolean?) {
+        ActionFragment.hide(appCompatActivity.supportFragmentManager)
         cleanup()
         promise = null
     }
@@ -100,7 +95,11 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context), Che
             componentError.exception is Cancelled3DS2Exception ||
             componentError.exception.message == "Payment canceled."
         ) {
-            promise?.reject(ModuleException.Canceled().code, ModuleException.Canceled().message, ModuleException.Canceled())
+            promise?.reject(
+                ModuleException.Canceled().code,
+                ModuleException.Canceled().message,
+                ModuleException.Canceled()
+            )
         } else {
             promise?.reject(COMPONENT_ERROR, componentError.errorMessage, componentError.exception)
         }
