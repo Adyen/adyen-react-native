@@ -17,8 +17,8 @@ import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
-import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.BaseComponentFragment
+import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
 class GooglePayFragment(

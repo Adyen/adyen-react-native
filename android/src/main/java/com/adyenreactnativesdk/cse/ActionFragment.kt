@@ -6,19 +6,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.adyen.checkout.action.core.GenericActionComponent
 import com.adyen.checkout.action.core.GenericActionConfiguration
 import com.adyen.checkout.components.core.ActionComponentCallback
-import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import kotlinx.coroutines.launch
 
 class ActionFragment(
     private val configuration: GenericActionConfiguration,
@@ -39,19 +34,13 @@ class ActionFragment(
         return inflater.inflate(R.layout.fragment_instant, container)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    setupComponent(action)
-                }
-            }
-        }
+    override fun onStart() {
+        super.onStart()
+
+        setupComponent()
     }
 
-    private fun setupComponent(action: Action) {
-        ActionComponentData
+    private fun setupComponent() {
         val component = GenericActionComponent.PROVIDER.get(
             this,
             configuration,
@@ -92,8 +81,8 @@ class ActionFragment(
         }
 
         fun hide(fragmentManager: FragmentManager) {
-            val fragment = fragmentManager.findFragmentByTag(TAG) as BottomSheetDialogFragment
-            fragment.dismiss()
+            val fragment = fragmentManager.findFragmentByTag(TAG) as? BottomSheetDialogFragment
+            fragment?.dismiss()
         }
     }
 }
