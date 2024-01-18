@@ -92,8 +92,7 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context),
 
     override fun onError(componentError: ComponentError) {
         if (componentError.exception is CancellationException ||
-            componentError.exception is Cancelled3DS2Exception ||
-            componentError.exception.message == "Payment canceled."
+            componentError.exception is Cancelled3DS2Exception
         ) {
             promise?.reject(
                 ModuleException.Canceled().code,
