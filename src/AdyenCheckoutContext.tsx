@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 import {Event, MISSING_CONTEXT_ERROR} from './Core/constants';
 import {
-  getNativeComponent,
   AdyenActionComponent,
   AdyenComponent,
   SessionHelper,
 } from './AdyenNativeModules';
+import { getNativeComponent } from './getNativeComponent';
 import {
   AdyenError,
   PaymentMethodsResponse,

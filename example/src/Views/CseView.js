@@ -15,8 +15,6 @@ import Styles from '../Utilities/Styles';
 import { useAppContext, checkoutConfiguration } from '../Utilities/AppContext';
 import { isSuccess } from '../Utilities/Helpers';
 
-const { threeDS2SdkVersion } = AdyenAction.getConstants();
-
 const CseView = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -46,7 +44,7 @@ const CseView = ({ navigation }) => {
           encryptedExpiryMonth: encryptedCard.expiryMonth,
           encryptedExpiryYear: encryptedCard.expiryYear,
           encryptedSecurityCode: encryptedCard.cvv,
-          threeDS2SdkVersion: threeDS2SdkVersion,
+          threeDS2SdkVersion: AdyenAction.threeDS2SdkVersion,
         },
       };
 
