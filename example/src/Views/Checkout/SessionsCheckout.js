@@ -1,22 +1,15 @@
 // @ts-check
 
 import React, {useEffect, useCallback, useState} from 'react';
-import {
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import {
-  AdyenCheckout,
-  ErrorCode,
-  ResultCode,
-} from '@adyen/react-native';
+import {SafeAreaView, Alert, ActivityIndicator} from 'react-native';
+import {AdyenCheckout, ErrorCode} from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
 import {checkoutConfiguration, useAppContext} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
 import {ENVIRONMENT} from '../../Configuration';
+import {isSuccess} from '../../Utilities/Helpers';
 
 const SessionsCheckout = ({navigation}) => {
   const {configuration} = useAppContext();
@@ -29,7 +22,10 @@ const SessionsCheckout = ({navigation}) => {
   }, []);
 
   const refreshSession = async (configuration) => {
-    const session = await ApiClient.requestSesion(configuration, ENVIRONMENT.returnUrl);
+    const session = await ApiClient.requestSesion(
+      configuration,
+      ENVIRONMENT.returnUrl,
+    );
     setSession(session);
   };
 
@@ -90,7 +86,7 @@ const SessionsCheckout = ({navigation}) => {
       nativeComponent.hide(false);
       if (error.errorCode === ErrorCode.canceled) {
         Alert.alert('Canceled');
-        refreshSession(configuration)
+        refreshSession(configuration);
       } else {
         Alert.alert('Error', error.message);
       }
@@ -111,21 +107,10 @@ const SessionsCheckout = ({navigation}) => {
           <PaymentMethods />
         </AdyenCheckout>
       ) : (
-        <ActivityIndicator size='large' style={Styles.page} />
+        <ActivityIndicator size="large" style={Styles.page} />
       )}
     </SafeAreaView>
   );
-};
-
-const isSuccess = (
-  /** @type {import('@adyen/react-native').PaymentResponse} */
-  result,
-) => {
-  const code = result.resultCode;
-  return code === ResultCode.authorised ||
-    code === ResultCode.received ||
-    code === ResultCode.pending || 
-    code === ResultCode.presentToShopper;
 };
 
 export default SessionsCheckout;

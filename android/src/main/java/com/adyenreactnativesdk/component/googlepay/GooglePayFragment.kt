@@ -17,8 +17,8 @@ import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
+import com.adyenreactnativesdk.component.base.BaseComponentFragment
 import com.adyenreactnativesdk.component.base.ComponentData
-import com.adyenreactnativesdk.component.base.GenericFragment
 import com.adyenreactnativesdk.component.base.ModuleException
 
 class GooglePayFragment(
@@ -26,7 +26,7 @@ class GooglePayFragment(
     paymentMethod: PaymentMethod,
     session: CheckoutSession?
 ) :
-    GenericFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod, session) {
+    BaseComponentFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod, session) {
 
     override fun setupComponent(componentData: ComponentData<GooglePayComponentState>) {
         val session = session

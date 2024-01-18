@@ -78,3 +78,16 @@ RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
                   event:(NSDictionary *)event)
 
 @end
+
+@interface RCT_EXTERN_MODULE(AdyenAction, NSObject)
+
+RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success)
+
+RCT_EXTERN_METHOD(handle:(NSDictionary *)action
+                  configuration:(NSDictionary *)configurationJSON
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+@end
+
+

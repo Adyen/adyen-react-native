@@ -66,17 +66,15 @@ internal class BaseModule: RCTEventEmitter {
         sendEvent(withName: event.rawValue, body: body)
     }
 
-    internal func sendEvent(error: Swift.Error) {
-        let errorToSend: Error
-        if let componentError = (error as? ComponentError), componentError == ComponentError.cancelled {
-            errorToSend = NativeModuleError.canceled
-        } else if
-            (error as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError",
-            (error as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue {
-            errorToSend = NativeModuleError.canceled
-        } else {
-            errorToSend = error
+    internal func checkErrorType(_ error: Error) -> Error {
+        if error.isComponentCanceled || error.is3DSCanceled {
+            return NativeModuleError.canceled
         }
+        return error
+    }
+
+    internal func sendEvent(error: Swift.Error) {
+        let errorToSend = checkErrorType(error)
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
 
@@ -154,7 +152,16 @@ internal class BaseModule: RCTEventEmitter {
             }
         }
     }
+}
 
+extension Error {
+
+    var isComponentCanceled: Bool { (self as? ComponentError) == ComponentError.cancelled }
+
+    var is3DSCanceled: Bool {
+        (self as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError" &&
+        (self as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue
+    }
 }
 
 extension BaseModule {
@@ -211,7 +218,6 @@ extension BaseModule {
             }
         }
     }
-
 }
 
 extension BaseModule: PresentationDelegate {

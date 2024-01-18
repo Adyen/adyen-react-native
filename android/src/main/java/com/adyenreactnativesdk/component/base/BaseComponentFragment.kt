@@ -19,17 +19,17 @@ import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.components.core.internal.PaymentComponent
+import com.adyen.checkout.components.core.internal.Component
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
-abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(
+abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<*>>(
     private val paymentMethod: PaymentMethod,
     protected var session: CheckoutSession? = null
 ) :
-    BottomSheetDialogFragment() where TComponent : PaymentComponent,
+    BottomSheetDialogFragment() where TComponent : Component,
                                       TComponent : ActionHandlingComponent {
 
     var component: TComponent? = null
@@ -87,7 +87,7 @@ abstract class GenericFragment<TComponent, TState : PaymentComponentState<*>>(
         const val FRAGMENT_ERROR = "Not able to find AdyenComponentView in `component_view` fragment"
 
         fun handle(fragmentManager: FragmentManager, action: Action, tag: String) {
-            val fragment = fragmentManager.findFragmentByTag(tag) as GenericFragment<*, *>
+            val fragment = fragmentManager.findFragmentByTag(tag) as BaseComponentFragment<*, *>
             fragment.viewModel.onAction(action)
         }
 

@@ -18,6 +18,7 @@ import {
   PaymentMethodsResponse,
   SessionResponse,
 } from './Core/types';
+import { BaseConfiguration } from './Core/configuration';
 
 /**
  * Options for dismissing the payment component.
@@ -137,6 +138,34 @@ class AdyenNativeComponentWrapper implements AdyenActionComponent {
     }
   }
 }
+
+/** Collection of android helper methods */
+export interface ActionModule extends AdyenComponent {
+  /**
+   * Handle a payment action received by the component.
+   * @param action - The payment action to be handled.
+   */
+  handle: (action: PaymentAction, configuration: BaseConfiguration) => Promise<PaymentMethodData>;
+
+  /**
+  * Dismiss the component from the screen.
+  * @param success - Indicates whether the component was dismissed successfully.
+  * @param option - Additional options for dismissing the component (optional).
+  */
+  hide: (success: boolean, option?: HideOption) => void;
+}
+
+/** Standalone Action Handling module. */
+export const AdyenAction: ActionModule & NativeModule = NativeModules.AdyenAction
+  ? NativeModules.AdyenAction
+  : new Proxy(
+    {},
+    {
+      get() {
+        throw new Error(LINKING_ERROR);
+      },
+    },
+  );
 
 /** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
 export const AdyenDropIn: AdyenActionComponent & NativeModule =

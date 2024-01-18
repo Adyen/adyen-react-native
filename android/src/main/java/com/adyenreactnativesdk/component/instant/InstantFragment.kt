@@ -19,8 +19,8 @@ import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
+import com.adyenreactnativesdk.component.base.BaseComponentFragment
 import com.adyenreactnativesdk.component.base.ComponentData
-import com.adyenreactnativesdk.component.base.GenericFragment
 import com.adyenreactnativesdk.component.base.ModuleException
 
 class InstantFragment(
@@ -28,7 +28,7 @@ class InstantFragment(
     paymentMethod: PaymentMethod,
     session: CheckoutSession?
 ) :
-    GenericFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod, session) {
+    BaseComponentFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod, session) {
 
     override fun setupComponent(componentData: ComponentData<InstantComponentState>) {
         val session = session
