@@ -1,24 +1,13 @@
 import {NativeModule, NativeModules} from 'react-native';
-import {
-  find,
-  NATIVE_COMPONENTS,
-  UNSUPPORTED_PAYMENT_METHODS,
-} from './ComponentMap';
-import {
-  ErrorCode,
-  Event,
-  LINKING_ERROR,
-  UNKNOWN_PAYMENT_METHOD_ERROR,
-  UNSUPPORTED_PAYMENT_METHOD_ERROR,
-} from './Core/constants';
+import {LINKING_ERROR} from './Core/constants';
 import {
   Card,
   PaymentAction,
-  PaymentMethod,
   PaymentMethodsResponse,
   SessionResponse,
 } from './Core/types';
-import { BaseConfiguration } from './Core/configuration';
+import {BaseConfiguration} from './Core/configuration';
+import {ActionModuleWrapper} from './ActionModuleWrapper';
 
 /**
  * Options for dismissing the payment component.
@@ -63,7 +52,7 @@ export interface AdyenActionComponent extends AdyenComponent {
   events: string[];
 }
 
-/** Collection of android helper methods */
+/** Describes a native module capable of creating new sessions. */
 export interface SessionHelperModule extends AdyenComponent {
   /**
    * Provides return URL for current application.
@@ -76,163 +65,29 @@ export interface SessionHelperModule extends AdyenComponent {
   createSession: (session: any, configuration: any) => Promise<SessionResponse>;
 }
 
-interface AdyenNativeComponentWrapperProps {
-  nativeModule: NativeModule;
-  canHandlePayment?: boolean;
-  canHandleAction?: boolean;
-  events?: string[];
-}
+/** Describes a native module capable of handling actions standalone. */
+export interface ActionModule {
+  /** Returns current version of 3DS2 library */
+  threeDS2SdkVersion: string;
 
-/**
- * @private
- *  Wrapper for all Native Modules that do not support Action handling.
- * */
-class AdyenNativeComponentWrapper implements AdyenActionComponent {
-  canHandleAction: boolean;
-  nativeModule: NativeModule | any;
-  constructor({
-    nativeModule,
-    canHandlePayment = true,
-    canHandleAction = true,
-    events,
-  }: AdyenNativeComponentWrapperProps) {
-    this.nativeModule = nativeModule;
-    this.canHandleAction = canHandleAction;
-    this.events = [Event.onError];
-
-    events?.forEach((element) => this.events.push(element));
-
-    if (canHandleAction) {
-      this.events.push(Event.onAdditionalDetails);
-    }
-
-    if (canHandlePayment) {
-      this.events.push(Event.onSubmit);
-      this.events.push(Event.onComplete);
-    }
-  }
-
-  events: string[];
-
-  addListener(eventType: string) {
-    this.nativeModule.addListener(eventType);
-  }
-  removeListeners(count: number) {
-    this.nativeModule.removeListeners(count);
-  }
-  handle(action: PaymentAction) {
-    if (this.canHandleAction) {
-      this.nativeModule.handle(action);
-    } else {
-      throw Error(ErrorCode.notSupportedAction);
-    }
-  }
-  open(paymentMethods: PaymentMethodsResponse, configuration: any) {
-    this.nativeModule.open(paymentMethods, configuration);
-  }
-  hide(success: boolean, option?: {message?: string}) {
-    if (option?.message) {
-      this.nativeModule.hide(success, option);
-    } else {
-      this.nativeModule.hide(success, {message: ''});
-    }
-  }
-}
-
-/** Collection of android helper methods */
-export interface ActionModule extends AdyenComponent {
   /**
-   * Handle a payment action received by the component.
+   * Handle a payment action received from Adyen API.
    * @param action - The payment action to be handled.
    */
-  handle: (action: PaymentAction, configuration: BaseConfiguration) => Promise<PaymentMethodData>;
+  handle: (
+    action: PaymentAction,
+    configuration: BaseConfiguration,
+  ) => Promise<PaymentMethodData>;
 
   /**
-  * Dismiss the component from the screen.
-  * @param success - Indicates whether the component was dismissed successfully.
-  * @param option - Additional options for dismissing the component (optional).
-  */
-  hide: (success: boolean, option?: HideOption) => void;
+   * Dismiss the component from the screen.
+   * @param success - Indicates whether the component was dismissed successfully.
+   */
+  hide: (success: boolean) => void;
 }
 
-/** Standalone Action Handling module. */
-export const AdyenAction: ActionModule & NativeModule = NativeModules.AdyenAction
-  ? NativeModules.AdyenAction
-  : new Proxy(
-    {},
-    {
-      get() {
-        throw new Error(LINKING_ERROR);
-      },
-    },
-  );
-
-/** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
-export const AdyenDropIn: AdyenActionComponent & NativeModule =
-  NativeModules.AdyenDropIn
-    ? NativeModules.AdyenDropIn
-    : new Proxy(
-        {},
-        {
-          get() {
-            throw new Error(LINKING_ERROR);
-          },
-        },
-      );
-
-/** Generic Redirect component */
-export const AdyenInstant: AdyenActionComponent & NativeModule =
-  NativeModules.AdyenInstant
-    ? NativeModules.AdyenInstant
-    : new Proxy(
-        {},
-        {
-          get() {
-            throw new Error(LINKING_ERROR);
-          },
-        },
-      );
-
-/** Apple Pay component (only available for iOS) */
-export const AdyenApplePay: AdyenComponent & NativeModule =
-  NativeModules.AdyenApplePay
-    ? NativeModules.AdyenApplePay
-    : new Proxy(
-        {},
-        {
-          get() {
-            throw new Error(LINKING_ERROR);
-          },
-        },
-      );
-
-/** Google Pay component (only available for Android) */
-export const AdyenGooglePay: AdyenComponent & NativeModule =
-  NativeModules.AdyenGooglePay
-    ? NativeModules.AdyenGooglePay
-    : new Proxy(
-        {},
-        {
-          get() {
-            throw new Error(LINKING_ERROR);
-          },
-        },
-      );
-
-/** Collection of session helper methods */
-export const SessionHelper: SessionHelperModule = NativeModules.SessionHelper
-  ? NativeModules.SessionHelper
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      },
-    );
-
-/** Describes Adyen Component capable of handling action */
-interface AdyenCSE extends NativeModule {
+/** Describes a native module capable of encrypting card data. */
+export interface AdyenCSEModule extends NativeModule {
   /** Method to encrypt card. */
   encryptCard: (payload: Card, publicKey: string) => Promise<Card>;
 
@@ -240,81 +95,38 @@ interface AdyenCSE extends NativeModule {
   encryptBin: (payload: string, publicKey: string) => Promise<string>;
 }
 
+const ModuleMock = new Proxy(
+  {},
+  {
+    get() {
+      throw new Error(LINKING_ERROR);
+    },
+  },
+);
+
+/** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
+export const AdyenDropIn: AdyenActionComponent & NativeModule =
+  NativeModules.AdyenDropIn ?? ModuleMock;
+
+/** Generic Redirect component */
+export const AdyenInstant: AdyenActionComponent & NativeModule =
+  NativeModules.AdyenInstant ?? ModuleMock;
+
+/** Apple Pay component (only available for iOS) */
+export const AdyenApplePay: AdyenComponent & NativeModule =
+  NativeModules.AdyenApplePay ?? ModuleMock;
+
+/** Google Pay component (only available for Android) */
+export const AdyenGooglePay: AdyenComponent & NativeModule =
+  NativeModules.AdyenGooglePay ?? ModuleMock;
+
+/** Collection of session helper methods */
+export const SessionHelper: SessionHelperModule =
+  NativeModules.SessionHelper ?? ModuleMock;
+
 /**Encryption helper. */
-export const AdyenCSE: AdyenCSE = NativeModules.AdyenCSE
-  ? NativeModules.AdyenCSE
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      },
-    );
+export const AdyenCSE: AdyenCSEModule = NativeModules.AdyenCSE ?? ModuleMock;
 
-/**
- * Get native component capable of handling provided payment method type.
- */
-export function getNativeComponent(
-  typeName: string,
-  paymentMethods: PaymentMethodsResponse,
-): {
-  nativeComponent: AdyenActionComponent & NativeModule;
-  paymentMethod: PaymentMethod | undefined;
-} {
-  switch (typeName) {
-    case 'dropin':
-    case 'dropIn':
-    case 'drop-in':
-    case 'adyendropin':
-      return {
-        nativeComponent: new AdyenNativeComponentWrapper({
-          nativeModule: AdyenDropIn,
-        }),
-        paymentMethod: undefined,
-      };
-    case 'applepay':
-      return {
-        nativeComponent: new AdyenNativeComponentWrapper({
-          nativeModule: AdyenApplePay,
-          canHandleAction: false,
-        }),
-        paymentMethod: undefined,
-      };
-    case 'paywithgoogle':
-    case 'googlepay':
-      return {
-        nativeComponent: new AdyenNativeComponentWrapper({
-          nativeModule: AdyenGooglePay,
-        }),
-        paymentMethod: undefined,
-      };
-    default:
-      break;
-  }
-
-  const paymentMethod = find(paymentMethods, typeName);
-  if (!paymentMethod) {
-    throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + typeName);
-  }
-
-  if (UNSUPPORTED_PAYMENT_METHODS.includes(typeName)) {
-    throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
-  }
-
-  if (NATIVE_COMPONENTS.includes(typeName)) {
-    return {
-      nativeComponent: new AdyenNativeComponentWrapper({
-        nativeModule: AdyenDropIn,
-      }),
-      paymentMethod: paymentMethod,
-    };
-  }
-
-  return {
-    nativeComponent: new AdyenNativeComponentWrapper({
-      nativeModule: AdyenInstant,
-    }),
-    paymentMethod: paymentMethod,
-  };
-}
+/** Standalone Action Handling module. */
+export const AdyenAction: ActionModule =
+  new ActionModuleWrapper(NativeModules.AdyenAction) ?? ModuleMock;
