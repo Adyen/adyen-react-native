@@ -1,7 +1,7 @@
 // @ts-check
 
 import React from 'react';
-import { useAdyenCheckout } from '@adyen/react-native';
+import {AdyenAction, useAdyenCheckout} from '@adyen/react-native';
 import {
   Button,
   View,
@@ -10,26 +10,32 @@ import {
   Image,
   Text,
   useColorScheme,
+  Alert,
 } from 'react-native';
 import Styles from '../../Utilities/Styles';
-import { ENVIRONMENT } from '../../Configuration';
+import {ENVIRONMENT} from '../../Configuration';
+import {payByID} from '../../Utilities/payByID';
+import {useAppContext} from '../../Utilities/AppContext';
 
-const PaymentMethods = () => {
-  const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
+const PaymentMethods = ({isSession}) => {
+  const {configuration} = useAppContext();
+  const {start, paymentMethods: paymentMethodsResponse} = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
   const storedPaymentMethods = paymentMethodsResponse?.storedPaymentMethods;
 
   const isNotReady = paymentMethodsResponse === undefined;
   const isDarkMode = useColorScheme() === 'dark';
 
-  const subtitle = (/** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm) => {
+  const subtitle = (
+    /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm,
+  ) => {
     switch (pm.type) {
       case 'scheme':
-        return `**** **** **** ${pm['lastFour']} (exp ${pm['expiryMonth']}/${pm['expiryYear']})`
+        return `**** **** **** ${pm['lastFour']} (exp ${pm['expiryMonth']}/${pm['expiryYear']})`;
       default:
-        return `${pm.id}`
+        return `${pm.id}`;
     }
-  }
+  };
 
   return (
     <ScrollView>
@@ -44,9 +50,11 @@ const PaymentMethods = () => {
           />
         </View>
 
-        {storedPaymentMethods ? (
+        {storedPaymentMethods && !isSession ? (
           <View>
-            <Text style={isDarkMode ? Styles.textDark : Styles.textLight}> Stored payments </Text>
+            <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+              Stored payments
+            </Text>
             {storedPaymentMethods.map((p) => {
               const iconName = p.type === 'scheme' ? 'card' : p.type;
               return (
@@ -55,17 +63,28 @@ const PaymentMethods = () => {
                     title={`${p.name}`}
                     subtitle={subtitle(p)}
                     icon={iconName}
-                    onPress={() => {
-                      start(p.id);
+                    onPress={async () => {
+                      try {
+                        let cvv = '737'; /** Collect CVV from shopper if nececery */
+                        let result = await payByID(p.id, cvv, configuration);
+                        Alert.alert('Result', result.resultCode);
+                      } catch (e) {
+                        Alert.alert('Error', e.message);
+                        AdyenAction.hide(false);
+                      }
                     }}
                   />
                 </View>
               );
             })}
           </View>
-        ) : (<View />)}
+        ) : (
+          <View />
+        )}
 
-        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}> Components </Text>
+        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+          Components
+        </Text>
         {regularPaymentMethods.map((p) => {
           const iconName = p.type === 'scheme' ? 'card' : p.type;
           return (
@@ -86,7 +105,7 @@ const PaymentMethods = () => {
   );
 };
 
-const PaymentMethodButton = ({ onPress, title, subtitle, icon }) => {
+const PaymentMethodButton = ({onPress, title, subtitle, icon}) => {
   const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${icon}@3x.png`;
 
   return (
@@ -96,10 +115,10 @@ const PaymentMethodButton = ({ onPress, title, subtitle, icon }) => {
       underlayColor="#042417"
     >
       <View style={Styles.btnContainer}>
-        <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
+        <Image source={{uri: iconURI}} style={Styles.btnIcon} />
         <View style={Styles.content}>
           <Text style={Styles.btnText}>{title}</Text>
-          {subtitle ? (<Text style={Styles.btnText}>{subtitle}</Text>) : (<View />)}
+          {subtitle ? <Text style={Styles.btnText}>{subtitle}</Text> : <View />}
         </View>
       </View>
     </TouchableHighlight>

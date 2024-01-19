@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   Button,
   SafeAreaView,
@@ -8,17 +8,16 @@ import {
   Alert,
   useColorScheme,
 } from 'react-native';
-import { AdyenCSE, AdyenAction } from '@adyen/react-native';
-import { ENVIRONMENT } from '../Configuration';
-import ApiClient from '../Utilities/APIClient';
+import {AdyenAction} from '@adyen/react-native';
 import Styles from '../Utilities/Styles';
-import { useAppContext, checkoutConfiguration } from '../Utilities/AppContext';
-import { isSuccess } from '../Utilities/Helpers';
+import {useAppContext} from '../Utilities/AppContext';
+import {isSuccess} from '../Utilities/Helpers';
+import {payWithCard} from '../Utilities/payWithCard';
 
-const CseView = ({ navigation }) => {
+const CseView = ({navigation}) => {
   const isDarkMode = useColorScheme() === 'dark';
 
-  const { configuration } = useAppContext();
+  const {configuration} = useAppContext();
 
   const [number, setNumber] = useState('');
   const [expiryMonth, setExpiryMonth] = useState('');
@@ -33,38 +32,18 @@ const CseView = ({ navigation }) => {
       cvv: cvv,
     };
     try {
-      const encryptedCard = await AdyenCSE.encryptCard(
-        unencryptedCard,
-        ENVIRONMENT.publicKey
-      );
-      const data = {
-        paymentMethod: {
-          type: 'scheme',
-          encryptedCardNumber: encryptedCard.number,
-          encryptedExpiryMonth: encryptedCard.expiryMonth,
-          encryptedExpiryYear: encryptedCard.expiryYear,
-          encryptedSecurityCode: encryptedCard.cvv,
-          threeDS2SdkVersion: AdyenAction.threeDS2SdkVersion,
-        },
-      };
-
-      var result = await ApiClient.payments(data, configuration, ENVIRONMENT.returnUrl);
-      if (result.action) {
-        const actionConfiguration = checkoutConfiguration(configuration);
-        const data = await AdyenAction.handle(result.action, actionConfiguration);
-        result = await ApiClient.paymentDetails(data);
-      }
+      var result = await payWithCard(unencryptedCard, configuration);
       handleResult(navigation, result);
     } catch (e) {
-      AdyenAction.hide(isSuccess(false))
+      AdyenAction.hide(isSuccess(false));
       Alert.alert('Error', e.message);
     }
   }, [configuration, cvv, expiryMonth, expiryYear, navigation, number]);
 
   function handleResult(navigation, result) {
-    AdyenAction.hide(isSuccess(result.resultCode))
+    AdyenAction.hide(isSuccess(result.resultCode));
     navigation.popToTop();
-    navigation.push('Result', { result: result.resultCode });
+    navigation.push('Result', {result: result.resultCode});
   }
 
   return (
@@ -116,4 +95,3 @@ const CseView = ({ navigation }) => {
 };
 
 export default CseView;
-
