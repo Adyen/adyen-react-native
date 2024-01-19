@@ -26,7 +26,7 @@ export function getNativeComponent(
   paymentMethods: PaymentMethodsResponse,
 ): {
   nativeComponent: AdyenActionComponent & NativeModule;
-  paymentMethod: PaymentMethod | undefined;
+  paymentMethod?: PaymentMethod;
 } {
   switch (typeName) {
     case 'dropin':
@@ -37,7 +37,6 @@ export function getNativeComponent(
         nativeComponent: new AdyenNativeComponentWrapper({
           nativeModule: AdyenDropIn,
         }),
-        paymentMethod: undefined,
       };
     case 'applepay':
       return {
@@ -45,7 +44,6 @@ export function getNativeComponent(
           nativeModule: AdyenApplePay,
           canHandleAction: false,
         }),
-        paymentMethod: undefined,
       };
     case 'paywithgoogle':
     case 'googlepay':
@@ -53,7 +51,6 @@ export function getNativeComponent(
         nativeComponent: new AdyenNativeComponentWrapper({
           nativeModule: AdyenGooglePay,
         }),
-        paymentMethod: undefined,
       };
     default:
       break;
@@ -68,18 +65,12 @@ export function getNativeComponent(
     throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  if (NATIVE_COMPONENTS.includes(typeName)) {
-    return {
-      nativeComponent: new AdyenNativeComponentWrapper({
-        nativeModule: AdyenDropIn,
-      }),
-      paymentMethod: paymentMethod,
-    };
-  }
-
+  const nativeModule = NATIVE_COMPONENTS.includes(typeName)
+    ? AdyenDropIn
+    : AdyenInstant;
   return {
     nativeComponent: new AdyenNativeComponentWrapper({
-      nativeModule: AdyenInstant,
+      nativeModule: nativeModule,
     }),
     paymentMethod: paymentMethod,
   };
