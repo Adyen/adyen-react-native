@@ -15,7 +15,6 @@
 ## Analytics
 
 - `enabled` - Enable/Disable all analytics. Defaults to **true**. ⚠️ This feature only available from v68 of Adyen API
-- `payload` - Data to be sent along with the event data
 
 ## React Native SDK provides the following configurations for components:
 
@@ -91,7 +90,7 @@ const configuration = {
   },
   returnUrl: 'myapp://adyencheckout',
   analytics: {
-    enable: true,
+    enabled: true,
   },
   dropin: {
     skipListWhenSinglePaymentMethod: true,

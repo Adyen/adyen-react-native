@@ -73,7 +73,7 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
         val config = setupRootConfig(json)
 
         val instantPaymentConfiguration = InstantPaymentConfiguration.Builder(locale, environment, clientKey)
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
+            .setAnalyticsConfiguration(config.analytics)
 
         return instantPaymentConfiguration.build()
     }

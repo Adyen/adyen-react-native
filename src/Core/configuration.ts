@@ -1,4 +1,3 @@
-import {AnalyticsOptions} from './Analytics/types';
 import {PaymentAmount} from './types';
 
 /** Collection of available environments. */
@@ -28,6 +27,13 @@ export interface BaseConfiguration {
   * @defaultValue null.
   */
   locale?: string;
+}
+
+export interface AnalyticsOptions {
+  /**
+   * Enable/Disable all analytics
+   */
+  enabled?: boolean;
 }
 
 /**

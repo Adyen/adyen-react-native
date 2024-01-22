@@ -125,11 +125,10 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         val config = setupRootConfig(json)
 
         val builder = Builder(locale, environment, clientKey)
+        builder.setAnalyticsConfiguration(config.analytics)
         configureDropIn(builder, json)
         configureBcmc(builder, json)
         configure3DS(builder)
-
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
 
         val amount = config.amount
         val countryCode = config.countryCode

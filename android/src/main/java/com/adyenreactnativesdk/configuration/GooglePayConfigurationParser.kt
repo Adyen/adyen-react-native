@@ -154,8 +154,6 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             builder.setShippingAddressParameters(shippingAddressParameters)
         }
 
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
-
         return builder.build()
     }
 

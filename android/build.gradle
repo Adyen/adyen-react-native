@@ -20,13 +20,14 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion safeExtGet('compileSdkVersion', 31)
+    compileSdkVersion safeExtGet('compileSdkVersion', 34)
     defaultConfig {
         minSdkVersion safeExtGet('minSdkVersion', 21)
-        targetSdkVersion safeExtGet('targetSdkVersion', 30)
+        targetSdkVersion safeExtGet('targetSdkVersion', 34)
         versionCode 1
         versionName "1.0"
         buildConfigField "String", "adyenReactNativeRedirectScheme", "\"$rootProject.ext.adyenReactNativeRedirectScheme\""
+        buildConfigField "String", "CHECKOUT_VERSION", "\"{SDK_VERSION}\""
     }
 
     buildTypes {
@@ -57,7 +58,7 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
-    implementation "com.adyen.checkout:drop-in:5.0.1"
+    implementation "com.adyen.checkout:drop-in:5.1.0"
     implementation 'com.google.android.material:material:1.7.0'
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0"
 

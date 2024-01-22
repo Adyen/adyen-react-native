@@ -1,35 +1,35 @@
 PODS:
-  - Adyen (5.4.1):
-    - Adyen/Actions (= 5.4.1)
-    - Adyen/Card (= 5.4.1)
-    - Adyen/Components (= 5.4.1)
-    - Adyen/Core (= 5.4.1)
-    - Adyen/DropIn (= 5.4.1)
-    - Adyen/Encryption (= 5.4.1)
-    - Adyen/Session (= 5.4.1)
-  - adyen-react-native (1.0.0-local.5):
-    - Adyen (= 5.4.1)
+  - Adyen (5.5.0):
+    - Adyen/Actions (= 5.5.0)
+    - Adyen/Card (= 5.5.0)
+    - Adyen/Components (= 5.5.0)
+    - Adyen/Core (= 5.5.0)
+    - Adyen/DropIn (= 5.5.0)
+    - Adyen/Encryption (= 5.5.0)
+    - Adyen/Session (= 5.5.0)
+  - adyen-react-native (2.0.0-local.1):
+    - Adyen (= 5.5.0)
     - React-Core
-  - Adyen/Actions (5.4.1):
+  - Adyen/Actions (5.5.0):
     - Adyen/Core
     - Adyen3DS2 (= 2.3.3)
-  - Adyen/Card (5.4.1):
+  - Adyen/Card (5.5.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Components (5.4.1):
+  - Adyen/Components (5.5.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Core (5.4.1):
+  - Adyen/Core (5.5.0):
     - AdyenNetworking (= 2.0.0)
-  - Adyen/DropIn (5.4.1):
+  - Adyen/DropIn (5.5.0):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (5.4.1):
+  - Adyen/Encryption (5.5.0):
     - Adyen/Core
-  - Adyen/Session (5.4.1):
+  - Adyen/Session (5.5.0):
     - Adyen/Actions
     - Adyen/Core
   - Adyen3DS2 (2.3.3)
@@ -482,8 +482,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: c176e4770fb8ac01559459dde00d78f63b5c55ba
-  adyen-react-native: 2315be0c1d1c22811aacc0abb4bc94885f8588a7
+  Adyen: be713642f59de01bbc1ccdac8c36de9e2801ab8b
+  adyen-react-native: 13afb54eeb848c2ece4b4b5e6b32993e12dfe3c7
   Adyen3DS2: 868f5fe2dc7dba62c97be5821b95d2838e6540d8
   AdyenNetworking: 49e447632b542e08c6dd06bb47ea1077a8adecb7
   boost: 57d2868c099736d80fcd648bf211b4431e51a558
@@ -524,6 +524,6 @@ SPEC CHECKSUMS:
   RNScreens: 3c2d122f5e08c192e254c510b212306da97d2581
   Yoga: e71803b4c1fff832ccf9b92541e00f9b873119b9
 
-PODFILE CHECKSUM: 23c052ef163d747e6a30255df0415afd5484e294
+PODFILE CHECKSUM: 5396337b98757994f226bc1f45ba11bec58622e7
 
 COCOAPODS: 1.14.3

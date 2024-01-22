@@ -114,7 +114,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
         )
             .setCountryCode(countryCode)
             .setAmount(amount)
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
+            .setAnalyticsConfiguration(config.analytics)
 
         return parser.getConfiguration(configBuilder, environment)
     }
