@@ -13,6 +13,7 @@ import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.AnalyticsParser
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -70,10 +71,10 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
     }
 
     override fun parseConfiguration(json: ReadableMap): Configuration {
-        val config = setupRootConfig(json)
-
+        setupRootConfig(json)
+        val analytics = AnalyticsParser(json).analytics
         val instantPaymentConfiguration = InstantPaymentConfiguration.Builder(locale, environment, clientKey)
-            .setAnalyticsConfiguration(config.analytics)
+            .setAnalyticsConfiguration(analytics)
 
         return instantPaymentConfiguration.build()
     }

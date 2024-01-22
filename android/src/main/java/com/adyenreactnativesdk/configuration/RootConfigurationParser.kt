@@ -8,9 +8,6 @@ package com.adyenreactnativesdk.configuration
 
 import android.util.Log
 import com.adyen.checkout.components.core.Amount
-import com.adyen.checkout.components.core.AnalyticsConfiguration
-import com.adyen.checkout.components.core.AnalyticsLevel
-import com.adyen.checkout.core.AdyenLogger
 import com.adyen.checkout.core.Environment
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReadableMap
@@ -25,9 +22,6 @@ class RootConfigurationParser(private val config: ReadableMap) {
         const val COUNTRY_CODE_KEY = "countryCode"
         const val ENVIRONMENT_KEY = "environment"
         const val SHOPPER_LOCALE_KEY = "shopperLocale"
-        const val ANALYTICS_KEY = "analytics"
-        const val ANALYTICS_ENABLED_KEY = "enabled"
-        const val ANALYTICS_VERBOSE_LOGS = "verboseLogs"
     }
 
     val amount: Amount?
@@ -72,22 +66,4 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 else -> Environment.TEST
             }
         } else Environment.TEST
-
-    private val analyticsEnabled: Boolean
-        get() = if (config.hasKey(ANALYTICS_KEY)) {
-            val map = config.getMap(ANALYTICS_KEY)
-            map?.hasKey(ANALYTICS_ENABLED_KEY) == true && map.getBoolean(ANALYTICS_ENABLED_KEY)
-        } else false
-
-    private val verboseLogs: Boolean
-        get() = if (config.hasKey(ANALYTICS_KEY)) {
-            val map = config.getMap(ANALYTICS_KEY)
-            map?.hasKey(ANALYTICS_VERBOSE_LOGS) == true && map.getBoolean(ANALYTICS_VERBOSE_LOGS)
-        } else false
-
-    val analytics: AnalyticsConfiguration
-        get() = { 
-            AdyenLogger.setLogLevel(if (verboseLogs) Log.VERBOSE else Log.ERROR)
-            return AnalyticsConfiguration(if (analyticsEnabled) AnalyticsLevel.ALL else AnalyticsLevel.NONE) 
-        }
 }
