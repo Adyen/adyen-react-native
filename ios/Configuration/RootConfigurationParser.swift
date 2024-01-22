@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-@_spi(AdyenInternal) import Adyen
+import Adyen
 
 public struct RootConfigurationParser {
 
@@ -58,14 +58,6 @@ public struct RootConfigurationParser {
         return Locale(identifier: shopperLocaleString)
     }
 
-    public var analyticsOn: Bool {
-        return configuration[AnalyticsKeys.enabled] as? Bool == true
-    }
-
-    public var verboseLogsOn: Bool {
-        return configuration[AnalyticsKeys.verboseLogs] as? Bool == true
-    }
-
 }
 
 extension RootConfigurationParser {
@@ -76,10 +68,7 @@ extension RootConfigurationParser {
         }
         let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
 
-        var analytics = AnalyticsConfiguration()
-        analytics.isEnabled = analyticsOn
-        analytics.context = TelemetryContext(version: AdyenSDKVersion, platform: .reactNative)
-        AdyenLogging.isEnabled = verboseLogsOn
+        let analytics = AnalyticsParser(configuration: configuration).configuration
         return AdyenContext(apiContext: apiContext, payment: self.payment, analyticsConfiguration: analytics)
     }
 }
