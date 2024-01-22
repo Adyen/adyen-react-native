@@ -26,13 +26,13 @@ const CseView = ({navigation}) => {
 
   const tryEncryptCard = useCallback(async () => {
     const unencryptedCard = {
-      number: number,
-      expiryMonth: expiryMonth,
-      expiryYear: expiryYear,
-      cvv: cvv,
+      number,
+      expiryMonth,
+      expiryYear,
+      cvv,
     };
     try {
-      var result = await payWithCard(unencryptedCard, configuration);
+      const result = await payWithCard(unencryptedCard, configuration);
       handleResult(navigation, result);
     } catch (e) {
       AdyenAction.hide(isSuccess(false));

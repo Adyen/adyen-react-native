@@ -6,7 +6,7 @@ import { isSuccess } from './Helpers';
 
 export async function payByID(id, cvv, configuration) {
   const encryptedCard = await AdyenCSE.encryptCard(
-    { cvv: cvv },
+    { cvv },
     ENVIRONMENT.publicKey
   );
   const data = {
@@ -18,7 +18,7 @@ export async function payByID(id, cvv, configuration) {
     },
   };
 
-  var result = await ApiClient.payments(data, configuration, ENVIRONMENT.returnUrl);
+  let result = await ApiClient.payments(data, configuration, ENVIRONMENT.returnUrl);
   if (result.action) {
     const actionConfiguration = checkoutConfiguration(configuration);
     const data = await AdyenAction.handle(result.action, actionConfiguration);

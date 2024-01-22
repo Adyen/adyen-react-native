@@ -121,5 +121,5 @@ const parseConfig = ({
   merchantAccount,
   countryCode,
   shopperReference,
-  shopperLocale: shopperLocale,
+  shopperLocale,
 });
