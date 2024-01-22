@@ -16,7 +16,7 @@ export const AppContext = createContext({
 });
 
 export const checkoutConfiguration = (config) => {
-  return {
+  const /** @type {import('@adyen/react-native').Configuration} */ configuration = {
     clientKey: ENVIRONMENT.clientKey,
     environment: ENVIRONMENT.environment,
     returnUrl: ENVIRONMENT.returnUrl,
@@ -49,7 +49,8 @@ export const checkoutConfiguration = (config) => {
       },
       emailRequired: true,
     }
-  }
+  };
+  return configuration
 };
 
 export const useAppContext = () => {
