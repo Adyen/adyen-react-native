@@ -62,6 +62,10 @@ public struct RootConfigurationParser {
         return configuration[AnalyticsKeys.enabled] as? Bool == true
     }
 
+    public var verboseLogsOn: Bool {
+        return configuration[AnalyticsKeys.verboseLogs] as? Bool == true
+    }
+
 }
 
 extension RootConfigurationParser {
@@ -75,6 +79,7 @@ extension RootConfigurationParser {
         var analytics = AnalyticsConfiguration()
         analytics.isEnabled = analyticsOn
         analytics.context = TelemetryContext(version: AdyenSDKVersion, platform: .reactNative)
+        AdyenLogging.isEnabled = verboseLogsOn
         return AdyenContext(apiContext: apiContext, payment: self.payment, analyticsConfiguration: analytics)
     }
 }

@@ -30,6 +30,7 @@ internal enum Keys {
 internal enum AnalyticsKeys: SubConfig {
     static var rootKey = "analytics"
     static var enabled = "enabled"
+    static var verboseLogs = "verboseLogs" 
 }
 
 internal enum DropInKeys: SubConfig {
