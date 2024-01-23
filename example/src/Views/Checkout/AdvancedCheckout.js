@@ -87,7 +87,7 @@ const AdvancedCheckout = ({navigation}) => {
   const didFail = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */ error,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
+      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent,
     ) => {
       console.log(`didFailed: ${error.message}`);
       processError(error, nativeComponent);
@@ -116,7 +116,7 @@ const AdvancedCheckout = ({navigation}) => {
   const processError = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */ error,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
+      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent,
     ) => {
       nativeComponent.hide(false);
       if (error.errorCode === ErrorCode.canceled) {
@@ -140,7 +140,7 @@ const AdvancedCheckout = ({navigation}) => {
           onComplete={didComplete}
           onError={didFail}
         >
-          <PaymentMethods />
+          <PaymentMethods isSession={false} />
         </AdyenCheckout>
       ) : (
         <ActivityIndicator size="large" style={Styles.page} />
