@@ -31,9 +31,13 @@ export interface BaseConfiguration {
 
 export interface AnalyticsOptions {
   /**
-   * Enable/Disable all analytics
+   * Enable/Disable all telemetry.
    */
   enabled?: boolean;
+  /**
+   * Enable/Disable verbose logs printed in the IDE developer console.
+   */
+  verboseLogs?: boolean;
 }
 
 /**

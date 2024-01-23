@@ -9,7 +9,6 @@ import com.facebook.react.bridge.ReadableMap
 class AnalyticsParser(config: ReadableMap) {
 
     companion object {
-        const val TAG = "CardConfigurationParser"
         const val ANALYTICS_KEY = "analytics"
         const val ANALYTICS_ENABLED_KEY = "enabled"
         const val ANALYTICS_VERBOSE_LOGS = "verboseLogs"
