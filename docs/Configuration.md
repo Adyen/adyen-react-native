@@ -14,8 +14,8 @@
 
 ## Analytics
 
-- `enabled` - Enable/Disable all analytics. Defaults to **true**. ⚠️ This feature only available from v68 of Adyen API
-- `verboseLogs` - Enable extensive logs from SDK. Helpful during debugging. Defaults to **false**
+- `enabled` - Enable/Disable all analytics. Defaults to **true**. ⚠️ This feature only available from v68 of Adyen API.
+- `verboseLogs` - Enable extensive logs from SDK. Helpful during debugging. Defaults to **false**.
 
 ## React Native SDK provides the following configurations for components:
 
@@ -52,7 +52,7 @@
 
 ### GooglePay component
 
-- `merchantAccount` - The merchant account to be put in the payment token from Google to Adyen. By default uses value from `brands`
+- `merchantAccount` - The merchant account to be put in the payment token from Google to Adyen. By default uses value from `brands`.
 - `allowedCardNetworks` - One or more card networks that you support, also supported by the Google Pay API.
 - `allowedAuthMethods` - Fields supported to authenticate a card transaction.
 - `totalPriceStatus` - The status of the total price used. Defaults to **"FINAL"**.
