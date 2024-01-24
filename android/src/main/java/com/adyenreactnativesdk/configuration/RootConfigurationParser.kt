@@ -66,5 +66,4 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 else -> Environment.TEST
             }
         } else Environment.TEST
-
 }

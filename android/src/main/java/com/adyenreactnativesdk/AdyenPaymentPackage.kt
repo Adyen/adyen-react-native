@@ -6,6 +6,8 @@
 
 package com.adyenreactnativesdk
 
+import com.adyen.checkout.components.core.internal.data.api.AnalyticsMapper
+import com.adyen.checkout.components.core.internal.data.api.AnalyticsPlatform
 import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
@@ -24,6 +26,8 @@ class AdyenPaymentPackage : ReactPackage {
     }
 
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+        val SDK_VERSION = BuildConfig.CHECKOUT_VERSION
+        AnalyticsMapper.Companion.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, SDK_VERSION)
         val modules: MutableList<NativeModule> = ArrayList()
         modules.add(DropInModule(reactContext))
         modules.add(InstantModule(reactContext))

@@ -27,6 +27,12 @@ internal enum Keys {
     static var shopperLocale = "shopperLocale"
 }
 
+internal enum AnalyticsKeys: SubConfig {
+    static var rootKey = "analytics"
+    static var enabled = "enabled"
+    static var verboseLogs = "verboseLogs" 
+}
+
 internal enum DropInKeys: SubConfig {
     static var rootKey = "dropin"
     static var showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod"

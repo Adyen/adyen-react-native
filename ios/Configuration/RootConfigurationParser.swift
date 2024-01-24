@@ -68,7 +68,7 @@ extension RootConfigurationParser {
         }
         let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
 
-        // TODO: add analyticsConfiguration: AnalyticsConfiguration()
-        return AdyenContext(apiContext: apiContext, payment: self.payment)
+        let analytics = AnalyticsParser(configuration: configuration).configuration
+        return AdyenContext(apiContext: apiContext, payment: self.payment, analyticsConfiguration: analytics)
     }
 }

@@ -17,6 +17,7 @@ import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.AnalyticsParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
@@ -107,6 +108,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
         }
 
         val parser = GooglePayConfigurationParser(json)
+        val analytics = AnalyticsParser(json).analytics
         val configBuilder = GooglePayConfiguration.Builder(
             locale,
             environment,
@@ -114,7 +116,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
         )
             .setCountryCode(countryCode)
             .setAmount(amount)
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
+            .setAnalyticsConfiguration(analytics)
 
         return parser.getConfiguration(configBuilder, environment)
     }

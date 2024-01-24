@@ -25,6 +25,10 @@ export const checkoutConfiguration = (config) => {
       currency: config.currency,
     },
     countryCode: config.countryCode,
+    analytics: {
+      enabled: true,
+      verboseLogs: true,
+    },
     applepay: {
       merchantID: ENVIRONMENT.applepayMerchantID,
       merchantName: config.merchantName,

@@ -27,7 +27,6 @@ import {
 } from './Core/types';
 import {Configuration} from './Core/configuration';
 import {checkPaymentMethodsResponse, checkConfiguration} from './Core/utils';
-import Analytics from './Core/Analytics';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
@@ -109,7 +108,6 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   children,
 }) => {
   const subscriptions = useRef<EmitterSubscription[]>([]);
-  const analytics = useRef<Analytics | null>(null);
   const [sessionStorage, setSession] = useState<SessionResponse | undefined>(
     undefined,
   );
@@ -133,24 +131,18 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       nativeComponent: AdyenActionComponent,
       extra: any,
     ) => {
-      const checkoutAttemptId = analytics.current?.checkoutAttemptId;
-      if (data.paymentMethod && checkoutAttemptId) {
-        data.paymentMethod.checkoutAttemptId = checkoutAttemptId;
-      }
-
       const payload = {
         ...data,
         returnUrl: data.returnUrl ?? configuration.returnUrl,
       };
       onSubmit?.(payload, nativeComponent, extra);
     },
-    [onSubmit, analytics],
+    [onSubmit],
   );
 
   const removeEventListeners = useCallback(() => {
     subscriptions.current.forEach((s) => s.remove());
-    analytics.current = null;
-  }, [subscriptions, analytics]);
+  }, [subscriptions]);
 
   const startEventListeners = useCallback(
     (
@@ -197,8 +189,6 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const start = useCallback(
     (typeName: string) => {
       removeEventListeners();
-      analytics.current = new Analytics(config);
-
       const currentPaymentMethods = checkPaymentMethodsResponse(
         paymentMethods ?? sessionStorage?.paymentMethods,
       );
@@ -218,14 +208,8 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           ...config,
           dropin: {skipListWhenSinglePaymentMethod: true},
         };
-        analytics.current.send({component: typeName});
         nativeComponent.open(singlePaymentMethods, singlePaymentConfig);
       } else {
-        analytics.current.send({
-          paymentMethods: paymentMethods?.paymentMethods.map((e) => e.type),
-          component: 'dropin',
-          flavor: 'dropin',
-        });
         nativeComponent.open(currentPaymentMethods, config);
       }
     },
@@ -235,7 +219,6 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       sessionStorage,
       startEventListeners,
       removeEventListeners,
-      analytics,
     ],
   );
 

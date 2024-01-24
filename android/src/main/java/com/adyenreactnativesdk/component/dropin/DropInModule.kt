@@ -23,6 +23,7 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.AnalyticsParser
 import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
@@ -125,11 +126,11 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         val config = setupRootConfig(json)
 
         val builder = Builder(locale, environment, clientKey)
+        val analytics = AnalyticsParser(json).analytics
+        builder.setAnalyticsConfiguration(analytics)
         configureDropIn(builder, json)
         configureBcmc(builder, json)
         configure3DS(builder)
-
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
 
         val amount = config.amount
         val countryCode = config.countryCode
