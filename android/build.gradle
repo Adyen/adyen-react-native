@@ -30,10 +30,6 @@ android {
         buildConfigField "String", "CHECKOUT_VERSION", "\"{SDK_VERSION}\""
     }
 
-    testOptions {
-        unitTests.returnDefaultValues = true
-    }
-
     buildTypes {
         release {
             minifyEnabled false
