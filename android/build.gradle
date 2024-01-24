@@ -4,7 +4,7 @@ def safeExtGet(prop, fallback) {
 
 buildscript {
     rootProject.ext.adyenReactNativeRedirectScheme = "adyenreactnative"
-    ext.kotlin_version = rootProject.ext.has('kotlin_version') ? rootProject.ext.get('kotlin_version') : '1.9.10'
+    apply from: './dependencies.gradle'
 
     repositories {
         google()
@@ -20,7 +20,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion safeExtGet('compileSdkVersion', 34)
+    compileSdk safeExtGet('compileSdkVersion', 34)
     defaultConfig {
         minSdkVersion safeExtGet('minSdkVersion', 21)
         targetSdkVersion safeExtGet('targetSdkVersion', 34)
@@ -28,6 +28,10 @@ android {
         versionName "1.0"
         buildConfigField "String", "adyenReactNativeRedirectScheme", "\"$rootProject.ext.adyenReactNativeRedirectScheme\""
         buildConfigField "String", "CHECKOUT_VERSION", "\"{SDK_VERSION}\""
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
     }
 
     buildTypes {
@@ -58,11 +62,13 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
-    implementation "com.adyen.checkout:drop-in:5.1.0"
-    implementation 'com.google.android.material:material:1.7.0'
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0"
+    implementation "com.adyen.checkout:drop-in:$adyen_version"
+    implementation "com.google.android.material:material:$material_version"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
 
     //Tests
-    testImplementation "junit:junit:4.13.2"
-    testImplementation 'org.mockito:mockito-core:5.1.0'
+    testImplementation testLibraries.json
+    testImplementation testLibraries.junit5
+    testImplementation testLibraries.kotlinCoroutines
+    testImplementation testLibraries.mockito
 }
