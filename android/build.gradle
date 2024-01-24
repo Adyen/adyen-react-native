@@ -59,7 +59,7 @@ dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
     implementation "com.adyen.checkout:drop-in:5.1.0"
-    implementation 'com.google.android.material:material:1.7.0'
+    implementation 'com.google.android.material:material:1.11.0'
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0"
 
     //Tests
