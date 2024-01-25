@@ -13,9 +13,10 @@ import com.facebook.react.bridge.ReadableMapKeySetIterator
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
 
-class WritableMapMock: WritableMap {
+class WritableMapMock: WritableMap, ReadableMapKeySetIterator {
 
     private val map: MutableMap<String, Any?> = mutableMapOf()
+    private lateinit var iterator: MutableIterator<MutableMap.MutableEntry<String, Any>>
 
     override fun hasKey(p0: String): Boolean {
         return map.containsKey(p0)
@@ -30,7 +31,11 @@ class WritableMapMock: WritableMap {
     }
 
     override fun getDouble(p0: String): Double {
-        return map.getValue(p0) as Double
+        return when (val value = map[p0]) {
+            is Double -> value
+            is Int -> value.toDouble()
+            else -> Double.NaN
+        }
     }
 
     override fun getInt(p0: String): Int {
@@ -54,15 +59,27 @@ class WritableMapMock: WritableMap {
     }
 
     override fun getType(p0: String): ReadableType {
-        TODO("Not yet implemented")
+        return when (map[p0]) {
+            is String -> ReadableType.String
+            is Double -> ReadableType.Number
+            is Float -> ReadableType.Number
+            is Int -> ReadableType.Number
+            is Map<*,*> -> ReadableType.Map
+            is Boolean -> ReadableType.Boolean
+            is Array<*> -> ReadableType.Array
+            else -> ReadableType.Null
+        }
     }
 
     override fun getEntryIterator(): MutableIterator<MutableMap.MutableEntry<String, Any>> {
-        TODO("Not yet implemented")
+        val noNullMap: MutableMap<String, Any> = mutableMapOf()
+        map.forEach { (key, value) -> value?.let { noNullMap[key] = it } }
+        return noNullMap.iterator()
     }
 
     override fun keySetIterator(): ReadableMapKeySetIterator {
-        TODO("Not yet implemented")
+        iterator = entryIterator
+        return this
     }
 
     override fun toHashMap(): HashMap<String, Any> {
@@ -70,31 +87,31 @@ class WritableMapMock: WritableMap {
     }
 
     override fun putNull(p0: String) {
-        map.put(p0, null)
+        map[p0] = null
     }
 
     override fun putBoolean(p0: String, p1: Boolean) {
-        map.put(p0, p1)
+        map[p0] = p1
     }
 
     override fun putDouble(p0: String, p1: Double) {
-        map.put(p0, p1)
+        map[p0] = p1
     }
 
     override fun putInt(p0: String, p1: Int) {
-        map.put(p0, p1)
+        map[p0] = p1
     }
 
     override fun putString(p0: String, p1: String?) {
-        map.put(p0, p1)
+        map[p0] = p1
     }
 
     override fun putArray(p0: String, p1: ReadableArray?) {
-        map.put(p0, p1)
+        map[p0] = p1
     }
 
     override fun putMap(p0: String, p1: ReadableMap?) {
-        map.put(p0, p1)
+        map[p0] = p1
     }
 
     override fun merge(p0: ReadableMap) {
@@ -103,6 +120,14 @@ class WritableMapMock: WritableMap {
 
     override fun copy(): WritableMap {
         TODO("Not yet implemented")
+    }
+
+    override fun hasNextKey(): Boolean {
+        return iterator.hasNext()
+    }
+
+    override fun nextKey(): String {
+        return iterator.next().key
     }
 
 }

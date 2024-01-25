@@ -71,24 +71,24 @@ object ReactNativeJson {
 
     @Throws(JSONException::class)
     fun convertMapToJson(readableMap: ReadableMap?): JSONObject {
-        val `object` = JSONObject()
+        val obj = JSONObject()
         val iterator = readableMap!!.keySetIterator()
         while (iterator.hasNextKey()) {
             val key = iterator.nextKey()
             when (readableMap.getType(key)) {
-                ReadableType.Null -> `object`.put(key, JSONObject.NULL)
-                ReadableType.Boolean -> `object`.put(key, readableMap.getBoolean(key))
-                ReadableType.Number -> `object`.put(key, readableMap.getDouble(key))
-                ReadableType.String -> `object`.put(key, readableMap.getString(key))
-                ReadableType.Map -> `object`.put(key, convertMapToJson(readableMap.getMap(key)))
-                ReadableType.Array -> `object`.put(
+                ReadableType.Null -> obj.put(key, JSONObject.NULL)
+                ReadableType.Boolean -> obj.put(key, readableMap.getBoolean(key))
+                ReadableType.Number -> obj.put(key, readableMap.getDouble(key))
+                ReadableType.String -> obj.put(key, readableMap.getString(key))
+                ReadableType.Map -> obj.put(key, convertMapToJson(readableMap.getMap(key)))
+                ReadableType.Array -> obj.put(
                     key, convertArrayToJson(
                         readableMap.getArray(key)
                     )
                 )
             }
         }
-        return `object`
+        return obj
     }
 
     @Throws(JSONException::class)

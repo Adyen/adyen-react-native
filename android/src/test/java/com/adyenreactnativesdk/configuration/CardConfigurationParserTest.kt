@@ -18,14 +18,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mockito.MockedStatic
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
 class CardConfigurationParserTest {
-
-    private var mockStatic: MockedStatic<Log>? = null
 
     @Test
     fun testGetConfiguration() {
@@ -121,7 +118,7 @@ class CardConfigurationParserTest {
     @Test
     fun testGetSupportedCardTypes() {
         // GIVEN
-        mockStatic = Mockito.mockStatic(Log::class.java)
+        val mockStatic = Mockito.mockStatic(Log::class.java)
         var wrong_cards_count = 0
         `when`(Log.w(Mockito.eq(CardConfigurationParser.TAG), Mockito.anyString())).thenReturn(wrong_cards_count++)
         val config = WritableMapMock()
