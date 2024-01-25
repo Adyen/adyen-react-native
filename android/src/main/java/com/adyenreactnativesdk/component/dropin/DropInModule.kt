@@ -139,7 +139,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
             builder.setAmount(amount)
             countryCode?.let {
                 configureGooglePay(builder, json, it, amount)
-
             }
         }
         configureCards(builder, json, countryCode)
