@@ -30,7 +30,7 @@ internal final class DropInModule: BaseModule {
         let context: AdyenContext
         do {
             paymentMethods = try parsePaymentMethods(from: paymentMethodsDict)
-            context = try parser.fetchContext()
+            context = try parser.fetchContext(session: BaseModule.session)
         } catch {
             return sendEvent(error: error)
         }

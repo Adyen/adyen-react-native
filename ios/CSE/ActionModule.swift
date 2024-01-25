@@ -49,7 +49,7 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
         let context: AdyenContext
         do {
             action = try parseAction(from: actionJson)
-            context = try parser.fetchContext()
+            context = try parser.fetchContext(session: BaseModule.session)
         } catch NativeModuleError.invalidAction {
             return reject(with: NativeModuleError.invalidAction)
         } catch NativeModuleError.noClientKey {
