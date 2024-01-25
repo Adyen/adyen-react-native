@@ -157,6 +157,32 @@ const MyCheckoutView = () => {
 };
 ```
 
+#### Sessions flow
+
+```javascript
+import { AdyenCheckout } from '@adyen/react-native';
+import { useCallback } from 'react';
+
+  const onCompleat = useCallback( (result, nativeComponent ) => {
+    /* When this callbeck executed, you must call `component.hide(true | false)` to dismiss the payment UI. */
+  }, [some, dependency]);
+  const onError = useCallback( (error, component) => {
+    /* Handle errors or termination by shopper */
+    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
+  }, []);
+
+<AdyenCheckout
+  config={configuration}
+  session={session}
+  onComplete={didComplete}
+  onError={didFail}
+>
+  <MyCheckoutView />
+</AdyenCheckout>;
+```
+
+#### Advanced flow
+
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
@@ -188,9 +214,7 @@ import { useCallback } from 'react';
 
 ### Handling Actions
 
-> :exclamation: Native components only handling actions after payment was **started**(nativeComponent.open) and before it was **hidden**(nativeComponent.hide). Handling of actions on its own is not supported
-
-Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions, use `nativeComponent.handle(action)` from  `onSubmit` callback.
+Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end chalanges, use `nativeComponent.handle(action)` from  `onSubmit` callback.
 
 ```javascript
 const handleSubmit = (paymentData, nativeComponent) => {
@@ -210,6 +234,19 @@ const handleSubmit = (paymentData, nativeComponent) => {
   >
     ...
 </AdyenCheckout>
+```
+
+#### Standalone Action handling
+
+In case of API-only integration `AdyenAction.handle` could be used.
+Before you begin, make sure you follow all [iOS integration](#ios-integration) and [Android integration](#android-integration) steps.
+
+Example:
+```js
+import { AdyenAction } from '@adyen/react-native';
+
+const data = await AdyenAction.handle(apiResponse.action, { environment: 'test', clientKey: '{YOUR_CLIENT_KEY}');
+result = await ApiClient.paymentDetails(data);
 ```
 
 ## Documentation
