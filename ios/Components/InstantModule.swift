@@ -26,7 +26,7 @@ internal final class InstantModule: BaseModule {
         let context: AdyenContext
         do {
             paymentMethod = try parseAnyPaymentMethod(from: paymentMethodsDict)
-            context = try parser.fetchContext()
+            context = try parser.fetchContext(session: BaseModule.session)
         } catch {
             return sendEvent(error: error)
         }

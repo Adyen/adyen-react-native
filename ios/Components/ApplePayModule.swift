@@ -26,7 +26,7 @@ internal final class ApplePayModule: BaseModule {
         let applePayComponent: ApplePayComponent
         do {
             let paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: ApplePayPaymentMethod.self)
-            let context = try parser.fetchContext()
+            let context = try parser.fetchContext(session: BaseModule.session)
             guard let payment = context.payment else { throw NativeModuleError.noPayment }
             let applepayConfig = try applePayParser.buildConfiguration(payment: payment)
             applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,

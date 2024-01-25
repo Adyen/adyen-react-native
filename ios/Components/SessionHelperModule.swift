@@ -37,7 +37,7 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
         let parser = RootConfigurationParser(configuration: configuration)
         let context: AdyenContext
         do {
-            context = try parser.fetchContext()
+            context = try parser.fetchContext(session: BaseModule.session)
         } catch {
             return rejecter("session", nil, error)
         }
