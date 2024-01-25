@@ -132,11 +132,15 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         configureBcmc(builder, json)
         configure3DS(builder)
 
-        val amount = config.amount
+        val session = BaseModule.session?.sessionSetupResponse
+        val amount = session?.amount ?: config.amount
         val countryCode = config.countryCode
-        if (amount != null && countryCode != null) {
+        if (amount != null) {
             builder.setAmount(amount)
-            configureGooglePay(builder, json, countryCode, amount)
+            countryCode?.let {
+                configureGooglePay(builder, json, it, amount)
+
+            }
         }
         configureCards(builder, json, countryCode)
 
