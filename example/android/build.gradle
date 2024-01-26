@@ -17,6 +17,5 @@ buildscript {
     }
     dependencies {
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jacoco:org.jacoco.core:0.8.11")
     }
 }
