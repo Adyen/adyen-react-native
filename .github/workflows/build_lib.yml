@@ -1,0 +1,50 @@
+name: Build library
+
+on:
+  workflow_call:
+
+jobs:
+  build-lib:
+    name: Build Nodes
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            node_modules
+            example/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Build library
+        run: yarn install --frozen-lockfile
+
+      - name: Build Example app
+        working-directory: example
+        run: yarn install
+
+      - name: Archive library
+        uses: actions/cache/save@v3
+        with:
+          path: lib
+          key: temp-lib-${{ github.sha }}
+
+      - name: Archive Node Modules
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            node_modules
+            example/node_modules
+          key: temp-node-${{ github.sha }}
