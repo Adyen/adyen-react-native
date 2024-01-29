@@ -18,4 +18,4 @@ class AdyenAppearance: AdyenAppearanceProvider {
 
 ## Android
 
-Follow the Android SDK [Customization docs](https://github.com/Adyen/adyen-android/blob/develop/docs/UI_CUSTOMIZATION.md)
+Follow the Android SDK [Customization docs](https://github.com/Adyen/adyen-android/blob/develop/docs/UI_CUSTOMIZATION.md).
