@@ -5,7 +5,12 @@ echo "Set Version"
 echo $VERSION
 
 IOS_PATH="ios/Version.swift"
-sed -i '' "s/{SDK_VERSION}/$VERSION/g" $IOS_PATH
-
 ANDROID_PATH="android/dependencies.gradle"
-sed -i '' "s/{SDK_VERSION}/$VERSION/g" $ANDROID_PATH
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/{SDK_VERSION}/$VERSION/g" $IOS_PATH
+    sed -i '' "s/{SDK_VERSION}/$VERSION/g" $ANDROID_PATH
+else
+    sed -i -e 's|{SDK_VERSION}|$VERSION|g' $IOS_PATH
+    sed -i -e 's|{SDK_VERSION}|$VERSION|g' $ANDROID_PATH
+fi
