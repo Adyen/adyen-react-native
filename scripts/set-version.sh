@@ -11,6 +11,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     sed -i '' "s/{SDK_VERSION}/$VERSION/g" $IOS_PATH
     sed -i '' "s/{SDK_VERSION}/$VERSION/g" $ANDROID_PATH
 else
-    sed -i -e 's|{SDK_VERSION}|$VERSION|g' $IOS_PATH
-    sed -i -e 's|{SDK_VERSION}|$VERSION|g' $ANDROID_PATH
+    sed -i -e "s|{SDK_VERSION}|$VERSION|g" $IOS_PATH
+    sed -i -e "s|{SDK_VERSION}|$VERSION|g" $ANDROID_PATH
 fi
