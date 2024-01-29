@@ -3,9 +3,13 @@ name: Test Android
 on:
   workflow_call:
     inputs:
-      api-level:
-        required: true
+      android-version:
+        required: false
         default: 29
+        type: number
+      react-native-version:
+        required: false
+        default: '0.71.14'
         type: string
 
 jobs:
@@ -48,13 +52,13 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ inputs.api-level }}
+          key: avd-${{ inputs.android-version }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ inputs.api-level }}
+          api-level: ${{ inputs.android-version }}
           target: ${{ env.target }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -64,7 +68,7 @@ jobs:
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ inputs.api-level }}
+          api-level: ${{ inputs.android-version }}
           target: ${{ env.target }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none

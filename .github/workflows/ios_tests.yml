@@ -3,8 +3,12 @@ name: Test iOS
 on:
   workflow_call:
     inputs:
+      device-version:
+        required: false
+        default: 14
+        type: number
       react-native-version:
-        required: true
+        required: false
         default: '0.71.14'
         type: string
 
@@ -15,7 +19,7 @@ jobs:
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
-      device: iPhone 14
+      device: iPhone ${{ inputs.device-version }}
       buildFolder: ./DerivedData
     steps:
       - uses: actions/checkout@v4
