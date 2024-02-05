@@ -24,6 +24,7 @@ import {
   PaymentMethodsResponse,
   SessionConfiguration,
   SessionResponse,
+  PaymentMethodData,
 } from './Core/types';
 import {Configuration} from './Core/configuration';
 import {checkPaymentMethodsResponse, checkConfiguration} from './Core/utils';
