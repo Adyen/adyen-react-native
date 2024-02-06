@@ -87,13 +87,13 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
         const val FRAGMENT_ERROR = "Not able to find AdyenComponentView in `component_view` fragment"
 
         fun handle(fragmentManager: FragmentManager, action: Action, tag: String) {
-            val fragment = fragmentManager.findFragmentByTag(tag) as BaseComponentFragment<*, *>
-            fragment.viewModel.onAction(action)
+            val fragment = fragmentManager.findFragmentByTag(tag) as? BaseComponentFragment<*, *>
+            fragment?.viewModel?.onAction(action)
         }
 
         fun hide(fragmentManager: FragmentManager, tag: String) {
-            val fragment = fragmentManager.findFragmentByTag(tag) as BottomSheetDialogFragment
-            fragment.dismiss()
+            val fragment = fragmentManager.findFragmentByTag(tag) as? BottomSheetDialogFragment
+            fragment?.dismiss()
         }
     }
 }
