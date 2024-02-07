@@ -21,7 +21,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
         const val CLIENT_KEY_KEY = "clientKey"
         const val COUNTRY_CODE_KEY = "countryCode"
         const val ENVIRONMENT_KEY = "environment"
-        const val SHOPPER_LOCALE_KEY = "shopperLocale"
+        const val LOCALE_KEY = "locale"
     }
 
     val amount: Amount?
@@ -50,8 +50,8 @@ class RootConfigurationParser(private val config: ReadableMap) {
         } else null
 
     val locale: Locale?
-        get() = if (config.hasKey(SHOPPER_LOCALE_KEY)) {
-            Locale.forLanguageTag(config.getString(SHOPPER_LOCALE_KEY)!!)
+        get() = if (config.hasKey(LOCALE_KEY)) {
+            Locale.forLanguageTag(config.getString(LOCALE_KEY)!!)
         } else null
 
     val environment: Environment
