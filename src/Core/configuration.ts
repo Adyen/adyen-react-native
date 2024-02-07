@@ -23,7 +23,6 @@ export interface BaseConfiguration {
   * The shopper's locale. This is used to enforce the language rendered in the UI.
   * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
   * Fallback locale is 'en-US'.
-  * @todo not implemented on on iOS.
   * @defaultValue null.
   */
   locale?: string;

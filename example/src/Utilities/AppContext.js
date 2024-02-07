@@ -20,6 +20,7 @@ export const checkoutConfiguration = (config) => {
     clientKey: ENVIRONMENT.clientKey,
     environment: ENVIRONMENT.environment,
     returnUrl: ENVIRONMENT.returnUrl,
+    locale: config.shopperLocale,
     amount: {
       value: config.amount,
       currency: config.currency,

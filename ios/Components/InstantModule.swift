@@ -32,7 +32,12 @@ internal final class InstantModule: BaseModule {
         }
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        actionHandler = AdyenActionComponent(context: context, configuration: .init(style: style))
+        var config = AdyenActionComponent.Configuration(style: style)
+        if let locale = parser.shopperLocale {
+            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
+        }
+
+        actionHandler = AdyenActionComponent(context: context, configuration: config)
         actionHandler?.delegate = self
         actionHandler?.presentationDelegate = self
 

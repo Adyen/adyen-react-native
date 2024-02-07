@@ -24,7 +24,7 @@ internal enum Keys {
     static var value = "value"
     static var countryCode = "countryCode"
     static var currency = "currency"
-    static var shopperLocale = "shopperLocale"
+    static var locale = "locale"
 }
 
 internal enum AnalyticsKeys: SubConfig {
