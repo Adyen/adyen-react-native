@@ -232,6 +232,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         val config = RootConfigurationParser(json)
         this.environment = config.environment
         this.clientKey = config.clientKey ?: throw ModuleException.NoClientKey()
+        // TODO: add session.sessionSetupResponse.locale as ultimate source of locale
         this.locale = config.locale ?: currentLocale(reactApplicationContext)
         return config
     }
