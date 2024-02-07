@@ -60,7 +60,7 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
         var config = AdyenActionComponent.Configuration(style: style)
-        if let locale = parser.shopperLocale {
+        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
             config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
         }
         actionHandler = AdyenActionComponent(context: context, configuration: config)

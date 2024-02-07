@@ -38,7 +38,7 @@ internal final class DropInModule: BaseModule {
         let config = DropInConfigurationParser(configuration: configuration).configuration
         config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
         config.style = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
-        if let locale = parser.shopperLocale {
+        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
             config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
         }
 
