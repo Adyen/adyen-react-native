@@ -54,14 +54,9 @@ public struct RootConfigurationParser {
         return Payment(amount: amount, countryCode: countryCode)
     }
 
-    public var shopperLocale: Locale? {
-        guard let shopperLocaleString = configuration[Keys.shopperLocale] as? String else {
-            return nil
-        }
-
-        return Locale(identifier: shopperLocaleString)
+    public var shopperLocale: String? {
+        return configuration[Keys.locale] as? String
     }
-
 }
 
 extension RootConfigurationParser {
