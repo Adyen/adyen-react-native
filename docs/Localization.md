@@ -4,13 +4,10 @@ By default, the React Native library uses a device's locale. To enable necessary
 
 ## Enforcing specific localization
 
-### iOS
+Provide a specific locale to `configuration.locale` for `AdyenCheckout`. 
 
-Not supported.
-
-### Android
-
-Provide a specific locale to `configuration.shopperLocale` for `AdyenCheckout`.
+> [!IMPORTANT]
+> For Session flow `locale` will match value provided by your backend.
 
 ## Overriding default values
 
