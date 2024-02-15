@@ -17,7 +17,7 @@ You can integrate with Adyen React Native in two ways:
 
 ## Contributing
 
-We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md)
+We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
 
 ## Requirements
 
@@ -121,7 +121,7 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ### Configuration
 
-To read more about other configuration, see the [full list](configuration).
+To read more about other configuration, see the [full list][configuration].
 Example of required configuration:
 
 ```typescript
