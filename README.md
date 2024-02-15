@@ -121,7 +121,7 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ### Configuration
 
-To read more about other configuration, see the [full list](configuration).
+To read more about other configuration, see the [full list][configuration].
 Example of required configuration:
 
 ```typescript
