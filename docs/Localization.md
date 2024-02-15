@@ -9,7 +9,7 @@ Payment method names are fetched from the Adyen API and can be set via `shopperL
 Provide a specific locale to `configuration.locale` for `AdyenCheckout`. 
 
 > [!IMPORTANT]
-> For Session flow `locale` will match value provided by your backend via [shopperLocale](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) requests.
+> For Session flow `locale` will match value provided by your backend via [shopperLocale](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) parameter.
 
 ## Overriding default values
 
