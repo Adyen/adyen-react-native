@@ -56,7 +56,7 @@ const SessionsCheckout = ({navigation}) => {
 
   const processResult = useCallback(
     async (
-      /** @type {import('@adyen/react-native').PaymentResponse} */
+      /** @type {import('./../../Types/index').PaymentResponse} */
       result,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
       nativeComponent,

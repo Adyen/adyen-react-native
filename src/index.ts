@@ -5,7 +5,7 @@ export {
   StoredPaymentMethod,
   PaymentAmount,
   Card,
-  PaymentResponse,
+  PaymentDetailsData,
   PaymentMethodData,
   PaymentMethodGroup,
   AdyenError,

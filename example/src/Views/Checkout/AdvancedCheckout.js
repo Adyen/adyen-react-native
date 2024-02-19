@@ -39,7 +39,7 @@ const AdvancedCheckout = ({navigation}) => {
         )}`,
       );
       try {
-        /** @type {import('@adyen/react-native').PaymentResponse} */
+        /** @type {import('./../../Types/index').PaymentResponse} */
         const result = await ApiClient.payments(
           data,
           configuration,
@@ -97,8 +97,10 @@ const AdvancedCheckout = ({navigation}) => {
 
   const processResult = useCallback(
     async (
-      /** @type {import('@adyen/react-native').PaymentResponse} */ result,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
+      /** @type {import('./../../Types/index').PaymentResponse} */
+      result,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */
+      nativeComponent,
     ) => {
       const success = isSuccess(result);
       console.log(

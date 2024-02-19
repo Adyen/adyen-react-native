@@ -1,5 +1,3 @@
-import { ResultCode } from './constants';
-
 /**
  * General type for card.
  */
@@ -185,14 +183,6 @@ export interface PaymentMethodsResponse {
 }
 
 /**
- * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#responses-200 API Explorer /payments response}
- */
-export interface PaymentResponse {
-  action?: PaymentAction;
-  resultCode: ResultCode;
-}
-
-/**
  * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#request-amount API Explorer /payments amount}
  */
 export interface PaymentAmount {
@@ -201,7 +191,8 @@ export interface PaymentAmount {
 }
 
 /**
- * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#request-amount API Explorer /payments amount}
+ * Use this object as basis for
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments API Explorer /payments request}
  */
 export interface PaymentMethodData {
   paymentMethod: {
@@ -216,6 +207,16 @@ export interface PaymentMethodData {
    * 	Contains passed-throught value for iOS or `adyencheckout://${DeviceInfo.getBundleId()}` for Android
    */
   returnUrl: string;
+}
+
+/**
+ * Use this object as basis for
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments/details API Explorer /payments/details request}
+ */
+export interface PaymentDetailsData {
+  details: any;
+  paymentData?: string;
+  authenticationData?: any;
 }
 
 /**

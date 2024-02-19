@@ -25,6 +25,7 @@ import {
   SessionConfiguration,
   SessionResponse,
   PaymentMethodData,
+  PaymentDetailsData,
 } from './Core/types';
 import {Configuration} from './Core/configuration';
 import {checkPaymentMethodsResponse, checkConfiguration} from './Core/utils';
@@ -86,7 +87,7 @@ type AdyenCheckoutProps = {
    * @param component - The Adyen payment component.
    */
   onAdditionalDetails?: (
-    data: PaymentMethodData,
+    data: PaymentDetailsData,
     component: AdyenActionComponent,
   ) => void;
   /**
