@@ -75,13 +75,9 @@ jobs:
           disable-animations: true
           working-directory: ./example/android
           pre-emulator-launch-script: |
-            sdkmanager --list
           script: |
             echo "::group::Running Android app"
             yarn android
-            echo "::endgroup::"
-            echo "::group::Running Gradle Build"
-            ./gradlew connectedCheck
             echo "::endgroup::"
             echo "::group::Running Tests"
             ./gradlew jacocoTestReport
@@ -89,7 +85,8 @@ jobs:
 
       - name: Prepare Jacoco report
         run: |
-          mv android/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml reports/jacoco.xml
+          mkdir reports
+          mv ${find . -name 'jacocoTestReport.xml'} reports/jacoco.xml
 
       - name: Archive Coverage report
         uses: actions/upload-artifact@v3
