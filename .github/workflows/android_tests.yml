@@ -86,7 +86,7 @@ jobs:
       - name: Prepare Jacoco report
         run: |
           mkdir reports
-          mv ${find . -name 'jacocoTestReport.xml'} reports/jacoco.xml
+          mv $(find . -name 'jacocoTestReport.xml') reports/jacoco.xml
 
       - name: Archive Coverage report
         uses: actions/upload-artifact@v3
