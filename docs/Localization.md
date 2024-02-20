@@ -2,7 +2,7 @@
 
 By default, the React Native library uses a device's locale. To enable necessary translations for iOS, make sure “Localizations” in the project configuration contains all required languages. If the device's locale is not supported, localization fallback to `en-US`.
 
-Payment method names are fetched from the Adyen API and can be set via `shopperLocale` in your [/paymentMethods](https://docs.adyen.com/api-explorer/Checkout/68/post/paymentMethods#request-shopperLocale) or [/sessions](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) requests.
+Titles of payment methods are fetched from the Adyen API and localized according to the `shopperLocale` value you set in your [/paymentMethods](https://docs.adyen.com/api-explorer/Checkout/68/post/paymentMethods#request-shopperLocale) or [/sessions](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) requests.
 
 ## Enforcing specific localization
 
