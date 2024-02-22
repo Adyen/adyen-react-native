@@ -4,7 +4,7 @@ def safeExtGet(prop, fallback) {
 
 buildscript {
     rootProject.ext.adyenReactNativeRedirectScheme = "adyenreactnative"
-    apply from: './dependencies.gradle'
+    apply from: 'dependencies.gradle'
 
     repositories {
         google()
@@ -18,6 +18,7 @@ buildscript {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply from: 'jacoco.gradle'
 
 android {
     compileSdk safeExtGet('compileSdkVersion', 34)

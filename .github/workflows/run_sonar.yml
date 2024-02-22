@@ -1,0 +1,45 @@
+name: Collect Sonar reports
+
+on:
+  workflow_call:
+
+jobs:
+  run-sonar:
+    name: Collect Sonar reports
+    runs-on: macos-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Tools
+        run: |
+          brew install sonar-scanner
+
+      - uses: actions/cache/restore@v3
+        id: lib-cache
+        with:
+          path: lib
+          key: temp-lib-${{ github.sha }}
+
+      - name: Build dependency if needed
+        if: steps.lib-cache.outputs.cache-hit != 'true'
+        run: yarn
+
+      - name: Download Swift coverage report
+        uses: actions/download-artifact@v3
+        with:
+          name: swift-coverage-report
+          path: reports
+
+      - name: Download Kotln coverage report
+        uses: actions/download-artifact@v3
+        with:
+          name: kotlin-coverage-report
+          path: reports
+
+      - name: Run Sonar
+        run: |
+          git fetch --unshallow --no-tags
+          sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}

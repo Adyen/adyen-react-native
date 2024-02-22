@@ -1,0 +1,58 @@
+apply plugin: 'jacoco'
+
+if (project.hasProperty('android')) {
+    android.buildTypes {
+        debug {
+            testCoverageEnabled = true
+        }
+    }
+}
+
+project.afterEvaluate {
+    jacoco {
+        toolVersion = "0.8.9"
+    }
+
+    tasks.withType(Test).configureEach {
+        jacoco {
+            excludes += coverageExclusions
+            includeNoLocationClasses = true
+        }
+    }
+
+    tasks.register('jacocoTestReport', JacocoReport) {
+        group 'Reporting'
+        description 'Generate JaCoCo report for debug unit tests'
+        dependsOn 'testDebugUnitTest'
+
+        additionalSourceDirs(android.sourceSets.main.java.sourceFiles)
+        additionalSourceDirs(android.sourceSets.debug.java.sourceFiles)
+        additionalClassDirs(fileTree(dir: "${buildDir}/intermediates/javac/debug", excludes: coverageExclusions))
+        additionalClassDirs(fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: coverageExclusions))
+        sourceDirectories.setFrom(files(["${projectDir}/src/main/java",
+                                         "${projectDir}/src/main/java/com/adyenreactnativesdk",]))
+
+        executionData(fileTree(dir: "${buildDir}",
+                includes: ["outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+                           "jacoco/test.exec",
+                           "outputs/code-coverage/connected/*coverage.ec"]),
+                fileTree(dir: "$projectDir",
+                        includes: ['jacoco.exec']))
+
+        reports {
+            xml.required = true
+            csv.required = false
+            html.required = false
+        }
+    }
+}
+
+ext.coverageExclusions = [
+        // Android
+        '**/BuildConfig.*',
+        '**/Manifest*.*',
+        '**/R$*.class',
+        '**/R.class',
+
+        // Fix issue with JaCoCo on JDK
+        'jdk.internal.*']
