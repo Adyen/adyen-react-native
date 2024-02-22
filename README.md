@@ -163,7 +163,7 @@ const MyCheckoutView = () => {
 import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
 
-  const onCompleat = useCallback( (result, nativeComponent ) => {
+  const onComplete = useCallback( (result, nativeComponent ) => {
     /* When this callbeck executed, you must call `component.hide(true | false)` to dismiss the payment UI. */
   }, [some, dependency]);
   const onError = useCallback( (error, component) => {
@@ -174,8 +174,8 @@ import { useCallback } from 'react';
 <AdyenCheckout
   config={configuration}
   session={session}
-  onComplete={didComplete}
-  onError={didFail}
+  onComplete={onComplete}
+  onError={onError}
 >
   <MyCheckoutView />
 </AdyenCheckout>;
