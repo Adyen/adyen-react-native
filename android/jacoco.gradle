@@ -54,31 +54,5 @@ ext.coverageExclusions = [
         '**/R$*.class',
         '**/R.class',
 
-        //Flutter
-        '**/CheckoutPlatformInterface*.*',
-        '**/*Codec*.*',
-        '**/ComponentCommunicationModel*.*',
-        '**/ComponentFlutterInterface*.*',
-        '**/ComponentPlatformInterface*.*',
-        '**/*DTO*.*',
-        '**/DropInPlatformInterface*.*',
-        '**/DropInFlutterInterface*.*',
-        '**/PlatformCommunicationModel*.*',
-
-        // Activities, Fragments, etc. (not tested with unit tests)
-        '**/*Activity$*.*',
-        '**/*Activity.*',
-        '**/*Adapter.*',
-        '**/*Behavior.*',
-        '**/*Dialog.*',
-        '**/*Drawable.*',
-        '**/*Fragment$*.*',
-        '**/*Fragment.*',
-        '**/*View.*',
-
-        // Activity result contract
-        '**/*ActivityResults.*',
-        '**/*ResultContract.*',
-
         // Fix issue with JaCoCo on JDK
         'jdk.internal.*']
