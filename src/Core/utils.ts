@@ -3,8 +3,15 @@ import { Configuration } from './configuration';
 import { PaymentMethodsResponse } from './types';
 
 export const checkPaymentMethodsResponse = (
-  paymentMethodsResponse: PaymentMethodsResponse
+  paymentMethodsResponse: PaymentMethodsResponse | undefined
 ) => {
+  if (paymentMethodsResponse == undefined) {
+    throw new Error(
+      'paymentMethodsResponse is undefined. Make sure to make POST `paymentMethods` or call `conext.startSession()`' +
+        'Try JSON.parse("{...}") your paymentMethodsResponse.'
+    );
+  }
+
   if (typeof paymentMethodsResponse === 'string') {
     throw new Error(
       'paymentMethodsResponse was provided but of an incorrect type (should be an object but a string was provided).' +
@@ -28,6 +35,8 @@ export const checkPaymentMethodsResponse = (
       'paymentMethodsResponse was provided but no payment methods were found.'
     );
   }
+
+  return paymentMethodsResponse
 };
 
 const countryCodeRegex = /^[A-Z]{2}$/;
@@ -35,7 +44,7 @@ const currencyCodeRegex = /^[A-Z]{3}$/;
 const clientKeyRegex = /^[a-z]{4,8}_[a-zA-Z0-9]{8,128}$/;
 
 export const checkConfiguration = (configuration: Configuration) => {
-  if (configuration && Platform.OS == 'ios' && !configuration.returnUrl) {
+  if (configuration && Platform.OS === 'ios' && !configuration.returnUrl) {
     throw new Error(`Parameter returnUrl is required`);
   }
 

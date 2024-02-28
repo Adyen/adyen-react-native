@@ -1,5 +1,3 @@
-import { ResultCode } from './constants';
-
 /**
  * General type for card.
  */
@@ -18,7 +16,7 @@ export class Card {
 }
 
 /**
- * {@link https://docs.adyen.com/api-explorer/#/PaymentSetupAndVerificationService/v51/payments__resParam_action API Explorer /payments action}
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#responses-200-action API Explorer /payments action}
  */
 export interface PaymentAction {
   /**
@@ -170,7 +168,7 @@ export interface StoredPaymentMethod extends PaymentMethod {
 
 /**
  * List of the available payment methods
- * {@link https://docs.adyen.com/api-explorer/#/PaymentSetupAndVerificationService/v51/paymentMethods API Explorer /paymentMethods}.
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/paymentMethods#responses-200 API Explorer /paymentMethods}.
  */
 export interface PaymentMethodsResponse {
   /**
@@ -184,19 +182,18 @@ export interface PaymentMethodsResponse {
   storedPaymentMethods?: StoredPaymentMethod[];
 }
 
-export interface PaymentResponse {
-  action?: PaymentAction;
-  resultCode: ResultCode;
-}
-
 /**
- * {@link https://docs.adyen.com/api-explorer/#/PaymentSetupAndVerificationService/v52/payments__reqParam_amount API Explorer /payments amount}
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#request-amount API Explorer /payments amount}
  */
 export interface PaymentAmount {
   value: number;
   currency: string;
 }
 
+/**
+ * Use this object as basis for
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments API Explorer /payments request}
+ */
 export interface PaymentMethodData {
   paymentMethod: {
     type: string;
@@ -206,4 +203,40 @@ export interface PaymentMethodData {
   browserInfo?: {
     userAgent: string;
   };
+  /**
+   * 	Contains passed-throught value for iOS or `adyencheckout://${DeviceInfo.getBundleId()}` for Android
+   */
+  returnUrl: string;
+}
+
+/**
+ * Use this object as basis for
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments/details API Explorer /payments/details request}
+ */
+export interface PaymentDetailsData {
+  details: any;
+  paymentData?: string;
+  authenticationData?: any;
+}
+
+/**
+ * Session configuration
+ */
+export interface SessionConfiguration {
+  sessionID: string,
+  sessionData: string
+}
+
+/**
+ * Session container
+ */
+export interface SessionResponse {
+  paymentMethods: PaymentMethodsResponse;
+  [key: string]: any;
+}
+
+/** Reason for payment termination */
+export interface AdyenError {
+  message: string;
+  errorCode: string;
 }

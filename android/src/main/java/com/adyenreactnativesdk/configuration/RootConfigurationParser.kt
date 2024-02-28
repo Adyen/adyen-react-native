@@ -3,15 +3,15 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
+
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.facebook.react.bridge.ReadableMap
-import com.adyen.checkout.components.model.payments.Amount
-import com.adyen.checkout.core.api.Environment
-import com.adyenreactnativesdk.component.BaseModuleException
+import com.adyen.checkout.components.core.Amount
+import com.adyen.checkout.core.Environment
 import com.adyenreactnativesdk.util.ReactNativeJson
-import java.util.*
+import com.facebook.react.bridge.ReadableMap
+import java.util.Locale
 
 class RootConfigurationParser(private val config: ReadableMap) {
 
@@ -21,7 +21,7 @@ class RootConfigurationParser(private val config: ReadableMap) {
         const val CLIENT_KEY_KEY = "clientKey"
         const val COUNTRY_CODE_KEY = "countryCode"
         const val ENVIRONMENT_KEY = "environment"
-        const val SHOPPER_LOCALE_KEY = "shopperLocale"
+        const val LOCALE_KEY = "locale"
     }
 
     val amount: Amount?
@@ -50,14 +50,14 @@ class RootConfigurationParser(private val config: ReadableMap) {
         } else null
 
     val locale: Locale?
-        get() = if (config.hasKey(SHOPPER_LOCALE_KEY)) {
-            Locale.forLanguageTag(config.getString(SHOPPER_LOCALE_KEY)!!)
+        get() = if (config.hasKey(LOCALE_KEY)) {
+            Locale.forLanguageTag(config.getString(LOCALE_KEY)!!)
         } else null
 
     val environment: Environment
         get() = if (config.hasKey(ENVIRONMENT_KEY)) {
             val environment = config.getString(ENVIRONMENT_KEY)!!
-            when (environment.toLowerCase(Locale.ROOT)) {
+            when (environment.lowercase(Locale.ROOT)) {
                 "live-au" -> Environment.AUSTRALIA
                 "live", "live-eu" -> Environment.EUROPE
                 "live-us" -> Environment.UNITED_STATES
@@ -66,5 +66,4 @@ class RootConfigurationParser(private val config: ReadableMap) {
                 else -> Environment.TEST
             }
         } else Environment.TEST
-
 }

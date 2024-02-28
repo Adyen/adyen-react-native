@@ -1,7 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v4.10.3-brightgreen.svg)](https://github.com/Adyen/adyen-ios)
-[![Adyen Android](https://img.shields.io/badge/android-v4.10.0-brightgreen.svg)](https://github.com/Adyen/adyen-android)
-
+[![Adyen iOS](https://img.shields.io/badge/ios-v5.5.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/5.5.0)
+[![Adyen Android](https://img.shields.io/badge/android-v5.1.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.1.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
 
@@ -59,12 +58,7 @@ Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/
 
 ### Android integration
 
-1. Add `AdyenCheckoutService` to manifest (`AndroidManifest.xml`):
-```xml
-<service android:name="com.adyenreactnativesdk.component.dropin.AdyenCheckoutService" android:exported="false" />
-```
-
-2. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
+1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
 ```java
 import com.adyenreactnativesdk.AdyenCheckout;
 import android.os.Bundle;
@@ -99,8 +93,12 @@ defaultConfig {
 </intent-filter>
 ```
 
-3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent`:
+3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.java`:
 ```java
+import android.content.Intent;
+
+...
+
 @Override
 public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
@@ -108,7 +106,7 @@ public void onNewIntent(Intent intent) {
 }
 ```
 
-4. To enable GooglePay, pass state to your Checkout activity `onActivityResult`:
+4. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.java`:
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -123,7 +121,7 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ### Configuration
 
-To read more about other configuration, see the [full list](configuration).
+To read more about other configuration, see the [full list][configuration].
 Example of required configuration:
 
 ```typescript
@@ -159,24 +157,56 @@ const MyCheckoutView = () => {
 };
 ```
 
+#### Sessions flow
+
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
+import { useCallback } from 'react';
+
+  const onComplete = useCallback( (result, nativeComponent ) => {
+    /* When this callbeck executed, you must call `component.hide(true | false)` to dismiss the payment UI. */
+  }, [some, dependency]);
+  const onError = useCallback( (error, component) => {
+    /* Handle errors or termination by shopper */
+    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
+  }, []);
+
+<AdyenCheckout
+  config={configuration}
+  session={session}
+  onComplete={onComplete}
+  onError={onError}
+>
+  <MyCheckoutView />
+</AdyenCheckout>;
+```
+
+#### Advanced flow
+
+```javascript
+import { AdyenCheckout } from '@adyen/react-native';
+import { useCallback } from 'react';
+
+  const onSubmit = useCallback( (data, nativeComponent ) => {
+    /* Call your server to make the `/payments` request, make sure you pass `returnUrl:data.returnUrl` to make redirect flow work cross platform */
+    /* When the API request contains `action`, you should call `component.handle(response.action)` to dismiss the payment UI. */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
+  }, [some, dependency]);
+  const onAdditionalDetails = useCallback( (paymentData, component) => {
+    /* Call your server to make the `/payments/details` request */
+    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
+  }, []);
+  const onError = useCallback( (error, component) => {
+    /* Handle errors or termination by shopper */
+    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
+  }, []);
 
 <AdyenCheckout
   config={configuration}
   paymentMethods={paymentMethods}
-  onSubmit={(paymentData, component) => {
-    /* Call your server to make the `/payments` request */
-    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }}
-  onAdditionalDetails={(paymentData, component) => {
-    /* Call your server to make the `/payments/details` request */
-    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }}
-  onError={(error, component) => {
-    /* Handle errors or termination by shopper */
-    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
-  }}
+  onSubmit={onSubmit}
+  onAdditionalDetails={onAdditionalDetails}
+  onError={onError}
 >
   <MyCheckoutView />
 </AdyenCheckout>;
@@ -184,9 +214,7 @@ import { AdyenCheckout } from '@adyen/react-native';
 
 ### Handling Actions
 
-> :exclamation: Native components only handling actions after payment was **started**(nativeComponent.open) and before it was **hidden**(nativeComponent.hide). Handling of actions on its own is not supported
-
-Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end actions, use `nativeComponent.handle(action)` from  `onSubmit` callback.
+Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end chalanges, use `nativeComponent.handle(action)` from  `onSubmit` callback.
 
 ```javascript
 const handleSubmit = (paymentData, nativeComponent) => {
@@ -206,6 +234,19 @@ const handleSubmit = (paymentData, nativeComponent) => {
   >
     ...
 </AdyenCheckout>
+```
+
+#### Standalone Action handling
+
+In case of API-only integration `AdyenAction.handle` could be used.
+Before you begin, make sure you follow all [iOS integration](#ios-integration) and [Android integration](#android-integration) steps.
+
+Example:
+```js
+import { AdyenAction } from '@adyen/react-native';
+
+const data = await AdyenAction.handle(apiResponse.action, { environment: 'test', clientKey: '{YOUR_CLIENT_KEY}');
+result = await ApiClient.paymentDetails(data);
 ```
 
 ## Documentation

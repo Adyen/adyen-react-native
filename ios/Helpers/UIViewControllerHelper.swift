@@ -6,11 +6,10 @@
 
 import UIKit
 
-
 extension UIViewController {
     internal static var topPresenter: UIViewController? {
         var topController: UIViewController? = UIApplication.shared.keyWindow?.rootViewController
-        
+
         while let presenter = topController?.presentedViewController {
             topController = presenter
         }

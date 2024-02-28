@@ -1,0 +1,92 @@
+name: Test iOS
+
+on:
+  workflow_call:
+    inputs:
+      device-version:
+        required: false
+        default: 14
+        type: number
+      react-native-version:
+        required: false
+        default: '0.71.14'
+        type: string
+
+jobs:
+  ios_tests:
+    name: Test iOS
+    runs-on: macos-13-large
+    env:
+      workspace: AdyenExample.xcworkspace
+      scheme: AdyenExample
+      device: iPhone ${{ inputs.device-version }}
+      buildFolder: ./DerivedData
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pre-heat iPhone Simulator ${{ env.device }}
+        id: sets-simulator
+        run: |
+          simulator_id=$(xcrun simctl list | grep -E '${{ env.device }}' | grep -Eo '[A-Z0-9-]{36}' | head -n 1)
+          xcrun simctl boot $simulator_id                            
+          open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/
+          echo "id=$simulator_id" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node-version }}
+          cache: 'yarn'
+
+      - uses: actions/cache/restore@v3
+        with:
+          path: lib
+          key: temp-lib-${{ github.sha }}
+
+      - uses: actions/cache/restore@v3
+        id: yarn-cache
+        with:
+          path: |
+            node_modules
+            example/node_modules
+          key: temp-node-${{ github.sha }}
+
+      - name: Build dependency if needed
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn
+
+      - uses: actions/cache@v3
+        with:
+          path: example/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-pods-
+
+      - name: Pod install
+        working-directory: example/ios
+        run: pod install
+
+      - name: Run tests
+        working-directory: example/ios
+        run: |
+          xcodebuild test \
+            -workspace ${{ env.workspace }} \
+            -scheme ${{ env.scheme }} \
+            -destination "id=${{ steps.sets-simulator.outputs.id }}" \
+            -derivedDataPath ${{ env.buildFolder }} \
+            -enableCodeCoverage YES | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+
+      - name: Generate code Coverage
+        working-directory: example/ios
+        run: |
+          mkdir ${{ github.workspace }}/reports
+          ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+          sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+
+      - name: SwiftLint
+        working-directory: ios
+        run: fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
+
+      - name: Archive Coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: swift-coverage-report
+          path: reports

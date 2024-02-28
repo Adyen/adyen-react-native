@@ -1,0 +1,45 @@
+name: Scan PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - develop
+env:
+  node-version: 20
+
+jobs:
+  build-lib:
+    name: Build Nodes
+    uses: ./.github/workflows/build_lib.yml
+
+  test-iOS:
+    name: Test iOS
+    needs: [build-lib]
+    uses: ./.github/workflows/ios_tests.yml
+
+  test-Android:
+    name: Test Android
+    needs: [build-lib]
+    uses: ./.github/workflows/android_tests.yml
+
+  run-sonar:
+    name: Collect Sonar reports
+    needs: [test-iOS, test-Android]
+    uses: ./.github/workflows/run_sonar.yml
+    secrets: inherit
+
+  delete-chach:
+    name: Clean up
+    runs-on: ubuntu-latest
+    needs: [run-sonar]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete temporary cache
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh cache delete temp-lib-${{ github.sha }}
+          gh cache delete temp-node-${{ github.sha }}

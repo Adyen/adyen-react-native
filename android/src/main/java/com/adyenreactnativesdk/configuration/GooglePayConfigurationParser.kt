@@ -1,12 +1,21 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.adyen.checkout.core.api.Environment
-import com.facebook.react.bridge.ReadableMap
-import com.adyen.checkout.googlepay.util.AllowedCardNetworks
-import com.google.android.gms.wallet.WalletConstants
+import com.adyen.checkout.core.Environment
+import com.adyen.checkout.googlepay.BillingAddressParameters
 import com.adyen.checkout.googlepay.GooglePayConfiguration
-import java.util.*
+import com.adyen.checkout.googlepay.ShippingAddressParameters
+import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.ReadableMap
+import com.google.android.gms.wallet.WalletConstants
+import org.json.JSONException
+import java.util.Locale
 
 class GooglePayConfigurationParser(config: ReadableMap) {
 
@@ -23,6 +32,17 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         const val SHIPPING_ADDRESS_REQUIRED_KEY = "shippingAddressRequired"
         const val EXISTING_PAYMENT_METHOD_REQUIRED_KEY = "existingPaymentMethodRequired"
         const val GOOGLEPAY_ENVIRONMENT_KEY = "googlePayEnvironment"
+        const val BILLING_ADDRESS_PARAMETERS_KEY = "shippingAddressParameters"
+        const val SHIPPING_ADDRESS_PARAMETERS_KEY = "billingAddressParameters"
+
+        const val AMEX = "AMEX"
+        const val DISCOVER = "DISCOVER"
+        const val INTERAC = "INTERAC"
+        const val JCB = "JCB"
+        const val MASTERCARD = "MASTERCARD"
+        const val VISA = "VISA"
+
+        val availableCardNetworks: Set<String> = setOf(AMEX, DISCOVER, INTERAC, JCB, MASTERCARD, VISA)
     }
 
     private var config: ReadableMap
@@ -35,15 +55,36 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         }
     }
 
-    private val allowedCardNetworks: List<String>
+    val shippingAddressParameters: ShippingAddressParameters?
+        get() {
+            try {
+                val map = config.getMap(SHIPPING_ADDRESS_PARAMETERS_KEY)
+                return ShippingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+            } catch (e: JSONException) {
+                Log.w(TAG, e.message ?: "Unable to parse shippingAddressParameters")
+                return null
+            }
+        }
+
+    val billingAddressParameters: BillingAddressParameters?
+        get() {
+            try {
+                val map = config.getMap(BILLING_ADDRESS_PARAMETERS_KEY)
+                return BillingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+            } catch (e: JSONException) {
+                Log.w(TAG, e.message ?: "Unable to parse billingAddressParameters")
+                return null
+            }
+        }
+
+    val allowedCardNetworks: List<String>
         get() {
             val list: List<Any> =
                 config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList() ?: emptyList()
             val strings: MutableList<String> = ArrayList(list.size)
-            val allowedCardNetworks: Set<String> =
-                HashSet(AllowedCardNetworks.getAllAllowedCardNetworks())
-            for (cardNetwork in list.map { it.toString().toUpperCase(Locale.ROOT) }) {
-                if (allowedCardNetworks.contains(cardNetwork)) {
+
+            for (cardNetwork in list.map { it.toString().uppercase(Locale.ROOT) }) {
+                if (availableCardNetworks.contains(cardNetwork)) {
                     strings.add(cardNetwork)
                 } else {
                     Log.w(TAG, "skipping brand $cardNetwork, as it is not an allowed card network.")
@@ -52,7 +93,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             return strings
         }
 
-    private val allowedAuthMethods: List<String>
+    val allowedAuthMethods: List<String>
         get() {
             val list: List<Any> =
                 config.getArray(ALLOWED_AUTH_METHODS_KEY)?.toArrayList() ?: emptyList()
@@ -63,7 +104,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             return strings
         }
 
-    private fun getGooglePayEnvironment(environment: Environment): Int {
+    fun getGooglePayEnvironment(environment: Environment): Int {
         if (config.hasKey(GOOGLEPAY_ENVIRONMENT_KEY)) {
             return config.getInt(GOOGLEPAY_ENVIRONMENT_KEY)
         }
@@ -73,8 +114,8 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         }
     }
 
-    fun getConfiguration(builder: GooglePayConfiguration.Builder): GooglePayConfiguration {
-        builder.setGooglePayEnvironment(getGooglePayEnvironment(builder.builderEnvironment))
+    fun getConfiguration(builder: GooglePayConfiguration.Builder, environment: Environment): GooglePayConfiguration {
+        builder.setGooglePayEnvironment(getGooglePayEnvironment(environment))
         if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
             builder.setAllowedAuthMethods(allowedAuthMethods)
         }
@@ -104,8 +145,15 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             config.getString(MERCHANT_ACCOUNT_KEY)?.let { builder.setMerchantAccount(it) }
         }
         if (config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
-            builder.setTotalPriceStatus(config.getString(TOTAL_PRICE_STATUS_KEY))
+            config.getString(TOTAL_PRICE_STATUS_KEY)?.let { builder.setTotalPriceStatus(it) }
         }
+        if (config.hasKey(BILLING_ADDRESS_PARAMETERS_KEY)) {
+            builder.setBillingAddressParameters(billingAddressParameters)
+        }
+        if (config.hasKey(SHIPPING_ADDRESS_PARAMETERS_KEY)) {
+            builder.setShippingAddressParameters(shippingAddressParameters)
+        }
+
         return builder.build()
     }
 

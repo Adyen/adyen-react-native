@@ -1,0 +1,74 @@
+ext {
+    // SDK
+    compile_sdk_version = 34
+    target_sdk_version = 34
+    min_sdk_version = 21
+
+    // The version_name format is "major.minor.patch(-(alpha|beta|rc)[0-9]{2}){0,1}" (e.g. 3.0.0, 3.1.1-alpha04 or 3.1.4-rc01 etc).
+    version_name = "{SDK_VERSION}"
+
+    // Build Script
+    kotlin_version = '1.9.21'
+
+    // Code quality
+    jacoco_version = '0.8.9'
+
+    // Android Dependencies
+    coroutines_version = "1.6.4"
+    lifecycle_version = "2.5.1"
+    material_version = "1.10.0"
+
+    // Adyen Dependencies
+    adyen_version = "5.1.0"
+
+    // Tests
+    arch_core_testing_version = "2.2.0"
+    espresso_version = "3.5.0"
+    json_version = '20231013'
+    jose4j_version = '0.9.4'
+    junit_jupiter_version = "5.9.1"
+    mockito_kotlin_version = "4.1.0"
+    mockito_version = "4.9.0"
+    robolectric_version = "4.11.1"
+    test_ext_version = "1.1.4"
+    test_rules_version = "1.5.0"
+    turbine_version = "0.12.1"
+    uiautomator_version = "2.2.0"
+
+    testLibraries = [
+            androidTest     : [
+                    "androidx.test:rules:$test_rules_version",
+                    "androidx.test.ext:junit-ktx:$test_ext_version",
+                    "androidx.test.uiautomator:uiautomator:$uiautomator_version"
+            ],
+            androidx        : [
+                    lifecycle: "androidx.arch.core:core-testing:$arch_core_testing_version"
+            ],
+            espresso        : [
+                    "androidx.test.espresso:espresso-contrib:$espresso_version",
+                    "androidx.test.espresso:espresso-core:$espresso_version",
+                    "androidx.test.espresso:espresso-intents:$espresso_version"
+            ],
+            jose4j          : "org.bitbucket.b_c:jose4j:$jose4j_version",
+            json            : "org.json:json:$json_version",
+            junit5          : [
+                    "org.junit.jupiter:junit-jupiter-api:$junit_jupiter_version",
+                    "org.junit.jupiter:junit-jupiter-engine:$junit_jupiter_version",
+                    "org.junit.jupiter:junit-jupiter-params:$junit_jupiter_version",
+                    "org.junit.vintage:junit-vintage-engine:$junit_jupiter_version",
+            ],
+            kotlinCoroutines: [
+                    "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version",
+                    "app.cash.turbine:turbine:$turbine_version"
+            ],
+            mockito         : [
+                    "org.mockito:mockito-junit-jupiter:$mockito_version",
+                    "org.mockito:mockito-inline:$mockito_version",
+                    "org.mockito.kotlin:mockito-kotlin:$mockito_kotlin_version"
+            ],
+            mockitoAndroid  : [
+                    "org.mockito:mockito-android:$mockito_version",
+                    "org.mockito.kotlin:mockito-kotlin:$mockito_kotlin_version"
+            ],
+    ]
+}
