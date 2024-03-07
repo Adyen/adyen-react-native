@@ -23,7 +23,70 @@ We strongly encourage you to contribute to our repository. Find out more in our 
 
 Drop-in and Components require a [client key][client.key], that should be provided in the `Configuration`.
 
-## Installation
+## Expo integration (experimental)
+
+> ❕ Please pay attention that this library is not compatible with ExpoGo. You can use it only with **Expo managed workflow**.
+Add `@adyen/react-native` plugin to your `app.json` and set minimum `targetSdkVersion` to **34+** and kotlin to **1.9+**:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      "@adyen/react-native",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0",
+            "kotlinVersion": "1.9.21"
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+> In case you are facing issues with the plugin, please pre-build your app and investigate the files generated:
+>
+> ```bash
+> npx expo prebuild --clean
+> ```
+
+Add `intentFilter` and 
+
+```json
+{
+  "expo": {
+    "android": {
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "myapp",
+              "pathPrefix": "/payment"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "ios": {
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["myapp://payment"]
+      }
+    }
+  }
+}
+```
+
+Update
+
+## Integration
 
 Add `@adyen/react-native` to your react-native project.
 ```bash
