@@ -6,24 +6,20 @@
 
 package com.adyenreactnativesdk.component.base
 
-import android.app.Activity
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
+import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
-import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.core.Environment
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.checkout.core.exception.CheckoutException
-import com.adyen.checkout.core.internal.data.api.HttpClientFactory
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.CheckoutSessionProvider
@@ -31,12 +27,7 @@ import com.adyen.checkout.sessions.core.CheckoutSessionResult
 import com.adyen.checkout.sessions.core.SessionModel
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyen.checkout.sessions.core.SessionSetupResponse
-import com.adyen.checkout.sessions.core.internal.data.api.SessionService
-import com.adyen.checkout.sessions.core.internal.data.model.SessionDetailsRequest
-import com.adyen.checkout.sessions.core.internal.data.model.SessionDetailsResponse
-import com.adyen.checkout.ui.core.internal.DefaultRedirectHandler
 import com.adyenreactnativesdk.AdyenCheckout
-import com.adyenreactnativesdk.BuildConfig
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
@@ -48,13 +39,12 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
-import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.Locale
 
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context),
-    CheckoutProxy.ComponentEventListener, ActionHandlingComponent {
+    CheckoutProxy.ComponentEventListener {
 
     lateinit var environment: Environment
     lateinit var clientKey: String
@@ -74,8 +64,15 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             .emit(DID_FAILED, ReactNativeError.mapError(error))
     }
 
-    private fun sendFinishEvent(result: SessionDetailsResponse) {
-        val jsonObject = SessionDetailsResponse.SERIALIZER.serialize(result)
+    private fun sendFinishEvent(result: SessionPaymentResult) {
+        // TODO: Use SERIALIZE after updating
+        val jsonObject = JSONObject().apply {
+            put("resultCode", result.resultCode)
+            put("order", result.order?.let { OrderResponse.SERIALIZER.serialize(it) })
+            put("sessionResult", result.sessionResult)
+            put("sessionData", result.sessionData)
+            put("sessionId", result.sessionId)
+        }
         sendEvent(DID_COMPLETE, jsonObject)
     }
 
@@ -131,15 +128,17 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         }
     }
 
+    // TODO: Remove restrict after updating
+    @SuppressLint("RestrictedApi")
     abstract fun parseConfiguration(json: ReadableMap): Configuration
 
     private fun parseSessionModel(json: ReadableMap): SessionModel {
-        var json = ReactNativeJson.convertMapToJson(json)
-        return SessionModel.SERIALIZER.deserialize(json)
+        val sessionModelJSON = ReactNativeJson.convertMapToJson(json)
+        return SessionModel.SERIALIZER.deserialize(sessionModelJSON)
     }
 
-    open fun getRedirectUrl(): String {
-        return getReturnUrl(reactApplicationContext)
+    open fun getRedirectUrl(): String? {
+        return null
     }
 
     override fun onSubmit(state: PaymentComponentState<*>) {
@@ -148,7 +147,10 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
                 JSONObject(it.toJson())
             } else null
         val jsonObject = PaymentComponentData.SERIALIZER.serialize(state.data)
-        jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, getRedirectUrl())
+        getRedirectUrl()?.let {
+            jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, it)
+        }
+
         val submitMap = SubmitMap(jsonObject, extra)
         sendEvent(DID_SUBMIT, submitMap.toJSONObject())
     }
@@ -165,67 +167,17 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     override fun onFinished(result: SessionPaymentResult) {
-        val resultCode = if (result.resultCode == VOUCHER_RESULT_CODE)
-            RESULT_CODE_PRESENTED
-        else
-            result.resultCode
-        sendFinishEvent(
-            SessionDetailsResponse(
-                result.sessionData ?: "",
-                "",
-                resultCode,
-                null,
-                result.sessionResult,
-                result.order
-            )
-        )
+        val updatedResult = if (result.resultCode == VOUCHER_RESULT_CODE) {
+            result.copy(resultCode =RESULT_CODE_PRESENTED )
+        }
+        else {
+            result
+        }
+        sendFinishEvent(updatedResult)
     }
 
     override fun onAdditionalData(jsonObject: JSONObject) {
         sendEvent(DID_PROVIDE, jsonObject)
-    }
-
-    override fun canHandleAction(action: Action): Boolean {
-        throw NotImplementedError("This is base class")
-    }
-
-    override fun handleAction(action: Action, activity: Activity) {
-        throw NotImplementedError("This is base class")
-    }
-
-    override fun handleIntent(intent: Intent) {
-        val redirectHandler = DefaultRedirectHandler()
-        val json = redirectHandler.parseRedirectResult(intent.data)
-        val httpClient = HttpClientFactory.getHttpClient(environment)
-        val sessionService = SessionService(httpClient)
-
-        appCompatActivity.lifecycleScope
-            .launch {
-                session?.let {
-                    val request = SessionDetailsRequest(
-                        sessionData = it.sessionSetupResponse.sessionData,
-                        paymentData = null,
-                        details = json
-                    )
-                    var response: SessionDetailsResponse
-                    try {
-                        response = sessionService.submitDetails(
-                            request = request,
-                            sessionId = it.sessionSetupResponse.id,
-                            clientKey = clientKey
-                        )
-                    } catch (e: java.lang.Exception) {
-                        sendErrorEvent(e)
-                        return@launch
-                    }
-
-                    sendFinishEvent(response)
-                }
-            }
-    }
-
-    override fun setOnRedirectListener(listener: () -> Unit) {
-        throw NotImplementedError("This is base class")
     }
 
     protected fun setupRootConfig(json: ReadableMap): RootConfigurationParser {
@@ -239,8 +191,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     protected fun cleanup() {
         session = null
-        AdyenCheckout.removeActivityResultHandlingComponent()
-        AdyenCheckout.removeIntentHandler()
+        AdyenCheckout.removeComponent()
         AdyenCheckout.removeDropInListener()
         CheckoutProxy.shared.componentListener = null
     }
@@ -251,16 +202,9 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_FAILED = "didFailCallback"
         const val DID_SUBMIT = "didSubmitCallback"
         const val RESULT_CODE_PRESENTED = "PresentToShopper"
-        private const val VOUCHER_RESULT_CODE = "finish_with_action";
+        private const val VOUCHER_RESULT_CODE = "finish_with_action"
 
         @JvmStatic
         protected var session: CheckoutSession? = null
-
-        private const val REDIRECT_RESULT_SCHEME =
-            BuildConfig.adyenReactNativeRedirectScheme + "://"
-
-        fun getReturnUrl(context: Context): String {
-            return REDIRECT_RESULT_SCHEME + context.packageName
-        }
     }
 }
