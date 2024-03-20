@@ -19,14 +19,26 @@ You can integrate with Adyen React Native in two ways:
 
 We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
 
-## Requirements
+## Prerequisites
 
-Drop-in and Components require a [client key][client.key], that should be provided in the `Configuration`.
+* [Adyen test account](https://www.adyen.com/signup)
+* [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key)
+* [Client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key)
+
+## Integration
+
+Add `@adyen/react-native` to your react-native project.
+```bash
+yarn add @adyen/react-native
+```
 
 ## Expo integration (experimental)
 
 > ❕ Please pay attention that this library is not compatible with ExpoGo. You can use it only with **Expo managed workflow**.
-Add `@adyen/react-native` plugin to your `app.json` and set minimum `targetSdkVersion` to **34+** and kotlin to **1.9+**:
+
+1. Add `@adyen/react-native` plugin to your `app.json`;
+2. Set minimum `targetSdkVersion` to **34+** and kotlin to **1.9+**;
+3. Add scheme for your `returnUrl`;
 
 ```json
 {
@@ -44,7 +56,8 @@ Add `@adyen/react-native` plugin to your `app.json` and set minimum `targetSdkVe
           }
         }
       ]
-    ]
+    ],
+    "scheme": "myapp://payment"
   }
 }
 ```
@@ -55,43 +68,7 @@ Add `@adyen/react-native` plugin to your `app.json` and set minimum `targetSdkVe
 > npx expo prebuild --clean
 > ```
 
-Add `intentFilter` and 
-
-```json
-{
-  "expo": {
-    "android": {
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "myapp",
-              "pathPrefix": "/payment"
-            }
-          ],
-          "category": ["BROWSABLE", "DEFAULT"]
-        }
-      ]
-    },
-    "ios": {
-      "infoPlist": {
-        "LSApplicationQueriesSchemes": ["myapp://payment"]
-      }
-    }
-  }
-}
-```
-
-Update
-
-## Integration
-
-Add `@adyen/react-native` to your react-native project.
-```bash
-yarn add @adyen/react-native
-```
+## Manual Integration
 
 ### iOS integration
 
@@ -108,10 +85,10 @@ yarn add @adyen/react-native
 ```
 
 > ❕ If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`-`):
-
-```objc
-#import <adyen_react_native/ADYRedirectComponent.h>
-```
+> 
+> ```objc
+> #import <adyen_react_native/ADYRedirectComponent.h>
+> ```
 
 3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
 
@@ -137,26 +114,17 @@ protected void onCreate(Bundle savedInstanceState) {
 
 ##### For standalone components
 
-1. [Provide `rootProject.ext.adyenReactNativeRedirectScheme`](https://developer.android.com/studio/build/manage-manifests#inject_build_variables_into_the_manifest) to your App's manifests.
-   To do so, add following to your **App's build.gradle** `defaultConfig`
-```groovy
-defaultConfig {
-    ...
-    manifestPlaceholders = [redirectScheme: rootProject.ext.adyenReactNativeRedirectScheme]
-}
-```
-
-2. Add `intent-filter` to your Checkout activity:
+1. Add `intent-filter` to your Checkout activity:
 ```xml
 <intent-filter>
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
-    <data android:host="${applicationId}" android:scheme="${redirectScheme}" />
+    <data android:scheme="myapp" android:path="/payment" />
 </intent-filter>
 ```
 
-3. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.java`:
+2. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.java`:
 ```java
 import android.content.Intent;
 
@@ -169,7 +137,7 @@ public void onNewIntent(Intent intent) {
 }
 ```
 
-4. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.java`:
+3. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.java`:
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {

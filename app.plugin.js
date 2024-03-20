@@ -1,4 +1,7 @@
-const {withMainActivity, withAppDelegate, withAppBuildGradle, withProjectBuildGradle} = require('@expo/config-plugins');
+const {
+  withMainActivity,
+  withAppDelegate,
+} = require('@expo/config-plugins');
 
 const withAdyenAndroid = (config) => {
   const configWithMainActivity = withMainActivity(config, async (newConfig) => {
@@ -15,7 +18,9 @@ const withAdyenAndroid = (config) => {
     );
 
     // on NewIntent
-    if (mainActivity.contents.includes('public void onNewIntent(Intent intent) {')) {
+    if (
+      mainActivity.contents.includes('public void onNewIntent(Intent intent) {')
+    ) {
       mainActivity.contents = mainActivity.contents.replace(
         'super.onNewIntent(intent);\n  }',
         'super.onNewIntent(intent);\n    AdyenCheckout.handleIntent(intent);\n  }',
@@ -23,13 +28,13 @@ const withAdyenAndroid = (config) => {
     } else {
       mainActivity.contents = mainActivity.contents.replace(
         /}\n$/,
-        "\n" +
-        "  @Override\n" +
-        "  public void onNewIntent(Intent intent) {\n" +
-        "    super.onNewIntent(intent);\n" +
-        "    AdyenCheckout.handleIntent(intent);\n" +
-        "  }\n" + 
-        "}\n",
+        '\n' +
+          '  @Override\n' +
+          '  public void onNewIntent(Intent intent) {\n' +
+          '    super.onNewIntent(intent);\n' +
+          '    AdyenCheckout.handleIntent(intent);\n' +
+          '  }\n' +
+          '}\n',
       );
     }
 
@@ -46,13 +51,13 @@ const withAdyenAndroid = (config) => {
     } else {
       mainActivity.contents = mainActivity.contents.replace(
         /}\n$/,
-        "\n" +
-        "  @Override\n" +
-        "  public void onActivityResult(int requestCode, int resultCode, Intent data) {\n"+
-        "    super.onActivityResult(requestCode, resultCode, data);\n" +
-        "    AdyenCheckout.handleActivityResult(requestCode, resultCode, data);\n" +
-        "  }\n" + 
-        "}\n",
+        '\n' +
+          '  @Override\n' +
+          '  public void onActivityResult(int requestCode, int resultCode, Intent data) {\n' +
+          '    super.onActivityResult(requestCode, resultCode, data);\n' +
+          '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data);\n' +
+          '  }\n' +
+          '}\n',
       );
     }
 
@@ -70,16 +75,16 @@ const withAdyenIos = (config, iosFramework) => {
   const appDelegate = withAppDelegate(config, async (newConfig) => {
     const appDelegateModResults = newConfig.modResults;
     appDelegateModResults.contents = appDelegateModResults.contents.replace(
-      '#import "AppDelegate.h"\n\n',
+      '#import "AppDelegate.h"\n',
       `#import "AppDelegate.h"\n\n${importLine}\n`,
     );
     appDelegateModResults.contents = appDelegateModResults.contents.replace(
       /\/\/ Linking API.*\n.*\n.*\n}/g,
-      `// Linking API
-  - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-    // Adyen SDK
-    return [ADYRedirectComponent applicationDidOpenURL:url];
-  }`,
+      `// Linking API\n` +
+        `- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {\n` +
+        `  // Adyen SDK\n` +
+        `  return [ADYRedirectComponent applicationDidOpenURL:url];\n` +
+        `}\n`,
     );
     return newConfig;
   });
