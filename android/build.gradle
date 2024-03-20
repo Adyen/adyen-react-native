@@ -3,7 +3,6 @@ def safeExtGet(prop, fallback) {
 }
 
 buildscript {
-    rootProject.ext.adyenReactNativeRedirectScheme = "adyenreactnative"
     apply from: 'dependencies.gradle'
 
     repositories {
@@ -27,7 +26,6 @@ android {
         targetSdkVersion safeExtGet('targetSdkVersion', 34)
         versionCode 1
         versionName "1.0"
-        buildConfigField "String", "adyenReactNativeRedirectScheme", "\"$rootProject.ext.adyenReactNativeRedirectScheme\""
         buildConfigField "String", "CHECKOUT_VERSION", "\"{SDK_VERSION}\""
     }
 
