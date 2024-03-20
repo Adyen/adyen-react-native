@@ -49,7 +49,7 @@ class ActionFragment(
         )
 
         this.component = component
-        AdyenCheckout.setIntentHandler(component)
+        AdyenCheckout.setComponent(component)
         view?.findViewById<AdyenComponentView>(R.id.component_view)
             ?.attach(component, this)
             ?: { Log.e(TAG, FRAGMENT_ERROR) }

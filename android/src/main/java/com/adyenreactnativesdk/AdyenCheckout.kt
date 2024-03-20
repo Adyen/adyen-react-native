@@ -6,11 +6,13 @@
 
 package com.adyenreactnativesdk
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
-import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
+import com.adyen.checkout.components.core.internal.Component
+import com.adyen.checkout.components.core.internal.IntentHandlingComponent
 import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
@@ -26,10 +28,12 @@ import java.lang.ref.WeakReference
  * Umbrella class for setting DropIn and Component specific parameters
  */
 object AdyenCheckout {
-    private var intentHandlingComponent: WeakReference<ActionHandlingComponent> = WeakReference(null)
-    private var activityResultHandlingComponent: WeakReference<ActivityResultHandlingComponent> = WeakReference(null)
+    @SuppressLint("RestrictedApi")
+    private var currentComponent: WeakReference<Component> = WeakReference(null)
     private val dropInCallback = DropInCallbackListener()
+    @SuppressLint("RestrictedApi")
     internal var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>? = null
+    @SuppressLint("RestrictedApi")
     internal var dropInSessionLauncher: ActivityResultLauncher<SessionDropInResultContractParams>? = null
 
     @JvmStatic
@@ -64,21 +68,21 @@ object AdyenCheckout {
     @JvmStatic
     fun handleIntent(intent: Intent): Boolean {
         val data = intent.data
-        val handler = intentHandlingComponent.get()
-        return if (data != null && handler != null) {
-            handler.handleIntent(intent)
+        val intentHandlingComponent = currentComponent.get() as? IntentHandlingComponent
+        return if (data != null && intentHandlingComponent != null) {
+            intentHandlingComponent.handleIntent(intent)
             true
         } else false
     }
 
     @JvmStatic
-    internal fun setIntentHandler(component: ActionHandlingComponent) {
-        intentHandlingComponent = WeakReference(component)
+    internal fun setComponent(@SuppressLint("RestrictedApi") component: Component) {
+        currentComponent = WeakReference(component)
     }
 
     @JvmStatic
-    internal fun removeIntentHandler() {
-        intentHandlingComponent.clear()
+    internal fun removeComponent() {
+        currentComponent.clear()
     }
 
     /**
@@ -90,18 +94,11 @@ object AdyenCheckout {
     @JvmStatic
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == GooglePayModule.GOOGLEPAY_REQUEST_CODE) {
-            activityResultHandlingComponent.get()?.handleActivityResult(resultCode, data)
+            val activityResultHandlingComponent =
+                currentComponent.get() as? ActivityResultHandlingComponent
+            // TODO: handle error if null
+            activityResultHandlingComponent?.handleActivityResult(resultCode, data)
         }
-    }
-
-    @JvmStatic
-    internal fun setActivityResultHandlingComponent(component: ActivityResultHandlingComponent) {
-        activityResultHandlingComponent = WeakReference(component)
-    }
-
-    @JvmStatic
-    internal fun removeActivityResultHandlingComponent() {
-        activityResultHandlingComponent.clear()
     }
 }
 

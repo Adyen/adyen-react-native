@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
+import android.annotation.SuppressLint
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
@@ -98,6 +99,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
         GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
     }
 
+    @SuppressLint("RestrictedApi")
     override fun parseConfiguration(json: ReadableMap): Configuration {
         val config = setupRootConfig(json)
 

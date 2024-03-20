@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk
 
+import android.annotation.SuppressLint
 import com.adyen.checkout.components.core.internal.data.api.AnalyticsMapper
 import com.adyen.checkout.components.core.internal.data.api.AnalyticsPlatform
 import com.adyenreactnativesdk.component.SessionHelperModule
@@ -26,16 +27,22 @@ class AdyenPaymentPackage : ReactPackage {
     }
 
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        val SDK_VERSION = BuildConfig.CHECKOUT_VERSION
-        AnalyticsMapper.Companion.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, SDK_VERSION)
-        val modules: MutableList<NativeModule> = ArrayList()
-        modules.add(DropInModule(reactContext))
-        modules.add(InstantModule(reactContext))
-        modules.add(GooglePayModule(reactContext))
-        modules.add(ApplePayModuleMock(reactContext))
-        modules.add(AdyenCSEModule(reactContext))
-        modules.add(SessionHelperModule(reactContext))
-        modules.add(ActionModule(reactContext))
-        return modules
+        configureAnalytics()
+        return listOf(
+            DropInModule(reactContext),
+            InstantModule(reactContext),
+            GooglePayModule(reactContext),
+            ApplePayModuleMock(reactContext),
+            AdyenCSEModule(reactContext),
+            SessionHelperModule(reactContext),
+            ActionModule(reactContext),
+        )
+    }
+
+    // This is intended.
+    @SuppressLint("RestrictedApi")
+    private fun configureAnalytics() {
+        val version = BuildConfig.CHECKOUT_VERSION
+        AnalyticsMapper.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, version)
     }
 }

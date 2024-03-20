@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.component.instant
 
+import android.annotation.SuppressLint
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.Configuration
@@ -70,6 +71,8 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
         InstantFragment.hide(appCompatActivity.supportFragmentManager)
     }
 
+    // TODO: Remove restrict after updating
+    @SuppressLint("RestrictedApi")
     override fun parseConfiguration(json: ReadableMap): Configuration {
         setupRootConfig(json)
         val analytics = AnalyticsParser(json).analytics

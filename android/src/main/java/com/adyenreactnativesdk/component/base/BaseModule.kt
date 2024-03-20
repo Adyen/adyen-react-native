@@ -168,7 +168,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     override fun onFinished(result: SessionPaymentResult) {
         val updatedResult = if (result.resultCode == VOUCHER_RESULT_CODE) {
-            result.copy(resultCode =RESULT_CODE_PRESENTED )
+            result.copy(resultCode = RESULT_CODE_PRESENTED )
         }
         else {
             result

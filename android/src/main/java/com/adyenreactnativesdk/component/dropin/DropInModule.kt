@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.component.dropin
 
+import android.annotation.SuppressLint
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.CardConfiguration
@@ -30,6 +31,7 @@ import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.JavaOnlyMap
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
@@ -62,7 +64,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         val session = session
         if (session != null) {
             preparePaymentMethods(dropInConfiguration, paymentMethodsResponse, session)
-            AdyenCheckout.setIntentHandler(this)
             AdyenCheckout.dropInSessionLauncher?.let {
                 startPayment(
                     reactApplicationContext,
@@ -122,6 +123,13 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         cleanup()
     }
 
+    @ReactMethod
+    fun getReturnURL(promise: Promise) {
+        promise.resolve(getRedirectUrl())
+    }
+
+    // TODO: Remove restrict after updating
+    @SuppressLint("RestrictedApi")
     override fun parseConfiguration(json: ReadableMap): Configuration {
         val config = setupRootConfig(json)
 
@@ -146,7 +154,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         return builder.build()
     }
 
-    override fun getRedirectUrl(): String {
+    override fun getRedirectUrl(): String? {
         return RedirectComponent.getReturnUrl(reactApplicationContext)
     }
 

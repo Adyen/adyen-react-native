@@ -1,5 +1,6 @@
 package com.adyenreactnativesdk.cse
 
+import android.annotation.SuppressLint
 import com.adyen.checkout.action.core.GenericActionConfiguration
 import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
 import com.adyen.checkout.components.core.ActionComponentCallback
@@ -36,6 +37,8 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context),
     fun removeListeners(count: Int?) { /* No JS events expected */
     }
 
+    // TODO: Remove restrict after updating
+    @SuppressLint("RestrictedApi")
     @ReactMethod
     fun handle(actionMap: ReadableMap, configuration: ReadableMap, promise: Promise) {
         this.promise = promise
@@ -67,6 +70,8 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context),
         promise = null
     }
 
+    // TODO: Remove restrict after updating
+    @SuppressLint("RestrictedApi")
     override fun parseConfiguration(json: ReadableMap): Configuration {
         val config = setupRootConfig(json)
 

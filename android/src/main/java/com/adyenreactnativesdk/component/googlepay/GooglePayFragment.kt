@@ -48,8 +48,7 @@ class GooglePayFragment(
         }) ?: throw ModuleException.WrongFlow()
 
         this.component = component
-        AdyenCheckout.setIntentHandler(component)
-        AdyenCheckout.setActivityResultHandlingComponent(component)
+        AdyenCheckout.setComponent(component)
         view?.findViewById<AdyenComponentView>(R.id.component_view)
             ?.attach(component, this)
             ?: { Log.e(TAG, FRAGMENT_ERROR) }
