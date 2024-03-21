@@ -10,9 +10,9 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
+import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
 import com.adyen.checkout.components.core.internal.Component
-import com.adyen.checkout.components.core.internal.IntentHandlingComponent
 import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
@@ -68,7 +68,7 @@ object AdyenCheckout {
     @JvmStatic
     fun handleIntent(intent: Intent): Boolean {
         val data = intent.data
-        val intentHandlingComponent = currentComponent.get() as? IntentHandlingComponent
+        val intentHandlingComponent = currentComponent.get() as? ActionHandlingComponent
         return if (data != null && intentHandlingComponent != null) {
             intentHandlingComponent.handleIntent(intent)
             true
