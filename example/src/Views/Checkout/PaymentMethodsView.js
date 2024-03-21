@@ -50,28 +50,58 @@ const PaymentMethods = ({isSession}) => {
           />
         </View>
 
-        {storedPaymentMethods && !isSession ? (
+        {!isSession ? ( // Sessions do not support components (yet)
           <View>
+            {storedPaymentMethods ? (
+              <View>
+                <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
+                  Stored payments
+                </Text>
+                {storedPaymentMethods.map((p) => {
+                  const iconName = p.type === 'scheme' ? 'card' : p.type;
+                  return (
+                    <View key={`${p.id}`}>
+                      <PaymentMethodButton
+                        title={`${p.name}`}
+                        subtitle={subtitle(p)}
+                        icon={iconName}
+                        onPress={async () => {
+                          try {
+                            let cvv =
+                              '737'; /** Collect CVV from shopper if nececery */
+                            let result = await payByID(
+                              p.id,
+                              cvv,
+                              configuration,
+                            );
+                            Alert.alert('Result', result.resultCode);
+                          } catch (e) {
+                            Alert.alert('Error', e.message);
+                            AdyenAction.hide(false);
+                          }
+                        }}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View />
+            )}
+
             <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-              Stored payments
+              Components
             </Text>
-            {storedPaymentMethods.map((p) => {
+            {regularPaymentMethods.map((p) => {
               const iconName = p.type === 'scheme' ? 'card' : p.type;
               return (
-                <View key={`${p.id}`}>
+                <View key={`${p.type + p.name}`}>
                   <PaymentMethodButton
                     title={`${p.name}`}
-                    subtitle={subtitle(p)}
+                    subtitle={undefined}
                     icon={iconName}
-                    onPress={async () => {
-                      try {
-                        let cvv = '737'; /** Collect CVV from shopper if nececery */
-                        let result = await payByID(p.id, cvv, configuration);
-                        Alert.alert('Result', result.resultCode);
-                      } catch (e) {
-                        Alert.alert('Error', e.message);
-                        AdyenAction.hide(false);
-                      }
+                    onPress={() => {
+                      start(p.type);
                     }}
                   />
                 </View>
@@ -81,25 +111,6 @@ const PaymentMethods = ({isSession}) => {
         ) : (
           <View />
         )}
-
-        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-          Components
-        </Text>
-        {regularPaymentMethods.map((p) => {
-          const iconName = p.type === 'scheme' ? 'card' : p.type;
-          return (
-            <View key={`${p.type + p.name}`}>
-              <PaymentMethodButton
-                title={`${p.name}`}
-                subtitle={undefined}
-                icon={iconName}
-                onPress={() => {
-                  start(p.type);
-                }}
-              />
-            </View>
-          );
-        })}
       </View>
     </ScrollView>
   );

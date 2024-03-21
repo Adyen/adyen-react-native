@@ -55,11 +55,6 @@ export interface AdyenActionComponent extends AdyenComponent {
 /** Describes a native module capable of creating new sessions. */
 export interface SessionHelperModule extends AdyenComponent {
   /**
-   * Provides return URL for current application.
-   */
-  getReturnURL: () => Promise<string>;
-
-  /**
    * Provides paymentMethods for sessionData and SessionID.
    */
   createSession: (session: any, configuration: any) => Promise<SessionResponse>;
@@ -86,6 +81,14 @@ export interface ActionModule {
   hide: (success: boolean) => void;
 }
 
+/** Describes Drop-in module. */
+export interface DropInModule extends AdyenActionComponent, NativeModule {
+  /**
+   * Provides return URL for current application.
+   */
+    getReturnURL: () => Promise<string>;
+}
+
 /** Describes a native module capable of encrypting card data. */
 export interface AdyenCSEModule extends NativeModule {
   /** Method to encrypt card. */
@@ -105,7 +108,7 @@ const ModuleMock = new Proxy(
 );
 
 /** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
-export const AdyenDropIn: AdyenActionComponent & NativeModule =
+export const AdyenDropIn: DropInModule =
   NativeModules.AdyenDropIn ?? ModuleMock;
 
 /** Generic Redirect component */

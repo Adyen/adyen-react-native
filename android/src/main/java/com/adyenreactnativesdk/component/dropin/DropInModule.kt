@@ -46,6 +46,11 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     @ReactMethod
     fun removeListeners(count: Int?) { /* No JS events expected */ }
 
+    @ReactMethod
+    fun getReturnURL(promise: Promise) {
+        promise.resolve(getRedirectUrl())
+    }
+
     override fun getName(): String = COMPONENT_NAME
 
     @ReactMethod
@@ -121,11 +126,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         }
 
         cleanup()
-    }
-
-    @ReactMethod
-    fun getReturnURL(promise: Promise) {
-        promise.resolve(getRedirectUrl())
     }
 
     // TODO: Remove restrict after updating

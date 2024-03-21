@@ -18,6 +18,7 @@ export {
   AdyenGooglePay,
   AdyenCSE,
   AdyenAction,
+  DropInModule,
   AdyenComponent,
   AdyenActionComponent,
   HideOption,
