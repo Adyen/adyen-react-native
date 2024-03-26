@@ -6,8 +6,7 @@
 
 package com.adyenreactnativesdk.component.applepay
 
-import android.annotation.SuppressLint
-import com.adyen.checkout.components.core.internal.Configuration
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.core.exception.MethodNotImplementedException
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
@@ -16,12 +15,6 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 
 class ApplePayModuleMock(context: ReactApplicationContext?) : BaseModule(context) {
-
-    // TODO: Remove restrict after updating
-    @SuppressLint("RestrictedApi")
-    override fun parseConfiguration(json: ReadableMap): Configuration {
-        throw MethodNotImplementedException("This method is not implemented for Android")
-    }
 
     override fun getName(): String = COMPONENT_NAME
 

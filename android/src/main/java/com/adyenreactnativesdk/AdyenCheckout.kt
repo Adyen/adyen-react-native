@@ -6,8 +6,8 @@
 
 package com.adyenreactnativesdk
 
-import android.annotation.SuppressLint
 import android.content.Intent
+import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
@@ -28,13 +28,11 @@ import java.lang.ref.WeakReference
  * Umbrella class for setting DropIn and Component specific parameters
  */
 object AdyenCheckout {
-    @SuppressLint("RestrictedApi")
     private var currentComponent: WeakReference<Component> = WeakReference(null)
     private val dropInCallback = DropInCallbackListener()
-    @SuppressLint("RestrictedApi")
     internal var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>? = null
-    @SuppressLint("RestrictedApi")
-    internal var dropInSessionLauncher: ActivityResultLauncher<SessionDropInResultContractParams>? = null
+    internal var dropInSessionLauncher: ActivityResultLauncher<SessionDropInResultContractParams>? =
+        null
 
     @JvmStatic
     internal fun addDropInListener(callback: ReactDropInCallback) {
@@ -67,16 +65,21 @@ object AdyenCheckout {
      */
     @JvmStatic
     fun handleIntent(intent: Intent): Boolean {
-        val data = intent.data
-        val intentHandlingComponent = currentComponent.get() as? ActionHandlingComponent
-        return if (data != null && intentHandlingComponent != null) {
-            intentHandlingComponent.handleIntent(intent)
+        if (intent.data != null) {
+            return false
+        }
+        val actionHandlingComponent = currentComponent.get() as? ActionHandlingComponent
+        return if (actionHandlingComponent != null) {
+            actionHandlingComponent.handleIntent(intent)
             true
-        } else false
+        } else {
+            Log.e(TAG, "Nothing registered as ActivityResultHandling")
+            false
+        }
     }
 
     @JvmStatic
-    internal fun setComponent(@SuppressLint("RestrictedApi") component: Component) {
+    internal fun setComponent(component: Component) {
         currentComponent = WeakReference(component)
     }
 
@@ -96,10 +99,15 @@ object AdyenCheckout {
         if (requestCode == GooglePayModule.GOOGLEPAY_REQUEST_CODE) {
             val activityResultHandlingComponent =
                 currentComponent.get() as? ActivityResultHandlingComponent
-            // TODO: handle error if null
-            activityResultHandlingComponent?.handleActivityResult(resultCode, data)
+            if (activityResultHandlingComponent != null) {
+                activityResultHandlingComponent.handleActivityResult(resultCode, data)
+            } else {
+                Log.e(TAG, "Nothing registered as ActivityResultHandling")
+            }
         }
     }
+
+    private const val TAG = "AdyenCheckout"
 }
 
 private class DropInCallbackListener : DropInCallback, SessionDropInCallback {

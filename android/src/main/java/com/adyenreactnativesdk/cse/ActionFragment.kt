@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.cse;
+package com.adyenreactnativesdk.cse
 
 import android.os.Bundle
 import android.util.Log
@@ -7,8 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.action.core.GenericActionComponent
-import com.adyen.checkout.action.core.GenericActionConfiguration
 import com.adyen.checkout.components.core.ActionComponentCallback
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
@@ -16,7 +16,7 @@ import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 class ActionFragment(
-    private val configuration: GenericActionConfiguration,
+    private val configuration: CheckoutConfiguration,
     private val callback: ActionComponentCallback,
     private val action: Action,
 ) :
@@ -73,7 +73,7 @@ class ActionFragment(
 
         fun show(
             fragmentManager: FragmentManager,
-            configuration: GenericActionConfiguration,
+            configuration: CheckoutConfiguration,
             callback: ActionComponentCallback,
             action: Action
         ) {

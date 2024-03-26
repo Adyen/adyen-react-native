@@ -10,11 +10,11 @@ package com.adyenreactnativesdk.component.instant
 import android.util.Log
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
-import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
@@ -24,7 +24,7 @@ import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
 class InstantFragment(
-    private val configuration: InstantPaymentConfiguration,
+    private val configuration: CheckoutConfiguration,
     paymentMethod: PaymentMethod,
     session: CheckoutSession?
 ) :
@@ -62,7 +62,7 @@ class InstantFragment(
 
         fun show(
             fragmentManager: FragmentManager,
-            configuration: InstantPaymentConfiguration,
+            configuration: CheckoutConfiguration,
             paymentMethod: PaymentMethod,
             session: CheckoutSession?
         ) {

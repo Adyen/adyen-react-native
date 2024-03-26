@@ -8,11 +8,11 @@ package com.adyenreactnativesdk.component.googlepay
 
 import android.util.Log
 import androidx.fragment.app.FragmentManager
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
-import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.AdyenCheckout
@@ -22,7 +22,7 @@ import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
 class GooglePayFragment(
-    private val configuration: GooglePayConfiguration,
+    private val configuration: CheckoutConfiguration,
     paymentMethod: PaymentMethod,
     session: CheckoutSession?
 ) :
@@ -64,7 +64,7 @@ class GooglePayFragment(
 
         fun show(
             fragmentManager: FragmentManager,
-            configuration: GooglePayConfiguration,
+            configuration: CheckoutConfiguration,
             paymentMethod: PaymentMethod,
             session: CheckoutSession?
         ) {

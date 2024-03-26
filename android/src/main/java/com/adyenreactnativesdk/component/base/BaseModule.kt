@@ -6,21 +6,21 @@
 
 package com.adyenreactnativesdk.component.base
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
+import com.adyen.checkout.bcmc.bcmc
+import com.adyen.checkout.card.card
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
-import com.adyen.checkout.components.core.internal.Configuration
-import com.adyen.checkout.core.Environment
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.checkout.core.exception.CheckoutException
+import com.adyen.checkout.dropin.dropIn
 import com.adyen.checkout.googlepay.GooglePayComponentState
+import com.adyen.checkout.googlepay.googlePay
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.CheckoutSessionProvider
 import com.adyen.checkout.sessions.core.CheckoutSessionResult
@@ -30,6 +30,10 @@ import com.adyen.checkout.sessions.core.SessionSetupResponse
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.model.SubmitMap
+import com.adyenreactnativesdk.configuration.AnalyticsParser
+import com.adyenreactnativesdk.configuration.CardConfigurationParser
+import com.adyenreactnativesdk.configuration.DropInConfigurationParser
+import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeError
@@ -41,14 +45,9 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import org.json.JSONException
 import org.json.JSONObject
-import java.util.Locale
 
 abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context),
     CheckoutProxy.ComponentEventListener {
-
-    lateinit var environment: Environment
-    lateinit var clientKey: String
-    lateinit var locale: Locale
 
     internal fun sendEvent(eventName: String, jsonObject: JSONObject) {
         try {
@@ -65,7 +64,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     }
 
     private fun sendFinishEvent(result: SessionPaymentResult) {
-        // TODO: Use SERIALIZE after updating
         val jsonObject = JSONObject().apply {
             put("resultCode", result.resultCode)
             put("order", result.order?.let { OrderResponse.SERIALIZER.serialize(it) })
@@ -91,14 +89,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         return paymentMethodsResponse.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
     }
 
-    private fun currentLocale(context: Context): Locale {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            context.resources.configuration.locales.get(0)
-        } else {
-            context.resources.configuration.locale
-        }
-    }
-
     protected val appCompatActivity: AppCompatActivity
         get() {
             val currentActivity = reactApplicationContext.currentActivity
@@ -109,14 +99,21 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
     open suspend fun createSessionAsync(
         sessionModelJSON: ReadableMap, configurationJSON: ReadableMap, promise: Promise
     ) {
-        val sessionModel = parseSessionModel(sessionModelJSON)
-        val configuration = parseConfiguration(configurationJSON)
+        val sessionModel: SessionModel
+        val configuration: CheckoutConfiguration
+        try {
+            sessionModel = parseSessionModel(sessionModelJSON)
+            configuration = getCheckoutConfiguration(configurationJSON)
+        } catch (e: java.lang.Exception) {
+            promise.reject(ModuleException.SessionError(e))
+            return
+        }
 
         session =
             when (val result = CheckoutSessionProvider.createSession(sessionModel, configuration)) {
                 is CheckoutSessionResult.Success -> result.checkoutSession
                 is CheckoutSessionResult.Error -> {
-                    promise.reject(ModuleException.SessionError())
+                    promise.reject(ModuleException.SessionError(null))
                     return
                 }
             }
@@ -127,10 +124,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
             promise.resolve(map)
         }
     }
-
-    // TODO: Remove restrict after updating
-    @SuppressLint("RestrictedApi")
-    abstract fun parseConfiguration(json: ReadableMap): Configuration
 
     private fun parseSessionModel(json: ReadableMap): SessionModel {
         val sessionModelJSON = ReactNativeJson.convertMapToJson(json)
@@ -168,9 +161,8 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     override fun onFinished(result: SessionPaymentResult) {
         val updatedResult = if (result.resultCode == VOUCHER_RESULT_CODE) {
-            result.copy(resultCode = RESULT_CODE_PRESENTED )
-        }
-        else {
+            result.copy(resultCode = RESULT_CODE_PRESENTED)
+        } else {
             result
         }
         sendFinishEvent(updatedResult)
@@ -180,13 +172,37 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         sendEvent(DID_PROVIDE, jsonObject)
     }
 
-    protected fun setupRootConfig(json: ReadableMap): RootConfigurationParser {
-        val config = RootConfigurationParser(json)
-        this.environment = config.environment
-        this.clientKey = config.clientKey ?: throw ModuleException.NoClientKey()
-        // TODO: add session.sessionSetupResponse.locale as ultimate source of locale
-        this.locale = config.locale ?: currentLocale(reactApplicationContext)
-        return config
+    protected fun getCheckoutConfiguration(json: ReadableMap): CheckoutConfiguration {
+        val rootParser = RootConfigurationParser(json)
+        val countryCode = rootParser.countryCode
+        val analyticsConfiguration = AnalyticsParser(json).analytics
+
+        val clientKey = rootParser.clientKey ?: throw ModuleException.NoClientKey()
+        return CheckoutConfiguration(
+            environment = rootParser.environment,
+            clientKey = clientKey,
+            shopperLocale = rootParser.locale,
+            amount = rootParser.amount,
+            analyticsConfiguration = analyticsConfiguration
+        ) {
+            googlePay {
+                setCountryCode(countryCode)
+                val googlePayParser = GooglePayConfigurationParser(json)
+                googlePayParser.applyConfiguration(this)
+            }
+            val cardParser = CardConfigurationParser(json, countryCode)
+            card {
+                cardParser.applyConfiguration(this)
+            }
+            bcmc {
+                cardParser.applyConfiguration(this)
+            }
+            dropIn {
+                val parser = DropInConfigurationParser(json)
+                parser.applyConfiguration(this)
+            }
+
+        }
     }
 
     protected fun cleanup() {
@@ -206,5 +222,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
         @JvmStatic
         protected var session: CheckoutSession? = null
+            private set
     }
 }

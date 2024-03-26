@@ -6,31 +6,17 @@
 
 package com.adyenreactnativesdk.component.dropin
 
-import android.annotation.SuppressLint
-import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
-import com.adyen.checkout.bcmc.BcmcConfiguration
-import com.adyen.checkout.card.CardConfiguration
-import com.adyen.checkout.components.core.Amount
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
-import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.dropin.DropIn.startPayment
-import com.adyen.checkout.dropin.DropInConfiguration
-import com.adyen.checkout.dropin.DropInConfiguration.Builder
-import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectComponent
-import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.configuration.AnalyticsParser
-import com.adyenreactnativesdk.configuration.CardConfigurationParser
-import com.adyenreactnativesdk.configuration.DropInConfigurationParser
-import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -41,10 +27,12 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     ReactDropInCallback {
 
     @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */ }
+    fun addListener(eventName: String?) { /* No JS events expected */
+    }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */ }
+    fun removeListeners(count: Int?) { /* No JS events expected */
+    }
 
     @ReactMethod
     fun getReturnURL(promise: Promise) {
@@ -55,11 +43,11 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap?, configuration: ReadableMap) {
-        val dropInConfiguration: DropInConfiguration
+        val checkoutConfiguration: CheckoutConfiguration
         val paymentMethodsResponse: PaymentMethodsApiResponse
         try {
             paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-            dropInConfiguration = parseConfiguration(configuration) as DropInConfiguration
+            checkoutConfiguration = getCheckoutConfiguration(configuration)
         } catch (e: java.lang.Exception) {
             return sendErrorEvent(e)
         }
@@ -68,13 +56,12 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         AdyenCheckout.addDropInListener(this)
         val session = session
         if (session != null) {
-            preparePaymentMethods(dropInConfiguration, paymentMethodsResponse, session)
             AdyenCheckout.dropInSessionLauncher?.let {
                 startPayment(
                     reactApplicationContext,
                     it,
                     session,
-                    dropInConfiguration,
+                    checkoutConfiguration,
                     SessionCheckoutService::class.java
                 )
             } ?: throw ModuleException.NoActivity()
@@ -85,22 +72,10 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
                     reactApplicationContext,
                     it,
                     paymentMethodsResponse,
-                    dropInConfiguration,
+                    checkoutConfiguration,
                     AdvancedCheckoutService::class.java
                 )
             } ?: throw ModuleException.NoActivity()
-        }
-    }
-
-    private fun preparePaymentMethods(
-        dropInConfiguration: DropInConfiguration,
-        paymentMethodsResponse: PaymentMethodsApiResponse,
-        session: CheckoutSession
-    ) {
-        if (dropInConfiguration.skipListWhenSinglePaymentMethod && paymentMethodsResponse.paymentMethods?.size == 1) {
-            session.sessionSetupResponse.paymentMethodsApiResponse?.paymentMethods =
-                paymentMethodsResponse.paymentMethods
-            session.sessionSetupResponse.paymentMethodsApiResponse?.storedPaymentMethods = null
         }
     }
 
@@ -128,32 +103,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         cleanup()
     }
 
-    // TODO: Remove restrict after updating
-    @SuppressLint("RestrictedApi")
-    override fun parseConfiguration(json: ReadableMap): Configuration {
-        val config = setupRootConfig(json)
-
-        val builder = Builder(locale, environment, clientKey)
-        val analytics = AnalyticsParser(json).analytics
-        builder.setAnalyticsConfiguration(analytics)
-        configureDropIn(builder, json)
-        configureBcmc(builder, json)
-        configure3DS(builder)
-
-        val session = BaseModule.session?.sessionSetupResponse
-        val amount = session?.amount ?: config.amount
-        val countryCode = config.countryCode
-        if (amount != null) {
-            builder.setAmount(amount)
-            countryCode?.let {
-                configureGooglePay(builder, json, it, amount)
-            }
-        }
-        configureCards(builder, json, countryCode)
-
-        return builder.build()
-    }
-
     override fun getRedirectUrl(): String? {
         return RedirectComponent.getReturnUrl(reactApplicationContext)
     }
@@ -171,7 +120,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
     }
 
     override fun onCompleted(result: String) {
-        var jsonObject = JSONObject("{\"resultCode\": ${RESULT_CODE_PRESENTED}}")
+        val jsonObject = JSONObject("{\"resultCode\": ${RESULT_CODE_PRESENTED}}")
         sendEvent(DID_COMPLETE, jsonObject)
     }
 
@@ -187,64 +136,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         } else {
             listener.onFail(message)
         }
-    }
-
-    private fun configureDropIn(builder: Builder, configuration: ReadableMap) {
-        val parser = DropInConfigurationParser(configuration)
-        builder.setShowPreselectedStoredPaymentMethod(parser.showPreselectedStoredPaymentMethod)
-        builder.setSkipListWhenSinglePaymentMethod(parser.skipListWhenSinglePaymentMethod)
-    }
-
-    private fun configureGooglePay(
-        builder: Builder,
-        configuration: ReadableMap,
-        countryCode: String,
-        amount: Amount
-    ) {
-        val parser = GooglePayConfigurationParser(configuration)
-        val configBuilder = GooglePayConfiguration.Builder(
-            locale,
-            environment,
-            clientKey
-        )
-            .setCountryCode(countryCode)
-            .setAmount(amount)
-        val googlePayConfiguration = parser.getConfiguration(configBuilder, environment)
-        builder.addGooglePayConfiguration(googlePayConfiguration)
-    }
-
-    private fun configure3DS(builder: Builder) {
-        builder.add3ds2ActionConfiguration(
-            Adyen3DS2Configuration.Builder(
-                locale,
-                environment,
-                clientKey
-            ).build()
-        )
-    }
-
-    private fun configureBcmc(builder: Builder, configuration: ReadableMap) {
-        var bcmcConfig = configuration.getMap("bcmc")
-        if (bcmcConfig == null) {
-            bcmcConfig = JavaOnlyMap()
-        }
-        val parser = CardConfigurationParser(bcmcConfig, null)
-        val bcmcBuilder = BcmcConfiguration.Builder(
-            locale,
-            environment,
-            clientKey
-        )
-        builder.addBcmcConfiguration(parser.getConfiguration(bcmcBuilder))
-    }
-
-    private fun configureCards(builder: Builder, configuration: ReadableMap, countryCode: String?) {
-        val parser = CardConfigurationParser(configuration, countryCode)
-        val cardBuilder = CardConfiguration.Builder(
-            locale,
-            environment,
-            clientKey
-        )
-        builder.addCardConfiguration(parser.getConfiguration(cardBuilder))
     }
 
     companion object {

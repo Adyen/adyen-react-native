@@ -84,7 +84,8 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
     }
 
     companion object {
-        const val FRAGMENT_ERROR = "Not able to find AdyenComponentView in `component_view` fragment"
+        const val FRAGMENT_ERROR =
+            "Not able to find AdyenComponentView in `component_view` fragment"
 
         fun handle(fragmentManager: FragmentManager, action: Action, tag: String) {
             val fragment = fragmentManager.findFragmentByTag(tag) as? BaseComponentFragment<*, *>
