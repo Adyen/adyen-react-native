@@ -65,11 +65,11 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
 
     private fun sendFinishEvent(result: SessionPaymentResult) {
         val jsonObject = JSONObject().apply {
-            put("resultCode", result.resultCode)
-            put("order", result.order?.let { OrderResponse.SERIALIZER.serialize(it) })
-            put("sessionResult", result.sessionResult)
-            put("sessionData", result.sessionData)
-            put("sessionId", result.sessionId)
+            put(RESULT_CODE_KEY, result.resultCode)
+            put(ORDER_KEY, result.order?.let { OrderResponse.SERIALIZER.serialize(it) })
+            put(SESSION_RESULT_KEY, result.sessionResult)
+            put(SESSION_DATA_KEY, result.sessionData)
+            put(SESSION_ID_KEY, result.sessionId)
         }
         sendEvent(DID_COMPLETE, jsonObject)
     }
@@ -219,6 +219,11 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_SUBMIT = "didSubmitCallback"
         const val RESULT_CODE_PRESENTED = "PresentToShopper"
         private const val VOUCHER_RESULT_CODE = "finish_with_action"
+        private const val RESULT_CODE_KEY = "resultCode"
+        private const val ORDER_KEY = "order"
+        private const val SESSION_RESULT_KEY = "sessionResult"
+        private const val SESSION_DATA_KEY = "sessionData"
+        private const val SESSION_ID_KEY = "sessionId"
 
         @JvmStatic
         protected var session: CheckoutSession? = null

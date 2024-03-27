@@ -12,6 +12,7 @@ import com.adyen.checkout.card.AddressConfiguration.None
 import com.adyen.checkout.card.AddressConfiguration.PostalCode
 import com.adyen.checkout.card.CardBrand
 import com.adyen.checkout.card.CardConfiguration
+import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.KCPAuthVisibility
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
 import com.facebook.react.bridge.ReadableMap
@@ -112,9 +113,14 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
 
     val supportedCardTypes: List<CardBrand>?
         get() {
-            return config.getArray(SUPPORTED_CARD_TYPES_KEY)?.toArrayList()?.map {
-                CardBrand(it.toString())
-            }
+            return config.getArray(SUPPORTED_CARD_TYPES_KEY)
+                ?.toArrayList()
+                ?.map { it.toString() }
+                ?.mapNotNull { txVariant ->
+                    CardType.getByBrandName(txVariant)?.let {
+                        CardBrand(it)
+                    }
+                }
         }
 
     val socialSecurityNumberVisibility: SocialSecurityNumberVisibility?

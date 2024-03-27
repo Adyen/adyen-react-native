@@ -8,6 +8,7 @@ package com.adyenreactnativesdk.configuration
 
 import android.util.Log
 import com.adyen.checkout.card.AddressConfiguration
+import com.adyen.checkout.card.CardBrand
 import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.KCPAuthVisibility
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
@@ -42,7 +43,7 @@ class CardConfigurationParserTest {
         val cardParser = CardConfigurationParser(config, "US")
 
         // THEN
-        assertFalse(cardParser.showStorePaymentField)
+        assertFalse(cardParser.showStorePaymentField == true)
     }
 
     @Test
@@ -55,7 +56,7 @@ class CardConfigurationParserTest {
         val cardParser = CardConfigurationParser(config, "US")
 
         // THEN
-        assertTrue(cardParser.holderNameRequired)
+        assertTrue(cardParser.holderNameRequired == true)
     }
 
     @Test
@@ -68,7 +69,7 @@ class CardConfigurationParserTest {
         val cardParser = CardConfigurationParser(config, "US")
 
         // THEN
-        assertTrue(cardParser.hideCvcStoredCard)
+        assertTrue(cardParser.hideCvcStoredCard == true)
     }
 
     @Test
@@ -119,8 +120,6 @@ class CardConfigurationParserTest {
     fun testGetSupportedCardTypes() {
         // GIVEN
         val mockStatic = Mockito.mockStatic(Log::class.java)
-        var wrong_cards_count = 0
-        `when`(Log.w(Mockito.eq(CardConfigurationParser.TAG), Mockito.anyString())).thenReturn(wrong_cards_count++)
         val config = WritableMapMock()
         val mockArray = mock(ReadableArray::class.java)
         `when`(mockArray.toArrayList()).thenReturn(arrayListOf("mc", "visa", "maestro", "wrong_value"))
@@ -130,8 +129,8 @@ class CardConfigurationParserTest {
         val cardParser = CardConfigurationParser(config, "US")
 
         // THEN
-        assertArrayEquals(cardParser.supportedCardTypes, arrayOf(CardType.MASTERCARD, CardType.VISA, CardType.MAESTRO))
-        assertEquals(wrong_cards_count, 1)
+        val map = cardParser.supportedCardTypes.orEmpty().map { CardType.getByBrandName(it.txVariant) }
+        assertEquals(listOf(CardType.MASTERCARD, CardType.VISA, CardType.MAESTRO), map)
 
         // TEAR DOWN
         mockStatic?.close()

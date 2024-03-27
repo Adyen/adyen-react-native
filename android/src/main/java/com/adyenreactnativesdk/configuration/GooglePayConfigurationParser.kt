@@ -42,7 +42,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         }
     }
 
-    private val shippingAddressParameters: ShippingAddressParameters?
+    internal val shippingAddressParameters: ShippingAddressParameters?
         get() {
             return try {
                 val map = config.getMap(SHIPPING_ADDRESS_PARAMETERS_KEY)
@@ -57,7 +57,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             }
         }
 
-    private val billingAddressParameters: BillingAddressParameters?
+    internal val billingAddressParameters: BillingAddressParameters?
         get() {
             return try {
                 val map = config.getMap(BILLING_ADDRESS_PARAMETERS_KEY)
@@ -68,14 +68,14 @@ class GooglePayConfigurationParser(config: ReadableMap) {
             }
         }
 
-    private val allowedCardNetworks: List<String>
+    internal val allowedCardNetworks: List<String>
         get() {
             return config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList().orEmpty().map {
                 it.toString()
             }
         }
 
-    private val allowedAuthMethods: List<String>
+    internal val allowedAuthMethods: List<String>
         get() {
             return config.getArray(ALLOWED_AUTH_METHODS_KEY)?.toArrayList().orEmpty().map {
                 it.toString()
