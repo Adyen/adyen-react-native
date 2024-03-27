@@ -1,12 +1,11 @@
 package com.adyenreactnativesdk.cse
 
-import com.adyen.checkout.action.core.GenericActionConfiguration
 import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
 import com.adyen.checkout.components.core.ActionComponentCallback
 import com.adyen.checkout.components.core.ActionComponentData
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.threeds2.ThreeDS2Service
 import com.adyenreactnativesdk.component.CheckoutProxy
@@ -40,11 +39,11 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context),
     fun handle(actionMap: ReadableMap, configuration: ReadableMap, promise: Promise) {
         this.promise = promise
         val action: Action
-        val config: Configuration
+        val checkoutConfiguration: CheckoutConfiguration
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             action = Action.SERIALIZER.deserialize(jsonObject)
-            config = parseConfiguration(configuration)
+            checkoutConfiguration = getCheckoutConfiguration(configuration)
         } catch (e: ModuleException) {
             promise.reject(e.code, e.message, e)
             return
@@ -54,7 +53,7 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context),
         }
         ActionFragment.show(
             appCompatActivity.supportFragmentManager,
-            config as GenericActionConfiguration,
+            checkoutConfiguration,
             this,
             action
         )
@@ -65,15 +64,6 @@ class ActionModule(context: ReactApplicationContext?) : BaseModule(context),
         ActionFragment.hide(appCompatActivity.supportFragmentManager)
         cleanup()
         promise = null
-    }
-
-    override fun parseConfiguration(json: ReadableMap): Configuration {
-        val config = setupRootConfig(json)
-
-        val configuration = GenericActionConfiguration.Builder(locale, environment, clientKey)
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
-
-        return configuration.build()
     }
 
     companion object {

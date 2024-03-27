@@ -1,8 +1,8 @@
 // @ts-check
 
 import React, {useEffect, useCallback, useState} from 'react';
-import {SafeAreaView, Alert, ActivityIndicator} from 'react-native';
-import {AdyenCheckout, ErrorCode} from '@adyen/react-native';
+import {SafeAreaView, Alert, ActivityIndicator, Platform} from 'react-native';
+import {AdyenCheckout, AdyenDropIn, ErrorCode} from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
 import {checkoutConfiguration, useAppContext} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
@@ -22,9 +22,13 @@ const SessionsCheckout = ({navigation}) => {
   }, []);
 
   const refreshSession = async (configuration) => {
+    const returnUrl = Platform.select({
+      ios: ENVIRONMENT.returnUrl,
+      android: await AdyenDropIn.getReturnURL()
+    });
     const session = await ApiClient.requestSesion(
       configuration,
-      ENVIRONMENT.returnUrl,
+      returnUrl
     );
     setSession(session);
   };

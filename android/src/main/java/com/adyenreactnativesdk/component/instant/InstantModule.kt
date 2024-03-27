@@ -6,37 +6,37 @@
 
 package com.adyenreactnativesdk.component.instant
 
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.components.core.internal.Configuration
-import com.adyen.checkout.instant.InstantPaymentConfiguration
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.configuration.AnalyticsParser
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 
-class InstantModule(context: ReactApplicationContext?) : BaseModule(context), CheckoutProxy.ComponentEventListener {
+class InstantModule(context: ReactApplicationContext?) : BaseModule(context),
+    CheckoutProxy.ComponentEventListener {
 
     override fun getName(): String = COMPONENT_NAME
 
     @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */ }
+    fun addListener(eventName: String?) { /* No JS events expected */
+    }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */ }
+    fun removeListeners(count: Int?) { /* No JS events expected */
+    }
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val instantPaymentConfiguration: InstantPaymentConfiguration
+        val checkoutConfiguration: CheckoutConfiguration
         val paymentMethod: PaymentMethod
         try {
-            instantPaymentConfiguration =
-                parseConfiguration(configuration) as InstantPaymentConfiguration
+            checkoutConfiguration = getCheckoutConfiguration(configuration)
             paymentMethod =
                 getPaymentMethodsApiResponse(paymentMethodsData).paymentMethods?.firstOrNull()
                     ?: throw ModuleException.InvalidPaymentMethods(null)
@@ -47,7 +47,7 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
         CheckoutProxy.shared.componentListener = this
         InstantFragment.show(
             appCompatActivity.supportFragmentManager,
-            instantPaymentConfiguration,
+            checkoutConfiguration,
             paymentMethod,
             session
         )
@@ -68,15 +68,6 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context), Ch
     fun hide(success: Boolean?, message: ReadableMap?) {
         cleanup()
         InstantFragment.hide(appCompatActivity.supportFragmentManager)
-    }
-
-    override fun parseConfiguration(json: ReadableMap): Configuration {
-        setupRootConfig(json)
-        val analytics = AnalyticsParser(json).analytics
-        val instantPaymentConfiguration = InstantPaymentConfiguration.Builder(locale, environment, clientKey)
-            .setAnalyticsConfiguration(analytics)
-
-        return instantPaymentConfiguration.build()
     }
 
     companion object {

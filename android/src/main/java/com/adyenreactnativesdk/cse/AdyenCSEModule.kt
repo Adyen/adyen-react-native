@@ -19,11 +19,13 @@ import com.facebook.react.bridge.WritableNativeMap
 class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaModule(context) {
 
     @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */ }
+    fun addListener(eventName: String?) { /* No JS events expected */
+    }
 
     @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */ }
-    
+    fun removeListeners(count: Int?) { /* No JS events expected */
+    }
+
     override fun getName() = COMPONENT_NAME
 
     @ReactMethod
@@ -38,7 +40,8 @@ class AdyenCSEModule(context: ReactApplicationContext?) : ReactContextBaseJavaMo
         card.getString(CVV_KEY)?.let { unencryptedCardBuilder.setCvc(it) }
 
         try {
-            val encryptedCard = CardEncrypter.encryptFields(unencryptedCardBuilder.build(), publicKey)
+            val encryptedCard =
+                CardEncrypter.encryptFields(unencryptedCardBuilder.build(), publicKey)
             val map = WritableNativeMap()
             map.putString(NUMBER_KEY, encryptedCard.encryptedCardNumber)
             map.putString(EXPIRY_MONTH_KEY, encryptedCard.encryptedExpiryMonth)

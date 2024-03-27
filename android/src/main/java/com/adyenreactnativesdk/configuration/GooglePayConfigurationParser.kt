@@ -7,42 +7,29 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.adyen.checkout.core.Environment
 import com.adyen.checkout.googlepay.BillingAddressParameters
 import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.googlepay.ShippingAddressParameters
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReadableMap
-import com.google.android.gms.wallet.WalletConstants
 import org.json.JSONException
-import java.util.Locale
 
 class GooglePayConfigurationParser(config: ReadableMap) {
 
     companion object {
-        const val TAG = "GooglePayConfigParser"
-        const val GOOGLEPAY_KEY = "googlepay"
-        const val MERCHANT_ACCOUNT_KEY = "merchantAccount"
-        const val ALLOWED_CARD_NETWORKS_KEY = "allowedCardNetworks"
-        const val ALLOWED_AUTH_METHODS_KEY = "allowedAuthMethods"
-        const val TOTAL_PRICE_STATUS_KEY = "totalPriceStatus"
-        const val ALLOW_PREPAID_CARDS_KEY = "allowPrepaidCards"
-        const val BILLING_ADDRESS_REQUIRED_KEY = "billingAddressRequired"
-        const val EMAIL_REQUIRED_KEY = "emailRequired"
-        const val SHIPPING_ADDRESS_REQUIRED_KEY = "shippingAddressRequired"
-        const val EXISTING_PAYMENT_METHOD_REQUIRED_KEY = "existingPaymentMethodRequired"
-        const val GOOGLEPAY_ENVIRONMENT_KEY = "googlePayEnvironment"
-        const val BILLING_ADDRESS_PARAMETERS_KEY = "shippingAddressParameters"
-        const val SHIPPING_ADDRESS_PARAMETERS_KEY = "billingAddressParameters"
-
-        const val AMEX = "AMEX"
-        const val DISCOVER = "DISCOVER"
-        const val INTERAC = "INTERAC"
-        const val JCB = "JCB"
-        const val MASTERCARD = "MASTERCARD"
-        const val VISA = "VISA"
-
-        val availableCardNetworks: Set<String> = setOf(AMEX, DISCOVER, INTERAC, JCB, MASTERCARD, VISA)
+        internal const val TAG = "GooglePayConfigParser"
+        internal const val GOOGLEPAY_KEY = "googlepay"
+        internal const val MERCHANT_ACCOUNT_KEY = "merchantAccount"
+        internal const val ALLOWED_CARD_NETWORKS_KEY = "allowedCardNetworks"
+        internal const val ALLOWED_AUTH_METHODS_KEY = "allowedAuthMethods"
+        internal const val TOTAL_PRICE_STATUS_KEY = "totalPriceStatus"
+        internal const val ALLOW_PREPAID_CARDS_KEY = "allowPrepaidCards"
+        internal const val BILLING_ADDRESS_REQUIRED_KEY = "billingAddressRequired"
+        internal const val EMAIL_REQUIRED_KEY = "emailRequired"
+        internal const val SHIPPING_ADDRESS_REQUIRED_KEY = "shippingAddressRequired"
+        internal const val EXISTING_PAYMENT_METHOD_REQUIRED_KEY = "existingPaymentMethodRequired"
+        internal const val BILLING_ADDRESS_PARAMETERS_KEY = "shippingAddressParameters"
+        internal const val SHIPPING_ADDRESS_PARAMETERS_KEY = "billingAddressParameters"
     }
 
     private var config: ReadableMap
@@ -55,67 +42,47 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         }
     }
 
-    val shippingAddressParameters: ShippingAddressParameters?
+    internal val shippingAddressParameters: ShippingAddressParameters?
         get() {
-            try {
+            return try {
                 val map = config.getMap(SHIPPING_ADDRESS_PARAMETERS_KEY)
-                return ShippingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+                ShippingAddressParameters.SERIALIZER.deserialize(
+                    ReactNativeJson.convertMapToJson(
+                        map
+                    )
+                )
             } catch (e: JSONException) {
                 Log.w(TAG, e.message ?: "Unable to parse shippingAddressParameters")
-                return null
+                null
             }
         }
 
-    val billingAddressParameters: BillingAddressParameters?
+    internal val billingAddressParameters: BillingAddressParameters?
         get() {
-            try {
+            return try {
                 val map = config.getMap(BILLING_ADDRESS_PARAMETERS_KEY)
-                return BillingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+                BillingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
             } catch (e: JSONException) {
                 Log.w(TAG, e.message ?: "Unable to parse billingAddressParameters")
-                return null
+                null
             }
         }
 
-    val allowedCardNetworks: List<String>
+    internal val allowedCardNetworks: List<String>
         get() {
-            val list: List<Any> =
-                config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList() ?: emptyList()
-            val strings: MutableList<String> = ArrayList(list.size)
-
-            for (cardNetwork in list.map { it.toString().uppercase(Locale.ROOT) }) {
-                if (availableCardNetworks.contains(cardNetwork)) {
-                    strings.add(cardNetwork)
-                } else {
-                    Log.w(TAG, "skipping brand $cardNetwork, as it is not an allowed card network.")
-                }
+            return config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList().orEmpty().map {
+                it.toString()
             }
-            return strings
         }
 
-    val allowedAuthMethods: List<String>
+    internal val allowedAuthMethods: List<String>
         get() {
-            val list: List<Any> =
-                config.getArray(ALLOWED_AUTH_METHODS_KEY)?.toArrayList() ?: emptyList()
-            val strings: MutableList<String> = ArrayList(list.size)
-            for (`object` in list) {
-                strings.add(`object`.toString())
+            return config.getArray(ALLOWED_AUTH_METHODS_KEY)?.toArrayList().orEmpty().map {
+                it.toString()
             }
-            return strings
         }
 
-    fun getGooglePayEnvironment(environment: Environment): Int {
-        if (config.hasKey(GOOGLEPAY_ENVIRONMENT_KEY)) {
-            return config.getInt(GOOGLEPAY_ENVIRONMENT_KEY)
-        }
-        return when (environment) {
-            Environment.TEST -> WalletConstants.ENVIRONMENT_TEST
-            else -> WalletConstants.ENVIRONMENT_PRODUCTION
-        }
-    }
-
-    fun getConfiguration(builder: GooglePayConfiguration.Builder, environment: Environment): GooglePayConfiguration {
-        builder.setGooglePayEnvironment(getGooglePayEnvironment(environment))
+    fun applyConfiguration(builder: GooglePayConfiguration.Builder) {
         if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
             builder.setAllowedAuthMethods(allowedAuthMethods)
         }
@@ -153,8 +120,6 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         if (config.hasKey(SHIPPING_ADDRESS_PARAMETERS_KEY)) {
             builder.setShippingAddressParameters(shippingAddressParameters)
         }
-
-        return builder.build()
     }
 
 }

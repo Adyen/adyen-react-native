@@ -6,19 +6,16 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
+import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.components.core.internal.Configuration
 import com.adyen.checkout.googlepay.GooglePayComponent
-import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.configuration.AnalyticsParser
-import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -40,11 +37,11 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
 
     @ReactMethod
     fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val googlePayConfiguration: GooglePayConfiguration
+        val checkoutConfiguration: CheckoutConfiguration
         val paymentMethodsResponse: PaymentMethodsApiResponse
         try {
             paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-            googlePayConfiguration = parseConfiguration(configuration) as GooglePayConfiguration
+            checkoutConfiguration = getCheckoutConfiguration(configuration)
         } catch (e: java.lang.Exception) {
             return sendErrorEvent(e)
         }
@@ -60,7 +57,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
         GooglePayComponent.run {
             PROVIDER.isAvailable(appCompatActivity.application,
                 payPaymentMethod,
-                googlePayConfiguration,
+                checkoutConfiguration,
                 object : ComponentAvailableCallback {
                     override fun onAvailabilityResult(
                         isAvailable: Boolean,
@@ -72,7 +69,7 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
                         }
                         GooglePayFragment.show(
                             appCompatActivity.supportFragmentManager,
-                            googlePayConfiguration,
+                            checkoutConfiguration,
                             paymentMethod,
                             session
                         )
@@ -96,29 +93,6 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
     fun hide(success: Boolean?, message: ReadableMap?) {
         cleanup()
         GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
-    }
-
-    override fun parseConfiguration(json: ReadableMap): Configuration {
-        val config = setupRootConfig(json)
-
-        val amount = config.amount ?: session?.sessionSetupResponse?.amount
-        val countryCode = config.countryCode
-        if (amount == null || countryCode == null) {
-            throw ModuleException.NoPayment()
-        }
-
-        val parser = GooglePayConfigurationParser(json)
-        val analytics = AnalyticsParser(json).analytics
-        val configBuilder = GooglePayConfiguration.Builder(
-            locale,
-            environment,
-            clientKey
-        )
-            .setCountryCode(countryCode)
-            .setAmount(amount)
-            .setAnalyticsConfiguration(analytics)
-
-        return parser.getConfiguration(configBuilder, environment)
     }
 
     companion object {

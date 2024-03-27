@@ -1,9 +1,6 @@
 package com.adyenreactnativesdk.component
 
 import androidx.lifecycle.lifecycleScope
-import com.adyen.checkout.components.core.internal.Configuration
-import com.adyen.checkout.dropin.DropInConfiguration
-import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.facebook.react.bridge.Promise
@@ -31,14 +28,6 @@ class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(contex
     fun hide(success: Boolean, message: ReadableMap?) { /* No UI */
     }
 
-    override fun parseConfiguration(json: ReadableMap): Configuration {
-        val config = setupRootConfig(json)
-        val builder = DropInConfiguration.Builder(locale, environment, clientKey)
-        // TODO: add .setAnalyticsConfiguration(getAnalyticsConfiguration())
-
-        return builder.build()
-    }
-
     override fun getName(): String = COMPONENT_NAME
 
     override fun onFinished(result: SessionPaymentResult) {
@@ -54,11 +43,6 @@ class SessionHelperModule(context: ReactApplicationContext?) : BaseModule(contex
         appCompatActivity.lifecycleScope.launch(Dispatchers.IO) {
             super.createSessionAsync(sessionModelJSON, configurationJSON, promise)
         }
-    }
-
-    @ReactMethod
-    fun getReturnURL(promise: Promise) {
-        promise.resolve(RedirectComponent.getReturnUrl(reactApplicationContext))
     }
 
     companion object {
