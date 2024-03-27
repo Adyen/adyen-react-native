@@ -21,11 +21,12 @@ class GooglePayConfigurationParserTest {
 
     @Test
     fun getShippingAddressParameters() {
+        // TODO: add shipping address configuration tests
     }
 
     @Test
     fun getBillingAddressParameters() {
-
+        // TODO: add billing address tests
     }
 
     @Test

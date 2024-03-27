@@ -27,10 +27,12 @@ class CardConfigurationParserTest {
 
     @Test
     fun testGetConfiguration() {
+        // TODO: add standard configuration tests
     }
 
     @Test
     fun testGetBcmcConfiguration() {
+        // TODO: add bcmc configuration tests
     }
 
     @Test
