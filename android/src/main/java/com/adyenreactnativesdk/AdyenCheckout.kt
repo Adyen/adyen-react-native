@@ -65,7 +65,7 @@ object AdyenCheckout {
      */
     @JvmStatic
     fun handleIntent(intent: Intent): Boolean {
-        if (intent.data != null) {
+        if (intent.data == null) {
             return false
         }
         val actionHandlingComponent = currentComponent.get() as? ActionHandlingComponent
