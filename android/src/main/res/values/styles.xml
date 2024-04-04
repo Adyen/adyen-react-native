@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Default theme for DropIn theme. Could be overrided on app level with decendent of Theme.MaterialComponents -->
-    <style name="AdyenCheckout" parent="Theme.MaterialComponents.DayNight" />
+    <style name="AdyenCheckout" parent="Theme.MaterialComponents.DayNight">
+        <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
 </resources>
