@@ -1,6 +1,6 @@
 import { NativeModule } from 'react-native';
-import { PaymentAction } from './Core/types';
-import { BaseConfiguration } from './Core/configuration';
+import { PaymentAction } from './core/types';
+import { BaseConfiguration } from './core/configuration';
 import { ActionModule } from './AdyenNativeModules';
 
 export class ActionModuleWrapper implements ActionModule {

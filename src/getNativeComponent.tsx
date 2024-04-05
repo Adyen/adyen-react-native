@@ -7,8 +7,8 @@ import {
 import {
   UNKNOWN_PAYMENT_METHOD_ERROR,
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
-} from './Core/constants';
-import {PaymentMethod, PaymentMethodsResponse} from './Core/types';
+} from './core/constants';
+import {PaymentMethod, PaymentMethodsResponse} from './core/types';
 import {AdyenNativeComponentWrapper} from './AdyenNativeComponentWrapper';
 import {
   AdyenActionComponent,
