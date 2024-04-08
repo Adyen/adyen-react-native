@@ -1,6 +1,6 @@
 import {NativeModule} from 'react-native';
-import {ErrorCode, Event} from './Core/constants';
-import {PaymentAction, PaymentMethodsResponse} from './Core/types';
+import {ErrorCode, Event} from './core/constants';
+import {PaymentAction, PaymentMethodsResponse} from './core/types';
 import {AdyenActionComponent} from './AdyenNativeModules';
 
 export interface AdyenNativeComponentWrapperProps {

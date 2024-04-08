@@ -12,7 +12,7 @@ import {
   NativeEventEmitter,
   NativeModule,
 } from 'react-native';
-import {Event, MISSING_CONTEXT_ERROR} from './Core/constants';
+import {Event, MISSING_CONTEXT_ERROR} from './core/constants';
 import {
   AdyenActionComponent,
   AdyenComponent,
@@ -26,9 +26,9 @@ import {
   SessionResponse,
   PaymentMethodData,
   PaymentDetailsData,
-} from './Core/types';
-import {Configuration} from './Core/configuration';
-import {checkPaymentMethodsResponse, checkConfiguration} from './Core/utils';
+} from './core/types';
+import {Configuration} from './core/configuration';
+import {checkPaymentMethodsResponse, checkConfiguration} from './core/utils';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.

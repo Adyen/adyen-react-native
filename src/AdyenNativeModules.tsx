@@ -1,12 +1,12 @@
 import {NativeModule, NativeModules} from 'react-native';
-import {LINKING_ERROR} from './Core/constants';
+import {LINKING_ERROR} from './core/constants';
 import {
   Card,
   PaymentAction,
   PaymentMethodsResponse,
   SessionResponse,
-} from './Core/types';
-import {BaseConfiguration} from './Core/configuration';
+} from './core/types';
+import {BaseConfiguration} from './core/configuration';
 import {ActionModuleWrapper} from './ActionModuleWrapper';
 
 /**

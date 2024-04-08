@@ -9,7 +9,7 @@ export {
   PaymentMethodData,
   PaymentMethodGroup,
   AdyenError,
-} from './Core/types';
+} from './core/types';
 
 export {
   AdyenDropIn,
@@ -32,7 +32,7 @@ export {
   useAdyenCheckout,
 } from './AdyenCheckoutContext';
 
-export { Event, ErrorCode, ResultCode } from './Core/constants';
+export { Event, ErrorCode, ResultCode } from './core/constants';
 
 export {
   BaseConfiguration,
@@ -47,4 +47,4 @@ export {
   CardAuthMethod,
   TotalPriceStatus,
   GooglePayEnvironment,
-} from './Core/configuration';
+} from './core/configuration';
