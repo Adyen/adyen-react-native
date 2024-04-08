@@ -36,30 +36,15 @@ yarn add @adyen/react-native
 
 > ❕ Please pay attention that this library is not compatible with ExpoGo. You can use it only with **Expo managed workflow**.
 
-1. Add `@adyen/react-native` plugin to your `app.json`;
-2. Set minimum `targetSdkVersion` to **34+** and kotlin to **1.9+**;
-3. Add scheme for your `returnUrl`;
+Add `@adyen/react-native` plugin to your `app.json`;
 
-```json
+```js
 {
   "expo": {
-    "plugins": [
-      "@adyen/react-native",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0",
-            "kotlinVersion": "1.9.21"
-          }
-        }
-      ]
-    ],
-    "scheme": "myapp://payment"
+    "plugins": ["@adyen/react-native"]
   }
 }
+
 ```
 
 > In case you are facing issues with the plugin, please pre-build your app and investigate the files generated:
@@ -67,6 +52,34 @@ yarn add @adyen/react-native
 > ```bash
 > npx expo prebuild --clean
 > ```
+
+### Expo plugin configuration
+
+#### merchantIdentifier
+
+Sets ApplePay Merchant ID to your iOS app's entitlment file. Empty by default.
+
+#### useFrameworks
+
+Adjust `import` on iOS in case your `Podfile` have `use_frameworks!` enabled.
+
+#### Example
+
+```js
+{
+  "expo": {
+    "plugins": [
+      [
+        "@adyen/react-native",
+        {
+          "merchantIdentifier": "merchant.com.my-merchant-id",
+          "useFrameworks": true
+        }
+      ]
+    ]
+  }
+}
+```
 
 ## Manual Integration
 
@@ -81,6 +94,14 @@ yarn add @adyen/react-native
 
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
   return [ADYRedirectComponent applicationDidOpenURL:url];
+}
+```
+
+In case you are using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpenURL` before them.
+
+```objc
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+  return [ADYRedirectComponent applicationDidOpenURL:url] || [RCTLinkingManager application:application openURL:url options:options];
 }
 ```
 
@@ -144,6 +165,14 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
   super.onActivityResult(requestCode, resultCode, data);
   AdyenCheckout.handleActivityResult(requestCode, resultCode, data);
 }
+```
+
+4. Make sure your main app theme is decendent of `Theme.MaterialComponents`.
+
+```xml
+  <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- Your configuration here -->
+  </style>
 ```
 
 ## Usage
