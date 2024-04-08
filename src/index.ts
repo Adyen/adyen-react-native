@@ -1,14 +1,15 @@
 export {
+  Card
+} from './core/types';
+export type {
   PaymentMethod,
   PaymentAction,
   PaymentMethodsResponse,
   StoredPaymentMethod,
-  PaymentAmount,
-  Card,
-  PaymentDetailsData,
+  PaymentAmount, PaymentDetailsData,
   PaymentMethodData,
   PaymentMethodGroup,
-  AdyenError,
+  AdyenError
 } from './core/types';
 
 export {
@@ -17,24 +18,28 @@ export {
   AdyenInstant,
   AdyenGooglePay,
   AdyenCSE,
-  AdyenAction,
+  AdyenAction, SessionHelper
+} from './AdyenNativeModules';
+export type {
   DropInModule,
   AdyenComponent,
   AdyenActionComponent,
-  HideOption,
-  SessionHelper,
+  HideOption
 } from './AdyenNativeModules';
 
 export {
-  AdyenCheckout,
+  AdyenCheckout, useAdyenCheckout
+} from './AdyenCheckoutContext';
+export type {
   AdyenCheckoutProps,
-  AdyenCheckoutContextType,
-  useAdyenCheckout,
+  AdyenCheckoutContextType
 } from './AdyenCheckoutContext';
 
 export { Event, ErrorCode, ResultCode } from './core/constants';
 
 export {
+  GooglePayEnvironment
+} from './core/configuration';export type {
   BaseConfiguration,
   Configuration,
   Environment,
@@ -45,6 +50,6 @@ export {
   AddressMode,
   GooglePayConfiguration,
   CardAuthMethod,
-  TotalPriceStatus,
-  GooglePayEnvironment,
+  TotalPriceStatus
 } from './core/configuration';
+

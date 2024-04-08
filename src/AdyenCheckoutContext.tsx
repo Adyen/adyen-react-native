@@ -254,9 +254,5 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   );
 };
 
-export {
-  AdyenCheckoutContextType,
-  AdyenCheckout,
-  AdyenCheckoutProps,
-  useAdyenCheckout,
-};
+export { AdyenCheckout, useAdyenCheckout };
+export type { AdyenCheckoutContextType, AdyenCheckoutProps };
