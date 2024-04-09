@@ -66,6 +66,7 @@ jobs:
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
+            -destination "name=iPhone 14" \
             -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES | xcpretty --utf --color && exit ${PIPESTATUS[0]}
 
