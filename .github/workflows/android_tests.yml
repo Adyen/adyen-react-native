@@ -14,7 +14,7 @@ on:
 
 jobs:
   test-Android:
-    runs-on: macos-13-large
+    runs-on: macos-latest
     env:
       target: google_apis
     steps:
@@ -33,9 +33,7 @@ jobs:
       - uses: actions/cache/restore@v3
         id: yarn-cache
         with:
-          path: |
-            node_modules
-            example\node_modules
+          path: example\node_modules
           key: temp-node-${{ github.sha }}
 
       - name: Build dependency if needed
