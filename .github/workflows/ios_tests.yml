@@ -48,7 +48,7 @@ jobs:
         with:
           path: example/ios/Pods
           key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: temp-pods-
+          restore-keys: pods-
 
       - name: Pod install
         working-directory: example/ios
