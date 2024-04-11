@@ -3,22 +3,25 @@ import {
   withAppDelegate,
   withEntitlementsPlist,
 } from '@expo/config-plugins';
-import {setApplePayEntitlement} from './setApplePayEntitlement';
-import {AdyenPluginProps} from './withAdyen';
-import {setImport} from './setImport';
-import {setRedirectComponent} from './setRedirectComponent';
+import { setApplePayEntitlement } from './setApplePayEntitlement';
+import { AdyenPluginProps } from './withAdyen';
+import { setImport } from './setImport';
+import { setApplicationOpenUrl } from './setApplicationOpenUrl';
+import { setApplicationContinueUserActivity } from './setApplicationContinueUserActivity';
 
 export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
   config,
-  {merchantIdentifier, useFrameworks},
+  { merchantIdentifier, useFrameworks }
 ) => {
   config = withAppDelegate(config, async (newConfig) => {
-    const appDelegate = newConfig.modResults.contents;
-    if (appDelegate.includes("ADYRedirectComponent")) {
-      return newConfig
+    var appDelegate = newConfig.modResults.contents;
+    if (appDelegate.includes('ADYRedirectComponent')) {
+      return newConfig;
     }
-    newConfig.modResults.contents = setImport(appDelegate, useFrameworks);
-    newConfig.modResults.contents = setRedirectComponent(appDelegate);
+    appDelegate = setImport(appDelegate, useFrameworks);
+    appDelegate = setApplicationOpenUrl(appDelegate);
+    appDelegate = setApplicationContinueUserActivity(appDelegate);
+    newConfig.modResults.contents = appDelegate;
     return newConfig;
   });
 
@@ -27,7 +30,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
       const entitlements = newConfig.modResults;
       newConfig.modResults = setApplePayEntitlement(
         entitlements,
-        merchantIdentifier,
+        merchantIdentifier
       );
       return newConfig;
     });
