@@ -44,7 +44,5 @@ jobs:
       - name: Archive Node Modules
         uses: actions/cache/save@v3
         with:
-          path: |
-            node_modules
-            example/node_modules
+          path: example/node_modules
           key: temp-node-${{ github.sha }}

@@ -15,7 +15,7 @@ on:
 jobs:
   ios_tests:
     name: Test iOS
-    runs-on: macos-13-large
+    runs-on: macos-latest
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
@@ -23,14 +23,6 @@ jobs:
       buildFolder: ./DerivedData
     steps:
       - uses: actions/checkout@v4
-
-      - name: Pre-heat iPhone Simulator ${{ env.device }}
-        id: sets-simulator
-        run: |
-          simulator_id=$(xcrun simctl list | grep -E '${{ env.device }}' | grep -Eo '[A-Z0-9-]{36}' | head -n 1)
-          xcrun simctl boot $simulator_id                            
-          open /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/
-          echo "id=$simulator_id" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v3
         with:
@@ -45,9 +37,7 @@ jobs:
       - uses: actions/cache/restore@v3
         id: yarn-cache
         with:
-          path: |
-            node_modules
-            example/node_modules
+          path: example/node_modules
           key: temp-node-${{ github.sha }}
 
       - name: Build dependency if needed
@@ -57,12 +47,18 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: example/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: ${{ runner.os }}-pods-
+          key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
+          restore-keys: pods-
 
       - name: Pod install
         working-directory: example/ios
-        run: pod install
+        run: pod update
+
+      - name: Archive library
+        uses: actions/cache/save@v3
+        with:
+          path: example/ios/Pods
+          key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
 
       - name: Run tests
         working-directory: example/ios
@@ -70,7 +66,7 @@ jobs:
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
-            -destination "id=${{ steps.sets-simulator.outputs.id }}" \
+            -destination "name=iPhone 14" \
             -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES | xcpretty --utf --color && exit ${PIPESTATUS[0]}
 
