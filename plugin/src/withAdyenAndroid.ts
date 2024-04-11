@@ -14,11 +14,11 @@ export const withAdyenAndroid: ConfigPlugin = (config) => {
       return newConfig;
     }
     if (mainActivity.language == 'java') {
-      newConfig.modResults.contents = setJavaMainActivity(
+      mainActivity.contents = setJavaMainActivity(
         mainActivity.contents
       );
     } else {
-      newConfig.modResults.contents = setKotlinMainActivity(
+      mainActivity.contents = setKotlinMainActivity(
         mainActivity.contents
       );
     }
