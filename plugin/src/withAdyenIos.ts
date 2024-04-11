@@ -21,8 +21,8 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
 
   if (merchantIdentifier) {
     config = withEntitlementsPlist(config, (newConfig) => {
-      const entitlements = newConfig.modResults.contents;
-      newConfig.modResults.contents = setApplePayEntitlement(
+      const entitlements = newConfig.modResults;
+      newConfig.modResults = setApplePayEntitlement(
         entitlements,
         merchantIdentifier,
       );
