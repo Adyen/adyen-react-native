@@ -1,8 +1,8 @@
 const in_app_payment_key = 'com.apple.developer.in-app-payments';
 
 export function setApplePayEntitlement(
-  entitlements: string,
-  newIdentifiers: string | string[],
+  entitlements: any,
+  newIdentifiers: string | string[]
 ): string {
   const identifiers: string[] = entitlements[in_app_payment_key] ?? [];
   const identifiersToSet = Array.isArray(newIdentifiers)
