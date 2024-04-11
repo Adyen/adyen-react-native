@@ -1,27 +1,20 @@
-// MIT License
-//
-// Copyright (c) 2020 stripe
+const in_app_payment_key = 'com.apple.developer.in-app-payments';
 
 export function setApplePayEntitlement(
-    merchantIdentifiers: string | string[],
-    entitlements: Record<string, any>
-  ): Record<string, any> {
-    const key = 'com.apple.developer.in-app-payments';
-  
-    const merchants: string[] = entitlements[key] ?? [];
-  
-    if (!Array.isArray(merchantIdentifiers)) {
-      merchantIdentifiers = [merchantIdentifiers];
-    }
-  
-    for (const id of merchantIdentifiers) {
-      if (id && !merchants.includes(id)) {
-        merchants.push(id);
-      }
-    }
-  
-    if (merchants.length) {
-      entitlements[key] = merchants;
-    }
-    return entitlements;
+  entitlements: string,
+  newIdentifiers: string | string[],
+): string {
+  const identifiers: string[] = entitlements[in_app_payment_key] ?? [];
+  const identifiersToSet = Array.isArray(newIdentifiers)
+    ? newIdentifiers
+    : [newIdentifiers];
+
+  identifiersToSet
+    .filter((id) => id && identifiers.includes(id))
+    .forEach((id) => identifiers.push(id));
+
+  if (identifiers.length) {
+    entitlements[in_app_payment_key] = identifiers;
   }
+  return entitlements;
+}

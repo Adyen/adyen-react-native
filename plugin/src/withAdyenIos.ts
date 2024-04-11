@@ -3,41 +3,31 @@ import {
   withAppDelegate,
   withEntitlementsPlist,
 } from '@expo/config-plugins';
-import { setApplePayEntitlement } from './setApplePayEntitlement';
-import { AdyenPluginProps } from './withAdyen';
-import { setImport } from './setImport';
-import { setRedirectComponent } from './setRedirectComponent';
+import {setApplePayEntitlement} from './setApplePayEntitlement';
+import {AdyenPluginProps} from './withAdyen';
+import {setImport} from './setImport';
+import {setRedirectComponent} from './setRedirectComponent';
 
 export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
   config,
-  { merchantIdentifier, useFrameworks }
+  {merchantIdentifier, useFrameworks},
 ) => {
-  const configWithAppDelegate = withAppDelegate(config, async (newConfig) => {
-    const appDelegateModResults = newConfig.modResults;
-    appDelegateModResults.contents = setImport(
-      appDelegateModResults.contents,
-      useFrameworks
-    );
-    appDelegateModResults.contents = setRedirectComponent(
-      appDelegateModResults.contents
-    );
+  config = withAppDelegate(config, async (newConfig) => {
+    const appDelegate = newConfig.modResults.contents;
+    newConfig.modResults.contents = setImport(appDelegate, useFrameworks);
+    newConfig.modResults.contents = setRedirectComponent(appDelegate);
     return newConfig;
   });
-  // apply Apple Pay Merchant ID
+
   if (merchantIdentifier) {
-    const configWithEntitlments = withEntitlementsPlist(
-      configWithAppDelegate,
-      (newConfig) => {
-        newConfig.modResults = setApplePayEntitlement(
-          merchantIdentifier,
-          newConfig.modResults
-        );
-        return newConfig;
-      }
-    );
-    return configWithEntitlments;
+    config = withEntitlementsPlist(config, (newConfig) => {
+      const entitlements = newConfig.modResults.contents;
+      newConfig.modResults.contents = setApplePayEntitlement(
+        entitlements,
+        merchantIdentifier,
+      );
+      return newConfig;
+    });
   }
-  return configWithAppDelegate;
+  return config;
 };
-
-
