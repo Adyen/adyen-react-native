@@ -105,6 +105,19 @@ In case you are using `RCTLinkingManager` or other deep-linking techniques, plac
 }
 ```
 
+For Universal Link support, use:
+```objc
+- (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
+  if ([[userActivity activityType] isEqualToString:NSUserActivityTypeBrowsingWeb]) {
+   NSURL *url = [userActivity webpageURL];
+    if (![url isEqual:[NSNull null]]) {
+      return [ADYRedirectComponent applicationDidOpenURL:url];
+    }
+  }
+  return [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
+}
+```
+
 > ❕ If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`-`):
 > 
 > ```objc
