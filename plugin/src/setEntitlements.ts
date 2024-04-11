@@ -1,6 +1,6 @@
 const in_app_payment_key = 'com.apple.developer.in-app-payments';
 
-export function setApplePayEntitlement(
+export function setEntitlements(
   entitlements: any,
   input: string | string[]
 ): any {
