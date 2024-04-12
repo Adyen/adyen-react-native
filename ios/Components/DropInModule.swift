@@ -72,6 +72,12 @@ internal final class DropInModule: BaseModule {
         }
     }
 
+    @objc
+    func getReturnURL(_ resolver: @escaping RCTPromiseResolveBlock,
+                       rejecter: @escaping RCTPromiseRejectBlock) {
+        resolver(nil)
+    }
+
 }
 
 extension DropInModule: DropInComponentDelegate {

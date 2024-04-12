@@ -37,7 +37,7 @@ public struct AnalyticsParser {
     public var configuration: AnalyticsConfiguration {
         var analytics = AnalyticsConfiguration()
         analytics.isEnabled = analyticsOn
-        analytics.context = TelemetryContext(version: AdyenSDKVersion, platform: .reactNative)
+        analytics.context = AnalyticsContext(version: AdyenSDKVersion, platform: .reactNative)
         AdyenLogging.isEnabled = verboseLogsOn
         return analytics
     }
