@@ -15,7 +15,7 @@ ext {
 
     // Android Dependencies
     coroutines_version = "1.6.4"
-    lifecycle_version = "2.5.1"
+    lifecycle_version = "2.7.0"
     material_version = "1.10.0"
 
     // Adyen Dependencies
