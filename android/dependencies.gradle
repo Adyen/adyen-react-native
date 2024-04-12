@@ -8,7 +8,7 @@ ext {
     version_name = "{SDK_VERSION}"
 
     // Build Script
-    kotlin_version = '1.9.21'
+    kotlin_version = '1.9.23'
 
     // Code quality
     jacoco_version = '0.8.9'
