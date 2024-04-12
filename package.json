@@ -28,27 +28,29 @@
     "android",
     "ios",
     "src",
+    "plugin",
+    "app.plugin.js",
     "adyen-react-native.podspec",
     "LICENSE",
     "README"
   ],
   "scripts": {
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
-    "prepare": "./scripts/set-version.sh && bob build",
+    "prepare": "./scripts/set-version.sh && bob build && tsc --build plugin",
     "pods": "cd example && pod-install --quiet",
     "ios": "cd example && yarn pod && yarn ios",
     "android": "cd example && yarn android",
     "bootstrap": "git clean -fxd && yarn && cd example && yarn"
   },
   "devDependencies": {
+    "@expo/config-plugins": "^7.8.4",
     "@react-native-community/eslint-config": "^3.2.0",
+    "@tsconfig/node10": "^1.0.7",
     "@tsconfig/react-native": "^2.0.3",
-    "@types/jest": "^29.5.0",
     "@types/react": "^18.0.29",
     "@types/react-test-renderer": "^18.0.0",
     "eslint": "^8.0.0",
     "pod-install": "^0.1.30",
-    "prettier": "^2.0.5",
     "react": "^18.2.0",
     "react-native": "^0.71.14",
     "react-native-builder-bob": "^0.23.1",
@@ -56,8 +58,14 @@
   },
   "peerDependencies": {
     "@types/react": "*",
+    "expo": "^47.0.0",
     "react": "*",
     "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo": {
+      "optional": true
+    }
   },
   "react-native-builder-bob": {
     "source": "src",
