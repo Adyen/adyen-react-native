@@ -19,7 +19,7 @@ ext {
     material_version = "1.10.0"
 
     // Adyen Dependencies
-    adyen_version = "5.3.0"
+    adyen_version = "5.3.1"
 
     // Tests
     arch_core_testing_version = "2.2.0"
