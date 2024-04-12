@@ -5,16 +5,17 @@
  */
 package com.adyenreactnativesdk.configuration
 
-import android.util.Log
-import com.facebook.react.bridge.ReadableMap
-import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.bcmc.BcmcConfiguration
 import com.adyen.checkout.card.AddressConfiguration
-import com.adyen.checkout.card.AddressConfiguration.*
+import com.adyen.checkout.card.AddressConfiguration.FullAddress
+import com.adyen.checkout.card.AddressConfiguration.None
+import com.adyen.checkout.card.AddressConfiguration.PostalCode
+import com.adyen.checkout.card.CardBrand
+import com.adyen.checkout.card.CardConfiguration
+import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.KCPAuthVisibility
-import com.adyen.checkout.card.data.CardType
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
-import java.util.ArrayList
+import com.facebook.react.bridge.ReadableMap
 
 class CardConfigurationParser(config: ReadableMap, private val countryCode: String?) {
 
@@ -42,54 +43,48 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
         }
     }
 
-    fun getConfiguration(builder: CardConfiguration.Builder): CardConfiguration {
-        if (config.hasKey(SUPPORTED_CARD_TYPES_KEY)) {
-            builder.setSupportedCardTypes(*supportedCardTypes)
-        }
-        return builder
-            .setShowStorePaymentField(showStorePaymentField)
-            .setHideCvcStoredCard(hideCvcStoredCard)
-            .setHideCvc(hideCvc)
-            .setHolderNameRequired(holderNameRequired)
-            .setAddressConfiguration(addressVisibility)
-            .setKcpAuthVisibility(kcpVisibility)
-            .setSocialSecurityNumberVisibility(socialSecurityNumberVisibility)
-            .build()
+    fun applyConfiguration(builder: CardConfiguration.Builder) {
+        supportedCardTypes?.let { builder.setSupportedCardTypes(*it.toTypedArray()) }
+        showStorePaymentField?.let { builder.setShowStorePaymentField(it) }
+        hideCvcStoredCard?.let { builder.setHideCvcStoredCard(it) }
+        hideCvc?.let { builder.setHideCvc(it) }
+        holderNameRequired?.let { builder.setHolderNameRequired(it) }
+        addressVisibility?.let { builder.setAddressConfiguration(it) }
+        kcpVisibility?.let { builder.setKcpAuthVisibility(it) }
+        socialSecurityNumberVisibility?.let { builder.setSocialSecurityNumberVisibility(it) }
     }
 
-    fun getConfiguration(builder: BcmcConfiguration.Builder): BcmcConfiguration {
-        return builder
-            .setShowStorePaymentField(showStorePaymentField)
-            .build()
+    fun applyConfiguration(builder: BcmcConfiguration.Builder) {
+        showStorePaymentField?.let { builder.setShowStorePaymentField(it) }
+        holderNameRequired?.let { builder.setHolderNameRequired(it) }
     }
 
-    val showStorePaymentField: Boolean
+    internal val showStorePaymentField: Boolean?
         get() = if (config.hasKey(SHOW_STORE_PAYMENT_FIELD_KEY)) {
             config.getBoolean(SHOW_STORE_PAYMENT_FIELD_KEY)
-        } else true
+        } else null
 
-    val holderNameRequired: Boolean
+    internal val holderNameRequired: Boolean?
         get() = if (config.hasKey(HOLDER_NAME_REQUIRED_KEY)) {
             config.getBoolean(HOLDER_NAME_REQUIRED_KEY)
-        } else false
+        } else null
 
-    val hideCvcStoredCard: Boolean
+    internal val hideCvcStoredCard: Boolean?
         get() = if (config.hasKey(HIDE_CVC_STORED_CARD_KEY)) {
             config.getBoolean(HIDE_CVC_STORED_CARD_KEY)
-        } else false
+        } else null
 
-    val hideCvc: Boolean
+    val hideCvc: Boolean?
         get() = if (config.hasKey(HIDE_CVC_KEY)) {
             config.getBoolean(HIDE_CVC_KEY)
-        } else false
+        } else null
 
-    val supportedCountries: List<String>
+    val supportedCountries: List<String>?
         get() = if (config.hasKey(SUPPORTED_COUNTRY_LIST_KEY)) {
-            config.getArray(SUPPORTED_COUNTRY_LIST_KEY)?.toArrayList() as? List<String>
-                ?: emptyList()
-        } else emptyList()
+            config.getArray(SUPPORTED_COUNTRY_LIST_KEY)?.toArrayList()?.map { it.toString() }
+        } else null
 
-    val kcpVisibility: KCPAuthVisibility
+    internal val kcpVisibility: KCPAuthVisibility?
         get() {
             return if (config.hasKey(KCP_VISIBILITY_KEY)) {
                 val value = config.getString(KCP_VISIBILITY_KEY)!!
@@ -97,41 +92,38 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
                     "show" -> KCPAuthVisibility.SHOW
                     else -> KCPAuthVisibility.HIDE
                 }
-            } else KCPAuthVisibility.HIDE
+            } else null
         }
 
-    val addressVisibility: AddressConfiguration
+    val addressVisibility: AddressConfiguration?
         get() {
             return when {
                 config.hasKey(ADDRESS_VISIBILITY_KEY) -> {
                     val value = config.getString(ADDRESS_VISIBILITY_KEY)!!
                     when (value.lowercase()) {
                         "postal_code", "postal", "postalcode" -> PostalCode()
-                        "full" -> FullAddress(countryCode, supportedCountries)
+                        "full" -> FullAddress(countryCode, supportedCountries.orEmpty())
                         else -> None
                     }
                 }
 
-                else -> None
+                else -> null
             }
         }
 
-    val supportedCardTypes: Array<CardType>
+    val supportedCardTypes: List<CardBrand>?
         get() {
-            val array = config.getArray(SUPPORTED_CARD_TYPES_KEY)?.toArrayList() as? List<String>
-                ?: listOf()
-            val size = array.size
-            val list: MutableList<CardType> = ArrayList(size)
-            for (i in 0 until size) {
-                val brandName = array[i]
-                val type = CardType.getByBrandName(brandName)
-                if (type != null) list.add(type)
-                else Log.w(TAG, "CardType not recognized: $brandName")
-            }
-            return list.toTypedArray()
+            return config.getArray(SUPPORTED_CARD_TYPES_KEY)
+                ?.toArrayList()
+                ?.map { it.toString() }
+                ?.mapNotNull { txVariant ->
+                    CardType.getByBrandName(txVariant)?.let {
+                        CardBrand(it)
+                    }
+                }
         }
 
-    val socialSecurityNumberVisibility: SocialSecurityNumberVisibility
+    val socialSecurityNumberVisibility: SocialSecurityNumberVisibility?
         get() {
             return when {
                 config.hasKey(SOCIAL_SECURITY_VISIBILITY_KEY) -> {
@@ -142,7 +134,7 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
                     }
                 }
 
-                else -> SocialSecurityNumberVisibility.HIDE
+                else -> null
             }
         }
 

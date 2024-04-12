@@ -46,7 +46,7 @@ RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
 @interface RCT_EXTERN_MODULE(AdyenGooglePay, NSObject)
 
 RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
-                configuration:(NSDictionary *)configuration)
+                  configuration:(NSDictionary *)configuration)
 
 @end
 
@@ -63,3 +63,31 @@ RCT_EXTERN_METHOD(encryptBin:(NSString *)bin
                   rejecter:(RCTPromiseRejectBlock)reject)
 
 @end
+
+@interface RCT_EXTERN_MODULE(SessionHelper, NSObject)
+
+RCT_EXTERN_METHOD(createSession:(NSDictionary *)sessionModelJSON
+                  configuration:(NSDictionary *)configurationJSON
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(getReturnURL:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
+                  event:(NSDictionary *)event)
+
+@end
+
+@interface RCT_EXTERN_MODULE(AdyenAction, NSObject)
+
+RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success)
+
+RCT_EXTERN_METHOD(handle:(NSDictionary *)action
+                  configuration:(NSDictionary *)configurationJSON
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+@end
+
+

@@ -10,14 +10,16 @@ import React
 import UIKit
 
 internal class BaseModule: RCTEventEmitter {
-    
+
+    internal static var session: AdyenSession?
+
     #if DEBUG
         override func invalidate() {
             super.invalidate()
             dismiss(false)
         }
     #endif
-        
+
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
     override func stopObserving() { /* No JS events expected */ }
@@ -33,22 +35,18 @@ internal class BaseModule: RCTEventEmitter {
         currentComponent as? PresentableComponent
     }
 
-    internal var currentPresenter: UIViewController?
+    internal static var currentPresenter: UIViewController?
     internal var actionHandler: AdyenActionComponent?
-    
+
     internal func present(_ component: PresentableComponent) {
-        if let paymentComponent = component as? PaymentComponent {
-            paymentComponent.delegate = self as? PaymentComponentDelegate
+        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else { return sendEvent(error: NativeModuleError.notKeyWindow) }
+
+        defer {
+            BaseModule.currentPresenter = presenter
         }
 
-        if let actionComponent = component as? ActionComponent {
-            actionComponent.delegate = self as? ActionComponentDelegate
-        }
-
-        currentComponent = component
-        currentPresenter = UIViewController.topPresenter
         guard component.requiresModalPresentation else {
-            currentPresenter?.present(component.viewController, animated: true)
+            presenter.present(component.viewController, animated: true)
             return
         }
 
@@ -56,42 +54,40 @@ internal class BaseModule: RCTEventEmitter {
         component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
                                                                            target: self,
                                                                            action: #selector(cancelDidPress))
-        currentPresenter?.present(navigation, animated: true)
+        presenter.present(navigation, animated: true)
     }
 
     @objc private func cancelDidPress() {
         currentComponent?.cancelIfNeeded()
         sendEvent(error: NativeModuleError.canceled)
     }
-        
+
     internal func sendEvent(event: Events, body: Any!) {
         sendEvent(withName: event.rawValue, body: body)
     }
-    
-    internal func sendEvent(error: Swift.Error) {
-        let errorToSend: Error
-        if let componentError = (error as? ComponentError), componentError == ComponentError.cancelled {
-            errorToSend = NativeModuleError.canceled
-        } else if
-            (error as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError",
-            (error as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue {
-            errorToSend = NativeModuleError.canceled
-        } else {
-            errorToSend = error
+
+    internal func checkErrorType(_ error: Error) -> Error {
+        if error.isComponentCanceled || error.is3DSCanceled {
+            return NativeModuleError.canceled
         }
+        return error
+    }
+
+    internal func sendEvent(error: Swift.Error) {
+        let errorToSend = checkErrorType(error)
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
-    
+
     internal func parsePaymentMethods(from dicionary: NSDictionary) throws -> PaymentMethods {
         guard let data = try? JSONSerialization.data(withJSONObject: dicionary, options: []),
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
         else {
             throw NativeModuleError.invalidPaymentMethods
         }
-        
+
         return paymentMethods
     }
-    
+
     internal func parseAction(from dicionary: NSDictionary) throws -> Action {
         guard let data = try? JSONSerialization.data(withJSONObject: dicionary, options: []),
               let action = try? JSONDecoder().decode(Action.self, from: data)
@@ -100,64 +96,76 @@ internal class BaseModule: RCTEventEmitter {
         }
         return action
     }
-    
+
     internal func fetchClientKey(from parser: RootConfigurationParser) throws -> String {
         guard let clientKey = parser.clientKey else {
             throw NativeModuleError.noClientKey
         }
         return clientKey
     }
-    
+
     internal func fetchPayment(from parser: RootConfigurationParser) throws -> Payment {
         guard let payment = parser.payment else {
             throw NativeModuleError.noPayment
         }
         return payment
     }
-    
+
     internal func parsePaymentMethod<T: PaymentMethod>(from dicionary: NSDictionary, for type: T.Type) throws -> T {
         let paymentMethods = try parsePaymentMethods(from: dicionary)
-        
+
         guard let paymentMethod = paymentMethods.paymentMethod(ofType: type) else {
             throw NativeModuleError.paymentMethodNotFound(type)
         }
-        
+
         return paymentMethod
     }
-    
+
     internal func parseAnyPaymentMethod(from dicionary: NSDictionary) throws -> PaymentMethod {
         let paymentMethods = try parsePaymentMethods(from: dicionary)
-        
+
         guard let paymentMethod = paymentMethods.regular.first else {
             throw NativeModuleError.invalidPaymentMethods
         }
-        
+
         return paymentMethod
     }
-    
+
     internal func cleanUp() {
-        actionHandler?.currentActionComponent?.cancelIfNeeded()
+        BaseModule.session = nil
+        SessionHelperModule.sessionListener = nil
+        actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
-        
-        currentPresenter?.dismiss(animated: true)
-        currentPresenter = nil
+
+        BaseModule.currentPresenter?.dismiss(animated: true) {
+            BaseModule.currentPresenter = nil
+        }
     }
-    
+
     internal func dismiss(_ result: Bool) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            
+
             self.currentComponent?.finalizeIfNeeded(with: result) {
                 self.cleanUp()
             }
         }
     }
-    
+}
+
+extension Error {
+
+    var isComponentCanceled: Bool { (self as? ComponentError) == ComponentError.cancelled }
+
+    var is3DSCanceled: Bool {
+        (self as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError" &&
+        (self as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue
+    }
 }
 
 extension BaseModule {
-    
+
     enum NativeModuleError: LocalizedError, KnownError {
         case canceled
         case noClientKey
@@ -165,8 +173,9 @@ extension BaseModule {
         case notSupported
         case invalidPaymentMethods
         case invalidAction
+        case notKeyWindow
         case paymentMethodNotFound(PaymentMethod.Type)
-        
+
         var errorCode: String {
             switch self {
             case .canceled:
@@ -183,9 +192,11 @@ extension BaseModule {
                 return "invalidAction"
             case .paymentMethodNotFound:
                 return "noPaymentMethod"
+            case .notKeyWindow:
+                return "notKeyWindow"
             }
         }
-        
+
         var errorDescription: String? {
             switch self {
             case .canceled:
@@ -202,18 +213,40 @@ extension BaseModule {
                 return "Can not parse action"
             case let .paymentMethodNotFound(type):
                 return "Can not find payment method of type \(type) in provided list"
+            case .notKeyWindow:
+                return "Can not find root ViewController"
             }
         }
     }
-    
 }
 
 extension BaseModule: PresentationDelegate {
-    
+
     internal func present(component: PresentableComponent) {
         DispatchQueue.main.async { [weak self] in
             self?.present(component)
         }
     }
-    
+
+}
+
+extension BaseModule: SessionResultListener {
+    func didComplete(with result: Adyen.AdyenSessionResult) {
+        sendEvent(event: Events.didComplete, body: result.jsonObject)
+    }
+
+    func didFail(with error: Error) {
+        sendEvent(error: error)
+    }
+}
+
+extension AdyenSessionResult: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.resultCode.rawValue, forKey: .resultCode)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case resultCode
+    }
 }

@@ -3,12 +3,18 @@
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
+
 package com.adyenreactnativesdk
 
-import com.adyenreactnativesdk.component.applepay.AdyenApplePayMock
-import com.adyenreactnativesdk.component.dropin.AdyenDropInComponent
-import com.adyenreactnativesdk.component.googlepay.AdyenGooglePayComponent
-import com.adyenreactnativesdk.component.instant.AdyenInstantComponent
+import android.annotation.SuppressLint
+import com.adyen.checkout.components.core.internal.data.api.AnalyticsMapper
+import com.adyen.checkout.components.core.internal.data.api.AnalyticsPlatform
+import com.adyenreactnativesdk.component.SessionHelperModule
+import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
+import com.adyenreactnativesdk.component.dropin.DropInModule
+import com.adyenreactnativesdk.component.googlepay.GooglePayModule
+import com.adyenreactnativesdk.component.instant.InstantModule
+import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
@@ -21,12 +27,22 @@ class AdyenPaymentPackage : ReactPackage {
     }
 
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        val modules: MutableList<NativeModule> = ArrayList()
-        modules.add(AdyenDropInComponent(reactContext))
-        modules.add(AdyenInstantComponent(reactContext))
-        modules.add(AdyenGooglePayComponent(reactContext))
-        modules.add(AdyenApplePayMock(reactContext))
-        modules.add(AdyenCSEModule(reactContext))
-        return modules
+        configureAnalytics()
+        return listOf(
+            DropInModule(reactContext),
+            InstantModule(reactContext),
+            GooglePayModule(reactContext),
+            ApplePayModuleMock(reactContext),
+            AdyenCSEModule(reactContext),
+            SessionHelperModule(reactContext),
+            ActionModule(reactContext),
+        )
+    }
+
+    // This is intended.
+    @SuppressLint("RestrictedApi")
+    private fun configureAnalytics() {
+        val version = BuildConfig.CHECKOUT_VERSION
+        AnalyticsMapper.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, version)
     }
 }

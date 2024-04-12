@@ -24,6 +24,34 @@ internal struct EncodablePaymentMethod: Encodable {
 
 internal extension PaymentMethod {
     var jsonObject: [String: Any] {
-        EncodablePaymentMethod(paymentMethod: self).jsonObject
+        var dict = [String: Any]()
+        dict["name"] = name
+        dict["type"] = type.rawValue
+
+        if let it = self as? StoredPaymentMethod {
+            dict["id"] = it.identifier
+            dict["supportedShopperInteractions"] = it.supportedShopperInteractions.map(\.rawValue)
+        }
+        if let it = self as? IssuerListPaymentMethod {
+            dict["issuers"] = it.issuers.map { ["id": $0.identifier, "name": $0.name] }
+        }
+        if let it = self as? StoredCardPaymentMethod {
+            dict["lastFour"] = it.lastFour
+            dict["expiryYear"] = it.expiryYear
+            dict["expiryMonth"] = it.expiryMonth
+            dict["holderName"] = it.holderName
+            dict["brand"] = it.brand.rawValue
+        }
+        if let it = self as? ApplePayPaymentMethod {
+            dict["brands"] = it.brands
+        }
+        if let it = self as? GiftCardPaymentMethod {
+            dict["brands"] = it.brand
+        }
+        if let it = self as? CardPaymentMethod {
+            dict["brands"] = it.brands.map(\.rawValue)
+        }
+
+        return dict
     }
 }

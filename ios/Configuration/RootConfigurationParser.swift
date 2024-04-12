@@ -40,9 +40,13 @@ public struct RootConfigurationParser {
         return Amount(value: paymentAmount, currencyCode: currencyCode)
     }
 
+    public var countryCode: String? {
+        configuration[Keys.countryCode] as? String
+    }
+
     public var payment: Payment? {
         guard let amount = self.amount,
-              let countryCode = configuration[Keys.countryCode] as? String
+              let countryCode = countryCode
         else {
             return nil
         }
@@ -50,12 +54,30 @@ public struct RootConfigurationParser {
         return Payment(amount: amount, countryCode: countryCode)
     }
 
-    public var shopperLocale: Locale? {
-        guard let shopperLocaleString = configuration[Keys.shopperLocale] as? String else {
-            return nil
+    public var shopperLocale: String? {
+        return configuration[Keys.locale] as? String
+    }
+}
+
+extension RootConfigurationParser {
+
+    internal func fetchContext(session: AdyenSession?) throws -> AdyenContext {
+        guard let clientKey = self.clientKey else {
+            throw BaseModule.NativeModuleError.noClientKey
+        }
+        let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
+
+        let analytics = AnalyticsParser(configuration: configuration).configuration
+
+        var payment: Payment?
+        if 
+            let context = session?.sessionContext,
+            let countryCode = context.countryCode ?? self.countryCode {
+            payment = Payment(amount: context.amount, countryCode: countryCode)
+        } else {
+            payment = self.payment
         }
 
-        return Locale(identifier: shopperLocaleString)
+        return AdyenContext(apiContext: apiContext, payment: payment, analyticsConfiguration: analytics)
     }
-
 }

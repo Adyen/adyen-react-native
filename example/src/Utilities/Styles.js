@@ -54,8 +54,10 @@ const Styles = StyleSheet.create({
   btnClickContain: {
     backgroundColor: '#009D6E',
     borderRadius: 5,
-    padding: 5,
-    margin: 5,
+    padding: 8,
+    marginVertical: 4,
+    marginLeft: 8,
+    marginRight: 8,
   },
   btnContainer: {
     flexDirection: 'row',

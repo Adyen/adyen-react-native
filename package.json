@@ -1,6 +1,6 @@
 {
   "name": "@adyen/react-native",
-  "version": "1.0.0-local.5",
+  "version": "2.0.0-local.1",
   "description": "Wraps Adyen Checkout Drop-In and Components for iOS and Android for convenient use with React Native",
   "license": "MIT",
   "author": "Adyen",
@@ -28,30 +28,29 @@
     "android",
     "ios",
     "src",
+    "plugin",
+    "app.plugin.js",
     "adyen-react-native.podspec",
     "LICENSE",
     "README"
   ],
   "scripts": {
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
-    "prepare": "bob build",
+    "prepare": "./scripts/set-version.sh && bob build && tsc --build plugin",
     "pods": "cd example && pod-install --quiet",
     "ios": "cd example && yarn pod && yarn ios",
     "android": "cd example && yarn android",
     "bootstrap": "git clean -fxd && yarn && cd example && yarn"
   },
   "devDependencies": {
+    "@expo/config-plugins": "^7.8.4",
     "@react-native-community/eslint-config": "^3.2.0",
+    "@tsconfig/node10": "^1.0.7",
     "@tsconfig/react-native": "^2.0.3",
-    "@types/jest": "^29.5.0",
     "@types/react": "^18.0.29",
-    "@types/react-native": "^0.71.3",
     "@types/react-test-renderer": "^18.0.0",
     "eslint": "^8.0.0",
-    "eslint-config-prettier": "^8.0.0",
-    "eslint-plugin-prettier": "^4.0.0",
     "pod-install": "^0.1.30",
-    "prettier": "^2.0.5",
     "react": "^18.2.0",
     "react-native": "^0.71.14",
     "react-native-builder-bob": "^0.23.1",
@@ -59,9 +58,14 @@
   },
   "peerDependencies": {
     "@types/react": "*",
-    "@types/react-native": "*",
+    "expo": "^47.0.0",
     "react": "*",
     "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo": {
+      "optional": true
+    }
   },
   "react-native-builder-bob": {
     "source": "src",

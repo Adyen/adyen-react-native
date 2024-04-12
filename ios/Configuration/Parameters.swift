@@ -24,7 +24,13 @@ internal enum Keys {
     static var value = "value"
     static var countryCode = "countryCode"
     static var currency = "currency"
-    static var shopperLocale = "shopperLocale"
+    static var locale = "locale"
+}
+
+internal enum AnalyticsKeys: SubConfig {
+    static var rootKey = "analytics"
+    static var enabled = "enabled"
+    static var verboseLogs = "verboseLogs" 
 }
 
 internal enum DropInKeys: SubConfig {
@@ -52,14 +58,15 @@ internal enum ApplePayKeys: SubConfig {
     static var merchantName = "merchantName"
     static var allowOnboarding = "allowOnboarding"
     static var summaryItems = "summaryItems"
-    static var summaryItemsLabel = "label"
-    static var deprecated_summaryItemsValue = "amount"
-    static var summaryItemsValue = "value"
     static var requiredBillingContactFields = "requiredBillingContactFields"
     static var requiredShippingContactFields = "requiredShippingContactFields"
     static var billingContact = "billingContact"
-    
-    enum PKContactKeys {
+    static var shippingContact = "shippingContact"
+    static var shippingType = "shippingType"
+    static var supportedCountries = "supportedCountries"
+    static var shippingMethods = "shippingMethods"
+
+    enum Contact {
         static var phoneNumber = "phoneNumber"
         static var emailAddress = "emailAddress"
         static var givenName = "givenName"
@@ -74,6 +81,20 @@ internal enum ApplePayKeys: SubConfig {
         static var administrativeArea = "administrativeArea"
         static var country = "country"
         static var countryCode = "countryCode"
+    }
+
+    enum SummeryItem {
+        static var label = "label"
+        static var amount = "amount"
+        static var type = "type"
+    }
+
+    enum ShippingMethod {
+        static var identifier = "identifier"
+        static var detail = "detail"
+        static var dateComponentsRange = "dateComponentsRange"
+        static var startDate = "startDate"
+        static var endDate = "endDate"
     }
 }
 

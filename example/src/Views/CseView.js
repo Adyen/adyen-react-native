@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   Button,
   SafeAreaView,
@@ -8,16 +8,16 @@ import {
   Alert,
   useColorScheme,
 } from 'react-native';
-import { AdyenCSE } from '@adyen/react-native';
-import { ENVIRONMENT } from '../Configuration';
-import ApiClient from '../Utilities/APIClient';
+import {AdyenAction} from '@adyen/react-native';
 import Styles from '../Utilities/Styles';
-import { useAppContext } from '../Utilities/AppContext';
+import {useAppContext} from '../Utilities/AppContext';
+import {isSuccess} from '../Utilities/Helpers';
+import {payWithCard} from '../Utilities/payWithCard';
 
-const CseView = ({ navigation }) => {
+const CseView = ({navigation}) => {
   const isDarkMode = useColorScheme() === 'dark';
 
-  const { configuration } = useAppContext();
+  const {configuration} = useAppContext();
 
   const [number, setNumber] = useState('');
   const [expiryMonth, setExpiryMonth] = useState('');
@@ -26,37 +26,25 @@ const CseView = ({ navigation }) => {
 
   const tryEncryptCard = useCallback(async () => {
     const unencryptedCard = {
-      number: number,
-      expiryMonth: expiryMonth,
-      expiryYear: expiryYear,
-      cvv: cvv,
+      number,
+      expiryMonth,
+      expiryYear,
+      cvv,
     };
     try {
-      const encryptedCard = await AdyenCSE.encryptCard(
-        unencryptedCard,
-        ENVIRONMENT.publicKey
-      );
-      const data = {
-        paymentMethod: {
-          type: 'scheme',
-          encryptedCardNumber: encryptedCard.number,
-          encryptedExpiryMonth: encryptedCard.expiryMonth,
-          encryptedExpiryYear: encryptedCard.expiryYear,
-          encryptedSecurityCode: encryptedCard.cvv,
-        },
-      };
-
-      const result = await ApiClient.payments(data, configuration);
-      if (result.action) {
-        Alert.alert('Action');
-      } else {
-        navigation.popToTop();
-        navigation.push('Result', { result: result.resultCode });
-      }
+      const result = await payWithCard(unencryptedCard, configuration);
+      handleResult(navigation, result);
     } catch (e) {
+      AdyenAction.hide(isSuccess(false));
       Alert.alert('Error', e.message);
     }
   }, [configuration, cvv, expiryMonth, expiryYear, navigation, number]);
+
+  function handleResult(navigation, result) {
+    AdyenAction.hide(isSuccess(result.resultCode));
+    navigation.popToTop();
+    navigation.push('Result', {result: result.resultCode});
+  }
 
   return (
     <SafeAreaView style={Styles.page}>

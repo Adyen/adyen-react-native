@@ -3,16 +3,18 @@
   "exclude": ["./lib/**/*"],
   "compilerOptions": {
     "jsx": "react",
-    "target": "es2016",
+    "target": "es2021",
     "module": "commonjs",
     "rootDir": "./src",
-    "allowJs": true,
-    "checkJs": true,
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true
   }
 }

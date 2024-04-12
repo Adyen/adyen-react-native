@@ -15,22 +15,19 @@
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="${applicationId}"
-                    android:scheme="${redirectScheme}" />
+                <data android:scheme="myapp" android:path="/payment" />
             </intent-filter>
         </activity>
 
-        <service android:name="com.adyenreactnativesdk.component.dropin.AdyenCheckoutService" android:exported="false" />
     </application>
 </manifest>
