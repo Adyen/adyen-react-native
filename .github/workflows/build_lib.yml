@@ -18,7 +18,7 @@ jobs:
         id: yarn-cache-dir-path
         run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -36,13 +36,13 @@ jobs:
         run: yarn install
 
       - name: Archive library
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: lib
           key: temp-lib-${{ github.sha }}
 
       - name: Archive Node Modules
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: example/node_modules
           key: temp-node-${{ github.sha }}
