@@ -29,12 +29,12 @@ jobs:
           node-version: ${{ env.node-version }}
           cache: 'yarn'
 
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         with:
           path: lib
           key: temp-lib-${{ github.sha }}
 
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         id: yarn-cache
         with:
           path: example/node_modules
@@ -44,7 +44,7 @@ jobs:
         if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: example/ios/Pods
           key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
@@ -55,7 +55,7 @@ jobs:
         run: pod update
 
       - name: Archive library
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: example/ios/Pods
           key: pods-${{ hashFiles('example/ios/Podfile.lock') }}

@@ -30,12 +30,12 @@ jobs:
           node-version: ${{ env.node-version }}
           cache: 'yarn'
 
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         with:
           path: lib
           key: temp-lib-${{ github.sha }}
 
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         id: yarn-cache
         with:
           path: example\node_modules
@@ -49,7 +49,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: AVD cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: avd-cache
         with:
           path: |
