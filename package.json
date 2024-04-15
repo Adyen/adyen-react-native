@@ -58,7 +58,7 @@
   },
   "peerDependencies": {
     "@types/react": "*",
-    "expo": "^47.0.0",
+    "expo": "^47.0.0 || ^50.0.0",
     "react": "*",
     "react-native": "*"
   },
