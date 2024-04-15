@@ -18,6 +18,9 @@ RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
 
 RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
 
+RCT_EXTERN_METHOD(getReturnURL:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end
 
 @interface RCT_EXTERN_MODULE(AdyenInstant, NSObject)
