@@ -223,7 +223,7 @@ export interface PaymentDetailsData {
  * Session configuration
  */
 export interface SessionConfiguration {
-  sessionID: string,
+  id: string,
   sessionData: string
 }
 
