@@ -92,7 +92,7 @@ jobs:
           mv $(find . -name 'jacocoTestReport.xml') reports/jacoco.xml
 
       - name: Archive Coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: kotlin-coverage-report
           path: reports

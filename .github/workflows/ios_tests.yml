@@ -82,7 +82,7 @@ jobs:
         run: fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
 
       - name: Archive Coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: swift-coverage-report
           path: reports
