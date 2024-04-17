@@ -32,6 +32,8 @@ object ReactNativeJson {
                 map.putArray(key, convertJsonToArray(value))
             } else if (value is Boolean) {
                 map.putBoolean(key, value)
+            } else if (value is Long && (value as Long) < Int.MAX_VALUE) {
+                map.putInt(key, value.toInt())
             } else if (value is Int) {
                 map.putInt(key, value)
             } else if (value is Double) {
@@ -56,6 +58,8 @@ object ReactNativeJson {
                 array.pushArray(convertJsonToArray(value))
             } else if (value is Boolean) {
                 array.pushBoolean(value)
+            } else if (value is Long && (value as Long) < Int.MAX_VALUE) {
+                array.pushInt(value.toInt())
             } else if (value is Int) {
                 array.pushInt(value)
             } else if (value is Double) {
