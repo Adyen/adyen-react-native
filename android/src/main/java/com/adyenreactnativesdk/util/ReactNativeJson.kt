@@ -26,22 +26,15 @@ object ReactNativeJson {
         while (iterator.hasNext()) {
             val key = iterator.next()
             val value = jsonObject[key]
-            if (value is JSONObject) {
-                map.putMap(key, convertJsonToMap(value))
-            } else if (value is JSONArray) {
-                map.putArray(key, convertJsonToArray(value))
-            } else if (value is Boolean) {
-                map.putBoolean(key, value)
-            } else if (value is Long && value <= Int.MAX_VALUE) {
-                map.putInt(key, value.toInt())
-            } else if (value is Int) {
-                map.putInt(key, value)
-            } else if (value is Double) {
-                map.putDouble(key, value)
-            } else if (value is String) {
-                map.putString(key, value)
-            } else {
-                map.putString(key, value.toString())
+            when {
+                value is JSONObject -> map.putMap(key, convertJsonToMap(value))
+                value is JSONArray -> map.putArray(key, convertJsonToArray(value))
+                value is Boolean -> map.putBoolean(key, value)
+                value is Long && value <= Int.MAX_VALUE -> map.putInt(key, value.toInt())
+                value is Int -> map.putInt(key, value)
+                value is Double -> map.putDouble(key, value)
+                value is String -> map.putString(key, value)
+                else -> map.putString(key, value.toString())
             }
         }
         return map
@@ -52,22 +45,15 @@ object ReactNativeJson {
         val array: WritableArray = WritableNativeArray()
         for (i in 0 until jsonArray.length()) {
             val value = jsonArray[i]
-            if (value is JSONObject) {
-                array.pushMap(convertJsonToMap(value))
-            } else if (value is JSONArray) {
-                array.pushArray(convertJsonToArray(value))
-            } else if (value is Boolean) {
-                array.pushBoolean(value)
-            }else if (value is Long && value <= Int.MAX_VALUE) {
-                array.pushInt(value.toInt())
-            } else if (value is Int) {
-                array.pushInt(value)
-            } else if (value is Double) {
-                array.pushDouble(value)
-            } else if (value is String) {
-                array.pushString(value)
-            } else {
-                array.pushString(value.toString())
+            when {
+                value is JSONObject -> array.pushMap(convertJsonToMap(value))
+                value is JSONArray -> array.pushArray(convertJsonToArray(value))
+                value is Boolean -> array.pushBoolean(value)
+                value is Long && value <= Int.MAX_VALUE -> array.pushInt(value.toInt())
+                value is Int -> array.pushInt(value)
+                value is Double -> array.pushDouble(value)
+                value is String -> array.pushString(value)
+                else -> array.pushString(value.toString())
             }
         }
         return array
