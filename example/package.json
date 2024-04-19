@@ -25,7 +25,7 @@
     "@tsconfig/react-native": "2.0.3",
     "eslint": "^8.53.0",
     "jest": "^29.4.0",
-    "babel-plugin-module-resolver": "^4.1.0",
+    "babel-plugin-module-resolver": "^5.0.0",
     "metro-react-native-babel-preset": "^0.73.3"
   }
 }
