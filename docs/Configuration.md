@@ -111,6 +111,9 @@ const configuration = {
     hideCvc: true,
     allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL'],
   },
+  threeDS2: {
+    requestorAppUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
+  },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
     allowOnboarding: true,
