@@ -62,6 +62,7 @@
 - `allowedAuthMethods` - Fields supported to authenticate a card transaction.
 - `totalPriceStatus` - The status of the total price used. Defaults to **"FINAL"**.
 - `allowPrepaidCards` - Set to **false** if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified.
+- `allowCreditCards` - Set to **false** if you don't support credit cards. Default: The credit card class is supported for the card networks specified.
 - `billingAddressRequired` - Set to **true** if you require a billing address. A billing address should only be requested if it's required to process the transaction.
 - `billingAddressParameters` - Set billing address parameters:
 
@@ -191,6 +192,8 @@ const configuration = {
     requiredShippingContactFields: ['name', 'phone', 'email', 'postalAddress'],
   },
   googlepay: {
+    allowCreditCards: false,
+    allowPrepaidCards: false,
     billingAddressRequired: true,
     billingAddressParameters: {
       format: 'FULL',
