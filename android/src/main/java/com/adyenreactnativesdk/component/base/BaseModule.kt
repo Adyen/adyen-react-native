@@ -8,6 +8,7 @@ package com.adyenreactnativesdk.component.base
 
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
+import com.adyen.checkout.adyen3ds2.adyen3DS2
 import com.adyen.checkout.bcmc.bcmc
 import com.adyen.checkout.card.card
 import com.adyen.checkout.components.core.CheckoutConfiguration
@@ -35,6 +36,7 @@ import com.adyenreactnativesdk.configuration.CardConfigurationParser
 import com.adyenreactnativesdk.configuration.DropInConfigurationParser
 import com.adyenreactnativesdk.configuration.GooglePayConfigurationParser
 import com.adyenreactnativesdk.configuration.RootConfigurationParser
+import com.adyenreactnativesdk.configuration.ThreeDSConfigurationParser
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeError
 import com.adyenreactnativesdk.util.ReactNativeJson
@@ -201,7 +203,10 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
                 val parser = DropInConfigurationParser(json)
                 parser.applyConfiguration(this)
             }
-
+            adyen3DS2 {
+                val parser = ThreeDSConfigurationParser(json)
+                parser.applyConfiguration(this)
+            }
         }
     }
 
