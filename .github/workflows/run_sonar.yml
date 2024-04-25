@@ -6,7 +6,7 @@ on:
 jobs:
   run-sonar:
     name: Collect Sonar reports
-    runs-on: macos-latest
+    runs-on: macos-14
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

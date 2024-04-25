@@ -15,7 +15,7 @@ on:
 jobs:
   ios_tests:
     name: Test iOS
-    runs-on: macos-latest
+    runs-on: macos-14
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
@@ -66,7 +66,7 @@ jobs:
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
-            -destination "name=iPhone 14" \
+            -destination "name=${{env.device}}}" \
             -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES | xcpretty --utf --color && exit ${PIPESTATUS[0]}
 
@@ -79,7 +79,9 @@ jobs:
 
       - name: SwiftLint
         working-directory: ios
-        run: fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
+        run: | 
+          brew install swiftlint
+          fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
 
       - name: Archive Coverage report
         uses: actions/upload-artifact@v4

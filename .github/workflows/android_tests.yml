@@ -5,7 +5,7 @@ on:
     inputs:
       android-version:
         required: false
-        default: 29
+        default: 32
         type: number
       react-native-version:
         required: false
@@ -14,9 +14,7 @@ on:
 
 jobs:
   test-Android:
-    runs-on: macos-latest
-    env:
-      target: google_apis
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
@@ -72,16 +70,16 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ inputs.android-version }}
-          target: ${{ env.target }}
+          target: google_apis
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: ./example/android
           pre-emulator-launch-script: |
-          script: |
             echo "::group::Running Android app"
             yarn android
             echo "::endgroup::"
+          script: |
             echo "::group::Running Tests"
             ./gradlew jacocoTestReport
             echo "::endgroup::"
