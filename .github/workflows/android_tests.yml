@@ -60,7 +60,6 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ inputs.android-version }}
-          target: ${{ env.target }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -70,16 +69,14 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ inputs.android-version }}
-          target: google_apis
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: ./example/android
-          pre-emulator-launch-script: |
+          script: |
             echo "::group::Running Android app"
             yarn android
             echo "::endgroup::"
-          script: |
             echo "::group::Running Tests"
             ./gradlew jacocoTestReport
             echo "::endgroup::"
