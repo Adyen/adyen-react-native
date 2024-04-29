@@ -15,12 +15,10 @@ class ThreeDSConfigurationParser(config: ReadableMap) {
     init {
         if (config.hasKey(THREEDS2_KEY)) {
             this.config = config.getMap(THREEDS2_KEY)!!
-        } else {
-            this.config = config
-        }
+        } else this.config = config
     }
 
-    val requestorAppUrl: String?
+    private val requestorAppUrl: String?
         get() = if (config.hasKey(THREEDS2_REQUESTOR_APP_URL_KEY)) {
             config.getString(THREEDS2_REQUESTOR_APP_URL_KEY)
         } else null
