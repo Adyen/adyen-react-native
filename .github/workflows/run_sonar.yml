@@ -42,4 +42,4 @@ jobs:
       - name: Run Sonar
         run: |
           git fetch --unshallow --no-tags
-          sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+          sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }} -X
