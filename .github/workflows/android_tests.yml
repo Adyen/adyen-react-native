@@ -17,6 +17,7 @@ jobs:
     runs-on: macos-13
     env:
       target: google_apis
+      arch: x86
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +64,7 @@ jobs:
         with:
           api-level: ${{ inputs.android-version }}
           target: ${{ env.target }}
+          arch: ${{ env.arch }}
           force-avd-creation: false
           script: echo "Generated AVD snapshot for caching."
 
@@ -71,6 +73,7 @@ jobs:
         with:
           api-level: ${{ inputs.android-version }}
           target: ${{ env.target }}
+          arch: ${{ env.arch }}
           force-avd-creation: false
           working-directory: ./example/android
           script: |
