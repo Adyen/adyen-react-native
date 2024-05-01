@@ -41,6 +41,10 @@ internal final class DropInModule: BaseModule {
         if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
             config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
         }
+        if let requestorAppUrl = ThreeDS2ConfigurationParser(configuration: configuration).requestorAppUrl,
+        let url = URL(string: requestorAppUrl) {
+            config.actionComponent.threeDS.requestorAppURL = url
+        }
 
         if let payment = context.payment {
             (try? ApplepayConfigurationParser(configuration: configuration).buildConfiguration(payment: payment)).map {
