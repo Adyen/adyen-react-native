@@ -24,6 +24,7 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         internal const val ALLOWED_AUTH_METHODS_KEY = "allowedAuthMethods"
         internal const val TOTAL_PRICE_STATUS_KEY = "totalPriceStatus"
         internal const val ALLOW_PREPAID_CARDS_KEY = "allowPrepaidCards"
+        internal const val ALLOW_CREDIT_CARDS_KEY = "allowCreditCards"
         internal const val BILLING_ADDRESS_REQUIRED_KEY = "billingAddressRequired"
         internal const val EMAIL_REQUIRED_KEY = "emailRequired"
         internal const val SHIPPING_ADDRESS_REQUIRED_KEY = "shippingAddressRequired"
@@ -91,6 +92,9 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         }
         if (config.hasKey(ALLOW_PREPAID_CARDS_KEY)) {
             builder.setAllowPrepaidCards(config.getBoolean(ALLOW_PREPAID_CARDS_KEY))
+        }
+        if (config.hasKey(ALLOW_CREDIT_CARDS_KEY)) {
+            builder.setAllowCreditCards(config.getBoolean(ALLOW_CREDIT_CARDS_KEY))
         }
         if (config.hasKey(BILLING_ADDRESS_REQUIRED_KEY)) {
             builder.setBillingAddressRequired(config.getBoolean(BILLING_ADDRESS_REQUIRED_KEY))

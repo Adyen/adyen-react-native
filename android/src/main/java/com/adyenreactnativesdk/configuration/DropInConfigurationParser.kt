@@ -28,12 +28,12 @@ class DropInConfigurationParser(config: ReadableMap) {
         }
     }
 
-    internal val skipListWhenSinglePaymentMethod: Boolean?
+    private val skipListWhenSinglePaymentMethod: Boolean?
         get() = if (config.hasKey(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY)) {
             config.getBoolean(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY)
         } else null
 
-    internal val showPreselectedStoredPaymentMethod: Boolean?
+    private val showPreselectedStoredPaymentMethod: Boolean?
         get() = if (config.hasKey(SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY)) {
             config.getBoolean(SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY)
         } else null

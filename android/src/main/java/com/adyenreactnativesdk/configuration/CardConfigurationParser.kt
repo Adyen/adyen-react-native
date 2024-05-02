@@ -59,32 +59,32 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
         holderNameRequired?.let { builder.setHolderNameRequired(it) }
     }
 
-    internal val showStorePaymentField: Boolean?
+    private val showStorePaymentField: Boolean?
         get() = if (config.hasKey(SHOW_STORE_PAYMENT_FIELD_KEY)) {
             config.getBoolean(SHOW_STORE_PAYMENT_FIELD_KEY)
         } else null
 
-    internal val holderNameRequired: Boolean?
+    private val holderNameRequired: Boolean?
         get() = if (config.hasKey(HOLDER_NAME_REQUIRED_KEY)) {
             config.getBoolean(HOLDER_NAME_REQUIRED_KEY)
         } else null
 
-    internal val hideCvcStoredCard: Boolean?
+    private val hideCvcStoredCard: Boolean?
         get() = if (config.hasKey(HIDE_CVC_STORED_CARD_KEY)) {
             config.getBoolean(HIDE_CVC_STORED_CARD_KEY)
         } else null
 
-    val hideCvc: Boolean?
+    private val hideCvc: Boolean?
         get() = if (config.hasKey(HIDE_CVC_KEY)) {
             config.getBoolean(HIDE_CVC_KEY)
         } else null
 
-    val supportedCountries: List<String>?
+    private val supportedCountries: List<String>?
         get() = if (config.hasKey(SUPPORTED_COUNTRY_LIST_KEY)) {
             config.getArray(SUPPORTED_COUNTRY_LIST_KEY)?.toArrayList()?.map { it.toString() }
         } else null
 
-    internal val kcpVisibility: KCPAuthVisibility?
+    private  val kcpVisibility: KCPAuthVisibility?
         get() {
             return if (config.hasKey(KCP_VISIBILITY_KEY)) {
                 val value = config.getString(KCP_VISIBILITY_KEY)!!
@@ -95,7 +95,7 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
             } else null
         }
 
-    val addressVisibility: AddressConfiguration?
+    internal val addressVisibility: AddressConfiguration?
         get() {
             return when {
                 config.hasKey(ADDRESS_VISIBILITY_KEY) -> {
@@ -111,19 +111,21 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
             }
         }
 
-    val supportedCardTypes: List<CardBrand>?
+    internal val supportedCardTypes: List<CardBrand>?
         get() {
-            return config.getArray(SUPPORTED_CARD_TYPES_KEY)
-                ?.toArrayList()
-                ?.map { it.toString() }
-                ?.mapNotNull { txVariant ->
+            return if (config.hasKey(SUPPORTED_CARD_TYPES_KEY))
+                config.getArray(SUPPORTED_CARD_TYPES_KEY)
+                    ?.toArrayList()
+                    ?.map { it.toString() }
+                    ?.mapNotNull { txVariant ->
                     CardType.getByBrandName(txVariant)?.let {
                         CardBrand(it)
                     }
                 }
+            else null
         }
 
-    val socialSecurityNumberVisibility: SocialSecurityNumberVisibility?
+    private val socialSecurityNumberVisibility: SocialSecurityNumberVisibility?
         get() {
             return when {
                 config.hasKey(SOCIAL_SECURITY_VISIBILITY_KEY) -> {

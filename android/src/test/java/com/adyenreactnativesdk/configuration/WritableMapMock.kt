@@ -64,6 +64,7 @@ class WritableMapMock: WritableMap, ReadableMapKeySetIterator {
             is Double -> ReadableType.Number
             is Float -> ReadableType.Number
             is Int -> ReadableType.Number
+            is Long -> ReadableType.Number
             is Map<*,*> -> ReadableType.Map
             is Boolean -> ReadableType.Boolean
             is Array<*> -> ReadableType.Array

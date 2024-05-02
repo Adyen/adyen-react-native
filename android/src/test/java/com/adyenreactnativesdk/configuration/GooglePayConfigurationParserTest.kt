@@ -6,64 +6,77 @@
 
 package com.adyenreactnativesdk.configuration
 
-import android.util.Log
-import com.adyen.checkout.core.Environment
+import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.facebook.react.bridge.ReadableArray
-import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mockito.Mockito.anyString
-import org.mockito.Mockito.eq
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.mockStatic
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 
 class GooglePayConfigurationParserTest {
 
     @Test
-    fun getShippingAddressParameters() {
-        // TODO: add shipping address configuration tests
+    fun applyConfigurationOnSubDictionary() {
+        // GIVEN
+        val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+        val config = WritableMapMock()
+        val googleConfig = WritableMapMock()
+
+        config.putMap(GooglePayConfigurationParser.GOOGLEPAY_KEY, googleConfig)
+
+        // WHEN
+        val sut = GooglePayConfigurationParser(config)
+        sut.applyConfiguration(mockBuilder)
+
+        verify(mockBuilder, times(0)).setAllowedAuthMethods(any())
+        verify(mockBuilder, times(0)).setAllowedCardNetworks(any())
+        verify(mockBuilder, times(0)).setAllowCreditCards(any())
+        verify(mockBuilder, times(0)).setAllowPrepaidCards(any())
+        verify(mockBuilder, times(0)).setEmailRequired(any())
+        verify(mockBuilder, times(0)).setShippingAddressRequired(any())
+        verify(mockBuilder, times(0)).setBillingAddressRequired(any())
+        verify(mockBuilder, times(0)).setTotalPriceStatus(any())
+        verify(mockBuilder, times(0)).setMerchantAccount(any())
     }
 
     @Test
-    fun getBillingAddressParameters() {
+    fun applyConfiguration() {
+        // GIVEN
+        val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+        val config = WritableMapMock()
+        config.putBoolean(GooglePayConfigurationParser.ALLOW_PREPAID_CARDS_KEY, true)
+        config.putBoolean(GooglePayConfigurationParser.ALLOW_CREDIT_CARDS_KEY, true)
+        config.putBoolean(GooglePayConfigurationParser.EMAIL_REQUIRED_KEY, true)
+        config.putBoolean(GooglePayConfigurationParser.SHIPPING_ADDRESS_REQUIRED_KEY, true)
+        config.putBoolean(GooglePayConfigurationParser.BILLING_ADDRESS_REQUIRED_KEY, true)
+        config.putString(GooglePayConfigurationParser.TOTAL_PRICE_STATUS_KEY, "FINAL")
+        config.putString(GooglePayConfigurationParser.MERCHANT_ACCOUNT_KEY, "Merchant_account")
         // TODO: add billing address tests
-    }
+        // TODO: add shipping address configuration tests
 
-    @Test
-    fun getAllowedCardNetworks() {
-        // GIVEN
-        val mockStatic = mockStatic(Log::class.java)
-        val config = WritableMapMock()
-        val mockArray = mock(ReadableArray::class.java)
-        `when`(mockArray.toArrayList()).thenReturn(arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value"))
-        config.putArray(GooglePayConfigurationParser.ALLOWED_CARD_NETWORKS_KEY, mockArray)
+        val allowedAuthArray = mock(ReadableArray::class.java)
+        `when`(allowedAuthArray.toArrayList()).thenReturn(arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS"))
+        config.putArray(GooglePayConfigurationParser.ALLOWED_AUTH_METHODS_KEY, allowedAuthArray)
 
-        // WHEN
-        val googlepayParser = GooglePayConfigurationParser(config)
-
-        // THEN
-        assertEquals(googlepayParser.allowedCardNetworks, listOf("MASTERCARD", "VISA", "amex", "wrong_value"))
-
-        // TEAR DOWN
-        mockStatic?.close()
-    }
-
-    @Test
-    fun getAllowedAuthMethods() {
-        // GIVEN
-        val config = WritableMapMock()
-        val mockArray = mock(ReadableArray::class.java)
-        `when`(mockArray.toArrayList()).thenReturn(arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS"))
-        config.putArray(GooglePayConfigurationParser.ALLOWED_AUTH_METHODS_KEY, mockArray)
+        val allowedCardArray = mock(ReadableArray::class.java)
+        `when`(allowedCardArray.toArrayList()).thenReturn(arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value"))
+        config.putArray(GooglePayConfigurationParser.ALLOWED_CARD_NETWORKS_KEY, allowedCardArray)
 
         // WHEN
-        val googlepayParser = GooglePayConfigurationParser(config)
+        val sut = GooglePayConfigurationParser(config)
+        sut.applyConfiguration(mockBuilder)
 
         // THEN
-        assertEquals(googlepayParser.allowedAuthMethods, listOf("PAN_ONLY", "CRYPTOGRAM_3DS"))
-    }
-
-    @Test
-    fun getConfiguration() {
+        verify(mockBuilder, times(1)).setAllowedAuthMethods(arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS"))
+        verify(mockBuilder, times(1)).setAllowedCardNetworks(arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value"))
+        verify(mockBuilder, times(1)).setAllowCreditCards(true)
+        verify(mockBuilder, times(1)).setAllowPrepaidCards(true)
+        verify(mockBuilder, times(1)).setEmailRequired(true)
+        verify(mockBuilder, times(1)).setShippingAddressRequired(true)
+        verify(mockBuilder, times(1)).setBillingAddressRequired(true)
+        verify(mockBuilder, times(1)).setTotalPriceStatus("FINAL")
+        verify(mockBuilder, times(1)).setMerchantAccount("Merchant_account")
     }
 }

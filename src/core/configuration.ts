@@ -227,6 +227,8 @@ export interface GooglePayConfiguration {
   totalPriceStatus?: TotalPriceStatus;
   /** Set to false if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified. */
   allowPrepaidCards?: boolean;
+  /** Set to false if you don't support credit cards. Default: The credit card class is supported for the card networks specified. */
+  allowCreditCards?: boolean;
   /** Set to true if you require a billing address. A billing address should only be requested if it's required to process the transaction. */
   billingAddressRequired?: boolean;
   /** The expected fields returned if billingAddressRequired is set to true. */
