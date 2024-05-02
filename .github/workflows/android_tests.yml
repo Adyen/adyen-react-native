@@ -5,7 +5,7 @@ on:
     inputs:
       android-version:
         required: false
-        default: 29
+        default: 30
         type: number
       react-native-version:
         required: false
@@ -14,9 +14,10 @@ on:
 
 jobs:
   test-Android:
-    runs-on: macos-latest
+    runs-on: macos-13
     env:
       target: google_apis
+      arch: x86
     steps:
       - uses: actions/checkout@v4
 
@@ -63,9 +64,8 @@ jobs:
         with:
           api-level: ${{ inputs.android-version }}
           target: ${{ env.target }}
+          arch: ${{ env.arch }}
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run tests
@@ -73,11 +73,9 @@ jobs:
         with:
           api-level: ${{ inputs.android-version }}
           target: ${{ env.target }}
+          arch: ${{ env.arch }}
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
           working-directory: ./example/android
-          pre-emulator-launch-script: |
           script: |
             echo "::group::Running Android app"
             yarn android
