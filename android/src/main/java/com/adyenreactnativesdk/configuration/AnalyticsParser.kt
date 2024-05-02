@@ -29,7 +29,7 @@ class AnalyticsParser(config: ReadableMap) {
             ANALYTICS_ENABLED_KEY
         )
 
-    private val verboseLogs: Boolean
+    internal val verboseLogs: Boolean
         get() = config.hasKey(ANALYTICS_VERBOSE_LOGS) && config.getBoolean(
             ANALYTICS_VERBOSE_LOGS
         )

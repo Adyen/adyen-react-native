@@ -6,7 +6,6 @@
 
 package com.adyenreactnativesdk.configuration
 
-import android.util.Log
 import com.adyen.checkout.card.AddressConfiguration
 import com.adyen.checkout.card.CardBrand
 import com.adyen.checkout.card.CardConfiguration
@@ -17,10 +16,35 @@ import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 
 class CardConfigurationParserTest {
 
+    @Test
+    fun applyConfigurationOnSubDictionary() {
+        // GIVEN
+        val config = WritableMapMock()
+        val cardConfig = WritableMapMock()
+        config.putMap(CardConfigurationParser.CARD_KEY, cardConfig)
+
+        // WHEN
+        val sut = CardConfigurationParser(config, countryCode = null)
+        val mockBuilder = mock(CardConfiguration.Builder::class.java)
+        sut.applyConfiguration(mockBuilder)
+
+        // THEN
+        verify(mockBuilder, times(0)).setShowStorePaymentField(any())
+        verify(mockBuilder, times(0)).setHolderNameRequired(any())
+        verify(mockBuilder, times(0)).setHideCvc(any())
+        verify(mockBuilder, times(0)).setHideCvcStoredCard(any())
+        verify(mockBuilder, times(0)).setKcpAuthVisibility(any())
+        verify(mockBuilder, times(0)).setAddressConfiguration(any())
+        verify(mockBuilder, times(0)).setSocialSecurityNumberVisibility(any())
+    }
 
     @Test
     fun testGetAddressVisibilityFull() {

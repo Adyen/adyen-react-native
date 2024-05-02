@@ -13,13 +13,39 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 
 class GooglePayConfigurationParserTest {
 
     @Test
-    fun applyConfiguration() {
+    fun applyConfigurationOnSubDictionary() {
+        // GIVEN
+        val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
         val config = WritableMapMock()
+        val googleConfig = WritableMapMock()
 
+        config.putMap(GooglePayConfigurationParser.GOOGLEPAY_KEY, googleConfig)
+
+        // WHEN
+        val sut = GooglePayConfigurationParser(config)
+        sut.applyConfiguration(mockBuilder)
+
+        verify(mockBuilder, times(0)).setAllowedAuthMethods(any())
+        verify(mockBuilder, times(0)).setAllowedCardNetworks(any())
+        verify(mockBuilder, times(0)).setAllowCreditCards(any())
+        verify(mockBuilder, times(0)).setAllowPrepaidCards(any())
+        verify(mockBuilder, times(0)).setEmailRequired(any())
+        verify(mockBuilder, times(0)).setShippingAddressRequired(any())
+        verify(mockBuilder, times(0)).setBillingAddressRequired(any())
+        verify(mockBuilder, times(0)).setTotalPriceStatus(any())
+        verify(mockBuilder, times(0)).setMerchantAccount(any())
+    }
+
+    @Test
+    fun applyConfiguration() {
+        // GIVEN
+        val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+        val config = WritableMapMock()
         config.putBoolean(GooglePayConfigurationParser.ALLOW_PREPAID_CARDS_KEY, true)
         config.putBoolean(GooglePayConfigurationParser.ALLOW_CREDIT_CARDS_KEY, true)
         config.putBoolean(GooglePayConfigurationParser.EMAIL_REQUIRED_KEY, true)
@@ -40,7 +66,6 @@ class GooglePayConfigurationParserTest {
 
         // WHEN
         val sut = GooglePayConfigurationParser(config)
-        val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
         sut.applyConfiguration(mockBuilder)
 
         // THEN
