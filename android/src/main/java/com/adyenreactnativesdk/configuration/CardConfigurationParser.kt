@@ -113,14 +113,16 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
 
     internal val supportedCardTypes: List<CardBrand>?
         get() {
-            return config.getArray(SUPPORTED_CARD_TYPES_KEY)
-                ?.toArrayList()
-                ?.map { it.toString() }
-                ?.mapNotNull { txVariant ->
+            return if (config.hasKey(SUPPORTED_CARD_TYPES_KEY))
+                config.getArray(SUPPORTED_CARD_TYPES_KEY)
+                    ?.toArrayList()
+                    ?.map { it.toString() }
+                    ?.mapNotNull { txVariant ->
                     CardType.getByBrandName(txVariant)?.let {
                         CardBrand(it)
                     }
                 }
+            else null
         }
 
     private val socialSecurityNumberVisibility: SocialSecurityNumberVisibility?
