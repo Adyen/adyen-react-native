@@ -18,7 +18,7 @@ import org.mockito.kotlin.any
 class GooglePayConfigurationParserTest {
 
     @Test
-    fun applyConfigurationOnSubDictionary() {
+    fun testConfigurationOnSubDictionary() {
         // GIVEN
         val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
         val config = WritableMapMock()
@@ -61,7 +61,14 @@ class GooglePayConfigurationParserTest {
         config.putArray(GooglePayConfigurationParser.ALLOWED_AUTH_METHODS_KEY, allowedAuthArray)
 
         val allowedCardArray = mock(ReadableArray::class.java)
-        `when`(allowedCardArray.toArrayList()).thenReturn(arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value"))
+        `when`(allowedCardArray.toArrayList()).thenReturn(
+            arrayListOf(
+                "MASTERCARD",
+                "VISA",
+                "amex",
+                "wrong_value"
+            )
+        )
         config.putArray(GooglePayConfigurationParser.ALLOWED_CARD_NETWORKS_KEY, allowedCardArray)
 
         // WHEN
@@ -69,8 +76,20 @@ class GooglePayConfigurationParserTest {
         sut.applyConfiguration(mockBuilder)
 
         // THEN
-        verify(mockBuilder, times(1)).setAllowedAuthMethods(arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS"))
-        verify(mockBuilder, times(1)).setAllowedCardNetworks(arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value"))
+        verify(mockBuilder, times(1)).setAllowedAuthMethods(
+            arrayListOf(
+                "PAN_ONLY",
+                "CRYPTOGRAM_3DS"
+            )
+        )
+        verify(mockBuilder, times(1)).setAllowedCardNetworks(
+            arrayListOf(
+                "MASTERCARD",
+                "VISA",
+                "amex",
+                "wrong_value"
+            )
+        )
         verify(mockBuilder, times(1)).setAllowCreditCards(true)
         verify(mockBuilder, times(1)).setAllowPrepaidCards(true)
         verify(mockBuilder, times(1)).setEmailRequired(true)

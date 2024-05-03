@@ -25,7 +25,7 @@ import org.mockito.kotlin.any
 class CardConfigurationParserTest {
 
     @Test
-    fun applyConfigurationOnSubDictionary() {
+    fun testConfigurationOnSubDictionary() {
         // GIVEN
         val config = WritableMapMock()
         val cardConfig = WritableMapMock()
@@ -61,7 +61,13 @@ class CardConfigurationParserTest {
         // THEN
         assertTrue(cardParser.addressVisibility is AddressConfiguration.FullAddress)
         assertTrue((cardParser.addressVisibility as AddressConfiguration.FullAddress).defaultCountryCode == "US")
-        assertTrue((cardParser.addressVisibility as AddressConfiguration.FullAddress).supportedCountryCodes == listOf("US", "GB", "NL"))
+        assertTrue(
+            (cardParser.addressVisibility as AddressConfiguration.FullAddress).supportedCountryCodes == listOf(
+                "US",
+                "GB",
+                "NL"
+            )
+        )
     }
 
     @Test
@@ -82,14 +88,22 @@ class CardConfigurationParserTest {
         // GIVEN
         val config = WritableMapMock()
         val mockArray = mock(ReadableArray::class.java)
-        `when`(mockArray.toArrayList()).thenReturn(arrayListOf("mc", "visa", "maestro", "wrong_value"))
+        `when`(mockArray.toArrayList()).thenReturn(
+            arrayListOf(
+                "mc",
+                "visa",
+                "maestro",
+                "wrong_value"
+            )
+        )
         config.putArray(CardConfigurationParser.SUPPORTED_CARD_TYPES_KEY, mockArray)
 
         // WHEN
         val cardParser = CardConfigurationParser(config, "US")
 
         // THEN
-        val map = cardParser.supportedCardTypes.orEmpty().map { CardType.getByBrandName(it.txVariant) }
+        val map =
+            cardParser.supportedCardTypes.orEmpty().map { CardType.getByBrandName(it.txVariant) }
         assertEquals(listOf(CardType.MASTERCARD, CardType.VISA, CardType.MAESTRO), map)
     }
 
@@ -106,7 +120,14 @@ class CardConfigurationParserTest {
         config.putString(CardConfigurationParser.SOCIAL_SECURITY_VISIBILITY_KEY, "show")
 
         val supportedCardsArray = mock(ReadableArray::class.java)
-        `when`(supportedCardsArray.toArrayList()).thenReturn(arrayListOf("mc", "visa", "maestro", "wrong_value"))
+        `when`(supportedCardsArray.toArrayList()).thenReturn(
+            arrayListOf(
+                "mc",
+                "visa",
+                "maestro",
+                "wrong_value"
+            )
+        )
         config.putArray(CardConfigurationParser.SUPPORTED_CARD_TYPES_KEY, supportedCardsArray)
 
         // WHEN
@@ -119,9 +140,17 @@ class CardConfigurationParserTest {
         verify(mockBuilder, times(1)).setHideCvc(true)
         verify(mockBuilder, times(1)).setHideCvcStoredCard(true)
         verify(mockBuilder, times(1)).setKcpAuthVisibility(KCPAuthVisibility.SHOW)
-        verify(mockBuilder, times(1)).setAddressConfiguration(org.mockito.kotlin.any())
-        verify(mockBuilder, times(1)).setSocialSecurityNumberVisibility(SocialSecurityNumberVisibility.SHOW)
-        verify(mockBuilder, times(1)).setSupportedCardTypes(*arrayOf(CardBrand("mc"), CardBrand("visa"), CardBrand("maestro")))
+        verify(mockBuilder, times(1)).setAddressConfiguration(any())
+        verify(mockBuilder, times(1)).setSocialSecurityNumberVisibility(
+            SocialSecurityNumberVisibility.SHOW
+        )
+        verify(mockBuilder, times(1)).setSupportedCardTypes(
+            *arrayOf(
+                CardBrand("mc"),
+                CardBrand("visa"),
+                CardBrand("maestro")
+            )
+        )
     }
 
 }

@@ -10,7 +10,7 @@ import org.mockito.kotlin.any
 class ThreeDSConfigurationParserTest {
 
     @Test
-    fun applyConfigurationOnSubDictionary() {
+    fun testConfigurationOnSubDictionary() {
         // GIVEN
         val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
         val config = WritableMapMock()
@@ -23,7 +23,6 @@ class ThreeDSConfigurationParserTest {
 
         // THEN
         verify(mockBuilder, times(0)).setThreeDSRequestorAppURL(any())
-
     }
 
     @Test
@@ -31,7 +30,10 @@ class ThreeDSConfigurationParserTest {
         // GIVEN
         val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
         val config = WritableMapMock()
-        config.putString(ThreeDSConfigurationParser.THREEDS2_REQUESTOR_APP_URL_KEY , "https://testing.com")
+        config.putString(
+            ThreeDSConfigurationParser.THREEDS2_REQUESTOR_APP_URL_KEY,
+            "https://testing.com"
+        )
 
         // WHEN
         val sut = ThreeDSConfigurationParser(config)

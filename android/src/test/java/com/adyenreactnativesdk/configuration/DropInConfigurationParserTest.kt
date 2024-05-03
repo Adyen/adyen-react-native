@@ -10,7 +10,7 @@ import org.mockito.kotlin.any
 class DropInConfigurationParserTest {
 
     @Test
-    fun applyConfigurationOnSubDictionary() {
+    fun testConfigurationOnSubDictionary() {
         // GIVEN
         val mockBuilder = mock(DropInConfiguration.Builder::class.java)
         val config = WritableMapMock()
@@ -32,7 +32,10 @@ class DropInConfigurationParserTest {
         val mockBuilder = mock(DropInConfiguration.Builder::class.java)
         val config = WritableMapMock()
         config.putBoolean(DropInConfigurationParser.SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY, false)
-        config.putBoolean(DropInConfigurationParser.SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY, false)
+        config.putBoolean(
+            DropInConfigurationParser.SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY,
+            false
+        )
 
         // WHEN
         val sut = DropInConfigurationParser(config)
