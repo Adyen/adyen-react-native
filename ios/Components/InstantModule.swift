@@ -33,7 +33,7 @@ internal final class InstantModule: BaseModule {
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
         var config = AdyenActionComponent.Configuration(style: style)
-        if let locale = BaseModule.session?.sessionContext.shopperLocale ??  parser.shopperLocale {
+        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
             config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
         }
 

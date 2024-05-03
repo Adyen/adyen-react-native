@@ -8,7 +8,7 @@ import Foundation
 
 public struct ThreeDS2ConfigurationParser {
 
-    private var dict: [String:Any]
+    private var dict: [String: Any]
 
     public init(configuration: NSDictionary) {
         guard let configuration = configuration as? [String: Any] else {
@@ -23,6 +23,6 @@ public struct ThreeDS2ConfigurationParser {
     }
 
     var requestorAppUrl: String? {
-        return dict[ThreeDSKey.requestorAppUrl] as? String
+        dict[ThreeDSKey.requestorAppUrl] as? String
     }
 }

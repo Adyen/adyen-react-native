@@ -27,11 +27,11 @@ public struct AnalyticsParser {
     }
 
     public var analyticsOn: Bool {
-        return dict[AnalyticsKeys.enabled] as? Bool == true
+        dict[AnalyticsKeys.enabled] as? Bool == true
     }
 
     public var verboseLogsOn: Bool {
-        return dict[AnalyticsKeys.verboseLogs] as? Bool == true
+        dict[AnalyticsKeys.verboseLogs] as? Bool == true
     }
 
     public var configuration: AnalyticsConfiguration {
