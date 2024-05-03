@@ -84,7 +84,7 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
             config.getArray(SUPPORTED_COUNTRY_LIST_KEY)?.toArrayList()?.map { it.toString() }
         } else null
 
-    private  val kcpVisibility: KCPAuthVisibility?
+    private val kcpVisibility: KCPAuthVisibility?
         get() {
             return if (config.hasKey(KCP_VISIBILITY_KEY)) {
                 val value = config.getString(KCP_VISIBILITY_KEY)!!
@@ -118,10 +118,10 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
                     ?.toArrayList()
                     ?.map { it.toString() }
                     ?.mapNotNull { txVariant ->
-                    CardType.getByBrandName(txVariant)?.let {
-                        CardBrand(it)
+                        CardType.getByBrandName(txVariant)?.let {
+                            CardBrand(it)
+                        }
                     }
-                }
             else null
         }
 

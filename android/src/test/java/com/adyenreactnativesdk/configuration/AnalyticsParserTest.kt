@@ -7,7 +7,7 @@ import org.junit.Test
 class AnalyticsParserTest {
 
     @Test
-    fun applyConfigurationOnSubDictionary() {
+    fun testConfigurationOnSubDictionary() {
         // GIVEN
         val config = WritableMapMock()
         val analyticsConfig = WritableMapMock()
@@ -35,7 +35,6 @@ class AnalyticsParserTest {
         // THEN
         Assert.assertSame(analyticsParser.analytics.level, AnalyticsLevel.ALL)
         Assert.assertFalse(analyticsParser.verboseLogs)
-
     }
 
     @Test
@@ -51,7 +50,5 @@ class AnalyticsParserTest {
         // THEN
         Assert.assertSame(analyticsParser.analytics.level, AnalyticsLevel.NONE)
         Assert.assertTrue(analyticsParser.verboseLogs)
-
     }
-
 }

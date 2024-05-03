@@ -33,7 +33,7 @@ class RootConfigurationParserTest {
 
         // THEN
         Assert.assertNotNull(rootParser.amount)
-        Assert.assertEquals(rootParser.amount?.value, 123456.toLong() )
+        Assert.assertEquals(rootParser.amount?.value, 123456.toLong())
         Assert.assertEquals(rootParser.amount?.currency, "USD")
     }
 
