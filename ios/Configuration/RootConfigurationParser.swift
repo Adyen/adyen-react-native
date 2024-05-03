@@ -46,7 +46,7 @@ public struct RootConfigurationParser {
 
     public var payment: Payment? {
         guard let amount = self.amount,
-              let countryCode = countryCode
+              let countryCode
         else {
             return nil
         }
@@ -55,7 +55,7 @@ public struct RootConfigurationParser {
     }
 
     public var shopperLocale: String? {
-        return configuration[Keys.locale] as? String
+        configuration[Keys.locale] as? String
     }
 }
 
@@ -70,7 +70,7 @@ extension RootConfigurationParser {
         let analytics = AnalyticsParser(configuration: configuration).configuration
 
         var payment: Payment?
-        if 
+        if
             let context = session?.sessionContext,
             let countryCode = context.countryCode ?? self.countryCode {
             payment = Payment(amount: context.amount, countryCode: countryCode)

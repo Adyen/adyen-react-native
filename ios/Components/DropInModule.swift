@@ -43,7 +43,7 @@ internal final class DropInModule: BaseModule {
             config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
         }
         if let requestorAppUrl = ThreeDS2ConfigurationParser(configuration: configuration).requestorAppUrl,
-        let url = URL(string: requestorAppUrl) {
+           let url = URL(string: requestorAppUrl) {
             config.actionComponent.threeDS.requestorAppURL = url
         }
 

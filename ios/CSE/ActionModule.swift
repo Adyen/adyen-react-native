@@ -5,9 +5,9 @@
 //
 
 import Adyen
+import Adyen3DS2
 import Foundation
 import React
-import Adyen3DS2
 
 @objc(AdyenAction)
 internal final class ActionModule: BaseModule, ActionComponentDelegate {
