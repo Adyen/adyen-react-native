@@ -35,7 +35,8 @@ internal final class DropInModule: BaseModule {
             return sendEvent(error: error)
         }
 
-        let config = DropInConfigurationParser(configuration: configuration).configuration
+        let dropInConfigParser = DropInConfigurationParser(configuration: configuration)
+        let config = dropInConfigParser.configuration
         config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
         config.style = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
         if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
@@ -55,7 +56,8 @@ internal final class DropInModule: BaseModule {
         SessionHelperModule.sessionListener = self
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         context: context,
-                                        configuration: config)
+                                        configuration: config,
+                                        title: dropInConfigParser.title)
         currentComponent = component
         component.delegate = BaseModule.session ?? self
         component.partialPaymentDelegate = BaseModule.session
