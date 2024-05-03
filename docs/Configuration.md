@@ -19,10 +19,11 @@
 
 ## React Native SDK provides the following configurations for components:
 
-### DropIn component
+### Drop-in
 
 - `showPreselectedStoredPaymentMethod` - Determines whether to enable the preselected stored payment method view step. Defaults to **true**.
 - `skipListWhenSinglePaymentMethod` - If set to **true** allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.
+- `title` - Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name used. This property have no effect on Android.
 
 ### Card component
 

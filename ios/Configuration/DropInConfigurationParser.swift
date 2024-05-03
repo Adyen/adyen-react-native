@@ -36,6 +36,10 @@ public struct DropInConfigurationParser {
         return value
     }
 
+    var title: String? {
+        dict[DropInKeys.title] as? String
+    }
+
     public var configuration: DropInComponent.Configuration {
         .init(allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
               allowPreselectedPaymentView: showPreselectedStoredPaymentMethod)
