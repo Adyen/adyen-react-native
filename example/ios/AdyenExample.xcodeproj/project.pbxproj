@@ -18,6 +18,11 @@
 		B6CB27F7E4011E633F2A25A7 /* libPods-AdyenExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 74FF1EDD8A3337F905F9FF61 /* libPods-AdyenExample.a */; };
 		E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */; };
 		E79C3AD02BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79C3ACF2BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift */; };
+		E7ED1EC22BF25F6C00B5F080 /* DropInNativeModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED1EBD2BF25F6C00B5F080 /* DropInNativeModuleTests.swift */; };
+		E7ED1EC32BF25F6C00B5F080 /* Wait+UIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED1EBE2BF25F6C00B5F080 /* Wait+UIKit.swift */; };
+		E7ED1EC42BF25F6C00B5F080 /* UIViewController+Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED1EBF2BF25F6C00B5F080 /* UIViewController+Search.swift */; };
+		E7ED1EC52BF25F6C00B5F080 /* Wait.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED1EC02BF25F6C00B5F080 /* Wait.swift */; };
+		E7ED1EC62BF25F6C00B5F080 /* UIView+Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED1EC12BF25F6C00B5F080 /* UIView+Search.swift */; };
 		F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */; };
 /* End PBXBuildFile section */
 
@@ -53,6 +58,11 @@
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
 		E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropInConfigurationParserTests.swift; sourceTree = "<group>"; };
 		E79C3ACF2BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThreeDSConfigurationParserTests.swift; sourceTree = "<group>"; };
+		E7ED1EBD2BF25F6C00B5F080 /* DropInNativeModuleTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DropInNativeModuleTests.swift; sourceTree = "<group>"; };
+		E7ED1EBE2BF25F6C00B5F080 /* Wait+UIKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Wait+UIKit.swift"; sourceTree = "<group>"; };
+		E7ED1EBF2BF25F6C00B5F080 /* UIViewController+Search.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIViewController+Search.swift"; sourceTree = "<group>"; };
+		E7ED1EC02BF25F6C00B5F080 /* Wait.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Wait.swift; sourceTree = "<group>"; };
+		E7ED1EC12BF25F6C00B5F080 /* UIView+Search.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+Search.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdyenAppearance.swift; sourceTree = "<group>"; };
 		F6D60E250285EB5A965E4921 /* Pods-AdyenExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdyenExample.debug.xcconfig"; path = "Target Support Files/Pods-AdyenExample/Pods-AdyenExample.debug.xcconfig"; sourceTree = "<group>"; };
@@ -81,6 +91,11 @@
 		00E356EF1AD99517003FC87E /* AdyenExampleTests */ = {
 			isa = PBXGroup;
 			children = (
+				E7ED1EBD2BF25F6C00B5F080 /* DropInNativeModuleTests.swift */,
+				E7ED1EC12BF25F6C00B5F080 /* UIView+Search.swift */,
+				E7ED1EBF2BF25F6C00B5F080 /* UIViewController+Search.swift */,
+				E7ED1EC02BF25F6C00B5F080 /* Wait.swift */,
+				E7ED1EBE2BF25F6C00B5F080 /* Wait+UIKit.swift */,
 				E773B10A2BE3B5B000638431 /* Parsers */,
 				00E356F01AD99517003FC87E /* Supporting Files */,
 				948B9B012A83D269003D15B4 /* DropInTest.swift */,
@@ -431,9 +446,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */,
+				E7ED1EC52BF25F6C00B5F080 /* Wait.swift in Sources */,
+				E7ED1EC62BF25F6C00B5F080 /* UIView+Search.swift in Sources */,
 				945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */,
 				E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */,
 				948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */,
+				E7ED1EC22BF25F6C00B5F080 /* DropInNativeModuleTests.swift in Sources */,
+				E7ED1EC32BF25F6C00B5F080 /* Wait+UIKit.swift in Sources */,
+				E7ED1EC42BF25F6C00B5F080 /* UIViewController+Search.swift in Sources */,
 				E79C3AD02BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -618,6 +638,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+					_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION,
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -638,6 +659,11 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-Wl",
+					"-ld_classic",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 			};
@@ -680,6 +706,10 @@
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION,
+				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -697,6 +727,11 @@
 					"\"$(inherited)\"",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-Wl",
+					"-ld_classic",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
