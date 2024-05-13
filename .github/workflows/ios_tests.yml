@@ -41,7 +41,6 @@ jobs:
           key: temp-node-${{ github.sha }}
 
       - name: Build dependency if needed
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn
 
       - uses: actions/cache@v4
@@ -53,6 +52,12 @@ jobs:
       - name: Pod install
         working-directory: example/ios
         run: pod update
+
+      - name: Run Metro
+        working-directory: example
+        run: |
+          yarn 
+          npx react-native start
 
       - name: Run tests
         working-directory: example/ios
