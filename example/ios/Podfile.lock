@@ -1,38 +1,38 @@
 PODS:
-  - Adyen (5.7.0):
-    - Adyen/Actions (= 5.7.0)
-    - Adyen/Card (= 5.7.0)
-    - Adyen/Components (= 5.7.0)
-    - Adyen/Core (= 5.7.0)
-    - Adyen/DropIn (= 5.7.0)
-    - Adyen/Encryption (= 5.7.0)
-    - Adyen/Session (= 5.7.0)
+  - Adyen (5.7.1):
+    - Adyen/Actions (= 5.7.1)
+    - Adyen/Card (= 5.7.1)
+    - Adyen/Components (= 5.7.1)
+    - Adyen/Core (= 5.7.1)
+    - Adyen/DropIn (= 5.7.1)
+    - Adyen/Encryption (= 5.7.1)
+    - Adyen/Session (= 5.7.1)
   - adyen-react-native (2.0.0-local.1):
-    - Adyen (= 5.7.0)
+    - Adyen (= 5.7.1)
     - React-Core
-  - Adyen/Actions (5.7.0):
+  - Adyen/Actions (5.7.1):
     - Adyen/Core
-    - Adyen3DS2 (= 2.4.1)
-  - Adyen/Card (5.7.0):
-    - Adyen/Core
-    - Adyen/Encryption
-  - Adyen/Components (5.7.0):
+    - Adyen3DS2 (= 2.4.2)
+  - Adyen/Card (5.7.1):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Core (5.7.0):
+  - Adyen/Components (5.7.1):
+    - Adyen/Core
+    - Adyen/Encryption
+  - Adyen/Core (5.7.1):
     - AdyenNetworking (= 2.0.0)
-  - Adyen/DropIn (5.7.0):
+  - Adyen/DropIn (5.7.1):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (5.7.0):
+  - Adyen/Encryption (5.7.1):
     - Adyen/Core
-  - Adyen/Session (5.7.0):
+  - Adyen/Session (5.7.1):
     - Adyen/Actions
     - Adyen/Core
-  - Adyen3DS2 (2.4.1)
+  - Adyen3DS2 (2.4.2)
   - AdyenNetworking (2.0.0)
   - boost (1.76.0)
   - DoubleConversion (1.1.6)
@@ -482,9 +482,9 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: 48550990ad15ccde06ca6f8dc3143fc8c44719b6
-  adyen-react-native: f45e5095ed4711680eeb9d95afa93d5c1d664b5b
-  Adyen3DS2: 6e1e6c7369118377feabe59706fc4a06dcfa848b
+  Adyen: 61b166d1412eec226e8aa00727b7dc25d25008bb
+  adyen-react-native: 2f82afdab97be28fbe926a9cdfa8bf87b1c81c1b
+  Adyen3DS2: aaa0a86c89f4f5d482d20894b2f91e91a63aee6b
   AdyenNetworking: 49e447632b542e08c6dd06bb47ea1077a8adecb7
   boost: 57d2868c099736d80fcd648bf211b4431e51a558
   DoubleConversion: 5189b271737e1565bdce30deb4a08d647e3f5f54
