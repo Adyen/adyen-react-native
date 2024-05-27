@@ -67,7 +67,7 @@ class ActionFragment(
 
     companion object {
         private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
-        internal const val TAG = "InstantFragment"
+        internal const val TAG = "ActionFragment"
         const val FRAGMENT_ERROR =
             "Not able to find AdyenComponentView in `component_view` fragment"
 
