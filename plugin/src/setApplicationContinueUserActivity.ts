@@ -9,8 +9,8 @@ export function setApplicationContinueUserActivity(contents: string): string {
       '- (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {\n' +
       '  if ([[userActivity activityType] isEqualToString:NSUserActivityTypeBrowsingWeb]) {\n' +
       '   NSURL *url = [userActivity webpageURL];\n' +
-      '    if (![url isEqual:[NSNull null]]) {\n' +
-      '      return [ADYRedirectComponent applicationDidOpenURL:url];\n' +
+      '    if (![url isEqual:[NSNull null]] && [ADYRedirectComponent applicationDidOpenURL:url]) {\n' +
+      '      return YES;\n' +
       '    }\n' +
       '  }\n'
     );
@@ -21,8 +21,8 @@ export function setApplicationContinueUserActivity(contents: string): string {
       '- (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {\n' +
       '  if ([[userActivity activityType] isEqualToString:NSUserActivityTypeBrowsingWeb]) {\n' +
       '    NSURL *url = [userActivity webpageURL];\n' +
-      '    if (![url isEqual:[NSNull null]]) {\n' +
-      '      return [ADYRedirectComponent applicationDidOpenURL:url];\n' +
+      '    if (![url isEqual:[NSNull null]] && [ADYRedirectComponent applicationDidOpenURL:url]) {\n' +
+      '      return YES;\n' +
       '    }\n' +
       '  }\n' +
       '  return [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler];\n' +
