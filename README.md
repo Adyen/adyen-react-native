@@ -1,6 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v5.7.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/5.7.0)
-[![Adyen Android](https://img.shields.io/badge/android-v5.3.1-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.3.1)
+[![Adyen iOS](https://img.shields.io/badge/ios-v5.8.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/5.8.0)
+[![Adyen Android](https://img.shields.io/badge/android-v5.4.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.4.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
 

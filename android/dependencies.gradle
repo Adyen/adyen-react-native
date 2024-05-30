@@ -14,7 +14,7 @@ ext {
     jacoco_version = '0.8.9'
 
     // Adyen Dependencies
-    adyen_version = "5.3.1"
+    adyen_version = "5.4.0"
 
     // Tests
     json_version = '20231013'
