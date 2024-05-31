@@ -25,7 +25,7 @@ export function setApplicationOpenUrl(contents: string): string {
       '@end',
       `\n` +
         `- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {\n` +
-        `  return [ADYRedirectComponent applicationDidOpenURL:url];\n` +
+        `  return [ADYRedirectComponent applicationDidOpenURL:url] || [super application:application openURL:url options:options] || [RCTLinkingManager application:application openURL:url options:options];\n` +
         `}\n` +
         '@end'
     );

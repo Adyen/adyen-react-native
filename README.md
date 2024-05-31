@@ -101,7 +101,7 @@ In case you are using `RCTLinkingManager` or other deep-linking techniques, plac
 
 ```objc
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-  return [ADYRedirectComponent applicationDidOpenURL:url] || [RCTLinkingManager application:application openURL:url options:options];
+  return [ADYRedirectComponent applicationDidOpenURL:url] || [super application:application openURL:url options:options] || [RCTLinkingManager application:application openURL:url options:options];
 }
 ```
 
@@ -115,7 +115,7 @@ For Universal Link support, use:
     }
   }
   BOOL result = [RCTLinkingManager application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
-  return result || [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
+  return [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler] || result;
 }
 ```
 
