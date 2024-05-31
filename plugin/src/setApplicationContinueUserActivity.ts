@@ -25,7 +25,8 @@ export function setApplicationContinueUserActivity(contents: string): string {
       '      return YES;\n' +
       '    }\n' +
       '  }\n' +
-      '  return [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler];\n' +
+      '  BOOL result = [RCTLinkingManager application:application continueUserActivity:userActivity restorationHandler:restorationHandler];\n' +
+      '  return result || [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler];\n' +
       '}\n' +
       '@end'
     );
