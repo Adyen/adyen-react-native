@@ -5,7 +5,7 @@
 | Parameter | Description | Required |
 | --- | --- | --- |
 | `environment` | Current Adyen API. Use **test** for debugging. When you are ready to go live, change the value to one of our [live environments](https://docs.adyen.com/online-payments/drop-in-web#testing-your-integration).  | Yes |
-| `clientKey` | A public key linked to your API credential, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication). | Yes |
+| `clientKey` | A public key linked to your API credentials, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication). | Yes |
 | `amount` | Amount to be displayed on the "Pay" Button. It expects an object with a minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **10$**. For card pre-authorisation set the amount to **0** (zero). | For `ApplePay` and `GooglePay`. Must be used together with `countryCode` |
 | `countryCode` | The shopper's country code in ISO 3166-1 alpha-2 format. Example: **NL** or **US**. | For `ApplePay` and `GooglePay`. Must be used together with `amount` |
 | `shopperLocale` | In the current version, this property only localizes payment method names. The default OS's locale is used for localization. | No |
