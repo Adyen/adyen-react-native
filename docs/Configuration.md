@@ -2,88 +2,95 @@
 
 ## Root configurations
 
-- `environment` - Use **test**. When you are ready to go live, change the value to one of our [live environments](https://docs.adyen.com/online-payments/drop-in-web#testing-your-integration).
-- `clientKey` - A public key linked to your API credential, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication).
-- `amount` - Amount to be displayed on the Pay Button. It expects an object with a minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **10$**. For card pre-authorisation set the amount to **0** (zero).
-- `countryCode` - The shopper's country code in ISO 3166-1 alpha-2 format. Example: **NL** or **US**.
-- `shopperLocale` - 🚧 Work in progress. In the current version, this property only localizes payment method names. The default OS's locale is used for localization.
-- `returnUrl` - For iOS, this is the URL to your app, where the shopper should return, after a redirection. Maximum of 1024 characters. For more information on setting a custom URL scheme for your app, read the [Apple Developer documentation](https://developer.apple.com/documentation/uikit/inter-process_communication/allowing_apps_and_websites_to_link_to_your_content/defining_a_custom_url_scheme_for_your_app).
-  For Android, this value is automatically overridden by `AdyenCheckout`.
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `environment` | Current Adyen API. Use **test** for debugging. When you are ready to go live, change the value to one of our [live environments](https://docs.adyen.com/online-payments/drop-in-web#testing-your-integration).  | Yes |
+| `clientKey` | A public key linked to your API credentials, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication). | Yes |
+| `amount` | Amount to be displayed on the "Pay" Button. It expects an object with a minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **10$**. For card pre-authorisation set the amount to **0** (zero). | For `ApplePay` and `GooglePay`. Must be used together with `countryCode` |
+| `countryCode` | The shopper's country code in ISO 3166-1 alpha-2 format. Example: **NL** or **US**. | For `ApplePay` and `GooglePay`. Must be used together with `amount` |
+| `shopperLocale` | In the current version, this property only localizes payment method names. The default OS's locale is used for localization. | No |
+| `returnUrl` | Url where the shopper should return after a payment is completed. Can use [Universal Links](https://developer.apple.com/ios/universal-links/)/[App Links](https://developer.android.com/training/app-links) or Custom URL Schemes. Maximum of 1024 characters.<br><br> - For **iOS**, any means of redirect an be used.<br><br> - For **Android Components**, any means of redirect an be used.<br><br> - For **Android Drop-in**, this value is automatically overridden by `AdyenCheckout`. Also, `await AdyenDropIn.getReturnURL()` can be used to extract a `returnUrl`.  | Yes |
 
-> ⚠️ To show the amount on the **Pay** button both _amount_ and _countryCode_ must be set.
+> [!IMPORTANT]
+> To show the amount on the **Pay** button both _amount_ and _countryCode_ must be set.
 
 ## Analytics
 
-- `enabled` - Enable/Disable all analytics. Defaults to **true**. ⚠️ This feature only available from v68 of Adyen API.
-- `verboseLogs` - Enable extensive logs from SDK. Helpful during debugging. Defaults to **false**.
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `enabled` | Enable/Disable all analytics. Defaults to **true**. ⚠️ This feature is only available from v68 of Adyen API. | No |
+| `verboseLogs` | Enable extensive logs from SDK. Helpful during debugging. Defaults to **false**. | No |
 
 ## React Native SDK provides the following configurations for components:
 
 ### Drop-in
 
-- `showPreselectedStoredPaymentMethod` - Determines whether to enable the preselected stored payment method view step. Defaults to **true**.
-- `skipListWhenSinglePaymentMethod` - If set to **true** allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.
-- `title` - Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name used. This property have no effect on Android.
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `showPreselectedStoredPaymentMethod` | Determines whether to enable the preselected stored payment method view step. Defaults to **true**. | No |
+| `skipListWhenSinglePaymentMethod` | If set to **true** allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**. | No |
+| `title` | Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name is used. This property has no effect on Android. | No |
 
 ### Card component
 
-- `addressVisibility` - Indicates the display mode of the billing address form. Options: **"none"**, **"postal"**, **"full"**. Defaults to **"none"**.
-- `allowedAddressCountryCodes` - List of ISO 3166-1 alpha-2 country code values to control country picker options in full address form.
-- `hideCvc` - Indicates whether to show the security code field at all. Defaults to false.
-- `hideCvcStoredCard` - Indicates whether to show the security code field on a stored card payment. Defaults to false.
-- `holderNameRequired` - Indicates if the field for entering the holder name should be displayed in the form. Defaults to **false**.
-- `kcpVisibility` - Indicates whether to show the security fields for South Korea-issued cards. Options: **"show"** or **"hide"**. Defaults to **"hide"**.
-- `showStorePaymentField` - Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**.
-- `socialSecurity` - Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**.
-- `supported` - The list of allowed card types. By default, uses a list of `brands` from the payment method. Fallbacks to list of all known cards.
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `addressVisibility` | Indicates the display mode of the billing address form. Options: **"none"**, **"postal"**, **"full"**. Defaults to **"none"**. | No |
+| `allowedAddressCountryCodes` | List of ISO 3166-1 alpha-2 country code values to control country picker options in full address form. | No |
+| `hideCvc` | Indicates whether to show the security code field at all. Defaults to false. | No |
+| `hideCvcStoredCard` | Indicates whether to show the security code field on a stored card payment. Defaults to false. | No |
+| `holderNameRequired` | Indicates if the field for entering the holder name should be displayed in the form. Defaults to **false**. | No |
+| `kcpVisibility` | Indicates whether to show the security fields for South Korea-issued cards. Options: **"show"** or **"hide"**. Defaults to **"hide"**. | No |
+| `showStorePaymentField` | Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**. | No |
+| `socialSecurity` | Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**. | No |
+| `supported` | The list of allowed card types. By default, a list of `brands` from the payment method is used. Fallbacks to list of all known cards. | No |
 
-### 3D Security 2
+### 3D Secure 2 
 
-- **requestorAppUrl** - Alternative `returnURL` value that could be used for 3D Security 2 OOB flow. Always use a [Universal Link](https://developer.apple.com/ios/universal-links/) aka [App Link](https://developer.android.com/training/app-links#android-app-links).
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `requestorAppUrl` | Alternative `returnURL` value that could be used for 3D Security 2 OOB flow. Always use a [Universal Link](https://developer.apple.com/ios/universal-links/) aka [App Link](https://developer.android.com/training/app-links#android-app-links). | No |
 
 
 ### ApplePay component
 
-- `merchantID` - The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.
-- `merchantName` - The merchant name. This value will be used to generate a single _PKPaymentSummaryItem_ if `summaryItems` is not provided.
-- `allowOnboarding` - The flag to toggle onboarding. If **true**, allow the shopper to add cards to Apple Pay if none exist yet or none is applicable. If **false**, Apple Pay is disabled when the shopper doesn’t have supported cards on the Apple Pay wallet. The default is **false**.
-- `summaryItems` - An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. **WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`.
-- `requiredShippingContactFields` - A list of fields that you need for a shipping contact in order to process the transaction. The list is empty by default.
-- `requiredBillingContactFields` - A list of fields that you need for a billing contact in order to process the transaction. The list is empty by default.
-- `billingContact` - Billing contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
-- `shippingContact` -  Shipping contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).
-- `shippingType` - Indicates the display mode for the shipping (e.g. "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Corresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype).
-- `supportedCountries` - A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.
-- `shippingMethods` - The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods). 
+> [!IMPORTANT]
+> Requires `amount` and `countryCode`
+
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `merchantID` | The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay. | Yes |
+| `merchantName` | The merchant name. This value will be used to generate a single _PKPaymentSummaryItem_. | Yes, if `summaryItems` is not provided. |
+| `allowOnboarding` | The flag to toggle onboarding. If **true**, allow the shopper to add cards to Apple Pay if none exist yet or none is applicable. If **false**, Apple Pay is disabled when the shopper doesn’t have supported cards on the Apple Pay wallet. The default is **false**. | No |
+| `summaryItems` | An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. <br>**WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. | Yes, if `merchantName` is not provided.  |
+| `requiredShippingContactFields` | A list of fields that you need for a shipping contact to process the transaction. The list is empty by default. | No |
+| `requiredBillingContactFields` | A list of fields that you need for a billing contact to process the transaction. The list is empty by default. | No |
+| `billingContact` | Billing contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact). | No |
+| `shippingContact` |  Shipping contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact). | No |
+| `shippingType` | Indicates the display mode for the shipping (e.g. "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Corresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype). | No |
+| `supportedCountries` | A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries. | No |
+| `shippingMethods` | The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods).  | No |
 
 ### GooglePay component
 
-- `merchantAccount` - The merchant account to be put in the payment token from Google to Adyen. By default uses value from `brands`.
-- `allowedCardNetworks` - One or more card networks that you support, also supported by the Google Pay API.
-- `allowedAuthMethods` - Fields supported to authenticate a card transaction.
-- `totalPriceStatus` - The status of the total price used. Defaults to **"FINAL"**.
-- `allowPrepaidCards` - Set to **false** if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified.
-- `allowCreditCards` - Set to **false** if you don't support credit cards. Default: The credit card class is supported for the card networks specified.
-- `billingAddressRequired` - Set to **true** if you require a billing address. A billing address should only be requested if it's required to process the transaction.
-- `billingAddressParameters` - Set billing address parameters:
+> [!IMPORTANT]
+> Requires `amount` and `countryCode`
 
-  - `format` - Billing address format required to complete the transaction.
-    
-    Possible values:
-      MIN *(default)*: Name, country code, and postal code.
-      FULL: Name, street address, locality, region, country code, and postal code.
-
-  - `phoneNumberRequired` - Set to true if a phone number is required for the provided shipping address.
-
-- `emailRequired` - Set to **true** to request an email address.
-- `shippingAddressRequired` - Set to **true** to request a full shipping address.
-- `shippingAddressParameters` - Set shipping address parameters.
-
-  - `allowedCountryCodes` - List of ISO 3166-1 alpha-2 country code values of the countries where shipping is allowed. If this object isn't specified, all shipping address countries are allowed.
-  - `phoneNumberRequired` - Set to true if a phone number is required for the provided shipping address.
-
-- `existingPaymentMethodRequired` - If set to **true** then the `isReadyToPayResponse` object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in **allowedPaymentMethods**.
-- `googlePayEnvironment` - The environment to be used by GooglePay. Should be either **WalletConstants.ENVIRONMENT_TEST** or **WalletConstants.ENVIRONMENT_PRODUCTION**. By default uses `environment` from the root.
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `merchantAccount` | The merchant account to be put in the payment token from Google to Adyen. By default, value from `brands` is used. | No |
+| `allowedCardNetworks` | The card networks you want to support from the list of cards supported by the Google Pay API. | No |
+| `allowedAuthMethods` | Fields supported to authenticate a card transaction. | No |
+| `totalPriceStatus` | The status of the total price used. Defaults to **"FINAL"**. | No |
+| `allowPrepaidCards` | Set to **false** if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified. | No |
+| `allowCreditCards` | Set to **false** if you don't support credit cards. Default: The credit card class is supported for the card networks specified. | No |
+| `billingAddressRequired` | Set to **true** if you require a billing address. A billing address should only be requested if it's required to process the transaction. | No |
+| `billingAddressParameters` | Set billing address parameters:<br><br>- `format` - Billing address format required to complete the transaction.<br>    Possible values:<br>      MIN *(default)*: Name, country code, and postal code.<br>      FULL: Name, street address, locality, region, country code, and postal code.<br><br>- `phoneNumberRequired` - Set to true if a phone number is required for the provided shipping address. | No |
+| `emailRequired` | Set to **true** to request an email address. | No |
+| `shippingAddressRequired` | Set to **true** to request a full shipping address. | No |
+| `shippingAddressParameters` | Set shipping address parameters.<br><br>  - `allowedCountryCodes` - List of ISO 3166-1 alpha-2 country code values of the countries where shipping is allowed. If this object isn't specified, all shipping address countries are allowed.<br><br>  - `phoneNumberRequired` - Set to true if a phone number is required for the provided shipping address. | No |
+| `existingPaymentMethodRequired` | If set to **true** then the `isReadyToPayResponse` object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in **allowedPaymentMethods**. | No |
+| `googlePayEnvironment` | The environment to be used by GooglePay. Should be either **WalletConstants.ENVIRONMENT_TEST** or **WalletConstants.ENVIRONMENT_PRODUCTION**. By default use `environment` from the root. | No |
 
 ## Example
 

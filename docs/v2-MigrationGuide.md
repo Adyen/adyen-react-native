@@ -4,11 +4,11 @@
 
 ### Android
 
-* Merchant's app theme must be decendent of `Theme.MaterialComponents` to operate with "instant" payment components (ex. Paypal, Klarna). Example:
+* Merchant's app theme must be a descendent of `Theme.MaterialComponents` to operate with "instant" payment components (ex. Paypal, Klarna). Example:
 ```xml
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar"> 
 ```
-* `adyenReactNativeRedirectScheme` was deprecared. Use any [intentFilter](https://developer.android.com/guide/components/intents-filters). SDK will still provides `returnUrl` value inside of the `onSubmit.data` in case it is needed, be cautious to not override it.
+* `adyenReactNativeRedirectScheme` was deprecated. Use any [intentFilter](https://developer.android.com/guide/components/intents-filters). SDK will still provide `returnUrl` value inside of the `onSubmit.data` in case it is needed, be cautious to not override it. Also, for Android Drop-in `await AdyenDropIn.getReturnURL()` can be used to extract a `returnUrl`.
 
 ## Non breaking changes
 
