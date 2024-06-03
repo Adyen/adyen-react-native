@@ -11,7 +11,7 @@ ext {
     kotlin_version = '1.9.23'
 
     // Code quality
-    jacoco_version = '0.8.9'
+    jacoco_version = '0.8.12'
 
     // Adyen Dependencies
     adyen_version = "5.4.0"
