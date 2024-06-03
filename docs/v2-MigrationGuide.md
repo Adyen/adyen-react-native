@@ -8,7 +8,7 @@
 ```xml
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar"> 
 ```
-* `adyenReactNativeRedirectScheme` was deprecared. Use any [intentFilter](https://developer.android.com/guide/components/intents-filters). SDK will still provides `returnUrl` value inside of the `onSubmit.data` in case it is needed, be cautious to not override it.
+* `adyenReactNativeRedirectScheme` was deprecared. Use any [intentFilter](https://developer.android.com/guide/components/intents-filters). SDK will still provides `returnUrl` value inside of the `onSubmit.data` in case it is needed, be cautious to not override it. Also, for Android Drop-in `await AdyenDropIn.getReturnURL()` can be used to extract a `returnUrl`.
 
 ## Non breaking changes
 
