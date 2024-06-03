@@ -35,11 +35,16 @@ internal final class DropInModule: BaseModule {
             return sendEvent(error: error)
         }
 
-        let config = DropInConfigurationParser(configuration: configuration).configuration
+        let dropInConfigParser = DropInConfigurationParser(configuration: configuration)
+        let config = dropInConfigParser.configuration
         config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
         config.style = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
         if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
             config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
+        }
+        if let requestorAppUrl = ThreeDS2ConfigurationParser(configuration: configuration).requestorAppUrl,
+           let url = URL(string: requestorAppUrl) {
+            config.actionComponent.threeDS.requestorAppURL = url
         }
 
         if let payment = context.payment {
@@ -51,7 +56,8 @@ internal final class DropInModule: BaseModule {
         SessionHelperModule.sessionListener = self
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         context: context,
-                                        configuration: config)
+                                        configuration: config,
+                                        title: dropInConfigParser.title)
         currentComponent = component
         component.delegate = BaseModule.session ?? self
         component.partialPaymentDelegate = BaseModule.session

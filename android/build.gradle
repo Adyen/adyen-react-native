@@ -62,6 +62,5 @@ dependencies {
     //Tests
     testImplementation testLibraries.json
     testImplementation testLibraries.junit5
-    testImplementation testLibraries.kotlinCoroutines
     testImplementation testLibraries.mockito
 }

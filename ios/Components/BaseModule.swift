@@ -160,7 +160,7 @@ extension Error {
 
     var is3DSCanceled: Bool {
         (self as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError" &&
-        (self as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue
+            (self as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue
     }
 }
 

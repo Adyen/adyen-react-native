@@ -6,8 +6,6 @@
 
 package com.adyenreactnativesdk.component.applepay
 
-import com.adyen.checkout.components.core.CheckoutConfiguration
-import com.adyen.checkout.core.exception.MethodNotImplementedException
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.facebook.react.bridge.ReactApplicationContext

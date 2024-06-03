@@ -15,7 +15,7 @@ on:
 jobs:
   ios_tests:
     name: Test iOS
-    runs-on: macos-latest
+    runs-on: macos-14
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
@@ -54,21 +54,16 @@ jobs:
         working-directory: example/ios
         run: pod update
 
-      - name: Archive library
-        uses: actions/cache/save@v4
-        with:
-          path: example/ios/Pods
-          key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
-
       - name: Run tests
         working-directory: example/ios
         run: |
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
-            -destination "name=iPhone 14" \
+            -destination "platform=iOS Simulator,name=${{env.device}}" \
             -derivedDataPath ${{ env.buildFolder }} \
-            -enableCodeCoverage YES | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+            -enableCodeCoverage YES \
+            -allowProvisioningUpdates | xcpretty --utf --color && exit ${PIPESTATUS[0]}
 
       - name: Generate code Coverage
         working-directory: example/ios
@@ -79,7 +74,9 @@ jobs:
 
       - name: SwiftLint
         working-directory: ios
-        run: fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
+        run: | 
+          brew install swiftlint
+          fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
 
       - name: Archive Coverage report
         uses: actions/upload-artifact@v4

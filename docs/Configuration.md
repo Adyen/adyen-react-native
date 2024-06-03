@@ -19,10 +19,11 @@
 
 ## React Native SDK provides the following configurations for components:
 
-### DropIn component
+### Drop-in
 
 - `showPreselectedStoredPaymentMethod` - Determines whether to enable the preselected stored payment method view step. Defaults to **true**.
 - `skipListWhenSinglePaymentMethod` - If set to **true** allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.
+- `title` - Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name used. This property have no effect on Android.
 
 ### Card component
 
@@ -35,6 +36,11 @@
 - `showStorePaymentField` - Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**.
 - `socialSecurity` - Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**.
 - `supported` - The list of allowed card types. By default, uses a list of `brands` from the payment method. Fallbacks to list of all known cards.
+
+### 3D Security 2
+
+- **requestorAppUrl** - Alternative `returnURL` value that could be used for 3D Security 2 OOB flow. Always use a [Universal Link](https://developer.apple.com/ios/universal-links/) aka [App Link](https://developer.android.com/training/app-links#android-app-links).
+
 
 ### ApplePay component
 
@@ -57,6 +63,7 @@
 - `allowedAuthMethods` - Fields supported to authenticate a card transaction.
 - `totalPriceStatus` - The status of the total price used. Defaults to **"FINAL"**.
 - `allowPrepaidCards` - Set to **false** if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified.
+- `allowCreditCards` - Set to **false** if you don't support credit cards. Default: The credit card class is supported for the card networks specified.
 - `billingAddressRequired` - Set to **true** if you require a billing address. A billing address should only be requested if it's required to process the transaction.
 - `billingAddressParameters` - Set billing address parameters:
 
@@ -105,6 +112,9 @@ const configuration = {
     hideCvcStoredCard: true,
     hideCvc: true,
     allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL'],
+  },
+  threeDS2: {
+    requestorAppUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
   },
   applepay: {
     merchantID: '{YOUR_APPLE_MERCHANT_ID}',
@@ -183,6 +193,8 @@ const configuration = {
     requiredShippingContactFields: ['name', 'phone', 'email', 'postalAddress'],
   },
   googlepay: {
+    allowCreditCards: false,
+    allowPrepaidCards: false,
     billingAddressRequired: true,
     billingAddressParameters: {
       format: 'FULL',

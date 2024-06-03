@@ -1,6 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v5.7.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/5.7.0)
-[![Adyen Android](https://img.shields.io/badge/android-v5.3.1-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.3.1)
+[![Adyen iOS](https://img.shields.io/badge/ios-v5.8.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/5.8.0)
+[![Adyen Android](https://img.shields.io/badge/android-v5.4.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.4.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
 
@@ -101,7 +101,7 @@ In case you are using `RCTLinkingManager` or other deep-linking techniques, plac
 
 ```objc
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-  return [ADYRedirectComponent applicationDidOpenURL:url] || [RCTLinkingManager application:application openURL:url options:options];
+  return [ADYRedirectComponent applicationDidOpenURL:url] || [super application:application openURL:url options:options] || [RCTLinkingManager application:application openURL:url options:options];
 }
 ```
 
@@ -110,11 +110,12 @@ For Universal Link support, use:
 - (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
   if ([[userActivity activityType] isEqualToString:NSUserActivityTypeBrowsingWeb]) {
    NSURL *url = [userActivity webpageURL];
-    if (![url isEqual:[NSNull null]]) {
-      return [ADYRedirectComponent applicationDidOpenURL:url];
+    if (![url isEqual:[NSNull null]] && [ADYRedirectComponent applicationDidOpenURL:url]) {
+      return YES;
     }
   }
-  return [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
+  BOOL result = [RCTLinkingManager application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
+  return [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler] || result;
 }
 ```
 

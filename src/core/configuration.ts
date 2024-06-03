@@ -57,6 +57,8 @@ export interface DropInConfiguration {
   showPreselectedStoredPaymentMethod?: boolean;
   /** Determines whether to enable skipping payment list step when there is only one non-instant payment method. */
   skipListWhenSinglePaymentMethod?: boolean;
+  /** Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name used. This property have no effect on Android. */
+  title?: string;
 }
 
 /** Collection of values for address field visibility. */
@@ -227,6 +229,8 @@ export interface GooglePayConfiguration {
   totalPriceStatus?: TotalPriceStatus;
   /** Set to false if you don't support prepaid cards. Default: The prepaid card class is supported for the card networks specified. */
   allowPrepaidCards?: boolean;
+  /** Set to false if you don't support credit cards. Default: The credit card class is supported for the card networks specified. */
+  allowCreditCards?: boolean;
   /** Set to true if you require a billing address. A billing address should only be requested if it's required to process the transaction. */
   billingAddressRequired?: boolean;
   /** The expected fields returned if billingAddressRequired is set to true. */

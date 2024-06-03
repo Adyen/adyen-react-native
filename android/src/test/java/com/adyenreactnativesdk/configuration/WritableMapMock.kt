@@ -13,7 +13,7 @@ import com.facebook.react.bridge.ReadableMapKeySetIterator
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
 
-class WritableMapMock: WritableMap, ReadableMapKeySetIterator {
+class WritableMapMock : WritableMap, ReadableMapKeySetIterator {
 
     private val map: MutableMap<String, Any?> = mutableMapOf()
     private lateinit var iterator: MutableIterator<MutableMap.MutableEntry<String, Any>>
@@ -64,7 +64,8 @@ class WritableMapMock: WritableMap, ReadableMapKeySetIterator {
             is Double -> ReadableType.Number
             is Float -> ReadableType.Number
             is Int -> ReadableType.Number
-            is Map<*,*> -> ReadableType.Map
+            is Long -> ReadableType.Number
+            is Map<*, *> -> ReadableType.Map
             is Boolean -> ReadableType.Boolean
             is Array<*> -> ReadableType.Array
             else -> ReadableType.Null

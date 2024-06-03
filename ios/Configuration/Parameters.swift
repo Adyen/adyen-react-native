@@ -30,13 +30,14 @@ internal enum Keys {
 internal enum AnalyticsKeys: SubConfig {
     static var rootKey = "analytics"
     static var enabled = "enabled"
-    static var verboseLogs = "verboseLogs" 
+    static var verboseLogs = "verboseLogs"
 }
 
 internal enum DropInKeys: SubConfig {
     static var rootKey = "dropin"
     static var showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod"
     static var skipListWhenSinglePaymentMethod = "skipListWhenSinglePaymentMethod"
+    static var title = "title"
 }
 
 internal enum CardKeys: SubConfig {
@@ -100,4 +101,9 @@ internal enum ApplePayKeys: SubConfig {
 
 internal enum StyleKeys: SubConfig {
     static var rootKey = "style"
+}
+
+internal enum ThreeDSKey: SubConfig {
+    static var rootKey = "threeDS2"
+    static var requestorAppUrl = "requestorAppUrl"
 }
