@@ -45,7 +45,7 @@
 | `socialSecurity` | Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**. | No |
 | `supported` | The list of allowed card types. By default, uses a list of `brands` from the payment method. Fallbacks to list of all known cards. | No |
 
-### 3D Security 2
+### 3D Secure 2 
 
 | Parameter | Description | Required |
 | --- | --- | --- |
