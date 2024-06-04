@@ -14,7 +14,7 @@ class ApiClient {
       ...parseAmount(configuration, data),
       ...serverConfiguration,
       ...paymentConfiguration,
-      returnUrl: returnUrl
+      returnUrl: returnUrl,
     };
 
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
@@ -30,7 +30,7 @@ class ApiClient {
       ...parseAmount(configuration),
       ...serverConfiguration,
       ...paymentConfiguration,
-      returnUrl: returnUrl
+      returnUrl: returnUrl,
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
@@ -59,7 +59,7 @@ class ApiClient {
     });
 
     const response = await fetch(request);
-    const pspReference = response.headers.get("pspreference");
+    const pspReference = response.headers.get('pspreference');
     console.debug(`PSP Reference - ${pspReference}`);
     const payload = await response.json();
     if (response.ok) return payload;
@@ -102,7 +102,7 @@ const paymentConfiguration = {
       imageUrl: 'URL_TO_PICTURE_OF_PURCHASED_ITEM',
     },
   ],
-  recurringProcessingModel: 'CardOnFile'
+  recurringProcessingModel: 'CardOnFile',
 };
 
 const parseAmount = (configuration, data) => ({

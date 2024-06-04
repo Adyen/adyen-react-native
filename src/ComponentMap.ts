@@ -115,5 +115,5 @@ export const NATIVE_COMPONENTS = [
   'boletobancario_hsbc',
   'boletobancario_itau',
   'boletobancario_santander',
-  'primeiropay_boleto'
+  'primeiropay_boleto',
 ];

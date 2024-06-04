@@ -36,7 +36,7 @@ export const checkPaymentMethodsResponse = (
     );
   }
 
-  return paymentMethodsResponse
+  return paymentMethodsResponse;
 };
 
 const countryCodeRegex = /^[A-Z]{2}$/;

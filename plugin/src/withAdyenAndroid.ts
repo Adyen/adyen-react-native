@@ -14,13 +14,9 @@ export const withAdyenAndroid: ConfigPlugin = (config) => {
       return newConfig;
     }
     if (mainActivity.language == 'java') {
-      mainActivity.contents = setJavaMainActivity(
-        mainActivity.contents
-      );
+      mainActivity.contents = setJavaMainActivity(mainActivity.contents);
     } else {
-      mainActivity.contents = setKotlinMainActivity(
-        mainActivity.contents
-      );
+      mainActivity.contents = setKotlinMainActivity(mainActivity.contents);
     }
 
     return newConfig;
@@ -33,5 +29,3 @@ export const withAdyenAndroid: ConfigPlugin = (config) => {
 
   return config;
 };
-
-

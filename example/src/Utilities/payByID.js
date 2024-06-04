@@ -18,7 +18,11 @@ export async function payByID(id, cvv, configuration) {
     },
   };
 
-  let result = await ApiClient.payments(data, configuration, ENVIRONMENT.returnUrl);
+  let result = await ApiClient.payments(
+    data,
+    configuration,
+    ENVIRONMENT.returnUrl
+  );
   if (result.action) {
     const actionConfiguration = checkoutConfiguration(configuration);
     const data = await AdyenAction.handle(result.action, actionConfiguration);

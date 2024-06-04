@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Button,
   SafeAreaView,
@@ -8,16 +8,16 @@ import {
   Alert,
   useColorScheme,
 } from 'react-native';
-import {AdyenAction} from '@adyen/react-native';
+import { AdyenAction } from '@adyen/react-native';
 import Styles from '../Utilities/Styles';
-import {useAppContext} from '../Utilities/AppContext';
-import {isSuccess} from '../Utilities/Helpers';
-import {payWithCard} from '../Utilities/payWithCard';
+import { useAppContext } from '../Utilities/AppContext';
+import { isSuccess } from '../Utilities/Helpers';
+import { payWithCard } from '../Utilities/payWithCard';
 
-const CseView = ({navigation}) => {
+const CseView = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
-  const {configuration} = useAppContext();
+  const { configuration } = useAppContext();
 
   const [number, setNumber] = useState('');
   const [expiryMonth, setExpiryMonth] = useState('');
@@ -43,7 +43,7 @@ const CseView = ({navigation}) => {
   function handleResult(navigation, result) {
     AdyenAction.hide(isSuccess(result.resultCode));
     navigation.popToTop();
-    navigation.push('Result', {result: result.resultCode});
+    navigation.push('Result', { result: result.resultCode });
   }
 
   return (

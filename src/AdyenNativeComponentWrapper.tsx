@@ -1,7 +1,7 @@
-import {NativeModule} from 'react-native';
-import {ErrorCode, Event} from './core/constants';
-import {PaymentAction, PaymentMethodsResponse} from './core/types';
-import {AdyenActionComponent} from './AdyenNativeModules';
+import { NativeModule } from 'react-native';
+import { ErrorCode, Event } from './core/constants';
+import { PaymentAction, PaymentMethodsResponse } from './core/types';
+import { AdyenActionComponent } from './AdyenNativeModules';
 
 export interface AdyenNativeComponentWrapperProps {
   nativeModule: NativeModule;
@@ -44,11 +44,11 @@ export class AdyenNativeComponentWrapper implements AdyenActionComponent {
   open(paymentMethods: PaymentMethodsResponse, configuration: any) {
     this.nativeModule.open(paymentMethods, configuration);
   }
-  hide(success: boolean, option?: {message?: string}) {
+  hide(success: boolean, option?: { message?: string }) {
     if (option?.message) {
       this.nativeModule.hide(success, option);
     } else {
-      this.nativeModule.hide(success, {message: ''});
+      this.nativeModule.hide(success, { message: '' });
     }
   }
 }

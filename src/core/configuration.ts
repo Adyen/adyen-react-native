@@ -1,4 +1,4 @@
-import {PaymentAmount} from './types';
+import { PaymentAmount } from './types';
 
 /** Collection of available environments. */
 export type Environment =
@@ -17,11 +17,11 @@ export interface BaseConfiguration {
   /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
   clientKey: string;
   /**
-  * The shopper's locale. This is used to enforce the language rendered in the UI.
-  * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
-  * Fallback locale is 'en-US'.
-  * @defaultValue null.
-  */
+   * The shopper's locale. This is used to enforce the language rendered in the UI.
+   * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
+   * Fallback locale is 'en-US'.
+   * @defaultValue null.
+   */
   locale?: string;
 }
 

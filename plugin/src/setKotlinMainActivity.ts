@@ -29,9 +29,11 @@ export function setKotlinMainActivity(contents: string): string {
   }
 
   // on ActivityResult
-  if (contents.includes(
-    'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {'
-  )) {
+  if (
+    contents.includes(
+      'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {'
+    )
+  ) {
     contents = contents.replace(
       'super.onActivityResult(requestCode, resultCode, data)\n',
       'super.onActivityResult(requestCode, resultCode, data)\n    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n'

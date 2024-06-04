@@ -46,7 +46,6 @@
     "@expo/config-plugins": "^7.8.4",
     "@react-native-community/eslint-config": "^3.2.0",
     "@tsconfig/node10": "^1.0.7",
-    "@tsconfig/react-native": "^3.0.0",
     "@types/react": "^18.0.29",
     "@types/react-test-renderer": "^18.0.0",
     "eslint": "^8.0.0",
@@ -87,17 +86,7 @@
     ],
     "rules": {
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
-      "prettier/prettier": [
-        "error",
-        {
-          "quoteProps": "consistent",
-          "singleQuote": true,
-          "tabWidth": 2,
-          "trailingComma": "es5",
-          "useTabs": false
-        }
-      ]
+      "react-hooks/exhaustive-deps": "warn"
     }
   },
   "eslintIgnore": [

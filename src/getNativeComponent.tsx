@@ -1,4 +1,4 @@
-import {NativeModule} from 'react-native';
+import { NativeModule } from 'react-native';
 import {
   find,
   NATIVE_COMPONENTS,
@@ -8,8 +8,8 @@ import {
   UNKNOWN_PAYMENT_METHOD_ERROR,
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from './core/constants';
-import {PaymentMethod, PaymentMethodsResponse} from './core/types';
-import {AdyenNativeComponentWrapper} from './AdyenNativeComponentWrapper';
+import { PaymentMethod, PaymentMethodsResponse } from './core/types';
+import { AdyenNativeComponentWrapper } from './AdyenNativeComponentWrapper';
 import {
   AdyenActionComponent,
   AdyenDropIn,
@@ -23,7 +23,7 @@ import {
  */
 export function getNativeComponent(
   typeName: string,
-  paymentMethods: PaymentMethodsResponse,
+  paymentMethods: PaymentMethodsResponse
 ): {
   nativeComponent: AdyenActionComponent & NativeModule;
   paymentMethod?: PaymentMethod;

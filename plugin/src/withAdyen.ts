@@ -1,7 +1,4 @@
-import {
-  ConfigPlugin,
-  createRunOncePlugin
-} from '@expo/config-plugins';
+import { ConfigPlugin, createRunOncePlugin } from '@expo/config-plugins';
 import { withAdyenAndroid } from './withAdyenAndroid';
 import { withAdyenIos } from './withAdyenIos';
 
@@ -13,7 +10,10 @@ export type AdyenPluginProps = {
 };
 
 const withAdyen: ConfigPlugin<AdyenPluginProps> = (config, props) => {
-  config = withAdyenIos(config, props ?? { merchantIdentifier: undefined, useFrameworks: false });
+  config = withAdyenIos(
+    config,
+    props ?? { merchantIdentifier: undefined, useFrameworks: false }
+  );
   config = withAdyenAndroid(config);
   return config;
 };
