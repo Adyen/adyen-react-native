@@ -14,7 +14,7 @@ on:
 
 jobs:
   test-Android:
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       target: google_apis
       arch: x86
