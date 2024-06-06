@@ -91,6 +91,7 @@
   },
   "eslintIgnore": [
     "node_modules/",
-    "lib/"
+    "lib/",
+    "plugin/build/"
   ]
 }

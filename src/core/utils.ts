@@ -5,7 +5,7 @@ import { PaymentMethodsResponse } from './types';
 export const checkPaymentMethodsResponse = (
   paymentMethodsResponse: PaymentMethodsResponse | undefined
 ) => {
-  if (paymentMethodsResponse == undefined) {
+  if (paymentMethodsResponse === undefined) {
     throw new Error(
       'paymentMethodsResponse is undefined. Make sure to make POST `paymentMethods` or call `conext.startSession()`' +
         'Try JSON.parse("{...}") your paymentMethodsResponse.'

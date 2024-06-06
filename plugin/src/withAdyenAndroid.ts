@@ -13,7 +13,7 @@ export const withAdyenAndroid: ConfigPlugin = (config) => {
     if (mainActivity.contents.includes('AdyenCheckout')) {
       return newConfig;
     }
-    if (mainActivity.language == 'java') {
+    if (mainActivity.language === 'java') {
       mainActivity.contents = setJavaMainActivity(mainActivity.contents);
     } else {
       mainActivity.contents = setKotlinMainActivity(mainActivity.contents);
