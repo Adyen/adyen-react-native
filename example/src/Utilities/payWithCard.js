@@ -8,7 +8,7 @@ export async function payWithCard(unencryptedCard, configuration) {
     unencryptedCard,
     ENVIRONMENT.publicKey
   );
-  const data = {
+  const paymentData = {
     paymentMethod: {
       type: 'scheme',
       encryptedCardNumber: encryptedCard.number,
@@ -19,11 +19,15 @@ export async function payWithCard(unencryptedCard, configuration) {
     },
   };
 
-  let result = await ApiClient.payments(data, configuration, ENVIRONMENT.returnUrl);
+  let result = await ApiClient.payments(
+    paymentData,
+    configuration,
+    ENVIRONMENT.returnUrl
+  );
   if (result.action) {
     const actionConfiguration = checkoutConfiguration(configuration);
-    const data = await AdyenAction.handle(result.action, actionConfiguration);
-    result = await ApiClient.paymentDetails(data);
+    const actionData = await AdyenAction.handle(result.action, actionConfiguration);
+    result = await ApiClient.paymentDetails(actionData);
   }
   return result;
 }

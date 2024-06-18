@@ -12,50 +12,51 @@ import { ENVIRONMENT } from '../Configuration';
 
 export const AppContext = createContext({
   configuration: {},
-  save: async (configuration) => { },
+  save: async (configuration) => {},
 });
 
 export const checkoutConfiguration = (config) => {
-  const /** @type {import('@adyen/react-native').Configuration} */ configuration = {
-    clientKey: ENVIRONMENT.clientKey,
-    environment: ENVIRONMENT.environment,
-    returnUrl: ENVIRONMENT.returnUrl,
-    locale: config.shopperLocale,
-    amount: {
-      value: config.amount,
-      currency: config.currency,
-    },
-    countryCode: config.countryCode,
-    analytics: {
-      enabled: true,
-      verboseLogs: true,
-    },
-    applepay: {
-      merchantID: ENVIRONMENT.applepayMerchantID,
-      merchantName: config.merchantName,
-      requiredBillingContactFields: ['phoneticName', 'postalAddress'],
-      requiredShippingContactFields: [
-        'name',
-        'phone',
-        'email',
-        'postalAddress',
-      ],
-    },
-    googlepay: {
-      billingAddressRequired: true,
-      billingAddressParameters: {
-        format: 'FULL',
-        phoneNumberRequired: true,
-      },
-      shippingAddressRequired: true,
-      shippingAddressParameters: {
-        allowedCountryCodes: ['US', 'MX',],
-        phoneNumberRequired: true,
-      },
-      emailRequired: true,
-    }
-  };
-  return configuration
+  const /** @type {import('@adyen/react-native').Configuration} */ configuration =
+      {
+        clientKey: ENVIRONMENT.clientKey,
+        environment: ENVIRONMENT.environment,
+        returnUrl: ENVIRONMENT.returnUrl,
+        locale: config.shopperLocale,
+        amount: {
+          value: config.amount,
+          currency: config.currency,
+        },
+        countryCode: config.countryCode,
+        analytics: {
+          enabled: true,
+          verboseLogs: true,
+        },
+        applepay: {
+          merchantID: ENVIRONMENT.applepayMerchantID,
+          merchantName: config.merchantName,
+          requiredBillingContactFields: ['phoneticName', 'postalAddress'],
+          requiredShippingContactFields: [
+            'name',
+            'phone',
+            'email',
+            'postalAddress',
+          ],
+        },
+        googlepay: {
+          billingAddressRequired: true,
+          billingAddressParameters: {
+            format: 'FULL',
+            phoneNumberRequired: true,
+          },
+          shippingAddressRequired: true,
+          shippingAddressParameters: {
+            allowedCountryCodes: ['US', 'MX'],
+            phoneNumberRequired: true,
+          },
+          emailRequired: true,
+        },
+      };
+  return configuration;
 };
 
 export const useAppContext = () => {
@@ -92,7 +93,7 @@ const AppContextProvider = (props) => {
   const appState = useMemo(
     () => ({
       configuration: config,
-      save: saveConfiguration
+      save: saveConfiguration,
     }),
     [config]
   );

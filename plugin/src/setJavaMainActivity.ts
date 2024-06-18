@@ -30,9 +30,11 @@ export function setJavaMainActivity(contents: string): string {
   }
 
   // on ActivityResult
-  if (contents.includes(
-    'public void onActivityResult(int requestCode, int resultCode, Intent data) {'
-  )) {
+  if (
+    contents.includes(
+      'public void onActivityResult(int requestCode, int resultCode, Intent data) {'
+    )
+  ) {
     contents = contents.replace(
       'super.onActivityResult(requestCode, resultCode, data);\n  }',
       'super.onActivityResult(requestCode, resultCode, data);\n    AdyenCheckout.handleActivityResult(requestCode, resultCode, data);\n  }'

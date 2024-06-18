@@ -9,7 +9,7 @@ export async function payByID(id, cvv, configuration) {
     { cvv },
     ENVIRONMENT.publicKey
   );
-  const data = {
+  const paymentData = {
     paymentMethod: {
       type: 'scheme',
       storedPaymentMethodId: id,
@@ -18,11 +18,15 @@ export async function payByID(id, cvv, configuration) {
     },
   };
 
-  let result = await ApiClient.payments(data, configuration, ENVIRONMENT.returnUrl);
+  let result = await ApiClient.payments(
+    paymentData,
+    configuration,
+    ENVIRONMENT.returnUrl
+  );
   if (result.action) {
     const actionConfiguration = checkoutConfiguration(configuration);
-    const data = await AdyenAction.handle(result.action, actionConfiguration);
-    result = await ApiClient.paymentDetails(data);
+    const actionData = await AdyenAction.handle(result.action, actionConfiguration);
+    result = await ApiClient.paymentDetails(actionData);
   }
   AdyenAction.hide(isSuccess(result.resultCode));
   return result;

@@ -1,7 +1,7 @@
 // @ts-check
 
 import React from 'react';
-import {AdyenAction, useAdyenCheckout} from '@adyen/react-native';
+import { AdyenAction, useAdyenCheckout } from '@adyen/react-native';
 import {
   Button,
   View,
@@ -13,13 +13,13 @@ import {
   Alert,
 } from 'react-native';
 import Styles from '../../Utilities/Styles';
-import {ENVIRONMENT} from '../../Configuration';
-import {payByID} from '../../Utilities/payByID';
-import {useAppContext} from '../../Utilities/AppContext';
+import { ENVIRONMENT } from '../../Configuration';
+import { payByID } from '../../Utilities/payByID';
+import { useAppContext } from '../../Utilities/AppContext';
 
-const PaymentMethods = ({isSession}) => {
-  const {configuration} = useAppContext();
-  const {start, paymentMethods: paymentMethodsResponse} = useAdyenCheckout();
+const PaymentMethods = ({ isSession }) => {
+  const { configuration } = useAppContext();
+  const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
   const storedPaymentMethods = paymentMethodsResponse?.storedPaymentMethods;
 
@@ -27,11 +27,11 @@ const PaymentMethods = ({isSession}) => {
   const isDarkMode = useColorScheme() === 'dark';
 
   const subtitle = (
-    /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm,
+    /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm
   ) => {
     switch (pm.type) {
       case 'scheme':
-        return `**** **** **** ${pm['lastFour']} (exp ${pm['expiryMonth']}/${pm['expiryYear']})`;
+        return `**** **** **** ${pm.lastFour} (exp ${pm.expiryMonth}/${pm.expiryYear})`;
       default:
         return `${pm.id}`;
     }
@@ -72,7 +72,7 @@ const PaymentMethods = ({isSession}) => {
                             let result = await payByID(
                               p.id,
                               cvv,
-                              configuration,
+                              configuration
                             );
                             Alert.alert('Result', result.resultCode);
                           } catch (e) {
@@ -116,7 +116,7 @@ const PaymentMethods = ({isSession}) => {
   );
 };
 
-const PaymentMethodButton = ({onPress, title, subtitle, icon}) => {
+const PaymentMethodButton = ({ onPress, title, subtitle, icon }) => {
   const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${icon}@3x.png`;
 
   return (
@@ -126,7 +126,7 @@ const PaymentMethodButton = ({onPress, title, subtitle, icon}) => {
       underlayColor="#042417"
     >
       <View style={Styles.btnContainer}>
-        <Image source={{uri: iconURI}} style={Styles.btnIcon} />
+        <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
         <View style={Styles.content}>
           <Text style={Styles.btnText}>{title}</Text>
           {subtitle ? <Text style={Styles.btnText}>{subtitle}</Text> : <View />}

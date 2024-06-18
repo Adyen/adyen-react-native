@@ -65,7 +65,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       shopperLocale: shopperLocale,
       shopperReference: shopperReference,
     };
-    save(newConfiguration)
+    save(newConfiguration);
     goBack();
   }, [
     countryCode,
@@ -75,7 +75,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
     shopperLocale,
     merchantName,
     configuration,
-    shopperReference
+    shopperReference,
   ]);
 
   return (

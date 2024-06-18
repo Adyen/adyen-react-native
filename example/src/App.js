@@ -12,9 +12,9 @@ import {
   DarkTheme,
   DefaultTheme,
 } from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import {Button, Alert, useColorScheme} from 'react-native';
+import { Button, Alert, useColorScheme } from 'react-native';
 import CseView from './Views/CseView';
 import SettingView from './Views/SettingsView';
 import Result from './Views/ResultView';
@@ -22,11 +22,11 @@ import SessionsCheckout from './Views/Checkout/SessionsCheckout';
 import AdvancedCheckout from './Views/Checkout/AdvancedCheckout';
 import Home from './Views/HomeView';
 import AppContextProvider from './Utilities/AppContext';
-import {DEFAULT_CONFIGURATION} from './Configuration';
+import { DEFAULT_CONFIGURATION } from './Configuration';
 
 const Stack = createNativeStackNavigator();
 
-const SettingsButton = ({navigation}) => {
+const SettingsButton = ({ navigation }) => {
   return (
     <Button onPress={() => navigation.navigate(Page.Settings)} title="Edit" />
   );
@@ -56,21 +56,19 @@ const App = () => {
           <Stack.Screen
             name={Page.Home}
             component={Home}
-            options={({navigation}) => ({
-              headerRight: () => (
-                <SettingsButton navigation={navigation} />
-              ),
+            options={({ navigation }) => ({
+              headerRight: () => <SettingsButton navigation={navigation} />,
             })}
           />
           <Stack.Screen
             name={Page.SessionsCheckout}
             component={SessionsCheckout}
-            options={() => ({title: 'Sessions Checkout' })}
+            options={() => ({ title: 'Sessions Checkout' })}
           />
           <Stack.Screen
             name={Page.AdvancedCheckout}
             component={AdvancedCheckout}
-            options={() => ({title: 'Advanced Checkout' })}
+            options={() => ({ title: 'Advanced Checkout' })}
           />
           <Stack.Screen name={Page.Settings} component={SettingView} />
           <Stack.Screen name={Page.Result} component={Result} />

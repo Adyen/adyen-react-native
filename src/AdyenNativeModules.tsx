@@ -1,5 +1,5 @@
-import {NativeModule, NativeModules} from 'react-native';
-import {LINKING_ERROR} from './core/constants';
+import { NativeModule, NativeModules } from 'react-native';
+import { LINKING_ERROR } from './core/constants';
 import {
   Card,
   PaymentAction,
@@ -7,8 +7,8 @@ import {
   PaymentMethodsResponse,
   SessionResponse,
 } from './core/types';
-import {BaseConfiguration} from './core/configuration';
-import {ActionModuleWrapper} from './ActionModuleWrapper';
+import { BaseConfiguration } from './core/configuration';
+import { ActionModuleWrapper } from './ActionModuleWrapper';
 
 /**
  * Options for dismissing the payment component.
@@ -72,7 +72,7 @@ export interface ActionModule {
    */
   handle: (
     action: PaymentAction,
-    configuration: BaseConfiguration,
+    configuration: BaseConfiguration
   ) => Promise<PaymentMethodData>;
 
   /**
@@ -87,7 +87,7 @@ export interface DropInModule extends AdyenActionComponent, NativeModule {
   /**
    * Provides return URL for current application.
    */
-    getReturnURL: () => Promise<string>;
+  getReturnURL: () => Promise<string>;
 }
 
 /** Describes a native module capable of encrypting card data. */
@@ -105,7 +105,7 @@ const ModuleMock = new Proxy(
     get() {
       throw new Error(LINKING_ERROR);
     },
-  },
+  }
 );
 
 /** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
