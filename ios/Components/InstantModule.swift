@@ -12,7 +12,7 @@ import React
 @objc(AdyenInstant)
 internal final class InstantModule: BaseModule {
 
-    override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+    override public func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {

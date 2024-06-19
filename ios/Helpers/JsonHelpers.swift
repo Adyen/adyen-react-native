@@ -24,3 +24,10 @@ internal extension Decodable {
         self = try JSONDecoder().decode(Self.self, from: data)
     }
 }
+
+internal extension NSDictionary {
+    func toJson<T: Decodable>() throws -> T {
+        let data = try JSONSerialization.data(withJSONObject: self, options: [])
+        return try JSONDecoder().decode(T.self, from: data)
+    }
+}

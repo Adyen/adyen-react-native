@@ -12,7 +12,7 @@ import React
 @objc(AdyenApplePay)
 internal final class ApplePayModule: BaseModule {
 
-    override func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+    override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
 
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {

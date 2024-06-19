@@ -12,6 +12,9 @@ import React
 @objc(AdyenDropIn)
 internal final class DropInModule: BaseModule {
 
+    private var lookupHandler: (([LookupAddressModel]) -> Void)?
+    private var lookupCompliationHandler: ((Result<Adyen.PostalAddress, any Error>) -> Void)?
+
     override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
     private var dropInComponent: DropInComponent? {
@@ -21,6 +24,30 @@ internal final class DropInModule: BaseModule {
     @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         dismiss(success.boolValue)
+    }
+
+    @objc
+    func updateLookup(_ results: NSArray) {
+        guard let lookupHandler else { return }
+
+        let addressModels: [LookupAddressModel] = results.compactMap{ $0 as? NSDictionary }.compactMap { try? $0.toJson() }
+        lookupHandler(addressModels)
+    }
+
+    @objc
+    func confirmLookup(success: Bool, dictionary: NSDictionary) {
+        guard let lookupCompliationHandler else { return }
+
+        if success {
+            do {
+                let address: PostalAddress = try dictionary.toJson()
+                lookupCompliationHandler(.success(address))
+            } catch {
+                lookupCompliationHandler(.failure(error))
+            }
+        } else {
+            lookupCompliationHandler(.failure(ComponentError.cancelled ))
+        }
     }
 
     @objc
@@ -37,7 +64,7 @@ internal final class DropInModule: BaseModule {
 
         let dropInConfigParser = DropInConfigurationParser(configuration: configuration)
         let config = dropInConfigParser.configuration
-        config.card = CardConfigurationParser(configuration: configuration).dropinConfiguration
+        config.card = CardConfigurationParser(configuration: configuration, delegate: self).dropinConfiguration
         config.style = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
         if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
             config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
@@ -84,6 +111,12 @@ internal final class DropInModule: BaseModule {
         resolver(nil)
     }
 
+    override func cleanUp() {
+        lookupHandler = nil
+        lookupCompliationHandler = nil
+        super.cleanUp()
+    }
+
 }
 
 extension DropInModule: DropInComponentDelegate {
@@ -116,4 +149,18 @@ extension DropInModule: DropInComponentDelegate {
     func didFail(with error: Error, from dropInComponent: Adyen.AnyDropInComponent) {
         sendEvent(error: error)
     }
+}
+
+extension DropInModule: AddressLookupProvider {
+
+    func lookUp(searchTerm: String, resultHandler: @escaping ([LookupAddressModel]) -> Void) {
+        lookupHandler = resultHandler
+        sendEvent(event: .didUpdateAddress, body: searchTerm)
+    }
+
+    func complete(incompleteAddress: LookupAddressModel, resultHandler: @escaping (Result<Adyen.PostalAddress, any Error>) -> Void) {
+        lookupCompliationHandler = resultHandler
+        sendEvent(event: .didUpdateAddress, body: incompleteAddress.jsonObject)
+    }
+
 }

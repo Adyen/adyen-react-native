@@ -2,11 +2,18 @@ import { NativeModule } from 'react-native';
 import { ErrorCode, Event } from './core/constants';
 import { PaymentAction, PaymentMethodsResponse } from './core/types';
 import { AdyenActionComponent } from './AdyenNativeModules';
+import { AddressLookupItem, PostalAddress } from './core/configuration';
 
 export interface AdyenNativeComponentWrapperProps {
   nativeModule: NativeModule;
   canHandleAction?: boolean;
   events?: string[];
+}
+
+export interface AddressLookup {
+  update(results: AddressLookupItem[]):void;
+  confirm(address: PostalAddress):void;
+  reject():void;
 }
 
 /**
@@ -50,5 +57,17 @@ export class AdyenNativeComponentWrapper implements AdyenActionComponent {
     } else {
       this.nativeModule.hide(success, { message: '' });
     }
+  }
+}
+
+export class AdyenAddressLookupComponentWrapper extends AdyenNativeComponentWrapper implements AddressLookup {
+  async update(results: AddressLookupItem[]): Promise<void> {
+    await this.nativeModule.updateLookup(results)
+  }
+  async confirm(address: PostalAddress): Promise<void> {
+    await this.nativeModule.confirmLookup(true, address)
+  }
+  async reject(): Promise<void> {
+    await this.nativeModule.confirmLookup(false, null)
   }
 }

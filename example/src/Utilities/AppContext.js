@@ -31,6 +31,18 @@ export const checkoutConfiguration = (config) => {
           enabled: true,
           verboseLogs: true,
         },
+        card: {
+          addressVisibility: 'lookup',
+          allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
+          onUpdateAddress: (prompt, lookup) => {
+            console.log(prompt);
+            lookup.update();
+          },
+          onConfirmAddress: (address, lookup) => {
+            console.log(address);
+            lookup.confirm(address)
+          }
+        },
         applepay: {
           merchantID: ENVIRONMENT.applepayMerchantID,
           merchantName: config.merchantName,

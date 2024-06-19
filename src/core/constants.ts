@@ -25,6 +25,10 @@ export enum Event {
   onComplete = 'didCompleteCallback',
   /** Event handler, called when payment about to be terminate. */
   onError = 'didFailCallback',
+  /** Event handler, called when address update called. */
+  onAddressUpdate = 'didUpdateAddressCallback',
+  /** Event handler, called when address confirmed called. */
+  onAddressConfirm = 'didConfirmAddressCallback'
 }
 
 /** Collection of errors components can throw. */

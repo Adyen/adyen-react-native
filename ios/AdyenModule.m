@@ -21,6 +21,11 @@ RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
 RCT_EXTERN_METHOD(getReturnURL:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(updateLookup:(NSDictionary *))
+
+RCT_EXTERN_METHOD(confirmLookup:(nonnull NSNumber *)success
+                  address:(nullable NSDictionary *))
+
 @end
 
 @interface RCT_EXTERN_MODULE(AdyenInstant, NSObject)

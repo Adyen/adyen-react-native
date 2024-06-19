@@ -9,7 +9,7 @@ import {
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from './core/constants';
 import { PaymentMethod, PaymentMethodsResponse } from './core/types';
-import { AdyenNativeComponentWrapper } from './AdyenNativeComponentWrapper';
+import { AdyenAddressLookupComponentWrapper, AdyenNativeComponentWrapper } from './AdyenNativeComponentWrapper';
 import {
   AdyenActionComponent,
   AdyenDropIn,
@@ -34,7 +34,7 @@ export function getNativeComponent(
     case 'drop-in':
     case 'adyendropin':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper({
+        nativeComponent: new AdyenAddressLookupComponentWrapper({
           nativeModule: AdyenDropIn,
         }),
       };

@@ -9,8 +9,10 @@ import Adyen
 public struct CardConfigurationParser {
 
     private var dict: [String: Any]
+    private unowned var delegate: AddressLookupProvider
 
-    public init(configuration: NSDictionary) {
+    public init(configuration: NSDictionary, delegate: AddressLookupProvider) {
+        self.delegate = delegate
         guard let configuration = configuration as? [String: Any] else {
             self.dict = [:]
             return
@@ -49,7 +51,7 @@ public struct CardConfigurationParser {
             return .none
         }
 
-        return .init(rawValue: value)
+        return .init(rawValue: value, delegate: delegate)
     }
 
     var kcpVisibility: CardComponent.FieldVisibility {
@@ -75,17 +77,22 @@ public struct CardConfigurationParser {
         return strings
     }
 
-    // TODO: add installmentConfiguration: InstallmentConfiguration?
+    var storedCardConfiguration: StoredCardConfiguration {
+        var soredCardConfiguration = StoredCardConfiguration()
+        soredCardConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
+        return soredCardConfiguration
+    }
 
-    public var configuration: CardComponent.Configuration {
-        var storedConfiguration = StoredCardConfiguration()
-        storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
-
+    var billingAddressConfiguration: BillingAddressConfiguration {
         var billingAddressConfiguration = BillingAddressConfiguration()
         billingAddressConfiguration.countryCodes = billingAddressCountryCodes
         billingAddressConfiguration.mode = addressVisibility
+        return billingAddressConfiguration
+    }
 
-        var soredCardConfiguration = StoredCardConfiguration()
+    // TODO: add installmentConfiguration: InstallmentConfiguration?
+
+    public var configuration: CardComponent.Configuration {
         return .init(style: FormComponentStyle(),
                      shopperInformation: nil,
                      localizationParameters: nil,
@@ -94,27 +101,19 @@ public struct CardConfigurationParser {
                      showsSecurityCodeField: showsSecurityCodeField,
                      koreanAuthenticationMode: kcpVisibility,
                      socialSecurityNumberMode: socialSecurityVisibility,
-                     storedCardConfiguration: soredCardConfiguration,
+                     storedCardConfiguration: storedCardConfiguration,
                      allowedCardTypes: allowedCardTypes,
                      installmentConfiguration: nil,
                      billingAddress: billingAddressConfiguration)
     }
 
     public var dropinConfiguration: DropInComponent.Card {
-        var storedConfiguration = StoredCardConfiguration()
-        storedConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
-
-        var billingAddressConfiguration = BillingAddressConfiguration()
-        billingAddressConfiguration.countryCodes = billingAddressCountryCodes
-        billingAddressConfiguration.mode = addressVisibility
-
-        var soredCardConfiguration = StoredCardConfiguration()
         return .init(showsHolderNameField: showsHolderNameField,
                      showsStorePaymentMethodField: showsStorePaymentMethodField,
                      showsSecurityCodeField: showsSecurityCodeField,
                      koreanAuthenticationMode: kcpVisibility,
                      socialSecurityNumberMode: socialSecurityVisibility,
-                     storedCardConfiguration: soredCardConfiguration,
+                     storedCardConfiguration: storedCardConfiguration,
                      allowedCardTypes: allowedCardTypes,
                      installmentConfiguration: nil,
                      billingAddress: billingAddressConfiguration)
@@ -137,12 +136,14 @@ public struct CardConfigurationParser {
 
 extension CardComponent.AddressFormType {
 
-    internal init(rawValue: String) {
+    internal init(rawValue: String, delegate: AddressLookupProvider) {
         switch rawValue.lowercased() {
         case "postalcode", "postal_code", "postal":
             self = .postalCode
         case "full":
             self = .full
+        case let "lookup":
+            self = .lookup(provider: delegate)
         default:
             self = .none
         }

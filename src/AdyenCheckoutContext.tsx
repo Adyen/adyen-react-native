@@ -29,6 +29,7 @@ import {
 } from './core/types';
 import { Configuration } from './core/configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
+import { AddressLookup } from './AdyenNativeComponentWrapper';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
@@ -178,6 +179,22 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         subscriptions.current.push(
           eventEmitter.addListener(Event.onComplete, (data) =>
             onComplete?.(data, nativeComponent)
+          )
+        );
+      }
+
+      if (configuration.card?.onUpdateAddress) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onAddressUpdate, (prompt) =>
+            configuration.card?.onUpdateAddress?.(prompt, nativeComponent as unknown as AddressLookup)
+          )
+        );
+      }
+
+      if (configuration.card?.onConfirmAddress) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onAddressConfirm, (address) =>
+            configuration.card?.onConfirmAddress?.(address, nativeComponent as unknown as AddressLookup)
           )
         );
       }
