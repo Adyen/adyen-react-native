@@ -29,8 +29,8 @@ class GooglePayConfigurationParser(config: ReadableMap) {
         internal const val EMAIL_REQUIRED_KEY = "emailRequired"
         internal const val SHIPPING_ADDRESS_REQUIRED_KEY = "shippingAddressRequired"
         internal const val EXISTING_PAYMENT_METHOD_REQUIRED_KEY = "existingPaymentMethodRequired"
-        internal const val BILLING_ADDRESS_PARAMETERS_KEY = "shippingAddressParameters"
-        internal const val SHIPPING_ADDRESS_PARAMETERS_KEY = "billingAddressParameters"
+        internal const val BILLING_ADDRESS_PARAMETERS_KEY = "billingAddressParameters"
+        internal const val SHIPPING_ADDRESS_PARAMETERS_KEY = "shippingAddressParameters"
     }
 
     private var config: ReadableMap
