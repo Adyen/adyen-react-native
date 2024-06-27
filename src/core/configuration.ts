@@ -1,4 +1,3 @@
-import { AddressLookup } from '../AdyenNativeComponentWrapper';
 import { PaymentAmount } from './types';
 
 /** Collection of available environments. */
@@ -96,7 +95,7 @@ export interface CardsConfiguration {
    * Callback when a new address for delegated address lookup confirmed.
    * @param address 
    */
-  onConfirmAddress?(address: PostalAddress, lookup: AddressLookup): void;
+  onConfirmAddress?(address: AddressLookupItem, lookup: AddressLookup): void;
 }
 
 export interface ApplePayConfiguration {
@@ -168,9 +167,9 @@ export interface ApplePayShippingMethod {
 
 export interface AddressLookupItem {
   /** The postal address information. */
-  postalAddress: string;
+  address: PostalAddress;
   /** The unique identifier of postal address */
-  identifier: string;
+  id: string;
 }
 
 export interface PostalAddress {
@@ -278,4 +277,10 @@ export interface GooglePayConfiguration {
   existingPaymentMethodRequired?: boolean;
   /** The environment to be used by GooglePay. Should be either WalletConstants.ENVIRONMENT_TEST (3) or WalletConstants.ENVIRONMENT_PRODUCTION (1). By default is using environment from root. */
   googlePayEnvironment?: GooglePayEnvironment;
+}
+
+export interface AddressLookup {
+  update(results: AddressLookupItem[]):void;
+  confirm(address: PostalAddress):void;
+  reject():void;
 }

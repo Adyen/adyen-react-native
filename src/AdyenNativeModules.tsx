@@ -7,7 +7,7 @@ import {
   PaymentMethodsResponse,
   SessionResponse,
 } from './core/types';
-import { BaseConfiguration } from './core/configuration';
+import { AddressLookup, BaseConfiguration } from './core/configuration';
 import { ActionModuleWrapper } from './ActionModuleWrapper';
 
 /**
@@ -83,7 +83,7 @@ export interface ActionModule {
 }
 
 /** Describes Drop-in module. */
-export interface DropInModule extends AdyenActionComponent, NativeModule {
+export interface DropInModule extends AdyenActionComponent, NativeModule, AddressLookup {
   /**
    * Provides return URL for current application.
    */

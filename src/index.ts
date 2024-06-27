@@ -48,4 +48,7 @@ export type {
   GooglePayConfiguration,
   CardAuthMethod,
   TotalPriceStatus,
+  AddressLookupItem,
+  PostalAddress,
+  AddressLookup
 } from './core/configuration';

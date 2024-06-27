@@ -34,11 +34,11 @@ export const checkoutConfiguration = (config) => {
         card: {
           addressVisibility: 'lookup',
           allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
-          onUpdateAddress: (prompt, lookup) => {
+          onUpdateAddress: (/** @type {any} */ prompt, /** @type { import('@adyen/react-native').AddressLookup } */ lookup) => {
             console.log(prompt);
-            lookup.update();
+            lookup.update()
           },
-          onConfirmAddress: (address, lookup) => {
+          onConfirmAddress: (/** @type {any} */ address, /** @type {{ confirm: (arg0: any) => void; }} */ lookup) => {
             console.log(address);
             lookup.confirm(address)
           }

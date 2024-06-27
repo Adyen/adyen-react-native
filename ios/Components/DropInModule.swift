@@ -13,7 +13,7 @@ import React
 internal final class DropInModule: BaseModule {
 
     private var lookupHandler: (([LookupAddressModel]) -> Void)?
-    private var lookupCompliationHandler: ((Result<Adyen.PostalAddress, any Error>) -> Void)?
+    private var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
 
     override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
@@ -158,7 +158,7 @@ extension DropInModule: AddressLookupProvider {
         sendEvent(event: .didUpdateAddress, body: searchTerm)
     }
 
-    func complete(incompleteAddress: LookupAddressModel, resultHandler: @escaping (Result<Adyen.PostalAddress, any Error>) -> Void) {
+    func complete(incompleteAddress: LookupAddressModel, resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void) {
         lookupCompliationHandler = resultHandler
         sendEvent(event: .didUpdateAddress, body: incompleteAddress.jsonObject)
     }

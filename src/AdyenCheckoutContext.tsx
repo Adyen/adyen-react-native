@@ -27,9 +27,8 @@ import {
   PaymentMethodData,
   PaymentDetailsData,
 } from './core/types';
-import { Configuration } from './core/configuration';
+import { AddressLookup, Configuration } from './core/configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
-import { AddressLookup } from './AdyenNativeComponentWrapper';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
