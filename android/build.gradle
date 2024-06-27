@@ -64,6 +64,8 @@ dependencies {
     implementation("com.adyen.checkout:drop-in:$adyen_version") {
         exclude group:'androidx.lifecycle'
     }
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
 
     //Tests
     testImplementation testLibraries.json

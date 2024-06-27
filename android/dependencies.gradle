@@ -16,6 +16,9 @@ ext {
     // Adyen Dependencies
     adyen_version = "5.5.0"
 
+    // Android Dependencies
+    lifecycle_version = "2.7.0"
+
     // Tests
     json_version = '20231013'
     junit_jupiter_version = "5.10.2"
