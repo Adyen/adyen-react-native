@@ -20,6 +20,7 @@ apply plugin: 'kotlin-android'
 apply from: 'jacoco.gradle'
 
 android {
+    namespace "com.adyenreactnativesdk"
     compileSdk safeExtGet('compileSdkVersion', 34)
     defaultConfig {
         minSdkVersion safeExtGet('minSdkVersion', 21)
@@ -41,6 +42,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 repositories {
@@ -57,7 +61,11 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     api "com.facebook.react:react-native:+"  // From node_modules
-    implementation "com.adyen.checkout:drop-in:$adyen_version"
+    implementation("com.adyen.checkout:drop-in:$adyen_version") {
+        exclude group:'androidx.lifecycle'
+    }
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
 
     //Tests
     testImplementation testLibraries.json
