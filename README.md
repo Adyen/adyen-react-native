@@ -4,6 +4,8 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
 > [!WARNING]
+> Google will introduce new [target API level requirements for Google Play apps](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en) starting August 31 2024.
+>
 > For React-Native **73+** 
 > * use version 2.1.1
 >
