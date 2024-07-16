@@ -3,6 +3,16 @@
 [![Adyen Android](https://img.shields.io/badge/android-v5.6.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.6.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
+> [!WARNING]
+> Google will introduce new [target API level requirements for Google Play apps](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en) starting August 31 2024.
+>
+> For React-Native **73+** 
+> * use version 2.1.1
+>
+> For React-Native **before 73**:
+> * update Android compileTarget to 34
+> * set android plugin version to at least 8.1+
+> * use version 2.1.0
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
