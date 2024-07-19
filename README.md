@@ -3,12 +3,12 @@
 [![Adyen Android](https://img.shields.io/badge/android-v5.6.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.6.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
-> [!ATTENTION]
+> [!NOTE]
 > Google will introduce new [target API level requirements for Google Play apps](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en) starting August 31 2024.
 >
 > For React-Native **73+** no action needed.
 >
-> For React-Native **before 73**:
+> For React-Native **72**:
 > * update Android compileTarget to 34 in `android/build.gradle`
 > * set `classpath("com.android.tools.build:gradle:8.1.4")` in `android/build.gradle`
 > * enable `buildConfig` in `android/app/build.gradle` by adding `android.buildFeatures.buildConfig = true`
