@@ -11,7 +11,7 @@ ext {
     // Tests
     json_version = '20231013'
     junit_jupiter_version = "5.10.3"
-    mockito_kotlin_version = "4.1.0"
+    mockito_kotlin_version = "5.4.0"
     mockito_version = "4.11.0"
 
     testLibraries = [
