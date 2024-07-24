@@ -1,7 +1,7 @@
 import React from 'react';
 import { SafeAreaView, View, Button } from 'react-native';
 import Styles from '../Utilities/Styles';
-import { Page } from '../App';
+import { Page } from '../../App';
 
 const Home = ({ navigation }) => {
   return (
