@@ -15,14 +15,14 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { Button, Alert, useColorScheme } from 'react-native';
-import CseView from './Views/CseView';
-import SettingView from './Views/SettingsView';
-import Result from './Views/ResultView';
-import SessionsCheckout from './Views/Checkout/SessionsCheckout';
-import AdvancedCheckout from './Views/Checkout/AdvancedCheckout';
-import Home from './Views/HomeView';
-import AppContextProvider from './Utilities/AppContext';
-import { DEFAULT_CONFIGURATION } from './Configuration';
+import CseView from './src/Views/CseView';
+import SettingView from './src/Views/SettingsView';
+import Result from './src/Views/ResultView';
+import SessionsCheckout from './src/Views/Checkout/SessionsCheckout';
+import AdvancedCheckout from './src/Views/Checkout/AdvancedCheckout';
+import Home from './src/Views/HomeView';
+import AppContextProvider from './src/Utilities/AppContext';
+import { DEFAULT_CONFIGURATION } from './src/Configuration';
 
 const Stack = createNativeStackNavigator();
 
