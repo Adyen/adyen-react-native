@@ -31,7 +31,7 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 Pods/
-*.xcode.env
+*.xcode.env.local
 
 # Android/IJ
 .idea
