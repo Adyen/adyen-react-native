@@ -10,21 +10,21 @@
 
 @interface RCT_EXTERN_MODULE(AdyenDropIn, NSObject)
 
-RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
-                  configuration:(NSDictionary *)configuration)
+RCT_EXTERN_METHOD(open:(nonnull NSDictionary *)paymentMethods
+                  configuration:(nonnull NSDictionary *)configuration)
 
 RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
-                  event:(NSDictionary *)event)
+                  event:(nullable NSDictionary *)event)
 
-RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
+RCT_EXTERN_METHOD(handle:(nonnull NSDictionary *)action)
 
 RCT_EXTERN_METHOD(getReturnURL:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(updateLookup:(NSDictionary *))
+RCT_EXTERN_METHOD(update:(nullable NSArray *)results)
 
-RCT_EXTERN_METHOD(confirmLookup:(nonnull NSNumber *)success
-                  address:(nullable NSDictionary *))
+RCT_EXTERN_METHOD(confirm:(nonnull NSNumber *)success
+                  address:(nonnull NSDictionary *)address)
 
 @end
 

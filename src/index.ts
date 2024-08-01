@@ -1,4 +1,4 @@
-export { Card } from './core/types';
+export {Card} from './core/types';
 export type {
   PaymentMethod,
   PaymentAction,
@@ -12,30 +12,38 @@ export type {
 } from './core/types';
 
 export {
-  AdyenDropIn,
   AdyenApplePay,
   AdyenInstant,
   AdyenGooglePay,
-  AdyenCSE,
-  AdyenAction,
-  SessionHelper,
-} from './AdyenNativeModules';
+} from './modules/NativeModules';
+
+export { AdyenDropIn } from './modules/DropInModule';
+export type { DropInModule } from './modules/DropInModule';
+
+export {AdyenCSE} from './modules/AdyenCSEModule';
+export type {AdyenCSEModule} from './modules/AdyenCSEModule';
+
+export {SessionHelper} from './modules/SessionHelperModule';
+export type {SessionHelperModule} from './modules/SessionHelperModule';
+
+export type {AdyenAction} from './modules/ActionModule';
+export type {ActionModule}  from './modules/ActionModule';
+
 export type {
-  DropInModule,
   AdyenComponent,
   AdyenActionComponent,
   HideOption,
-} from './AdyenNativeModules';
+} from './core/AdyenNativeModules';
 
-export { AdyenCheckout, useAdyenCheckout } from './AdyenCheckoutContext';
+export {AdyenCheckout, useAdyenCheckout} from './AdyenCheckoutContext';
 export type {
   AdyenCheckoutProps,
   AdyenCheckoutContextType,
 } from './AdyenCheckoutContext';
 
-export { Event, ErrorCode, ResultCode } from './core/constants';
+export {Event, ErrorCode, ResultCode} from './core/constants';
 
-export { GooglePayEnvironment } from './core/configuration';
+export {GooglePayEnvironment} from './core/configuration';
 export type {
   BaseConfiguration,
   Configuration,
@@ -50,5 +58,5 @@ export type {
   TotalPriceStatus,
   AddressLookupItem,
   PostalAddress,
-  AddressLookup
+  AddressLookup,
 } from './core/configuration';

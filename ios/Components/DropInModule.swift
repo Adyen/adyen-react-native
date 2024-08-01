@@ -27,26 +27,35 @@ internal final class DropInModule: BaseModule {
     }
 
     @objc
-    func updateLookup(_ results: NSArray) {
+    func update(_ results: NSArray) {
         guard let lookupHandler else { return }
 
         let addressModels: [LookupAddressModel] = results.compactMap{ $0 as? NSDictionary }.compactMap { try? $0.toJson() }
-        lookupHandler(addressModels)
+        DispatchQueue.main.async {
+            lookupHandler(addressModels)
+        }
     }
 
     @objc
-    func confirmLookup(success: Bool, dictionary: NSDictionary) {
+    func confirm(_ success: NSNumber, address: NSDictionary) {
         guard let lookupCompliationHandler else { return }
+        let result: Result<PostalAddress, any Error>
 
-        if success {
+        defer {
+            DispatchQueue.main.async {
+                lookupCompliationHandler(result)
+            }
+        }
+
+        if success.boolValue {
             do {
-                let address: PostalAddress = try dictionary.toJson()
-                lookupCompliationHandler(.success(address))
+                let address: LookupAddressModel = try address.toJson()
+                result = .success(address.postalAddress)
             } catch {
-                lookupCompliationHandler(.failure(error))
+                result = .failure(error)
             }
         } else {
-            lookupCompliationHandler(.failure(ComponentError.cancelled ))
+            result = .failure(ComponentError.cancelled )
         }
     }
 
@@ -160,7 +169,7 @@ extension DropInModule: AddressLookupProvider {
 
     func complete(incompleteAddress: LookupAddressModel, resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void) {
         lookupCompliationHandler = resultHandler
-        sendEvent(event: .didUpdateAddress, body: incompleteAddress.jsonObject)
+        sendEvent(event: .didConfirmAddress, body: incompleteAddress.jsonObject)
     }
 
 }

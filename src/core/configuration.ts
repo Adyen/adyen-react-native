@@ -95,7 +95,7 @@ export interface CardsConfiguration {
    * Callback when a new address for delegated address lookup confirmed.
    * @param address 
    */
-  onConfirmAddress?(address: AddressLookupItem, lookup: AddressLookup): void;
+  onConfirmAddress?(address: PostalAddress, lookup: AddressLookup): void;
 }
 
 export interface ApplePayConfiguration {
@@ -167,9 +167,9 @@ export interface ApplePayShippingMethod {
 
 export interface AddressLookupItem {
   /** The postal address information. */
-  address: PostalAddress;
+  postalAddress: PostalAddress;
   /** The unique identifier of postal address */
-  id: string;
+  identifier: string;
 }
 
 export interface PostalAddress {
@@ -281,6 +281,6 @@ export interface GooglePayConfiguration {
 
 export interface AddressLookup {
   update(results: AddressLookupItem[]):void;
-  confirm(address: PostalAddress):void;
+  confirm(address: AddressLookupItem):void;
   reject():void;
 }

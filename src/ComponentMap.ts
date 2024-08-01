@@ -72,6 +72,12 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'wechatpaySDK',
 ];
 
+export const ADDRESS_COMPONENTS = [
+  'card',
+  'scheme',
+  'bcmc',
+];
+
 export const NATIVE_COMPONENTS = [
   /** Card */
   'card',
@@ -84,7 +90,6 @@ export const NATIVE_COMPONENTS = [
   'dotpay',
   'entercash',
   'eps',
-  'ideal',
   'molpay_ebanking_fpx_MY',
   'molpay_ebanking_TH',
   'molpay_ebanking_VN',

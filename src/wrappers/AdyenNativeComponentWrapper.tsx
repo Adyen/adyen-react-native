@@ -1,8 +1,7 @@
 import { NativeModule } from 'react-native';
-import { ErrorCode, Event } from './core/constants';
-import { PaymentAction, PaymentMethodsResponse } from './core/types';
-import { AdyenActionComponent } from './AdyenNativeModules';
-import { AddressLookup, AddressLookupItem, PostalAddress } from './core/configuration';
+import { Event } from '../core/constants';
+import { PaymentMethodsResponse } from '../core/types';
+import { AdyenComponent } from '../core/AdyenNativeModules';
 
 export interface AdyenNativeComponentWrapperProps {
   nativeModule: NativeModule;
@@ -13,7 +12,7 @@ export interface AdyenNativeComponentWrapperProps {
 /**
  *  Wrapper for all Native Modules that do not support Action handling.
  * */
-export class AdyenNativeComponentWrapper implements AdyenActionComponent {
+export class AdyenNativeComponentWrapper implements AdyenComponent {
   canHandleAction: boolean;
   nativeModule: NativeModule | any;
   events: string[];
@@ -35,13 +34,6 @@ export class AdyenNativeComponentWrapper implements AdyenActionComponent {
   removeListeners(count: number) {
     this.nativeModule.removeListeners(count);
   }
-  handle(action: PaymentAction) {
-    if (this.canHandleAction) {
-      this.nativeModule.handle(action);
-    } else {
-      throw Error(ErrorCode.notSupportedAction);
-    }
-  }
   open(paymentMethods: PaymentMethodsResponse, configuration: any) {
     this.nativeModule.open(paymentMethods, configuration);
   }
@@ -54,14 +46,4 @@ export class AdyenNativeComponentWrapper implements AdyenActionComponent {
   }
 }
 
-export class AdyenAddressLookupComponentWrapper extends AdyenNativeComponentWrapper implements AddressLookup {
-  async update(results: AddressLookupItem[]): Promise<void> {
-    await this.nativeModule.updateLookup(results)
-  }
-  async confirm(address: PostalAddress): Promise<void> {
-    await this.nativeModule.confirmLookup(true, address)
-  }
-  async reject(): Promise<void> {
-    await this.nativeModule.confirmLookup(false, null)
-  }
-}
+
