@@ -7,6 +7,7 @@ ext {
 
     // Android Dependencies
     lifecycle_version = "2.7.0"
+    gson_version = "2.9.1"
 
     // Tests
     json_version = '20231013'

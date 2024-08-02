@@ -43,7 +43,7 @@ export const checkoutConfiguration = (
             console.debug(`<-- Merchant side: onUpdateAddress - ${prompt}`)
             lookup.update([
               {
-                postalAddress: {
+                address: {
                   houseNumberOrName: '5478',
                   street: 'Hessel Bridge',
                   stateOrProvince: 'IA',
@@ -51,10 +51,10 @@ export const checkoutConfiguration = (
                   city: 'Emardfort',
                   postalCode: '08272',
                 },
-                identifier: 'item1',
+                id: 'item1',
               },
               {
-                postalAddress: {
+                address: {
                   houseNumberOrName: 'Apt. 611 425',
                   street: 'Myron Inlet',
                   stateOrProvince: 'CT',
@@ -62,10 +62,10 @@ export const checkoutConfiguration = (
                   city: 'Daughertyberg',
                   postalCode: '93289-3423',
                 },
-                identifier: 'item2',
+                id: 'item2',
               },
               {
-                postalAddress: {
+                address: {
                   houseNumberOrName: '616',
                   street: 'Pfeffer Ferry',
                   stateOrProvince: 'MI',
@@ -73,7 +73,7 @@ export const checkoutConfiguration = (
                   city: 'Cristiside',
                   postalCode: '60347',
                 },
-                identifier: 'item3',
+                id: 'item3',
               },
             ]);
           },

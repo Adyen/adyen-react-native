@@ -167,9 +167,9 @@ export interface ApplePayShippingMethod {
 
 export interface AddressLookupItem {
   /** The postal address information. */
-  postalAddress: PostalAddress;
+  address: PostalAddress;
   /** The unique identifier of postal address */
-  identifier: string;
+  id: string;
 }
 
 export interface PostalAddress {

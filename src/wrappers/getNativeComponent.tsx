@@ -1,4 +1,4 @@
-import {NativeModule} from 'react-native';
+import {NativeModule, Platform} from 'react-native';
 import {
   ADDRESS_COMPONENTS,
   find,
@@ -72,7 +72,13 @@ export function getNativeComponent(
       nativeModule: AdyenDropIn,
     });
   } else {
-    const nativeModule = NATIVE_COMPONENTS.includes(typeName)
+    // New iDEAL not treated as INSTANT on Android
+    var extendedComponentList = NATIVE_COMPONENTS
+    if ( Platform.OS === `android`) {
+      extendedComponentList.push(`ideal`);
+    }
+    console.debug(extendedComponentList.includes(typeName))
+    const nativeModule = extendedComponentList.includes(typeName)
       ? AdyenDropIn
       : AdyenInstant;
     nativeComponent = new AdyenActionHandlingComponentWrapper({

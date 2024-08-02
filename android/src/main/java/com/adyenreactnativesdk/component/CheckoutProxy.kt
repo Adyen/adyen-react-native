@@ -6,8 +6,11 @@
 
 package com.adyenreactnativesdk.component
 
+import com.adyen.checkout.components.core.AddressLookupCallback
+import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.core.exception.CheckoutException
+import com.adyen.checkout.dropin.BaseDropInServiceContract
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
@@ -15,18 +18,15 @@ import java.lang.ref.WeakReference
 
 class CheckoutProxy private constructor() {
     private var _componentListener = WeakReference<ComponentEventListener>(null)
-    private var _moduleListener = WeakReference<ModuleEventListener>(null)
+
+    var sessionService: BaseDropInServiceContract? = null
+
+    var advancedService: BaseDropInServiceContract? = null
 
     var componentListener: ComponentEventListener?
         get() = _componentListener.get()
         set(value) {
             _componentListener = WeakReference(value)
-        }
-
-    var moduleListener: ModuleEventListener?
-        get() = _moduleListener.get()
-        set(value) {
-            _moduleListener = WeakReference(value)
         }
 
     /** All events coming from Android SDK */
@@ -35,13 +35,6 @@ class CheckoutProxy private constructor() {
         fun onAdditionalData(jsonObject: JSONObject)
         fun onException(exception: CheckoutException)
         fun onFinished(result: SessionPaymentResult)
-    }
-
-    /** All events coming from React Native */
-    interface ModuleEventListener {
-        fun onAction(jsonObject: JSONObject)
-        fun onFail(map: ReadableMap?)
-        fun onComplete(message: String)
     }
 
     companion object {

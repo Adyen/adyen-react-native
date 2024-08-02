@@ -8,20 +8,17 @@ package com.adyenreactnativesdk.component.dropin
 
 import android.util.Log
 import com.adyen.checkout.components.core.ActionComponentData
+import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.PaymentComponentState
-import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.dropin.DropInService
-import com.adyen.checkout.dropin.DropInServiceResult
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
-import com.adyenreactnativesdk.component.CheckoutProxy.ModuleEventListener
-import com.facebook.react.bridge.ReadableMap
-import org.json.JSONObject
 
-open class AdvancedCheckoutService : DropInService(), ModuleEventListener {
+open class AdvancedCheckoutService : DropInService() {
 
     override fun onCreate() {
         super.onCreate()
-        CheckoutProxy.shared.moduleListener = this
+        CheckoutProxy.shared.advancedService = this
     }
 
     override fun onSubmit(state: PaymentComponentState<*>) {
@@ -43,18 +40,12 @@ open class AdvancedCheckoutService : DropInService(), ModuleEventListener {
             )
     }
 
-    override fun onAction(jsonObject: JSONObject) {
-        val action = Action.SERIALIZER.deserialize(jsonObject)
-        sendResult(DropInServiceResult.Action(action))
+    override fun onAddressLookupQueryChanged(query: String) {
+        AdyenCheckout.addressLookupCallback.get()?.onQueryChanged(query)
     }
 
-    override fun onFail(map: ReadableMap?) {
-        val message = map?.getString(MESSAGE_KEY) ?: ""
-        sendResult(DropInServiceResult.Error(null, message, true)) // just hiding DropIn
-    }
-
-    override fun onComplete(message: String) {
-        sendResult(DropInServiceResult.Finished(message))
+    override fun onAddressLookupCompletion(lookupAddress: LookupAddress): Boolean {
+        return AdyenCheckout.addressLookupCallback.get()?.onLookupCompletion(lookupAddress) ?: false
     }
 
     companion object {
