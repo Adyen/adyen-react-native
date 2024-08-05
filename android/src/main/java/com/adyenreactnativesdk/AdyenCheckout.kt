@@ -35,17 +35,6 @@ object AdyenCheckout {
     internal var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>? = null
     internal var dropInSessionLauncher: ActivityResultLauncher<SessionDropInResultContractParams>? =
         null
-    internal lateinit var addressLookupCallback: WeakReference<AddressLookupCallback>
-
-    @JvmStatic
-    internal fun addAddressLookupListener(callback: AddressLookupCallback) {
-        addressLookupCallback = WeakReference(callback)
-    }
-
-    @JvmStatic
-    internal fun removeAddressLookupListener() {
-        addressLookupCallback.clear()
-    }
 
     @JvmStatic
     internal fun addDropInListener(callback: ReactDropInCallback) {

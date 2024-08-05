@@ -41,11 +41,11 @@ open class AdvancedCheckoutService : DropInService() {
     }
 
     override fun onAddressLookupQueryChanged(query: String) {
-        AdyenCheckout.addressLookupCallback.get()?.onQueryChanged(query)
+        CheckoutProxy.shared.addressLookupCallback?.onQueryChanged(query)
     }
 
     override fun onAddressLookupCompletion(lookupAddress: LookupAddress): Boolean {
-        return AdyenCheckout.addressLookupCallback.get()?.onLookupCompletion(lookupAddress) ?: false
+        return CheckoutProxy.shared.addressLookupCallback?.onLookupCompletion(lookupAddress) ?: false
     }
 
     companion object {

@@ -18,6 +18,7 @@ import java.lang.ref.WeakReference
 
 class CheckoutProxy private constructor() {
     private var _componentListener = WeakReference<ComponentEventListener>(null)
+    private var _addressLookupCallback = WeakReference<AddressLookupCallback>(null)
 
     var sessionService: BaseDropInServiceContract? = null
 
@@ -27,6 +28,12 @@ class CheckoutProxy private constructor() {
         get() = _componentListener.get()
         set(value) {
             _componentListener = WeakReference(value)
+        }
+
+    var addressLookupCallback: AddressLookupCallback?
+        get() = _addressLookupCallback.get()
+        set(value) {
+            _addressLookupCallback = WeakReference(value)
         }
 
     /** All events coming from Android SDK */

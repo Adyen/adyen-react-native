@@ -216,7 +216,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         session = null
         AdyenCheckout.removeComponent()
         AdyenCheckout.removeDropInListener()
-        AdyenCheckout.removeAddressLookupListener()
+        CheckoutProxy.shared.addressLookupCallback = null
         CheckoutProxy.shared.componentListener = null
     }
 

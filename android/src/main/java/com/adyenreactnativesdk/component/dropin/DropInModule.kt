@@ -66,8 +66,8 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         }
 
         CheckoutProxy.shared.componentListener = this
+        CheckoutProxy.shared.addressLookupCallback = this
         AdyenCheckout.addDropInListener(this)
-        AdyenCheckout.addAddressLookupListener(this)
         val session = session
         if (session != null) {
             AdyenCheckout.dropInSessionLauncher?.let {
