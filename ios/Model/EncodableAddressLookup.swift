@@ -10,8 +10,8 @@ import Adyen
 extension LookupAddressModel: Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let identifier = try container.decode(String.self, forKey: .identifier)
-        let postalAddress = try container.decode(PostalAddress.self, forKey: .postalAddress)
+        let identifier = try container.decode(String.self, forKey: .id)
+        let postalAddress = try container.decode(PostalAddress.self, forKey: .address)
 
         self = .init(identifier: identifier, postalAddress: postalAddress)
     }
@@ -19,13 +19,13 @@ extension LookupAddressModel: Codable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
-        try container.encode(identifier, forKey: .identifier)
-        try container.encode(postalAddress, forKey: .postalAddress)
+        try container.encode(identifier, forKey: .id)
+        try container.encode(postalAddress, forKey: .address)
     }
 
     private enum CodingKeys: String, CodingKey {
-        case identifier
-        case postalAddress
+        case id
+        case address
     }
 }
 
