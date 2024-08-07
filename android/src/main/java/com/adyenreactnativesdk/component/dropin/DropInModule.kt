@@ -15,6 +15,7 @@ import com.adyen.checkout.dropin.AddressLookupDropInServiceResult
 import com.adyen.checkout.dropin.BaseDropInServiceContract
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInServiceResult
+import com.adyen.checkout.dropin.ErrorDialog
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.AdyenCheckout
@@ -134,7 +135,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
 
     @ReactMethod
     fun confirm(success: Boolean, address: ReadableMap?) {
-        if (address == null) return
         val listener = getService()
         if (listener == null) {
             sendErrorEvent(ModuleException.NoModuleListener(integration))
@@ -142,11 +142,16 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
         }
 
         if (success) {
-            val jsonString = ReactNativeJson.convertMapToJson(address).toString()
-            val lookupAddress = Gson().fromJson(jsonString, LookupAddress::class.java)
-            listener.sendAddressLookupResult(AddressLookupDropInServiceResult.LookupComplete(lookupAddress))
+            try {
+                val jsonString = ReactNativeJson.convertMapToJson(address).toString()
+                val lookupAddress = Gson().fromJson(jsonString, LookupAddress::class.java)
+                listener.sendAddressLookupResult(AddressLookupDropInServiceResult.LookupComplete(lookupAddress))
+            } catch (error: Throwable) {
+                listener.sendAddressLookupResult(AddressLookupDropInServiceResult.Error(ErrorDialog(message = error.localizedMessage), null, false) )
+            }
         } else {
-            listener.sendAddressLookupResult(AddressLookupDropInServiceResult.Error(null, null, false) )
+            val error = address?.getString("message")?.let { ErrorDialog(message = it) }
+            listener.sendAddressLookupResult(AddressLookupDropInServiceResult.Error(error, null, false) )
         }
     }
 

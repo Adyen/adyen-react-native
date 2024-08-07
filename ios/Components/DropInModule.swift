@@ -39,23 +39,18 @@ internal final class DropInModule: BaseModule {
     @objc
     func confirm(_ success: NSNumber, address: NSDictionary) {
         guard let lookupCompliationHandler else { return }
-        let result: Result<PostalAddress, any Error>
 
-        defer {
-            DispatchQueue.main.async {
-                lookupCompliationHandler(result)
+        DispatchQueue.main.async {
+            if !success.boolValue, let message = address["message"] as? String {
+                return lookupCompliationHandler(.failure(AddressError(message: message) ))
             }
-        }
 
-        if success.boolValue {
             do {
                 let address: LookupAddressModel = try address.toJson()
-                result = .success(address.postalAddress)
+                lookupCompliationHandler(.success(address.postalAddress))
             } catch {
-                result = .failure(error)
+                lookupCompliationHandler(.failure(error))
             }
-        } else {
-            result = .failure(ComponentError.cancelled )
         }
     }
 
@@ -172,4 +167,17 @@ extension DropInModule: AddressLookupProvider {
         sendEvent(event: .didConfirmAddress, body: incompleteAddress.jsonObject)
     }
 
+}
+
+struct AddressError: Error, LocalizedError, Codable {
+
+    var errorDescription: String? {
+        message
+    }
+
+    var message: String
+
+    enum CodingKeys: CodingKey {
+        case message
+    }
 }

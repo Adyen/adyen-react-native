@@ -29,7 +29,7 @@ extension LookupAddressModel: Codable {
     }
 }
 
-extension PostalAddress: Codable {
+extension PostalAddress: Decodable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let city = try container.decodeIfPresent(String.self, forKey: .city)

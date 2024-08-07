@@ -282,5 +282,5 @@ export interface GooglePayConfiguration {
 export interface AddressLookup {
   update(results: AddressLookupItem[]):void;
   confirm(address: AddressLookupItem):void;
-  reject():void;
+  reject(error?: { message: string }):void;
 }

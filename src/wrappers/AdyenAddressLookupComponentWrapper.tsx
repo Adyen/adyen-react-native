@@ -12,8 +12,8 @@ export class AdyenAddressLookupComponentWrapper extends AdyenActionHandlingCompo
     console.debug("--> Wrapper: Calling confirm");
     this.nativeModule.confirm(true, address);
   }
-  reject() {
-    this.nativeModule.confirm(false, null);
+  reject(error?: { message: string }) {
+    this.nativeModule.confirm(false, error);
   }
 }
 
