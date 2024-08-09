@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.component.dropin
 
+import android.util.Log
 import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
@@ -33,11 +34,11 @@ import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEm
 import com.google.gson.Gson
 import org.json.JSONObject
 
-class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
-    ReactDropInCallback, AddressLookupCallback {
+class DropInModule(context: ReactApplicationContext?) : BaseModule(context), ReactDropInCallback,
+    AddressLookupCallback {
 
     private fun getService(): BaseDropInServiceContract? {
-       return  if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
+        return if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
     }
 
     @ReactMethod
@@ -127,10 +128,18 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
             return
         }
 
-        val jsonString = ReactNativeJson.convertArrayToJson(results).toString()
-        val addresses = Gson().fromJson(jsonString, Array<LookupAddress>::class.java)
-        val result = AddressLookupDropInServiceResult.LookupResult(addresses.toList())
-        listener.sendAddressLookupResult(result)
+        try {
+            val jsonString = ReactNativeJson.convertArrayToJson(results).toString()
+            val addresses = Gson().fromJson(jsonString, Array<LookupAddress>::class.java)
+            val result = AddressLookupDropInServiceResult.LookupResult(addresses.toList())
+            listener.sendAddressLookupResult(result)
+        } catch (error: Throwable) {
+            Log.w(TAG, error)
+            val result = AddressLookupDropInServiceResult.LookupResult(
+                arrayListOf()
+            )
+            listener.sendAddressLookupResult(result)
+        }
     }
 
     @ReactMethod
@@ -145,13 +154,29 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context),
             try {
                 val jsonString = ReactNativeJson.convertMapToJson(address).toString()
                 val lookupAddress = Gson().fromJson(jsonString, LookupAddress::class.java)
-                listener.sendAddressLookupResult(AddressLookupDropInServiceResult.LookupComplete(lookupAddress))
+                listener.sendAddressLookupResult(
+                    AddressLookupDropInServiceResult.LookupComplete(
+                        lookupAddress
+                    )
+                )
             } catch (error: Throwable) {
-                listener.sendAddressLookupResult(AddressLookupDropInServiceResult.Error(ErrorDialog(message = error.localizedMessage), null, false) )
+                listener.sendAddressLookupResult(
+                    AddressLookupDropInServiceResult.Error(
+                        ErrorDialog(
+                            message = error.localizedMessage
+                        ), null, false
+                    )
+                )
             }
         } else {
             val error = address?.getString("message")?.let { ErrorDialog(message = it) }
-            listener.sendAddressLookupResult(AddressLookupDropInServiceResult.Error(error, null, false) )
+            listener.sendAddressLookupResult(
+                AddressLookupDropInServiceResult.Error(
+                    error,
+                    null,
+                    false
+                )
+            )
         }
     }
 

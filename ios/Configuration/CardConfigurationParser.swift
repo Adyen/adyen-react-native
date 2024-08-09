@@ -78,9 +78,9 @@ public struct CardConfigurationParser {
     }
 
     var storedCardConfiguration: StoredCardConfiguration {
-        var soredCardConfiguration = StoredCardConfiguration()
-        soredCardConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
-        return soredCardConfiguration
+        var storedCardConfiguration = StoredCardConfiguration()
+        storedCardConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
+        return storedCardConfiguration
     }
 
     var billingAddressConfiguration: BillingAddressConfiguration {
@@ -89,8 +89,6 @@ public struct CardConfigurationParser {
         billingAddressConfiguration.mode = addressVisibility
         return billingAddressConfiguration
     }
-
-    // TODO: add installmentConfiguration: InstallmentConfiguration?
 
     public var configuration: CardComponent.Configuration {
         return .init(style: FormComponentStyle(),

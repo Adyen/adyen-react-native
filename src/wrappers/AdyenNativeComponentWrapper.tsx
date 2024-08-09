@@ -45,5 +45,3 @@ export class AdyenNativeComponentWrapper implements AdyenComponent {
     }
   }
 }
-
-
