@@ -103,6 +103,7 @@ class CardConfigurationParser(config: ReadableMap, private val countryCode: Stri
                     when (value.lowercase()) {
                         "postal_code", "postal", "postalcode" -> PostalCode()
                         "full" -> FullAddress(countryCode, supportedCountries.orEmpty())
+                        "lookup" -> AddressConfiguration.Lookup()
                         else -> None
                     }
                 }

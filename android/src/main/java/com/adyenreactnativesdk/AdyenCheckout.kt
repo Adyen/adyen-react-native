@@ -11,6 +11,8 @@ import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
+import com.adyen.checkout.components.core.AddressLookupCallback
+import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.internal.ActivityResultHandlingComponent
 import com.adyen.checkout.components.core.internal.Component
 import com.adyen.checkout.dropin.DropIn

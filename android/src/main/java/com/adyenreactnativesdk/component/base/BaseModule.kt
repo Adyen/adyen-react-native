@@ -60,6 +60,8 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         }
     }
 
+    internal var integration = if (session == null) "advanced" else "session"
+
     protected fun sendErrorEvent(error: Exception) {
         reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
             .emit(DID_FAILED, ReactNativeError.mapError(error))
@@ -214,6 +216,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         session = null
         AdyenCheckout.removeComponent()
         AdyenCheckout.removeDropInListener()
+        CheckoutProxy.shared.addressLookupCallback = null
         CheckoutProxy.shared.componentListener = null
     }
 
@@ -222,7 +225,11 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_PROVIDE = "didProvideCallback"
         const val DID_FAILED = "didFailCallback"
         const val DID_SUBMIT = "didSubmitCallback"
+        const val DID_UPDATE_ADDRESS = "didUpdateAddressCallback"
+        const val DID_CONFIRM_ADDRESS = "didConfirmAddressCallback"
+
         const val RESULT_CODE_PRESENTED = "PresentToShopper"
+
         private const val VOUCHER_RESULT_CODE = "finish_with_action"
         private const val RESULT_CODE_KEY = "resultCode"
         private const val ORDER_KEY = "order"

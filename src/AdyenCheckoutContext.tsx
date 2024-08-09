@@ -14,11 +14,10 @@ import {
 } from 'react-native';
 import { Event, MISSING_CONTEXT_ERROR } from './core/constants';
 import {
-  AdyenActionComponent,
   AdyenComponent,
-  SessionHelper,
-} from './AdyenNativeModules';
-import { getNativeComponent } from './getNativeComponent';
+} from './core/AdyenNativeModules';
+import { SessionHelper } from './modules/SessionHelperModule';
+import { getNativeComponent } from './wrappers/getNativeComponent';
 import {
   AdyenError,
   PaymentMethodsResponse,
@@ -29,6 +28,9 @@ import {
 } from './core/types';
 import { Configuration } from './core/configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
+import { AdyenAddressLookupComponentWrapper, isAddressLooker } from './wrappers/AdyenAddressLookupComponentWrapper';
+import { isActionComponent } from './wrappers/AdyenActionHandlingComponentWrapper';
+import { AdyenActionComponent } from "./core/AdyenNativeModules";
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
@@ -72,7 +74,7 @@ type AdyenCheckoutProps = {
    */
   onSubmit?: (
     data: PaymentMethodData,
-    component: AdyenActionComponent,
+    component: AdyenComponent,
     extra?: any
   ) => void;
   /**
@@ -94,7 +96,7 @@ type AdyenCheckoutProps = {
    * Event callback, called when a shopper finishes the flow (Voucher payments only).
    * @param component - The Adyen payment component.
    */
-  onComplete?: (result: string, component: AdyenActionComponent) => void;
+  onComplete?: (result: string, component: AdyenComponent) => void;
   /** Inner components */
   children: ReactNode;
 };
@@ -130,7 +132,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     (
       configuration: Configuration,
       data: any,
-      nativeComponent: AdyenActionComponent,
+      nativeComponent: AdyenComponent,
       extra: any
     ) => {
       const payload = {
@@ -149,7 +151,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const startEventListeners = useCallback(
     (
       configuration: Configuration,
-      nativeComponent: AdyenActionComponent & NativeModule
+      nativeComponent: AdyenComponent & NativeModule
     ) => {
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
@@ -166,18 +168,33 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         ),
       ];
 
-      if (nativeComponent.events.includes(Event.onAdditionalDetails)) {
-        subscriptions.current.push(
-          eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
-            onAdditionalDetails?.(data, nativeComponent)
-          )
-        );
-      }
-
       if (nativeComponent.events.includes(Event.onComplete)) {
         subscriptions.current.push(
           eventEmitter.addListener(Event.onComplete, (data) =>
             onComplete?.(data, nativeComponent)
+          )
+        );
+      }
+
+      if (isActionComponent(nativeComponent)) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
+            onAdditionalDetails?.(data, nativeComponent as unknown as AdyenActionComponent)
+          )
+        );
+      }
+
+      if (isAddressLooker(nativeComponent)) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onAddressUpdate, async (prompt) => {
+            configuration.card?.onUpdateAddress?.(prompt, nativeComponent as AdyenAddressLookupComponentWrapper)
+          }
+          )
+        );
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onAddressConfirm, (address) => {
+            configuration.card?.onConfirmAddress?.(address, nativeComponent as AdyenAddressLookupComponentWrapper);
+          }
           )
         );
       }

@@ -15,6 +15,10 @@ internal enum Events: String, CaseIterable {
     case didProvide = "didProvideCallback"
     case didComplete = "didCompleteCallback"
     case didFail = "didFailCallback"
+    case didUpdateAddress = "didUpdateAddressCallback"
+    case didConfirmAddress = "didConfirmAddressCallback"
+
+    static var coreEvents: [Events] { [.didFail, .didSubmit, .didProvide, .didComplete] }
 }
 
 internal enum Keys {

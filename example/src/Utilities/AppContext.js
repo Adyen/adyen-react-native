@@ -8,14 +8,16 @@ import React, {
   useEffect,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ENVIRONMENT } from '../Configuration';
+import {ENVIRONMENT} from '../Configuration';
 
 export const AppContext = createContext({
   configuration: {},
-  save: async (configuration) => {},
+  save: async (/** @type {any} */ configuration) => {},
 });
 
-export const checkoutConfiguration = (config) => {
+export const checkoutConfiguration = (
+  /** @type {{ shopperLocale?: any; amount?: any; currency?: any; countryCode?: any; merchantName?: any; }} */ config,
+) => {
   const /** @type {import('@adyen/react-native').Configuration} */ configuration =
       {
         clientKey: ENVIRONMENT.clientKey,
@@ -30,6 +32,58 @@ export const checkoutConfiguration = (config) => {
         analytics: {
           enabled: true,
           verboseLogs: true,
+        },
+        card: {
+          addressVisibility: 'lookup',
+          allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
+          onUpdateAddress: (
+            /** @type {any} */ prompt,
+            /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
+          ) => {
+            console.debug(`<-- Merchant side: onUpdateAddress - ${prompt}`)
+            lookup.update([
+              {
+                address: {
+                  houseNumberOrName: '5478',
+                  street: 'Hessel Bridge',
+                  stateOrProvince: 'IA',
+                  country: 'US',
+                  city: 'Emardfort',
+                  postalCode: '08272',
+                },
+                id: 'item1',
+              },
+              {
+                address: {
+                  houseNumberOrName: 'Apt. 611 425',
+                  street: 'Myron Inlet',
+                  stateOrProvince: 'CT',
+                  country: 'US',
+                  city: 'Daughertyberg',
+                  postalCode: '93289-3423',
+                },
+                id: 'item2',
+              },
+              {
+                address: {
+                  houseNumberOrName: '616',
+                  street: 'Pfeffer Ferry',
+                  stateOrProvince: 'MI',
+                  country: 'US',
+                  city: 'Cristiside',
+                  postalCode: '60347',
+                },
+                id: 'item3',
+              },
+            ]);
+          },
+          onConfirmAddress: (
+            /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
+            /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
+          ) => {
+            console.debug(`<-- Merchant side: onConfirmAddress - ${address}`)
+            lookup.confirm(address);
+          },
         },
         applepay: {
           merchantID: ENVIRONMENT.applepayMerchantID,
@@ -69,7 +123,9 @@ export const useAppContext = () => {
 
 const storeKey = '@config_storage';
 
-const AppContextProvider = (props) => {
+const AppContextProvider = (
+  /** @type {any} */ props,
+) => {
   const [config, setConfig] = useState(props.configuration);
 
   useEffect(() => {
@@ -95,7 +151,7 @@ const AppContextProvider = (props) => {
       configuration: config,
       save: saveConfiguration,
     }),
-    [config]
+    [config],
   );
 
   return (
