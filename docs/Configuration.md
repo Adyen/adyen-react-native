@@ -121,13 +121,13 @@ const configuration = {
     hideCvcStoredCard: true,
     hideCvc: true,
     allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL'],
-    onUpdateAddress: ( prompt, lookup ) => {
-      let results = // get list of addresses for shopper's prompt
+    onUpdateAddress: (prompt, lookup) => {
+      let results = ... // get list of addresses for shopper's prompt
       lookup.update(results);
     },
-    onConfirmAddress: (address, lookup ) => {
+    onConfirmAddress: (address, lookup) => {
       lookup.confirm(address);
-    }
+    },
   },
   threeDS2: {
     requestorAppUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
@@ -191,18 +191,18 @@ const configuration = {
     supportedCountries: ['US', 'UK', 'CA', 'NL'],
     shippingMethods: [
       {
-        label: "Free Shipping",
-        detail: "Arrives in 5 to 7 days",
-        amount: "0.00",
-        identifier: "FreeShip",
+        label: 'Free Shipping',
+        detail: 'Arrives in 5 to 7 days',
+        amount: '0.00',
+        identifier: 'FreeShip',
       },
       {
-        label: "Super Shipping",
-        detail: "Arrives super fast",
-        amount: "10.00",
-        identifier: "SuperShip",
-        startDate: "2022-02-01",
-        endDate: "2022-02-10"
+        label: 'Super Shipping',
+        detail: 'Arrives super fast',
+        amount: '10.00',
+        identifier: 'SuperShip',
+        startDate: '2022-02-01',
+        endDate: '2022-02-10',
       },
     ],
     requiredBillingContactFields: ['phoneticName', 'postalAddress'],
@@ -224,5 +224,4 @@ const configuration = {
     emailRequired: true,
   },
 };
-
 ```
