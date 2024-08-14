@@ -114,11 +114,18 @@ const configuration = {
   },
   card: {
     holderNameRequired: true,
-    addressVisibility: 'postalCode',
+    addressVisibility: 'lookup',
     showStorePaymentField: false,
     hideCvcStoredCard: true,
     hideCvc: true,
     allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL'],
+    onUpdateAddress: ( prompt, lookup ) => {
+      let results = // get list of addresses for shopper's prompt
+      lookup.update(results);
+    },
+    onConfirmAddress: (address, lookup ) => {
+      lookup.confirm(address);
+    }
   },
   threeDS2: {
     requestorAppUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
