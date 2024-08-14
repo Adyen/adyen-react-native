@@ -45,7 +45,7 @@
 | `socialSecurity` | Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**. | No |
 | `supported` | The list of allowed card types. By default, a list of `brands` from the payment method is used. Fallbacks to list of all known cards. | No |
 | `onUpdateAddress: (prompt, lookup) => {}` | The callback to provide `lookup` results for shopper-selected `prompt`. Used when `addressVisibility` is set to **lookup** | No |
-| `onConfirmAddress: (address, lookup) => {}` | The callback to confirm selected `address` to the `lookup`. Used when `addressVisibility` is set to **lookup** | No |
+| `onConfirmAddress: (address, lookup) => {}` | The callback to confirm the selected `address` to the `lookup`. Used when `addressVisibility` is set to **lookup** | No |
 
 ### 3D Secure 2 
 
