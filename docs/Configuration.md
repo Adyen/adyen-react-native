@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `environment` | Current Adyen API. Use **test** for debugging. When you are ready to go live, change the value to one of our [live environments](https://docs.adyen.com/online-payments/drop-in-web#testing-your-integration).  | Yes |
 | `clientKey` | A public key linked to your API credentials, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication). | Yes |
-| `amount` | Amount to be displayed on the "Pay" Button. It expects an object with a minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **10$**. For card pre-authorisation set the amount to **0** (zero). | For `ApplePay` and `GooglePay`. Must be used together with `countryCode` |
+| `amount` | Amount to be displayed on the "Pay" Button. It expects an object with a minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **$10**. For card pre-authorisation set the amount to **0** (zero). | For `ApplePay` and `GooglePay`. Must be used together with `countryCode` |
 | `countryCode` | The shopper's country code in ISO 3166-1 alpha-2 format. Example: **NL** or **US**. | For `ApplePay` and `GooglePay`. Must be used together with `amount` |
 | `shopperLocale` | In the current version, this property only localizes payment method names. The default OS's locale is used for localization. | No |
 | `returnUrl` | Url where the shopper should return after a payment is completed. Can use [Universal Links](https://developer.apple.com/ios/universal-links/)/[App Links](https://developer.android.com/training/app-links) or Custom URL Schemes. Maximum of 1024 characters.<br><br> - For **iOS**, any means of redirect can be used.<br><br> - For **Android Components**, any means of redirect can be used.<br><br> - For **Android Drop-in**, this value is automatically overridden by `AdyenCheckout`. Also, `await AdyenDropIn.getReturnURL()` can be used to extract a `returnUrl`.  | Yes |
@@ -35,15 +35,17 @@
 
 | Parameter | Description | Required |
 | --- | --- | --- |
-| `addressVisibility` | Indicates the display mode of the billing address form. Options: **"none"**, **"postal"**, **"full"**. Defaults to **"none"**. | No |
+| `addressVisibility` | Indicates the display mode of the billing address form. Options: **"none"**, **"postal"**, **"full"**, **"lookup"**. Defaults to **"none"**. | No |
 | `allowedAddressCountryCodes` | List of ISO 3166-1 alpha-2 country code values to control country picker options in full address form. | No |
-| `hideCvc` | Indicates whether to show the security code field at all. Defaults to false. | No |
-| `hideCvcStoredCard` | Indicates whether to show the security code field on a stored card payment. Defaults to false. | No |
+| `hideCvc` | Indicates whether to show the security code field at all. Defaults to **false**. | No |
+| `hideCvcStoredCard` | Indicates whether to show the security code field on a stored card payment. Defaults to **false**. | No |
 | `holderNameRequired` | Indicates if the field for entering the holder name should be displayed in the form. Defaults to **false**. | No |
 | `kcpVisibility` | Indicates whether to show the security fields for South Korea-issued cards. Options: **"show"** or **"hide"**. Defaults to **"hide"**. | No |
 | `showStorePaymentField` | Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**. | No |
 | `socialSecurity` | Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**. | No |
 | `supported` | The list of allowed card types. By default, a list of `brands` from the payment method is used. Fallbacks to list of all known cards. | No |
+| `onUpdateAddress: (prompt, lookup) => {}` | The callback to provide `lookup` results for shopper-selected `prompt`. Used when `addressVisibility` is set to **lookup** | No |
+| `onConfirmAddress: (address, lookup) => {}` | The callback to confirm the selected `address` to the `lookup`. Used when `addressVisibility` is set to **lookup** | No |
 
 ### 3D Secure 2 
 
@@ -114,11 +116,18 @@ const configuration = {
   },
   card: {
     holderNameRequired: true,
-    addressVisibility: 'postalCode',
+    addressVisibility: 'lookup',
     showStorePaymentField: false,
     hideCvcStoredCard: true,
     hideCvc: true,
     allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL'],
+    onUpdateAddress: (prompt, lookup) => {
+      let results = ... // get list of addresses for shopper's prompt
+      lookup.update(results);
+    },
+    onConfirmAddress: (address, lookup) => {
+      lookup.confirm(address);
+    },
   },
   threeDS2: {
     requestorAppUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
@@ -182,18 +191,18 @@ const configuration = {
     supportedCountries: ['US', 'UK', 'CA', 'NL'],
     shippingMethods: [
       {
-        label: "Free Shipping",
-        detail: "Arrives in 5 to 7 days",
-        amount: "0.00",
-        identifier: "FreeShip",
+        label: 'Free Shipping',
+        detail: 'Arrives in 5 to 7 days',
+        amount: '0.00',
+        identifier: 'FreeShip',
       },
       {
-        label: "Super Shipping",
-        detail: "Arrives super fast",
-        amount: "10.00",
-        identifier: "SuperShip",
-        startDate: "2022-02-01",
-        endDate: "2022-02-10"
+        label: 'Super Shipping',
+        detail: 'Arrives super fast',
+        amount: '10.00',
+        identifier: 'SuperShip',
+        startDate: '2022-02-01',
+        endDate: '2022-02-10',
       },
     ],
     requiredBillingContactFields: ['phoneticName', 'postalAddress'],
@@ -215,5 +224,4 @@ const configuration = {
     emailRequired: true,
   },
 };
-
 ```
