@@ -43,20 +43,19 @@ export type {
 
 export {Event, ErrorCode, ResultCode} from './core/constants';
 
-export {GooglePayEnvironment} from './core/configuration';
 export type {
   BaseConfiguration,
   Configuration,
   Environment,
-  DropInConfiguration,
-  ApplePayConfiguration,
-  CardsConfiguration,
-  FieldVisibility,
-  AddressMode,
-  GooglePayConfiguration,
-  CardAuthMethod,
-  TotalPriceStatus,
-  AddressLookupItem,
-  PostalAddress,
-  AddressLookup,
-} from './core/configuration';
+} from './core/configurations/Configuration';
+
+export { GooglePayEnvironment } from './core/configurations/GooglePayConfiguration';
+export type { GooglePayBillingAddressFormat, GooglePayBillingAddressParameters, GooglePayConfiguration, GooglePayShippingAddressParameters, TotalPriceStatus, CardAuthMethod } from './core/configurations/GooglePayConfiguration';
+
+export type { DropInConfiguration } from './core/configurations/DropInConfiguration';
+
+export type { AddressLookup, AddressLookupItem, PostalAddress } from './core/configurations/AddressLookup'
+
+export type { ApplePayAddressFields, ApplePayCalendarUnit, ApplePayConfiguration, ApplePayPaymentContact, ApplePayRecurringPaymentRequest, ApplePayRecurringSummaryItem, ApplePayShippingMethod, ApplePaySummaryItem, ApplePayShippingType } from './core/configurations/ApplePayConfiguration'
+
+export type { CardsConfiguration, AddressMode } from './core/configurations/CardsConfiguration'

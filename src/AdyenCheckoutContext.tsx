@@ -26,7 +26,7 @@ import {
   PaymentMethodData,
   PaymentDetailsData,
 } from './core/types';
-import { Configuration } from './core/configuration';
+import { Configuration } from './core/configurations/Configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
 import { AdyenAddressLookupComponentWrapper, isAddressLooker } from './wrappers/AdyenAddressLookupComponentWrapper';
 import { isActionComponent } from './wrappers/AdyenActionHandlingComponentWrapper';

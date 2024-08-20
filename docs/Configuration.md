@@ -73,6 +73,16 @@
 | `supportedCountries` | A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries. | No |
 | `shippingMethods` | The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods).  | No |
 
+### ApplePay Recurring payment
+
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `paymentDescription` | The description you provide of the recurring payment and that Apple Pay displays to the user in the payment sheet. | Yes |
+| `regularBilling` | The summary item for the recurring payment that includes the payment period and interval. | Yes |
+| `managementURL` | The URL to a web page where the user can update or delete the payment method for the recurring payment. | Yes |
+| `intervalUnit` | The amount of time – in calendar units such as day, month, or year – that represents a fraction of the total payment interval. | No |
+| `intervalCount` | The number of interval units that make up the total payment interval. | No |
+
 ### GooglePay component
 
 > [!IMPORTANT]
