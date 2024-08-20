@@ -26,7 +26,7 @@ export type {AdyenCSEModule} from './modules/AdyenCSEModule';
 export {SessionHelper} from './modules/SessionHelperModule';
 export type {SessionHelperModule} from './modules/SessionHelperModule';
 
-export type {AdyenAction} from './modules/ActionModule';
+export {AdyenAction} from './modules/ActionModule';
 export type {ActionModule}  from './modules/ActionModule';
 
 export type {
