@@ -104,47 +104,14 @@ public struct ApplepayConfigurationParser {
         return shippingMethods.isEmpty ? nil : shippingMethods
     }
 
-        // A description of the recurring payment, for example "Apple News+".
-    var paymentDescription: String? {
-        return dict[ApplePayKeys.Recurring.paymentDescription] as? String
-    }
-
-        // The regular billing cycle, for example "$9.99 monthly".
-    @available(iOS 15.0, *)
-    var regularBilling: PKRecurringPaymentSummaryItem? {
-        guard let dictionary = dict[ApplePayKeys.Recurring.regularBilling] as? [String: Any] else {
+    @available(iOS 16.0, *)
+    var recurringPaymentRequest: PKRecurringPaymentRequest? {
+        guard let recurringDict = dict[ApplePayKeys.recurringPaymentRequest] as? NSDictionary else {
             return nil
         }
-        return .init(dictionary)
-    }
 
-        // Optional, trial billing cycle, for example "$1.99 for the first six months".
-    @available(iOS 15.0, *)
-    var trialBilling: PKRecurringPaymentSummaryItem? {
-        guard let dictionary = dict[ApplePayKeys.Recurring.trialBilling] as? [String: Any] else {
-            return nil
-        }
-        return .init(dictionary)
-    }
-
-        // Optional, localized billing agreement to be displayed to the user prior to payment authorization.
-    var billingAgreement: String? {
-        return dict[ApplePayKeys.Recurring.billingAgreement] as? String
-    }
-
-        // A URL that links to a page on your web site where the user can manage the payment method for this
-        // recurring payment, including deleting it.
-    var managementURL: URL? {
-        guard let url = dict[ApplePayKeys.Recurring.managementURL] as? String else { return nil }
-        return URL(string: url)
-    }
-
-    // Optional URL to receive lifecycle notifications for the merchant-specific payment token issued
-    // for this request, if applicable. If this property is not set, notifications will not be sent when
-    // lifecycle changes occur for the token, for example when the token is deleted.
-    var tokenNotificationURL: URL? {
-        guard let url = dict[ApplePayKeys.Recurring.tokenNotificationURL] as? String else { return nil }
-        return URL(string: url)
+        let parser = ApplePayRecurringConfigurationParser(configuration: recurringDict)
+        return parser.paymentRequest
     }
 
     public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
@@ -184,19 +151,11 @@ public struct ApplepayConfigurationParser {
         paymentRequest.shippingType = shippingType ?? .shipping
         paymentRequest.supportedCountries = supportedCountries
         paymentRequest.shippingMethods = shippingMethods
-        
-        guard #available(iOS 16.0, *), let paymentDescription, let regularBilling, let managementURL else {
-            return paymentRequest
+
+        if #available(iOS 16.0, *), let recurringPaymentRequest {
+            paymentRequest.recurringPaymentRequest = recurringPaymentRequest
         }
 
-        let recurringRequest = PKRecurringPaymentRequest(paymentDescription: paymentDescription,
-                                                         regularBilling: regularBilling,
-                                                         managementURL: managementURL)
-        recurringRequest.tokenNotificationURL = tokenNotificationURL
-        recurringRequest.trialBilling = trialBilling
-        recurringRequest.billingAgreement = billingAgreement
-
-        paymentRequest.recurringPaymentRequest = recurringRequest
         return paymentRequest
     }
 }

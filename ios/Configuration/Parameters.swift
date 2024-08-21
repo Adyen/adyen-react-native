@@ -70,6 +70,7 @@ internal enum ApplePayKeys: SubConfig {
     static var shippingType = "shippingType"
     static var supportedCountries = "supportedCountries"
     static var shippingMethods = "shippingMethods"
+    static var recurringPaymentRequest="recurringPaymentRequest"
 
     enum Recurring {
         static var paymentDescription = "description"
@@ -115,7 +116,6 @@ internal enum ApplePayKeys: SubConfig {
     enum RecurringPaymentSummaryItem {
         static var label = "label"
         static var amount = "amount"
-        static var type = "type"
 
         static var startDate = "startDate"
         static var endDate = "endDate"

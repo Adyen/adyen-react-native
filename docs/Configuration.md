@@ -217,6 +217,27 @@ const configuration = {
     ],
     requiredBillingContactFields: ['phoneticName', 'postalAddress'],
     requiredShippingContactFields: ['name', 'phone', 'email', 'postalAddress'],
+    recurringPaymentRequest: {
+            description: 'My Subscription',
+            regularBilling: {
+              amount: 1000,
+              label: 'Monthy payment',
+              intervalCount: 1,
+              intervalUnit: 'month',
+              startDate: new Date('2025-04-28'),
+            },
+            managementURL: 'https://my-domain.com/managementURL',
+            trialBilling: {
+              amount: 10,
+              label: 'Trail week',
+              intervalCount: 7,
+              intervalUnit: 'day',
+              endDate: new Date('2025-04-21'),
+            },
+            tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
+            billingAgreement: 'Hereby I am willing to give my money',
+          },
+        }
   },
   googlepay: {
     allowCreditCards: false,

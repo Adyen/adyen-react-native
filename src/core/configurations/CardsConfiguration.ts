@@ -1,4 +1,4 @@
-import { AddressLookup, PostalAddress } from './AddressLookup';
+import { AddressLookup, AddressLookupItem } from './AddressLookup';
 
 export interface CardsConfiguration {
   /**  Determines whether to enable preselected stored payment method view step */
@@ -28,7 +28,7 @@ export interface CardsConfiguration {
    * Callback when a new address for delegated address lookup confirmed.
    * @param address
    */
-  onConfirmAddress?(address: PostalAddress, lookup: AddressLookup): void;
+  onConfirmAddress?(address: AddressLookupItem, lookup: AddressLookup): void;
 }
 
 /** Collection of values for address field visibility. */
