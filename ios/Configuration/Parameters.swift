@@ -70,6 +70,17 @@ internal enum ApplePayKeys: SubConfig {
     static var shippingType = "shippingType"
     static var supportedCountries = "supportedCountries"
     static var shippingMethods = "shippingMethods"
+    static var recurringPaymentRequest="recurringPaymentRequest"
+
+    enum Recurring {
+        static var paymentDescription = "description"
+        static var regularBilling = "regularBilling"
+        static var managementURL = "managementURL"
+
+        static var billingAgreement = "billingAgreement"
+        static var trialBilling = "trialBilling"
+        static var tokenNotificationURL = "tokenNotificationURL"
+    }
 
     enum Contact {
         static var phoneNumber = "phoneNumber"
@@ -100,6 +111,35 @@ internal enum ApplePayKeys: SubConfig {
         static var dateComponentsRange = "dateComponentsRange"
         static var startDate = "startDate"
         static var endDate = "endDate"
+    }
+
+    enum RecurringPaymentSummaryItem {
+        static var label = "label"
+        static var amount = "amount"
+
+        static var startDate = "startDate"
+        static var endDate = "endDate"
+        static var intervalUnit = "intervalUnit"
+        static var intervalCount = "intervalCount"
+    }
+
+    enum CalendarUnit: String {
+        case minute, hour, day, month, year
+
+        var systemValue: NSCalendar.Unit {
+            switch self {
+            case .minute:
+                return .minute
+            case .hour:
+                return .hour
+            case .day:
+                return .day
+            case .month:
+                return .month
+            case .year:
+                return .year
+            }
+        }
     }
 }
 

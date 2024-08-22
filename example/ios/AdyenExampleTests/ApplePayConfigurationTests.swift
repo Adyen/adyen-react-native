@@ -455,6 +455,24 @@ final class ApplePayConfigurationTests: XCTestCase {
     }
   }
 
+  @available(iOS 16.0, *)
+  func testRecurringConfiguration() throws {
+    let sut = ApplepayConfigurationParser(configuration: [
+      "applepay":
+        [
+          "merchantID": "merchant.com.adyen.test",
+          "merchantName": "SomeName",
+          "recurringPaymentRequest": [
+            "description": "Some description",
+            "regularBilling": ["amount": 1000, "label": "Some Label"],
+            "managementURL" : "https://some-domain.com"
+          ]
+        ]
+    ])
+    let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+    XCTAssertNotNil(paymentRequest.recurringPaymentRequest)
+  }
+
   func testIso8610Formatter() {
     XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01"))
     XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00Z"))

@@ -1,5 +1,5 @@
 import { NativeModule, NativeModules } from "react-native";
-import { AddressLookup } from "../core/configuration";
+import { AddressLookup } from '../core/configurations/AddressLookup';
 import { AdyenActionComponent } from "../core/AdyenNativeModules";
 import { ModuleMock } from "./NativeModules";
 

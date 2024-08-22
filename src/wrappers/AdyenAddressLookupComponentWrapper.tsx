@@ -1,5 +1,5 @@
 import { AdyenActionHandlingComponentWrapper } from './AdyenActionHandlingComponentWrapper';
-import { AddressLookup, AddressLookupItem, PostalAddress } from "../core/configuration";
+import { AddressLookup, AddressLookupItem } from '../core/configurations/AddressLookup';
 import { AdyenComponent } from '../core/AdyenNativeModules';
 
 

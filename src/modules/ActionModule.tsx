@@ -1,6 +1,6 @@
 import { NativeModule, NativeModules } from 'react-native';
 import { PaymentAction } from '../core/types';
-import { BaseConfiguration } from '../core/configuration';
+import { BaseConfiguration } from '../core/configurations/Configuration';
 import { ModuleMock } from './NativeModules';
 
 /** Describes a native module capable of handling actions standalone. */

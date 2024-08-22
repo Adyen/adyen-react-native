@@ -104,6 +104,16 @@ public struct ApplepayConfigurationParser {
         return shippingMethods.isEmpty ? nil : shippingMethods
     }
 
+    @available(iOS 16.0, *)
+    var recurringPaymentRequest: PKRecurringPaymentRequest? {
+        guard let recurringDict = dict[ApplePayKeys.recurringPaymentRequest] as? NSDictionary else {
+            return nil
+        }
+
+        let parser = ApplePayRecurringConfigurationParser(configuration: recurringDict)
+        return parser.paymentRequest
+    }
+
     public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
         let paymentRequest = try buildPaymentRequest(payment: payment)
         return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
@@ -141,6 +151,10 @@ public struct ApplepayConfigurationParser {
         paymentRequest.shippingType = shippingType ?? .shipping
         paymentRequest.supportedCountries = supportedCountries
         paymentRequest.shippingMethods = shippingMethods
+
+        if #available(iOS 16.0, *), let recurringPaymentRequest {
+            paymentRequest.recurringPaymentRequest = recurringPaymentRequest
+        }
 
         return paymentRequest
     }

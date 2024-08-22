@@ -40,7 +40,7 @@ export const checkoutConfiguration = (
             /** @type {any} */ prompt,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            console.debug(`<-- Merchant side: onUpdateAddress - ${prompt}`)
+            console.debug(`<-- Merchant side: onUpdateAddress - ${prompt}`);
             lookup.update([
               {
                 address: {
@@ -81,7 +81,7 @@ export const checkoutConfiguration = (
             /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            console.debug(`<-- Merchant side: onConfirmAddress - ${address}`)
+            console.debug(`<-- Merchant side: onConfirmAddress - ${address}`);
             lookup.confirm(address);
           },
         },
@@ -95,6 +95,30 @@ export const checkoutConfiguration = (
             'email',
             'postalAddress',
           ],
+          recurringPaymentRequest: {
+            description: 'My Subscription',
+            regularBilling: {
+              amount: 1000,
+              label: 'Monthy payment',
+              intervalCount: 1,
+              intervalUnit: 'month',
+              startDate: new Date(
+                new Date().setDate(new Date().getDate() + 7),
+              ).toISOString(),
+            },
+            managementURL: 'https://my-domain.com/managementURL',
+            trialBilling: {
+              amount: 10,
+              label: 'Trail week',
+              intervalCount: 7,
+              intervalUnit: 'day',
+              endDate: new Date(
+                new Date().setDate(new Date().getDate() + 7),
+              ).toISOString(),
+            },
+            tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
+            billingAgreement: 'Hereby I am willing to give my money',
+          },
         },
         googlepay: {
           billingAddressRequired: true,
@@ -123,9 +147,7 @@ export const useAppContext = () => {
 
 const storeKey = '@config_storage';
 
-const AppContextProvider = (
-  /** @type {any} */ props,
-) => {
+const AppContextProvider = (/** @type {any} */ props) => {
   const [config, setConfig] = useState(props.configuration);
 
   useEffect(() => {
