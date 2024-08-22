@@ -32,15 +32,3 @@ extension PKRecurringPaymentSummaryItem {
         }
     }
 }
-
-
-/*
- static var label = "label"
- static var amount = "amount"
- static var type = "type"
-
- static var startDate = "startDate"
- static var endDate = "endDate"
- static var intervalUnit = "intervalUnit"
- static var intervalCount = "intervalCount"
- */

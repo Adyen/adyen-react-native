@@ -1,8 +1,7 @@
 //
-//  ApplePayRecurringConfigurationParser.swift
-//  adyen-react-native
+// Copyright (c) 2024 Adyen N.V.
 //
-//  Created by Vladimir Abramichev on 21/08/2024.
+// This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
 import PassKit

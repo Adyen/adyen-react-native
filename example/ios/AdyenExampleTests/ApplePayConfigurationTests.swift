@@ -464,7 +464,7 @@ final class ApplePayConfigurationTests: XCTestCase {
           "merchantName": "SomeName",
           "recurringPaymentRequest": [
             "description": "Some description",
-            "regularBilling": ["amount": 1000, "lable": "Some Label"],
+            "regularBilling": ["amount": 1000, "label": "Some Label"],
             "managementURL" : "https://some-domain.com"
           ]
         ]

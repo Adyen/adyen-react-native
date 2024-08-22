@@ -1,4 +1,5 @@
 export {Card} from './core/types';
+
 export type {
   PaymentMethod,
   PaymentAction,
@@ -17,8 +18,8 @@ export {
   AdyenGooglePay,
 } from './modules/NativeModules';
 
-export { AdyenDropIn } from './modules/DropInModule';
-export type { DropInModule } from './modules/DropInModule';
+export {AdyenDropIn} from './modules/DropInModule';
+export type {DropInModule} from './modules/DropInModule';
 
 export {AdyenCSE} from './modules/AdyenCSEModule';
 export type {AdyenCSEModule} from './modules/AdyenCSEModule';
@@ -27,7 +28,7 @@ export {SessionHelper} from './modules/SessionHelperModule';
 export type {SessionHelperModule} from './modules/SessionHelperModule';
 
 export {AdyenAction} from './modules/ActionModule';
-export type {ActionModule}  from './modules/ActionModule';
+export type {ActionModule} from './modules/ActionModule';
 
 export type {
   AdyenComponent,
@@ -49,13 +50,38 @@ export type {
   Environment,
 } from './core/configurations/Configuration';
 
-export { GooglePayEnvironment } from './core/configurations/GooglePayConfiguration';
-export type { GooglePayBillingAddressFormat, GooglePayBillingAddressParameters, GooglePayConfiguration, GooglePayShippingAddressParameters, TotalPriceStatus, CardAuthMethod } from './core/configurations/GooglePayConfiguration';
+export type {
+  GooglePayBillingAddressFormat,
+  GooglePayBillingAddressParameters,
+  GooglePayConfiguration,
+  GooglePayShippingAddressParameters,
+  TotalPriceStatus,
+  CardAuthMethod,
+  GooglePayEnvironment,
+} from './core/configurations/GooglePayConfiguration';
 
-export type { DropInConfiguration } from './core/configurations/DropInConfiguration';
+export type {DropInConfiguration} from './core/configurations/DropInConfiguration';
 
-export type { AddressLookup, AddressLookupItem, PostalAddress } from './core/configurations/AddressLookup'
+export type {
+  AddressLookup,
+  AddressLookupItem,
+  PostalAddress,
+} from './core/configurations/AddressLookup';
 
-export type { ApplePayAddressFields, ApplePayCalendarUnit, ApplePayConfiguration, ApplePayPaymentContact, ApplePayRecurringPaymentRequest, ApplePayRecurringSummaryItem, ApplePayShippingMethod, ApplePaySummaryItem, ApplePayShippingType } from './core/configurations/ApplePayConfiguration'
+export type {
+  ApplePayAddressFields,
+  ApplePayCalendarUnit,
+  ApplePayConfiguration,
+  ApplePayPaymentContact,
+  ApplePayRecurringPaymentRequest,
+  ApplePayRecurringSummaryItem,
+  ApplePayShippingMethod,
+  ApplePaySummaryItem,
+  ApplePayShippingType,
+} from './core/configurations/ApplePayConfiguration';
 
-export type { CardsConfiguration, AddressMode } from './core/configurations/CardsConfiguration'
+export type {
+  CardsConfiguration,
+  AddressMode,
+  FieldVisibility,
+} from './core/configurations/CardsConfiguration';
