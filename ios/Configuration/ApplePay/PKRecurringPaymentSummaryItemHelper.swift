@@ -12,8 +12,7 @@ extension PKRecurringPaymentSummaryItem {
     convenience init?(_ dictionary: [NSString: Any]) {
         guard let label = dictionary[ApplePayKeys.RecurringPaymentSummaryItem.label as NSString] as? String,
               let amount = dictionary[ApplePayKeys.RecurringPaymentSummaryItem.amount as NSString] as? NSNumber else {
-            self.init()
-            return
+            return nil
         }
         self.init(label: label, amount: NSDecimalNumber(value: amount.doubleValue))
         if let startDateRaw = dictionary[ApplePayKeys.RecurringPaymentSummaryItem.startDate as NSString] as? String,
