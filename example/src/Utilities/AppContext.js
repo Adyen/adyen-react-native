@@ -33,6 +33,9 @@ export const checkoutConfiguration = (
           enabled: true,
           verboseLogs: true,
         },
+        dropin: {
+          showRemovePaymentMethodButton: true,
+        },
         card: {
           addressVisibility: 'lookup',
           allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],

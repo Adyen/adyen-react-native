@@ -36,13 +36,22 @@ public struct DropInConfigurationParser {
         return value
     }
 
+    var showRemovePaymentMethodButton: Bool {
+        guard let value = dict[DropInKeys.showRemovePaymentMethodButton] as? Bool else {
+            return false
+        }
+        return value
+    }
+
     var title: String? {
         dict[DropInKeys.title] as? String
     }
 
     public var configuration: DropInComponent.Configuration {
-        .init(allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
-              allowPreselectedPaymentView: showPreselectedStoredPaymentMethod)
+        let configuration = DropInComponent.Configuration(allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
+                                                                 allowPreselectedPaymentView: showPreselectedStoredPaymentMethod)
+        configuration.paymentMethodsList.allowDisablingStoredPaymentMethods = showRemovePaymentMethodButton
+        return configuration
     }
 
 }

@@ -31,6 +31,7 @@ class ApiClient {
       ...serverConfiguration,
       ...paymentConfiguration,
       returnUrl: returnUrl,
+      showRemovePaymentMethodButton: true,
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
