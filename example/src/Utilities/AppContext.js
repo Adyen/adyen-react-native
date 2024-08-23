@@ -35,6 +35,20 @@ export const checkoutConfiguration = (
         },
         dropin: {
           showRemovePaymentMethodButton: true,
+          onDisableStoredPaymentMethod: (
+            storedPaymentMethod,
+            resolve,
+            reject,
+          ) => {
+            console.debug(
+              ` = = = = onDisableStoredPaymentMethod called: ${JSON.stringify(
+                storedPaymentMethod,
+                null,
+                ' ',
+              )}`,
+            );
+            resolve();
+          },
         },
         card: {
           addressVisibility: 'lookup',
