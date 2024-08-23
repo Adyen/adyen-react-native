@@ -13,11 +13,9 @@ import {
   NativeModule,
 } from 'react-native';
 import { Event, MISSING_CONTEXT_ERROR } from './core/constants';
-import {
-  AdyenComponent,
-} from './core/AdyenNativeModules';
+import { AdyenComponent } from './core/AdyenNativeModules';
 import { SessionHelper } from './modules/SessionHelperModule';
-import { getNativeComponent } from './wrappers/getNativeComponent';
+import { getWrapper } from './wrappers/getNativeComponent';
 import {
   AdyenError,
   PaymentMethodsResponse,
@@ -28,9 +26,16 @@ import {
 } from './core/types';
 import { Configuration } from './core/configurations/Configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
-import { AdyenAddressLookupComponentWrapper, isAddressLooker } from './wrappers/AdyenAddressLookupComponentWrapper';
-import { isActionComponent } from './wrappers/AdyenActionHandlingComponentWrapper';
-import { AdyenActionComponent } from "./core/AdyenNativeModules";
+import {
+  AddressLookup,
+  isAddressLooker,
+} from './wrappers/AddressLookupComponentWrapper';
+import { isActionComponent } from './wrappers/ActionHandlingComponentWrapper';
+import { AdyenActionComponent } from './core/AdyenNativeModules';
+import {
+  isRemovesStoredPaymentComponent,
+  RemovesStoredPayment,
+} from './wrappers/RemoveStoredPaymentComponentWrapper';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
@@ -179,7 +184,31 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       if (isActionComponent(nativeComponent)) {
         subscriptions.current.push(
           eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
-            onAdditionalDetails?.(data, nativeComponent as unknown as AdyenActionComponent)
+            onAdditionalDetails?.(
+              data,
+              nativeComponent as unknown as AdyenActionComponent
+            )
+          )
+        );
+      }
+
+      if (isRemovesStoredPaymentComponent(nativeComponent)) {
+        console.debug('Subcribing for onDisableStoredPaymentMethod');
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onDisableStoredPaymentMethod, (data) =>
+            configuration.dropin?.onDisableStoredPaymentMethod?.(
+              data,
+              () => {
+                (
+                  nativeComponent as unknown as RemovesStoredPayment
+                ).removeStored(true);
+              },
+              () => {
+                (
+                  nativeComponent as unknown as RemovesStoredPayment
+                ).removeStored(false);
+              }
+            )
           )
         );
       }
@@ -187,15 +216,19 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       if (isAddressLooker(nativeComponent)) {
         subscriptions.current.push(
           eventEmitter.addListener(Event.onAddressUpdate, async (prompt) => {
-            configuration.card?.onUpdateAddress?.(prompt, nativeComponent as AdyenAddressLookupComponentWrapper)
-          }
-          )
+            configuration.card?.onUpdateAddress?.(
+              prompt,
+              nativeComponent as unknown as AddressLookup
+            );
+          })
         );
         subscriptions.current.push(
           eventEmitter.addListener(Event.onAddressConfirm, (address) => {
-            configuration.card?.onConfirmAddress?.(address, nativeComponent as AdyenAddressLookupComponentWrapper);
-          }
-          )
+            configuration.card?.onConfirmAddress?.(
+              address,
+              nativeComponent as unknown as AddressLookup
+            );
+          })
         );
       }
     },
@@ -209,7 +242,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         paymentMethods ?? sessionStorage?.paymentMethods
       );
 
-      const { nativeComponent, paymentMethod } = getNativeComponent(
+      const { nativeComponent, paymentMethod } = getWrapper(
         typeName,
         currentPaymentMethods
       );

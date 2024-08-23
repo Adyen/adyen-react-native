@@ -1,4 +1,4 @@
-import {NativeModule, Platform} from 'react-native';
+import { NativeModule, Platform } from 'react-native';
 import {
   ADDRESS_COMPONENTS,
   find,
@@ -9,22 +9,22 @@ import {
   UNKNOWN_PAYMENT_METHOD_ERROR,
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from '../core/constants';
-import {PaymentMethod, PaymentMethodsResponse} from '../core/types';
-import {AdyenNativeComponentWrapper} from './AdyenNativeComponentWrapper';
-import {AdyenActionHandlingComponentWrapper} from './AdyenActionHandlingComponentWrapper';
-import {AdyenAddressLookupComponentWrapper} from './AdyenAddressLookupComponentWrapper';
-import {AdyenComponent} from '../core/AdyenNativeModules';
-import {AdyenGooglePay} from '../modules/NativeModules';
-import {AdyenApplePay} from '../modules/NativeModules';
-import {AdyenInstant} from '../modules/NativeModules';
-import {AdyenDropIn} from '../modules/DropInModule';
+import { PaymentMethod, PaymentMethodsResponse } from '../core/types';
+import { ComponentWrapper } from './ComponentWrapper';
+import { ActionHandlingComponentWrapper as ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
+import { AdyenComponent } from '../core/AdyenNativeModules';
+import { AdyenGooglePay } from '../modules/NativeModules';
+import { AdyenApplePay } from '../modules/NativeModules';
+import { AdyenInstant } from '../modules/NativeModules';
+import { AdyenDropIn } from '../modules/DropInModule';
+import { DropInComponentWrapper } from './DropInComponentWrapper';
 
 /**
  * Get native component capable of handling provided payment method type.
  */
-export function getNativeComponent(
+export function getWrapper(
   typeName: string,
-  paymentMethods: PaymentMethodsResponse,
+  paymentMethods: PaymentMethodsResponse
 ): {
   nativeComponent: AdyenComponent & NativeModule;
   paymentMethod?: PaymentMethod;
@@ -35,21 +35,20 @@ export function getNativeComponent(
     case 'drop-in':
     case 'adyendropin':
       return {
-        nativeComponent: new AdyenAddressLookupComponentWrapper({
+        nativeComponent: new DropInComponentWrapper({
           nativeModule: AdyenDropIn,
         }),
       };
     case 'applepay':
       return {
-        nativeComponent: new AdyenNativeComponentWrapper({
+        nativeComponent: new ComponentWrapper({
           nativeModule: AdyenApplePay,
-          canHandleAction: false,
         }),
       };
     case 'paywithgoogle':
     case 'googlepay':
       return {
-        nativeComponent: new AdyenActionHandlingComponentWrapper({
+        nativeComponent: new ActionHandlingComponentWrapper({
           nativeModule: AdyenGooglePay,
         }),
       };
@@ -68,20 +67,19 @@ export function getNativeComponent(
 
   let nativeComponent: AdyenComponent & NativeModule;
   if (ADDRESS_COMPONENTS.includes(typeName)) {
-    nativeComponent = new AdyenAddressLookupComponentWrapper({
+    nativeComponent = new DropInComponentWrapper({
       nativeModule: AdyenDropIn,
     });
   } else {
     // New iDEAL not treated as INSTANT on Android
-    var extendedComponentList = NATIVE_COMPONENTS
-    if ( Platform.OS === `android`) {
+    var extendedComponentList = NATIVE_COMPONENTS;
+    if (Platform.OS === `android`) {
       extendedComponentList.push(`ideal`);
     }
-    console.debug(extendedComponentList.includes(typeName))
     const nativeModule = extendedComponentList.includes(typeName)
       ? AdyenDropIn
       : AdyenInstant;
-    nativeComponent = new AdyenActionHandlingComponentWrapper({
+    nativeComponent = new ActionHandlingComponentWrapper({
       nativeModule: nativeModule,
     });
   }
