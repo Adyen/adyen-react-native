@@ -11,11 +11,13 @@ import {
 } from '../core/constants';
 import { PaymentMethod, PaymentMethodsResponse } from '../core/types';
 import { ComponentWrapper } from './ComponentWrapper';
-import { ActionHandlingComponentWrapper as ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
+import { ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
 import { AdyenComponent } from '../core/AdyenNativeModules';
-import { AdyenGooglePay } from '../modules/NativeModules';
-import { AdyenApplePay } from '../modules/NativeModules';
-import { AdyenInstant } from '../modules/NativeModules';
+import {
+  AdyenGooglePay,
+  AdyenInstant,
+  AdyenApplePay,
+} from '../modules/NativeModules';
 import { AdyenDropIn } from '../modules/DropInModule';
 import { DropInComponentWrapper } from './DropInComponentWrapper';
 

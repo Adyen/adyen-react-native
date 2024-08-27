@@ -186,13 +186,13 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
 
     @ReactMethod
     fun removeStored(success: Boolean) {
-        val result = if (success) storedPaymentMethodID?.let {
+        val successfulResult = if (success) storedPaymentMethodID?.let {
             RecurringDropInServiceResult.PaymentMethodRemoved(it)
         }
         else null
 
-        val resultA = result ?: RecurringDropInServiceResult.Error(null, null, false)
-        CheckoutProxy.shared.advancedService?.sendRecurringResult(resultA)
+        val result = successfulResult ?: RecurringDropInServiceResult.Error(null, null, false)
+        CheckoutProxy.shared.advancedService?.sendRecurringResult(result)
     }
 
     override fun getRedirectUrl(): String? {
