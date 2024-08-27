@@ -9,6 +9,7 @@ package com.adyenreactnativesdk.component
 import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.dropin.BaseDropInServiceContract
 import com.adyen.checkout.sessions.core.SessionPaymentResult
@@ -42,6 +43,7 @@ class CheckoutProxy private constructor() {
         fun onAdditionalData(jsonObject: JSONObject)
         fun onException(exception: CheckoutException)
         fun onFinished(result: SessionPaymentResult)
+        fun onRemove(storedPaymentMethod: StoredPaymentMethod)
     }
 
     companion object {

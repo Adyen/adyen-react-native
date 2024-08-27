@@ -11,12 +11,14 @@ import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.dropin.AddressLookupDropInServiceResult
 import com.adyen.checkout.dropin.BaseDropInServiceContract
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInServiceResult
 import com.adyen.checkout.dropin.ErrorDialog
+import com.adyen.checkout.dropin.RecurringDropInServiceResult
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.AdyenCheckout
@@ -40,6 +42,8 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
     private fun getService(): BaseDropInServiceContract? {
         return if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
     }
+
+    private var storedPaymentMethodID: String? = null
 
     @ReactMethod
     fun addListener(eventName: String?) { /* No JS events expected */
@@ -180,6 +184,17 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         }
     }
 
+    @ReactMethod
+    fun removeStored(success: Boolean) {
+        val result = if (success) storedPaymentMethodID?.let {
+            RecurringDropInServiceResult.PaymentMethodRemoved(it)
+        }
+        else null
+
+        val resultA = result ?: RecurringDropInServiceResult.Error(null, null, false)
+        CheckoutProxy.shared.advancedService?.sendRecurringResult(resultA)
+    }
+
     override fun getRedirectUrl(): String? {
         return RedirectComponent.getReturnUrl(reactApplicationContext)
     }
@@ -232,6 +247,13 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
             .emit(DID_CONFIRM_ADDRESS, ReactNativeJson.convertJsonToMap(jsonObject))
         return true
+    }
+
+    override fun onRemove(storedPaymentMethod: StoredPaymentMethod) {
+        storedPaymentMethodID = storedPaymentMethod.id
+        val jsonObject = StoredPaymentMethod.SERIALIZER.serialize(storedPaymentMethod)
+        reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
+            .emit(DID_DISABLE_STORED_PAYMENT_METHOD, ReactNativeJson.convertJsonToMap(jsonObject))
     }
 }
 

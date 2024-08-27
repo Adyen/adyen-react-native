@@ -57,7 +57,9 @@ internal final class DropInModule: BaseModule {
 
     @objc
     func removeStored(_ success: NSNumber) {
-        disableStoredPaymentMethodHandler?(success.boolValue)
+        DispatchQueue.main.async { [weak self] in
+            self?.disableStoredPaymentMethodHandler?(success.boolValue)
+        }
     }
 
     @objc

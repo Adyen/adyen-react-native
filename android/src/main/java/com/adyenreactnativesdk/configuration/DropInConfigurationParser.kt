@@ -16,6 +16,7 @@ class DropInConfigurationParser(config: ReadableMap) {
         const val DROPIN_KEY = "dropin"
         const val SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY = "showPreselectedStoredPaymentMethod"
         const val SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY = "skipListWhenSinglePaymentMethod"
+        const val SHOW_REMOVE_PAYMENT_METHOD_BUTTON_KEY = "showRemovePaymentMethodButton"
     }
 
     private var config: ReadableMap
@@ -38,9 +39,15 @@ class DropInConfigurationParser(config: ReadableMap) {
             config.getBoolean(SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY)
         } else null
 
+    private val setEnableRemovingStoredPaymentMethods: Boolean?
+        get() = if (config.hasKey(SHOW_REMOVE_PAYMENT_METHOD_BUTTON_KEY)) {
+            config.getBoolean(SHOW_REMOVE_PAYMENT_METHOD_BUTTON_KEY)
+        } else null
+
     fun applyConfiguration(builder: DropInConfiguration.Builder) {
         showPreselectedStoredPaymentMethod?.let { builder.setShowPreselectedStoredPaymentMethod(it) }
         skipListWhenSinglePaymentMethod?.let { builder.setSkipListWhenSinglePaymentMethod(it) }
+        setEnableRemovingStoredPaymentMethods?.let { builder.setEnableRemovingStoredPaymentMethods(it) }
     }
 
 }
