@@ -48,7 +48,7 @@
     "@tsconfig/node10": "^1.0.7",
     "@types/react": "^18.0.29",
     "@types/react-test-renderer": "^18.0.0",
-    "eslint": "^8.0.0",
+    "eslint": "^9.0.0",
     "pod-install": "^0.2.0",
     "react": "^18.2.0",
     "react-native": "^0.74.2",
