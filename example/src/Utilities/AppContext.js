@@ -40,13 +40,7 @@ export const checkoutConfiguration = (
             resolve,
             reject,
           ) => {
-            console.debug(
-              ` = = = = onDisableStoredPaymentMethod called: ${JSON.stringify(
-                storedPaymentMethod,
-                null,
-                ' ',
-              )}`,
-            );
+            
             resolve();
           },
         },
@@ -57,7 +51,6 @@ export const checkoutConfiguration = (
             /** @type {any} */ prompt,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            console.debug(`<-- Merchant side: onUpdateAddress - ${prompt}`);
             lookup.update([
               {
                 address: {
@@ -98,7 +91,6 @@ export const checkoutConfiguration = (
             /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            console.debug(`<-- Merchant side: onConfirmAddress - ${address}`);
             lookup.confirm(address);
           },
         },

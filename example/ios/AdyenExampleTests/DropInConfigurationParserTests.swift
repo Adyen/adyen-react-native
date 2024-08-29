@@ -22,12 +22,20 @@ final class DropInConfigurationParserTests: XCTestCase {
                                             [
                                                 "showPreselectedStoredPaymentMethod": false,
                                                 "skipListWhenSinglePaymentMethod": false,
-                                                "title": "MY_DROPIN"
+                                                "title": "MY_DROPIN",
+                                                "showRemovePaymentMethodButton": true,
                                             ]
       )
+
       XCTAssertFalse(sut.showPreselectedStoredPaymentMethod)
       XCTAssertFalse(sut.skipListWhenSinglePaymentMethod)
       XCTAssertEqual(sut.title, "MY_DROPIN")
+      XCTAssertTrue(sut.showRemovePaymentMethodButton)
+
+      XCTAssertNotNil(sut.configuration)
+      XCTAssertFalse(sut.configuration.allowPreselectedPaymentView)
+      XCTAssertFalse(sut.configuration.allowsSkippingPaymentList)
+      XCTAssertTrue(sut.configuration.paymentMethodsList.allowDisablingStoredPaymentMethods)
   }
 
   func testEmptySubDictionary() throws {
@@ -39,5 +47,5 @@ final class DropInConfigurationParserTests: XCTestCase {
       let sut = DropInConfigurationParser(configuration: ["dropin": ["showPreselectedStoredPaymentMethod": false]])
       XCTAssertFalse(sut.showPreselectedStoredPaymentMethod)
   }
-
+  
 }

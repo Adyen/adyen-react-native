@@ -15,7 +15,7 @@ import {
 import { Event, MISSING_CONTEXT_ERROR } from './core/constants';
 import { AdyenComponent } from './core/AdyenNativeModules';
 import { SessionHelper } from './modules/SessionHelperModule';
-import { getWrapper } from './wrappers/getNativeComponent';
+import { getWrapper } from './wrappers/getWrapper';
 import {
   AdyenError,
   PaymentMethodsResponse,
