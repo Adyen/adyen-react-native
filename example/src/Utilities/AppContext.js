@@ -33,6 +33,17 @@ export const checkoutConfiguration = (
           enabled: true,
           verboseLogs: true,
         },
+        dropin: {
+          showRemovePaymentMethodButton: true,
+          onDisableStoredPaymentMethod: (
+            storedPaymentMethod,
+            resolve,
+            reject,
+          ) => {
+            
+            resolve();
+          },
+        },
         card: {
           addressVisibility: 'lookup',
           allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
@@ -40,7 +51,6 @@ export const checkoutConfiguration = (
             /** @type {any} */ prompt,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            console.debug(`<-- Merchant side: onUpdateAddress - ${prompt}`);
             lookup.update([
               {
                 address: {
@@ -81,7 +91,6 @@ export const checkoutConfiguration = (
             /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            console.debug(`<-- Merchant side: onConfirmAddress - ${address}`);
             lookup.confirm(address);
           },
         },

@@ -17,6 +17,7 @@ import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.dropin.dropIn
@@ -176,6 +177,10 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         sendEvent(DID_PROVIDE, jsonObject)
     }
 
+    override fun onRemove(storedPaymentMethod: StoredPaymentMethod) {
+        throw NotImplementedError("An operation only available for DropIn.")
+    }
+
     protected fun getCheckoutConfiguration(json: ReadableMap): CheckoutConfiguration {
         val rootParser = RootConfigurationParser(json)
         val countryCode = rootParser.countryCode
@@ -227,6 +232,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_SUBMIT = "didSubmitCallback"
         const val DID_UPDATE_ADDRESS = "didUpdateAddressCallback"
         const val DID_CONFIRM_ADDRESS = "didConfirmAddressCallback"
+        const val DID_DISABLE_STORED_PAYMENT_METHOD = "didDisableStoredPaymentMethod"
 
         const val RESULT_CODE_PRESENTED = "PresentToShopper"
 

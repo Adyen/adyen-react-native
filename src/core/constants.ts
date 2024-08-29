@@ -28,7 +28,9 @@ export enum Event {
   /** Event handler, called when address update called. */
   onAddressUpdate = 'didUpdateAddressCallback',
   /** Event handler, called when address confirmed called. */
-  onAddressConfirm = 'didConfirmAddressCallback'
+  onAddressConfirm = 'didConfirmAddressCallback',
+  /** Event handler, called when shopper requests to remove stored payment method on DropIn Advanced flow. */
+  onDisableStoredPaymentMethod = 'didDisableStoredPaymentMethod',
 }
 
 /** Collection of errors components can throw. */

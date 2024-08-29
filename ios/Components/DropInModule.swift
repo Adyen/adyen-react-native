@@ -14,6 +14,7 @@ internal final class DropInModule: BaseModule {
 
     private var lookupHandler: (([LookupAddressModel]) -> Void)?
     private var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
+    private var disableStoredPaymentMethodHandler: Adyen.Completion<Bool>?
 
     override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
@@ -55,6 +56,13 @@ internal final class DropInModule: BaseModule {
     }
 
     @objc
+    func removeStored(_ success: NSNumber) {
+        DispatchQueue.main.async { [weak self] in
+            self?.disableStoredPaymentMethodHandler?(success.boolValue)
+        }
+    }
+
+    @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         let parser = RootConfigurationParser(configuration: configuration)
         let paymentMethods: PaymentMethods
@@ -92,6 +100,7 @@ internal final class DropInModule: BaseModule {
         currentComponent = component
         component.delegate = BaseModule.session ?? self
         component.partialPaymentDelegate = BaseModule.session
+        component.storedPaymentMethodsDelegate = BaseModule.session ?? self
         present(component: component)
     }
 
@@ -167,6 +176,13 @@ extension DropInModule: AddressLookupProvider {
         sendEvent(event: .didConfirmAddress, body: incompleteAddress.jsonObject)
     }
 
+}
+
+extension DropInModule: StoredPaymentMethodsDelegate {
+    func disable(storedPaymentMethod: any Adyen.StoredPaymentMethod, completion: @escaping Adyen.Completion<Bool>) {
+        disableStoredPaymentMethodHandler = completion
+        sendEvent(event: .didDisableStoredPaymentMethod, body: storedPaymentMethod.jsonObject)
+    }
 }
 
 struct AddressError: Error, LocalizedError, Codable {

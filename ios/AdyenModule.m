@@ -26,6 +26,8 @@ RCT_EXTERN_METHOD(update:(nullable NSArray *)results)
 RCT_EXTERN_METHOD(confirm:(nonnull NSNumber *)success
                   address:(nonnull NSDictionary *)address)
 
+RCT_EXTERN_METHOD(removeStored:(nonnull NSNumber *)success)
+
 @end
 
 @interface RCT_EXTERN_MODULE(AdyenInstant, NSObject)

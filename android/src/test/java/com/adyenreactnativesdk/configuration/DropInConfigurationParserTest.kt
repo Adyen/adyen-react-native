@@ -31,11 +31,9 @@ class DropInConfigurationParserTest {
         // GIVEN
         val mockBuilder = mock(DropInConfiguration.Builder::class.java)
         val config = WritableMapMock()
-        config.putBoolean(DropInConfigurationParser.SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY, false)
-        config.putBoolean(
-            DropInConfigurationParser.SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY,
-            false
-        )
+        config.putBoolean("skipListWhenSinglePaymentMethod", false)
+        config.putBoolean("showPreselectedStoredPaymentMethod", false)
+        config.putBoolean("showRemovePaymentMethodButton", true)
 
         // WHEN
         val sut = DropInConfigurationParser(config)
@@ -44,5 +42,6 @@ class DropInConfigurationParserTest {
         // THEN
         verify(mockBuilder, times(1)).setSkipListWhenSinglePaymentMethod(false)
         verify(mockBuilder, times(1)).setShowPreselectedStoredPaymentMethod(false)
+        verify(mockBuilder, times(1)).setEnableRemovingStoredPaymentMethods(true)
     }
 }
