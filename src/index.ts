@@ -12,11 +12,9 @@ export type {
   AdyenError,
 } from './core/types';
 
-export {
-  AdyenApplePay,
-  AdyenInstant,
-  AdyenGooglePay,
-} from './modules/NativeModules';
+export {AdyenApplePay} from './modules/AdyenApplePay';
+export {AdyenGooglePay} from './modules/AdyenGooglePay';
+export {AdyenInstant} from './modules/AdyenInstant';
 
 export {AdyenDropIn} from './modules/DropInModule';
 export type {DropInModule} from './modules/DropInModule';

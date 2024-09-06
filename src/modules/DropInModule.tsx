@@ -1,7 +1,7 @@
 import { NativeModule, NativeModules } from "react-native";
 import { AddressLookup } from '../core/configurations/AddressLookup';
 import { AdyenActionComponent } from "../core/AdyenNativeModules";
-import { ModuleMock } from "./NativeModules";
+import { ModuleMock } from "./ModuleMock";
 
 /** Describes Drop-in module. */
 

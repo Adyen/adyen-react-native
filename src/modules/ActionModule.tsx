@@ -1,7 +1,6 @@
 import { NativeModule, NativeModules } from 'react-native';
 import { PaymentAction } from '../core/types';
 import { BaseConfiguration } from '../core/configurations/Configuration';
-import { ModuleMock } from './NativeModules';
 
 /** Describes a native module capable of handling actions standalone. */
 export interface ActionModule {
@@ -44,5 +43,5 @@ export class ActionModuleWrapper implements ActionModule {
 
 /** Standalone Action Handling module. */
 export const AdyenAction: ActionModule =
-  new ActionModuleWrapper(NativeModules.AdyenAction) ?? ModuleMock;
+  new ActionModuleWrapper(NativeModules.AdyenAction);
 
