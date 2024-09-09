@@ -18,18 +18,19 @@
 
 | Parameter     | Description                                                                                                  | Required |
 | ------------- | ------------------------------------------------------------------------------------------------------------ | -------- |
-| `enabled`     | Enable/Disable all analytics. Defaults to **true**. ⚠️ This feature is only available from v68 of Adyen API.  | No       |
+| `enabled`     | Enable/Disable all analytics. Defaults to **true**. ⚠️ This feature is only available from v68 of Adyen API. | No       |
 | `verboseLogs` | Enable extensive logs from SDK. Helpful during debugging. Defaults to **false**.                             | No       |
 
 ## React Native SDK provides the following configurations for components:
 
 ### Drop-in
 
-| Parameter                            | Description                                                                                                                                        | Required |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `showPreselectedStoredPaymentMethod` | Determines whether to enable the preselected stored payment method view step. Defaults to **true**.                                                | No       |
-| `skipListWhenSinglePaymentMethod`    | If set to **true** allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.               | No       |
-| `title`                              | Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name is used. This property has no effect on Android. | No       |
+| Parameter                            | Description                                                                                                                                                                                                                                                                                                                                                                                                                        | Required |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `showRemovePaymentMethodButton`      | Enables UI that allows the shopper to remove stored payment methods. Defaults to **false**. For `\sessions` this option works out of the box. For `\payment` (aka "Advanced flow") one must implement `onDisableStoredPaymentMethod?(storedPaymentMethod: StoredPaymentMethod, resolve: () => void, reject: () => void)` callback and call [/disable](https://docs.adyen.com/api-explorer/Recurring/68/post/disable) API endpoint. | No       |
+| `showPreselectedStoredPaymentMethod` | Determines whether to enable the preselected stored payment method view step. Defaults to **true**.                                                                                                                                                                                                                                                                                                                                | No       |
+| `skipListWhenSinglePaymentMethod`    | If set to **true** allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.                                                                                                                                                                                                                                                                                               | No       |
+| `title`                              | Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name is used. This property has no effect on Android.                                                                                                                                                                                                                                                                                 | No       |
 
 ### Card component
 
@@ -71,6 +72,7 @@
 | `shippingType`                  | Indicates the display mode for the shipping (e.g. "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Corresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype).                                                                                                                 | No                                      |
 | `supportedCountries`            | A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.                                                                                                                                                                                    | No                                      |
 | `shippingMethods`               | The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods).                                                                                                                                                                       | No                                      |
+| `recurringPaymentRequest`       | A class that represents a request to set up a recurring payment, typically a subscription. Corresponds to [PKRecurringPaymentRequest](#applepay-recurring-payment).                                                                                                                                                                                                                         | No                                      |
 
 #### ApplePay Recurring payment
 
