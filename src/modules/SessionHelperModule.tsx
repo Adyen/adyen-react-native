@@ -1,7 +1,7 @@
 import { NativeModules } from "react-native";
 import { SessionResponse } from "../core/types";
 import { AdyenComponent } from "../core/AdyenNativeModules";
-import { ModuleMock } from "./NativeModules";
+import { ModuleMock } from "./ModuleMock";
 
 /** Describes a native module capable of creating new sessions. */
 export interface SessionHelperModule extends AdyenComponent {
