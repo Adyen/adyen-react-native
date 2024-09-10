@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
 
 
   s.dependency "React-Core"
-  s.dependency "Adyen", '5.10.0'
+  s.dependency "Adyen", '5.11.0'
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
 
 end
