@@ -1,7 +1,4 @@
-import {
-  PaymentAction,
-  PaymentMethodsResponse,
-} from './types';
+import { PaymentAction, PaymentMethodsResponse } from './types';
 
 /**
  * Options for dismissing the payment component.
@@ -18,7 +15,7 @@ export interface AdyenComponent {
   /**
    * List of events supported by component
    */
-    events: string[];
+  events: string[];
 
   /**
    * Show the component above the current screen.
@@ -45,5 +42,3 @@ export interface AdyenActionComponent extends AdyenComponent {
    */
   handle: (action: PaymentAction) => void;
 }
-
-

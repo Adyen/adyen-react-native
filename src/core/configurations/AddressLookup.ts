@@ -1,7 +1,7 @@
 export interface AddressLookup {
   update(results: AddressLookupItem[]): void;
   confirm(address: AddressLookupItem): void;
-  reject(error?: { message: string; }): void;
+  reject(error?: { message: string }): void;
 }
 
 export interface PostalAddress {
@@ -25,4 +25,3 @@ export interface AddressLookupItem {
   /** The unique identifier of postal address */
   id: string;
 }
-

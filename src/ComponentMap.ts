@@ -72,11 +72,7 @@ export const UNSUPPORTED_PAYMENT_METHODS = [
   'wechatpaySDK',
 ];
 
-export const ADDRESS_COMPONENTS = [
-  'card',
-  'scheme',
-  'bcmc',
-];
+export const ADDRESS_COMPONENTS = ['card', 'scheme', 'bcmc'];
 
 export const NATIVE_COMPONENTS = [
   /** Card */
