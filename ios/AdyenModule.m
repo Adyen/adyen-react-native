@@ -81,9 +81,6 @@ RCT_EXTERN_METHOD(createSession:(NSDictionary *)sessionModelJSON
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(getReturnURL:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
 RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
                   event:(NSDictionary *)event)
 
