@@ -40,7 +40,6 @@ export const checkoutConfiguration = (
             resolve,
             reject,
           ) => {
-            
             resolve();
           },
         },
@@ -161,7 +160,7 @@ const AppContextProvider = (/** @type {any} */ props) => {
 
   useEffect(() => {
     AsyncStorage.getItem(storeKey)
-      .then((value) => {
+      .then(value => {
         if (value) {
           console.debug(`Stored config: ${value}`);
           const parsed = JSON.parse(value);
