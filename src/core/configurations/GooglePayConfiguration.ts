@@ -55,6 +55,5 @@ export type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';
 
 export enum GooglePayEnvironment {
   Test = 3,
-  Production = 1
+  Production = 1,
 }
-

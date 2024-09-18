@@ -1,29 +1,26 @@
 // @ts-check
 
-import React, { useEffect, useCallback, useState } from 'react';
-import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
-import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
+import React, {useEffect, useCallback, useState} from 'react';
+import {SafeAreaView, Alert, ActivityIndicator} from 'react-native';
+import {AdyenCheckout, ErrorCode} from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import {
-  checkoutConfiguration,
-  useAppContext,
-} from '../../Utilities/AppContext';
+import {checkoutConfiguration, useAppContext} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
-import { isSuccess } from '../../Utilities/Helpers';
+import {isSuccess} from '../../Utilities/Helpers';
 
-const AdvancedCheckout = ({ navigation }) => {
-  const { configuration } = useAppContext();
+const AdvancedCheckout = ({navigation}) => {
+  const {configuration} = useAppContext();
   const [paymentMethods, setPaymentMethods] = useState(undefined);
 
   useEffect(() => {
-    refreshPaymentMethods(configuration).catch((e) => {
+    refreshPaymentMethods(configuration).catch(e => {
       console.error(e);
     });
   }, []);
 
-  const refreshPaymentMethods = async (configuration) => {
+  const refreshPaymentMethods = async configuration => {
     const paymentMethods = await ApiClient.paymentMethods(configuration);
     setPaymentMethods(paymentMethods);
   };
@@ -32,21 +29,21 @@ const AdvancedCheckout = ({ navigation }) => {
     async (
       /** @type {import('@adyen/react-native').PaymentMethodData} */ data,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
-      /** @type any */ extra
+      /** @type any */ extra,
     ) => {
       console.debug(
         `didSubmit: ${data.paymentMethod.type} with extra: ${JSON.stringify(
           extra,
           null,
-          ' '
-        )}`
+          ' ',
+        )}`,
       );
       try {
         /** @type {import('./../../Types/index').PaymentResponse} */
         const result = await ApiClient.payments(
           data,
           configuration,
-          data.returnUrl
+          data.returnUrl,
         );
         if (result.action) {
           nativeComponent.handle(result.action);
@@ -57,13 +54,13 @@ const AdvancedCheckout = ({ navigation }) => {
         processError(error, nativeComponent);
       }
     },
-    [configuration]
+    [configuration],
   );
 
   const didProvide = useCallback(
     async (
       /** @type {any} */ data,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
     ) => {
       console.debug('didProvide');
       try {
@@ -73,29 +70,29 @@ const AdvancedCheckout = ({ navigation }) => {
         processError(error, nativeComponent);
       }
     },
-    []
+    [],
   );
 
   const didComplete = useCallback(
     async (
       result,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
     ) => {
       console.log('didComplete');
       processResult(result, nativeComponent);
     },
-    []
+    [],
   );
 
   const didFail = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */ error,
-      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent
+      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent,
     ) => {
       console.log(`didFailed: ${error.message}`);
       processError(error, nativeComponent);
     },
-    []
+    [],
   );
 
   const processResult = useCallback(
@@ -103,25 +100,25 @@ const AdvancedCheckout = ({ navigation }) => {
       /** @type {import('./../../Types/index').PaymentResponse} */
       result,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
-      nativeComponent
+      nativeComponent,
     ) => {
       const success = isSuccess(result);
       console.log(
         `Payment: ${success ? 'success' : 'failure'} : ${
           success ? result.resultCode : JSON.stringify(result)
-        }`
+        }`,
       );
       nativeComponent.hide(success);
       navigation.popToTop();
-      navigation.push('Result', { result: result.resultCode });
+      navigation.push('Result', {result: result.resultCode});
     },
-    []
+    [],
   );
 
   const processError = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */ error,
-      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent
+      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent,
     ) => {
       nativeComponent.hide(false);
       if (error.errorCode === ErrorCode.canceled) {
@@ -130,7 +127,7 @@ const AdvancedCheckout = ({ navigation }) => {
         Alert.alert('Error', error.message);
       }
     },
-    []
+    [],
   );
 
   return (
@@ -143,8 +140,7 @@ const AdvancedCheckout = ({ navigation }) => {
           onSubmit={didSubmit}
           onAdditionalDetails={didProvide}
           onComplete={didComplete}
-          onError={didFail}
-        >
+          onError={didFail}>
           <PaymentMethods isSession={false} />
         </AdyenCheckout>
       ) : (

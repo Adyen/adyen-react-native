@@ -42,6 +42,6 @@ export class ActionModuleWrapper implements ActionModule {
 }
 
 /** Standalone Action Handling module. */
-export const AdyenAction: ActionModule =
-  new ActionModuleWrapper(NativeModules.AdyenAction);
-
+export const AdyenAction: ActionModule = new ActionModuleWrapper(
+  NativeModules.AdyenAction
+);

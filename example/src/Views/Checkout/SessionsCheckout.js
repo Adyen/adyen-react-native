@@ -1,30 +1,27 @@
 // @ts-check
 
-import React, { useEffect, useCallback, useState } from 'react';
-import { SafeAreaView, Alert, ActivityIndicator, Platform } from 'react-native';
-import { AdyenCheckout, AdyenDropIn, ErrorCode } from '@adyen/react-native';
+import React, {useEffect, useCallback, useState} from 'react';
+import {SafeAreaView, Alert, ActivityIndicator, Platform} from 'react-native';
+import {AdyenCheckout, AdyenDropIn, ErrorCode} from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import {
-  checkoutConfiguration,
-  useAppContext,
-} from '../../Utilities/AppContext';
+import {checkoutConfiguration, useAppContext} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
-import { ENVIRONMENT } from '../../Configuration';
-import { isSuccess } from '../../Utilities/Helpers';
+import {ENVIRONMENT} from '../../Configuration';
+import {isSuccess} from '../../Utilities/Helpers';
 
-const SessionsCheckout = ({ navigation }) => {
-  const { configuration } = useAppContext();
+const SessionsCheckout = ({navigation}) => {
+  const {configuration} = useAppContext();
   const [session, setSession] = useState(undefined);
 
   useEffect(() => {
-    refreshSession(configuration).catch((e) => {
+    refreshSession(configuration).catch(e => {
       console.error(e);
     });
   }, []);
 
-  const refreshSession = async (configuration) => {
+  const refreshSession = async configuration => {
     const returnUrl = Platform.select({
       ios: ENVIRONMENT.returnUrl,
       android: await AdyenDropIn.getReturnURL(),
@@ -37,12 +34,12 @@ const SessionsCheckout = ({ navigation }) => {
     async (
       result,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
-      nativeComponent
+      nativeComponent,
     ) => {
-      console.log(`didComplete :`);
+      console.log('didComplete :');
       processResult(result, nativeComponent);
     },
-    []
+    [],
   );
 
   const didFail = useCallback(
@@ -50,12 +47,12 @@ const SessionsCheckout = ({ navigation }) => {
       /** @type {import('@adyen/react-native').AdyenError} */
       error,
       /** @type {import('@adyen/react-native').AdyenComponent} */
-      nativeComponent
+      nativeComponent,
     ) => {
       console.log(`didFailed: ${error.message}`);
       processError(error, nativeComponent);
     },
-    []
+    [],
   );
 
   const processResult = useCallback(
@@ -63,13 +60,13 @@ const SessionsCheckout = ({ navigation }) => {
       /** @type {import('./../../Types/index').PaymentResponse} */
       result,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
-      nativeComponent
+      nativeComponent,
     ) => {
       const success = isSuccess(result);
       console.log(
         `Payment: ${success ? 'success' : 'failure'} : ${
           success ? result.resultCode : JSON.stringify(result, null, ' ')
-        }`
+        }`,
       );
       nativeComponent.hide(success);
       navigation.popToTop();
@@ -77,7 +74,7 @@ const SessionsCheckout = ({ navigation }) => {
         result: result.resultCode,
       });
     },
-    []
+    [],
   );
 
   const processError = useCallback(
@@ -85,7 +82,7 @@ const SessionsCheckout = ({ navigation }) => {
       /** @type {import('@adyen/react-native').AdyenError} */
       error,
       /** @type {import('@adyen/react-native').AdyenComponent} */
-      nativeComponent
+      nativeComponent,
     ) => {
       nativeComponent.hide(false);
       if (error.errorCode === ErrorCode.canceled) {
@@ -95,7 +92,7 @@ const SessionsCheckout = ({ navigation }) => {
         Alert.alert('Error', error.message);
       }
     },
-    [configuration]
+    [configuration],
   );
 
   return (
@@ -106,8 +103,7 @@ const SessionsCheckout = ({ navigation }) => {
           config={checkoutConfiguration(configuration)}
           session={session}
           onComplete={didComplete}
-          onError={didFail}
-        >
+          onError={didFail}>
           <PaymentMethods isSession={true} />
         </AdyenCheckout>
       ) : (

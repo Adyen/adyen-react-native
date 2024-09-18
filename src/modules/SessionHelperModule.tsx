@@ -1,7 +1,7 @@
-import { NativeModules } from "react-native";
-import { SessionResponse } from "../core/types";
-import { AdyenComponent } from "../core/AdyenNativeModules";
-import { ModuleMock } from "./ModuleMock";
+import { NativeModules } from 'react-native';
+import { SessionResponse } from '../core/types';
+import { AdyenComponent } from '../core/AdyenNativeModules';
+import { ModuleMock } from './ModuleMock';
 
 /** Describes a native module capable of creating new sessions. */
 export interface SessionHelperModule extends AdyenComponent {
@@ -12,5 +12,5 @@ export interface SessionHelperModule extends AdyenComponent {
 }
 
 /** Collection of session helper methods */
-export const SessionHelper: SessionHelperModule = NativeModules.SessionHelper ?? ModuleMock;
-
+export const SessionHelper: SessionHelperModule =
+  NativeModules.SessionHelper ?? ModuleMock;

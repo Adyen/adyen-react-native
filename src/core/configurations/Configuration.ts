@@ -55,4 +55,3 @@ export interface Configuration extends BaseConfiguration {
   /** Google Pay component configuration. */
   googlepay?: GooglePayConfiguration;
 }
-

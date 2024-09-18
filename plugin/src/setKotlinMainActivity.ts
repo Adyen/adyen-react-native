@@ -20,11 +20,11 @@ export function setKotlinMainActivity(contents: string): string {
     contents = contents.replace(
       /}\n$/,
       '\n' +
-      '  override fun onNewIntent(intent: Intent?) {\n' +
-      '    super.onNewIntent(intent)\n' +
-      '    intent?.let { AdyenCheckout.handleIntent(it) }\n' +
-      '  }\n' +
-      '}\n'
+        '  override fun onNewIntent(intent: Intent?) {\n' +
+        '    super.onNewIntent(intent)\n' +
+        '    intent?.let { AdyenCheckout.handleIntent(it) }\n' +
+        '  }\n' +
+        '}\n'
     );
   }
 
@@ -42,11 +42,11 @@ export function setKotlinMainActivity(contents: string): string {
     contents = contents.replace(
       /}\n$/,
       '\n' +
-      '  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {\n' +
-      '    super.onActivityResult(requestCode, resultCode, data)\n' +
-      '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
-      '  }\n' +
-      '}\n'
+        '  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {\n' +
+        '    super.onActivityResult(requestCode, resultCode, data)\n' +
+        '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
+        '  }\n' +
+        '}\n'
     );
   }
 

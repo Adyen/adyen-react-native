@@ -1,18 +1,18 @@
-import React, { useCallback } from 'react';
-import { View, Text, useColorScheme } from 'react-native';
-import { useAppContext } from '../../Utilities/AppContext';
+import React, {useCallback} from 'react';
+import {View, Text, useColorScheme} from 'react-native';
+import {useAppContext} from '../../Utilities/AppContext';
 import Styles from '../../Utilities/Styles';
 
 function getFlagEmoji(countryCode) {
   const codePoints = countryCode
     .toUpperCase()
     .split('')
-    .map((char) => 127397 + char.charCodeAt(0));
+    .map(char => 127397 + char.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
 }
 
 const TopView = () => {
-  const { configuration } = useAppContext();
+  const {configuration} = useAppContext();
 
   return (
     <View style={Styles.horizontalContent}>
@@ -26,7 +26,7 @@ const TopView = () => {
   );
 };
 
-const CountryView = ({ countryCode }) => {
+const CountryView = ({countryCode}) => {
   const isDarkMode = useColorScheme() === 'dark';
 
   if (!countryCode) {
@@ -48,11 +48,11 @@ const CountryView = ({ countryCode }) => {
   );
 };
 
-const AmountView = ({ amount, currency, locale }) => {
+const AmountView = ({amount, currency, locale}) => {
   const isDarkMode = useColorScheme() === 'dark';
 
   const formatMinorUnits = useCallback(
-    (amount) => {
+    amount => {
       const formatter = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: currency,
@@ -73,7 +73,7 @@ const AmountView = ({ amount, currency, locale }) => {
 
       return formatter.format(amount);
     },
-    [locale, currency]
+    [locale, currency],
   );
 
   if (!amount) {
@@ -89,8 +89,9 @@ const AmountView = ({ amount, currency, locale }) => {
   return (
     <View style={Styles.centeredContent}>
       <Text
-        style={isDarkMode ? Styles.textDark : Styles.textLight}
-      >{`${formatMinorUnits(amount)}`}</Text>
+        style={
+          isDarkMode ? Styles.textDark : Styles.textLight
+        }>{`${formatMinorUnits(amount)}`}</Text>
     </View>
   );
 };

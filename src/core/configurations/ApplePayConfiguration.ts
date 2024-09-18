@@ -22,21 +22,23 @@ export interface ApplePayConfiguration {
   /** The list of shipping methods available for a payment request. */
   shippingMethods?: ApplePayShippingMethod[];
   /** An optional request to set up a recurring payment, typically a subscription. */
-  recurringPaymentRequest?:ApplePayRecurringPaymentRequest;
+  recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
 }
 
 /** Collection of values for address field visibility. */
-export type ApplePayShippingType = 'shipping' |
-  'delivery' |
-  'storePickup' |
-  'servicePickup';
+export type ApplePayShippingType =
+  | 'shipping'
+  | 'delivery'
+  | 'storePickup'
+  | 'servicePickup';
 
 /** Collection of values for address field visibility. */
-export type ApplePayAddressFields = 'postalAddress' |
-  'name' |
-  'phoneticName' |
-  'phone' |
-  'email';
+export type ApplePayAddressFields =
+  | 'postalAddress'
+  | 'name'
+  | 'phoneticName'
+  | 'phone'
+  | 'email';
 
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
 export interface ApplePaySummaryItem {
@@ -105,10 +107,10 @@ export interface ApplePayRecurringPaymentRequest {
   billingAgreement?: string;
   /** Optional URL to receive lifecycle notifications for the merchant-specific payment token issued for this request, if applicable. If this property is not set, notifications will not be sent when lifecycle changes occur for the token, for example when the token is deleted. */
   tokenNotificationURL?: string;
-};
+}
 
 /** An object that defines a summary item for a payment that occurs repeatedly at a specified interval, such as a subscription. */
-export interface ApplePayRecurringSummaryItem extends ApplePaySummaryItem  {
+export interface ApplePayRecurringSummaryItem extends ApplePaySummaryItem {
   /** The timestamp in ISO 8601 date format (ex. 2025-04-21) at which the first payment will be taken. The default value is null which requests the first payment as part of the initial transaction. */
   startDate?: string;
   /** The interval at which payments will be taken (daily, weekly, monthly, yearly, etc.). The default value is NSCalendarUnitMonth. */
@@ -117,7 +119,7 @@ export interface ApplePayRecurringSummaryItem extends ApplePaySummaryItem  {
   intervalCount?: Number;
   /**The timestamp in ISO 8601 date format (ex. 2025-04-21) which the recurring payments will end. The default value is null which specifies no end date. */
   endDate?: string;
-};
+}
 
 /** A type that indicates calendrical units, such as year, month, day, and hour. */
 export type ApplePayCalendarUnit = `year` | `month` | `day` | `hour` | `minute`;
