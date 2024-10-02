@@ -1,4 +1,4 @@
-export {Card} from './core/types';
+export { Card } from './core/types';
 
 export type {
   PaymentMethod,
@@ -12,21 +12,21 @@ export type {
   AdyenError,
 } from './core/types';
 
-export {AdyenApplePay} from './modules/AdyenApplePay';
-export {AdyenGooglePay} from './modules/AdyenGooglePay';
-export {AdyenInstant} from './modules/AdyenInstant';
+export { AdyenApplePay } from './modules/AdyenApplePay';
+export { AdyenGooglePay } from './modules/AdyenGooglePay';
+export { AdyenInstant } from './modules/AdyenInstant';
 
-export {AdyenDropIn} from './modules/DropInModule';
-export type {DropInModule} from './modules/DropInModule';
+export { AdyenDropIn } from './modules/DropInModule';
+export type { DropInModule } from './modules/DropInModule';
 
-export {AdyenCSE} from './modules/AdyenCSEModule';
-export type {AdyenCSEModule} from './modules/AdyenCSEModule';
+export { AdyenCSE } from './modules/AdyenCSEModule';
+export type { AdyenCSEModule } from './modules/AdyenCSEModule';
 
-export {SessionHelper} from './modules/SessionHelperModule';
-export type {SessionHelperModule} from './modules/SessionHelperModule';
+export { SessionHelper } from './modules/SessionHelperModule';
+export type { SessionHelperModule } from './modules/SessionHelperModule';
 
-export {AdyenAction} from './modules/ActionModule';
-export type {ActionModule} from './modules/ActionModule';
+export { AdyenAction } from './modules/ActionModule';
+export type { ActionModule } from './modules/ActionModule';
 
 export type {
   AdyenComponent,
@@ -34,13 +34,13 @@ export type {
   HideOption,
 } from './core/AdyenNativeModules';
 
-export {AdyenCheckout, useAdyenCheckout} from './AdyenCheckoutContext';
+export { AdyenCheckout, useAdyenCheckout } from './AdyenCheckoutContext';
 export type {
   AdyenCheckoutProps,
   AdyenCheckoutContextType,
 } from './AdyenCheckoutContext';
 
-export {Event, ErrorCode, ResultCode} from './core/constants';
+export { Event, ErrorCode, ResultCode } from './core/constants';
 
 export type {
   BaseConfiguration,
@@ -58,7 +58,7 @@ export type {
   GooglePayEnvironment,
 } from './core/configurations/GooglePayConfiguration';
 
-export type {DropInConfiguration} from './core/configurations/DropInConfiguration';
+export type { DropInConfiguration } from './core/configurations/DropInConfiguration';
 
 export type {
   AddressLookup,

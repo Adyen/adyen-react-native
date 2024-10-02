@@ -1,7 +1,7 @@
 // @ts-check
 
 import React from 'react';
-import { AdyenAction, useAdyenCheckout } from '@adyen/react-native';
+import {AdyenAction, useAdyenCheckout} from '@adyen/react-native';
 import {
   Button,
   View,
@@ -13,13 +13,13 @@ import {
   Alert,
 } from 'react-native';
 import Styles from '../../Utilities/Styles';
-import { ENVIRONMENT } from '../../Configuration';
-import { payByID } from '../../Utilities/payByID';
-import { useAppContext } from '../../Utilities/AppContext';
+import {ENVIRONMENT} from '../../Configuration';
+import {payByID} from '../../Utilities/payByID';
+import {useAppContext} from '../../Utilities/AppContext';
 
-const PaymentMethods = ({ isSession }) => {
-  const { configuration } = useAppContext();
-  const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
+const PaymentMethods = ({isSession}) => {
+  const {configuration} = useAppContext();
+  const {start, paymentMethods: paymentMethodsResponse} = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
   const storedPaymentMethods = paymentMethodsResponse?.storedPaymentMethods;
 
@@ -27,7 +27,7 @@ const PaymentMethods = ({ isSession }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
   const subtitle = (
-    /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm
+    /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm,
   ) => {
     switch (pm.type) {
       case 'scheme':
@@ -57,7 +57,7 @@ const PaymentMethods = ({ isSession }) => {
                 <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
                   Stored payments
                 </Text>
-                {storedPaymentMethods.map((p) => {
+                {storedPaymentMethods.map(p => {
                   const iconName = p.type === 'scheme' ? 'card' : p.type;
                   return (
                     <View key={`${p.id}`}>
@@ -72,7 +72,7 @@ const PaymentMethods = ({ isSession }) => {
                             let result = await payByID(
                               p.id,
                               cvv,
-                              configuration
+                              configuration,
                             );
                             Alert.alert('Result', result.resultCode);
                           } catch (e) {
@@ -92,7 +92,7 @@ const PaymentMethods = ({ isSession }) => {
             <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
               Components
             </Text>
-            {regularPaymentMethods.map((p) => {
+            {regularPaymentMethods.map(p => {
               const iconName = p.type === 'scheme' ? 'card' : p.type;
               return (
                 <View key={`${p.type + p.name}`}>
@@ -116,17 +116,16 @@ const PaymentMethods = ({ isSession }) => {
   );
 };
 
-const PaymentMethodButton = ({ onPress, title, subtitle, icon }) => {
+const PaymentMethodButton = ({onPress, title, subtitle, icon}) => {
   const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${icon}@3x.png`;
 
   return (
     <TouchableHighlight
       onPress={onPress}
       style={Styles.btnClickContain}
-      underlayColor="#042417"
-    >
+      underlayColor="#042417">
       <View style={Styles.btnContainer}>
-        <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
+        <Image source={{uri: iconURI}} style={Styles.btnIcon} />
         <View style={Styles.content}>
           <Text style={Styles.btnText}>{title}</Text>
           {subtitle ? <Text style={Styles.btnText}>{subtitle}</Text> : <View />}

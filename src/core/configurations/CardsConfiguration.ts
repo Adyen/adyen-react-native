@@ -36,5 +36,3 @@ export type AddressMode = 'full' | 'postalCode' | 'none' | 'lookup';
 
 /** Collection of values for address field visibility. */
 export type FieldVisibility = 'show' | 'hide';
-
-

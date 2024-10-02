@@ -1,7 +1,7 @@
 // @ts-check
 
-import { LogBox } from 'react-native';
-import { ENVIRONMENT, CHANNEL } from '../Configuration';
+import {LogBox} from 'react-native';
+import {ENVIRONMENT, CHANNEL} from '../Configuration';
 
 LogBox.ignoreLogs(['Require cycle:']);
 
@@ -20,7 +20,7 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
   }
 
-  static paymentDetails = (data) => {
+  static paymentDetails = data => {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
@@ -36,7 +36,7 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
-  static paymentMethods = (configuration) => {
+  static paymentMethods = configuration => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
@@ -81,7 +81,9 @@ class ApiClient {
     const pspReference = response.headers.get('pspreference');
     console.debug(`PSP Reference - ${pspReference}`);
     const payload = await response.json();
-    if (response.ok) return payload;
+    if (response.ok) {
+      return payload;
+    }
     console.warn(`Error - ${JSON.stringify(payload, null, ' ')}`);
     throw new Error(`Network Error ${response.status}:
           ${payload.message ?? JSON.stringify(payload)}`);

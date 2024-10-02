@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import {StyleSheet} from 'react-native';
 
 const Styles = StyleSheet.create({
   page: {
@@ -44,8 +44,8 @@ const Styles = StyleSheet.create({
   textDark: {
     color: 'white',
   },
-  slash: { paddingHorizontal: 4, textAlign: 'center' },
-  centeredText: { textAlign: 'center' },
+  slash: {paddingHorizontal: 4, textAlign: 'center'},
+  centeredText: {textAlign: 'center'},
   centeredButton: {
     alignItems: 'center',
     justifyContent: 'center',

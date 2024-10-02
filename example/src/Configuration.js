@@ -1,4 +1,4 @@
-import { Platform, NativeModules } from 'react-native';
+import {Platform, NativeModules} from 'react-native';
 export const DEVICE_LOCALE = (
   Platform.OS === 'ios'
     ? NativeModules.SettingsManager.settings.AppleLocale ||
