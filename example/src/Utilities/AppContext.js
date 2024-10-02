@@ -41,17 +41,13 @@ export const checkoutConfiguration = (
             resolve,
             reject,
           ) => {
-            try {
-              let success = await ApiClient.removeStoredCard(
-                storedPaymentMethod.id,
-                config,
-              );
-              if (success) {
-                resolve();
-              } else {
-                reject();
-              }
-            } catch (error) {
+            let success = await ApiClient.tryRemoveStoredCard(
+              storedPaymentMethod.id,
+              config,
+            );
+            if (success) {
+              resolve();
+            } else {
               reject();
             }
           },
@@ -63,14 +59,14 @@ export const checkoutConfiguration = (
             /** @type {any} */ prompt,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            // Make request to Google Maps API or other addres provider.
+            // Make request to Google Maps API or other address provider.
             lookup.update(mockAddresses);
           },
           onConfirmAddress: (
             /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            // Make request to Google Maps API or other addres provider.
+            // Make request to Google Maps API or other address provider.
             lookup.confirm(address);
           },
         },

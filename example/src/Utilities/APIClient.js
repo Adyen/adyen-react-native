@@ -45,7 +45,7 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
 
-  static removeStoredCard = async (id, configuration) => {
+  static tryRemoveStoredCard = async (id, configuration) => {
     let {merchantAccount, shopperReference} = configuration;
     const url =
       ENVIRONMENT.url +
@@ -57,10 +57,14 @@ class ApiClient {
         'X-API-Key': ENVIRONMENT.apiKey,
       },
     });
-    const response = await fetch(request);
-    const pspReference = response.headers.get('pspreference');
-    console.debug(`PSP Reference - ${pspReference}`);
-    return response.status == 204;
+    try {
+      const response = await fetch(request);
+      const pspReference = response.headers.get('pspreference');
+      console.debug(`PSP Reference - ${pspReference}`);
+      return response.status == 204;
+    } catch {
+      return false;
+    }
   };
 
   /** @private */
