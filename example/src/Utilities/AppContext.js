@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ENVIRONMENT} from '../Configuration';
+import ApiClient from './APIClient';
 
 export const AppContext = createContext({
   configuration: {},
@@ -35,13 +36,24 @@ export const checkoutConfiguration = (
         },
         dropin: {
           showRemovePaymentMethodButton: true,
-          onDisableStoredPaymentMethod: (
+          onDisableStoredPaymentMethod: async (
             storedPaymentMethod,
             resolve,
             reject,
           ) => {
-            
-            resolve();
+            try {
+              let success = await ApiClient.removeStoredCard(
+                storedPaymentMethod.id,
+                config,
+              );
+              if (success) {
+                resolve();
+              } else {
+                reject();
+              }
+            } catch (error) {
+              reject();
+            }
           },
         },
         card: {
@@ -51,46 +63,14 @@ export const checkoutConfiguration = (
             /** @type {any} */ prompt,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
-            lookup.update([
-              {
-                address: {
-                  houseNumberOrName: '5478',
-                  street: 'Hessel Bridge',
-                  stateOrProvince: 'IA',
-                  country: 'US',
-                  city: 'Emardfort',
-                  postalCode: '08272',
-                },
-                id: 'item1',
-              },
-              {
-                address: {
-                  houseNumberOrName: 'Apt. 611 425',
-                  street: 'Myron Inlet',
-                  stateOrProvince: 'CT',
-                  country: 'US',
-                  city: 'Daughertyberg',
-                  postalCode: '93289-3423',
-                },
-                id: 'item2',
-              },
-              {
-                address: {
-                  houseNumberOrName: '616',
-                  street: 'Pfeffer Ferry',
-                  stateOrProvince: 'MI',
-                  country: 'US',
-                  city: 'Cristiside',
-                  postalCode: '60347',
-                },
-                id: 'item3',
-              },
-            ]);
+            // Make request to Google Maps API or other addres provider.
+            lookup.update(mockAddresses);
           },
           onConfirmAddress: (
             /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
           ) => {
+            // Make request to Google Maps API or other addres provider.
             lookup.confirm(address);
           },
         },
@@ -161,7 +141,7 @@ const AppContextProvider = (/** @type {any} */ props) => {
 
   useEffect(() => {
     AsyncStorage.getItem(storeKey)
-      .then((value) => {
+      .then(value => {
         if (value) {
           console.debug(`Stored config: ${value}`);
           const parsed = JSON.parse(value);
@@ -191,3 +171,39 @@ const AppContextProvider = (/** @type {any} */ props) => {
 };
 
 export default AppContextProvider;
+
+const mockAddresses = [
+  {
+    address: {
+      houseNumberOrName: '5478',
+      street: 'Hessel Bridge',
+      stateOrProvince: 'IA',
+      country: 'US',
+      city: 'Emardfort',
+      postalCode: '08272',
+    },
+    id: 'item1',
+  },
+  {
+    address: {
+      houseNumberOrName: 'Apt. 611 425',
+      street: 'Myron Inlet',
+      stateOrProvince: 'CT',
+      country: 'US',
+      city: 'Daughertyberg',
+      postalCode: '93289-3423',
+    },
+    id: 'item2',
+  },
+  {
+    address: {
+      houseNumberOrName: '616',
+      street: 'Pfeffer Ferry',
+      stateOrProvince: 'MI',
+      country: 'US',
+      city: 'Cristiside',
+      postalCode: '60347',
+    },
+    id: 'item3',
+  },
+];

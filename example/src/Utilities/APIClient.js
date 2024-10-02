@@ -24,7 +24,7 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
-  static requestSesion = (configuration, returnUrl) => {
+  static requestSession = (configuration, returnUrl) => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
@@ -43,6 +43,24 @@ class ApiClient {
       ...serverConfiguration,
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
+  };
+
+  static removeStoredCard = async (id, configuration) => {
+    let {merchantAccount, shopperReference} = configuration;
+    const url =
+      ENVIRONMENT.url +
+      `storedPaymentMethods/${id}?merchantAccount=${merchantAccount}&shopperReference=${shopperReference}`;
+    const request = new Request(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': ENVIRONMENT.apiKey,
+      },
+    });
+    const response = await fetch(request);
+    const pspReference = response.headers.get('pspreference');
+    console.debug(`PSP Reference - ${pspReference}`);
+    return response.status == 204;
   };
 
   /** @private */
@@ -78,7 +96,11 @@ const serverConfiguration = {
 };
 
 const paymentConfiguration = {
-  additionalData: { allow3DS2: true },
+  authenticationData: {
+    threeDSRequestData: {
+      nativeThreeDS: 'preferred',
+    },
+  },
   lineItems: [
     {
       quantity: '1',
@@ -104,6 +126,7 @@ const paymentConfiguration = {
     },
   ],
   recurringProcessingModel: 'CardOnFile',
+  shopperInteraction: 'Ecommerce',
 };
 
 const parseAmount = (configuration, data) => ({

@@ -29,7 +29,7 @@ const SessionsCheckout = ({ navigation }) => {
       ios: ENVIRONMENT.returnUrl,
       android: await AdyenDropIn.getReturnURL(),
     });
-    const session = await ApiClient.requestSesion(configuration, returnUrl);
+    const session = await ApiClient.requestSession(configuration, returnUrl);
     setSession(session);
   };
 
