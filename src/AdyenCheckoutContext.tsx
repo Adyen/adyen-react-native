@@ -23,6 +23,8 @@ import {
   SessionResponse,
   PaymentMethodData,
   PaymentDetailsData,
+  StoredPaymentMethod,
+  SubmitModel,
 } from './core/types';
 import { Configuration } from './core/configurations/Configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
@@ -36,6 +38,7 @@ import {
   isRemovesStoredPaymentComponent,
   RemovesStoredPayment,
 } from './wrappers/RemoveStoredPaymentComponentWrapper';
+import { AddressLookupItem } from './core/configurations/AddressLookup';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
@@ -79,7 +82,7 @@ type AdyenCheckoutProps = {
    */
   onSubmit?: (
     data: PaymentMethodData,
-    component: AdyenComponent,
+    component: AdyenActionComponent,
     extra?: any
   ) => void;
   /**
@@ -137,7 +140,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     (
       configuration: Configuration,
       data: any,
-      nativeComponent: AdyenComponent,
+      nativeComponent: AdyenActionComponent,
       extra: any
     ) => {
       const payload = {
@@ -150,17 +153,17 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   );
 
   const removeEventListeners = useCallback(() => {
-    subscriptions.current.forEach((s) => s.remove());
+    subscriptions.current.forEach((s: EmitterSubscription) => s.remove());
   }, [subscriptions]);
 
   const startEventListeners = useCallback(
     (
       configuration: Configuration,
-      nativeComponent: AdyenComponent & NativeModule
+      nativeComponent: AdyenActionComponent & NativeModule
     ) => {
       const eventEmitter = new NativeEventEmitter(nativeComponent);
       subscriptions.current = [
-        eventEmitter.addListener(Event.onSubmit, (response) =>
+        eventEmitter.addListener(Event.onSubmit, (response: SubmitModel) =>
           submitPayment(
             configuration,
             response.paymentData,
@@ -175,60 +178,59 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 
       if (nativeComponent.events.includes(Event.onComplete)) {
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onComplete, (data) =>
+          eventEmitter.addListener(Event.onComplete, (data: any) =>
             onComplete?.(data, nativeComponent)
           )
         );
       }
 
       if (isActionComponent(nativeComponent)) {
+        const nativeModule = nativeComponent as unknown as AdyenActionComponent;
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onAdditionalDetails, (data) =>
-            onAdditionalDetails?.(
-              data,
-              nativeComponent as unknown as AdyenActionComponent
-            )
+          eventEmitter.addListener(
+            Event.onAdditionalDetails,
+            (data: PaymentDetailsData) =>
+              onAdditionalDetails?.(data, nativeModule)
           )
         );
       }
 
       if (isRemovesStoredPaymentComponent(nativeComponent)) {
-        console.debug('Subcribing for onDisableStoredPaymentMethod');
+        const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onDisableStoredPaymentMethod, (data) =>
-            configuration.dropin?.onDisableStoredPaymentMethod?.(
-              data,
-              () => {
-                (
-                  nativeComponent as unknown as RemovesStoredPayment
-                ).removeStored(true);
-              },
-              () => {
-                (
-                  nativeComponent as unknown as RemovesStoredPayment
-                ).removeStored(false);
-              }
-            )
+          eventEmitter.addListener(
+            Event.onDisableStoredPaymentMethod,
+            (data: StoredPaymentMethod) =>
+              configuration.dropin?.onDisableStoredPaymentMethod?.(
+                data,
+                () => {
+                  nativeModule.removeStored(true);
+                },
+                () => {
+                  nativeModule.removeStored(false);
+                }
+              )
           )
         );
       }
 
       if (isAddressLooker(nativeComponent)) {
+        const nativeModule = nativeComponent as unknown as AddressLookup;
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onAddressUpdate, async (prompt) => {
-            configuration.card?.onUpdateAddress?.(
-              prompt,
-              nativeComponent as unknown as AddressLookup
-            );
-          })
+          eventEmitter.addListener(
+            Event.onAddressUpdate,
+            async (prompt: string) => {
+              configuration.card?.onUpdateAddress?.(prompt, nativeModule);
+            }
+          )
         );
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onAddressConfirm, (address) => {
-            configuration.card?.onConfirmAddress?.(
-              address,
-              nativeComponent as unknown as AddressLookup
-            );
-          })
+          eventEmitter.addListener(
+            Event.onAddressConfirm,
+            (address: AddressLookupItem) => {
+              configuration.card?.onConfirmAddress?.(address, nativeModule);
+            }
+          )
         );
       }
     },
