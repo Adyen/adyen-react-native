@@ -3,6 +3,7 @@ import { ApplePayConfiguration } from './ApplePayConfiguration';
 import { CardsConfiguration } from './CardsConfiguration';
 import { DropInConfiguration } from './DropInConfiguration';
 import { GooglePayConfiguration } from './GooglePayConfiguration';
+import { ThreeDSConfiguration } from './ThreeDSConfiguration';
 
 /** Collection of available environments. */
 export type Environment =
@@ -54,4 +55,6 @@ export interface Configuration extends BaseConfiguration {
   applepay?: ApplePayConfiguration;
   /** Google Pay component configuration. */
   googlepay?: GooglePayConfiguration;
+  /** 3D Secure 2 authentication configuration. */
+  threeDS2?: ThreeDSConfiguration;
 }
