@@ -60,6 +60,8 @@ export type {
 
 export type { DropInConfiguration } from './core/configurations/DropInConfiguration';
 
+export type { ThreeDSConfiguration } from './core/configurations/ThreeDSConfiguration';
+
 export type {
   AddressLookup,
   AddressLookupItem,
