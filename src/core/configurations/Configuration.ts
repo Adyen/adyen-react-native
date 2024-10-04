@@ -55,6 +55,6 @@ export interface Configuration extends BaseConfiguration {
   applepay?: ApplePayConfiguration;
   /** Google Pay component configuration. */
   googlepay?: GooglePayConfiguration;
-  /** 3D Secure 2 authenticationconfiguration. */
+  /** 3D Secure 2 authentication configuration. */
   threeDS2?: ThreeDSConfiguration;
 }
