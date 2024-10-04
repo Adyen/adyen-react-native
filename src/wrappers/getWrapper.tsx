@@ -64,7 +64,7 @@ export function getWrapper(
     throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  let nativeComponent: ActionHandlingComponentWrapper & NativeModule;
+  let nativeComponent: AdyenActionComponent & NativeModule;
   if (ADDRESS_COMPONENTS.includes(typeName)) {
     nativeComponent = new DropInComponentWrapper({
       nativeModule: AdyenDropIn,
