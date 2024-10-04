@@ -232,7 +232,7 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_SUBMIT = "didSubmitCallback"
         const val DID_UPDATE_ADDRESS = "didUpdateAddressCallback"
         const val DID_CONFIRM_ADDRESS = "didConfirmAddressCallback"
-        const val DID_DISABLE_STORED_PAYMENT_METHOD = "didDisableStoredPaymentMethod"
+        const val DID_DISABLE_STORED_PAYMENT_METHOD = "didDisableStoredPaymentMethodCallback"
 
         const val RESULT_CODE_PRESENTED = "PresentToShopper"
 
