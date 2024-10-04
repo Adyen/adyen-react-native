@@ -240,3 +240,8 @@ export interface AdyenError {
   message: string;
   errorCode: string;
 }
+
+export interface SubmitModel {
+  paymentData: PaymentMethodData;
+  extra?: any;
+}

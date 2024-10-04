@@ -10,9 +10,8 @@ import {
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from '../core/constants';
 import { PaymentMethod, PaymentMethodsResponse } from '../core/types';
-import { ComponentWrapper } from './ComponentWrapper';
 import { ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
-import { AdyenComponent } from '../core/AdyenNativeModules';
+import { AdyenActionComponent } from '../core/AdyenNativeModules';
 import { AdyenDropIn } from '../modules/DropInModule';
 import { AdyenInstant } from '../modules/AdyenInstant';
 import { AdyenApplePay } from '../modules/AdyenApplePay';
@@ -26,7 +25,7 @@ export function getWrapper(
   typeName: string,
   paymentMethods: PaymentMethodsResponse
 ): {
-  nativeComponent: AdyenComponent & NativeModule;
+  nativeComponent: AdyenActionComponent & NativeModule;
   paymentMethod?: PaymentMethod;
 } {
   switch (typeName) {
@@ -41,7 +40,7 @@ export function getWrapper(
       };
     case 'applepay':
       return {
-        nativeComponent: new ComponentWrapper({
+        nativeComponent: new ActionHandlingComponentWrapper({
           nativeModule: AdyenApplePay,
         }),
       };
@@ -65,7 +64,7 @@ export function getWrapper(
     throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  let nativeComponent: AdyenComponent & NativeModule;
+  let nativeComponent: AdyenActionComponent & NativeModule;
   if (ADDRESS_COMPONENTS.includes(typeName)) {
     nativeComponent = new DropInComponentWrapper({
       nativeModule: AdyenDropIn,
