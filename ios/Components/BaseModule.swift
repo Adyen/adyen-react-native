@@ -12,6 +12,8 @@ import UIKit
 internal class BaseModule: RCTEventEmitter {
 
     internal static var session: AdyenSession?
+    internal var requestOrderHandler: ((Result<PartialPaymentOrder, any Error>) -> Void)?
+    internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
 
     #if DEBUG
         override func invalidate() {
@@ -64,6 +66,10 @@ internal class BaseModule: RCTEventEmitter {
 
     internal func sendEvent(event: Events, body: Any!) {
         sendEvent(withName: event.rawValue, body: body)
+    }
+
+    internal func sendEvent(event: Events) {
+        sendEvent(withName: event.rawValue, body: [:])
     }
 
     internal func checkErrorType(_ error: Error) -> Error {
@@ -137,6 +143,8 @@ internal class BaseModule: RCTEventEmitter {
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
+        requestOrderHandler = nil
+        checkBalanceHandler = nil
 
         BaseModule.currentPresenter?.dismiss(animated: true) {
             BaseModule.currentPresenter = nil
@@ -175,6 +183,7 @@ extension BaseModule {
         case invalidAction
         case notKeyWindow
         case paymentMethodNotFound(PaymentMethod.Type)
+        case balanceCheck
 
         var errorCode: String {
             switch self {
@@ -194,6 +203,8 @@ extension BaseModule {
                 return "noPaymentMethod"
             case .notKeyWindow:
                 return "notKeyWindow"
+            case .balanceCheck:
+                return "balanceCheck"
             }
         }
 
@@ -215,6 +226,8 @@ extension BaseModule {
                 return "Can not find payment method of type \(type) in provided list"
             case .notKeyWindow:
                 return "Can not find root ViewController"
+            case .balanceCheck:
+                return "Something went wrong during balance check"
             }
         }
     }
@@ -240,13 +253,40 @@ extension BaseModule: SessionResultListener {
     }
 }
 
-extension AdyenSessionResult: Encodable {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(self.resultCode.rawValue, forKey: .resultCode)
+extension BaseModule: PartialPaymentDelegate {
+
+    func checkBalance(with data: PaymentComponentData, component: any Adyen.Component, completion: @escaping (Result<Balance, any Error>) -> Void) {
+        sendEvent(event: .didCheckBalance, body: data.jsonObject)
+        checkBalanceHandler = completion
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case resultCode
+    @objc
+    public func provideBalance(_ success: NSNumber, result: NSDictionary) {
+        guard let checkBalanceHandler else { return }
+
+        guard success.boolValue, let balance: Balance = try? result.toJson() else {
+            return checkBalanceHandler(.failure(NativeModuleError.balanceCheck))
+        }
+        checkBalanceHandler(.success(balance))
     }
+
+    func requestOrder(for component: any Adyen.Component, completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void) {
+        sendEvent(event: .didRequestOrder)
+        requestOrderHandler = completion
+    }
+
+    @objc
+    public func provideOrder(_ success: NSNumber, result: NSDictionary) {
+        guard let requestOrderHandler else { return }
+
+        guard success.boolValue, let order: PartialPaymentOrder = try? result.toJson() else {
+            return requestOrderHandler(.failure(NativeModuleError.balanceCheck))
+        }
+        requestOrderHandler(.success(order))
+    }
+
+    func cancelOrder(_ order: Adyen.PartialPaymentOrder, component: any Adyen.Component) {
+        sendEvent(event: .didCancelOrder, body: order.jsonObject)
+    }
+
 }

@@ -99,7 +99,7 @@ internal final class DropInModule: BaseModule {
                                         title: dropInConfigParser.title)
         currentComponent = component
         component.delegate = BaseModule.session ?? self
-        component.partialPaymentDelegate = BaseModule.session
+        component.partialPaymentDelegate = BaseModule.session ?? self
         component.storedPaymentMethodsDelegate = BaseModule.session ?? self
         present(component: component)
     }
@@ -127,6 +127,7 @@ internal final class DropInModule: BaseModule {
     override func cleanUp() {
         lookupHandler = nil
         lookupCompliationHandler = nil
+        disableStoredPaymentMethodHandler = nil
         super.cleanUp()
     }
 
