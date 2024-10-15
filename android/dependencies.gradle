@@ -13,7 +13,7 @@ ext {
     json_version = '20231013'
     junit_jupiter_version = "5.10.3"
     mockito_kotlin_version = "4.1.0"
-    mockito_version = "4.11.0"
+    mockito_version = "5.14.2"
 
     testLibraries = [
             json            : "org.json:json:$json_version",
