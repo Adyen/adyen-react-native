@@ -183,7 +183,8 @@ extension BaseModule {
         case invalidAction
         case notKeyWindow
         case paymentMethodNotFound(PaymentMethod.Type)
-        case balanceCheck
+        case balanceCheck(message: String)
+        case orderRequest(message: String)
 
         var errorCode: String {
             switch self {
@@ -203,8 +204,10 @@ extension BaseModule {
                 return "noPaymentMethod"
             case .notKeyWindow:
                 return "notKeyWindow"
-            case .balanceCheck:
+            case .balanceCheck(_):
                 return "balanceCheck"
+            case .orderRequest(_):
+                return "orderRequest"
             }
         }
 
@@ -226,8 +229,10 @@ extension BaseModule {
                 return "Can not find payment method of type \(type) in provided list"
             case .notKeyWindow:
                 return "Can not find root ViewController"
-            case .balanceCheck:
-                return "Something went wrong during balance check"
+            case let .balanceCheck(message):
+                return "Balance check error: \(message)"
+            case let .orderRequest(message):
+                return "Order request error: \(message)"
             }
         }
     }
@@ -261,12 +266,13 @@ extension BaseModule: PartialPaymentDelegate {
     }
 
     @objc
-    public func provideBalance(_ success: NSNumber, balance: NSDictionary) {
+    public func provideBalance(_ success: NSNumber, balance: NSDictionary?, error: NSDictionary?) {
         guard let checkBalanceHandler else { return }
 
         DispatchQueue.main.async {
-            guard success.boolValue, let balance: Balance = try? balance.toJson() else {
-                return checkBalanceHandler(.failure(NativeModuleError.balanceCheck))
+            guard success.boolValue, let balance: Balance = try? balance?.toJson() else {
+                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                return checkBalanceHandler(.failure(NativeModuleError.balanceCheck(message: message)))
             }
             checkBalanceHandler(.success(balance))
         }
@@ -278,12 +284,13 @@ extension BaseModule: PartialPaymentDelegate {
     }
 
     @objc
-    public func provideOrder(_ success: NSNumber, order: NSDictionary) {
+    public func provideOrder(_ success: NSNumber, order: NSDictionary?, error: NSDictionary?) {
         guard let requestOrderHandler else {
             return }
         DispatchQueue.main.async {
-            guard success.boolValue, let order: PartialPaymentOrder = try? order.toJson() else {
-                return requestOrderHandler(.failure(NativeModuleError.balanceCheck))
+            guard success.boolValue, let order: PartialPaymentOrder = try? order?.toJson() else {
+                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                return requestOrderHandler(.failure(NativeModuleError.orderRequest(message: message)))
             }
             requestOrderHandler(.success(order))
         }

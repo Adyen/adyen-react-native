@@ -240,7 +240,6 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           eventEmitter.addListener(Event.onCheckBalance, async (paymentData) => {
             configuration.partialPayment?.onBalanceCheck?.(paymentData,
               (balance) => {
-                console.debug("Here is your balance: " + JSON.stringify(balance));
                 (
                   nativeComponent as unknown as PartialPaymentComponent
                 ).provideBalance(true, balance, undefined)
@@ -257,15 +256,9 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           eventEmitter.addListener(Event.onRequestOrder, () => {
             configuration.partialPayment?.onOrderRequest?.(
               (order) => {
-                try {
-                  console.debug("Providing Order");
-                  console.debug(nativeComponent.provideOrder);
-                  (
-                    nativeComponent as unknown as PartialPaymentComponent
-                  ).provideOrder(true, order, undefined)
-                } catch (error) {
-                  console.error(error)
-                }
+                (
+                  nativeComponent as unknown as PartialPaymentComponent
+                ).provideOrder(true, order, undefined)
               },
               (error) => {
                 console.debug("Order error: " + JSON.stringify(error));

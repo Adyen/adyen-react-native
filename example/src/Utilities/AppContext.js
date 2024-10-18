@@ -39,7 +39,6 @@ export const checkoutConfiguration = (
         console.debug("= = on BalanceCheck:" + JSON.stringify(paymentData));
         try {
           let response = await ApiClient.checkBalance(paymentData, config);
-          console.debug("= = Balance:" + JSON.stringify(response.resultCode) + " Amount: " + response.balance);
           resolve({
             balance: response.balance,
             transactionLimit: response.transactionLimit
@@ -50,11 +49,9 @@ export const checkoutConfiguration = (
         }
       },
       onOrderRequest: async (resolve, reject) => {
-        console.debug("= = on OrderRequest:");
         try {
           let response = await ApiClient.requestOrder(config);
           resolve(response);
-          console.debug("= = Order: " + JSON.stringify(response));
         } catch (e) {
           console.error("Order wasn't requested: " + JSON.stringify(e))
           reject(e);
@@ -63,7 +60,7 @@ export const checkoutConfiguration = (
       onOrderCancel: async (order) => {
         console.debug("= = on OrderRequest:" + order);
         try {
-          let result = await ApiClient.cancelOrder(order, config);
+          await ApiClient.cancelOrder(order, config);
         } catch (e) {
           console.error("Order wasn't canceled!")
         }
@@ -184,7 +181,6 @@ const AppContextProvider = (/** @type {any} */ props) => {
 
   const saveConfiguration = async (newConfig = config) => {
     await AsyncStorage.setItem(storeKey, JSON.stringify(newConfig));
-
     setConfig(newConfig);
   };
 

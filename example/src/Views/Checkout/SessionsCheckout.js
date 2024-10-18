@@ -36,7 +36,7 @@ const SessionsCheckout = ({navigation}) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
       nativeComponent,
     ) => {
-      console.log('didComplete :');
+      console.log(`didComplete : ${JSON.stringify(result, null, " ")}`);
       processResult(result, nativeComponent);
     },
     [],

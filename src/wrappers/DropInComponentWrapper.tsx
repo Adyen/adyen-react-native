@@ -21,10 +21,10 @@ export class DropInComponentWrapper
   reject(error?: { message: string }) {
     this.nativeModule.confirm(false, error);
   }
-  provideBalance(success: boolean, balance: Balance | undefined): void {
-    this.nativeModule.provideBalance(success, balance);
+  provideBalance(success: boolean, balance: Balance | undefined, error: Error | undefined): void {
+    this.nativeModule.provideBalance(success, balance, error);
   }
-  provideOrder(success: boolean, order: Order | undefined): void {
-    this.nativeModule.confirm(success, order);
+  provideOrder(success: boolean, order: Order | undefined, error: Error | undefined): void {
+    this.nativeModule.provideOrder(success, order, error);
   }
 }
