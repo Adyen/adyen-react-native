@@ -28,11 +28,11 @@ RCT_EXTERN_METHOD(confirm:(nonnull NSNumber *)success
 
 RCT_EXTERN_METHOD(removeStored:(nonnull NSNumber *)success)
 
-RCT_EXTERN_METHOD(provideBalance:(nonnull NSNumber *)success
-                  balance:(nullable NSDictionary *)address)
-
 RCT_EXTERN_METHOD(provideOrder:(nonnull NSNumber *)success
-                  order:(nullable NSDictionary *)address)
+                  order:(nullable NSDictionary *)order)
+
+RCT_EXTERN_METHOD(provideBalance:(nonnull NSNumber *)success
+                  balance:(nullable NSDictionary *)balance)
 
 @end
 

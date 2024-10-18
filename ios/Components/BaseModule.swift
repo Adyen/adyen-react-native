@@ -261,13 +261,15 @@ extension BaseModule: PartialPaymentDelegate {
     }
 
     @objc
-    public func provideBalance(_ success: NSNumber, result: NSDictionary) {
+    public func provideBalance(_ success: NSNumber, balance: NSDictionary) {
         guard let checkBalanceHandler else { return }
 
-        guard success.boolValue, let balance: Balance = try? result.toJson() else {
-            return checkBalanceHandler(.failure(NativeModuleError.balanceCheck))
+        DispatchQueue.main.async {
+            guard success.boolValue, let balance: Balance = try? balance.toJson() else {
+                return checkBalanceHandler(.failure(NativeModuleError.balanceCheck))
+            }
+            checkBalanceHandler(.success(balance))
         }
-        checkBalanceHandler(.success(balance))
     }
 
     func requestOrder(for component: any Adyen.Component, completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void) {
@@ -276,13 +278,15 @@ extension BaseModule: PartialPaymentDelegate {
     }
 
     @objc
-    public func provideOrder(_ success: NSNumber, result: NSDictionary) {
-        guard let requestOrderHandler else { return }
-
-        guard success.boolValue, let order: PartialPaymentOrder = try? result.toJson() else {
-            return requestOrderHandler(.failure(NativeModuleError.balanceCheck))
+    public func provideOrder(_ success: NSNumber, order: NSDictionary) {
+        guard let requestOrderHandler else {
+            return }
+        DispatchQueue.main.async {
+            guard success.boolValue, let order: PartialPaymentOrder = try? order.toJson() else {
+                return requestOrderHandler(.failure(NativeModuleError.balanceCheck))
+            }
+            requestOrderHandler(.success(order))
         }
-        requestOrderHandler(.success(order))
     }
 
     func cancelOrder(_ order: Adyen.PartialPaymentOrder, component: any Adyen.Component) {

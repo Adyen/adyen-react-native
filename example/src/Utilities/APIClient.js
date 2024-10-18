@@ -67,6 +67,33 @@ class ApiClient {
     }
   };
 
+  static checkBalance = async (paymentData, configuration) => {
+    const body = {
+      paymentMethod: paymentData.paymentMethod,
+      ...parseAmount(configuration),
+      merchantAccount: configuration.merchantAccount,
+      reference: serverConfiguration.reference,
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods/balance', body);
+  };
+
+  static requestOrder = async (configuration) => {
+    const body = {
+      ...parseAmount(configuration),
+      merchantAccount: configuration.merchantAccount,
+      reference: serverConfiguration.reference,
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders', body);
+  };
+
+  static cancelOrder = async (order, configuration) => {
+    const body = {
+      order: order,
+      ...parseConfig(configuration),
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
+  };
+
   /** @private */
   static makeRequest = async (url, body) => {
     const bodyJSON = JSON.stringify(body);

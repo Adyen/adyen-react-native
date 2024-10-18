@@ -31,6 +31,12 @@ export enum Event {
   onAddressConfirm = 'didConfirmAddressCallback',
   /** Event handler, called when shopper requests to remove stored payment method on DropIn Advanced flow. */
   onDisableStoredPaymentMethod = 'didDisableStoredPaymentMethodCallback',
+  /** Event handler, called when balance for an order needs to be checked. */
+  onCheckBalance = `didCheckBalanceCallback`,
+  /** Event handler, called when a new order for a partial payment needs to be requested. */
+  onRequestOrder = `didRequestOrderCallback`,
+  /** Event handler, called when the partial payment order was canceled. */
+  onCancelOrder = `didCancelOrderCallback`,
 }
 
 /** Collection of errors components can throw. */

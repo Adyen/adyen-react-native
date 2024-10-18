@@ -17,7 +17,7 @@ extension Balance: Decodable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case availableAmount
+        case availableAmount = "balance"
         case transactionLimit
     }
 }

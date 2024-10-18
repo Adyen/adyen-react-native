@@ -3,6 +3,7 @@ import { ApplePayConfiguration } from './ApplePayConfiguration';
 import { CardsConfiguration } from './CardsConfiguration';
 import { DropInConfiguration } from './DropInConfiguration';
 import { GooglePayConfiguration } from './GooglePayConfiguration';
+import { PartialPaymentConfiguration } from './PartialPaymentConfiguration';
 import { ThreeDSConfiguration } from './ThreeDSConfiguration';
 
 /** Collection of available environments. */
@@ -59,41 +60,4 @@ export interface Configuration extends BaseConfiguration {
   threeDS2?: ThreeDSConfiguration;
   /** Partial payment flow configuration. */
   partialPayment?: PartialPaymentConfiguration;
-}
-
-interface PartialPaymentConfiguration {
-
-  /** Invoked when the payment component needs a balance check call to be performed. */
-  onBalanceCheck(
-    paymentData: PaymentMethodData,
-    resolve: (balance: Balance) => void,
-    reject: (error: Error) => void
-  ): void;
-
-  /** Invoked when the payment component needs a partial payment order object. */
-  onOrderRequest(
-    resolve: (order: Order) => void,
-    reject: (error: Error) => void
-  ): void;
-
-  /** Invoked when the payment component needs to cancel the order.  */
-  onOrderCancel(
-    order: Order
-  ): void;
-}
-
-interface Balance {
-  balance?: PaymentAmount;
-  transactionLimit?: PaymentAmount;
-}
-
-export interface Order {
-    /** The encrypted order data. */
-    orderData: string;
-
-    /** The pspReference that belongs to the order. */
-    pspReference: string;
-
-    /** The remaining amount to complete the order. */
-    remainingAmount?: PaymentAmount;
 }
