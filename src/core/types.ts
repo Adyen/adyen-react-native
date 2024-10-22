@@ -254,12 +254,12 @@ export interface Balance {
 }
 
 export interface Order {
-    /** The encrypted order data. */
-    orderData: string;
+  /** The encrypted order data. */
+  orderData: string;
 
-    /** The pspReference that belongs to the order. */
-    pspReference: string;
+  /** The pspReference that belongs to the order. */
+  pspReference: string;
 
-    /** The remaining amount to complete the order. */
-    remainingAmount?: PaymentAmount;
+  /** The remaining amount to complete the order. */
+  remainingAmount?: PaymentAmount;
 }

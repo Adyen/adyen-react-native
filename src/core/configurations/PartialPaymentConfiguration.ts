@@ -1,7 +1,6 @@
-import { Balance, Order, PaymentMethodData } from "../types";
+import { Balance, Order, PaymentMethodData } from '../types';
 
 export interface PartialPaymentConfiguration {
-
   /** Invoked when the payment component needs a balance check call to be performed. */
   onBalanceCheck(
     paymentData: PaymentMethodData,
@@ -16,7 +15,5 @@ export interface PartialPaymentConfiguration {
   ): void;
 
   /** Invoked when the payment component needs to cancel the order.  */
-  onOrderCancel(
-    order: Order
-  ): void;
+  onOrderCancel(order: Order): void;
 }

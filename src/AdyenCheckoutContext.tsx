@@ -39,7 +39,10 @@ import {
   RemovesStoredPayment,
 } from './wrappers/RemoveStoredPaymentComponentWrapper';
 import { AddressLookupItem } from './core/configurations/AddressLookup';
-import { isPartialPaymentsComponent, PartialPaymentComponent } from './wrappers/PartialPaymentsComponentWrapper';
+import {
+  isPartialPaymentsComponent,
+  PartialPaymentComponent,
+} from './wrappers/PartialPaymentsComponentWrapper';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
@@ -237,36 +240,42 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 
       if (isPartialPaymentsComponent(nativeComponent)) {
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onCheckBalance, async (paymentData) => {
-            configuration.partialPayment?.onBalanceCheck?.(paymentData,
-              (balance) => {
-                (
-                  nativeComponent as unknown as PartialPaymentComponent
-                ).provideBalance(true, balance, undefined)
-              },
-              (error) => {
-                console.debug("Balance error: " + JSON.stringify(error));
-                (
-                  nativeComponent as unknown as PartialPaymentComponent
-                ).provideBalance(false, undefined, error)
-              })
-          }),
+          eventEmitter.addListener(
+            Event.onCheckBalance,
+            async (paymentData) => {
+              configuration.partialPayment?.onBalanceCheck?.(
+                paymentData,
+                (balance) => {
+                  (
+                    nativeComponent as unknown as PartialPaymentComponent
+                  ).provideBalance(true, balance, undefined);
+                },
+                (error) => {
+                  console.debug('Balance error: ' + JSON.stringify(error));
+                  (
+                    nativeComponent as unknown as PartialPaymentComponent
+                  ).provideBalance(false, undefined, error);
+                }
+              );
+            }
+          ),
           eventEmitter.addListener(Event.onRequestOrder, () => {
             configuration.partialPayment?.onOrderRequest?.(
               (order) => {
                 (
                   nativeComponent as unknown as PartialPaymentComponent
-                ).provideOrder(true, order, undefined)
+                ).provideOrder(true, order, undefined);
               },
               (error) => {
-                console.debug("Order error: " + JSON.stringify(error));
+                console.debug('Order error: ' + JSON.stringify(error));
                 (
                   nativeComponent as unknown as PartialPaymentComponent
-                ).provideOrder(false, undefined, error)
-              })
+                ).provideOrder(false, undefined, error);
+              }
+            );
           }),
           eventEmitter.addListener(Event.onCancelOrder, (order) => {
-            configuration.partialPayment?.onOrderCancel?.(order)
+            configuration.partialPayment?.onOrderCancel?.(order);
           })
         );
       }
