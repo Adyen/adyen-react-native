@@ -31,7 +31,7 @@ internal final class DropInModule: BaseModule {
     func update(_ results: NSArray) {
         guard let lookupHandler else { return }
 
-        let addressModels: [LookupAddressModel] = results.compactMap{ $0 as? NSDictionary }.compactMap { try? $0.toJson() }
+        let addressModels: [LookupAddressModel] = results.compactMap{ $0 as? NSDictionary }.compactMap { try? $0.decode() }
         DispatchQueue.main.async {
             lookupHandler(addressModels)
         }
@@ -47,7 +47,7 @@ internal final class DropInModule: BaseModule {
             }
 
             do {
-                let address: LookupAddressModel = try address.toJson()
+                let address: LookupAddressModel = try address.decode()
                 lookupCompliationHandler(.success(address.postalAddress))
             } catch {
                 lookupCompliationHandler(.failure(error))
@@ -197,4 +197,66 @@ struct AddressError: Error, LocalizedError, Codable {
     enum CodingKeys: CodingKey {
         case message
     }
+}
+
+extension DropInModule: PartialPaymentDelegate {
+
+    func checkBalance(with data: PaymentComponentData, component: any Adyen.Component, completion: @escaping (Result<Balance, any Error>) -> Void) {
+        sendEvent(event: .didCheckBalance, body: data.jsonObject)
+        checkBalanceHandler = completion
+    }
+
+    @objc
+    public func provideBalance(_ success: NSNumber, balance: NSDictionary?, error: NSDictionary?) {
+        guard let checkBalanceHandler else { return }
+
+        DispatchQueue.main.async {
+            guard success.boolValue, let balance: Balance = try? balance?.decode() else {
+                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                return checkBalanceHandler(.failure(NativeModuleError.balanceCheck(message: message)))
+            }
+            checkBalanceHandler(.success(balance))
+        }
+    }
+
+    func requestOrder(for component: any Adyen.Component, completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void) {
+        sendEvent(event: .didRequestOrder)
+        requestOrderHandler = completion
+    }
+
+    @objc
+    public func provideOrder(_ success: NSNumber, order: NSDictionary?, error: NSDictionary?) {
+        guard let requestOrderHandler else {
+            return }
+        DispatchQueue.main.async {
+            guard success.boolValue, let order: PartialPaymentOrder = try? order?.decode() else {
+                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                return requestOrderHandler(.failure(NativeModuleError.orderRequest(message: message)))
+            }
+            requestOrderHandler(.success(order))
+        }
+    }
+
+    func cancelOrder(_ order: Adyen.PartialPaymentOrder, component: any Adyen.Component) {
+        sendEvent(event: .didCancelOrder, body: order.jsonObject)
+    }
+
+    @objc(providePaymentMethods:order:)
+    public func providePaymentMethods(_ paymentMethodsJson: NSDictionary, orderJson: NSDictionary) {
+        let paymentMethods: PaymentMethods
+        let order: PartialPaymentOrder
+        do {
+            paymentMethods = try paymentMethodsJson.decode()
+            order = try orderJson.decode()
+
+            guard let dropIn = currentComponent as? DropInComponent else {
+                throw NativeModuleError.notSupported
+            }
+
+            try dropIn.reload(with: order, paymentMethods)
+        } catch {
+            return sendEvent(error: error)
+        }
+    }
+
 }

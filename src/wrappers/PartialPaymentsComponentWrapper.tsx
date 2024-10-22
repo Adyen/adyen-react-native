@@ -1,6 +1,6 @@
 import { AdyenComponent } from '../core/AdyenNativeModules';
 import { ComponentWrapper } from './ComponentWrapper';
-import { Order, Balance, PaymentMethodData } from '../core/types';
+import { Order, Balance, PaymentMethodData, PaymentMethodsResponse } from '../core/types';
 
 export interface PartialPaymentListener {
   checkBalance(data: PaymentMethodData, component: PartialPaymentComponent): void;
@@ -11,6 +11,7 @@ export interface PartialPaymentListener {
 export interface PartialPaymentComponent {
   provideBalance(success: boolean, balance: Balance | undefined, error: Error | undefined): void;
   provideOrder(success: boolean, order: Order | undefined, error: Error | undefined): void;
+  providePaymentMethods(paymentMethods: PaymentMethodsResponse, order: Order | undefined): void;
 }
 
 export function isPartialPaymentsComponent(

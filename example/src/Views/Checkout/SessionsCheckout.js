@@ -104,7 +104,7 @@ const SessionsCheckout = ({navigation}) => {
           session={session}
           onComplete={didComplete}
           onError={didFail}>
-          <PaymentMethods isSession={true} />
+          <PaymentMethods showComponents={false} />
         </AdyenCheckout>
       ) : (
         <ActivityIndicator size="large" style={Styles.page} />

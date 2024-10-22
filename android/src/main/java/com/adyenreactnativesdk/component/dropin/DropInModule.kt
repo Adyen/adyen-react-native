@@ -8,16 +8,21 @@ package com.adyenreactnativesdk.component.dropin
 
 import android.util.Log
 import com.adyen.checkout.components.core.AddressLookupCallback
+import com.adyen.checkout.components.core.BalanceResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
+import com.adyen.checkout.components.core.Order
+import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.dropin.AddressLookupDropInServiceResult
+import com.adyen.checkout.dropin.BalanceDropInServiceResult
 import com.adyen.checkout.dropin.BaseDropInServiceContract
 import com.adyen.checkout.dropin.DropIn.startPayment
 import com.adyen.checkout.dropin.DropInServiceResult
 import com.adyen.checkout.dropin.ErrorDialog
+import com.adyen.checkout.dropin.OrderDropInServiceResult
 import com.adyen.checkout.dropin.RecurringDropInServiceResult
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyen.checkout.sessions.core.SessionPaymentResult
@@ -193,6 +198,57 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
 
         val result = successfulResult ?: RecurringDropInServiceResult.Error(null, null, false)
         CheckoutProxy.shared.advancedService?.sendRecurringResult(result)
+    }
+
+    @ReactMethod
+    fun provideBalance(success: Boolean, balance: ReadableMap?, error: ReadableMap?) {
+        val listener = getService()
+        if (listener == null) {
+            sendErrorEvent(ModuleException.NoModuleListener(integration))
+            return
+        }
+        if (success) {
+            val jsonObject = ReactNativeJson.convertMapToJson(balance)
+            val balanceResult = BalanceResult.SERIALIZER.deserialize(jsonObject)
+            listener.sendBalanceResult(BalanceDropInServiceResult.Balance(balanceResult))
+        } else {
+            val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
+            listener.sendBalanceResult(BalanceDropInServiceResult.Error(null, message, false)  )
+        }
+    }
+
+    @ReactMethod
+    fun provideOrder(success: Boolean, order: ReadableMap?, error: ReadableMap?) {
+        val listener = getService()
+        if (listener == null) {
+            sendErrorEvent(ModuleException.NoModuleListener(integration))
+            return
+        }
+        if (success) {
+            val jsonObject = ReactNativeJson.convertMapToJson(order)
+            val orderResponse = OrderResponse.SERIALIZER.deserialize(jsonObject)
+            listener.sendOrderResult(OrderDropInServiceResult.OrderCreated(orderResponse))
+        } else {
+            val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
+            listener.sendOrderResult(OrderDropInServiceResult.Error(null, message, false)  )
+        }
+    }
+
+    @ReactMethod
+    fun providePaymentMethods(paymentMethods: ReadableMap, order: ReadableMap?) {
+        val listener = getService()
+        if (listener == null) {
+            sendErrorEvent(ModuleException.NoModuleListener(integration))
+            return
+        }
+        val pmJsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
+        val paymentMethods = PaymentMethodsApiResponse.SERIALIZER.deserialize(pmJsonObject)
+        val order = order?.let  {
+            val jsonObject = ReactNativeJson.convertMapToJson(it)
+            return@let OrderResponse.SERIALIZER.deserialize(jsonObject)
+        }
+
+        listener.sendResult(DropInServiceResult.Update(paymentMethods, order) )
     }
 
     override fun getRedirectUrl(): String? {

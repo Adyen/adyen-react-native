@@ -23,8 +23,7 @@ class AdvancedComponentViewModel<TState : PaymentComponentState<*>, TComponentDa
     }
 
     override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
-        val jsonObject = ActionComponentData.SERIALIZER.serialize(actionComponentData)
-        CheckoutProxy.shared.componentListener?.let { it.onAdditionalData(jsonObject) } ?: {
+        CheckoutProxy.shared.componentListener?.onAdditionalDetails(actionComponentData) ?: {
             Log.e(
                 TAG,
                 COMPONENT_LISTENER_IS_NULL
@@ -33,7 +32,7 @@ class AdvancedComponentViewModel<TState : PaymentComponentState<*>, TComponentDa
     }
 
     override fun onSubmit(state: TState) {
-        CheckoutProxy.shared.componentListener?.let { it.onSubmit(state) } ?: {
+        CheckoutProxy.shared.componentListener?.onSubmit(state) ?: {
             Log.e(
                 TAG,
                 COMPONENT_LISTENER_IS_NULL

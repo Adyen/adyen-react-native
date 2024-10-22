@@ -23,6 +23,7 @@ import AdvancedCheckout from './src/Views/Checkout/AdvancedCheckout';
 import Home from './src/Views/HomeView';
 import AppContextProvider from './src/Utilities/AppContext';
 import {DEFAULT_CONFIGURATION} from './src/Configuration';
+import PartialPaymentCheckout from './src/Views/Checkout/PartialPaymentCheckout';
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +40,7 @@ export const Page = {
   Settings: 'Settings',
   CustomCard: 'CustomCard',
   Result: 'Result',
+  PartialPaymentCheckout: 'PartialPaymentCheckout'
 };
 
 const App = () => {
@@ -68,6 +70,11 @@ const App = () => {
             name={Page.AdvancedCheckout}
             component={AdvancedCheckout}
             options={() => ({title: 'Advanced Checkout'})}
+          />
+           <Stack.Screen
+            name={Page.PartialPaymentCheckout}
+            component={PartialPaymentCheckout}
+            options={() => ({title: 'Partial Payment'})}
           />
           <Stack.Screen name={Page.Settings} component={SettingView} />
           <Stack.Screen name={Page.Result} component={Result} />

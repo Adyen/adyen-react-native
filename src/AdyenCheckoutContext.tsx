@@ -250,9 +250,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
                   nativeComponent as unknown as PartialPaymentComponent
                 ).provideBalance(false, undefined, error)
               })
-          })
-        );
-        subscriptions.current.push(
+          }),
           eventEmitter.addListener(Event.onRequestOrder, () => {
             configuration.partialPayment?.onOrderRequest?.(
               (order) => {
@@ -266,9 +264,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
                   nativeComponent as unknown as PartialPaymentComponent
                 ).provideOrder(false, undefined, error)
               })
-          })
-        );
-        subscriptions.current.push(
+          }),
           eventEmitter.addListener(Event.onCancelOrder, (order) => {
             configuration.partialPayment?.onOrderCancel?.(order)
           })

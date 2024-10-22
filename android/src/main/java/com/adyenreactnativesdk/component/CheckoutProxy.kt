@@ -12,6 +12,7 @@ import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.dropin.BaseDropInServiceContract
+import com.adyen.checkout.dropin.DropInServiceContract
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONObject
@@ -38,9 +39,7 @@ class CheckoutProxy private constructor() {
         }
 
     /** All events coming from Android SDK */
-    interface ComponentEventListener {
-        fun onSubmit(state: PaymentComponentState<*>)
-        fun onAdditionalData(jsonObject: JSONObject)
+    interface ComponentEventListener: DropInServiceContract {
         fun onException(exception: CheckoutException)
         fun onFinished(result: SessionPaymentResult)
         fun onRemove(storedPaymentMethod: StoredPaymentMethod)

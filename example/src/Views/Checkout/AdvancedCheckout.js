@@ -141,7 +141,7 @@ const AdvancedCheckout = ({navigation}) => {
           onAdditionalDetails={didProvide}
           onComplete={didComplete}
           onError={didFail}>
-          <PaymentMethods isSession={false} />
+          <PaymentMethods showComponents={true} />
         </AdyenCheckout>
       ) : (
         <ActivityIndicator size="large" style={Styles.page} />

@@ -36,6 +36,11 @@ RCT_EXTERN_METHOD(provideOrder:(nonnull NSNumber *)success
                   order:(nullable NSDictionary *)order
                   error:(nullable NSDictionary *)error)
 
+RCT_EXTERN_METHOD(providePaymentMethods:(nonnull NSDictionary *)paymentMethods
+                  order:(nullable NSDictionary *)order)
+
+
+
 @end
 
 @interface RCT_EXTERN_MODULE(AdyenInstant, NSObject)

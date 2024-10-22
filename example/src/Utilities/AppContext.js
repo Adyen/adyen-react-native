@@ -34,38 +34,6 @@ export const checkoutConfiguration = (
       enabled: true,
       verboseLogs: true,
     },
-    partialPayment: {
-      onBalanceCheck: async (paymentData, resolve, reject) => {
-        console.debug("= = on BalanceCheck:" + JSON.stringify(paymentData));
-        try {
-          let response = await ApiClient.checkBalance(paymentData, config);
-          resolve({
-            balance: response.balance,
-            transactionLimit: response.transactionLimit
-          });
-        } catch (e) {
-          console.error("Balance wasn't checkeed: " + JSON.stringify(e))
-          reject(e);
-        }
-      },
-      onOrderRequest: async (resolve, reject) => {
-        try {
-          let response = await ApiClient.requestOrder(config);
-          resolve(response);
-        } catch (e) {
-          console.error("Order wasn't requested: " + JSON.stringify(e))
-          reject(e);
-        }
-      },
-      onOrderCancel: async (order) => {
-        console.debug("= = on OrderRequest:" + order);
-        try {
-          await ApiClient.cancelOrder(order, config);
-        } catch (e) {
-          console.error("Order wasn't canceled!")
-        }
-      }
-    },
     dropin: {
       showRemovePaymentMethodButton: true,
       onDisableStoredPaymentMethod: async (

@@ -1,5 +1,5 @@
 import { AddressLookupItem } from '../core/configurations/AddressLookup';
-import { Balance, Order } from '../core/types';
+import { Balance, Order, PaymentMethodsResponse } from '../core/types';
 import { ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
 import { AddressLookup } from './AddressLookupComponentWrapper';
 import { PartialPaymentComponent } from './PartialPaymentsComponentWrapper';
@@ -26,5 +26,8 @@ export class DropInComponentWrapper
   }
   provideOrder(success: boolean, order: Order | undefined, error: Error | undefined): void {
     this.nativeModule.provideOrder(success, order, error);
+  }
+  providePaymentMethods(paymentMethods: PaymentMethodsResponse, order: Order | undefined): void {
+    this.nativeModule.providePaymentMethods(paymentMethods, order);
   }
 }

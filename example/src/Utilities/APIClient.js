@@ -36,11 +36,12 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
-  static paymentMethods = configuration => {
+  static paymentMethods = (configuration, order) => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
       ...serverConfiguration,
+      order: order ? parseOrder(order) : undefined,
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
@@ -88,8 +89,8 @@ class ApiClient {
 
   static cancelOrder = async (order, configuration) => {
     const body = {
-      order: order,
-      ...parseConfig(configuration),
+      order: order ? parseOrder(order) : undefined,
+      merchantAccount: configuration.merchantAccount,
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
   };
@@ -179,4 +180,12 @@ const parseConfig = ({
   countryCode,
   shopperReference,
   shopperLocale,
+});
+
+const parseOrder = ({
+  orderData,
+  pspReference,
+}) => ({
+  orderData,
+  pspReference
 });

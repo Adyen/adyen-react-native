@@ -79,7 +79,7 @@ internal class BaseModule: RCTEventEmitter {
         return error
     }
 
-    internal func sendEvent(error: Swift.Error) {
+    internal func sendEvent(error: Error) {
         let errorToSend = checkErrorType(error)
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
@@ -256,48 +256,4 @@ extension BaseModule: SessionResultListener {
     func didFail(with error: Error) {
         sendEvent(error: error)
     }
-}
-
-extension BaseModule: PartialPaymentDelegate {
-
-    func checkBalance(with data: PaymentComponentData, component: any Adyen.Component, completion: @escaping (Result<Balance, any Error>) -> Void) {
-        sendEvent(event: .didCheckBalance, body: data.jsonObject)
-        checkBalanceHandler = completion
-    }
-
-    @objc
-    public func provideBalance(_ success: NSNumber, balance: NSDictionary?, error: NSDictionary?) {
-        guard let checkBalanceHandler else { return }
-
-        DispatchQueue.main.async {
-            guard success.boolValue, let balance: Balance = try? balance?.toJson() else {
-                let message = error?.value(forKey: "message") as? String ?? "Unknown"
-                return checkBalanceHandler(.failure(NativeModuleError.balanceCheck(message: message)))
-            }
-            checkBalanceHandler(.success(balance))
-        }
-    }
-
-    func requestOrder(for component: any Adyen.Component, completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void) {
-        sendEvent(event: .didRequestOrder)
-        requestOrderHandler = completion
-    }
-
-    @objc
-    public func provideOrder(_ success: NSNumber, order: NSDictionary?, error: NSDictionary?) {
-        guard let requestOrderHandler else {
-            return }
-        DispatchQueue.main.async {
-            guard success.boolValue, let order: PartialPaymentOrder = try? order?.toJson() else {
-                let message = error?.value(forKey: "message") as? String ?? "Unknown"
-                return requestOrderHandler(.failure(NativeModuleError.orderRequest(message: message)))
-            }
-            requestOrderHandler(.success(order))
-        }
-    }
-
-    func cancelOrder(_ order: Adyen.PartialPaymentOrder, component: any Adyen.Component) {
-        sendEvent(event: .didCancelOrder, body: order.jsonObject)
-    }
-
 }
