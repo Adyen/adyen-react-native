@@ -80,30 +80,7 @@ export const checkoutConfiguration = (
         'email',
         'postalAddress',
       ],
-      recurringPaymentRequest: {
-        description: 'My Subscription',
-        regularBilling: {
-          amount: 1000,
-          label: 'Monthy payment',
-          intervalCount: 1,
-          intervalUnit: 'month',
-          startDate: new Date(
-            new Date().setDate(new Date().getDate() + 7),
-          ).toISOString(),
-        },
-        managementURL: 'https://my-domain.com/managementURL',
-        trialBilling: {
-          amount: 10,
-          label: 'Trail week',
-          intervalCount: 7,
-          intervalUnit: 'day',
-          endDate: new Date(
-            new Date().setDate(new Date().getDate() + 7),
-          ).toISOString(),
-        },
-        tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
-        billingAgreement: 'Hereby I am willing to give my money',
-      },
+      recurringPaymentRequest: mockApplePayRecurringPayment,
     },
     googlepay: {
       billingAddressRequired: true,
@@ -202,3 +179,28 @@ const mockAddresses = [
     id: 'item3',
   },
 ];
+
+const mockApplePayRecurringPayment = {
+  description: 'My Subscription',
+  regularBilling: {
+    amount: 1000,
+    label: 'Monthy payment',
+    intervalCount: 1,
+    intervalUnit: 'month',
+    startDate: new Date(
+      new Date().setDate(new Date().getDate() + 7)
+    ).toISOString(),
+  },
+  managementURL: 'https://my-domain.com/managementURL',
+  trialBilling: {
+    amount: 10,
+    label: 'Trail week',
+    intervalCount: 7,
+    intervalUnit: 'day',
+    endDate: new Date(
+      new Date().setDate(new Date().getDate() + 7)
+    ).toISOString(),
+  },
+  tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
+  billingAgreement: 'Hereby I am willing to give my money',
+};
