@@ -213,7 +213,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
             listener.sendBalanceResult(BalanceDropInServiceResult.Balance(balanceResult))
         } else {
             val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
-            listener.sendBalanceResult(BalanceDropInServiceResult.Error(null, message, false)  )
+            listener.sendBalanceResult(BalanceDropInServiceResult.Error(null, message, true)  )
         }
     }
 
@@ -230,7 +230,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
             listener.sendOrderResult(OrderDropInServiceResult.OrderCreated(orderResponse))
         } else {
             val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
-            listener.sendOrderResult(OrderDropInServiceResult.Error(null, message, false)  )
+            listener.sendOrderResult(OrderDropInServiceResult.Error(null, message, true)  )
         }
     }
 
