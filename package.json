@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@expo/config-plugins": "^8.0.4",
-    "@react-native/eslint-config": "^0.74.1",
+    "@react-native/eslint-config": "^0.76.0",
     "@tsconfig/node10": "^1.0.7",
     "@types/react": "^18.0.29",
     "@types/react-test-renderer": "^18.0.0",
