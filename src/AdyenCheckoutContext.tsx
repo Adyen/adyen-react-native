@@ -226,9 +226,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
             async (prompt: string) => {
               configuration.card?.onUpdateAddress?.(prompt, nativeModule);
             }
-          )
-        );
-        subscriptions.current.push(
+          ),
           eventEmitter.addListener(
             Event.onAddressConfirm,
             (address: AddressLookupItem) => {
@@ -296,7 +294,6 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       );
 
       checkConfiguration(config);
-
       startEventListeners(config, nativeComponent);
 
       if (paymentMethod) {

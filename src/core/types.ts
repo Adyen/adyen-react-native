@@ -235,8 +235,8 @@ export interface SessionResponse {
   [key: string]: any;
 }
 
-/** 
- * Reason for payment termination 
+/**
+ * Reason for payment termination
  */
 export interface AdyenError {
   message: string;
@@ -249,7 +249,14 @@ export interface SubmitModel {
 }
 
 export interface Balance {
+  /**
+   * The balance for the payment method.
+   */
   balance?: PaymentAmount;
+
+  /**
+   * The maximum spendable balance for a single transaction. Applicable to some gift cards.
+   */
   transactionLimit?: PaymentAmount;
 }
 

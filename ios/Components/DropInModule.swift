@@ -47,8 +47,8 @@ internal final class DropInModule: BaseModule {
             }
 
             do {
-                let address: LookupAddressModel = try address.decode()
-                lookupCompliationHandler(.success(address.postalAddress))
+                let addressModel: LookupAddressModel = try address.decode()
+                lookupCompliationHandler(.success(addressModel.postalAddress))
             } catch {
                 lookupCompliationHandler(.failure(error))
             }

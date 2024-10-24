@@ -41,7 +41,7 @@ class ApiClient {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
       ...serverConfiguration,
-      order: order ? parseOrder(order) : undefined,
+      ...(order && { order: parseOrder(order) }),
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
@@ -89,7 +89,7 @@ class ApiClient {
 
   static cancelOrder = async (order, configuration) => {
     const body = {
-      order: order ? parseOrder(order) : undefined,
+      ...(order && { order: parseOrder(order) }),
       merchantAccount: configuration.merchantAccount,
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
