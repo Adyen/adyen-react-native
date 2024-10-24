@@ -26,7 +26,7 @@ internal extension Decodable {
 }
 
 internal extension NSDictionary {
-    func toJson<T: Decodable>() throws -> T {
+    func decode<T: Decodable>() throws -> T {
         let data = try JSONSerialization.data(withJSONObject: self, options: [])
         return try JSONDecoder().decode(T.self, from: data)
     }

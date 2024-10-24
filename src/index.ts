@@ -10,6 +10,8 @@ export type {
   PaymentMethodData,
   PaymentMethodGroup,
   AdyenError,
+  Order,
+  Balance,
 } from './core/types';
 
 export { AdyenApplePay } from './modules/AdyenApplePay';
@@ -47,6 +49,9 @@ export type {
   Configuration,
   Environment,
 } from './core/configurations/Configuration';
+
+export type { PartialPaymentConfiguration } from './core/configurations/PartialPaymentConfiguration';
+export type { PartialPaymentComponent } from './wrappers/PartialPaymentsComponentWrapper';
 
 export type {
   GooglePayBillingAddressFormat,

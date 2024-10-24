@@ -36,11 +36,12 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
-  static paymentMethods = configuration => {
+  static paymentMethods = (configuration, order) => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
       ...serverConfiguration,
+      ...(order && { order: parseOrder(order) }),
     };
     return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
@@ -65,6 +66,33 @@ class ApiClient {
     } catch {
       return false;
     }
+  };
+
+  static checkBalance = async (paymentData, configuration) => {
+    const body = {
+      paymentMethod: paymentData.paymentMethod,
+      ...parseAmount(configuration),
+      merchantAccount: configuration.merchantAccount,
+      reference: serverConfiguration.reference,
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods/balance', body);
+  };
+
+  static requestOrder = async (configuration) => {
+    const body = {
+      ...parseAmount(configuration),
+      merchantAccount: configuration.merchantAccount,
+      reference: serverConfiguration.reference,
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders', body);
+  };
+
+  static cancelOrder = async (order, configuration) => {
+    const body = {
+      ...(order && { order: parseOrder(order) }),
+      merchantAccount: configuration.merchantAccount,
+    };
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
   };
 
   /** @private */
@@ -152,4 +180,12 @@ const parseConfig = ({
   countryCode,
   shopperReference,
   shopperLocale,
+});
+
+const parseOrder = ({
+  orderData,
+  pspReference,
+}) => ({
+  orderData,
+  pspReference
 });

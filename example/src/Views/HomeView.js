@@ -16,6 +16,10 @@ const Home = ({navigation}) => {
           title="Advanced case"
         />
         <Button
+          onPress={() => navigation.navigate(Page.PartialPaymentCheckout)}
+          title="Advanced partial payment case"
+        />
+        <Button
           onPress={() => navigation.navigate(Page.CustomCard)}
           title="Custom Card Integration"
         />

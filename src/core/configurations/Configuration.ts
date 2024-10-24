@@ -1,8 +1,9 @@
-import { PaymentAmount } from '../types';
+import { PaymentAmount, PaymentMethodData } from '../types';
 import { ApplePayConfiguration } from './ApplePayConfiguration';
 import { CardsConfiguration } from './CardsConfiguration';
 import { DropInConfiguration } from './DropInConfiguration';
 import { GooglePayConfiguration } from './GooglePayConfiguration';
+import { PartialPaymentConfiguration } from './PartialPaymentConfiguration';
 import { ThreeDSConfiguration } from './ThreeDSConfiguration';
 
 /** Collection of available environments. */
@@ -57,4 +58,6 @@ export interface Configuration extends BaseConfiguration {
   googlepay?: GooglePayConfiguration;
   /** 3D Secure 2 authentication configuration. */
   threeDS2?: ThreeDSConfiguration;
+  /** Partial payment flow configuration. */
+  partialPayment?: PartialPaymentConfiguration;
 }

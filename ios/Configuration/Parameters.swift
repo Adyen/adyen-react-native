@@ -17,7 +17,10 @@ internal enum Events: String, CaseIterable {
     case didFail = "didFailCallback"
     case didUpdateAddress = "didUpdateAddressCallback"
     case didConfirmAddress = "didConfirmAddressCallback"
-    case didDisableStoredPaymentMethod = "didDisableStoredPaymentMethod"
+    case didDisableStoredPaymentMethod = "didDisableStoredPaymentMethodCallback"
+    case didCheckBalance = "didCheckBalanceCallback"
+    case didRequestOrder = "didRequestOrderCallback"
+    case didCancelOrder = "didCancelOrderCallback"
 
     static var coreEvents: [Events] { [.didFail, .didSubmit, .didProvide, .didComplete] }
 }

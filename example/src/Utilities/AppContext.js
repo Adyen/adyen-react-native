@@ -8,117 +8,94 @@ import React, {
   useEffect,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {ENVIRONMENT} from '../Configuration';
+import { ENVIRONMENT } from '../Configuration';
 import ApiClient from './APIClient';
 
 export const AppContext = createContext({
   configuration: {},
-  save: async (/** @type {any} */ configuration) => {},
+  save: async (/** @type {any} */ configuration) => { },
 });
 
 export const checkoutConfiguration = (
   /** @type {{ shopperLocale?: any; amount?: any; currency?: any; countryCode?: any; merchantName?: any; }} */ config,
 ) => {
   const /** @type {import('@adyen/react-native').Configuration} */ configuration =
-      {
-        clientKey: ENVIRONMENT.clientKey,
-        environment: ENVIRONMENT.environment,
-        returnUrl: ENVIRONMENT.returnUrl,
-        locale: config.shopperLocale,
-        amount: {
-          value: config.amount,
-          currency: config.currency,
-        },
-        countryCode: config.countryCode,
-        analytics: {
-          enabled: true,
-          verboseLogs: true,
-        },
-        dropin: {
-          showRemovePaymentMethodButton: true,
-          onDisableStoredPaymentMethod: async (
-            storedPaymentMethod,
-            resolve,
-            reject,
-          ) => {
-            let success = await ApiClient.tryRemoveStoredCard(
-              storedPaymentMethod.id,
-              config,
-            );
-            if (success) {
-              resolve();
-            } else {
-              reject();
-            }
-          },
-        },
-        card: {
-          addressVisibility: 'lookup',
-          allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
-          onUpdateAddress: (
+  {
+    clientKey: ENVIRONMENT.clientKey,
+    environment: ENVIRONMENT.environment,
+    returnUrl: ENVIRONMENT.returnUrl,
+    locale: config.shopperLocale,
+    amount: {
+      value: config.amount,
+      currency: config.currency,
+    },
+    countryCode: config.countryCode,
+    analytics: {
+      enabled: true,
+      verboseLogs: true,
+    },
+    dropin: {
+      showRemovePaymentMethodButton: true,
+      onDisableStoredPaymentMethod: async (
+        storedPaymentMethod,
+        resolve,
+        reject,
+      ) => {
+        let success = await ApiClient.tryRemoveStoredCard(
+          storedPaymentMethod.id,
+          config,
+        );
+        if (success) {
+          resolve();
+        } else {
+          reject();
+        }
+      },
+    },
+    card: {
+      addressVisibility: 'lookup',
+      allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
+      onUpdateAddress: (
             /** @type {any} */ prompt,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
-          ) => {
-            // Make request to Google Maps API or other address provider.
-            lookup.update(mockAddresses);
-          },
-          onConfirmAddress: (
+      ) => {
+        // Make request to Google Maps API or other address provider.
+        lookup.update(mockAddresses);
+      },
+      onConfirmAddress: (
             /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
             /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
-          ) => {
-            // Make request to Google Maps API or other address provider.
-            lookup.confirm(address);
-          },
-        },
-        applepay: {
-          merchantID: ENVIRONMENT.applepayMerchantID,
-          merchantName: config.merchantName,
-          requiredBillingContactFields: ['phoneticName', 'postalAddress'],
-          requiredShippingContactFields: [
-            'name',
-            'phone',
-            'email',
-            'postalAddress',
-          ],
-          recurringPaymentRequest: {
-            description: 'My Subscription',
-            regularBilling: {
-              amount: 1000,
-              label: 'Monthy payment',
-              intervalCount: 1,
-              intervalUnit: 'month',
-              startDate: new Date(
-                new Date().setDate(new Date().getDate() + 7),
-              ).toISOString(),
-            },
-            managementURL: 'https://my-domain.com/managementURL',
-            trialBilling: {
-              amount: 10,
-              label: 'Trail week',
-              intervalCount: 7,
-              intervalUnit: 'day',
-              endDate: new Date(
-                new Date().setDate(new Date().getDate() + 7),
-              ).toISOString(),
-            },
-            tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
-            billingAgreement: 'Hereby I am willing to give my money',
-          },
-        },
-        googlepay: {
-          billingAddressRequired: true,
-          billingAddressParameters: {
-            format: 'FULL',
-            phoneNumberRequired: true,
-          },
-          shippingAddressRequired: true,
-          shippingAddressParameters: {
-            allowedCountryCodes: ['US', 'MX'],
-            phoneNumberRequired: true,
-          },
-          emailRequired: true,
-        },
-      };
+      ) => {
+        // Make request to Google Maps API or other address provider.
+        lookup.confirm(address);
+      },
+    },
+    applepay: {
+      merchantID: ENVIRONMENT.applepayMerchantID,
+      merchantName: config.merchantName,
+      requiredBillingContactFields: ['phoneticName', 'postalAddress'],
+      requiredShippingContactFields: [
+        'name',
+        'phone',
+        'email',
+        'postalAddress',
+      ],
+      recurringPaymentRequest: mockApplePayRecurringPayment,
+    },
+    googlepay: {
+      billingAddressRequired: true,
+      billingAddressParameters: {
+        format: 'FULL',
+        phoneNumberRequired: true,
+      },
+      shippingAddressRequired: true,
+      shippingAddressParameters: {
+        allowedCountryCodes: ['US', 'MX'],
+        phoneNumberRequired: true,
+      },
+      emailRequired: true,
+    },
+  };
   return configuration;
 };
 
@@ -149,7 +126,6 @@ const AppContextProvider = (/** @type {any} */ props) => {
 
   const saveConfiguration = async (newConfig = config) => {
     await AsyncStorage.setItem(storeKey, JSON.stringify(newConfig));
-
     setConfig(newConfig);
   };
 
@@ -203,3 +179,28 @@ const mockAddresses = [
     id: 'item3',
   },
 ];
+
+const mockApplePayRecurringPayment = {
+  description: 'My Subscription',
+  regularBilling: {
+    amount: 1000,
+    label: 'Monthy payment',
+    intervalCount: 1,
+    intervalUnit: 'month',
+    startDate: new Date(
+      new Date().setDate(new Date().getDate() + 7)
+    ).toISOString(),
+  },
+  managementURL: 'https://my-domain.com/managementURL',
+  trialBilling: {
+    amount: 10,
+    label: 'Trail week',
+    intervalCount: 7,
+    intervalUnit: 'day',
+    endDate: new Date(
+      new Date().setDate(new Date().getDate() + 7)
+    ).toISOString(),
+  },
+  tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
+  billingAgreement: 'Hereby I am willing to give my money',
+};

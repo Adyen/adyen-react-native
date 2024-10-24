@@ -11,7 +11,9 @@ import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
 import com.adyen.checkout.adyen3ds2.adyen3DS2
 import com.adyen.checkout.bcmc.bcmc
 import com.adyen.checkout.card.card
+import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.CheckoutConfiguration
+import com.adyen.checkout.components.core.Order
 import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
@@ -173,12 +175,27 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         sendFinishEvent(updatedResult)
     }
 
-    override fun onAdditionalData(jsonObject: JSONObject) {
+    override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
+        val jsonObject = ActionComponentData.SERIALIZER.serialize(actionComponentData)
         sendEvent(DID_PROVIDE, jsonObject)
     }
 
     override fun onRemove(storedPaymentMethod: StoredPaymentMethod) {
         throw NotImplementedError("An operation only available for DropIn.")
+    }
+
+    override fun onBalanceCheck(paymentComponentState: PaymentComponentState<*>) {
+        val jsonObject = PaymentComponentData.SERIALIZER.serialize(paymentComponentState.data)
+        sendEvent(DID_CHECK_BALANCE, jsonObject)
+    }
+
+    override fun onOrderRequest() {
+        sendEvent(DID_REQUEST_ORDER, JSONObject())
+    }
+
+    override fun onOrderCancel(order: Order, shouldUpdatePaymentMethods: Boolean) {
+        val jsonObject = Order.SERIALIZER.serialize(order)
+        sendEvent(DID_CANCEL_ORDER, jsonObject)
     }
 
     protected fun getCheckoutConfiguration(json: ReadableMap): CheckoutConfiguration {
@@ -232,7 +249,11 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_SUBMIT = "didSubmitCallback"
         const val DID_UPDATE_ADDRESS = "didUpdateAddressCallback"
         const val DID_CONFIRM_ADDRESS = "didConfirmAddressCallback"
-        const val DID_DISABLE_STORED_PAYMENT_METHOD = "didDisableStoredPaymentMethod"
+        const val DID_DISABLE_STORED_PAYMENT_METHOD = "didDisableStoredPaymentMethodCallback"
+        const val DID_CHECK_BALANCE = "didCheckBalanceCallback"
+        const val DID_REQUEST_ORDER = "didRequestOrderCallback"
+        const val DID_CANCEL_ORDER = "didCancelOrderCallback"
+
 
         const val RESULT_CODE_PRESENTED = "PresentToShopper"
 

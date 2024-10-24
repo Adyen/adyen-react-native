@@ -17,7 +17,7 @@ import {ENVIRONMENT} from '../../Configuration';
 import {payByID} from '../../Utilities/payByID';
 import {useAppContext} from '../../Utilities/AppContext';
 
-const PaymentMethods = ({isSession}) => {
+const PaymentMethods = ({showComponents}) => {
   const {configuration} = useAppContext();
   const {start, paymentMethods: paymentMethodsResponse} = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
@@ -50,7 +50,7 @@ const PaymentMethods = ({isSession}) => {
           />
         </View>
 
-        {!isSession ? ( // Sessions do not support components (yet)
+        {showComponents ? ( // Sessions do not support components (yet)
           <View>
             {storedPaymentMethods ? (
               <View>

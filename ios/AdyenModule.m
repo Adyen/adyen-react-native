@@ -24,9 +24,22 @@ RCT_EXTERN_METHOD(getReturnURL:(RCTPromiseResolveBlock)resolve
 RCT_EXTERN_METHOD(update:(nullable NSArray *)results)
 
 RCT_EXTERN_METHOD(confirm:(nonnull NSNumber *)success
-                  address:(nonnull NSDictionary *)address)
+                  address:(nullable NSDictionary *)address)
 
 RCT_EXTERN_METHOD(removeStored:(nonnull NSNumber *)success)
+
+RCT_EXTERN_METHOD(provideBalance:(nonnull NSNumber *)success
+                  balance:(nullable NSDictionary *)balance
+                  error:(nullable NSDictionary *)error)
+
+RCT_EXTERN_METHOD(provideOrder:(nonnull NSNumber *)success
+                  order:(nullable NSDictionary *)order
+                  error:(nullable NSDictionary *)error)
+
+RCT_EXTERN_METHOD(providePaymentMethods:(nonnull NSDictionary *)paymentMethods
+                  order:(nullable NSDictionary *)order)
+
+
 
 @end
 

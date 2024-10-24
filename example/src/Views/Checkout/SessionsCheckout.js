@@ -36,7 +36,7 @@ const SessionsCheckout = ({navigation}) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
       nativeComponent,
     ) => {
-      console.log('didComplete :');
+      console.log(`didComplete : ${JSON.stringify(result, null, " ")}`);
       processResult(result, nativeComponent);
     },
     [],
@@ -104,7 +104,7 @@ const SessionsCheckout = ({navigation}) => {
           session={session}
           onComplete={didComplete}
           onError={didFail}>
-          <PaymentMethods isSession={true} />
+          <PaymentMethods showComponents={false} />
         </AdyenCheckout>
       ) : (
         <ActivityIndicator size="large" style={Styles.page} />

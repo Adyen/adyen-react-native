@@ -12,6 +12,8 @@ import UIKit
 internal class BaseModule: RCTEventEmitter {
 
     internal static var session: AdyenSession?
+    internal var requestOrderHandler: ((Result<PartialPaymentOrder, any Error>) -> Void)?
+    internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
 
     #if DEBUG
         override func invalidate() {
@@ -66,6 +68,10 @@ internal class BaseModule: RCTEventEmitter {
         sendEvent(withName: event.rawValue, body: body)
     }
 
+    internal func sendEvent(event: Events) {
+        sendEvent(withName: event.rawValue, body: [:])
+    }
+
     internal func checkErrorType(_ error: Error) -> Error {
         if error.isComponentCanceled || error.is3DSCanceled {
             return NativeModuleError.canceled
@@ -73,7 +79,7 @@ internal class BaseModule: RCTEventEmitter {
         return error
     }
 
-    internal func sendEvent(error: Swift.Error) {
+    internal func sendEvent(error: Error) {
         let errorToSend = checkErrorType(error)
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
@@ -137,6 +143,8 @@ internal class BaseModule: RCTEventEmitter {
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
+        requestOrderHandler = nil
+        checkBalanceHandler = nil
 
         BaseModule.currentPresenter?.dismiss(animated: true) {
             BaseModule.currentPresenter = nil
@@ -175,6 +183,8 @@ extension BaseModule {
         case invalidAction
         case notKeyWindow
         case paymentMethodNotFound(PaymentMethod.Type)
+        case balanceCheck(message: String)
+        case orderRequest(message: String)
 
         var errorCode: String {
             switch self {
@@ -194,6 +204,10 @@ extension BaseModule {
                 return "noPaymentMethod"
             case .notKeyWindow:
                 return "notKeyWindow"
+            case .balanceCheck(_):
+                return "balanceCheck"
+            case .orderRequest(_):
+                return "orderRequest"
             }
         }
 
@@ -215,6 +229,10 @@ extension BaseModule {
                 return "Can not find payment method of type \(type) in provided list"
             case .notKeyWindow:
                 return "Can not find root ViewController"
+            case let .balanceCheck(message):
+                return "Balance check error: \(message)"
+            case let .orderRequest(message):
+                return "Order request error: \(message)"
             }
         }
     }
@@ -237,16 +255,5 @@ extension BaseModule: SessionResultListener {
 
     func didFail(with error: Error) {
         sendEvent(error: error)
-    }
-}
-
-extension AdyenSessionResult: Encodable {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(self.resultCode.rawValue, forKey: .resultCode)
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case resultCode
     }
 }

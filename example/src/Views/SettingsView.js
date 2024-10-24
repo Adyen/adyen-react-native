@@ -56,7 +56,7 @@ const SettingFormView = ({navigation: {goBack}}) => {
   const handleOnPress = useCallback(() => {
     const newConfiguration = {
       countryCode: countryCode,
-      amount: amount,
+      amount: Number(amount),
       currency: currency,
       merchantAccount: merchantAccount,
       merchantName: merchantName,

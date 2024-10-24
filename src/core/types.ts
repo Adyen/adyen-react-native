@@ -235,7 +235,9 @@ export interface SessionResponse {
   [key: string]: any;
 }
 
-/** Reason for payment termination */
+/**
+ * Reason for payment termination
+ */
 export interface AdyenError {
   message: string;
   errorCode: string;
@@ -244,4 +246,27 @@ export interface AdyenError {
 export interface SubmitModel {
   paymentData: PaymentMethodData;
   extra?: any;
+}
+
+export interface Balance {
+  /**
+   * The balance for the payment method.
+   */
+  balance?: PaymentAmount;
+
+  /**
+   * The maximum spendable balance for a single transaction. Applicable to some gift cards.
+   */
+  transactionLimit?: PaymentAmount;
+}
+
+export interface Order {
+  /** The encrypted order data. */
+  orderData: string;
+
+  /** The pspReference that belongs to the order. */
+  pspReference: string;
+
+  /** The remaining amount to complete the order. */
+  remainingAmount?: PaymentAmount;
 }
