@@ -16,7 +16,8 @@ export const withAdyenAndroid: ConfigPlugin = (config) => {
     if (mainActivity.language === 'java') {
       mainActivity.contents = setJavaMainActivity(mainActivity.contents);
     } else {
-      mainActivity.contents = setKotlinMainActivity(mainActivity.contents);
+      const sdkVersion = parseInt(config.sdkVersion.split('.')[0]);
+      mainActivity.contents = setKotlinMainActivity(mainActivity.contents, sdkVersion);
     }
 
     return newConfig;

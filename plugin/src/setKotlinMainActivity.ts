@@ -1,4 +1,10 @@
-export function setKotlinMainActivity(contents: string): string {
+// In Expo version 50, Android SDK level was set to 34, which introduces breaking changes.
+const breakingChangeVersion = 50 
+
+// In Expo version 52, onActivityResult with 3 parameters was deprecated.
+const onActivityResultDeprecationVersion = 52 
+
+export function setKotlinMainActivity(contents: string, sdkVersion: number): string {
   contents = contents.replace(
     'class MainActivity : ReactActivity() {',
     'import com.adyenreactnativesdk.AdyenCheckout\nimport android.content.Intent\nclass MainActivity : ReactActivity() {'
@@ -11,39 +17,53 @@ export function setKotlinMainActivity(contents: string): string {
   );
 
   // on NewIntent
-  if (contents.includes('override fun onNewIntent(intent: Intent?) {')) {
+  const onNewIntentSignature =
+    sdkVersion < breakingChangeVersion
+      ? 'override fun onNewIntent(intent: Intent?) {'
+      : 'override fun onNewIntent(intent: Intent) {';
+  const onNewIntentMethod =
+    sdkVersion < breakingChangeVersion
+      ? 'intent?.let { AdyenCheckout.handleIntent(it) }'
+      : 'AdyenCheckout.handleIntent(intent)';
+  
+  if (contents.includes(onNewIntentSignature)) {
     contents = contents.replace(
       'super.onNewIntent(intent)\n',
-      'super.onNewIntent(intent)\n    intent?.let { AdyenCheckout.handleIntent(it) }\n'
+      'super.onNewIntent(intent)\n    ' + onNewIntentMethod + '\n'
     );
   } else {
     contents = contents.replace(
       /}\n$/,
       '\n' +
-        '  override fun onNewIntent(intent: Intent?) {\n' +
+        '  ' + onNewIntentSignature + '\n' +
         '    super.onNewIntent(intent)\n' +
-        '    intent?.let { AdyenCheckout.handleIntent(it) }\n' +
+        '    ' + onNewIntentMethod + '\n' +
         '  }\n' +
         '}\n'
     );
   }
 
   // on ActivityResult
-  if (
-    contents.includes(
-      'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {'
-    )
-  ) {
+  const onActivityResultSignature =
+    sdkVersion < onActivityResultDeprecationVersion
+      ? 'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {'
+      : 'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, caller: ComponentCaller) {';
+  const onActivityResultSuper =
+    sdkVersion < onActivityResultDeprecationVersion
+      ? 'super.onActivityResult(requestCode, resultCode, data)'
+      : 'super.onActivityResult(requestCode, resultCode, data, caller)';
+      
+  if (contents.includes(onActivityResultSignature)) {
     contents = contents.replace(
-      'super.onActivityResult(requestCode, resultCode, data)\n',
-      'super.onActivityResult(requestCode, resultCode, data)\n    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n'
+      onActivityResultSuper + '\n',
+      onActivityResultSuper + '\n    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n'
     );
   } else {
     contents = contents.replace(
       /}\n$/,
       '\n' +
-        '  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {\n' +
-        '    super.onActivityResult(requestCode, resultCode, data)\n' +
+        '  ' + onActivityResultSignature + '\n' +
+        '    ' + onActivityResultSuper + '\n' +
         '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
         '  }\n' +
         '}\n'
