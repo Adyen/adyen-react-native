@@ -100,6 +100,18 @@ Adjust `import` on iOS in case your `Podfile` have `use_frameworks!` enabled.
 }
 ```
 
+For Swift:
+
+```swift
+import Adyen
+
+...
+
+func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey: Any] = [:]) -> Bool {
+    return RedirectComponent.applicationDidOpen(from: url)
+}
+```
+
 In case you are using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpenURL` before them.
 
 ```objc
