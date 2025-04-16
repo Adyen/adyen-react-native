@@ -28,14 +28,14 @@ We strongly encourage you to contribute to our repository. Find out more in our 
 * [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key)
 * [Client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key)
 
-## Integration
+# Integration
 
 Add `@adyen/react-native` to your react-native project.
 ```bash
 yarn add @adyen/react-native
 ```
 
-## Expo integration (experimental)
+## Expo integration
 
 > ❕ Please pay attention that this library is not compatible with ExpoGo. You can use it only with **Expo managed workflow**.
 
@@ -56,17 +56,17 @@ Add `@adyen/react-native` plugin to your `app.json`;
 > npx expo prebuild --clean
 > ```
 
-### Expo plugin configuration
+## Expo plugin configuration
 
-#### merchantIdentifier
+### merchantIdentifier
 
 Sets ApplePay Merchant ID to your iOS app's entitlment file. Empty by default.
 
-#### useFrameworks
+### useFrameworks
 
 Adjust `import` on iOS in case your `Podfile` have `use_frameworks!` enabled.
 
-#### Example
+## Example
 
 ```js
 {
@@ -84,9 +84,9 @@ Adjust `import` on iOS in case your `Podfile` have `use_frameworks!` enabled.
 }
 ```
 
-## Manual Integration
+# Manual Integration
 
-### iOS integration
+## iOS integration
 
 1. run `pod install`
 2. add return URL handler to your `AppDelegate.m(m)`
@@ -141,11 +141,16 @@ For Universal Link support, use:
 
 3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
 
-#### For ApplePay
+### For ApplePay
 
 Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
 
-### Android integration
+## Android integration
+
+> [!Warning]
+>
+> If you are using RN versions 0.74+ and enabled "new Archetecture", make sure to [Opting-out of Bridgeless](https://github.com/reactwg/react-native-new-architecture/discussions/174) mode.
+> This is necessary to run Drop-In and some components on Android, especially for [Advanced flow](https://github.com/Adyen/adyen-react-native/edit/develop/README.md#advanced-flow).
 
 1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
 ```java
@@ -161,7 +166,7 @@ protected void onCreate(Bundle savedInstanceState) {
 }
 ```
 
-##### For standalone components
+### For standalone components
 
 1. Add `intent-filter` to your Checkout activity:
 ```xml
@@ -203,11 +208,11 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
   </style>
 ```
 
-## Usage
+# Usage
 
 For general understanding of how prebuilt UI components of Adyen work you can follow [our documentation](https://docs.adyen.com/online-payments/prebuilt-ui).
 
-### Configuration
+## Configuration
 
 To read more about other configuration, see the [full list][configuration].
 Example of required configuration:
@@ -224,7 +229,7 @@ const configuration: Configuration = {
 };
 ```
 
-### Opening Payment component
+## Opening Payment component
 
 To use `@adyen/react-native` you can use our helper component `AdyenCheckout` and helper functions from `useAdyenCheckout` with standalone component:
 
@@ -245,7 +250,7 @@ const MyCheckoutView = () => {
 };
 ```
 
-#### Sessions flow
+### Sessions flow
 
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
@@ -269,7 +274,7 @@ import { useCallback } from 'react';
 </AdyenCheckout>;
 ```
 
-#### Advanced flow
+### Advanced flow
 
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
@@ -300,7 +305,7 @@ import { useCallback } from 'react';
 </AdyenCheckout>;
 ```
 
-### Handling Actions
+## Handling Actions
 
 Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end chalanges, use `nativeComponent.handle(action)` from  `onSubmit` callback.
 
@@ -324,7 +329,7 @@ const handleSubmit = (paymentData, nativeComponent) => {
 </AdyenCheckout>
 ```
 
-#### Standalone Action handling
+### Standalone Action handling
 
 In case of API-only integration `AdyenAction.handle` could be used.
 Before you begin, make sure you follow all [iOS integration](#ios-integration) and [Android integration](#android-integration) steps.
@@ -337,7 +342,7 @@ const data = await AdyenAction.handle(apiResponse.action, { environment: 'test',
 result = await ApiClient.paymentDetails(data);
 ```
 
-## Documentation
+# Documentation
 
 - [Configuration][configuration]
 - [Localization][localization]
@@ -346,11 +351,11 @@ result = await ApiClient.paymentDetails(data);
 - [Drop-in documentation][adyen-docs-dropin]
 - [Component documentation][adyen-docs-components]
 
-## Support
+# Support
 
 If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our Support Team via [Customer Area](https://ca-live.adyen.com/ca/ca/contactUs/support.shtml) or via email: support@adyen.com
 
-## License
+# License
 
 MIT license. For more information, see the LICENSE file.
 
