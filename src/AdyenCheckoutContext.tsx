@@ -287,6 +287,20 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           )
         );
       }
+
+      const onBinLookupCallback = configuration.card?.onBinLookup;
+      if (onBinLookupCallback) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onBinLookuop, onBinLookupCallback)
+        );
+      }
+
+      const onBinValueCallback = configuration.card?.onBinValue;
+      if (onBinValueCallback) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onBinValue, onBinValueCallback)
+        );
+      }
     },
     [submitPayment, onAdditionalDetails, onComplete, onError, subscriptions]
   );

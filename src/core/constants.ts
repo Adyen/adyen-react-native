@@ -37,6 +37,10 @@ export enum Event {
   onRequestOrder = `didRequestOrderCallback`,
   /** Event handler, called when the partial payment order was canceled. */
   onCancelOrder = `didCancelOrderCallback`,
+  /** Event handler, called when the partial payment order was canceled. */
+  onBinLookuop = `didBinLookupCallback`,
+  /** Event handler, called when the partial payment order was canceled. */
+  onBinValue = `didBinValueCallback`,
 }
 
 /** Collection of errors components can throw. */
