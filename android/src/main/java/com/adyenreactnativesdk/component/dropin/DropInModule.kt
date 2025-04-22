@@ -30,6 +30,7 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.component.model.BinLookupDataDTO
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Promise
@@ -313,9 +314,8 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
     override fun onBinLookup(data: List<BinLookupData>) {
         when {
             data.isEmpty() -> { return }
-            data.any { !it.isReliable } -> { return }
             else -> {
-                val brandOnlyMap = data.map { BrandOnly(it.brand) }
+                val brandOnlyMap = data.map { BinLookupDataDTO(it.brand) }
                 val jsonString = Gson().toJson(brandOnlyMap)
                 val jsonObject = JSONArray(jsonString)
                 reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
@@ -331,8 +331,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
             .emit(DID_DISABLE_STORED_PAYMENT_METHOD, ReactNativeJson.convertJsonToMap(jsonObject))
     }
 }
-
-private data class BrandOnly(val brand: String)
 
 internal interface ReactDropInCallback {
     fun onCancel()

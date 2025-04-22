@@ -274,7 +274,8 @@ extension DropInModule: CardComponentDelegate {
     }
     
     func didChangeCardBrand(_ value: [Adyen.CardBrand]?, component: Adyen.CardComponent) {
-        guard let value else { return }
-        sendEvent(event: .didBinLookup, body: value.map { [ Keys.brand : $0.type.rawValue] })
+        guard let value, !value.isEmpty else { return }
+        let jsonData = value.map { BinLookupDataDTO(brand: $0.type.rawValue).jsonObject }
+        sendEvent(event: .didBinLookup, body: jsonData)
     }
 }
