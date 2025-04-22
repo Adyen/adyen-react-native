@@ -42,7 +42,7 @@ internal final class DropInModule: BaseModule {
         guard let lookupCompliationHandler else { return }
 
         DispatchQueue.main.async {
-            if !success.boolValue, let message = address["message"] as? String {
+            if !success.boolValue, let message = address[Keys.message] as? String {
                 return lookupCompliationHandler(.failure(AddressError(message: message) ))
             }
 
@@ -102,6 +102,7 @@ internal final class DropInModule: BaseModule {
         component.delegate = BaseModule.session ?? self
         component.partialPaymentDelegate = BaseModule.session ?? self
         component.storedPaymentMethodsDelegate = BaseModule.session ?? self
+        component.cardComponentDelegate = self
         present(component: component)
     }
 
@@ -213,7 +214,7 @@ extension DropInModule: PartialPaymentDelegate {
 
         DispatchQueue.main.async {
             guard success.boolValue, let balance: Balance = try? balance?.decode() else {
-                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                let message = error?.value(forKey: Keys.message) as? String ?? "Unknown"
                 return checkBalanceHandler(.failure(NativeModuleError.balanceCheck(message: message)))
             }
             checkBalanceHandler(.success(balance))
@@ -231,7 +232,7 @@ extension DropInModule: PartialPaymentDelegate {
             return }
         DispatchQueue.main.async {
             guard success.boolValue, let order: PartialPaymentOrder = try? order?.decode() else {
-                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                let message = error?.value(forKey: Keys.message) as? String ?? "Unknown"
                 return requestOrderHandler(.failure(NativeModuleError.orderRequest(message: message)))
             }
             requestOrderHandler(.success(order))
@@ -261,4 +262,19 @@ extension DropInModule: PartialPaymentDelegate {
         }
     }
 
+}
+
+extension DropInModule: CardComponentDelegate {
+    func didSubmit(lastFour: String, finalBIN: String, component: Adyen.CardComponent) {
+        /* No Callback implemented */
+    }
+    
+    func didChangeBIN(_ value: String, component: Adyen.CardComponent) {
+        sendEvent(event: .didBinValue, body: value)
+    }
+    
+    func didChangeCardBrand(_ value: [Adyen.CardBrand]?, component: Adyen.CardComponent) {
+        guard let value else { return }
+        sendEvent(event: .didBinLookup, body: value.map { [ Keys.brand : $0.type.rawValue] })
+    }
 }

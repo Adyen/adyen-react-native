@@ -311,10 +311,17 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
     }
 
     override fun onBinLookup(data: List<BinLookupData>) {
-        val jsonString = Gson().toJson(data)
-        val jsonObject = JSONArray(jsonString)
-        reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
-            .emit(DID_BIN_LOOKUP, ReactNativeJson.convertJsonToArray(jsonObject))
+        when {
+            data.isEmpty() -> { return }
+            data.any { !it.isReliable } -> { return }
+            else -> {
+                val brandOnlyMap = data.map { BrandOnly(it.brand) }
+                val jsonString = Gson().toJson(brandOnlyMap)
+                val jsonObject = JSONArray(jsonString)
+                reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
+                    .emit(DID_BIN_LOOKUP, ReactNativeJson.convertJsonToArray(jsonObject))
+            }
+        }
     }
 
     override fun onRemove(storedPaymentMethod: StoredPaymentMethod) {
@@ -324,6 +331,8 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
             .emit(DID_DISABLE_STORED_PAYMENT_METHOD, ReactNativeJson.convertJsonToMap(jsonObject))
     }
 }
+
+private data class BrandOnly(val brand: String)
 
 internal interface ReactDropInCallback {
     fun onCancel()

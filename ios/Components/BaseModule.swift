@@ -241,6 +241,8 @@ extension BaseModule {
         static let sessionId = "sessionId"
         static let sessionData = "sessionData"
         static let order = "order"
+        static let message = "message"
+        static let brand = "brand"
     }
 }
 
