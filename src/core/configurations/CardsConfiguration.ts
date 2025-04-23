@@ -19,7 +19,7 @@ export interface CardsConfiguration {
    * @default "none"
    */
   addressVisibility?: AddressMode;
-  /** IIndicates if the toggle allowing the user to store the card payment
+  /** Indicates if the toggle allowing the user to store the card payment
    * method for future use should be displayed in the form.
    * @default true */
   showStorePaymentField?: boolean;
