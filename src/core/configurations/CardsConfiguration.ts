@@ -29,7 +29,7 @@ export interface CardsConfiguration {
    */
   hideCvcStoredCard?: boolean;
   /**
-   * Indicates whether to hide the Card Verification Code (CVC) input field when the user is entering a new card details.
+   * Indicates whether to hide the Card Verification Code (CVC) input field when the user is entering new card details.
    * @default false
    */
   hideCvc?: boolean;
