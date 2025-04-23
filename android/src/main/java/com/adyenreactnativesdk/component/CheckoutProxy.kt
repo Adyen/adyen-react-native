@@ -6,9 +6,8 @@
 
 package com.adyenreactnativesdk.component
 
+import com.adyen.checkout.card.BinLookupData
 import com.adyen.checkout.components.core.AddressLookupCallback
-import com.adyen.checkout.components.core.LookupAddress
-import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.dropin.BaseDropInServiceContract
@@ -20,7 +19,6 @@ import java.lang.ref.WeakReference
 
 class CheckoutProxy private constructor() {
     private var _componentListener = WeakReference<ComponentEventListener>(null)
-    private var _addressLookupCallback = WeakReference<AddressLookupCallback>(null)
 
     var sessionService: BaseDropInServiceContract? = null
 
@@ -32,17 +30,17 @@ class CheckoutProxy private constructor() {
             _componentListener = WeakReference(value)
         }
 
-    var addressLookupCallback: AddressLookupCallback?
-        get() = _addressLookupCallback.get()
-        set(value) {
-            _addressLookupCallback = WeakReference(value)
-        }
-
-    /** All events coming from Android SDK */
+    /** Base events coming from Components */
     interface ComponentEventListener: DropInServiceContract {
         fun onException(exception: CheckoutException)
         fun onFinished(result: SessionPaymentResult)
         fun onRemove(storedPaymentMethod: StoredPaymentMethod)
+    }
+
+    /** Events coming from Card Component */
+    interface CardComponentEventListener: ComponentEventListener {
+        fun onBinValue(binValue: String)
+        fun onBinLookup(data: List<BinLookupData>)
     }
 
     companion object {

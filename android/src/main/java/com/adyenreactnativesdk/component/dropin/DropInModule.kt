@@ -7,11 +7,11 @@
 package com.adyenreactnativesdk.component.dropin
 
 import android.util.Log
+import com.adyen.checkout.card.BinLookupData
 import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.BalanceResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
-import com.adyen.checkout.components.core.Order
 import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.StoredPaymentMethod
@@ -30,6 +30,7 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.component.model.BinLookupDataDTO
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Promise
@@ -39,10 +40,11 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import com.google.gson.Gson
+import org.json.JSONArray
 import org.json.JSONObject
 
 class DropInModule(context: ReactApplicationContext?) : BaseModule(context), ReactDropInCallback,
-    AddressLookupCallback {
+    AddressLookupCallback, CheckoutProxy.CardComponentEventListener {
 
     private fun getService(): BaseDropInServiceContract? {
         return if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
@@ -77,7 +79,6 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         }
 
         CheckoutProxy.shared.componentListener = this
-        CheckoutProxy.shared.addressLookupCallback = this
         AdyenCheckout.addDropInListener(this)
         val session = session
         if (session != null) {
@@ -303,6 +304,24 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
             .emit(DID_CONFIRM_ADDRESS, ReactNativeJson.convertJsonToMap(jsonObject))
         return true
+    }
+
+    override fun onBinValue(binValue: String) {
+        reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
+            .emit(DID_CHANGE_BIN_VALUE, binValue)
+    }
+
+    override fun onBinLookup(data: List<BinLookupData>) {
+        when {
+            data.isEmpty() -> { return }
+            else -> {
+                val brandOnlyMap = data.map { BinLookupDataDTO(it.brand) }
+                val jsonString = Gson().toJson(brandOnlyMap)
+                val jsonObject = JSONArray(jsonString)
+                reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
+                    .emit(DID_BIN_LOOKUP, ReactNativeJson.convertJsonToArray(jsonObject))
+            }
+        }
     }
 
     override fun onRemove(storedPaymentMethod: StoredPaymentMethod) {

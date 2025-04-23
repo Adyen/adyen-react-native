@@ -247,7 +247,6 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         session = null
         AdyenCheckout.removeComponent()
         AdyenCheckout.removeDropInListener()
-        CheckoutProxy.shared.addressLookupCallback = null
         CheckoutProxy.shared.componentListener = null
     }
 
@@ -262,6 +261,8 @@ abstract class BaseModule(context: ReactApplicationContext?) : ReactContextBaseJ
         const val DID_CHECK_BALANCE = "didCheckBalanceCallback"
         const val DID_REQUEST_ORDER = "didRequestOrderCallback"
         const val DID_CANCEL_ORDER = "didCancelOrderCallback"
+        const val DID_BIN_LOOKUP = "didBinLookupCallback"
+        const val DID_CHANGE_BIN_VALUE = "didChangeBinValueCallback"
 
 
         const val RESULT_CODE_PRESENTED = "PresentToShopper"
