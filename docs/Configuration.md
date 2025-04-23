@@ -57,6 +57,15 @@
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
 | `requestorAppUrl` | Alternative `returnURL` value that could be used for 3D Security 2 OOB flow. Always use a [Universal Link](https://developer.apple.com/ios/universal-links/) aka [App Link](https://developer.android.com/training/app-links#android-app-links). | No       |
 
+### Partial payments
+
+| Parameter        | Description                                                                                                                                                                        | Required |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `pinRequired`    | Indicates whether the security code field should be shown. Defaults to `true`.                                                                                                     | No       |
+| `onBalanceCheck` | Invoked when the payment component requires a balance check. Call the [paymentMethods/balance](https://docs.adyen.com/api-explorer/Checkout/68/post/paymentMethods/balance) API.   | No       |
+| `onOrderRequest` | Invoked when the payment component requires a partial payment order object. Call the [/orders](https://docs.adyen.com/api-explorer/Checkout/68/post/orders) API.                   | No       |
+| `onOrderCancel`  | Invoked when the payment component needs to cancel the order. Call the  [orders/cancel](https://docs.adyen.com/api-explorer/Checkout/68/post/orders/cancel) API.                   | No       |
+
 ### ApplePay component
 
 > [!IMPORTANT]
