@@ -11,7 +11,7 @@
 | `locale`      | Enforce [particular locale](Localization.md) to `DropIn/Component` UI. If not set, the default OS's locale is used.                                                                                                                                                                                                                                                                                                                                                                                                                                                            | No                                                                       |
 | `returnUrl`   | Url where the shopper should return after a payment is completed. Can use [Universal Links](https://developer.apple.com/ios/universal-links/)/[App Links](https://developer.android.com/training/app-links) or Custom URL Schemes. Maximum of 1024 characters.<br><br> - For **iOS**, any means of redirect can be used.<br><br> - For **Android Components**, any means of redirect can be used.<br><br> - For **Android Drop-in**, this value is automatically overridden by `AdyenCheckout`. Also, `await AdyenDropIn.getReturnURL()` can be used to extract a `returnUrl`. | Yes                                                                      |
 
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > `*` The titles of payment methods are fetched from the Adyen API and localized according to the `shopperLocale` value you set in your [/paymentMethods](https://docs.adyen.com/api-explorer/Checkout/68/post/paymentMethods#request-shopperLocale) or [/sessions](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) requests
 >
 > `* *` To show the amount on the **Pay** button both _amount_ and _countryCode_ must be set.
@@ -50,8 +50,8 @@
 | `supported`                                 | The list of allowed card types. By default, a list of `brands` from the payment method is used. Fallbacks to list of all known cards.                     | No       |
 | `onUpdateAddress: (prompt, lookup) => {}`   | The callback to provide `lookup` results for shopper-selected `prompt`. Used when `addressVisibility` is set to **lookup**                                | No       |
 | `onConfirmAddress: (address, lookup) => {}` | The callback to confirm the selected `address` to the `lookup`. Used when `addressVisibility` is set to **lookup**                                        | No       |
-| `onBinLookup: (binDatap) => {}`             | An optional callback that is triggered when the BIN lookup data is available.                                       | No       |
-| `onBinValue: (binValue) => {}`              | An optional callback that is triggered when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field in `CardComponent` changes.                          | No       |
+| `onBinLookup: (binData) => {}`              | An optional callback that is triggered when the BIN lookup data is available.                                                                             | No       |
+| `onBinValue: (binValue) => {}`              | An optional callback that is triggered when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field in `CardComponent` changes.           | No       |
 
 ### 3D Secure 2
 
