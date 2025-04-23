@@ -308,7 +308,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
 
     override fun onBinValue(binValue: String) {
         reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
-            .emit(DID_BIN_VALUE, binValue)
+            .emit(DID_CHANGE_BIN_VALUE, binValue)
     }
 
     override fun onBinLookup(data: List<BinLookupData>) {

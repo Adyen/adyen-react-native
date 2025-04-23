@@ -22,7 +22,7 @@ internal enum Events: String, CaseIterable {
     case didRequestOrder = "didRequestOrderCallback"
     case didCancelOrder = "didCancelOrderCallback"
     case didBinLookup = "didBinLookupCallback"
-    case didBinValue = "didBinValueCallback"
+    case didChangeBinValue = "didChangeBinValueCallback"
 
     static var coreEvents: [Events] { [.didFail, .didSubmit, .didProvide, .didComplete] }
 }

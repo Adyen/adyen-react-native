@@ -270,7 +270,7 @@ extension DropInModule: CardComponentDelegate {
     }
     
     func didChangeBIN(_ value: String, component: Adyen.CardComponent) {
-        sendEvent(event: .didBinValue, body: value)
+        sendEvent(event: .didChangeBinValue, body: value)
     }
     
     func didChangeCardBrand(_ value: [Adyen.CardBrand]?, component: Adyen.CardComponent) {

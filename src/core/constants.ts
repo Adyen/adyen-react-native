@@ -40,7 +40,7 @@ export enum Event {
   /** Event handler, called when the partial payment order was canceled. */
   onBinLookuop = `didBinLookupCallback`,
   /** Event handler, called when the partial payment order was canceled. */
-  onBinValue = `didBinValueCallback`,
+  onBinValue = `didChangeBinValueCallback`,
 }
 
 /** Collection of errors components can throw. */
