@@ -70,11 +70,7 @@ export function getWrapper(
       nativeModule: AdyenDropIn,
     });
   } else {
-    // New iDEAL not treated as INSTANT on Android
     var extendedComponentList = NATIVE_COMPONENTS;
-    if (Platform.OS === `android`) {
-      extendedComponentList.push(`ideal`);
-    }
     const nativeModule = extendedComponentList.includes(typeName)
       ? AdyenDropIn
       : AdyenInstant;
