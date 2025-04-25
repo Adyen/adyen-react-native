@@ -45,7 +45,12 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context),
         }
 
         CheckoutProxy.shared.componentListener = this
-        InstantFragment.show(
+        when (paymentMethod.type) {
+            "ideal" -> fragment = IdealFragment
+            else -> fragment = InstantFragment
+        }
+
+        fragment?.show(
             appCompatActivity.supportFragmentManager,
             checkoutConfiguration,
             paymentMethod,
@@ -58,7 +63,7 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context),
         try {
             val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
             val action = Action.SERIALIZER.deserialize(jsonObject)
-            InstantFragment.handle(appCompatActivity.supportFragmentManager, action)
+            fragment?.handle(appCompatActivity.supportFragmentManager, action)
         } catch (e: JSONException) {
             sendErrorEvent(ModuleException.InvalidAction(e))
         }
@@ -67,11 +72,13 @@ class InstantModule(context: ReactApplicationContext?) : BaseModule(context),
     @ReactMethod
     fun hide(success: Boolean?, message: ReadableMap?) {
         cleanup()
-        InstantFragment.hide(appCompatActivity.supportFragmentManager)
+        fragment?.hide(appCompatActivity.supportFragmentManager)
+        fragment = null
     }
 
     companion object {
         private const val COMPONENT_NAME = "AdyenInstant"
+        private var fragment: IInstantFragment? = null
     }
 
 }
