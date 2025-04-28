@@ -34,22 +34,16 @@ export function getWrapper(
     case 'drop-in':
     case 'adyendropin':
       return {
-        nativeComponent: new DropInComponentWrapper({
-          nativeModule: AdyenDropIn,
-        }),
+        nativeComponent: new DropInComponentWrapper(),
       };
     case 'applepay':
       return {
-        nativeComponent: new ActionHandlingComponentWrapper({
-          nativeModule: AdyenApplePay,
-        }),
+        nativeComponent: new ActionHandlingComponentWrapper(AdyenApplePay),
       };
     case 'paywithgoogle':
     case 'googlepay':
       return {
-        nativeComponent: new ActionHandlingComponentWrapper({
-          nativeModule: AdyenGooglePay,
-        }),
+        nativeComponent: new ActionHandlingComponentWrapper(AdyenGooglePay),
       };
     default:
       break;
@@ -65,18 +59,15 @@ export function getWrapper(
   }
 
   let nativeComponent: AdyenActionComponent & NativeModule;
+  // Currently this resolves address lookup and bin lookup callbacks for Dropin-based Card payment.
   if (ADDRESS_COMPONENTS.includes(typeName)) {
-    nativeComponent = new DropInComponentWrapper({
-      nativeModule: AdyenDropIn,
-    });
+    nativeComponent = new DropInComponentWrapper();
   } else {
     var extendedComponentList = NATIVE_COMPONENTS;
     const nativeModule = extendedComponentList.includes(typeName)
       ? AdyenDropIn
       : AdyenInstant;
-    nativeComponent = new ActionHandlingComponentWrapper({
-      nativeModule: nativeModule,
-    });
+    nativeComponent = new ActionHandlingComponentWrapper(nativeModule);
   }
 
   return {
