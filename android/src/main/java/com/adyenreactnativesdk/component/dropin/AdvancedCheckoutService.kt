@@ -13,6 +13,7 @@ import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.Order
 import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.dropin.DropInService
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.CheckoutProxy.CardComponentEventListener
@@ -75,6 +76,11 @@ open class AdvancedCheckoutService : DropInService() {
     override fun onBinValue(binValue: String) {
         val listener = CheckoutProxy.shared.componentListener as? CardComponentEventListener
         listener?.onBinValue(binValue)
+    }
+
+    override fun onRemoveStoredPaymentMethod(storedPaymentMethod: StoredPaymentMethod) {
+        val listener = CheckoutProxy.shared.componentListener as? CardComponentEventListener
+        listener?.onRemove(storedPaymentMethod)
     }
 
     companion object {
