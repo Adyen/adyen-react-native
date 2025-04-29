@@ -251,7 +251,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         nativeComponent.events.includes(Event.onRequestOrder) &&
         nativeComponent.events.includes(Event.onCancelOrder)
       ) {
-        let component = nativeComponent as unknown as PartialPaymentComponent;
+        const component = nativeComponent as unknown as PartialPaymentComponent;
         subscriptions.current.push(
           eventEmitter.addListener(
             Event.onCheckBalance,
