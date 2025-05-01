@@ -28,7 +28,7 @@ Provide a specific locale to `configuration.locale` for `AdyenCheckout`.
 
 Add new locales in Xcode and Android Studio respectively. Provide a translation for all necessary keys.
 
-List of currently avaialble locales:
+List of currently available locales:
 
 | Language               | Locale code | Fallback |
 | ---------------------- | ----------- | :------: |
