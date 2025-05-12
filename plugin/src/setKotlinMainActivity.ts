@@ -5,9 +5,18 @@ const breakingChangeVersion = 50
 const onActivityResultDeprecationVersion = 52 
 
 export function setKotlinMainActivity(contents: string, sdkVersion: number): string {
+  // imports
+  let imports = 
+  'import com.adyenreactnativesdk.AdyenCheckout\n' +
+  'import android.content.Intent\n';
+
+  if (sdkVersion >= onActivityResultDeprecationVersion) {
+   imports += 'import android.app.ComponentCaller\n';
+  }
+
   contents = contents.replace(
     'class MainActivity : ReactActivity() {',
-    'import com.adyenreactnativesdk.AdyenCheckout\nimport android.content.Intent\nclass MainActivity : ReactActivity() {'
+    imports + 'class MainActivity : ReactActivity() {'
   );
 
   // on Create
