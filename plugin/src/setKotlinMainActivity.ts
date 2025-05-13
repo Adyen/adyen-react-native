@@ -5,9 +5,23 @@ const breakingChangeVersion = 50
 const onActivityResultDeprecationVersion = 52 
 
 export function setKotlinMainActivity(contents: string, sdkVersion: number): string {
+  let importLines = [
+      'import com.adyenreactnativesdk.AdyenCheckout',
+      'import android.content.Intent']
+
+  if (sdkVersion >= onActivityResultDeprecationVersion) {
+      importLines.push('import android.app.ComponentCaller');
+  }
+
+  // Filter out imports that are already present
+  const uniqueImports = importLines.filter(line => !contents.includes(line));
+
+  // Join and prepare the import block
+  const importBlock = uniqueImports.join('\n') + '\n';
+
   contents = contents.replace(
     'class MainActivity : ReactActivity() {',
-    'import com.adyenreactnativesdk.AdyenCheckout\nimport android.content.Intent\nclass MainActivity : ReactActivity() {'
+    importBlock + 'class MainActivity : ReactActivity() {'
   );
 
   // on Create
@@ -35,11 +49,11 @@ export function setKotlinMainActivity(contents: string, sdkVersion: number): str
     contents = contents.replace(
       /}\n$/,
       '\n' +
-        '  ' + onNewIntentSignature + '\n' +
-        '    super.onNewIntent(intent)\n' +
-        '    ' + onNewIntentMethod + '\n' +
-        '  }\n' +
-        '}\n'
+      '  ' + onNewIntentSignature + '\n' +
+      '    super.onNewIntent(intent)\n' +
+      '    ' + onNewIntentMethod + '\n' +
+      '  }\n' +
+      '}\n'
     );
   }
 
@@ -62,11 +76,11 @@ export function setKotlinMainActivity(contents: string, sdkVersion: number): str
     contents = contents.replace(
       /}\n$/,
       '\n' +
-        '  ' + onActivityResultSignature + '\n' +
-        '    ' + onActivityResultSuper + '\n' +
-        '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
-        '  }\n' +
-        '}\n'
+      '  ' + onActivityResultSignature + '\n' +
+      '    ' + onActivityResultSuper + '\n' +
+      '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
+      '  }\n' +
+      '}\n'
     );
   }
 
