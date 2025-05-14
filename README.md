@@ -4,9 +4,10 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
 > [!Warning]
-> **For versions 0.74+**:</br>
-> This SDK is not compatible with New Architecture [Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174) (yet). To disable it, adjust your `MainApplication.kt` code:
-> 
+> **React Native versions 0.74 and above:**:</br>
+> This SDK, when used with the **[Advanced flow](https://docs.adyen.com/online-payments/build-your-integration/advanced-flow/?platform=React+Native&integration=Drop-in&version=2.5.0)**, is currently **not compatible** with React Native's **New Architecture** on Android when **[Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174)** is enabled.
+
+To disable Bridgeless mode, please modify your `MainApplication.kt` file as follows:
 
 ```diff
 override fun onCreate() {
