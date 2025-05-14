@@ -5,7 +5,20 @@
 
 > [!Warning]
 > **For versions 0.74+**:</br>
-> This SDK is not compatible with New Archetecture [Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174) (yet).
+> This SDK is not compatible with New Architecture [Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174) (yet). To disable it, adjust your `MainActivity`:
+> 
+
+```diff
+override fun onCreate() {
+  super.onCreate()
+  SoLoader.init(this, false)
+  if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+  // If you opted-in for the New Architecture, we load the native entry point for this app.
++   load(bridgelessEnabled=false)
+-   load()
+  }
+}
+```
 
 > [!Note]
 >
