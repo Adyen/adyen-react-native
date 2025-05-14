@@ -5,7 +5,7 @@
 
 > [!Warning]
 > **For versions 0.74+**:</br>
-> This SDK is not compatible with New Architecture [Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174) (yet). To disable it, adjust your `MainActivity`:
+> This SDK is not compatible with New Architecture [Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174) (yet). To disable it, adjust your `MainApplication.kt` code:
 > 
 
 ```diff
