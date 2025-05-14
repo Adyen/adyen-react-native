@@ -3,6 +3,24 @@
 [![Adyen Android](https://img.shields.io/badge/android-v5.10.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.10.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
+> [!Warning]
+> **React Native versions 0.74 and above:**:</br>
+> This SDK, when used with the **[Advanced flow](https://docs.adyen.com/online-payments/build-your-integration/advanced-flow/?platform=React+Native&integration=Drop-in&version=2.5.0)**, is currently **not compatible** with React Native's **New Architecture** on Android when **[Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174)** is enabled.
+
+To disable Bridgeless mode, please modify your `MainApplication.kt` file as follows:
+
+```diff
+override fun onCreate() {
+  super.onCreate()
+  SoLoader.init(this, false)
+  if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+  // If you opted-in for the New Architecture, we load the native entry point for this app.
++   load(bridgelessEnabled=false)
+-   load()
+  }
+}
+```
+
 > [!Note]
 >
 > For compatibility with officially unsupported versions below v0.74 check [this document](docs/Compatibility.md).
