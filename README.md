@@ -3,6 +3,10 @@
 [![Adyen Android](https://img.shields.io/badge/android-v5.10.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.10.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
+> [!Warning]
+> **For versions 0.74+**:</br>
+> This SDK is not compatible with New Archetecture [Bridgeless mode](https://github.com/reactwg/react-native-new-architecture/discussions/174) (yet).
+
 > [!Note]
 >
 > For compatibility with officially unsupported versions below v0.74 check [this document](docs/Compatibility.md).
