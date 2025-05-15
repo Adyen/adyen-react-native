@@ -8,6 +8,7 @@ package com.adyenreactnativesdk.component.dropin
 
 import android.util.Log
 import com.adyen.checkout.card.BinLookupData
+import com.adyen.checkout.components.core.AddressData
 import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.BalanceResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
@@ -30,6 +31,7 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.component.model.AddressDataAdapter
 import com.adyenreactnativesdk.component.model.BinLookupDataDTO
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
@@ -39,7 +41,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -140,7 +142,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
 
         try {
             val jsonString = ReactNativeJson.convertArrayToJson(results).toString()
-            val addresses = Gson().fromJson(jsonString, Array<LookupAddress>::class.java)
+            val addresses = gson.fromJson(jsonString, Array<LookupAddress>::class.java)
             val result = AddressLookupDropInServiceResult.LookupResult(addresses.toList())
             listener.sendAddressLookupResult(result)
         } catch (error: Throwable) {
@@ -163,7 +165,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         if (success) {
             try {
                 val jsonString = ReactNativeJson.convertMapToJson(address).toString()
-                val lookupAddress = Gson().fromJson(jsonString, LookupAddress::class.java)
+                val lookupAddress = gson.fromJson(jsonString, LookupAddress::class.java)
                 listener.sendAddressLookupResult(
                     AddressLookupDropInServiceResult.LookupComplete(
                         lookupAddress
@@ -291,6 +293,10 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
         private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
+
+        private val gson = GsonBuilder()
+            .registerTypeAdapter(AddressData::class.java, AddressDataAdapter())
+            .create()
     }
 
     override fun onQueryChanged(query: String) {
@@ -299,7 +305,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
     }
 
     override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean {
-        val jsonString = Gson().toJson(lookupAddress)
+        val jsonString = gson.toJson(lookupAddress)
         val jsonObject = JSONObject(jsonString)
         reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
             .emit(DID_CONFIRM_ADDRESS, ReactNativeJson.convertJsonToMap(jsonObject))
@@ -316,7 +322,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
             data.isEmpty() -> { return }
             else -> {
                 val brandOnlyMap = data.map { BinLookupDataDTO(it.brand) }
-                val jsonString = Gson().toJson(brandOnlyMap)
+                val jsonString = gson.toJson(brandOnlyMap)
                 val jsonObject = JSONArray(jsonString)
                 reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
                     .emit(DID_BIN_LOOKUP, ReactNativeJson.convertJsonToArray(jsonObject))
