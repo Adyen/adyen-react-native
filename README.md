@@ -55,7 +55,9 @@ yarn add @adyen/react-native
 
 ## Expo integration
 
-> ❕ Please pay attention that this library is not compatible with ExpoGo. You can use it only with **Expo managed workflow**.
+> [!IMPORTANT]
+>
+> This library is not compatible with Expo Go. It is designed exclusively for use with the [Continuous Native Generation](https://docs.expo.dev/workflow/overview/#continuous-native-generation-cng).
 
 Add `@adyen/react-native` plugin to your `app.json`;
 
