@@ -56,7 +56,7 @@
     "typescript": "^5.0.2"
   },
   "peerDependencies": {
-    "expo": ">=47",
+    "expo": ">=52",
     "react": "*",
     "react-native": "*"
   },
