@@ -26,14 +26,36 @@ const PaymentMethods = ({showComponents}) => {
   const isNotReady = paymentMethodsResponse === undefined;
   const isDarkMode = useColorScheme() === 'dark';
 
-  const subtitle = (
+  const storedSubtitle = (
     /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm,
   ) => {
     switch (pm.type) {
       case 'scheme':
-        return `**** **** **** ${pm.lastFour} (exp ${pm.expiryMonth}/${pm.expiryYear})`;
+        return `exp ${pm.expiryMonth}/${pm.expiryYear}`;
       default:
-        return `${pm.id}`;
+        return undefined;
+    }
+  };
+
+  const storedTitle = (
+    /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm,
+  ) => {
+    switch (pm.type) {
+      case 'scheme':
+        return `**** **** **** ${pm.lastFour}`;
+      default:
+        return `${pm.name}`;
+    }
+  };
+
+  const storedIcon = (
+    /** @type {import('@adyen/react-native').StoredPaymentMethod} */ pm,
+  ) => {
+    switch (pm.type) {
+      case 'scheme':
+        return `${pm.brand ?? 'card'}`;
+      default:
+        return `${pm.type}`;
     }
   };
 
@@ -58,13 +80,12 @@ const PaymentMethods = ({showComponents}) => {
                   Stored payments
                 </Text>
                 {storedPaymentMethods.map(p => {
-                  const iconName = p.type === 'scheme' ? 'card' : p.type;
                   return (
                     <View key={`${p.id}`}>
                       <PaymentMethodButton
-                        title={`${p.name}`}
-                        subtitle={subtitle(p)}
-                        icon={iconName}
+                        title={storedTitle(p)}
+                        subtitle={storedSubtitle(p)}
+                        icon={storedIcon(p)}
                         onPress={async () => {
                           try {
                             let cvv =
