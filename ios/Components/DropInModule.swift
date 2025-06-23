@@ -213,9 +213,9 @@ extension DropInModule: PartialPaymentDelegate {
         guard let checkBalanceHandler else { return }
 
         DispatchQueue.main.async {
-            guard let balanceDict = balance,
+            guard success.boolValue, let balanceDict = balance,
                   let balance = try? balanceDict.decode() as Balance else {
-                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                let message = error?.value(forKey: Keys.message) as? String ?? "Unknown"
                 return checkBalanceHandler(.failure(NativeModuleError.balanceCheck(message: message)))
             }
             checkBalanceHandler(.success(balance))
@@ -232,9 +232,9 @@ extension DropInModule: PartialPaymentDelegate {
         guard let requestOrderHandler else {
             return }
         DispatchQueue.main.async {
-            guard let orderDict = order,
+            guard success.boolValue, let orderDict = order,
                   let order = try? orderDict.decode() as PartialPaymentOrder else {
-                let message = error?.value(forKey: "message") as? String ?? "Unknown"
+                let message = error?.value(forKey: Keys.message) as? String ?? "Unknown"
                 return requestOrderHandler(.failure(NativeModuleError.orderRequest(message: message)))
             }
             requestOrderHandler(.success(order))
