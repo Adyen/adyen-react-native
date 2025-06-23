@@ -10,7 +10,8 @@ import Foundation
 internal extension Encodable {
     var jsonObject: [String: Any] {
         guard let data = try? JSONEncoder().encode(self),
-              let object = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+              let raw = try? JSONSerialization.jsonObject(with: data, options: []),
+              let object = raw as? [String: Any] else {
             return [:]
         }
 
