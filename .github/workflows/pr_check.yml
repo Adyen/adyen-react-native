@@ -1,4 +1,7 @@
 name: Scan PR
+permissions:
+  contents: read
+  pull-requests: write
 
 on:
   pull_request:
@@ -36,7 +39,7 @@ jobs:
     needs: [run-sonar]
     if: always()
     env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Delete temporary Node cache
