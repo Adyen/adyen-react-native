@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Default theme for Adyen library. Could be overridden on the app level with a descendant of Theme.MaterialComponents -->
+    <!-- Default theme for Adyen library. Could be overridden on the app level -->
     <style name="AdyenCheckout" parent="Adyen">
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>>
