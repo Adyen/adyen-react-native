@@ -3,5 +3,5 @@
     <!-- Default theme for Adyen library. Could be overridden on the app level -->
     <style name="AdyenCheckout" parent="Adyen">
         <item name="android:statusBarColor">@android:color/transparent</item>
-    </style>>
+    </style>
 </resources>
