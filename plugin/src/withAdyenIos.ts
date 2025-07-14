@@ -8,6 +8,9 @@ import { AdyenPluginProps } from './withAdyen';
 import { setImport } from './setImport';
 import { setApplicationOpenUrl } from './setApplicationOpenUrl';
 import { setApplicationContinueUserActivity } from './setApplicationContinueUserActivity';
+import { setImportSwift } from './setImportSwift';
+import { setApplicationOpenUrlSwift } from './setApplicationOpenUrlSwift';
+import { setApplicationContinueUserActivitySwift } from './setApplicationContinueUserActivitySwift';
 
 export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
   config,
@@ -18,9 +21,20 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
     if (appDelegate.includes('ADYRedirectComponent')) {
       return newConfig;
     }
-    appDelegate = setImport(appDelegate, useFrameworks);
-    appDelegate = setApplicationOpenUrl(appDelegate);
-    appDelegate = setApplicationContinueUserActivity(appDelegate);
+    
+    // Detect if it's Swift or Objective-C
+    const isSwift = appDelegate.includes('import UIKit');
+    
+    if (isSwift) {
+      appDelegate = setImportSwift(appDelegate);
+      appDelegate = setApplicationOpenUrlSwift(appDelegate);
+      appDelegate = setApplicationContinueUserActivitySwift(appDelegate);
+    } else {
+      appDelegate = setImport(appDelegate, useFrameworks);
+      appDelegate = setApplicationOpenUrl(appDelegate);
+      appDelegate = setApplicationContinueUserActivity(appDelegate);
+    }
+    
     newConfig.modResults.contents = appDelegate;
     return newConfig;
   });
