@@ -38,6 +38,7 @@ Pods/
 .gradle
 local.properties
 *.hprof
+coverage
 
 # node.js
 node_modules/
@@ -60,3 +61,4 @@ example/yarn.lock
 
 # NPM
 example/package-lock.json
+

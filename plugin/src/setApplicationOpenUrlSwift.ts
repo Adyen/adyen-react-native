@@ -3,15 +3,17 @@ export function setApplicationOpenUrlSwift(contents: string): string {
   const existingFunction = contents.match(/func application\(_ app: UIApplication, open url: URL, options: \[UIApplication.OpenURLOptionsKey : Any\] = \[:\]\) -> Bool/g);
   
   if (existingFunction) {
-    // If the function exists, add our RedirectComponent call
-    return contents.replace(/func application\(_ app: UIApplication, open url: URL, options: \[UIApplication.OpenURLOptionsKey : Any\] = \[:\]\) -> Bool\s*\{\s*return/,
-      `func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-        return RedirectComponent.applicationDidOpen(from: url) ||`);
+    // If the function exists, find the return statement and add our call
+    const returnPattern = /return\s+super\.application\(app, open: url, options: options\)\s+\|\|\s+RCTLinkingManager\.application\(app, open: url, options: options\)/g;
+    if (contents.match(returnPattern)) {
+      return contents.replace(returnPattern,
+        'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)');
+    }
   }
 
   // If the function doesn't exist, create it with the correct Expo pattern
   const openUrlFunction = `    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-        return super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options) || RedirectComponent.applicationDidOpen(from: url)
+        return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
     }`;
 
   // Find the end of the AppDelegate class
