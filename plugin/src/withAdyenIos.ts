@@ -21,10 +21,9 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
     if (appDelegate.includes('ADYRedirectComponent')) {
       return newConfig;
     }
-    
     // Detect if it's Swift or Objective-C
-    const isSwift = appDelegate.includes('import UIKit');
-    
+    const isSwift = appDelegate.includes('import Expo');
+
     if (isSwift) {
       appDelegate = setImportSwift(appDelegate);
       appDelegate = setApplicationOpenUrlSwift(appDelegate);
@@ -34,7 +33,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
       appDelegate = setApplicationOpenUrl(appDelegate);
       appDelegate = setApplicationContinueUserActivity(appDelegate);
     }
-    
+
     newConfig.modResults.contents = appDelegate;
     return newConfig;
   });

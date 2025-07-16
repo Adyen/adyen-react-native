@@ -1,9 +1,6 @@
 export function setImportSwift(contents: string): string {
   const importLine = 'import AdyenReactNative';
 
-  contents = contents.replace(
-    'import UIKit\n',
-    `import UIKit\n\n${importLine}\n`
-  );
+  contents = contents.replace('import Expo', `import Expo\n${importLine}`);
   return contents;
 }

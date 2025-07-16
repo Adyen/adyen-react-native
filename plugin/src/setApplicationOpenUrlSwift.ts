@@ -1,26 +1,39 @@
 export function setApplicationOpenUrlSwift(contents: string): string {
   // Check if the function exists
-  const existingFunction = contents.match(/func application\(_ app: UIApplication, open url: URL, options: \[UIApplication.OpenURLOptionsKey : Any\] = \[:\]\) -> Bool/g);
-  
+  const existingFunction = contents.match(
+    /public override func application\(\s* _ app: UIApplication,\s* open url: URL,\s* options: \[UIApplication\.OpenURLOptionsKey: Any\] = \[:\]\s* \) -> Bool {/g
+  );
+
   if (existingFunction) {
     // If the function exists, find the return statement and add our call
-    const returnPattern = /return\s+super\.application\(app, open: url, options: options\)\s+\|\|\s+RCTLinkingManager\.application\(app, open: url, options: options\)/g;
+    const returnPattern =
+      /return\s+super\.application\(app, open: url, options: options\)\s+\|\|\s+RCTLinkingManager\.application\(app, open: url, options: options\)/g;
     if (contents.match(returnPattern)) {
-      return contents.replace(returnPattern,
-        'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)');
+      return contents.replace(
+        returnPattern,
+        'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)'
+      );
     }
   }
 
   // If the function doesn't exist, create it with the correct Expo pattern
-  const openUrlFunction = `    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+  const openUrlFunction = `    public override func application( _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:] ) -> Bool {
         return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
     }`;
 
   // Find the end of the AppDelegate class
-  const classEndIndex = contents.indexOf('}', contents.indexOf('class AppDelegate'));
-  
+  const classEndIndex = contents.indexOf(
+    '}',
+    contents.indexOf('class AppDelegate')
+  );
+
   // Insert the function before the closing brace
-  contents = contents.slice(0, classEndIndex) + '\n' + openUrlFunction + '\n' + contents.slice(classEndIndex);
-  
+  contents =
+    contents.slice(0, classEndIndex) +
+    '\n' +
+    openUrlFunction +
+    '\n' +
+    contents.slice(classEndIndex);
+
   return contents;
 }
