@@ -12,12 +12,12 @@ describe('setApplicationContinueUserActivitySwift', () => {
       /public override func application\(\s* _ application: UIApplication,\s* continue userActivity: NSUserActivity,\s* restorationHandler: @escaping \(\[UIUserActivityRestoring]\?\) -> Void\s* \) -> Bool {/;
     const expectedReturn =
       /return super\.application\(application, continue: userActivity, restorationHandler: restorationHandler\) \|\| result/;
-    const expectedAdyenRedirect =
+    const expectedExpoRedirect =
       /let result = RCTLinkingManager\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/;
 
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
-    expect(result).toMatch(expectedAdyenRedirect);
+    expect(result).toMatch(expectedExpoRedirect);
   });
 
   it('should create new function with RedirectComponent first', () => {
@@ -27,12 +27,16 @@ describe('setApplicationContinueUserActivitySwift', () => {
       /public override func application\(\s* _ application: UIApplication,\s* continue userActivity: NSUserActivity,\s* restorationHandler: @escaping \(\[UIUserActivityRestoring]\?\) -> Void\s* \) -> Bool {/;
     const expectedReturn =
       /return super\.application\(application, continue: userActivity, restorationHandler: restorationHandler\) \|\| result/;
-    const expectedAdyenRedirect =
+    const expectedExpoRedirect =
       /let result = RCTLinkingManager\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/;
 
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
-    expect(result).toMatch(expectedAdyenRedirect);
+    expect(result).toMatch(expectedExpoRedirect);
+
+    const intaktDelegateClass =
+      /class ReactNativeDelegate\: ExpoReactNativeFactoryDelegate \{\s*override func sourceURL\(for bridge: RCTBridge\) \-\> URL\? \{\s*bridge\.bundleURL \?\? bundleURL\(\)\s*}\s*}/;
+    expect(result).toMatch(intaktDelegateClass);
   });
 
   it('should handle malformed return statement gracefully', () => {
@@ -42,12 +46,9 @@ describe('setApplicationContinueUserActivitySwift', () => {
     const functionDefinition =
       /public override func application\(\s* _ application: UIApplication,\s* continue userActivity: NSUserActivity,\s* restorationHandler: @escaping \(\[UIUserActivityRestoring]\?\) -> Void\s* \) -> Bool {/;
     const expectedReturn =
-      /return super\.application\(application, continue: userActivity, restorationHandler: restorationHandler\) \|\| result/;
-    const expectedAdyenRedirect =
-      /let result = RCTLinkingManager\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/;
+      /return super\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/;
 
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
-    expect(result).toMatch(expectedAdyenRedirect);
   });
 });

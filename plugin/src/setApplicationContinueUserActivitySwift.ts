@@ -8,15 +8,25 @@ export function setApplicationContinueUserActivitySwift(
 
   if (existingFunction) {
     // If the function exists, find the return statement and add our call
-    const oldPattern =
+    const defaultTemplatePattern =
       /let result = RCTLinkingManager\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/g;
-    if (contents.match(oldPattern)) {
+    const customTemplatePattern =
+      /return super\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/g;
+    if (contents.match(defaultTemplatePattern)) {
       const newPattern = `if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
       return true
     }
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)`;
-      return contents.replace(oldPattern, newPattern);
+      return contents.replace(defaultTemplatePattern, newPattern);
+    } else if (contents.match(customTemplatePattern)) {
+      const newPattern = `if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
+      return true
     }
+    return super.application(application, continue: userActivity, restorationHandler: restorationHandler)`;
+      return contents.replace(customTemplatePattern, newPattern);
+    }
+
+    return contents;
   }
 
   // If the function doesn't exist, create it with the correct Expo pattern
@@ -29,8 +39,8 @@ export function setApplicationContinueUserActivitySwift(
   }`;
 
   // Find the end of the AppDelegate class
-  const classEndIndex = contents.lastIndexOf(
-    '}',
+  const classEndIndex = contents.indexOf(
+    '\n}',
     contents.indexOf('class AppDelegate')
   );
 

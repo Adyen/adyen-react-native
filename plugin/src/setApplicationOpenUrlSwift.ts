@@ -6,24 +6,32 @@ export function setApplicationOpenUrlSwift(contents: string): string {
 
   if (existingFunction) {
     // If the function exists, find the return statement and add our call
-    const returnPattern =
+    const defaultTemplatePattern =
       /return\s+super\.application\(app, open: url, options: options\)\s+\|\|\s+RCTLinkingManager\.application\(app, open: url, options: options\)/g;
-    if (contents.match(returnPattern)) {
+    const customTemplatePattern =
+      /return\s+super\.application\(app, open: url, options: options\)\s/g;
+    if (contents.match(defaultTemplatePattern)) {
       return contents.replace(
-        returnPattern,
+        defaultTemplatePattern,
         'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)'
       );
+    } else if (contents.match(customTemplatePattern)) {
+      return contents.replace(
+        customTemplatePattern,
+        'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options)'
+      );
     }
+    return contents;
   }
 
   // If the function doesn't exist, create it with the correct Expo pattern
-  const openUrlFunction = `    public override func application( _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:] ) -> Bool {
-        return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
+  const openUrlFunction = `   public override func application( _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:] ) -> Bool {
+      return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
     }`;
 
   // Find the end of the AppDelegate class
   const classEndIndex = contents.indexOf(
-    '}',
+    '\n}',
     contents.indexOf('class AppDelegate')
   );
 

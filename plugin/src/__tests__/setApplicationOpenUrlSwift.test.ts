@@ -25,6 +25,10 @@ describe('setApplicationOpenUrlSwift', () => {
       /return RedirectComponent\.applicationDidOpen\(from: url\) \|\| super\.application\(app, open: url, options: options\) \|\| RCTLinkingManager\.application\(app, open: url, options: options\)/;
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
+
+    const intaktDelegateClass =
+      /class ReactNativeDelegate\: ExpoReactNativeFactoryDelegate \{\s*override func sourceURL\(for bridge: RCTBridge\) \-\> URL\? \{\s*bridge\.bundleURL \?\? bundleURL\(\)\s*}\s*}/;
+    expect(result).toMatch(intaktDelegateClass);
   });
 
   it('should handle malformed return statement gracefully', () => {
@@ -33,7 +37,7 @@ describe('setApplicationOpenUrlSwift', () => {
     const functionDefinition =
       /public override func application\(\s* _ app: UIApplication,\s* open url: URL,\s* options: \[UIApplication\.OpenURLOptionsKey: Any\] = \[:\]\s* \) -> Bool {/;
     const expectedReturn =
-      /return RedirectComponent\.applicationDidOpen\(from: url\) \|\| super\.application\(app, open: url, options: options\) \|\| RCTLinkingManager\.application\(app, open: url, options: options\)/;
+      /return RedirectComponent\.applicationDidOpen\(from: url\) \|\| super\.application\(app, open: url, options: options\)/;
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
   });
