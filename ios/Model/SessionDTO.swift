@@ -37,12 +37,3 @@ struct SessionDTO {
         case id, sessionData, amount, expiresAt, paymentMethods, configuration
     }
 }
-
-extension PaymentMethods {
-    var jsonObject: [String: Any] {
-        var dict = [String: Any]()
-        dict["storedPaymentMethods"] = self.stored.map(\.jsonObject)
-        dict["paymentMethods"] = self.regular.map(\.jsonObject)
-        return dict
-    }
-}
