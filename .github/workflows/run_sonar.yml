@@ -42,6 +42,10 @@ jobs:
           name: kotlin-coverage-report
           path: reports
 
+      - name: Make JS coverage report
+        run: |
+          npx jest --coverage --coverageDirectory=reports
+
       - name: Run Sonar
         run: |
           git fetch --unshallow --no-tags
