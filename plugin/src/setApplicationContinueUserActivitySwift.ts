@@ -12,13 +12,13 @@ export function setApplicationContinueUserActivitySwift(
       /let result = RCTLinkingManager\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/g;
     const customTemplatePattern =
       /return super\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/g;
-    if (contents.match(defaultTemplatePattern)) {
+    if (defaultTemplatePattern.test(contents)) {
       const newPattern = `if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
       return true
     }
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)`;
       return contents.replace(defaultTemplatePattern, newPattern);
-    } else if (contents.match(customTemplatePattern)) {
+    } else if (customTemplatePattern.test(contents)) {
       const newPattern = `if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
       return true
     }

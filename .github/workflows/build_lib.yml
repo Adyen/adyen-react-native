@@ -34,6 +34,16 @@ jobs:
       - name: Build library
         run: yarn install --frozen-lockfile
 
+      - name: Make JS coverage report
+        run: |
+          npx jest --coverage --coverageDirectory=reports
+
+      - name: Archive JS Coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-coverage-report
+          path: reports
+
       - name: Build Example app
         working-directory: example
         run: yarn install

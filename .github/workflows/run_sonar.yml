@@ -42,9 +42,11 @@ jobs:
           name: kotlin-coverage-report
           path: reports
 
-      - name: Make JS coverage report
-        run: |
-          npx jest --coverage --coverageDirectory=reports
+      - name: Download JS coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: js-coverage-report
+          path: reports          
 
       - name: Run Sonar
         run: |

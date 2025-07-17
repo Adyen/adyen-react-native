@@ -10,12 +10,12 @@ export function setApplicationOpenUrlSwift(contents: string): string {
       /return\s+super\.application\(app, open: url, options: options\)\s+\|\|\s+RCTLinkingManager\.application\(app, open: url, options: options\)/g;
     const customTemplatePattern =
       /return\s+super\.application\(app, open: url, options: options\)\s/g;
-    if (contents.match(defaultTemplatePattern)) {
+    if (defaultTemplatePattern.test(contents)) {
       return contents.replace(
         defaultTemplatePattern,
         'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)'
       );
-    } else if (contents.match(customTemplatePattern)) {
+    } else if (customTemplatePattern.test(contents)) {
       return contents.replace(
         customTemplatePattern,
         'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options)'
