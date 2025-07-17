@@ -158,7 +158,6 @@ describe('withAdyenIos', () => {
       modResults: { contents: '// AppDelegate content' },
     };
 
-    console.log('no merchantIdentifier');
     withAdyenIos(config, {
       merchantIdentifier: '',
       useFrameworks: false,
@@ -169,9 +168,28 @@ describe('withAdyenIos', () => {
     expect(setEntitlements).not.toHaveBeenCalled();
   });
 
-  it('should skip modification if AppDelegate is already configured', async () => {
+  it('should skip modification if AppDelegate is already configured for Obj-c', async () => {
     const originalContent =
-      'import AdyenReactNative\n// Already contains ADYRedirectComponent';
+      '#import <adyen-react-native/ADYRedirectComponent.h>\n// Already contains ADYRedirectComponent';
+    const config = {
+      name: 'test-app',
+      slug: 'test-app',
+      modResults: { contents: originalContent },
+    };
+
+    const result = withAdyenIos(config, mockPluginSettings);
+
+    // Check that no modifiers were called
+    expect(setImport).not.toHaveBeenCalled();
+    expect(setImportSwift).not.toHaveBeenCalled();
+    // ...and so on for all other modifiers
+
+    // Check that the content is unchanged
+    expect(result.modResults.contents).toBe(originalContent);
+  });
+
+  it('should skip modification if AppDelegate is already configured for Swift', async () => {
+    const originalContent = 'import Adyen\n// Already contains Adyen';
     const config = {
       name: 'test-app',
       slug: 'test-app',

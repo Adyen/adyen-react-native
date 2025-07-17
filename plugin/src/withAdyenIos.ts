@@ -18,7 +18,10 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
 ) => {
   config = withAppDelegate(config, (newConfig) => {
     var appDelegate = newConfig.modResults.contents;
-    if (appDelegate.includes('ADYRedirectComponent')) {
+    if (
+      appDelegate.includes('ADYRedirectComponent') ||
+      appDelegate.includes('import Adyen')
+    ) {
       return newConfig;
     }
     // Detect if it's Swift or Objective-C
@@ -41,7 +44,6 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
   });
 
   if (merchantIdentifier || merchantIdentifier !== '') {
-    console.log(merchantIdentifier);
     config = withEntitlementsPlist(config, (newConfig) => {
       const entitlements = newConfig.modResults;
       newConfig.modResults = setEntitlements(entitlements, merchantIdentifier);
