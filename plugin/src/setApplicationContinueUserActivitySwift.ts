@@ -1,3 +1,5 @@
+import { findClassEndIndex } from './utils/findClassEndIndex';
+
 export function setApplicationContinueUserActivitySwift(
   contents: string
 ): string {
@@ -39,10 +41,7 @@ export function setApplicationContinueUserActivitySwift(
   }`;
 
   // Find the end of the AppDelegate class
-  const classEndIndex = contents.indexOf(
-    '\n}',
-    contents.indexOf('class AppDelegate')
-  );
+  const classEndIndex = findClassEndIndex(contents, 'AppDelegate');
 
   // Insert the function before the closing brace
   contents =

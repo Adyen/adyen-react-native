@@ -1,3 +1,5 @@
+import { findClassEndIndex } from './utils/findClassEndIndex';
+
 export function setApplicationOpenUrlSwift(contents: string): string {
   // Check if the function exists
   const existingFunction = contents.match(
@@ -30,10 +32,7 @@ export function setApplicationOpenUrlSwift(contents: string): string {
     }`;
 
   // Find the end of the AppDelegate class
-  const classEndIndex = contents.indexOf(
-    '\n}',
-    contents.indexOf('class AppDelegate')
-  );
+  const classEndIndex = findClassEndIndex(contents, 'AppDelegate');
 
   // Insert the function before the closing brace
   contents =
