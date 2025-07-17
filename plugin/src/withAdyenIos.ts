@@ -43,7 +43,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
     return newConfig;
   });
 
-  if (merchantIdentifier || merchantIdentifier !== '') {
+if (merchantIdentifier) {
     config = withEntitlementsPlist(config, (newConfig) => {
       const entitlements = newConfig.modResults;
       newConfig.modResults = setEntitlements(entitlements, merchantIdentifier);
