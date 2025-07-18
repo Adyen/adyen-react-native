@@ -89,6 +89,7 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
 
         fun handle(fragmentManager: FragmentManager, action: Action, tag: String) {
             val fragment = fragmentManager.findFragmentByTag(tag) as? BaseComponentFragment<*, *>
+            fragment?.isCancelable = false
             fragment?.viewModel?.onAction(action)
         }
 
