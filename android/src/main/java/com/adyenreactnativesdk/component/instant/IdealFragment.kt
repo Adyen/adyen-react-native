@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Adyen N.V.
+ * Copyright (c) 2025 Adyen N.V.
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  *
@@ -13,6 +13,8 @@ import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.ideal.IdealComponent
+import com.adyen.checkout.ideal.IdealComponentState
 import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.sessions.core.CheckoutSession
@@ -23,24 +25,24 @@ import com.adyenreactnativesdk.component.base.BaseComponentFragment
 import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
-class InstantFragment(
+class IdealFragment(
     private val configuration: CheckoutConfiguration,
     paymentMethod: PaymentMethod,
     session: CheckoutSession?
 ) :
-    BaseComponentFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod, session) {
+    BaseComponentFragment<IdealComponent, IdealComponentState>(paymentMethod, session) {
 
-    override fun setupComponent(componentData: ComponentData<InstantComponentState>) {
+    override fun setupComponent(componentData: ComponentData<IdealComponentState>) {
         val session = session
         val component = (if (session == null) componentData.callback?.let {
-            InstantPaymentComponent.PROVIDER.get(
+            IdealComponent.PROVIDER.get(
                 this,
                 componentData.paymentMethod,
                 configuration,
                 it,
             )
         } else componentData.sessionCallback?.let {
-            InstantPaymentComponent.PROVIDER.get(
+            IdealComponent.PROVIDER.get(
                 this,
                 session,
                 componentData.paymentMethod,
@@ -57,8 +59,7 @@ class InstantFragment(
     }
 
     companion object : IInstantFragment {
-        private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
-        internal const val TAG = "InstantFragment"
+        internal const val TAG = "IdealFragment"
 
         override fun show(
             fragmentManager: FragmentManager,
@@ -66,11 +67,7 @@ class InstantFragment(
             paymentMethod: PaymentMethod,
             session: CheckoutSession?
         ) {
-            InstantFragment(configuration, paymentMethod, session).apply {
-                arguments = bundleOf(
-                    PAYMENT_METHOD_TYPE_EXTRA to paymentMethod.type
-                )
-            }.show(fragmentManager, TAG)
+            IdealFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
         }
 
         override fun handle(fragmentManager: FragmentManager, action: Action) {
@@ -86,4 +83,3 @@ class InstantFragment(
     override fun runComponent() { /* No action needed */
     }
 }
-

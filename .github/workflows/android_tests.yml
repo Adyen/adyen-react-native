@@ -1,4 +1,7 @@
 name: Test Android
+permissions:
+  contents: read
+  pull-requests: write
 
 on:
   workflow_call:
@@ -25,7 +28,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.node-version }}

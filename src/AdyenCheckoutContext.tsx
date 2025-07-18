@@ -29,21 +29,11 @@ import {
 } from './core/types';
 import { Configuration } from './core/configurations/Configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
-import {
-  AddressLookup,
-  isAddressLooker,
-} from './wrappers/AddressLookupComponentWrapper';
-import { isActionComponent } from './wrappers/ActionHandlingComponentWrapper';
+import { AddressLookup } from './wrappers/AddressLookupComponentWrapper';
 import { AdyenActionComponent } from './core/AdyenNativeModules';
-import {
-  isRemovesStoredPaymentComponent,
-  RemovesStoredPayment,
-} from './wrappers/RemoveStoredPaymentComponentWrapper';
+import { RemovesStoredPayment } from './wrappers/RemoveStoredPaymentComponentWrapper';
 import { AddressLookupItem } from './core/configurations/AddressLookup';
-import {
-  isPartialPaymentsComponent,
-  PartialPaymentComponent,
-} from './wrappers/PartialPaymentsComponentWrapper';
+import { PartialPaymentComponent } from './wrappers/PartialPaymentsComponentWrapper';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
@@ -189,24 +179,28 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
 
-      if (isActionComponent(nativeComponent)) {
-        const nativeModule = nativeComponent as unknown as AdyenActionComponent;
+      if (nativeComponent.events.includes(Event.onAdditionalDetails)) {
         subscriptions.current.push(
           eventEmitter.addListener(
             Event.onAdditionalDetails,
             (data: PaymentDetailsData) =>
-              onAdditionalDetails?.(data, nativeModule)
+              onAdditionalDetails?.(data, nativeComponent)
           )
         );
       }
 
-      if (isRemovesStoredPaymentComponent(nativeComponent)) {
+      const onDisableStoredPaymentMethodCallback =
+        configuration.dropin?.onDisableStoredPaymentMethod;
+      if (
+        onDisableStoredPaymentMethodCallback &&
+        nativeComponent.events.includes(Event.onDisableStoredPaymentMethod)
+      ) {
         const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
         subscriptions.current.push(
           eventEmitter.addListener(
             Event.onDisableStoredPaymentMethod,
             (data: StoredPaymentMethod) =>
-              configuration.dropin?.onDisableStoredPaymentMethod?.(
+              onDisableStoredPaymentMethodCallback(
                 data,
                 () => {
                   nativeModule.removeStored(true);
@@ -219,72 +213,100 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
 
-      if (isAddressLooker(nativeComponent)) {
+      const onUpdateAddressCallback = configuration.card?.onUpdateAddress;
+      const onConfirmAddressCallback = configuration.card?.onConfirmAddress;
+      if (
+        onUpdateAddressCallback &&
+        onConfirmAddressCallback &&
+        nativeComponent.events.includes(Event.onAddressUpdate) &&
+        nativeComponent.events.includes(Event.onAddressConfirm)
+      ) {
         const nativeModule = nativeComponent as unknown as AddressLookup;
         subscriptions.current.push(
           eventEmitter.addListener(
             Event.onAddressUpdate,
             async (prompt: string) => {
-              configuration.card?.onUpdateAddress?.(prompt, nativeModule);
+              onUpdateAddressCallback(prompt, nativeModule);
             }
           ),
           eventEmitter.addListener(
             Event.onAddressConfirm,
             (address: AddressLookupItem) => {
-              configuration.card?.onConfirmAddress?.(address, nativeModule);
+              onConfirmAddressCallback(address, nativeModule);
             }
           )
         );
       }
 
-      if (isPartialPaymentsComponent(nativeComponent)) {
+      const onBalanceCheckCallback =
+        configuration.partialPayment?.onBalanceCheck;
+      const onOrderRequestCallback =
+        configuration.partialPayment?.onOrderRequest;
+      const onOrderCancelCallback = configuration.partialPayment?.onOrderCancel;
+      if (
+        onBalanceCheckCallback &&
+        onOrderRequestCallback &&
+        onOrderCancelCallback &&
+        nativeComponent.events.includes(Event.onCheckBalance) &&
+        nativeComponent.events.includes(Event.onRequestOrder) &&
+        nativeComponent.events.includes(Event.onCancelOrder)
+      ) {
+        const component = nativeComponent as unknown as PartialPaymentComponent;
         subscriptions.current.push(
           eventEmitter.addListener(
             Event.onCheckBalance,
             async (paymentData) => {
-              configuration.partialPayment?.onBalanceCheck?.(
+              onBalanceCheckCallback(
                 paymentData,
                 (balance) => {
-                  (
-                    nativeComponent as unknown as PartialPaymentComponent
-                  ).provideBalance(true, balance, undefined);
+                  component.provideBalance(true, balance, undefined);
                 },
                 (error: Error) => {
-                  console.debug('Balance error: ' + JSON.stringify(error));
-                  (
-                    nativeComponent as unknown as PartialPaymentComponent
-                  ).provideBalance(false, undefined, error);
+                  component.provideBalance(false, undefined, error);
                 }
               );
             }
           ),
           eventEmitter.addListener(Event.onRequestOrder, () => {
-            configuration.partialPayment?.onOrderRequest?.(
+            onOrderRequestCallback(
               (order: Order) => {
-                (
-                  nativeComponent as unknown as PartialPaymentComponent
-                ).provideOrder(true, order, undefined);
+                component.provideOrder(true, order, undefined);
               },
               (error: Error) => {
-                console.debug('Order error: ' + JSON.stringify(error));
-                (
-                  nativeComponent as unknown as PartialPaymentComponent
-                ).provideOrder(false, undefined, error);
+                component.provideOrder(false, undefined, error);
               }
             );
           }),
           eventEmitter.addListener(
             Event.onCancelOrder,
             ({ order, shouldUpdatePaymentMethods }) => {
-              let component =
-                nativeComponent as unknown as PartialPaymentComponent;
-              configuration.partialPayment?.onOrderCancel?.(
+              onOrderCancelCallback(
                 order,
                 shouldUpdatePaymentMethods,
                 component
               );
             }
           )
+        );
+      }
+
+      const onBinLookupCallback = configuration.card?.onBinLookup;
+      if (
+        onBinLookupCallback &&
+        nativeComponent.events.includes(Event.onBinLookuop)
+      ) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onBinLookuop, onBinLookupCallback)
+        );
+      }
+
+      const onBinValueCallback = configuration.card?.onBinValue;
+      if (
+        onBinValueCallback &&
+        nativeComponent.events.includes(Event.onBinValue)
+      ) {
+        subscriptions.current.push(
+          eventEmitter.addListener(Event.onBinValue, onBinValueCallback)
         );
       }
     },

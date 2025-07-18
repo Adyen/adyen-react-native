@@ -1,4 +1,7 @@
 name: Collect Sonar reports
+permissions:
+  contents: read
+  pull-requests: write
 
 on:
   workflow_call:
@@ -38,6 +41,12 @@ jobs:
         with:
           name: kotlin-coverage-report
           path: reports
+
+      - name: Download JS coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: js-coverage-report
+          path: reports          
 
       - name: Run Sonar
         run: |

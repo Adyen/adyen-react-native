@@ -1,10 +1,11 @@
 import { AddressLookupItem } from '../core/configurations/AddressLookup';
 import { Balance, Order, PaymentMethodsResponse } from '../core/types';
-import { DropInModule } from '../modules/DropInModule';
+import { AdyenDropIn, DropInModule } from '../modules/DropInModule';
 import { ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
 import { AddressLookup } from './AddressLookupComponentWrapper';
 import { PartialPaymentComponent } from './PartialPaymentsComponentWrapper';
 import { RemovesStoredPayment } from './RemoveStoredPaymentComponentWrapper';
+import { Event } from '../core/constants';
 
 export class DropInComponentWrapper
   extends ActionHandlingComponentWrapper
@@ -14,6 +15,19 @@ export class DropInComponentWrapper
     RemovesStoredPayment,
     PartialPaymentComponent
 {
+  constructor() {
+    super(AdyenDropIn, [
+      Event.onBinValue,
+      Event.onBinLookuop,
+      Event.onCancelOrder,
+      Event.onRequestOrder,
+      Event.onCheckBalance,
+      Event.onDisableStoredPaymentMethod,
+      Event.onAddressConfirm,
+      Event.onAddressUpdate,
+    ]);
+  }
+
   getReturnURL!: () => Promise<string>;
 
   removeStored(success: boolean): void {

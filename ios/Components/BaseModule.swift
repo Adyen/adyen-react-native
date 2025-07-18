@@ -146,6 +146,10 @@ internal class BaseModule: RCTEventEmitter {
         requestOrderHandler = nil
         checkBalanceHandler = nil
 
+        guard BaseModule.currentPresenter?.presentedViewController != nil else {
+            BaseModule.currentPresenter = nil
+            return
+        }
         BaseModule.currentPresenter?.dismiss(animated: true) {
             BaseModule.currentPresenter = nil
         }
@@ -241,6 +245,8 @@ extension BaseModule {
         static let sessionId = "sessionId"
         static let sessionData = "sessionData"
         static let order = "order"
+        static let message = "message"
+        static let brand = "brand"
     }
 }
 

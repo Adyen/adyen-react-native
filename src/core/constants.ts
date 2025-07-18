@@ -37,6 +37,10 @@ export enum Event {
   onRequestOrder = `didRequestOrderCallback`,
   /** Event handler, called when the partial payment order was canceled. */
   onCancelOrder = `didCancelOrderCallback`,
+  /** Event handler, called when the BIN lookup data is available. */
+  onBinLookuop = `didBinLookupCallback`,
+  /** Event handler, called when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field changes. */
+  onBinValue = `didChangeBinValueCallback`,
 }
 
 /** Collection of errors components can throw. */
