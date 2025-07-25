@@ -159,11 +159,6 @@ Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/
 
 ## Android integration
 
-> [!Warning]
->
-> If you are using RN versions 0.74+ and enabled "new Archetecture", make sure to [Opting-out of Bridgeless](https://github.com/reactwg/react-native-new-architecture/discussions/174) mode.
-> This is necessary to run Drop-In and some components on Android, especially for [Advanced flow](https://github.com/Adyen/adyen-react-native/edit/develop/README.md#advanced-flow).
-
 1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
 ```java
 import com.adyenreactnativesdk.AdyenCheckout;
