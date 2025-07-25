@@ -35,11 +35,14 @@ import com.adyenreactnativesdk.component.model.AddressDataAdapter
 import com.adyenreactnativesdk.component.model.BinLookupDataDTO
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.jstasks.HeadlessJsTaskConfig
+import com.facebook.react.jstasks.HeadlessJsTaskContext
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import com.google.gson.GsonBuilder
 import org.json.JSONArray
@@ -47,6 +50,8 @@ import org.json.JSONObject
 
 class DropInModule(context: ReactApplicationContext?) : BaseModule(context), ReactDropInCallback,
     AddressLookupCallback, CheckoutProxy.CardComponentEventListener {
+
+    private var taskId: Int? = null
 
     private fun getService(): BaseDropInServiceContract? {
         return if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
@@ -83,6 +88,13 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         CheckoutProxy.shared.componentListener = this
         AdyenCheckout.addDropInListener(this)
         val session = session
+        val config = HeadlessJsTaskConfig(
+            "TEST_KEY",
+            Arguments.createMap(),
+            0,
+            true
+        )
+        taskId = HeadlessJsTaskContext.getInstance(reactApplicationContext).startTask(config)
         if (session != null) {
             AdyenCheckout.dropInSessionLauncher?.let {
                 startPayment(
@@ -129,6 +141,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         }
 
         cleanup()
+        taskId?.let { HeadlessJsTaskContext.getInstance(reactApplicationContext).finishTask(it) }
     }
 
     @ReactMethod
