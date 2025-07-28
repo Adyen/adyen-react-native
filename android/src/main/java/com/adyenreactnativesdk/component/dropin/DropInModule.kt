@@ -89,7 +89,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         AdyenCheckout.addDropInListener(this)
         val session = session
         val config = HeadlessJsTaskConfig(
-            "TEST_KEY",
+            TASK_NAME,
             Arguments.createMap(),
             0,
             true
@@ -306,6 +306,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
         private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
+        private const val TASK_NAME = "ADYEN_DROPIN_TASK"
 
         private val gson = GsonBuilder()
             .registerTypeAdapter(AddressData::class.java, AddressDataAdapter())
