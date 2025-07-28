@@ -12,9 +12,8 @@ import {
   DarkTheme,
   DefaultTheme,
 } from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import {Button, Alert, useColorScheme} from 'react-native';
+import {Alert, useColorScheme} from 'react-native';
 import CseView from './src/Views/CseView';
 import SettingView from './src/Views/SettingsView';
 import Result from './src/Views/ResultView';
@@ -25,23 +24,7 @@ import AppContextProvider from './src/Utilities/AppContext';
 import {DEFAULT_CONFIGURATION} from './src/Configuration';
 import PartialPaymentCheckout from './src/Views/Checkout/PartialPaymentCheckout';
 
-const Stack = createNativeStackNavigator();
-
-const SettingsButton = ({navigation}) => {
-  return (
-    <Button onPress={() => navigation.navigate(Page.Settings)} title="Edit" />
-  );
-};
-
-export const Page = {
-  Home: 'Home',
-  SessionsCheckout: 'SessionsCheckout',
-  AdvancedCheckout: 'AdvancedCheckout',
-  Settings: 'Settings',
-  CustomCard: 'CustomCard',
-  Result: 'Result',
-  PartialPaymentCheckout: 'PartialPaymentCheckout'
-};
+import {Stack} from './src/State/RootStackParamList';
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -54,31 +37,25 @@ const App = () => {
       }}>
       <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack.Navigator>
+          <Stack.Screen name="Home" component={Home} />
           <Stack.Screen
-            name={Page.Home}
-            component={Home}
-            options={({navigation}) => ({
-              headerRight: () => <SettingsButton navigation={navigation} />,
-            })}
-          />
-          <Stack.Screen
-            name={Page.SessionsCheckout}
+            name="SessionsCheckout"
             component={SessionsCheckout}
             options={() => ({title: 'Sessions Checkout'})}
           />
           <Stack.Screen
-            name={Page.AdvancedCheckout}
+            name="AdvancedCheckout"
             component={AdvancedCheckout}
             options={() => ({title: 'Advanced Checkout'})}
           />
-           <Stack.Screen
-            name={Page.PartialPaymentCheckout}
+          <Stack.Screen
+            name="PartialPaymentCheckout"
             component={PartialPaymentCheckout}
             options={() => ({title: 'Partial Payment'})}
           />
-          <Stack.Screen name={Page.Settings} component={SettingView} />
-          <Stack.Screen name={Page.Result} component={Result} />
-          <Stack.Screen name={Page.CustomCard} component={CseView} />
+          <Stack.Screen name="Settings" component={SettingView} />
+          <Stack.Screen name="Result" component={Result} />
+          <Stack.Screen name="CustomCard" component={CseView} />
         </Stack.Navigator>
       </NavigationContainer>
     </AppContextProvider>
