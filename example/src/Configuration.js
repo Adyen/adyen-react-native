@@ -1,5 +1,7 @@
-import {Platform, NativeModules} from 'react-native';
-export const DEVICE_LOCALE = "en-US";
+import {Platform, I18nManager} from 'react-native';
+
+let locale = I18nManager.getConstants().localeIdentifier ?? 'en-US';
+export const DEVICE_LOCALE = locale.replace('_', '-');
 
 export const CHANNEL = Platform.select({
   ios: () => 'iOS',
