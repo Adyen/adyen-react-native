@@ -88,15 +88,9 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         CheckoutProxy.shared.componentListener = this
         AdyenCheckout.addDropInListener(this)
         val session = session
-        val config = HeadlessJsTaskConfig(
-            TASK_NAME,
-            Arguments.createMap(),
-            0,
-            true
-        )
-        taskId = HeadlessJsTaskContext.getInstance(reactApplicationContext).startTask(config)
         if (session != null) {
             AdyenCheckout.dropInSessionLauncher?.let {
+                startBackgroundService()
                 startPayment(
                     reactApplicationContext,
                     it,
@@ -107,6 +101,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
             } ?: throw ModuleException.NoActivity()
         } else {
             AdyenCheckout.dropInLauncher?.let {
+                startBackgroundService()
                 startPayment(
                     reactApplicationContext,
                     it,
@@ -141,7 +136,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         }
 
         cleanup()
-        taskId?.let { HeadlessJsTaskContext.getInstance(reactApplicationContext).finishTask(it) }
+        stopBackgroundService()
     }
 
     @ReactMethod
@@ -300,6 +295,22 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         } else {
             listener.sendResult(DropInServiceResult.Error(null, messageString, true))
         }
+    }
+
+    private fun startBackgroundService() {
+        val config = HeadlessJsTaskConfig(
+            TASK_NAME,
+            Arguments.createMap(),
+            0,
+            true
+        )
+        val context = HeadlessJsTaskContext.getInstance(reactApplicationContext)
+        taskId?.let { context.finishTask(it) }
+        taskId = context.startTask(config)
+    }
+
+    private fun stopBackgroundService() {
+        taskId?.let { HeadlessJsTaskContext.getInstance(reactApplicationContext).finishTask(it) }
     }
 
     companion object {
