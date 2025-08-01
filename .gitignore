@@ -39,6 +39,7 @@ Pods/
 local.properties
 *.hprof
 coverage
+.cxx
 
 # node.js
 node_modules/
@@ -61,4 +62,3 @@ example/yarn.lock
 
 # NPM
 example/package-lock.json
-

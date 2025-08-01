@@ -6,6 +6,7 @@
 
 import Adyen
 import UIKit
+import React
 
 protocol SessionResultListener {
     func didComplete(with result: Adyen.AdyenSessionResult)

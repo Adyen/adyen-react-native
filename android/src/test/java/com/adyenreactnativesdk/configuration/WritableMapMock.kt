@@ -12,6 +12,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableMapKeySetIterator
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableMap
+import java.util.HashMap
 
 class WritableMapMock : WritableMap, ReadableMapKeySetIterator {
 
@@ -40,6 +41,10 @@ class WritableMapMock : WritableMap, ReadableMapKeySetIterator {
 
     override fun getInt(p0: String): Int {
         return map.getValue(p0) as Int
+    }
+
+    override fun getLong(p0: String): Long {
+        return map.getValue(p0) as Long
     }
 
     override fun getString(p0: String): String {
@@ -72,18 +77,20 @@ class WritableMapMock : WritableMap, ReadableMapKeySetIterator {
         }
     }
 
-    override fun getEntryIterator(): MutableIterator<MutableMap.MutableEntry<String, Any>> {
-        val noNullMap: MutableMap<String, Any> = mutableMapOf()
-        map.forEach { (key, value) -> value?.let { noNullMap[key] = it } }
-        return noNullMap.iterator()
-    }
+    override val entryIterator: Iterator<Map.Entry<String, Any?>>
+        get() {
+            val noNullMap: MutableMap<String, Any> = mutableMapOf()
+            map.forEach { (key, value) -> value?.let { noNullMap[key] = it } }
+            iterator = noNullMap.iterator()
+            return iterator
+        }
 
     override fun keySetIterator(): ReadableMapKeySetIterator {
-        iterator = entryIterator
+        entryIterator
         return this
     }
 
-    override fun toHashMap(): HashMap<String, Any> {
+    override fun toHashMap(): HashMap<String, Any?> {
         TODO("Not yet implemented")
     }
 
@@ -100,6 +107,10 @@ class WritableMapMock : WritableMap, ReadableMapKeySetIterator {
     }
 
     override fun putInt(p0: String, p1: Int) {
+        map[p0] = p1
+    }
+
+    override fun putLong(p0: String, p1: Long) {
         map[p0] = p1
     }
 

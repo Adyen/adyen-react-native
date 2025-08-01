@@ -35,11 +35,14 @@ import com.adyenreactnativesdk.component.model.AddressDataAdapter
 import com.adyenreactnativesdk.component.model.BinLookupDataDTO
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.jstasks.HeadlessJsTaskConfig
+import com.facebook.react.jstasks.HeadlessJsTaskContext
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import com.google.gson.GsonBuilder
 import org.json.JSONArray
@@ -47,6 +50,8 @@ import org.json.JSONObject
 
 class DropInModule(context: ReactApplicationContext?) : BaseModule(context), ReactDropInCallback,
     AddressLookupCallback, CheckoutProxy.CardComponentEventListener {
+
+    private var taskId: Int? = null
 
     private fun getService(): BaseDropInServiceContract? {
         return if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
@@ -85,6 +90,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         val session = session
         if (session != null) {
             AdyenCheckout.dropInSessionLauncher?.let {
+                startBackgroundService()
                 startPayment(
                     reactApplicationContext,
                     it,
@@ -95,6 +101,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
             } ?: throw ModuleException.NoActivity()
         } else {
             AdyenCheckout.dropInLauncher?.let {
+                startBackgroundService()
                 startPayment(
                     reactApplicationContext,
                     it,
@@ -129,6 +136,7 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         }
 
         cleanup()
+        stopBackgroundService()
     }
 
     @ReactMethod
@@ -289,10 +297,27 @@ class DropInModule(context: ReactApplicationContext?) : BaseModule(context), Rea
         }
     }
 
+    private fun startBackgroundService() {
+        val config = HeadlessJsTaskConfig(
+            TASK_NAME,
+            Arguments.createMap(),
+            0,
+            true
+        )
+        val context = HeadlessJsTaskContext.getInstance(reactApplicationContext)
+        taskId?.let { context.finishTask(it) }
+        taskId = context.startTask(config)
+    }
+
+    private fun stopBackgroundService() {
+        taskId?.let { HeadlessJsTaskContext.getInstance(reactApplicationContext).finishTask(it) }
+    }
+
     companion object {
         private const val TAG = "DropInComponent"
         private const val COMPONENT_NAME = "AdyenDropIn"
         private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
+        private const val TASK_NAME = "ADYEN_DROPIN_TASK"
 
         private val gson = GsonBuilder()
             .registerTypeAdapter(AddressData::class.java, AddressDataAdapter())
