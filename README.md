@@ -232,9 +232,45 @@ const configuration: Configuration = {
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
-  returnUrl: 'myapp://payment', // Custom URL scheme of your iOS app. This value is overridden for Android by `AdyenCheckout`. You can also send this property from your backend.
+  returnUrl: 'myapp://payment', // See description below.
 };
 ```
+
+### Return URL
+
+> [!IMPORTANT]
+>
+> On `config` use a custom URL scheme or App/Universal link of your app(s) on `config`.
+
+<table>
+<tr>
+  <th> Scenario </th> 
+  <th> How to use </th>
+</tr>
+<tr>
+  <td> Advanced flow </td> 
+  <td> 
+    
+  During `onSubmit(data, component, extras)` pass `"returnUrl": data.returnUrl` to make `\payments` API call. 
+    
+  </td>
+</tr>
+<tr>
+  <td> Sessions flow </td> 
+  <td> 
+
+  To make `\sessions` API call use `AdyenDropIn.getReturnURL()` to fetch `returnUrl`.
+
+  ```js
+  const returnUrl = Platform.select({
+     ios: 'myapp://payment',
+     android: await AdyenDropIn.getReturnURL(),
+  });`
+  ```
+
+  </td>
+</tr> 
+</table>
 
 ## Opening Payment component
 
