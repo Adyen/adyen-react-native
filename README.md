@@ -240,7 +240,7 @@ const configuration: Configuration = {
 
 > [!IMPORTANT]
 >
-> On `config` use a custom URL scheme or App/Universal link of your app(s) on `config`.
+> On `config` use a custom URL scheme or App/Universal link of your app(s).
 
 <table>
 <tr>
@@ -265,7 +265,7 @@ const configuration: Configuration = {
   const returnUrl = Platform.select({
      ios: 'myapp://payment',
      android: await AdyenDropIn.getReturnURL(),
-  });`
+  });
   ```
 
   </td>
