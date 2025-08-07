@@ -49,6 +49,7 @@ class ActionFragment(
         )
 
         this.component = component
+        this.isCancelable = false
         AdyenCheckout.setComponent(component)
         view?.findViewById<AdyenComponentView>(R.id.component_view)
             ?.attach(component, this)
