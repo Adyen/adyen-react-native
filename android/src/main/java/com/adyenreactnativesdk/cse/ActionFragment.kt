@@ -30,7 +30,6 @@ class ActionFragment(
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        dialog?.setCanceledOnTouchOutside(false)
         return inflater.inflate(R.layout.fragment_instant, container)
     }
 
