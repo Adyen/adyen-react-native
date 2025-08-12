@@ -1,7 +1,12 @@
 module.exports = {
-  presets: [
-    'module:metro-react-native-babel-preset',
-    ['@babel/preset-env', { targets: { node: 'current' } }],
-    '@babel/preset-typescript',
+  overrides: [
+    {
+      exclude: /\/node_modules\//,
+      presets: ['module:react-native-builder-bob/babel-preset'],
+    },
+    {
+      include: /\/node_modules\//,
+      presets: ['module:@react-native/babel-preset'],
+    },
   ],
 };
