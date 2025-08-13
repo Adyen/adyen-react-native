@@ -3,6 +3,11 @@
 
 CONFIG_PATH=$(find . -name Configuration.js ! -path "*node_modules*" )
 
+if [ -z "$CONFIG_PATH" ]; then
+  echo "Error: Configuration.js not found." >&2
+  exit 1
+fi
+
 echo "Config file found $CONFIG_PATH"
 
 source ~/.bash_profile
