@@ -1,7 +1,7 @@
 
 #!/bin/bash
 
-CONFIG_PATH=$(find . -name Configuration.js)
+CONFIG_PATH=$(find . -name Configuration.js ! -path "*node_modules*" )
 
 echo "Config file found $CONFIG_PATH"
 
