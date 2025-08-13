@@ -1,5 +1,5 @@
-import { NativeModule, NativeModules } from 'react-native';
-import { AdyenComponent } from '../core/AdyenNativeModules';
+import { type NativeModule, NativeModules } from 'react-native';
+import type { AdyenComponent } from '../core/AdyenNativeModules';
 import { ModuleMock } from '../modules/ModuleMock';
 
 /** Apple Pay component (only available for iOS) */

@@ -1,4 +1,4 @@
-import { StoredPaymentMethod } from '../types';
+import type { StoredPaymentMethod } from '../types';
 
 export interface DropInConfiguration {
   /**  Determines whether to enable preselected stored payment method view step */

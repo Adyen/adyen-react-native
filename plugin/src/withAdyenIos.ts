@@ -1,10 +1,10 @@
 import {
-  ConfigPlugin,
+  type ConfigPlugin,
   withAppDelegate,
   withEntitlementsPlist,
 } from '@expo/config-plugins';
 import { setEntitlements } from './setEntitlements';
-import { AdyenPluginProps } from './withAdyen';
+import type { AdyenPluginProps } from './withAdyen';
 import { setImport } from './setImport';
 import { setApplicationOpenUrl } from './setApplicationOpenUrl';
 import { setApplicationContinueUserActivity } from './setApplicationContinueUserActivity';
@@ -43,7 +43,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
     return newConfig;
   });
 
-if (merchantIdentifier) {
+  if (merchantIdentifier) {
     config = withEntitlementsPlist(config, (newConfig) => {
       const entitlements = newConfig.modResults;
       newConfig.modResults = setEntitlements(entitlements, merchantIdentifier);

@@ -1,5 +1,5 @@
 import { setImportSwift } from '../setImportSwift';
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect } from '@jest/globals';
 
 describe('setImportSwift', () => {
   // Test case 1: The import line already exists in the content.

@@ -1,8 +1,7 @@
-import { PartialPaymentComponent } from '../../wrappers/PartialPaymentsComponentWrapper';
-import { Balance, Order, PaymentMethodData } from '../types';
+import type { PartialPaymentComponent } from '../../wrappers/PartialPaymentsComponentWrapper';
+import type { Balance, Order, PaymentMethodData } from '../types';
 
 export interface PartialPaymentConfiguration {
-
   /**
    * Indicates whether to show the security code field. Defaults to true.
    */

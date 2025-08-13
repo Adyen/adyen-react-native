@@ -1,5 +1,5 @@
-import { NativeModule, NativeModules } from 'react-native';
-import { AdyenActionComponent } from '../core/AdyenNativeModules';
+import { type NativeModule, NativeModules } from 'react-native';
+import type { AdyenActionComponent } from '../core/AdyenNativeModules';
 import { ModuleMock } from '../modules/ModuleMock';
 
 /** Generic Redirect component */
