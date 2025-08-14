@@ -84,10 +84,7 @@ class GooglePayFragment(
 
     override fun runComponent() {
         if (!googlePayScreenVisible) {
-            component?.startGooglePayScreen(
-                requireActivity(),
-                GooglePayModule.GOOGLEPAY_REQUEST_CODE
-            )
+            component?.submit()
             googlePayScreenVisible = true
         }
     }
