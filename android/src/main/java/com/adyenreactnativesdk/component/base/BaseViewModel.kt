@@ -48,7 +48,7 @@ abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData :
     }
 
     override fun componentStarted() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Main) {
             _events.emit(ComponentEvent.ComponentCreated)
         }
     }
