@@ -1,7 +1,6 @@
 {
   "name": "@adyen/react-native",
   "version": "2.0.0-local.1",
-  "private": true,
   "description": "Wraps Adyen Checkout Drop-In and Components for iOS and Android for convenient use with React Native",
   "license": "MIT",
   "author": "Adyen",
@@ -20,7 +19,7 @@
     "components"
   ],
   "main": "./lib/module/index.js",
-  "source": "./src/index.tsx",
+  "source": "./src/index.ts",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
     ".": {
