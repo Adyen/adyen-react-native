@@ -1,6 +1,6 @@
 const path = require('path');
 const { getDefaultConfig } = require('@react-native/metro-config');
-const { withMetroConfig } = require('react-native-monorepo-config');
+const { getConfig } = require('react-native-builder-bob/metro-config');
 
 const root = path.resolve(__dirname, '..');
 
@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '..');
  *
  * @type {import('metro-config').MetroConfig}
  */
-module.exports = withMetroConfig(getDefaultConfig(__dirname), {
+module.exports = getConfig(getDefaultConfig(__dirname), {
   root,
-  dirname: __dirname,
+  project: __dirname,
 });
