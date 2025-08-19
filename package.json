@@ -55,7 +55,7 @@
     "pod-install": "^0.2.0",
     "react": "^18.2.0",
     "react-native": "^0.74.2",
-    "react-native-builder-bob": "^0.23.2",
+    "react-native-builder-bob": "^0.40.0",
     "typescript": "^5.0.2",
     "metro-react-native-babel-preset": "^0.77.0"
   },
