@@ -17,6 +17,7 @@ on:
 
 jobs:
   test-Android:
+    name: Test Android
     runs-on: ubuntu-24.04
     env:
       target: google_apis
@@ -44,11 +45,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.node-version }}
-          cache: 'yarn'
 
       - uses: actions/cache/restore@v4
         with:
