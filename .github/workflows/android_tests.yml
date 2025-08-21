@@ -8,21 +8,37 @@ on:
     inputs:
       android-version:
         required: false
-        default: 30
+        default: 35
         type: number
       react-native-version:
         required: false
-        default: '0.71.14'
+        default: '0.78.3'
         type: string
 
 jobs:
   test-Android:
-    runs-on: macos-13
+    runs-on: ubuntu-24.04
     env:
       target: google_apis
-      arch: x86
+      arch: x86_64
     steps:
-      - uses: actions/checkout@v4
+      - name: Provide more disk space
+        run: |
+          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc /opt/cabal /opt/stack
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf "/usr/local/share/boost"
+          sudo apt-get remove -y 'php.*'
+          sudo docker image prune --all --force
+
+      - uses: actions/checkout@v5
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
       - uses: actions/setup-java@v4
         with:
@@ -42,15 +58,19 @@ jobs:
       - uses: actions/cache/restore@v4
         id: yarn-cache
         with:
-          path: example\node_modules
+          path: | 
+            node_modules
+            example/node_modules
           key: temp-node-${{ github.sha }}
 
       - name: Build dependency if needed
         if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: yarn
+        run: | 
+          yarn
+          yarn prepare
 
       - name: Gradle cache
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: AVD cache
         uses: actions/cache@v4
@@ -69,6 +89,7 @@ jobs:
           target: ${{ env.target }}
           arch: ${{ env.arch }}
           force-avd-creation: false
+          emulator-boot-timeout: 300
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run tests
@@ -78,6 +99,7 @@ jobs:
           target: ${{ env.target }}
           arch: ${{ env.arch }}
           force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: ./example/android
           script: |
             echo "::group::Running Android app"
