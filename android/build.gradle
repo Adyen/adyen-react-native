@@ -34,7 +34,7 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-    buildConfigField "String", "CHECKOUT_VERSION", "\"2.0.0-local.1\""
+    buildConfigField "String", "CHECKOUT_VERSION", "\"{SDK_VERSION}\""
   }
 
   buildFeatures {
