@@ -1,7 +1,7 @@
-import { PaymentAction } from '../core/types';
+import type { PaymentAction } from '../core/types';
 import { ComponentWrapper } from './ComponentWrapper';
-import { AdyenActionComponent } from '../core/AdyenNativeModules';
-import { NativeModule } from 'react-native';
+import type { AdyenActionComponent } from '../core/AdyenNativeModules';
+import type { NativeModule } from 'react-native';
 import { Event } from '../core/constants';
 
 /**

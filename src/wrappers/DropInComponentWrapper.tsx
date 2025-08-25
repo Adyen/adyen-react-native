@@ -1,10 +1,10 @@
-import { AddressLookupItem } from '../core/configurations/AddressLookup';
-import { Balance, Order, PaymentMethodsResponse } from '../core/types';
-import { AdyenDropIn, DropInModule } from '../modules/DropInModule';
+import type { AddressLookupItem } from '../core/configurations/AddressLookup';
+import type { Balance, Order, PaymentMethodsResponse } from '../core/types';
+import { AdyenDropIn, type DropInModule } from '../modules/DropInModule';
 import { ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
-import { AddressLookup } from './AddressLookupComponentWrapper';
-import { PartialPaymentComponent } from './PartialPaymentsComponentWrapper';
-import { RemovesStoredPayment } from './RemoveStoredPaymentComponentWrapper';
+import type { AddressLookup } from './AddressLookupComponentWrapper';
+import type { PartialPaymentComponent } from './PartialPaymentsComponentWrapper';
+import type { RemovesStoredPayment } from './RemoveStoredPaymentComponentWrapper';
 import { Event } from '../core/constants';
 
 export class DropInComponentWrapper

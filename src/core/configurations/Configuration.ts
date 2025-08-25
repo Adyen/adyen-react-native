@@ -1,10 +1,10 @@
-import { PaymentAmount, PaymentMethodData } from '../types';
-import { ApplePayConfiguration } from './ApplePayConfiguration';
-import { CardsConfiguration } from './CardsConfiguration';
-import { DropInConfiguration } from './DropInConfiguration';
-import { GooglePayConfiguration } from './GooglePayConfiguration';
-import { PartialPaymentConfiguration } from './PartialPaymentConfiguration';
-import { ThreeDSConfiguration } from './ThreeDSConfiguration';
+import type { PaymentAmount } from '../types';
+import type { ApplePayConfiguration } from './ApplePayConfiguration';
+import type { CardsConfiguration } from './CardsConfiguration';
+import type { DropInConfiguration } from './DropInConfiguration';
+import type { GooglePayConfiguration } from './GooglePayConfiguration';
+import type { PartialPaymentConfiguration } from './PartialPaymentConfiguration';
+import type { ThreeDSConfiguration } from './ThreeDSConfiguration';
 
 /** Collection of available environments. */
 export type Environment =

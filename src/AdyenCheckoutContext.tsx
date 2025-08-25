@@ -4,19 +4,19 @@ import React, {
   createContext,
   useEffect,
   useContext,
-  ReactNode,
+  type ReactNode,
   useState,
 } from 'react';
 import {
-  EmitterSubscription,
+  type EmitterSubscription,
   NativeEventEmitter,
-  NativeModule,
+  type NativeModule,
 } from 'react-native';
 import { Event, MISSING_CONTEXT_ERROR } from './core/constants';
-import { AdyenComponent } from './core/AdyenNativeModules';
+import type { AdyenComponent } from './core/AdyenNativeModules';
 import { SessionHelper } from './modules/SessionHelperModule';
 import { getWrapper } from './wrappers/getWrapper';
-import {
+import type {
   AdyenError,
   PaymentMethodsResponse,
   SessionConfiguration,
@@ -27,13 +27,13 @@ import {
   SubmitModel,
   Order,
 } from './core/types';
-import { Configuration } from './core/configurations/Configuration';
+import type { Configuration } from './core/configurations/Configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
-import { AddressLookup } from './wrappers/AddressLookupComponentWrapper';
-import { AdyenActionComponent } from './core/AdyenNativeModules';
-import { RemovesStoredPayment } from './wrappers/RemoveStoredPaymentComponentWrapper';
-import { AddressLookupItem } from './core/configurations/AddressLookup';
-import { PartialPaymentComponent } from './wrappers/PartialPaymentsComponentWrapper';
+import type { AddressLookup } from './wrappers/AddressLookupComponentWrapper';
+import type { AdyenActionComponent } from './core/AdyenNativeModules';
+import type { RemovesStoredPayment } from './wrappers/RemoveStoredPaymentComponentWrapper';
+import type { AddressLookupItem } from './core/configurations/AddressLookup';
+import type { PartialPaymentComponent } from './wrappers/PartialPaymentsComponentWrapper';
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.

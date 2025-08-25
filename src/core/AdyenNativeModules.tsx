@@ -1,4 +1,4 @@
-import { PaymentAction, PaymentMethodsResponse } from './types';
+import type { PaymentAction, PaymentMethodsResponse } from './types';
 
 /**
  * Options for dismissing the payment component.

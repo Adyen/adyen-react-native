@@ -1,8 +1,9 @@
-import { NativeModule, NativeModules } from 'react-native';
-import { AddressLookup } from '../core/configurations/AddressLookup';
-import { AdyenActionComponent } from '../core/AdyenNativeModules';
+import type { NativeModule } from 'react-native';
+import { NativeModules } from 'react-native';
+import type { AddressLookup } from '../core/configurations/AddressLookup';
+import type { AdyenActionComponent } from '../core/AdyenNativeModules';
 import { ModuleMock } from './ModuleMock';
-import { Order, PaymentMethodsResponse } from '../core/types';
+import type { Order, PaymentMethodsResponse } from '../core/types';
 
 /** Describes Drop-in module. */
 

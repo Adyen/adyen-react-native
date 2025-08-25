@@ -1,4 +1,4 @@
-import { NativeModule, Platform } from 'react-native';
+import type { NativeModule } from 'react-native';
 import {
   ADDRESS_COMPONENTS,
   find,
@@ -9,9 +9,9 @@ import {
   UNKNOWN_PAYMENT_METHOD_ERROR,
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from '../core/constants';
-import { PaymentMethod, PaymentMethodsResponse } from '../core/types';
+import type { PaymentMethod, PaymentMethodsResponse } from '../core/types';
 import { ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
-import { AdyenActionComponent } from '../core/AdyenNativeModules';
+import type { AdyenActionComponent } from '../core/AdyenNativeModules';
 import { AdyenDropIn } from '../modules/DropInModule';
 import { AdyenInstant } from '../modules/AdyenInstant';
 import { AdyenApplePay } from '../modules/AdyenApplePay';

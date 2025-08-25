@@ -1,11 +1,6 @@
-import { AdyenComponent } from '../core/AdyenNativeModules';
+import type { AdyenComponent } from '../core/AdyenNativeModules';
 import { ComponentWrapper } from './ComponentWrapper';
-import {
-  Order,
-  Balance,
-  PaymentMethodData,
-  PaymentMethodsResponse,
-} from '../core/types';
+import type { Order, Balance, PaymentMethodData } from '../core/types';
 
 export interface PartialPaymentListener {
   checkBalance(

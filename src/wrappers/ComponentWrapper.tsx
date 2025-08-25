@@ -1,7 +1,7 @@
-import { NativeModule } from 'react-native';
+import type { NativeModule } from 'react-native';
 import { Event } from '../core/constants';
-import { PaymentMethodsResponse } from '../core/types';
-import { AdyenComponent } from '../core/AdyenNativeModules';
+import type { PaymentMethodsResponse } from '../core/types';
+import type { AdyenComponent } from '../core/AdyenNativeModules';
 
 /**
  *  Wrapper for all Native Modules that do not support Action handling.

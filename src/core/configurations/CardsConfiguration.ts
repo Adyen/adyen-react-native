@@ -1,4 +1,4 @@
-import { AddressLookup, AddressLookupItem } from './AddressLookup';
+import type { AddressLookup, AddressLookupItem } from './AddressLookup';
 
 export interface BinLookupData {
   brand: string;

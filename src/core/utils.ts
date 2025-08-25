@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
-import { Configuration } from './configurations/Configuration';
-import { PaymentMethodsResponse } from './types';
+import type { Configuration } from './configurations/Configuration';
+import type { PaymentMethodsResponse } from './types';
 
 export const checkPaymentMethodsResponse = (
   paymentMethodsResponse: PaymentMethodsResponse | undefined

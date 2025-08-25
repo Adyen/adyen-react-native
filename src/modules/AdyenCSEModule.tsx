@@ -1,5 +1,5 @@
-import { NativeModule, NativeModules } from 'react-native';
-import { Card } from '../core/types';
+import { type NativeModule, NativeModules } from 'react-native';
+import type { Card } from '../core/types';
 import { ModuleMock } from './ModuleMock';
 
 /** Describes a native module capable of encrypting card data. */

@@ -1,20 +1,24 @@
 // In Expo version 50, Android SDK level was set to 34, which introduces breaking changes.
-const breakingChangeVersion = 50 
+const breakingChangeVersion = 50;
 
 // In Expo version 52, onActivityResult with 3 parameters was deprecated.
-const onActivityResultDeprecationVersion = 52 
+const onActivityResultDeprecationVersion = 52;
 
-export function setKotlinMainActivity(contents: string, sdkVersion: number): string {
+export function setKotlinMainActivity(
+  contents: string,
+  sdkVersion: number
+): string {
   let importLines = [
-      'import com.adyenreactnativesdk.AdyenCheckout',
-      'import android.content.Intent']
+    'import com.adyenreactnativesdk.AdyenCheckout',
+    'import android.content.Intent',
+  ];
 
   if (sdkVersion >= onActivityResultDeprecationVersion) {
-      importLines.push('import android.app.ComponentCaller');
+    importLines.push('import android.app.ComponentCaller');
   }
 
   // Filter out imports that are already present
-  const uniqueImports = importLines.filter(line => !contents.includes(line));
+  const uniqueImports = importLines.filter((line) => !contents.includes(line));
 
   // Join and prepare the import block
   const importBlock = uniqueImports.join('\n') + '\n';
@@ -39,7 +43,7 @@ export function setKotlinMainActivity(contents: string, sdkVersion: number): str
     sdkVersion < breakingChangeVersion
       ? 'intent?.let { AdyenCheckout.handleIntent(it) }'
       : 'AdyenCheckout.handleIntent(intent)';
-  
+
   if (contents.includes(onNewIntentSignature)) {
     contents = contents.replace(
       'super.onNewIntent(intent)\n',
@@ -49,11 +53,15 @@ export function setKotlinMainActivity(contents: string, sdkVersion: number): str
     contents = contents.replace(
       /}\n$/,
       '\n' +
-      '  ' + onNewIntentSignature + '\n' +
-      '    super.onNewIntent(intent)\n' +
-      '    ' + onNewIntentMethod + '\n' +
-      '  }\n' +
-      '}\n'
+        '  ' +
+        onNewIntentSignature +
+        '\n' +
+        '    super.onNewIntent(intent)\n' +
+        '    ' +
+        onNewIntentMethod +
+        '\n' +
+        '  }\n' +
+        '}\n'
     );
   }
 
@@ -66,21 +74,26 @@ export function setKotlinMainActivity(contents: string, sdkVersion: number): str
     sdkVersion < onActivityResultDeprecationVersion
       ? 'super.onActivityResult(requestCode, resultCode, data)'
       : 'super.onActivityResult(requestCode, resultCode, data, caller)';
-      
+
   if (contents.includes(onActivityResultSignature)) {
     contents = contents.replace(
       onActivityResultSuper + '\n',
-      onActivityResultSuper + '\n    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n'
+      onActivityResultSuper +
+        '\n    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n'
     );
   } else {
     contents = contents.replace(
       /}\n$/,
       '\n' +
-      '  ' + onActivityResultSignature + '\n' +
-      '    ' + onActivityResultSuper + '\n' +
-      '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
-      '  }\n' +
-      '}\n'
+        '  ' +
+        onActivityResultSignature +
+        '\n' +
+        '    ' +
+        onActivityResultSuper +
+        '\n' +
+        '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
+        '  }\n' +
+        '}\n'
     );
   }
 
