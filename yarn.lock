@@ -41,7 +41,7 @@ __metadata:
     "@expo/config-plugins": "npm:^10.0.2"
     "@react-native-community/cli": "npm:15.0.1"
     "@react-native/babel-preset": "npm:^0.78.2"
-    "@react-native/eslint-config": "npm:^0.78.0"
+    "@react-native/eslint-config": "npm:^0.81.0"
     "@types/jest": "npm:^29.5.5"
     "@types/react": "npm:^19.0.0"
     eslint: "npm:^9.22.0"
@@ -2810,13 +2810,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native/eslint-config@npm:^0.78.0":
-  version: 0.78.3
-  resolution: "@react-native/eslint-config@npm:0.78.3"
+"@react-native/eslint-config@npm:^0.81.0":
+  version: 0.81.0
+  resolution: "@react-native/eslint-config@npm:0.81.0"
   dependencies:
     "@babel/core": "npm:^7.25.2"
     "@babel/eslint-parser": "npm:^7.25.1"
-    "@react-native/eslint-plugin": "npm:0.78.3"
+    "@react-native/eslint-plugin": "npm:0.81.0"
     "@typescript-eslint/eslint-plugin": "npm:^7.1.1"
     "@typescript-eslint/parser": "npm:^7.1.1"
     eslint-config-prettier: "npm:^8.5.0"
@@ -2824,19 +2824,19 @@ __metadata:
     eslint-plugin-ft-flow: "npm:^2.0.1"
     eslint-plugin-jest: "npm:^27.9.0"
     eslint-plugin-react: "npm:^7.30.1"
-    eslint-plugin-react-hooks: "npm:^4.6.0"
+    eslint-plugin-react-hooks: "npm:^5.2.0"
     eslint-plugin-react-native: "npm:^4.0.0"
   peerDependencies:
     eslint: ">=8"
     prettier: ">=2"
-  checksum: 10c0/d44798fecb2446db94227ca0e8bf53722de80de4c7e7a076461e88fc51980301c66652b599324a97d5a68b1aa3e9fe86f350a18225412402fbd6ff846d4e7d17
+  checksum: 10c0/d8fcb87d1a2c5978057be3cb009c5d468ff0acfe1bd19dce59eba2f9557ba9e05a8271bc0896ad88dacdb0a534410bea18dcf5ebe01447fcae4fcea1f3e9eb8e
   languageName: node
   linkType: hard
 
-"@react-native/eslint-plugin@npm:0.78.3":
-  version: 0.78.3
-  resolution: "@react-native/eslint-plugin@npm:0.78.3"
-  checksum: 10c0/08ddad87aea0749c80576be5cd00fd39c207c0a3abc64e96194b5945546ae2586f68269a58c38e0ea52c18c12ce355d90975f509bfb4b148b78008e06ecefe58
+"@react-native/eslint-plugin@npm:0.81.0":
+  version: 0.81.0
+  resolution: "@react-native/eslint-plugin@npm:0.81.0"
+  checksum: 10c0/418a59b25f49cc7d1ee921380e603a4281c63935e0de95de2d477778a1fe6ca44cbdf51b9288e1b51435b9405f92d31b9ab4e9b1463425dcdc4129d8b19c8bbd
   languageName: node
   linkType: hard
 
@@ -5808,15 +5808,6 @@ __metadata:
     eslint-config-prettier:
       optional: true
   checksum: 10c0/5cc780e0ab002f838ad8057409e86de4ff8281aa2704a50fa8511abff87028060c2e45741bc9cbcbd498712e8d189de8026e70aed9e20e50fe5ba534ee5a8442
-  languageName: node
-  linkType: hard
-
-"eslint-plugin-react-hooks@npm:^4.6.0":
-  version: 4.6.2
-  resolution: "eslint-plugin-react-hooks@npm:4.6.2"
-  peerDependencies:
-    eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0
-  checksum: 10c0/4844e58c929bc05157fb70ba1e462e34f1f4abcbc8dd5bbe5b04513d33e2699effb8bca668297976ceea8e7ebee4e8fc29b9af9d131bcef52886feaa2308b2cc
   languageName: node
   linkType: hard
 
