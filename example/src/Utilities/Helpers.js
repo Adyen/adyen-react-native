@@ -1,6 +1,6 @@
-import {ResultCode} from '@adyen/react-native';
+import { ResultCode } from '@adyen/react-native';
 
-export const isSuccess = ({resultCode}) =>
+export const isSuccess = ({ resultCode }) =>
   [
     ResultCode.authorised,
     ResultCode.received,

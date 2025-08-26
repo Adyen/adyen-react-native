@@ -8,7 +8,7 @@ import React, {
   useEffect,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {ENVIRONMENT} from '../Configuration';
+import { ENVIRONMENT } from '../Configuration';
 import ApiClient from './APIClient';
 
 export const AppContext = createContext({
@@ -17,7 +17,7 @@ export const AppContext = createContext({
 });
 
 export const checkoutConfiguration = (
-  /** @type {{ shopperLocale?: any; amount?: any; currency?: any; countryCode?: any; merchantName?: any; }} */ config,
+  /** @type {{ shopperLocale?: any; amount?: any; currency?: any; countryCode?: any; merchantName?: any; }} */ config
 ) => {
   const /** @type {import('@adyen/react-native').Configuration} */ configuration =
       {
@@ -39,11 +39,11 @@ export const checkoutConfiguration = (
           onDisableStoredPaymentMethod: async (
             storedPaymentMethod,
             resolve,
-            reject,
+            reject
           ) => {
             let success = await ApiClient.tryRemoveStoredCard(
               storedPaymentMethod.id,
-              config,
+              config
             );
             if (success) {
               resolve();
@@ -57,22 +57,22 @@ export const checkoutConfiguration = (
           allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
           onUpdateAddress: (
             /** @type {any} */ prompt,
-            /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
+            /** @type { import('@adyen/react-native').AddressLookup } */ lookup
           ) => {
             // Make request to Google Maps API or other address provider.
             lookup.update(mockAddresses);
           },
           onConfirmAddress: (
             /** @type { import('@adyen/react-native').AddressLookupItem } */ address,
-            /** @type { import('@adyen/react-native').AddressLookup } */ lookup,
+            /** @type { import('@adyen/react-native').AddressLookup } */ lookup
           ) => {
             // Make request to Google Maps API or other address provider.
             lookup.confirm(address);
           },
-          onBinValue: binValue => {
+          onBinValue: (binValue) => {
             console.log('BIN: ', binValue);
           },
-          onBinLookup: binData => {
+          onBinLookup: (binData) => {
             console.log('BIN data: ', JSON.stringify(binData));
           },
         },
@@ -120,7 +120,7 @@ const AppContextProvider = (/** @type {any} */ props) => {
 
   useEffect(() => {
     AsyncStorage.getItem(storeKey)
-      .then(value => {
+      .then((value) => {
         if (value) {
           console.debug(`Stored config: ${value}`);
           const parsed = JSON.parse(value);
@@ -140,7 +140,7 @@ const AppContextProvider = (/** @type {any} */ props) => {
       configuration: config,
       save: saveConfiguration,
     }),
-    [config],
+    [config]
   );
 
   return (
@@ -194,7 +194,7 @@ const mockApplePayRecurringPayment = {
     intervalCount: 1,
     intervalUnit: 'month',
     startDate: new Date(
-      new Date().setDate(new Date().getDate() + 7),
+      new Date().setDate(new Date().getDate() + 7)
     ).toISOString(),
   },
   managementURL: 'https://my-domain.com/managementURL',
@@ -204,7 +204,7 @@ const mockApplePayRecurringPayment = {
     intervalCount: 7,
     intervalUnit: 'day',
     endDate: new Date(
-      new Date().setDate(new Date().getDate() + 7),
+      new Date().setDate(new Date().getDate() + 7)
     ).toISOString(),
   },
   tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',

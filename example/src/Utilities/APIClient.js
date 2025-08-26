@@ -1,7 +1,7 @@
 // @ts-check
 
-import {LogBox} from 'react-native';
-import {ENVIRONMENT, CHANNEL} from '../Configuration';
+import { LogBox } from 'react-native';
+import { ENVIRONMENT, CHANNEL } from '../Configuration';
 
 LogBox.ignoreLogs(['Require cycle:']);
 
@@ -20,7 +20,7 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
   }
 
-  static paymentDetails = data => {
+  static paymentDetails = (data) => {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
@@ -47,7 +47,7 @@ class ApiClient {
   };
 
   static tryRemoveStoredCard = async (id, configuration) => {
-    let {merchantAccount, shopperReference} = configuration;
+    let { merchantAccount, shopperReference } = configuration;
     const url =
       ENVIRONMENT.url +
       `storedPaymentMethods/${id}?merchantAccount=${merchantAccount}&shopperReference=${shopperReference}`;
@@ -75,7 +75,10 @@ class ApiClient {
       merchantAccount: configuration.merchantAccount,
       reference: serverConfiguration.reference,
     };
-    return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods/balance', body);
+    return ApiClient.makeRequest(
+      ENVIRONMENT.url + 'paymentMethods/balance',
+      body
+    );
   };
 
   static requestOrder = async (configuration) => {
@@ -182,10 +185,7 @@ const parseConfig = ({
   shopperLocale,
 });
 
-const parseOrder = ({
+const parseOrder = ({ orderData, pspReference }) => ({
   orderData,
   pspReference,
-}) => ({
-  orderData,
-  pspReference
 });
