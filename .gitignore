@@ -51,6 +51,7 @@ android.iml
 
 # Ruby
 /vendor/
+Gemfile.lock
 
 # node.js
 node_modules/
