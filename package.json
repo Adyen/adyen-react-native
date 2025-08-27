@@ -55,7 +55,8 @@
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "git clean -fxd",
-    "prepare": "./scripts/set-version.sh && bob build && tsc --build plugin"
+    "prepare": "./scripts/set-version.sh && bob build && tsc --build plugin",
+    "start": "husky && yarn && yarn prepare"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^19.6.0",
