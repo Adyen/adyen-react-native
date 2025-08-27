@@ -1,4 +1,4 @@
-import {Platform, I18nManager} from 'react-native';
+import { Platform, I18nManager } from 'react-native';
 
 let locale = I18nManager.getConstants().localeIdentifier ?? 'en-US';
 export const DEVICE_LOCALE = locale.replace('_', '-');

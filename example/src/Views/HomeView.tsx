@@ -1,9 +1,9 @@
-import React, {useCallback, useEffect} from 'react';
-import {View, Button} from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { View, Button } from 'react-native';
 import Styles from '../Utilities/Styles';
 import { PageProps } from '../State/RootStackParamList';
 
-function createOptions({navigation}: PageProps) {
+function createOptions({ navigation }: PageProps) {
   return {
     headerRight: () => (
       <Button
@@ -14,9 +14,9 @@ function createOptions({navigation}: PageProps) {
   };
 }
 
-const Home = ({navigation}: PageProps) => {
+const Home = ({ navigation }: PageProps) => {
   useEffect(() => {
-    const options = createOptions({navigation});
+    const options = createOptions({ navigation });
     navigation.setOptions(options);
   }, [navigation]);
 
@@ -24,7 +24,7 @@ const Home = ({navigation}: PageProps) => {
     (targetScreen: Parameters<typeof navigation.navigate>[0]) => {
       navigation.navigate(targetScreen);
     },
-    [navigation],
+    [navigation]
   );
 
   type PageType = {
@@ -35,25 +35,25 @@ const Home = ({navigation}: PageProps) => {
   const pagesWithButtons: PageType[] = [
     {
       title: 'Checkout',
-      route: {name: 'SessionsCheckout', params: undefined},
+      route: { name: 'SessionsCheckout', params: undefined },
     },
     {
       title: 'Advanced case',
-      route: {name: 'AdvancedCheckout', params: undefined},
+      route: { name: 'AdvancedCheckout', params: undefined },
     },
     {
       title: 'Advanced partial payment case',
-      route: {name: 'PartialPaymentCheckout', params: undefined},
+      route: { name: 'PartialPaymentCheckout', params: undefined },
     },
     {
       title: 'Custom Card Integration',
-      route: {name: 'CustomCard', params: undefined},
+      route: { name: 'CustomCard', params: undefined },
     },
   ];
 
   return (
     <View style={Styles.content}>
-      {pagesWithButtons.map(({title, route}) => (
+      {pagesWithButtons.map(({ title, route }) => (
         <Button
           title={title}
           key={title}

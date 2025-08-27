@@ -4,7 +4,10 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import { checkoutConfiguration, useAppContext } from '../../Utilities/AppContext';
+import {
+  checkoutConfiguration,
+  useAppContext,
+} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
@@ -16,44 +19,44 @@ const PartialPaymentCheckout = ({ navigation }) => {
 
   useEffect(() => {
     ApiClient.paymentMethods(configuration, undefined)
-    .then(setPaymentMethods)
-    .catch(e => {
-      console.error(e);
-    })
+      .then(setPaymentMethods)
+      .catch((e) => {
+        console.error(e);
+      });
   }, []);
 
   const didSubmit = useCallback(
     async (
       /** @type {import('@adyen/react-native').PaymentMethodData} */ data,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
-      /** @type any */ extra,
+      /** @type any */ extra
     ) => {
       console.debug(
         `didSubmit: ${data.paymentMethod.type} with extra: ${JSON.stringify(
           extra,
           null,
-          ' ',
-        )}`,
+          ' '
+        )}`
       );
       try {
         /** @type {import('../../Types/index').PaymentResponse} */
         const result = await ApiClient.payments(
           data,
           configuration,
-          data.returnUrl,
+          data.returnUrl
         );
         processResult(result, nativeComponent);
       } catch (error) {
         processError(error, nativeComponent);
       }
     },
-    [configuration],
+    [configuration]
   );
 
   const didProvide = useCallback(
     async (
       /** @type {any} */ data,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       console.debug('didProvide');
       try {
@@ -63,29 +66,29 @@ const PartialPaymentCheckout = ({ navigation }) => {
         processError(error, nativeComponent);
       }
     },
-    [],
+    []
   );
 
   const didComplete = useCallback(
     async (
       result,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
+      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       console.log('didComplete');
       processResult(result, nativeComponent);
     },
-    [],
+    []
   );
 
   const didFail = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */ error,
-      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent,
+      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent
     ) => {
       console.log(`didFailed: ${error.message}`);
       processError(error, nativeComponent);
     },
-    [],
+    []
   );
 
   const processResult = useCallback(
@@ -93,7 +96,7 @@ const PartialPaymentCheckout = ({ navigation }) => {
       /** @type {import('../../Types/index').PaymentResponse} */
       result,
       /** @type {import('@adyen/react-native').DropInModule} */
-      dropInComponent,
+      dropInComponent
     ) => {
       var success = isSuccess(result);
       var outcome = result.resultCode.toString();
@@ -102,19 +105,22 @@ const PartialPaymentCheckout = ({ navigation }) => {
         return;
       } else if (isRefusedInPartialPaymentFlow(result)) {
         success = false;
-        outcome = "Refused"
+        outcome = 'Refused';
       } else if (isNonFullyPaidOrder(result)) {
         try {
           let order = {
             orderData: result?.order?.orderData,
-            pspReference: result?.order?.pspReference
+            pspReference: result?.order?.pspReference,
           };
-          let paymentMethods = await ApiClient.paymentMethods(configuration, order);
+          let paymentMethods = await ApiClient.paymentMethods(
+            configuration,
+            order
+          );
           dropInComponent.providePaymentMethods(paymentMethods, order);
           return;
         } catch (error) {
           success = false;
-          outcome = error.message
+          outcome = error.message;
         }
       }
       console.log(`Payment ${success ? 'success' : 'failure'} : ${outcome}`);
@@ -122,13 +128,13 @@ const PartialPaymentCheckout = ({ navigation }) => {
       navigation.popToTop();
       navigation.push('Result', { result: outcome });
     },
-    [],
+    []
   );
 
   const processError = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */ error,
-      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent,
+      /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent
     ) => {
       nativeComponent.hide(false);
       if (error.errorCode === ErrorCode.canceled) {
@@ -137,7 +143,7 @@ const PartialPaymentCheckout = ({ navigation }) => {
         Alert.alert('Error', error.message);
       }
     },
-    [],
+    []
   );
 
   const checkBalance = useCallback(
@@ -146,14 +152,14 @@ const PartialPaymentCheckout = ({ navigation }) => {
         let response = await ApiClient.checkBalance(paymentData, configuration);
         resolve({
           balance: response.balance,
-          transactionLimit: response.transactionLimit
+          transactionLimit: response.transactionLimit,
         });
       } catch (e) {
-        console.error("Balance check error: " + JSON.stringify(e))
+        console.error('Balance check error: ' + JSON.stringify(e));
         reject(e);
       }
     },
-    [configuration],
+    [configuration]
   );
 
   const requestOrder = useCallback(
@@ -162,45 +168,49 @@ const PartialPaymentCheckout = ({ navigation }) => {
         let response = await ApiClient.requestOrder(configuration);
         resolve(response);
       } catch (e) {
-        console.error("Order request error: " + JSON.stringify(e))
+        console.error('Order request error: ' + JSON.stringify(e));
         reject(e);
       }
     },
-    [configuration],
+    [configuration]
   );
 
   const cancelOrder = useCallback(
     async (
-      /** @type {import('@adyen/react-native').Order} */ order, 
+      /** @type {import('@adyen/react-native').Order} */ order,
       /** @type {Boolean} */ shouldUpdatePaymentMethods,
-      /** @type {import('@adyen/react-native').DropInModule} */ dropInComponent) => {
+      /** @type {import('@adyen/react-native').DropInModule} */ dropInComponent
+    ) => {
       try {
         await ApiClient.cancelOrder(order, configuration);
         if (shouldUpdatePaymentMethods) {
-          let paymentMethods = await ApiClient.paymentMethods(configuration, order);
+          let paymentMethods = await ApiClient.paymentMethods(
+            configuration,
+            order
+          );
           dropInComponent.providePaymentMethods(paymentMethods, undefined);
         } else {
           dropInComponent.hide(false);
         }
       } catch (e) {
-        console.error("Order wasn't canceled! " + JSON.stringify(e, null, " "));
+        console.error("Order wasn't canceled! " + JSON.stringify(e, null, ' '));
       }
     },
-    [configuration],
+    [configuration]
   );
 
   /**
    * @param {import('../../Types/index').PaymentResponse} response
    */
   function isRefusedInPartialPaymentFlow(response) {
-    return isRefused(response) && isNonFullyPaidOrder(response)
+    return isRefused(response) && isNonFullyPaidOrder(response);
   }
 
   /**
    * @param {import('../../Types/index').PaymentResponse} response
    */
   function isRefused(response) {
-    return response?.resultCode === "Refused"
+    return response?.resultCode === 'Refused';
   }
 
   /**
@@ -216,21 +226,20 @@ const PartialPaymentCheckout = ({ navigation }) => {
       <TopView />
       {paymentMethods ? (
         <AdyenCheckout
-          config={
-            {
-              ...checkoutConfiguration(configuration),
-              partialPayment: {
-                onBalanceCheck: checkBalance,
-                onOrderRequest: requestOrder,
-                onOrderCancel: cancelOrder
-              },
-            }
-          }
+          config={{
+            ...checkoutConfiguration(configuration),
+            partialPayment: {
+              onBalanceCheck: checkBalance,
+              onOrderRequest: requestOrder,
+              onOrderCancel: cancelOrder,
+            },
+          }}
           paymentMethods={paymentMethods}
           onSubmit={didSubmit}
           onAdditionalDetails={didProvide}
           onComplete={didComplete}
-          onError={didFail}>
+          onError={didFail}
+        >
           <PaymentMethods showComponents={false} />
         </AdyenCheckout>
       ) : (

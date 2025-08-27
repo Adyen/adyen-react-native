@@ -1,7 +1,7 @@
 // @ts-check
 
-import React, {useCallback, useState} from 'react';
-import {useAppContext} from '../Utilities/AppContext';
+import React, { useCallback, useState } from 'react';
+import { useAppContext } from '../Utilities/AppContext';
 import Styles from '../Utilities/Styles';
 import {
   Button,
@@ -12,7 +12,7 @@ import {
   useColorScheme,
 } from 'react-native';
 
-const FormTextInput = ({value, title, onChangeText, ...rest}) => {
+const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
   const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={Styles.item}>
@@ -20,7 +20,8 @@ const FormTextInput = ({value, title, onChangeText, ...rest}) => {
         style={[
           isDarkMode ? Styles.textDark : Styles.textLight,
           Styles.itemTitle,
-        ]}>
+        ]}
+      >
         {title}
       </Text>
       <TextInput
@@ -36,21 +37,21 @@ const FormTextInput = ({value, title, onChangeText, ...rest}) => {
   );
 };
 
-const SettingFormView = ({navigation: {goBack}}) => {
-  const {configuration, save} = useAppContext();
+const SettingFormView = ({ navigation: { goBack } }) => {
+  const { configuration, save } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
   const [amount, setAmount] = useState(configuration.amount);
   const [currency, setCurrency] = useState(configuration.currency);
   const [merchantName, setMerchantName] = useState(configuration.merchantName);
   const [merchantAccount, setMerchantAccount] = useState(
-    configuration.merchantAccount,
+    configuration.merchantAccount
   );
   const [shopperReference, setShopperReference] = useState(
-    configuration.shopperReference,
+    configuration.shopperReference
   );
   const [shopperLocale, setShopperLocale] = useState(
-    configuration.shopperLocale,
+    configuration.shopperLocale
   );
 
   const handleOnPress = useCallback(() => {
@@ -121,7 +122,7 @@ const SettingFormView = ({navigation: {goBack}}) => {
   );
 };
 
-const SettingView = ({navigation}) => {
+const SettingView = ({ navigation }) => {
   return (
     <SafeAreaView style={Styles.page}>
       <SettingFormView navigation={navigation} />
