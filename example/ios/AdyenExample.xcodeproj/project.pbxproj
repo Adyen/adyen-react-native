@@ -17,6 +17,7 @@
 		94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */; };
 		E741F0FE2E38DECD000D0F42 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */; };
 		E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */; };
+		E77AE1202E605FCD00607717 /* EncodablePaymentComponentDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77AE11F2E605FCB00607717 /* EncodablePaymentComponentDataTests.swift */; };
 		E77D207A2CDBB31900FED3F0 /* AnalyticsParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77D20772CDBB31900FED3F0 /* AnalyticsParserTests.swift */; };
 		E77D207B2CDBB31900FED3F0 /* RooConfigurationtParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77D20792CDBB31900FED3F0 /* RooConfigurationtParserTests.swift */; };
 		E77D207C2CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77D20782CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift */; };
@@ -56,6 +57,7 @@
 		E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
 		E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropInConfigurationParserTests.swift; sourceTree = "<group>"; };
+		E77AE11F2E605FCB00607717 /* EncodablePaymentComponentDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncodablePaymentComponentDataTests.swift; sourceTree = "<group>"; };
 		E77D20772CDBB31900FED3F0 /* AnalyticsParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsParserTests.swift; sourceTree = "<group>"; };
 		E77D20782CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartialPaymentConfigurationParserTests.swift; sourceTree = "<group>"; };
 		E77D20792CDBB31900FED3F0 /* RooConfigurationtParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RooConfigurationtParserTests.swift; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 		00E356EF1AD99517003FC87E /* AdyenExampleTests */ = {
 			isa = PBXGroup;
 			children = (
+				E77AE11E2E605FBC00607717 /* Encoders */,
 				E773B10A2BE3B5B000638431 /* Parsers */,
 				00E356F01AD99517003FC87E /* Supporting Files */,
 				948B9B012A83D269003D15B4 /* DropInTest.swift */,
@@ -183,6 +186,14 @@
 				E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */,
 			);
 			name = Parsers;
+			sourceTree = "<group>";
+		};
+		E77AE11E2E605FBC00607717 /* Encoders */ = {
+			isa = PBXGroup;
+			children = (
+				E77AE11F2E605FCB00607717 /* EncodablePaymentComponentDataTests.swift */,
+			);
+			path = Encoders;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -429,6 +440,7 @@
 				E77D207C2CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift in Sources */,
 				E788D7AD2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift in Sources */,
 				945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */,
+				E77AE1202E605FCD00607717 /* EncodablePaymentComponentDataTests.swift in Sources */,
 				E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */,
 				948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */,
 				E79C3AD02BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift in Sources */,
@@ -636,7 +648,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -711,7 +726,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
