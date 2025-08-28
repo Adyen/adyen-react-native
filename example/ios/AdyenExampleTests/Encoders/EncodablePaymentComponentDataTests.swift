@@ -56,6 +56,8 @@ class EncodablePaymentComponentDataTests: XCTestCase {
     XCTAssertNotNil(json["amount"])
     XCTAssertNotNil(json["order"])
     XCTAssertNotNil(json["checkoutAttemptId"])
+    XCTAssertNotNil(json["installments"])
+    XCTAssertNotNil(json["supportNativeRedirect"])
   }
 
   func testEncodingWitCardsData() throws {
@@ -66,9 +68,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
                                      encryptedCard: EncryptedCard(number: nil, securityCode: nil, expiryMonth: nil, expiryYear: nil),
                                      socialSecurityNumber: "123-45-6789",
                                      delegatedAuthenticationData: delegatedData)
-    var paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails,
-                                           amount: nil,
-                                           order: nil)
+    var paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails, amount: nil, order: nil)
     paymentData = paymentData.replacing(checkoutAttemptId: "attempt_id")
     let encodableData = EncodablePaymentComponentData(data: paymentData)
 
@@ -79,6 +79,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
     // THEN
     XCTAssertNotNil(json["paymentMethod"])
     XCTAssertEqual(json["socialSecurityNumber"] as? String, "123-45-6789")
+    XCTAssertNotNil(json["delegatedAuthenticationData"])
   }
 
   func testEncodingWithAffirmData() throws {
