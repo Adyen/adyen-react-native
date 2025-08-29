@@ -62,7 +62,7 @@ class ApiClient {
       const response = await fetch(request);
       const pspReference = response.headers.get('pspreference');
       console.debug(`PSP Reference - ${pspReference}`);
-      return response.status == 204;
+      return response.status === 204;
     } catch {
       return false;
     }
