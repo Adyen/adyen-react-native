@@ -30,6 +30,9 @@ class EncodablePaymentComponentDataTests: XCTestCase {
     XCTAssertNil(json["amount"])
     XCTAssertNil(json["order"])
     XCTAssertNil(json["checkoutAttemptId"])
+    XCTAssertNil(json["installments"])
+    XCTAssertTrue(json["supportNativeRedirect"] as! Bool)
+    XCTAssertNil(json["delegatedAuthenticationData"])
   }
 
   func testEncodingWithGerenalData() throws {
@@ -60,7 +63,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
     XCTAssertNotNil(json["supportNativeRedirect"])
   }
 
-  func testEncodingWitCardsData() throws {
+  func testEncodingWithCardsData() throws {
     // GIVEN
     let delegatedDataRaw = "{\"sdkInput\": \"SOME_DATA\"}".data(using: .utf8)!
     let delegatedData = try JSONDecoder().decode(DelegatedAuthenticationData.self, from: delegatedDataRaw)
