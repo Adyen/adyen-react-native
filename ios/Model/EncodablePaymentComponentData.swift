@@ -14,7 +14,7 @@ internal struct EncodablePaymentComponentData: Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(data.paymentMethod.encodable, forKey: .details)
-        try container.encode(data.storePaymentMethod, forKey: .storePaymentMethod)
+        try container.encodeIfPresent(data.storePaymentMethod, forKey: .storePaymentMethod)
         try container.encodeIfPresent(data.browserInfo, forKey: .browserInfo)
         try container.encodeIfPresent(data.shopperName, forKey: .shopperName)
         try container.encodeIfPresent(data.emailAddress, forKey: .shopperEmail)
@@ -25,6 +25,9 @@ internal struct EncodablePaymentComponentData: Encodable {
         try container.encodeIfPresent(data.order?.compactOrder, forKey: .order)
         try container.encodeIfPresent(data.installments, forKey: .installments)
         try container.encodeIfPresent(data.amount, forKey: .amount)
+        try container.encodeIfPresent(data.checkoutAttemptId, forKey: .checkoutAttemptId)
+        try container.encodeIfPresent(data.supportNativeRedirect, forKey: .supportNativeRedirect)
+        try container.encodeIfPresent(data.delegatedAuthenticationData, forKey: .delegatedAuthenticationData)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -40,6 +43,9 @@ internal struct EncodablePaymentComponentData: Encodable {
         case order
         case installments
         case amount
+        case checkoutAttemptId
+        case supportNativeRedirect
+        case delegatedAuthenticationData
     }
 }
 
