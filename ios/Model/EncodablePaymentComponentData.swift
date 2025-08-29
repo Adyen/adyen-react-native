@@ -27,8 +27,7 @@ internal struct EncodablePaymentComponentData: Encodable {
         try container.encodeIfPresent(data.amount, forKey: .amount)
         try container.encodeIfPresent(data.checkoutAttemptId, forKey: .checkoutAttemptId)
         try container.encodeIfPresent(data.supportNativeRedirect, forKey: .supportNativeRedirect)
-        try container.encodeIfPresent(data.delegatedAuthenticationData, forKey: .delegatedAuthenticationData
-        )
+        try container.encodeIfPresent(data.delegatedAuthenticationData, forKey: .delegatedAuthenticationData)
     }
 
     private enum CodingKeys: String, CodingKey {
