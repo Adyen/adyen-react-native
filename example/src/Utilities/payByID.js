@@ -1,7 +1,7 @@
 import { AdyenCSE, AdyenAction } from '@adyen/react-native';
 import { ENVIRONMENT } from '../Configuration';
 import ApiClient from './APIClient';
-import { checkoutConfiguration } from './AppContext';
+import { checkoutConfiguration } from './checkoutConfiguration';
 import { isSuccess } from './Helpers';
 
 export async function payByID(id, cvv, configuration) {

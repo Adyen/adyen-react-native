@@ -15,7 +15,7 @@ import {
 import { Alert, useColorScheme } from 'react-native';
 import Result from './src/Views/ResultView';
 import Home from './src/Views/HomeView';
-import AppContextProvider from './src/Utilities/AppContext';
+import AppContextProvider from './src/State/AppContext';
 import { DEFAULT_CONFIGURATION } from './src/Configuration';
 import SettingView from './src/Views/SettingsView';
 import SessionsCheckout from './src/Views/Checkout/SessionsCheckout';

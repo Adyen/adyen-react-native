@@ -4,13 +4,11 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { AdyenCheckout, AdyenDropIn, ErrorCode } from '@adyen/react-native';
 import ApiClient from '../../Utilities/APIClient';
-import {
-  checkoutConfiguration,
-  useAppContext,
-} from '../../Utilities/AppContext';
-import PaymentMethods from './PaymentMethodsView';
+import { useAppContext } from '../../hooks/useAppContext';
+import { checkoutConfiguration } from '../../Utilities/checkoutConfiguration';
+import PaymentMethods from './components/PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
-import TopView from './TopView';
+import TopView from './components/TopView';
 import { ENVIRONMENT } from '../../Configuration';
 import { isSuccess } from '../../Utilities/Helpers';
 
