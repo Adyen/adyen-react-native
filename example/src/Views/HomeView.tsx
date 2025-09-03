@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { View, Button } from 'react-native';
 import Styles from '../Utilities/Styles';
-import { PageProps } from '../State/RootStackParamList';
+import type { PageProps } from '../State/RootStackParamList';
 
 function createOptions({ navigation }: PageProps) {
   return {
@@ -34,21 +34,13 @@ const Home = ({ navigation }: PageProps) => {
 
   const pagesWithButtons: PageType[] = [
     {
-      title: 'Checkout',
+      title: 'Sessions flow',
       route: { name: 'SessionsCheckout', params: undefined },
     },
     {
-      title: 'Advanced case',
+      title: 'Advanced flow',
       route: { name: 'AdvancedCheckout', params: undefined },
-    },
-    {
-      title: 'Advanced partial payment case',
-      route: { name: 'PartialPaymentCheckout', params: undefined },
-    },
-    {
-      title: 'Custom Card Integration',
-      route: { name: 'CustomCard', params: undefined },
-    },
+    }
   ];
 
   return (

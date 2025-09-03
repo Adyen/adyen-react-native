@@ -16,7 +16,7 @@ import { isSuccess } from '../../Utilities/Helpers';
 
 const SessionsCheckout = ({ navigation }) => {
   const { configuration } = useAppContext();
-  const [session, setSession] = useState(undefined);
+  const [session, setSession] = useState();
 
   useEffect(() => {
     refreshSession(configuration).catch((e) => {
@@ -74,7 +74,7 @@ const SessionsCheckout = ({ navigation }) => {
       nativeComponent.hide(success);
       navigation.popToTop();
       navigation.push('Result', {
-        result: result.resultCode,
+        resultCode: result.resultCode,
       });
     },
     []
@@ -104,7 +104,7 @@ const SessionsCheckout = ({ navigation }) => {
       {session ? (
         <AdyenCheckout
           config={checkoutConfiguration(configuration)}
-          session={session}
+          session={{id: session.id, sessionData: session.data }}
           onComplete={didComplete}
           onError={didFail}
         >

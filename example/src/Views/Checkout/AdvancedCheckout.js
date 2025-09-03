@@ -113,7 +113,7 @@ const AdvancedCheckout = ({ navigation }) => {
       );
       nativeComponent.hide(success);
       navigation.popToTop();
-      navigation.push('Result', { result: result.resultCode });
+      navigation.push('Result', { resultCode: result.resultCode });
     },
     []
   );
