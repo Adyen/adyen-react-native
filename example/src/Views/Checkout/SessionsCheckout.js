@@ -33,7 +33,7 @@ const SessionsCheckout = ({ navigation }) => {
     setSession(session);
   };
 
-  const didComplete = useCallback(
+  const onCompleteHandler = useCallback(
     async (
       result,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
@@ -45,7 +45,7 @@ const SessionsCheckout = ({ navigation }) => {
     []
   );
 
-  const didFail = useCallback(
+  const onErrorHandler = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */
       error,
@@ -105,8 +105,8 @@ const SessionsCheckout = ({ navigation }) => {
         <AdyenCheckout
           config={checkoutConfiguration(configuration)}
           session={{id: session.id, sessionData: session.data }}
-          onComplete={didComplete}
-          onError={didFail}
+          onComplete={onCompleteHandler}
+          onError={onErrorHandler}
         >
           <PaymentMethods showComponents={false} />
         </AdyenCheckout>

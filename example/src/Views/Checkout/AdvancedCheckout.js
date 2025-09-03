@@ -28,7 +28,7 @@ const AdvancedCheckout = ({ navigation }) => {
     setPaymentMethods(paymentMethods);
   };
 
-  const didSubmit = useCallback(
+  const onSubmitHandler = useCallback(
     async (
       /** @type {import('@adyen/react-native').PaymentMethodData} */ data,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent,
@@ -46,13 +46,14 @@ const AdvancedCheckout = ({ navigation }) => {
         const result = await ApiClient.payments(
           data,
           configuration,
-          data.returnUrl
+          'myapp://payment' //data.returnUrl
         );
-        if (result.action) {
-          nativeComponent.handle(result.action);
-        } else {
-          processResult(result, nativeComponent);
-        }
+        nativeComponent.hide(result.resultCode === 'Success');
+        // if (result.action) {
+        //   nativeComponent.handle(result.action);
+        // } else {
+        //   processResult(result, nativeComponent);
+        // }
       } catch (error) {
         processError(error, nativeComponent);
       }
@@ -60,34 +61,23 @@ const AdvancedCheckout = ({ navigation }) => {
     [configuration]
   );
 
-  const didProvide = useCallback(
+  const onAditionalDetailsHandler = useCallback(
     async (
       /** @type {any} */ data,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
     ) => {
       console.debug('didProvide');
-      try {
-        const result = await ApiClient.paymentDetails(data);
-        processResult(result, nativeComponent);
-      } catch (error) {
-        processError(error, nativeComponent);
-      }
+      // try {
+      //   const result = await ApiClient.paymentDetails(data);
+      //   processResult(result, nativeComponent);
+      // } catch (error) {
+      //   processError(error, nativeComponent);
+      // }
     },
     []
   );
 
-  const didComplete = useCallback(
-    async (
-      result,
-      /** @type {import('@adyen/react-native').AdyenActionComponent} */ nativeComponent
-    ) => {
-      console.log('didComplete');
-      processResult(result, nativeComponent);
-    },
-    []
-  );
-
-  const didFail = useCallback(
+  const onErrorHandler = useCallback(
     async (
       /** @type {import('@adyen/react-native').AdyenError} */ error,
       /** @type {import('@adyen/react-native').AdyenComponent} */ nativeComponent
@@ -140,10 +130,9 @@ const AdvancedCheckout = ({ navigation }) => {
         <AdyenCheckout
           config={checkoutConfiguration(configuration)}
           paymentMethods={paymentMethods}
-          onSubmit={didSubmit}
-          onAdditionalDetails={didProvide}
-          onComplete={didComplete}
-          onError={didFail}
+          // onSubmit={onSubmitHandler}
+          // onAdditionalDetails={onAditionalDetailsHandler}
+          onError={onErrorHandler}
         >
           <PaymentMethods showComponents={true} />
         </AdyenCheckout>
