@@ -30,10 +30,6 @@ export const checkoutConfiguration = (
           currency: config.currency,
         },
         countryCode: config.countryCode,
-        analytics: {
-          enabled: true,
-          verboseLogs: true,
-        },
         dropin: {
           showRemovePaymentMethodButton: true,
           onDisableStoredPaymentMethod: async (
