@@ -36,11 +36,11 @@ export type {
   HideOption,
 } from './core/AdyenNativeModules';
 
-export { AdyenCheckout, useAdyenCheckout } from './AdyenCheckoutContext';
-export type {
-  AdyenCheckoutProps,
-  AdyenCheckoutContextType,
-} from './AdyenCheckoutContext';
+export { useAdyenCheckout } from './hooks/useAdyenCheckout';
+export type { AdyenCheckoutContextType } from './hooks/useAdyenCheckout';
+
+export { AdyenCheckout } from './components/AdyenCheckout';
+export type { AdyenCheckoutProps } from './components/AdyenCheckout';
 
 export { Event, ErrorCode, ResultCode } from './core/constants';
 

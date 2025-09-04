@@ -1,9 +1,7 @@
 import React, {
   useRef,
   useCallback,
-  createContext,
   useEffect,
-  useContext,
   type ReactNode,
   useState,
 } from 'react';
@@ -12,10 +10,10 @@ import {
   NativeEventEmitter,
   type NativeModule,
 } from 'react-native';
-import { Event, MISSING_CONTEXT_ERROR } from './core/constants';
-import type { AdyenComponent } from './core/AdyenNativeModules';
-import { SessionHelper } from './modules/SessionHelperModule';
-import { getWrapper } from './wrappers/getWrapper';
+import { Event } from '../core/constants';
+import type { AdyenComponent } from '../core/AdyenNativeModules';
+import { SessionHelper } from '../modules/SessionHelperModule';
+import { getWrapper } from '../wrappers/getWrapper';
 import type {
   AdyenError,
   PaymentMethodsResponse,
@@ -26,43 +24,20 @@ import type {
   StoredPaymentMethod,
   SubmitModel,
   Order,
-} from './core/types';
-import type { Configuration } from './core/configurations/Configuration';
-import { checkPaymentMethodsResponse, checkConfiguration } from './core/utils';
-import type { AddressLookup } from './wrappers/AddressLookupComponentWrapper';
-import type { AdyenActionComponent } from './core/AdyenNativeModules';
-import type { RemovesStoredPayment } from './wrappers/RemoveStoredPaymentComponentWrapper';
-import type { AddressLookupItem } from './core/configurations/AddressLookup';
-import type { PartialPaymentComponent } from './wrappers/PartialPaymentsComponentWrapper';
-
-/**
- * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
- */
-interface AdyenCheckoutContextType {
-  start: (typeName: string) => void;
-  config: Configuration;
-  paymentMethods?: PaymentMethodsResponse;
-}
-
-const AdyenCheckoutContext = createContext<AdyenCheckoutContextType | null>(
-  null
-);
-
-/**
- * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
- */
-const useAdyenCheckout = (): AdyenCheckoutContextType => {
-  const context = useContext(AdyenCheckoutContext);
-  if (context != null) {
-    return context;
-  }
-  throw new Error(MISSING_CONTEXT_ERROR);
-};
+} from '../core/types';
+import type { Configuration } from '../core/configurations/Configuration';
+import { checkPaymentMethodsResponse, checkConfiguration } from '../core/utils';
+import type { AddressLookup } from '../wrappers/AddressLookupComponentWrapper';
+import type { AdyenActionComponent } from '../core/AdyenNativeModules';
+import type { RemovesStoredPayment } from '../wrappers/RemoveStoredPaymentComponentWrapper';
+import type { AddressLookupItem } from '../core/configurations/AddressLookup';
+import type { PartialPaymentComponent } from '../wrappers/PartialPaymentsComponentWrapper';
+import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
 
 /**
  * Props for AdyenCheckout
  */
-type AdyenCheckoutProps = {
+export type AdyenCheckoutProps = {
   /** Collection of all necessary configurations */
   config: Configuration;
   /** JSON response from Adyen API `\paymentMethods` */
@@ -104,7 +79,7 @@ type AdyenCheckoutProps = {
   children: ReactNode;
 };
 
-const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
+export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   config,
   paymentMethods,
   session,
@@ -119,6 +94,10 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     undefined
   );
 
+  function removeEventListeners() {
+    subscriptions.current.forEach((s: EmitterSubscription) => s.remove());
+  }
+
   useEffect(() => {
     return () => {
       removeEventListeners();
@@ -126,45 +105,43 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, []);
 
   useEffect(() => {
-    if (session) {
-      createSession();
+    function createSession(newSession: SessionConfiguration) {
+      SessionHelper.createSession(newSession, config)
+        .then((sessionResponse) => {
+          setSession(sessionResponse);
+        })
+        .catch((error) => {
+          onError(
+            {
+              message: JSON.stringify(error),
+              errorCode: 'sessionError',
+            },
+            SessionHelper
+          );
+        });
     }
-  }, [session]);
 
-  const submitPayment = useCallback(
-    (
-      configuration: Configuration,
-      data: any,
-      nativeComponent: AdyenActionComponent,
-      extra: any
-    ) => {
-      const payload = {
-        ...data,
-        returnUrl: data.returnUrl ?? configuration.returnUrl,
-      };
-      onSubmit?.(payload, nativeComponent, extra);
-    },
-    [onSubmit]
-  );
-
-  const removeEventListeners = useCallback(() => {
-    subscriptions.current.forEach((s: EmitterSubscription) => s.remove());
-  }, [subscriptions]);
+    if (session) {
+      createSession(session);
+    }
+  }, [session, config, onError]);
 
   const startEventListeners = useCallback(
-    (
-      configuration: Configuration,
-      nativeComponent: AdyenActionComponent & NativeModule
-    ) => {
+    (nativeComponent: AdyenActionComponent & NativeModule) => {
+      removeEventListeners();
       const eventEmitter = new NativeEventEmitter(nativeComponent);
+
+      function submitPayment(data: any, extra: any) {
+        const payload = {
+          ...data,
+          returnUrl: data.returnUrl ?? config.returnUrl,
+        };
+        onSubmit?.(payload, nativeComponent, extra);
+      }
+
       subscriptions.current = [
         eventEmitter.addListener(Event.onSubmit, (response: SubmitModel) =>
-          submitPayment(
-            configuration,
-            response.paymentData,
-            nativeComponent,
-            response.extra
-          )
+          submitPayment(response.paymentData, response.extra)
         ),
         eventEmitter.addListener(Event.onError, (error: AdyenError) =>
           onError?.(error, nativeComponent)
@@ -190,7 +167,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       }
 
       const onDisableStoredPaymentMethodCallback =
-        configuration.dropin?.onDisableStoredPaymentMethod;
+        config.dropin?.onDisableStoredPaymentMethod;
       if (
         onDisableStoredPaymentMethodCallback &&
         nativeComponent.events.includes(Event.onDisableStoredPaymentMethod)
@@ -213,8 +190,8 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
 
-      const onUpdateAddressCallback = configuration.card?.onUpdateAddress;
-      const onConfirmAddressCallback = configuration.card?.onConfirmAddress;
+      const onUpdateAddressCallback = config.card?.onUpdateAddress;
+      const onConfirmAddressCallback = config.card?.onConfirmAddress;
       if (
         onUpdateAddressCallback &&
         onConfirmAddressCallback &&
@@ -238,11 +215,9 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
 
-      const onBalanceCheckCallback =
-        configuration.partialPayment?.onBalanceCheck;
-      const onOrderRequestCallback =
-        configuration.partialPayment?.onOrderRequest;
-      const onOrderCancelCallback = configuration.partialPayment?.onOrderCancel;
+      const onBalanceCheckCallback = config.partialPayment?.onBalanceCheck;
+      const onOrderRequestCallback = config.partialPayment?.onOrderRequest;
+      const onOrderCancelCallback = config.partialPayment?.onOrderCancel;
       if (
         onBalanceCheckCallback &&
         onOrderRequestCallback &&
@@ -290,7 +265,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
 
-      const onBinLookupCallback = configuration.card?.onBinLookup;
+      const onBinLookupCallback = config.card?.onBinLookup;
       if (
         onBinLookupCallback &&
         nativeComponent.events.includes(Event.onBinLookuop)
@@ -300,7 +275,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
 
-      const onBinValueCallback = configuration.card?.onBinValue;
+      const onBinValueCallback = config.card?.onBinValue;
       if (
         onBinValueCallback &&
         nativeComponent.events.includes(Event.onBinValue)
@@ -310,12 +285,11 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
     },
-    [submitPayment, onAdditionalDetails, onComplete, onError, subscriptions]
+    [onSubmit, onAdditionalDetails, onComplete, onError, config]
   );
 
   const start = useCallback(
     (typeName: string) => {
-      removeEventListeners();
       const currentPaymentMethods = checkPaymentMethodsResponse(
         paymentMethods ?? sessionStorage?.paymentMethods
       );
@@ -326,7 +300,7 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       );
 
       checkConfiguration(config);
-      startEventListeners(config, nativeComponent);
+      startEventListeners(nativeComponent);
 
       if (paymentMethod) {
         const singlePaymentMethods = { paymentMethods: [paymentMethod] };
@@ -339,30 +313,8 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         nativeComponent.open(currentPaymentMethods, config);
       }
     },
-    [
-      config,
-      paymentMethods,
-      sessionStorage,
-      startEventListeners,
-      removeEventListeners,
-    ]
+    [config, paymentMethods, sessionStorage, startEventListeners]
   );
-
-  const createSession = useCallback(() => {
-    SessionHelper.createSession(session, config)
-      .then((sessionResponse) => {
-        setSession(sessionResponse);
-      })
-      .catch((e) => {
-        onError(
-          {
-            message: JSON.stringify(e),
-            errorCode: 'sessionError',
-          },
-          SessionHelper
-        );
-      });
-  }, [session, config, onError]);
 
   return (
     <AdyenCheckoutContext.Provider
@@ -376,6 +328,3 @@ const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     </AdyenCheckoutContext.Provider>
   );
 };
-
-export { AdyenCheckout, useAdyenCheckout };
-export type { AdyenCheckoutContextType, AdyenCheckoutProps };
