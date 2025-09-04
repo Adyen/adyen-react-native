@@ -113,7 +113,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         .catch((error) => {
           onError(
             {
-              message: JSON.stringify(error),
+              message: String(error),
               errorCode: 'sessionError',
             },
             SessionHelper
@@ -131,7 +131,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       removeEventListeners();
       const eventEmitter = new NativeEventEmitter(nativeComponent);
 
-      function submitPayment(data: any, extra: any) {
+      function submitPayment(data: PaymentMethodData, extra: any) {
         const payload = {
           ...data,
           returnUrl: data.returnUrl ?? config.returnUrl,
