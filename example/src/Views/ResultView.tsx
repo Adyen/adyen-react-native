@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Text, useColorScheme, View } from 'react-native';
 import Styles from '../Utilities/Styles';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../State/RootStackParamList';
@@ -9,9 +9,10 @@ export type ResultViewProps = NativeStackScreenProps<
 >;
 
 const ResultView = ({ route }: ResultViewProps) => {
+  const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={Styles.content}>
-      <Text style={[Styles.textLight, Styles.centeredText]}>
+      <Text style={[isDarkMode ? Styles.textDark : Styles.textLight, Styles.centeredText]}>
         {route.params.resultCode}
       </Text>
     </View>
