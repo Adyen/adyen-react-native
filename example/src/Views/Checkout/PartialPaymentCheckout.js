@@ -9,6 +9,7 @@ import TopView from './TopView';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { isSuccess } from '../../Utilities/isSuccess';
+import { checkoutConfiguration } from '../../State/checkoutConfiguration';
 
 const PartialPaymentCheckout = ({ navigation }) => {
   const { configuration } = useAppContext();

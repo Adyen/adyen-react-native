@@ -10,7 +10,7 @@ import { ENVIRONMENT } from '../../Configuration';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { isSuccess } from '../../Utilities/isSuccess';
-import { checkoutConfiguration } from '../../Utilities/checkoutConfiguration';
+import { checkoutConfiguration } from '../../State/checkoutConfiguration';
 
 const SessionsCheckout = ({ navigation }) => {
   const { configuration } = useAppContext();

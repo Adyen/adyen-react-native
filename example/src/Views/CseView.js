@@ -43,7 +43,7 @@ const CseView = ({ navigation }) => {
   function handleResult(navigation, result) {
     AdyenAction.hide(isSuccess(result.resultCode));
     navigation.popToTop();
-    navigation.push('Result', { result: result.resultCode });
+    navigation.push('Result', { resultCode: result.resultCode });
   }
 
   return (

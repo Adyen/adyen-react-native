@@ -1,7 +1,7 @@
 import { AdyenCSE, AdyenAction } from '@adyen/react-native';
 import { ENVIRONMENT } from '../Configuration';
 import ApiClient from '../api/APIClient';
-import { checkoutConfiguration } from '../hooks/useAppContext';
+import { checkoutConfiguration } from '../State/checkoutConfiguration';
 
 export async function payWithCard(unencryptedCard, configuration) {
   const encryptedCard = await AdyenCSE.encryptCard(
