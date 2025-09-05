@@ -1,6 +1,6 @@
 // @ts-check
 
-import type { PaymentMethodsResponse } from '@adyen/react-native';
+import type { PaymentMethodsResponse, PaymentMethodData } from '@adyen/react-native';
 import { ENVIRONMENT, CHANNEL } from '../Configuration';
 import type {
   PaymentConfiguration,
@@ -12,7 +12,7 @@ import type {
 
 class ApiClient {
   static payments(
-    data: any,
+    data: PaymentMethodData,
     configuration: PaymentConfiguration,
     returnUrl?: string
   ): Promise<PaymentResponse> {
@@ -62,7 +62,7 @@ class ApiClient {
   };
 
   static tryRemoveStoredCard = async (
-    id: any,
+    id: String,
     configuration: PaymentConfiguration
   ): Promise<boolean> => {
     let { merchantAccount, shopperReference } = configuration;
@@ -87,7 +87,7 @@ class ApiClient {
   };
 
   static checkBalance = async (
-    paymentData: any,
+    paymentData: PaymentMethodData,
     configuration: PaymentConfiguration
   ): Promise<BalanceResponse> => {
     const body = {
@@ -112,7 +112,7 @@ class ApiClient {
   };
 
   static cancelOrder = async (
-    order: { orderData: any; pspReference: string },
+    order: any,
     configuration: PaymentConfiguration
   ): Promise<OrderResponse> => {
     const body = {
@@ -123,7 +123,7 @@ class ApiClient {
   };
 
   /** @private */
-  static makeRequest = async (url: string | Request, body: any) => {
+  static makeRequest = async (url: string, body: any) => {
     const bodyJSON = JSON.stringify(body);
     console.debug(`Request to: ${url}`);
     console.debug(`== ${bodyJSON}`);
@@ -192,7 +192,7 @@ const paymentConfiguration = {
 
 const parseAmount = (
   configuration: PaymentConfiguration,
-  data?: { amount: any }
+  data?: any
 ) => ({
   amount: data?.amount ?? {
     value: configuration.amount,
@@ -205,7 +205,7 @@ const parseConfig = ({
   countryCode,
   shopperReference,
   shopperLocale,
-}: any) => ({
+}: PaymentConfiguration) => ({
   merchantAccount,
   countryCode,
   shopperReference,
