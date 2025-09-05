@@ -104,6 +104,11 @@ internal final class DropInModule: BaseModule {
         component.storedPaymentMethodsDelegate = BaseModule.session ?? self
         component.cardComponentDelegate = self
         present(component: component)
+
+      // `TrackableComponent` prevents any Component that is running within DropIn with "skipListWhenSinglePaymentMethod" to send `sendInitialAnalytics`.
+      if paymentMethods.regular.count == 1 && config.allowsSkippingPaymentList {
+        sendTelemetry(types: paymentMethods.regular.map(\.type), context: context)
+      }
     }
 
     @objc

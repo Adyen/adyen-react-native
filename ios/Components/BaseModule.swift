@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Adyen
+@_spi(AdyenInternal) import Adyen
 import Adyen3DS2
 import React
 import UIKit
@@ -164,6 +164,26 @@ internal class BaseModule: RCTEventEmitter {
             }
         }
     }
+
+  internal func sendTelemetry(type: PaymentMethodType, context: AdyenContext) {
+    let amount = context.payment?.amount
+    let additionalFields = AdditionalAnalyticsFields(amount: amount,
+                                                     sessionId: BaseModule.session?.sessionContext.identifier)
+    context.analyticsProvider?.sendInitialAnalytics(
+      with: .components(type: type),
+      additionalFields: additionalFields
+    )
+  }
+
+  internal func sendTelemetry(types: [PaymentMethodType], context: AdyenContext) {
+    let amount = context.payment?.amount
+    let additionalFields = AdditionalAnalyticsFields(amount: amount,
+                                                     sessionId: BaseModule.session?.sessionContext.identifier)
+    context.analyticsProvider?.sendInitialAnalytics(
+      with: .dropIn(type: "dropin", paymentMethods: types.map{$0.rawValue}),
+      additionalFields: additionalFields
+    )
+  }
 }
 
 extension Error {

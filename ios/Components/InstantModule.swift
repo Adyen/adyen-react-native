@@ -31,6 +31,9 @@ internal final class InstantModule: BaseModule {
             return sendEvent(error: error)
         }
 
+        // Attempt to fetch checkoutAttemptId before submitting payment
+        sendTelemetry(type: paymentMethod.type, context: context)
+
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
         var config = AdyenActionComponent.Configuration(style: style)
         if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
@@ -46,8 +49,9 @@ internal final class InstantModule: BaseModule {
         component.delegate = BaseModule.session ?? self
         currentComponent = component
 
-        DispatchQueue.main.async {
-            component.initiatePayment()
+        // Small delay to ensure checkoutAttemptId is fetched
+        DispatchQueue.main.asyncAfter(deadline: .now().advanced(by: .milliseconds(100))) {
+          component.initiatePayment()
         }
     }
 
