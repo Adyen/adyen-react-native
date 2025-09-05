@@ -42,7 +42,7 @@ export type { AdyenCheckoutContextType } from './hooks/useAdyenCheckout';
 export { AdyenCheckout } from './components/AdyenCheckout';
 export type { AdyenCheckoutProps } from './components/AdyenCheckout';
 
-export { Event, ErrorCode, ResultCode } from './core/constants';
+export * from './core/constants';
 
 export type {
   BaseConfiguration,

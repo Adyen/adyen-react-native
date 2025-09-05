@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { AdyenAction } from '@adyen/react-native';
 import Styles from '../Utilities/Styles';
-import { useAppContext } from '../Utilities/AppContext';
-import { isSuccess } from '../Utilities/Helpers';
+import { isSuccess } from '../Utilities/isSuccess';
 import { payWithCard } from '../Utilities/payWithCard';
+import { useAppContext } from '../hooks/useAppContext';
 
 const CseView = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';

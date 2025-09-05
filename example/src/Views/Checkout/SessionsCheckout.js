@@ -3,16 +3,14 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { AdyenCheckout, AdyenDropIn, ErrorCode } from '@adyen/react-native';
-import ApiClient from '../../Utilities/APIClient';
-import {
-  checkoutConfiguration,
-  useAppContext,
-} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
 import { ENVIRONMENT } from '../../Configuration';
-import { isSuccess } from '../../Utilities/Helpers';
+import ApiClient from '../../api/APIClient';
+import { useAppContext } from '../../hooks/useAppContext';
+import { isSuccess } from '../../Utilities/isSuccess';
+import { checkoutConfiguration } from '../../Utilities/checkoutConfiguration';
 
 const SessionsCheckout = ({ navigation }) => {
   const { configuration } = useAppContext();
@@ -74,7 +72,7 @@ const SessionsCheckout = ({ navigation }) => {
       nativeComponent.hide(success);
       navigation.popToTop();
       navigation.push('Result', {
-        result: result.resultCode,
+        resultCode: result.resultCode,
       });
     },
     []

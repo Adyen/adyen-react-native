@@ -1,7 +1,7 @@
 
 #!/bin/bash
 
-CONFIG_PATH=$(find . -name Configuration.js ! -path "*node_modules*" )
+CONFIG_PATH=$(find . -name Configuration.ts ! -path "*node_modules*" )
 
 if [ -z "$CONFIG_PATH" ]; then
   echo "Error: Configuration.js not found." >&2

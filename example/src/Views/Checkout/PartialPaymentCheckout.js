@@ -3,15 +3,12 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
-import ApiClient from '../../Utilities/APIClient';
-import {
-  checkoutConfiguration,
-  useAppContext,
-} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
-import { isSuccess } from '../../Utilities/Helpers';
+import ApiClient from '../../api/APIClient';
+import { useAppContext } from '../../hooks/useAppContext';
+import { isSuccess } from '../../Utilities/isSuccess';
 
 const PartialPaymentCheckout = ({ navigation }) => {
   const { configuration } = useAppContext();
@@ -39,7 +36,7 @@ const PartialPaymentCheckout = ({ navigation }) => {
         )}`
       );
       try {
-        /** @type {import('../../Types/index').PaymentResponse} */
+        /** @type {import('../../api/types').PaymentResponse} */
         const result = await ApiClient.payments(
           data,
           configuration,
@@ -93,7 +90,7 @@ const PartialPaymentCheckout = ({ navigation }) => {
 
   const processResult = useCallback(
     async (
-      /** @type {import('../../Types/index').PaymentResponse} */
+      /** @type {import('../../api/types').PaymentResponse} */
       result,
       /** @type {import('@adyen/react-native').DropInModule} */
       dropInComponent
@@ -200,21 +197,21 @@ const PartialPaymentCheckout = ({ navigation }) => {
   );
 
   /**
-   * @param {import('../../Types/index').PaymentResponse} response
+   * @param {import('../../api/types').PaymentResponse} response
    */
   function isRefusedInPartialPaymentFlow(response) {
     return isRefused(response) && isNonFullyPaidOrder(response);
   }
 
   /**
-   * @param {import('../../Types/index').PaymentResponse} response
+   * @param {import('../../api/types').PaymentResponse} response
    */
   function isRefused(response) {
     return response?.resultCode === 'Refused';
   }
 
   /**
-   * @param {import('../../Types/index').PaymentResponse} response
+   * @param {import('../../api/types').PaymentResponse} response
    */
   function isNonFullyPaidOrder(response) {
     const remainingAmount = response?.order?.remainingAmount?.value ?? 0;
