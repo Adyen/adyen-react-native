@@ -12,7 +12,12 @@ const ResultView = ({ route }: ResultViewProps) => {
   const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={Styles.content}>
-      <Text style={[isDarkMode ? Styles.textDark : Styles.textLight, Styles.centeredText]}>
+      <Text
+        style={[
+          isDarkMode ? Styles.textDark : Styles.textLight,
+          Styles.centeredText,
+        ]}
+      >
         {route.params.resultCode}
       </Text>
     </View>

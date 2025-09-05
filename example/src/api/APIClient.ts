@@ -1,6 +1,11 @@
 // @ts-check
 
-import type { PaymentMethodsResponse, PaymentMethodData } from '@adyen/react-native';
+import type {
+  PaymentMethodsResponse,
+  PaymentMethodData,
+  PaymentDetailsData,
+  Order,
+} from '@adyen/react-native';
 import { ENVIRONMENT, CHANNEL } from '../Configuration';
 import type {
   PaymentConfiguration,
@@ -29,7 +34,9 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
   }
 
-  static paymentDetails = (data: any): Promise<PaymentResponse> => {
+  static paymentDetails = (
+    data: PaymentDetailsData
+  ): Promise<PaymentResponse> => {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
@@ -102,7 +109,9 @@ class ApiClient {
     );
   };
 
-  static requestOrder = async (configuration: PaymentConfiguration) => {
+  static requestOrder = async (
+    configuration: PaymentConfiguration
+  ): Promise<OrderResponse> => {
     const body = {
       ...parseAmount(configuration),
       merchantAccount: configuration.merchantAccount,
@@ -112,7 +121,7 @@ class ApiClient {
   };
 
   static cancelOrder = async (
-    order: any,
+    order: Order,
     configuration: PaymentConfiguration
   ): Promise<OrderResponse> => {
     const body = {
@@ -190,10 +199,7 @@ const paymentConfiguration = {
   shopperInteraction: 'Ecommerce',
 };
 
-const parseAmount = (
-  configuration: PaymentConfiguration,
-  data?: any
-) => ({
+const parseAmount = (configuration: PaymentConfiguration, data?: any) => ({
   amount: data?.amount ?? {
     value: configuration.amount,
     currency: configuration.currency,

@@ -4,6 +4,7 @@ import type {
   AddressLookup,
   AddressLookupItem,
   ApplePayRecurringPaymentRequest,
+  BinLookupData,
   Configuration,
   StoredPaymentMethod,
 } from '@adyen/react-native';
@@ -55,10 +56,10 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
         // Make request to Google Maps API or other address provider.
         lookup.confirm(address);
       },
-      onBinValue: (binValue: any) => {
+      onBinValue: (binValue: string) => {
         console.log('BIN: ', binValue);
       },
-      onBinLookup: (binData: any) => {
+      onBinLookup: (binData: BinLookupData[]) => {
         console.log('BIN data: ', JSON.stringify(binData));
       },
     },

@@ -73,20 +73,6 @@ export type {
   PostalAddress,
 } from './core/configurations/AddressLookup';
 
-export type {
-  ApplePayAddressFields,
-  ApplePayCalendarUnit,
-  ApplePayConfiguration,
-  ApplePayPaymentContact,
-  ApplePayRecurringPaymentRequest,
-  ApplePayRecurringSummaryItem,
-  ApplePayShippingMethod,
-  ApplePaySummaryItem,
-  ApplePayShippingType,
-} from './core/configurations/ApplePayConfiguration';
+export type * from './core/configurations/ApplePayConfiguration';
 
-export type {
-  CardsConfiguration,
-  AddressMode,
-  FieldVisibility,
-} from './core/configurations/CardsConfiguration';
+export type * from './core/configurations/CardsConfiguration';

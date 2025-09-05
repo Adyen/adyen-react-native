@@ -3,6 +3,7 @@ import type { AddressLookup, AddressLookupItem } from './AddressLookup';
 export interface BinLookupData {
   brand: string;
 }
+
 export interface CardsConfiguration {
   /**
    * Determines whether the field for the cardholder's name is required.
