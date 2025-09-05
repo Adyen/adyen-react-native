@@ -31,7 +31,7 @@ export type PaymentConfiguration = {
   amount: number;
   currency: string;
   countryCode: string;
-  merchantName?: any;
+  merchantName?: string;
   merchantAccount: string;
   shopperReference: string;
 };

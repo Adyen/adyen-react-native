@@ -4,7 +4,7 @@
 CONFIG_PATH=$(find . -name Configuration.ts ! -path "*node_modules*" )
 
 if [ -z "$CONFIG_PATH" ]; then
-  echo "Error: Configuration.js not found." >&2
+  echo "Error: Configuration.ts not found." >&2
   exit 1
 fi
 
