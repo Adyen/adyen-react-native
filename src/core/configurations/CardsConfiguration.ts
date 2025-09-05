@@ -82,7 +82,7 @@ export interface CardsConfiguration {
    * An optional callback that is triggered when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field in `CardComponent` changes.
    * @param binValue - The Bank Identification Number (BIN) value.
    */
-  onBinValue?(binValue: String): void;
+  onBinValue?(binValue: string): void;
 }
 
 /** Collection of values for address field visibility. */

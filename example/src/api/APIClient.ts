@@ -35,7 +35,7 @@ class ApiClient {
 
   static requestSession = (
     configuration: PaymentConfiguration,
-    returnUrl: String
+    returnUrl: string
   ): Promise<SessionResponse> => {
     const body = {
       ...parseConfig(configuration),
@@ -50,7 +50,7 @@ class ApiClient {
 
   static paymentMethods = (
     configuration: PaymentConfiguration,
-    order?: { orderData: any; pspReference: String }
+    order?: { orderData: any; pspReference: string }
   ): Promise<PaymentMethodsResponse> => {
     const body = {
       ...parseConfig(configuration),
@@ -62,7 +62,7 @@ class ApiClient {
   };
 
   static tryRemoveStoredCard = async (
-    id: String,
+    id: string,
     configuration: PaymentConfiguration
   ): Promise<boolean> => {
     let { merchantAccount, shopperReference } = configuration;
