@@ -166,9 +166,7 @@ internal class BaseModule: RCTEventEmitter {
     }
 
   internal func sendTelemetry(type: PaymentMethodType, context: AdyenContext) {
-    let amount = context.payment?.amount
-    let additionalFields = AdditionalAnalyticsFields(amount: amount,
-                                                     sessionId: BaseModule.session?.sessionContext.identifier)
+    let additionalFields = createAdditionalAnalyticsFields(context: context)
     context.analyticsProvider?.sendInitialAnalytics(
       with: .components(type: type),
       additionalFields: additionalFields
@@ -176,13 +174,17 @@ internal class BaseModule: RCTEventEmitter {
   }
 
   internal func sendTelemetry(types: [PaymentMethodType], context: AdyenContext) {
-    let amount = context.payment?.amount
-    let additionalFields = AdditionalAnalyticsFields(amount: amount,
-                                                     sessionId: BaseModule.session?.sessionContext.identifier)
+    let additionalFields = createAdditionalAnalyticsFields(context: context)
     context.analyticsProvider?.sendInitialAnalytics(
       with: .dropIn(type: "dropin", paymentMethods: types.map{$0.rawValue}),
       additionalFields: additionalFields
     )
+  }
+
+  private func createAdditionalAnalyticsFields(context: AdyenContext) -> AdditionalAnalyticsFields {
+    let amount = context.payment?.amount
+    return AdditionalAnalyticsFields(amount: amount,
+                                     sessionId: BaseModule.session?.sessionContext.identifier)
   }
 }
 
