@@ -15,7 +15,7 @@ import {
 import Styles from '../../Utilities/Styles';
 import { ENVIRONMENT } from '../../Configuration';
 import { payByID } from '../../Utilities/payByID';
-import { useAppContext } from '../../Utilities/AppContext';
+import { useAppContext } from '../../hooks/useAppContext';
 
 const PaymentMethods = ({ showComponents }) => {
   const { configuration } = useAppContext();

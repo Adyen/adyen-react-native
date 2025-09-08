@@ -1,12 +1,26 @@
 // @ts-check
 
-import { LogBox } from 'react-native';
+import type {
+  PaymentMethodsResponse,
+  PaymentMethodData,
+  PaymentDetailsData,
+  Order,
+} from '@adyen/react-native';
 import { ENVIRONMENT, CHANNEL } from '../Configuration';
-
-LogBox.ignoreLogs(['Require cycle:']);
+import type {
+  PaymentConfiguration,
+  SessionResponse,
+  PaymentResponse,
+  BalanceResponse,
+  OrderResponse,
+} from './types';
 
 class ApiClient {
-  static payments(data, configuration, returnUrl) {
+  static payments(
+    data: PaymentMethodData,
+    configuration: PaymentConfiguration,
+    returnUrl?: string
+  ): Promise<PaymentResponse> {
     console.debug(JSON.stringify(data));
     const body = {
       ...data,
@@ -20,11 +34,16 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
   }
 
-  static paymentDetails = (data) => {
+  static paymentDetails = (
+    data: PaymentDetailsData
+  ): Promise<PaymentResponse> => {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
-  static requestSession = (configuration, returnUrl) => {
+  static requestSession = (
+    configuration: PaymentConfiguration,
+    returnUrl: string
+  ): Promise<SessionResponse> => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
@@ -36,7 +55,10 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
-  static paymentMethods = (configuration, order) => {
+  static paymentMethods = (
+    configuration: PaymentConfiguration,
+    order?: { orderData: any; pspReference: string }
+  ): Promise<PaymentMethodsResponse> => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
@@ -46,7 +68,10 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
 
-  static tryRemoveStoredCard = async (id, configuration) => {
+  static tryRemoveStoredCard = async (
+    id: string,
+    configuration: PaymentConfiguration
+  ): Promise<boolean> => {
     let { merchantAccount, shopperReference } = configuration;
     const url =
       ENVIRONMENT.url +
@@ -68,7 +93,10 @@ class ApiClient {
     }
   };
 
-  static checkBalance = async (paymentData, configuration) => {
+  static checkBalance = async (
+    paymentData: PaymentMethodData,
+    configuration: PaymentConfiguration
+  ): Promise<BalanceResponse> => {
     const body = {
       paymentMethod: paymentData.paymentMethod,
       ...parseAmount(configuration),
@@ -81,7 +109,9 @@ class ApiClient {
     );
   };
 
-  static requestOrder = async (configuration) => {
+  static requestOrder = async (
+    configuration: PaymentConfiguration
+  ): Promise<OrderResponse> => {
     const body = {
       ...parseAmount(configuration),
       merchantAccount: configuration.merchantAccount,
@@ -90,7 +120,10 @@ class ApiClient {
     return ApiClient.makeRequest(ENVIRONMENT.url + 'orders', body);
   };
 
-  static cancelOrder = async (order, configuration) => {
+  static cancelOrder = async (
+    order: Order,
+    configuration: PaymentConfiguration
+  ): Promise<OrderResponse> => {
     const body = {
       ...(order && { order: parseOrder(order) }),
       merchantAccount: configuration.merchantAccount,
@@ -99,7 +132,7 @@ class ApiClient {
   };
 
   /** @private */
-  static makeRequest = async (url, body) => {
+  static makeRequest = async (url: string, body: any) => {
     const bodyJSON = JSON.stringify(body);
     console.debug(`Request to: ${url}`);
     console.debug(`== ${bodyJSON}`);
@@ -116,10 +149,10 @@ class ApiClient {
     const pspReference = response.headers.get('pspreference');
     console.debug(`PSP Reference - ${pspReference}`);
     const payload = await response.json();
+    console.debug(`Response : ${JSON.stringify(payload, null, ' ')}`);
     if (response.ok) {
       return payload;
     }
-    console.warn(`Error - ${JSON.stringify(payload, null, ' ')}`);
     throw new Error(`Network Error ${response.status}:
           ${payload.message ?? JSON.stringify(payload)}`);
   };
@@ -166,7 +199,7 @@ const paymentConfiguration = {
   shopperInteraction: 'Ecommerce',
 };
 
-const parseAmount = (configuration, data) => ({
+const parseAmount = (configuration: PaymentConfiguration, data?: any) => ({
   amount: data?.amount ?? {
     value: configuration.amount,
     currency: configuration.currency,
@@ -178,14 +211,14 @@ const parseConfig = ({
   countryCode,
   shopperReference,
   shopperLocale,
-}) => ({
+}: PaymentConfiguration) => ({
   merchantAccount,
   countryCode,
   shopperReference,
   shopperLocale,
 });
 
-const parseOrder = ({ orderData, pspReference }) => ({
+const parseOrder = ({ orderData, pspReference }: any) => ({
   orderData,
   pspReference,
 });

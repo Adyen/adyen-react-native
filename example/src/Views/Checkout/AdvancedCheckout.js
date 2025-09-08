@@ -3,15 +3,13 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
-import ApiClient from '../../Utilities/APIClient';
-import {
-  checkoutConfiguration,
-  useAppContext,
-} from '../../Utilities/AppContext';
 import PaymentMethods from './PaymentMethodsView';
 import Styles from '../../Utilities/Styles';
 import TopView from './TopView';
-import { isSuccess } from '../../Utilities/Helpers';
+import ApiClient from '../../api/APIClient';
+import { useAppContext } from '../../hooks/useAppContext';
+import { isSuccess } from '../../Utilities/isSuccess';
+import { checkoutConfiguration } from '../../State/checkoutConfiguration';
 
 const AdvancedCheckout = ({ navigation }) => {
   const { configuration } = useAppContext();
@@ -42,7 +40,7 @@ const AdvancedCheckout = ({ navigation }) => {
         )}`
       );
       try {
-        /** @type {import('./../../Types/index').PaymentResponse} */
+        /** @type {import('../../api/types').PaymentResponse} */
         const result = await ApiClient.payments(
           data,
           configuration,
@@ -100,7 +98,7 @@ const AdvancedCheckout = ({ navigation }) => {
 
   const processResult = useCallback(
     async (
-      /** @type {import('./../../Types/index').PaymentResponse} */
+      /** @type {import('../../api/types').PaymentResponse} */
       result,
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
       nativeComponent
@@ -113,7 +111,7 @@ const AdvancedCheckout = ({ navigation }) => {
       );
       nativeComponent.hide(success);
       navigation.popToTop();
-      navigation.push('Result', { result: result.resultCode });
+      navigation.push('Result', { resultCode: result.resultCode });
     },
     []
   );

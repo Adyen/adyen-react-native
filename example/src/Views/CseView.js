@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { AdyenAction } from '@adyen/react-native';
 import Styles from '../Utilities/Styles';
-import { useAppContext } from '../Utilities/AppContext';
-import { isSuccess } from '../Utilities/Helpers';
+import { isSuccess } from '../Utilities/isSuccess';
 import { payWithCard } from '../Utilities/payWithCard';
+import { useAppContext } from '../hooks/useAppContext';
 
 const CseView = ({ navigation }) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -43,7 +43,7 @@ const CseView = ({ navigation }) => {
   function handleResult(navigation, result) {
     AdyenAction.hide(isSuccess(result.resultCode));
     navigation.popToTop();
-    navigation.push('Result', { result: result.resultCode });
+    navigation.push('Result', { resultCode: result.resultCode });
   }
 
   return (

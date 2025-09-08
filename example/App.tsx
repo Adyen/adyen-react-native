@@ -6,7 +6,6 @@
  * @flow strict-local
  */
 
-import React from 'react';
 import {
   NavigationContainer,
   DarkTheme,
@@ -16,15 +15,15 @@ import {
 import { Alert, useColorScheme } from 'react-native';
 import CseView from './src/Views/CseView';
 import SettingView from './src/Views/SettingsView';
-import Result from './src/Views/ResultView';
+import ResultView from './src/Views/ResultView';
 import SessionsCheckout from './src/Views/Checkout/SessionsCheckout';
 import AdvancedCheckout from './src/Views/Checkout/AdvancedCheckout';
 import Home from './src/Views/HomeView';
-import AppContextProvider from './src/Utilities/AppContext';
 import { DEFAULT_CONFIGURATION } from './src/Configuration';
 import PartialPaymentCheckout from './src/Views/Checkout/PartialPaymentCheckout';
 
 import { Stack } from './src/State/RootStackParamList';
+import AppContextProvider from './src/hooks/useAppContext';
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -32,7 +31,7 @@ const App = () => {
   return (
     <AppContextProvider
       configuration={DEFAULT_CONFIGURATION}
-      onError={(error) => {
+      onError={(error: Error) => {
         Alert.alert('App error', error.message || 'Error');
       }}
     >
@@ -55,7 +54,7 @@ const App = () => {
             options={() => ({ title: 'Partial Payment' })}
           />
           <Stack.Screen name="Settings" component={SettingView} />
-          <Stack.Screen name="Result" component={Result} />
+          <Stack.Screen name="Result" component={ResultView} />
           <Stack.Screen name="CustomCard" component={CseView} />
         </Stack.Navigator>
       </NavigationContainer>
