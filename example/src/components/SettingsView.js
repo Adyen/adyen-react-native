@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { useAppContext } from '../hooks/useAppContext';
-import Styles from '../Utilities/Styles';
+import Styles from './utilities/Styles';
 import {
   Button,
   SafeAreaView,

@@ -1,7 +1,7 @@
 import { Text, useColorScheme, View } from 'react-native';
-import Styles from '../Utilities/Styles';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../State/RootStackParamList';
+import Styles from './utilities/Styles';
 
 export type ResultViewProps = NativeStackScreenProps<
   RootStackParamList,

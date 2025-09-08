@@ -9,9 +9,9 @@ import {
   useColorScheme,
 } from 'react-native';
 import { AdyenAction } from '@adyen/react-native';
-import Styles from '../Utilities/Styles';
-import { isSuccess } from '../Utilities/isSuccess';
-import { payWithCard } from '../Utilities/payWithCard';
+import Styles from './utilities/Styles';
+import { isSuccess } from './utilities/isSuccess';
+import { payWithCard } from './utilities/payWithCard';
 import { useAppContext } from '../hooks/useAppContext';
 
 const CseView = ({ navigation }) => {

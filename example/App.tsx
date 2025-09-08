@@ -13,14 +13,8 @@ import {
 } from '@react-navigation/native';
 
 import { Alert, useColorScheme } from 'react-native';
-import CseView from './src/Views/CseView';
-import SettingView from './src/Views/SettingsView';
-import ResultView from './src/Views/ResultView';
-import SessionsCheckout from './src/Views/Checkout/SessionsCheckout';
-import AdvancedCheckout from './src/Views/Checkout/AdvancedCheckout';
-import Home from './src/Views/HomeView';
 import { DEFAULT_CONFIGURATION } from './src/Configuration';
-import PartialPaymentCheckout from './src/Views/Checkout/PartialPaymentCheckout';
+import * as Screens from './src/components';
 
 import { Stack } from './src/State/RootStackParamList';
 import AppContextProvider from './src/hooks/useAppContext';
@@ -37,25 +31,25 @@ const App = () => {
     >
       <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack.Navigator>
-          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="Home" component={Screens.Home} />
           <Stack.Screen
             name="SessionsCheckout"
-            component={SessionsCheckout}
+            component={Screens.SessionsCheckout}
             options={() => ({ title: 'Sessions Checkout' })}
           />
           <Stack.Screen
             name="AdvancedCheckout"
-            component={AdvancedCheckout}
+            component={Screens.AdvancedCheckout}
             options={() => ({ title: 'Advanced Checkout' })}
           />
           <Stack.Screen
             name="PartialPaymentCheckout"
-            component={PartialPaymentCheckout}
+            component={Screens.PartialPaymentCheckout}
             options={() => ({ title: 'Partial Payment' })}
           />
-          <Stack.Screen name="Settings" component={SettingView} />
-          <Stack.Screen name="Result" component={ResultView} />
-          <Stack.Screen name="CustomCard" component={CseView} />
+          <Stack.Screen name="Settings" component={Screens.SettingView} />
+          <Stack.Screen name="Result" component={Screens.ResultView} />
+          <Stack.Screen name="CustomCard" component={Screens.CseView} />
         </Stack.Navigator>
       </NavigationContainer>
     </AppContextProvider>

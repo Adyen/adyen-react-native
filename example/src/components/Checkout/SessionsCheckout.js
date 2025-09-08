@@ -4,12 +4,12 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { AdyenCheckout, AdyenDropIn, ErrorCode } from '@adyen/react-native';
 import PaymentMethods from './PaymentMethodsView';
-import Styles from '../../Utilities/Styles';
+import Styles from '../utilities/Styles';
 import TopView from './TopView';
 import { ENVIRONMENT } from '../../Configuration';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
-import { isSuccess } from '../../Utilities/isSuccess';
+import { isSuccess } from '../utilities/isSuccess';
 import { checkoutConfiguration } from '../../State/checkoutConfiguration';
 
 const SessionsCheckout = ({ navigation }) => {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { View, Button } from 'react-native';
-import Styles from '../Utilities/Styles';
 import type { PageProps } from '../State/RootStackParamList';
+import Styles from './utilities/Styles';
 
 function createOptions({ navigation }: PageProps) {
   return {

@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, useColorScheme } from 'react-native';
 import { useAppContext } from '../../hooks/useAppContext';
-import Styles from '../../Utilities/Styles';
+import Styles from '../utilities/Styles';
 
 function getFlagEmoji(countryCode) {
   const codePoints = countryCode

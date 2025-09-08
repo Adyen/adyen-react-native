@@ -1,5 +1,5 @@
 import { type NativeModule, NativeModules } from 'react-native';
-import type { PaymentAction, PaymentMethodData } from '../core/types';
+import type { PaymentAction, PaymentDetailsData } from '../core/types';
 import type { BaseConfiguration } from '../core/configurations/Configuration';
 
 /** Describes a native module capable of handling actions standalone. */
@@ -14,7 +14,7 @@ export interface ActionModule {
   handle: (
     action: PaymentAction,
     configuration: BaseConfiguration
-  ) => Promise<PaymentMethodData>;
+  ) => Promise<PaymentDetailsData>;
 
   /**
    * Dismiss the component from the screen.

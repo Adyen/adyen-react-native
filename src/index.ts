@@ -1,18 +1,5 @@
 export { Card } from './core/types';
-
-export type {
-  PaymentMethod,
-  PaymentAction,
-  PaymentMethodsResponse,
-  StoredPaymentMethod,
-  PaymentAmount,
-  PaymentDetailsData,
-  PaymentMethodData,
-  PaymentMethodGroup,
-  AdyenError,
-  Order,
-  Balance,
-} from './core/types';
+export type * from './core/types';
 
 export { AdyenApplePay } from './modules/AdyenApplePay';
 export { AdyenGooglePay } from './modules/AdyenGooglePay';
@@ -30,11 +17,7 @@ export type { SessionHelperModule } from './modules/SessionHelperModule';
 export { AdyenAction } from './modules/ActionModule';
 export type { ActionModule } from './modules/ActionModule';
 
-export type {
-  AdyenComponent,
-  AdyenActionComponent,
-  HideOption,
-} from './core/AdyenNativeModules';
+export type * from './core/AdyenNativeModules';
 
 export { useAdyenCheckout } from './hooks/useAdyenCheckout';
 export type { AdyenCheckoutContextType } from './hooks/useAdyenCheckout';
@@ -44,34 +27,18 @@ export type { AdyenCheckoutProps } from './components/AdyenCheckout';
 
 export * from './core/constants';
 
-export type {
-  BaseConfiguration,
-  Configuration,
-  Environment,
-} from './core/configurations/Configuration';
+export type * from './core/configurations/Configuration';
 
 export type { PartialPaymentConfiguration } from './core/configurations/PartialPaymentConfiguration';
 export type { PartialPaymentComponent } from './wrappers/PartialPaymentsComponentWrapper';
 
-export type {
-  GooglePayBillingAddressFormat,
-  GooglePayBillingAddressParameters,
-  GooglePayConfiguration,
-  GooglePayShippingAddressParameters,
-  TotalPriceStatus,
-  CardAuthMethod,
-  GooglePayEnvironment,
-} from './core/configurations/GooglePayConfiguration';
+export type * from './core/configurations/GooglePayConfiguration';
 
 export type { DropInConfiguration } from './core/configurations/DropInConfiguration';
 
 export type { ThreeDSConfiguration } from './core/configurations/ThreeDSConfiguration';
 
-export type {
-  AddressLookup,
-  AddressLookupItem,
-  PostalAddress,
-} from './core/configurations/AddressLookup';
+export type * from './core/configurations/AddressLookup';
 
 export type * from './core/configurations/ApplePayConfiguration';
 
