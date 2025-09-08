@@ -103,7 +103,7 @@ const AdvancedCheckout = ({ navigation }) => {
       /** @type {import('@adyen/react-native').AdyenActionComponent} */
       nativeComponent
     ) => {
-      const success = isSuccess(result);
+      const success = isSuccess(result.resultCode);
       console.log(
         `Payment: ${success ? 'success' : 'failure'} : ${
           success ? result.resultCode : JSON.stringify(result)

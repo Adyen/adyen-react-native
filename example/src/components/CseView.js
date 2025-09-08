@@ -35,7 +35,7 @@ const CseView = ({ navigation }) => {
       const result = await payWithCard(unencryptedCard, configuration);
       handleResult(navigation, result);
     } catch (e) {
-      AdyenAction.hide(isSuccess(false));
+      AdyenAction.hide(false);
       Alert.alert('Error', e.message);
     }
   }, [configuration, cvv, expiryMonth, expiryYear, navigation, number]);
