@@ -12,9 +12,9 @@ import {
   useColorScheme,
   Alert,
 } from 'react-native';
-import Styles from '../../Utilities/Styles';
+import Styles from '../utilities/Styles';
 import { ENVIRONMENT } from '../../Configuration';
-import { payByID } from '../../Utilities/payByID';
+import { payByID } from '../utilities/payByID';
 import { useAppContext } from '../../hooks/useAppContext';
 
 const PaymentMethods = ({ showComponents }) => {

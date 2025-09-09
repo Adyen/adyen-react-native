@@ -28,7 +28,7 @@ class ApiClient {
       ...parseAmount(configuration, data),
       ...serverConfiguration,
       ...paymentConfiguration,
-      returnUrl: returnUrl,
+      returnUrl: returnUrl ?? data.returnUrl,
     };
 
     return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);

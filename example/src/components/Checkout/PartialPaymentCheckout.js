@@ -4,11 +4,11 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { AdyenCheckout, ErrorCode } from '@adyen/react-native';
 import PaymentMethods from './PaymentMethodsView';
-import Styles from '../../Utilities/Styles';
+import Styles from '../utilities/Styles';
 import TopView from './TopView';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
-import { isSuccess } from '../../Utilities/isSuccess';
+import { isSuccess } from '../utilities/isSuccess';
 import { checkoutConfiguration } from '../../State/checkoutConfiguration';
 
 const PartialPaymentCheckout = ({ navigation }) => {
@@ -96,7 +96,7 @@ const PartialPaymentCheckout = ({ navigation }) => {
       /** @type {import('@adyen/react-native').DropInModule} */
       dropInComponent
     ) => {
-      var success = isSuccess(result);
+      let success = isSuccess(result.resultCode);
       var outcome = result.resultCode.toString();
       if (result.action) {
         dropInComponent.handle(result.action);
