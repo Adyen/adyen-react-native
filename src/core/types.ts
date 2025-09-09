@@ -1,3 +1,5 @@
+import type { ResultCode } from './constants';
+
 /**
  * General type for card.
  */
@@ -228,9 +230,9 @@ export interface SessionConfiguration {
 }
 
 /**
- * Session container
+ * Session context
  */
-export interface SessionResponse {
+export interface SessionContext {
   paymentMethods: PaymentMethodsResponse;
   [key: string]: any;
 }
@@ -270,3 +272,18 @@ export interface Order {
   /** The remaining amount to complete the order. */
   remainingAmount?: PaymentAmount;
 }
+
+/**
+ * Represents the response structure specifically for session flow.
+ */
+export type SessionsResult = {
+  /**
+   * An encoded string that can be used to get the payment outcome on your server.
+   * DESCRIPTION: Use this value with the new `/sessions/id` endpoint as a query string on your server to get a synchronous result for your payment.
+   */
+  resultData: string;
+  /**
+   * The primary result code indicating the overall status of the session operation.
+   */
+  resultCode: ResultCode;
+};

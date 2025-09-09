@@ -18,12 +18,12 @@ import type {
   AdyenError,
   PaymentMethodsResponse,
   SessionConfiguration,
-  SessionResponse,
   PaymentMethodData,
   PaymentDetailsData,
   StoredPaymentMethod,
   SubmitModel,
   Order,
+  SessionsResult,
 } from '../core/types';
 import type { Configuration } from '../core/configurations/Configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from '../core/utils';
@@ -70,11 +70,14 @@ export type AdyenCheckoutProps = {
     data: PaymentDetailsData,
     component: AdyenActionComponent
   ) => void;
-  /**
-   * Event callback, called when a shopper finishes the flow (Voucher payments only).
-   * @param component - The Adyen payment component.
+/**
+   * An optional callback function invoked when a payment session or component
+   * interaction is successfully completed. This method provides the result of the session
+   * and a reference to the Adyen component that triggered the completion.
+   * @param result - The response object containing encoded result data and result code of the completed session.
+   * @param component - The Adyen component instance that completed the interaction.
    */
-  onComplete?: (result: string, component: AdyenComponent) => void;
+  onComplete?: (result: SessionsResult, component: AdyenComponent) => void;
   /** Inner components */
   children: ReactNode;
 };

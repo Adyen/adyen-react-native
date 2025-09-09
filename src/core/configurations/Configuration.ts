@@ -15,13 +15,18 @@ export type Environment =
   | 'live-apse'
   | 'live-in';
 
-export interface BaseConfiguration {
+/** Environment configuration */
+export interface EnvironmentConfiguration {
+    /** Selected environment */
+    environment: Environment;
+    /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
+    clientKey: string;
+}
+
+/** Base component configuration */
+export interface BaseConfiguration extends EnvironmentConfiguration {
   /** Configuration for analytics service */
   analytics?: AnalyticsOptions;
-  /** Selected environment */
-  environment: Environment;
-  /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
-  clientKey: string;
   /**
    * The shopper's locale. This is used to enforce the language rendered in the UI.
    * If no value is set, will rely on the system to choose the best fitting locale based on the device's locale and locales supported by the app.
@@ -31,6 +36,7 @@ export interface BaseConfiguration {
   locale?: string;
 }
 
+/** Analytics configuration */
 export interface AnalyticsOptions {
   /** Enable/Disable all telemetry. */
   enabled?: boolean;
