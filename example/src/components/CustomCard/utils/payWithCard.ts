@@ -1,24 +1,20 @@
-import { AdyenCSE, AdyenAction, type PaymentMethodData, type PaymentDetailsData } from '@adyen/react-native';
-import type { PaymentConfiguration } from '../../api/types';
-import { ENVIRONMENT } from '../../Configuration';
-import ApiClient from '../../api/APIClient';
-import { checkoutConfiguration } from '../../State/checkoutConfiguration';
-import { isSuccess } from './isSuccess';
+import { AdyenCSE, AdyenAction, Card, type PaymentMethodData } from '@adyen/react-native';
+import { ENVIRONMENT } from '../../../Configuration';
+import ApiClient from '../../../api/APIClient';
+import { checkoutConfiguration } from '../../../State/checkoutConfiguration';
+import type { PaymentConfiguration } from '../../../api/types';
 
-
-export async function payByID(
-  id: string,
-  cvv: string,
-  configuration: PaymentConfiguration
-) {
+export async function payWithCard(unencryptedCard: Card, configuration: PaymentConfiguration) {
   const encryptedCard = await AdyenCSE.encryptCard(
-    { cvv },
+    unencryptedCard,
     ENVIRONMENT.publicKey
   );
   const paymentData: PaymentMethodData = {
     paymentMethod: {
       type: 'scheme',
-      storedPaymentMethodId: id,
+      encryptedCardNumber: encryptedCard.number,
+      encryptedExpiryMonth: encryptedCard.expiryMonth,
+      encryptedExpiryYear: encryptedCard.expiryYear,
       encryptedSecurityCode: encryptedCard.cvv,
       threeDS2SdkVersion: AdyenAction.threeDS2SdkVersion,
     },
@@ -35,9 +31,7 @@ export async function payByID(
       result.action,
       actionConfiguration
     );
-
     result = await ApiClient.paymentDetails(actionData);
   }
-  AdyenAction.hide(isSuccess(result.resultCode));
   return result;
 }

@@ -1,15 +1,8 @@
-import React, { useCallback } from 'react';
 import { View, Text, useColorScheme } from 'react-native';
-import { useAppContext } from '../../hooks/useAppContext';
-import Styles from '../utilities/Styles';
-
-function getFlagEmoji(countryCode) {
-  const codePoints = countryCode
-    .toUpperCase()
-    .split('')
-    .map((char) => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-}
+import { useAppContext } from '../../../hooks/useAppContext';
+import Styles from '../../utilities/Styles';
+import { getFlagEmoji } from '../utils/getFlagEmoji';
+import { formatMinorUnits } from '../utils/formatMinorUnits';
 
 const TopView = () => {
   const { configuration } = useAppContext();
@@ -26,7 +19,7 @@ const TopView = () => {
   );
 };
 
-const CountryView = ({ countryCode }) => {
+const CountryView = ({ countryCode }: { countryCode: string }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
   if (!countryCode) {
@@ -48,33 +41,16 @@ const CountryView = ({ countryCode }) => {
   );
 };
 
-const AmountView = ({ amount, currency, locale }) => {
+const AmountView = ({
+  amount,
+  currency,
+  locale,
+}: {
+  amount: number;
+  currency: string;
+  locale: string;
+}) => {
   const isDarkMode = useColorScheme() === 'dark';
-
-  const formatMinorUnits = useCallback(
-    (amount) => {
-      const formatter = new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: currency,
-      });
-
-      switch (currency) {
-        case 'JPY':
-        case 'IDR':
-          break;
-        case 'BHD':
-        case 'KWD':
-          amount = amount / 1000;
-          break;
-        default:
-          amount = amount / 100;
-          break;
-      }
-
-      return formatter.format(amount);
-    },
-    [locale, currency]
-  );
 
   if (!amount) {
     return (
@@ -90,7 +66,7 @@ const AmountView = ({ amount, currency, locale }) => {
     <View style={Styles.centeredContent}>
       <Text
         style={isDarkMode ? Styles.textDark : Styles.textLight}
-      >{`${formatMinorUnits(amount)}`}</Text>
+      >{`${formatMinorUnits(amount, currency, locale)}`}</Text>
     </View>
   );
 };

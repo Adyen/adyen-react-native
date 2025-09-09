@@ -1,43 +1,13 @@
 // @ts-check
 
-import React, { useCallback, useState } from 'react';
-import { useAppContext } from '../hooks/useAppContext';
-import Styles from './utilities/Styles';
-import {
-  Button,
-  SafeAreaView,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { useCallback, useState } from 'react';
+import { useAppContext } from '../../hooks/useAppContext';
+import Styles from '../utilities/Styles';
+import { Button, View } from 'react-native';
+import FormTextInput from './components/FormTextInput';
+import type { PageProps } from '../../State/RootStackParamList';
 
-const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={Styles.item}>
-      <Text
-        style={[
-          isDarkMode ? Styles.textDark : Styles.textLight,
-          Styles.itemTitle,
-        ]}
-      >
-        {title}
-      </Text>
-      <TextInput
-        {...rest} // Inherit any props passed to it; e.g., multiline, numberOfLines below
-        editable
-        maxLength={40}
-        placeholder=""
-        value={value}
-        onChangeText={onChangeText}
-        style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
-      />
-    </View>
-  );
-};
-
-const SettingFormView = ({ navigation: { goBack } }) => {
+const SettingView = ({ navigation: { goBack } }: PageProps) => {
   const { configuration, save } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
@@ -93,7 +63,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
         title="Amount"
         value={amount.toString()}
         inputMode={'numeric'}
-        onChangeText={setAmount}
+        onChangeText={(value) => setAmount(Number(value))}
       />
       <FormTextInput
         title="Merchant Account"
@@ -119,14 +89,6 @@ const SettingFormView = ({ navigation: { goBack } }) => {
         <Button title="Save" onPress={handleOnPress} />
       </View>
     </View>
-  );
-};
-
-const SettingView = ({ navigation }) => {
-  return (
-    <SafeAreaView style={Styles.page}>
-      <SettingFormView navigation={navigation} />
-    </SafeAreaView>
   );
 };
 
