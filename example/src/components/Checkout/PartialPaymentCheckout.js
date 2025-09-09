@@ -96,7 +96,7 @@ const PartialPaymentCheckout = ({ navigation }) => {
       /** @type {import('@adyen/react-native').DropInModule} */
       dropInComponent
     ) => {
-      var success = isSuccess(result.resultCode);
+      let success = isSuccess(result.resultCode);
       var outcome = result.resultCode.toString();
       if (result.action) {
         dropInComponent.handle(result.action);
