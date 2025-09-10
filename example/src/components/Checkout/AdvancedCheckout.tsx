@@ -18,7 +18,6 @@ import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../State/checkoutConfiguration';
 import type { PageProps } from '../../State/RootStackParamList';
-import type { PaymentConfiguration } from '../../api/types';
 import { processResult } from './utils/processResult';
 import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
@@ -32,9 +31,10 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
   >(undefined);
 
   useEffect(() => {
-    const refreshPaymentMethods = async (config: PaymentConfiguration) => {
+    const refreshPaymentMethods = async () => {
       try {
-        const paymentMethodsResponse = await ApiClient.paymentMethods(config);
+        const paymentMethodsResponse =
+          await ApiClient.paymentMethods(configuration);
         setPaymentMethods(paymentMethodsResponse);
       } catch (e) {
         setError(String(e));
@@ -42,7 +42,7 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
         setLoading(false);
       }
     };
-    refreshPaymentMethods(configuration);
+    refreshPaymentMethods();
   }, [configuration, setPaymentMethods, setLoading]);
 
   const didSubmit = useCallback(

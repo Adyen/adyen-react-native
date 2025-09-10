@@ -1,5 +1,8 @@
 import { NativeModules } from 'react-native';
-import type { SessionConfiguration, SessionContext } from '../core/types';
+import type {
+  PaymentMethodsResponse,
+  SessionConfiguration,
+} from '../core/types';
 import type { AdyenComponent } from '../core/AdyenNativeModules';
 import { ModuleMock } from './ModuleMock';
 import type { EnvironmentConfiguration } from '../core/configurations/Configuration';
@@ -20,3 +23,9 @@ export interface SessionHelperModule extends AdyenComponent {
 /** Collection of session helper methods */
 export const SessionHelper: SessionHelperModule =
   NativeModules.SessionHelper ?? ModuleMock;
+
+/** @internal Session context */
+export interface SessionContext {
+  paymentMethods: PaymentMethodsResponse;
+  [key: string]: any;
+}

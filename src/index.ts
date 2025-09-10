@@ -11,9 +11,6 @@ export type { DropInModule } from './modules/DropInModule';
 export { AdyenCSE } from './modules/AdyenCSEModule';
 export type { AdyenCSEModule } from './modules/AdyenCSEModule';
 
-export { SessionHelper } from './modules/SessionHelperModule';
-export type { SessionHelperModule } from './modules/SessionHelperModule';
-
 export { AdyenAction } from './modules/ActionModule';
 export type { ActionModule } from './modules/ActionModule';
 

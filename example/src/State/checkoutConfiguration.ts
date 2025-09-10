@@ -34,7 +34,7 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
         resolve: () => void,
         reject: () => void
       ) => {
-        let success = await ApiClient.tryRemoveStoredCard(
+        const success = await ApiClient.tryRemoveStoredCard(
           storedPaymentMethod.id,
           config
         );

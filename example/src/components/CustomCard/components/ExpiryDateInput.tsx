@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   TextInput,
   Text,
@@ -14,24 +14,28 @@ type ExpiryDateInputProps = {
 
 const ExpiryDateInput = (props: ExpiryDateInputProps) => {
   const isDarkMode = useColorScheme() === 'dark';
-  const [cardNumber, setCardNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const { onChangeText } = props;
 
-  const formatCardNumber = (input: string) => {
-    // Remove all non-digit characters
-    const digits = input.replace(/\D/g, '');
+  const formatCardNumber = useCallback(
+    (input: string) => {
+      // Remove all non-digit characters
+      const digits = input.replace(/\D/g, '');
 
-    // Limit to 4 digits
-    const limitedDigits = digits.slice(0, 4);
+      // Limit to 4 digits
+      const limitedDigits = digits.slice(0, 4);
 
-    // Format as MM/YY
-    let formatted = limitedDigits;
-    if (limitedDigits.length >= 3) {
-      formatted = `${limitedDigits.slice(0, 2)}/${limitedDigits.slice(2)}`;
-    }
+      // Format as MM/YY
+      let formatted = limitedDigits;
+      if (limitedDigits.length >= 3) {
+        formatted = `${limitedDigits.slice(0, 2)}/${limitedDigits.slice(2)}`;
+      }
 
-    setCardNumber(formatted);
-    props.onChangeText(formatted);
-  };
+      setExpiryDate(formatted);
+      onChangeText(formatted);
+    },
+    [onChangeText]
+  );
 
   return (
     <View style={Styles.item}>
@@ -49,7 +53,7 @@ const ExpiryDateInput = (props: ExpiryDateInputProps) => {
         keyboardType="numeric"
         maxLength={5} // 16 digits + 3 spaces
         placeholder="MM/YY"
-        value={cardNumber}
+        value={expiryDate}
         onChangeText={formatCardNumber}
         style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
       />

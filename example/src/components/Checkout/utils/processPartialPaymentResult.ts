@@ -38,7 +38,10 @@ export async function processPartialPaymentResult(
     outcome = ResultCode.refused;
   } else if (order && isNonFullyPaidOrder(order)) {
     try {
-      let paymentMethods = await ApiClient.paymentMethods(configuration, order);
+      const paymentMethods = await ApiClient.paymentMethods(
+        configuration,
+        order
+      );
       dropInComponent.providePaymentMethods(paymentMethods, order);
       return;
     } catch (error) {

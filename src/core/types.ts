@@ -230,14 +230,6 @@ export interface SessionConfiguration {
 }
 
 /**
- * Session context
- */
-export interface SessionContext {
-  paymentMethods: PaymentMethodsResponse;
-  [key: string]: any;
-}
-
-/**
  * Reason for payment termination
  */
 export interface AdyenError {

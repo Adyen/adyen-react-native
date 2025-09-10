@@ -13,7 +13,10 @@ import {
 } from 'react-native';
 import { Event } from '../core/constants';
 import type { AdyenComponent } from '../core/AdyenNativeModules';
-import { SessionHelper } from '../modules/SessionHelperModule';
+import {
+  SessionHelper,
+  type SessionContext,
+} from '../modules/SessionHelperModule';
 import { getWrapper } from '../wrappers/getWrapper';
 import type {
   AdyenError,
@@ -25,7 +28,6 @@ import type {
   SubmitModel,
   Order,
   SessionsResult,
-  SessionContext,
 } from '../core/types';
 import type { Configuration } from '../core/configurations/Configuration';
 import { checkPaymentMethodsResponse, checkConfiguration } from '../core/utils';

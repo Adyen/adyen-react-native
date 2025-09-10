@@ -11,7 +11,7 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
   const { configuration, save } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
-  const [amount, setAmount] = useState(configuration.amount);
+  const [amount, setAmount] = useState(String(configuration.amount));
   const [currency, setCurrency] = useState(configuration.currency);
   const [merchantName, setMerchantName] = useState(configuration.merchantName);
   const [merchantAccount, setMerchantAccount] = useState(
@@ -45,7 +45,7 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
     ]
   );
 
-  const handleOnPress = useCallback(() => {
+  const saveAndClose = useCallback(() => {
     save(settings);
     goBack();
   }, [settings, save, goBack]);
@@ -55,18 +55,20 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
       <FormTextInput
         title="Country"
         value={countryCode}
+        maxLength={2}
         onChangeText={setCountryCode}
       />
       <FormTextInput
         title="Currency"
         value={currency}
+        maxLength={3}
         onChangeText={setCurrency}
       />
       <FormTextInput
         title="Amount"
         value={amount.toString()}
         inputMode={'numeric'}
-        onChangeText={(value) => setAmount(Number(value))}
+        onChangeText={setAmount}
       />
       <FormTextInput
         title="Merchant Account"
@@ -81,6 +83,7 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
       <FormTextInput
         title="Shopper locale"
         value={shopperLocale}
+        maxLength={5}
         onChangeText={setShopperLocale}
       />
       <FormTextInput
@@ -89,7 +92,7 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
         onChangeText={setShopperReference}
       />
       <View style={Styles.centeredButton}>
-        <Button title="Save" onPress={handleOnPress} />
+        <Button title="Save" onPress={saveAndClose} />
       </View>
     </View>
   );

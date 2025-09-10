@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   TextInput,
   Text,
@@ -15,24 +15,25 @@ type SecureCodeInputProps = {
 
 const SecureCodeInput = (props: SecureCodeInputProps) => {
   const isDarkMode = useColorScheme() === 'dark';
-  const [cardNumber, setCardNumber] = useState('');
+  const [secureCode, setSecureCode] = useState('');
+  const { onChangeText, bin } = props;
 
-  const formatCardNumber = (input: string) => {
-    // Remove all non-digit characters
-    const digits = input.replace(/\D/g, '');
+  const formatCardNumber = useCallback(
+    (input: string) => {
+      // Remove all non-digit characters
+      const digits = input.replace(/\D/g, '');
 
-    // Limit to 4 digits
-    const limitedDigits = digits.slice(0, 4);
+      let formatted = digits.slice(0, 4);
+      if (bin.startsWith('3')) {
+        // detect AMEX
+        formatted = digits.slice(0, 3);
+      }
 
-    // Format as MM/YY
-    let formatted = limitedDigits;
-    if (limitedDigits.length >= 3) {
-      formatted = `${limitedDigits.slice(0, 2)}/${limitedDigits.slice(2)}`;
-    }
-
-    setCardNumber(formatted);
-    props.onChangeText(formatted);
-  };
+      setSecureCode(formatted);
+      onChangeText(formatted);
+    },
+    [onChangeText, bin]
+  );
 
   return (
     <View style={Styles.item}>
@@ -50,7 +51,7 @@ const SecureCodeInput = (props: SecureCodeInputProps) => {
         placeholder="123"
         keyboardType="numeric"
         maxLength={4}
-        value={cardNumber}
+        value={secureCode}
         onChangeText={formatCardNumber}
         style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
       />

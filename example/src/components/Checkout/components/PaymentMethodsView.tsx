@@ -1,28 +1,21 @@
 // @ts-check
 
-import { AdyenAction, ResultCode, useAdyenCheckout } from '@adyen/react-native';
-import {
-  Button,
-  View,
-  ScrollView,
-  Text,
-  useColorScheme,
-  Alert,
-} from 'react-native';
+import { useAdyenCheckout } from '@adyen/react-native';
+import { Button, View, ScrollView, Text, useColorScheme } from 'react-native';
 import Styles from '../../utilities/Styles';
-import { payByID } from '../utils/payByID';
 import { useAppContext } from '../../../hooks/useAppContext';
 import PaymentMethodButton from './PaymentMethodButton';
-import { isSuccess } from '../../utilities/isSuccess';
-import type {
-  PaymentResponse,
-  StoredCardPaymentMethod,
-} from '../../../api/types';
+import type { StoredCardPaymentMethod } from '../../../api/types';
 import { storedSubtitle } from '../utils/storedSubtitle';
 import { storedIcon } from '../utils/storedIcon';
 import { storedTitle } from '../utils/storedTitle';
+import { handleStoredPayment } from '../utils/handleStoredPayment';
 
-const PaymentMethods = ({ showComponents }: { showComponents: boolean }) => {
+interface PaymentMethodsProps {
+  showComponents: boolean;
+}
+
+const PaymentMethods = ({ showComponents }: PaymentMethodsProps) => {
   const { configuration } = useAppContext();
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
@@ -45,14 +38,14 @@ const PaymentMethods = ({ showComponents }: { showComponents: boolean }) => {
           />
         </View>
 
-        {showComponents ? ( // Sessions do not support components (yet)
+        {showComponents ? (
           <View>
             {storedPaymentMethods ? (
               <View>
                 <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
                   Stored payments
                 </Text>
-                {storedPaymentMethods.map((p: StoredCardPaymentMethod) => {
+                {storedPaymentMethods.map((p) => {
                   return (
                     <View key={`${p.id}`}>
                       <PaymentMethodButton
@@ -60,19 +53,7 @@ const PaymentMethods = ({ showComponents }: { showComponents: boolean }) => {
                         subtitle={storedSubtitle(p)}
                         icon={storedIcon(p)}
                         onPress={async () => {
-                          let result: PaymentResponse;
-                          try {
-                            let cvv =
-                              '737'; /** Collect CVV from shopper if nececery */
-                            result = await payByID(p.id, cvv, configuration);
-                            Alert.alert('Result', result.resultCode);
-                          } catch (e) {
-                            result = {
-                              resultCode: ResultCode.error,
-                            };
-                            Alert.alert('Error', String(e));
-                          }
-                          AdyenAction.hide(isSuccess(result.resultCode));
+                          await handleStoredPayment(p, configuration);
                         }}
                       />
                     </View>

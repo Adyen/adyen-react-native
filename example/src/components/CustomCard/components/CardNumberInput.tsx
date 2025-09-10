@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   TextInput,
   Text,
@@ -15,20 +15,24 @@ type CardNumberInputProps = {
 const CardNumberInput = (props: CardNumberInputProps) => {
   const isDarkMode = useColorScheme() === 'dark';
   const [cardNumber, setCardNumber] = useState('');
+  const { onChangeText } = props;
 
-  const formatCardNumber = (input: string) => {
-    // Remove all non-digit characters
-    const digits = input.replace(/\D/g, '');
+  const formatCardNumber = useCallback(
+    (input: string) => {
+      // Remove all non-digit characters
+      const digits = input.replace(/\D/g, '');
 
-    // Limit to 16 digits (optional, based on card type)
-    const limitedDigits = digits.slice(0, 16);
+      // Limit to 16 digits (optional, based on card type)
+      const limitedDigits = digits.slice(0, 16);
 
-    // Add a space after every 4 digits
-    const formatted = limitedDigits.replace(/(.{4})/g, '$1 ').trim();
+      // Add a space after every 4 digits
+      const formatted = limitedDigits.replace(/(.{4})/g, '$1 ').trim();
 
-    setCardNumber(formatted);
-    props.onChangeText(formatted);
-  };
+      setCardNumber(formatted);
+      onChangeText(formatted);
+    },
+    [onChangeText]
+  );
 
   return (
     <View style={Styles.item}>

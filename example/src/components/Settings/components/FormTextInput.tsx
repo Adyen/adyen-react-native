@@ -24,10 +24,7 @@ const FormTextInput = (pros: FormTextInputProps) => {
         {pros.title}
       </Text>
       <TextInput
-        {...pros} // Inherit any props passed to it; e.g., multiline, numberOfLines below
-        editable
-        maxLength={40}
-        placeholder=""
+        {...pros}
         value={pros.value}
         onChangeText={pros.onChangeText}
         style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
