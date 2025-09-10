@@ -6,7 +6,7 @@ ext {
     adyen_version = "5.13.1"
 
     // Android Dependencies
-    gson_version = "2.9.1"
+    gson_version = "2.13.2"
 
     // Tests
     json_version = '20231013'
