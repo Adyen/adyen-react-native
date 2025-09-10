@@ -1,1 +1,3 @@
 yarn test
+yarn lint
+yarn typecheck
