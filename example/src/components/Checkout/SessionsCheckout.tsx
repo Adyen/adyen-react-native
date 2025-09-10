@@ -64,7 +64,10 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
       if (!session) {
         throw new Error('Session is not defined');
       }
-      const status = await ApiClient.requestSessionResult(session.id, result.resultData); 
+      const status = await ApiClient.requestSessionResult(
+        session.id,
+        result.resultData
+      );
       processResult(status, nativeComponent, navigation);
     },
     [navigation, session]

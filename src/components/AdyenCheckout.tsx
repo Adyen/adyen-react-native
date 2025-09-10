@@ -70,7 +70,7 @@ export type AdyenCheckoutProps = {
     data: PaymentDetailsData,
     component: AdyenActionComponent
   ) => void;
-/**
+  /**
    * An optional callback function invoked when a payment session or component
    * interaction is successfully completed. This method provides the result of the session
    * and a reference to the Adyen component that triggered the completion.

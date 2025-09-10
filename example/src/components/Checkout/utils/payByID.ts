@@ -1,4 +1,8 @@
-import { AdyenCSE, AdyenAction, type PaymentMethodData } from '@adyen/react-native';
+import {
+  AdyenCSE,
+  AdyenAction,
+  type PaymentMethodData,
+} from '@adyen/react-native';
 import type { PaymentConfiguration } from '../../../api/types';
 import { ENVIRONMENT } from '../../../Configuration';
 import ApiClient from '../../../api/APIClient';
@@ -20,13 +24,10 @@ export async function payByID(
       encryptedSecurityCode: encryptedCard.cvv,
       threeDS2SdkVersion: AdyenAction.threeDS2SdkVersion,
     },
-    returnUrl: ENVIRONMENT.returnUrl
+    returnUrl: ENVIRONMENT.returnUrl,
   };
 
-  let result = await ApiClient.payments(
-    paymentData,
-    configuration
-  );
+  let result = await ApiClient.payments(paymentData, configuration);
   if (result.action) {
     const actionConfiguration = checkoutConfiguration(configuration);
     const actionData = await AdyenAction.handle(

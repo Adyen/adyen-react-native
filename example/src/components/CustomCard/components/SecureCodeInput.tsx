@@ -42,7 +42,7 @@ const SecureCodeInput = (props: SecureCodeInputProps) => {
           Styles.itemTitle,
         ]}
       >
-        {"CVC / CVV"}
+        {'CVC / CVV'}
       </Text>
       <TextInput
         {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below

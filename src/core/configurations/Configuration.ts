@@ -17,10 +17,10 @@ export type Environment =
 
 /** Environment configuration */
 export interface EnvironmentConfiguration {
-    /** Selected environment */
-    environment: Environment;
-    /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
-    clientKey: string;
+  /** Selected environment */
+  environment: Environment;
+  /** A public key linked to your web service user, used for {@link https://docs.adyen.com/user-management/client-side-authentication | client-side authentication}. */
+  clientKey: string;
 }
 
 /** Base component configuration */

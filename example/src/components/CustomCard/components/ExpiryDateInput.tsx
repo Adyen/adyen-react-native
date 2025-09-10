@@ -41,7 +41,7 @@ const ExpiryDateInput = (props: ExpiryDateInputProps) => {
           Styles.itemTitle,
         ]}
       >
-        {"Expiry date"}
+        {'Expiry date'}
       </Text>
       <TextInput
         {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below

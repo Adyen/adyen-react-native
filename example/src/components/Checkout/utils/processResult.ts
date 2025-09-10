@@ -6,7 +6,8 @@ import type { PaymentResponse } from '../../../api/types';
 export function processResult(
   result: PaymentResponse,
   nativeComponent: AdyenComponent,
-  navigation: PageProps['navigation']) {
+  navigation: PageProps['navigation']
+) {
   const success = isSuccess(result.resultCode);
   console.log(
     `Payment: ${success ? 'success' : 'failure'} : ${success ? result.resultCode : JSON.stringify(result)}`

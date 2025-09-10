@@ -105,7 +105,10 @@ const PartialPaymentCheckout = ({ navigation }: PageProps) => {
       reject: (error: Error) => void
     ) => {
       try {
-        let response = await ApiClient.checkBalance(paymentData, configuration);
+        const response = await ApiClient.checkBalance(
+          paymentData,
+          configuration
+        );
         resolve(response);
       } catch (e) {
         console.error('Balance check error: ', e);
@@ -118,7 +121,7 @@ const PartialPaymentCheckout = ({ navigation }: PageProps) => {
   const requestOrder = useCallback(
     async (resolve: (order: Order) => void, reject: (error: Error) => void) => {
       try {
-        let response = await ApiClient.requestOrder(configuration);
+        const response = await ApiClient.requestOrder(configuration);
         resolve(response);
       } catch (e) {
         console.error('Order request error: ', e);
@@ -137,7 +140,7 @@ const PartialPaymentCheckout = ({ navigation }: PageProps) => {
       try {
         await ApiClient.cancelOrder(order, configuration);
         if (shouldUpdatePaymentMethods) {
-          let paymentMethods = await ApiClient.paymentMethods(
+          const paymentMethods = await ApiClient.paymentMethods(
             configuration,
             order
           );

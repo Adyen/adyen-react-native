@@ -59,18 +59,24 @@ class ApiClient {
     resultData: string,
     sessionId: string
   ): Promise<PaymentResponse> => {
-    const url = ENVIRONMENT.url + 'sessions/' + sessionId + `?sessionResult=${resultData}`;
+    const url =
+      ENVIRONMENT.url +
+      'sessions/' +
+      sessionId +
+      `?sessionResult=${resultData}`;
     const request = new Request(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': ENVIRONMENT.apiKey,
-      },  
+      },
     });
-    
+
     const response = await fetch(request);
     if (!response.ok) {
-      throw new Error(`Network Error ${response.status}: ${response.statusText}`);
+      throw new Error(
+        `Network Error ${response.status}: ${response.statusText}`
+      );
     }
     const payload = await response.json();
     return { resultCode: payload.status };

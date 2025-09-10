@@ -38,7 +38,7 @@ const CardNumberInput = (props: CardNumberInputProps) => {
           Styles.itemTitle,
         ]}
       >
-        {"Card number"}
+        {'Card number'}
       </Text>
       <TextInput
         {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below

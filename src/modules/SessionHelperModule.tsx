@@ -4,7 +4,6 @@ import type { AdyenComponent } from '../core/AdyenNativeModules';
 import { ModuleMock } from './ModuleMock';
 import type { EnvironmentConfiguration } from '../core/configurations/Configuration';
 
-
 /** Describes a native module capable of creating new sessions. */
 export interface SessionHelperModule extends AdyenComponent {
   /**
@@ -12,7 +11,10 @@ export interface SessionHelperModule extends AdyenComponent {
    * @param session - Session configuration (id and SessionData)
    * @param configuration - Environment configuration
    */
-  createSession: (session: SessionConfiguration, configuration: EnvironmentConfiguration) => Promise<SessionContext>;
+  createSession: (
+    session: SessionConfiguration,
+    configuration: EnvironmentConfiguration
+  ) => Promise<SessionContext>;
 }
 
 /** Collection of session helper methods */
