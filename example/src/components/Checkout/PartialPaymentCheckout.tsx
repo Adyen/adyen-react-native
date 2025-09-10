@@ -140,12 +140,12 @@ const PartialPaymentCheckout = ({ navigation }: PageProps) => {
       try {
         await ApiClient.cancelOrder(order, configuration);
         if (shouldUpdatePaymentMethods) {
-          const paymentMethods = await ApiClient.paymentMethods(
+          const newPaymentMethods = await ApiClient.paymentMethods(
             configuration,
             order
           );
           const dropIn = component as unknown as DropInModule;
-          dropIn.providePaymentMethods(paymentMethods, undefined);
+          dropIn.providePaymentMethods(newPaymentMethods, undefined);
         } else {
           component.hide(false);
         }

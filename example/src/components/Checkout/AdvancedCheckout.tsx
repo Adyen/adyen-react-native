@@ -66,7 +66,7 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
         processError(error, nativeComponent);
       }
     },
-    [configuration]
+    [configuration, navigation]
   );
 
   const didProvide = useCallback(
@@ -78,7 +78,7 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
         processError(error, nativeComponent);
       }
     },
-    []
+    [navigation]
   );
 
   const didFail = useCallback(

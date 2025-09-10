@@ -18,7 +18,6 @@ import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../State/checkoutConfiguration';
 import type { PageProps } from '../../State/RootStackParamList';
-import type { PaymentConfiguration } from '../../api/types';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 import { processResult } from './utils/processResult';
@@ -32,7 +31,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
   );
 
   useEffect(() => {
-    const refreshSession = async (configuration: PaymentConfiguration) => {
+    const refreshSession = async () => {
       const returnUrl = Platform.select({
         android: await AdyenDropIn.getReturnURL(),
         default: ENVIRONMENT.returnUrl,
@@ -49,7 +48,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
         setLoading(false);
       }
     };
-    refreshSession(configuration);
+    refreshSession();
   }, [configuration, setSession, setLoading, setError]);
 
   const didFail = useCallback(

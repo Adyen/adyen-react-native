@@ -1,6 +1,6 @@
 // @ts-check
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../utilities/Styles';
 import { Button, View } from 'react-native';
@@ -24,8 +24,8 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
     configuration.shopperLocale
   );
 
-  const handleOnPress = useCallback(() => {
-    const newConfiguration = {
+  const settings = useMemo(
+    () => ({
       countryCode: countryCode,
       amount: Number(amount),
       currency: currency,
@@ -33,19 +33,22 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
       merchantName: merchantName,
       shopperLocale: shopperLocale,
       shopperReference: shopperReference,
-    };
-    save(newConfiguration);
+    }),
+    [
+      countryCode,
+      amount,
+      currency,
+      merchantAccount,
+      merchantName,
+      shopperLocale,
+      shopperReference,
+    ]
+  );
+
+  const handleOnPress = useCallback(() => {
+    save(settings);
     goBack();
-  }, [
-    countryCode,
-    currency,
-    amount,
-    merchantAccount,
-    shopperLocale,
-    merchantName,
-    configuration,
-    shopperReference,
-  ]);
+  }, [settings, save, goBack]);
 
   return (
     <View>
