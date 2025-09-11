@@ -18,7 +18,10 @@ interface PaymentMethodsProps {
   navigation?: PageProps['navigation'];
 }
 
-const PaymentMethods = ({ showComponents, navigation }: PaymentMethodsProps) => {
+const PaymentMethods = ({
+  showComponents,
+  navigation,
+}: PaymentMethodsProps) => {
   const { configuration } = useAppContext();
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
@@ -28,7 +31,7 @@ const PaymentMethods = ({ showComponents, navigation }: PaymentMethodsProps) => 
   const isNotReady = paymentMethodsResponse === undefined;
   const isDarkMode = useColorScheme() === 'dark';
 
-  const makePayment = useCallback(  
+  const makePayment = useCallback(
     async (p: StoredCardPaymentMethod) => {
       await handleStoredPayment(p, configuration, navigation);
     },

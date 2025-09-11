@@ -57,7 +57,7 @@ class ApiClient {
 
   static requestSessionResult = async (
     sessionId: string,
-    sessionResult: string,
+    sessionResult: string
   ): Promise<PaymentResponse> => {
     const url =
       ENVIRONMENT.url +

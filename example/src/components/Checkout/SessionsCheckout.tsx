@@ -65,7 +65,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
       }
       const status = await ApiClient.requestSessionResult(
         session.id,
-        result.resultData
+        result.sessionResult
       );
       processResult(status, nativeComponent, navigation);
     },
