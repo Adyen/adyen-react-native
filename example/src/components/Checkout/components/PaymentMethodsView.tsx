@@ -10,12 +10,15 @@ import { storedSubtitle } from '../utils/storedSubtitle';
 import { storedIcon } from '../utils/storedIcon';
 import { storedTitle } from '../utils/storedTitle';
 import { handleStoredPayment } from '../utils/handleStoredPayment';
+import type { PageProps } from '../../../State/RootStackParamList';
+import { useCallback } from 'react';
 
 interface PaymentMethodsProps {
   showComponents: boolean;
+  navigation?: PageProps['navigation'];
 }
 
-const PaymentMethods = ({ showComponents }: PaymentMethodsProps) => {
+const PaymentMethods = ({ showComponents, navigation }: PaymentMethodsProps) => {
   const { configuration } = useAppContext();
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
@@ -24,6 +27,13 @@ const PaymentMethods = ({ showComponents }: PaymentMethodsProps) => {
 
   const isNotReady = paymentMethodsResponse === undefined;
   const isDarkMode = useColorScheme() === 'dark';
+
+  const makePayment = useCallback(  
+    async (p: StoredCardPaymentMethod) => {
+      await handleStoredPayment(p, configuration, navigation);
+    },
+    [configuration, navigation]
+  );
 
   return (
     <ScrollView>
@@ -52,9 +62,7 @@ const PaymentMethods = ({ showComponents }: PaymentMethodsProps) => {
                         title={storedTitle(p)}
                         subtitle={storedSubtitle(p)}
                         icon={storedIcon(p)}
-                        onPress={async () => {
-                          await handleStoredPayment(p, configuration);
-                        }}
+                        onPress={() => makePayment(p)}
                       />
                     </View>
                   );

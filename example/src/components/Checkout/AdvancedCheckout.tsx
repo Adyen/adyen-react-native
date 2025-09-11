@@ -115,7 +115,7 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
         onAdditionalDetails={didProvide}
         onError={didFail}
       >
-        <PaymentMethods showComponents={true} />
+        <PaymentMethods showComponents={true} navigation={navigation}/>
       </AdyenCheckout>
     </View>
   );
