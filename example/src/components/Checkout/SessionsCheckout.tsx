@@ -97,7 +97,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
         onComplete={didComplete}
         onError={didFail}
       >
-        <PaymentMethods showComponents={true} />
+        <PaymentMethods showComponents={false} />
       </AdyenCheckout>
     </View>
   );

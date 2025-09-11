@@ -24,7 +24,7 @@ const CseView = ({ navigation }: PageProps) => {
     return {
       number: number.replace(/\s+/g, ''),
       expiryMonth,
-      expiryYear,
+      expiryYear: '20' + expiryYear,
       cvv,
     };
   }, [expiryDate, number, cvv]);
@@ -43,7 +43,7 @@ const CseView = ({ navigation }: PageProps) => {
   }, [configuration, navigation, unencryptedCard]);
 
   return (
-    <View style={Styles.centeredContent}>
+    <View style={Styles.content}>
       <CardNumberInput onChangeText={setNumber} />
       <View style={Styles.horizontalContent}>
         <ExpiryDateInput onChangeText={setExpiryDate} />

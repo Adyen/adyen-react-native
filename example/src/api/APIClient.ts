@@ -56,14 +56,14 @@ class ApiClient {
   };
 
   static requestSessionResult = async (
-    resultData: string,
-    sessionId: string
+    sessionId: string,
+    sessionResult: string,
   ): Promise<PaymentResponse> => {
     const url =
       ENVIRONMENT.url +
       'sessions/' +
       sessionId +
-      `?sessionResult=${resultData}`;
+      `?sessionResult=${sessionResult}`;
     const request = new Request(url, {
       method: 'GET',
       headers: {
