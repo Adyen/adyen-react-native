@@ -111,6 +111,10 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
         onAdditionalDetails={didProvide}
+        onComplete={(result, component) => {
+          // `onComplete` is only called for Voucher payment methods
+          processResult(result, component, navigation);
+        }}
         onError={didFail}
       >
         <PaymentMethods showComponents={true} navigation={navigation} />
