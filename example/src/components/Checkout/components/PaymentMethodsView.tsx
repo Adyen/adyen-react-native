@@ -23,8 +23,9 @@ const PaymentMethods = ({
   const { configuration } = useAppContext();
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
-  const storedPaymentMethods =
-    paymentMethodsResponse?.storedPaymentMethods as StoredCardPaymentMethod[];
+  const storedCards = paymentMethodsResponse?.storedPaymentMethods?.filter(
+    (pm) => pm.type === 'scheme'
+  ) as StoredCardPaymentMethod[];
 
   const isNotReady = paymentMethodsResponse === undefined;
   const isDarkMode = useColorScheme() === 'dark';
@@ -51,12 +52,12 @@ const PaymentMethods = ({
 
         {showComponents ? (
           <View>
-            {storedPaymentMethods ? (
+            {storedCards ? (
               <View>
                 <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
                   Stored payments
                 </Text>
-                {storedPaymentMethods.map((p) => {
+                {storedCards.map((p) => {
                   return (
                     <View key={`${p.id}`}>
                       <PaymentMethodButton

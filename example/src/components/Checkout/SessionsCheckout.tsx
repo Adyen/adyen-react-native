@@ -62,7 +62,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
       );
       processResult(status, nativeComponent, navigation);
     },
-    [navigation, session]
+    [navigation]
   );
 
   if (loading) {
