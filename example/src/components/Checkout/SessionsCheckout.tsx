@@ -56,11 +56,8 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
 
   const didComplete = useCallback(
     async (result: SessionsResult, nativeComponent: AdyenComponent) => {
-      if (!session) {
-        throw new Error('Session is not defined');
-      }
       const status = await ApiClient.requestSessionResult(
-        session.id,
+        result.sessionId,
         result.sessionResult
       );
       processResult(status, nativeComponent, navigation);
