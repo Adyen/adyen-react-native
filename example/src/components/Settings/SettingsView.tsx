@@ -1,5 +1,3 @@
-// @ts-check
-
 import { useCallback, useMemo, useState } from 'react';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../utilities/Styles';

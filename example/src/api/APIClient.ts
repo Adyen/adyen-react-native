@@ -1,5 +1,3 @@
-// @ts-check
-
 import type {
   PaymentMethodsResponse,
   PaymentMethodData,

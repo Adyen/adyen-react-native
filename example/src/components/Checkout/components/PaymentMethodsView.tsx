@@ -1,5 +1,3 @@
-// @ts-check
-
 import { useAdyenCheckout } from '@adyen/react-native';
 import { Button, View, ScrollView, Text, useColorScheme } from 'react-native';
 import Styles from '../../utilities/Styles';

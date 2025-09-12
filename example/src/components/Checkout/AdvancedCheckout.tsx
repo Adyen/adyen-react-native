@@ -1,5 +1,3 @@
-// @ts-check
-
 import { useEffect, useCallback, useState } from 'react';
 import { Text, ActivityIndicator, View } from 'react-native';
 import { AdyenCheckout } from '@adyen/react-native';
