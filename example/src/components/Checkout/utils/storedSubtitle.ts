@@ -1,11 +1,11 @@
 import type { StoredCardPaymentMethod } from '../../../api/types';
 
 export function storedSubtitle(
-  pm: StoredCardPaymentMethod
+  paymentMethod: StoredCardPaymentMethod
 ): string | undefined {
-  switch (pm.type) {
+  switch (paymentMethod.type) {
     case 'scheme':
-      return `exp ${pm.expiryMonth}/${pm.expiryYear}`;
+      return `exp ${paymentMethod.expiryMonth}/${paymentMethod.expiryYear}`;
     default:
       return undefined;
   }

@@ -10,6 +10,7 @@ import { storedTitle } from '../utils/storedTitle';
 import { handleStoredPayment } from '../utils/handleStoredPayment';
 import type { PageProps } from '../../../State/RootStackParamList';
 import { useCallback } from 'react';
+import { icon } from '../utils/icon';
 
 interface PaymentMethodsProps {
   showComponents: boolean;
@@ -24,7 +25,7 @@ const PaymentMethods = ({
   const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
   const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
   const storedCards = paymentMethodsResponse?.storedPaymentMethods?.filter(
-    (pm) => pm.type === 'scheme'
+    (paymentMethod) => paymentMethod.type === 'scheme'
   ) as StoredCardPaymentMethod[];
 
   const isNotReady = paymentMethodsResponse === undefined;
@@ -57,14 +58,14 @@ const PaymentMethods = ({
                 <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
                   Stored payments
                 </Text>
-                {storedCards.map((p) => {
+                {storedCards.map((paymentMethod) => {
                   return (
-                    <View key={`${p.id}`}>
+                    <View key={`${paymentMethod.id}`}>
                       <PaymentMethodButton
-                        title={storedTitle(p)}
-                        subtitle={storedSubtitle(p)}
-                        icon={storedIcon(p)}
-                        onPress={() => makePayment(p)}
+                        title={storedTitle(paymentMethod)}
+                        subtitle={storedSubtitle(paymentMethod)}
+                        icon={storedIcon(paymentMethod)}
+                        onPress={() => makePayment(paymentMethod)}
                       />
                     </View>
                   );
@@ -77,16 +78,15 @@ const PaymentMethods = ({
             <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
               Components
             </Text>
-            {regularPaymentMethods.map((p) => {
-              const iconName = p.type === 'scheme' ? 'card' : p.type;
+            {regularPaymentMethods.map((paymentMethod) => {
               return (
-                <View key={`${p.type + p.name}`}>
+                <View key={paymentMethod.type + paymentMethod.name}>
                   <PaymentMethodButton
-                    title={`${p.name}`}
+                    title={paymentMethod.name}
                     subtitle={undefined}
-                    icon={iconName}
+                    icon={icon(paymentMethod)}
                     onPress={() => {
-                      start(p.type);
+                      start(paymentMethod.type);
                     }}
                   />
                 </View>

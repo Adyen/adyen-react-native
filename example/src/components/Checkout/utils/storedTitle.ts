@@ -1,10 +1,10 @@
 import type { StoredCardPaymentMethod } from '../../../api/types';
 
-export function storedTitle(pm: StoredCardPaymentMethod): string {
-  switch (pm.type) {
+export function storedTitle(paymentMethod: StoredCardPaymentMethod): string {
+  switch (paymentMethod.type) {
     case 'scheme':
-      return `**** **** **** ${pm.lastFour}`;
+      return `**** **** **** ${paymentMethod.lastFour}`;
     default:
-      return `${pm.name}`;
+      return `${paymentMethod.name}`;
   }
 }
