@@ -74,6 +74,10 @@ const Styles = StyleSheet.create({
     marginLeft: 10,
     marginTop: 2,
   },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+  },
 });
 
 export default Styles;

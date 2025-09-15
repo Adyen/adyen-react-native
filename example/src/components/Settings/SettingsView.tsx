@@ -1,47 +1,15 @@
-// @ts-check
+import { useCallback, useMemo, useState } from 'react';
+import { useAppContext } from '../../hooks/useAppContext';
+import Styles from '../utilities/Styles';
+import { Button, View } from 'react-native';
+import FormTextInput from './components/FormTextInput';
+import type { PageProps } from '../../State/RootStackParamList';
 
-import React, { useCallback, useState } from 'react';
-import { useAppContext } from '../hooks/useAppContext';
-import Styles from './utilities/Styles';
-import {
-  Button,
-  SafeAreaView,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
-
-const FormTextInput = ({ value, title, onChangeText, ...rest }) => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={Styles.item}>
-      <Text
-        style={[
-          isDarkMode ? Styles.textDark : Styles.textLight,
-          Styles.itemTitle,
-        ]}
-      >
-        {title}
-      </Text>
-      <TextInput
-        {...rest} // Inherit any props passed to it; e.g., multiline, numberOfLines below
-        editable
-        maxLength={40}
-        placeholder=""
-        value={value}
-        onChangeText={onChangeText}
-        style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
-      />
-    </View>
-  );
-};
-
-const SettingFormView = ({ navigation: { goBack } }) => {
+const SettingView = ({ navigation: { goBack } }: PageProps) => {
   const { configuration, save } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
-  const [amount, setAmount] = useState(configuration.amount);
+  const [amount, setAmount] = useState(String(configuration.amount));
   const [currency, setCurrency] = useState(configuration.currency);
   const [merchantName, setMerchantName] = useState(configuration.merchantName);
   const [merchantAccount, setMerchantAccount] = useState(
@@ -54,8 +22,8 @@ const SettingFormView = ({ navigation: { goBack } }) => {
     configuration.shopperLocale
   );
 
-  const handleOnPress = useCallback(() => {
-    const newConfiguration = {
+  const settings = useMemo(
+    () => ({
       countryCode: countryCode,
       amount: Number(amount),
       currency: currency,
@@ -63,30 +31,35 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       merchantName: merchantName,
       shopperLocale: shopperLocale,
       shopperReference: shopperReference,
-    };
-    save(newConfiguration);
+    }),
+    [
+      countryCode,
+      amount,
+      currency,
+      merchantAccount,
+      merchantName,
+      shopperLocale,
+      shopperReference,
+    ]
+  );
+
+  const saveAndClose = useCallback(() => {
+    save(settings);
     goBack();
-  }, [
-    countryCode,
-    currency,
-    amount,
-    merchantAccount,
-    shopperLocale,
-    merchantName,
-    configuration,
-    shopperReference,
-  ]);
+  }, [settings, save, goBack]);
 
   return (
     <View>
       <FormTextInput
         title="Country"
         value={countryCode}
+        maxLength={2}
         onChangeText={setCountryCode}
       />
       <FormTextInput
         title="Currency"
         value={currency}
+        maxLength={3}
         onChangeText={setCurrency}
       />
       <FormTextInput
@@ -108,6 +81,7 @@ const SettingFormView = ({ navigation: { goBack } }) => {
       <FormTextInput
         title="Shopper locale"
         value={shopperLocale}
+        maxLength={5}
         onChangeText={setShopperLocale}
       />
       <FormTextInput
@@ -116,17 +90,9 @@ const SettingFormView = ({ navigation: { goBack } }) => {
         onChangeText={setShopperReference}
       />
       <View style={Styles.centeredButton}>
-        <Button title="Save" onPress={handleOnPress} />
+        <Button title="Save" onPress={saveAndClose} />
       </View>
     </View>
-  );
-};
-
-const SettingView = ({ navigation }) => {
-  return (
-    <SafeAreaView style={Styles.page}>
-      <SettingFormView navigation={navigation} />
-    </SafeAreaView>
   );
 };
 
