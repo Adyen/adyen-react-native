@@ -1,10 +1,10 @@
 import type { StoredCardPaymentMethod } from '../../../api/types';
 
-export function storedIcon(pm: StoredCardPaymentMethod): string {
-  switch (pm.type) {
+export function storedIcon(paymentMethod: StoredCardPaymentMethod): string {
+  switch (paymentMethod.type) {
     case 'scheme':
-      return `${pm.brand ?? 'card'}`;
+      return `${paymentMethod.brand ?? 'card'}`;
     default:
-      return `${pm.type}`;
+      return `${paymentMethod.type}`;
   }
 }

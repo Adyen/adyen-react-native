@@ -1,6 +1,7 @@
 import { TouchableHighlight, View, Image, Text } from 'react-native';
 import { ENVIRONMENT } from '../../../Configuration';
 import Styles from '../../utilities/Styles';
+import { getIconUrl } from '../../utilities/getIcon';
 
 interface PaymentMethodButtonProps {
   onPress: () => void;
@@ -10,7 +11,7 @@ interface PaymentMethodButtonProps {
 }
 
 const PaymentMethodButton = (props: PaymentMethodButtonProps) => {
-  const iconURI = `https://checkoutshopper-${ENVIRONMENT.environment}.adyen.com/checkoutshopper/images/logos/small/${props.icon}@3x.png`;
+  const iconURI = getIconUrl(ENVIRONMENT.environment, props.icon);
 
   return (
     <TouchableHighlight
