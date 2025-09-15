@@ -155,8 +155,8 @@ extension DropInModule: DropInComponentDelegate {
     }
 
     func didComplete(from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
-      let result = ResultDTO(result: .presentToShopper)
-      sendEvent(event: .didComplete, body: result.jsonObject)
+        let result = ResultDTO(result: .presentToShopper)
+        sendEvent(event: .didComplete, body: result.jsonObject)
     }
 
     func didFail(with error: Error, from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
