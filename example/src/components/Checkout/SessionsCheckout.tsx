@@ -56,6 +56,10 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
 
   const didComplete = useCallback(
     async (result: SessionsResult, nativeComponent: AdyenComponent) => {
+      if (result.resultCode === 'PresentToShopper') {
+        processResult(result, nativeComponent, navigation);
+        return;
+      }
       const status = await ApiClient.requestSessionResult(
         result.sessionId,
         result.sessionResult
