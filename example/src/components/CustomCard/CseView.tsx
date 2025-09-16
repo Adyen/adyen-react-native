@@ -56,7 +56,7 @@ const CseView = ({ navigation }: PageProps) => {
       <CardNumberInput onChangeText={setNumber} style={Styles.padded} />
       <View style={[Styles.horizontalContent]}>
         <ExpiryDateInput onChangeText={setExpiryDate} />
-        <View style={Styles.padded} />
+        <View style={Styles.horizontalSpace} />
         <SecureCodeInput bin={number.slice(0, 8)} onChangeText={setCvv} />
       </View>
 

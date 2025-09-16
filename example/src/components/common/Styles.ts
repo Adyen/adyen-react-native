@@ -70,6 +70,9 @@ const Styles = StyleSheet.create({
   scrollBottomPadding: {
     height: 60,
   },
+  horizontalSpace: {
+    width: 8,
+  },
 });
 
 export default Styles;

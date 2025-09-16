@@ -11,12 +11,7 @@ const FormTextInput = (props: FormTextInputProps) => {
   return (
     <View style={Styles.page}>
       <AdaptiveText style={Styles.paddedTitle}>{props.title}</AdaptiveText>
-      <AdaptiveTextInput
-        {...props}
-        value={props.value}
-        onChangeText={props.onChangeText}
-        style={[props.style, Styles.textInput]}
-      />
+      <AdaptiveTextInput {...props} style={[props.style, Styles.textInput]} />
     </View>
   );
 };
