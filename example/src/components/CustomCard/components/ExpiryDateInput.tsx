@@ -1,23 +1,16 @@
 import { useCallback, useState } from 'react';
-import {
-  TextInput,
-  Text,
-  View,
-  useColorScheme,
-  type TextInputProps,
-} from 'react-native';
-import Styles from '../../utilities/Styles';
+import { type TextInputProps } from 'react-native';
+import FormTextInput from '../../common/FormTextInput';
 
 type ExpiryDateInputProps = {
   onChangeText: (value: string) => void;
 } & TextInputProps;
 
 const ExpiryDateInput = (props: ExpiryDateInputProps) => {
-  const isDarkMode = useColorScheme() === 'dark';
   const [expiryDate, setExpiryDate] = useState('');
   const { onChangeText } = props;
 
-  const formatCardNumber = useCallback(
+  const formatExpiryDate = useCallback(
     (input: string) => {
       // Remove all non-digit characters
       const digits = input.replace(/\D/g, '');
@@ -38,26 +31,15 @@ const ExpiryDateInput = (props: ExpiryDateInputProps) => {
   );
 
   return (
-    <View style={Styles.item}>
-      <Text
-        style={[
-          isDarkMode ? Styles.textDark : Styles.textLight,
-          Styles.itemTitle,
-        ]}
-      >
-        {'Expiry date'}
-      </Text>
-      <TextInput
-        {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below
-        editable
-        keyboardType="numeric"
-        maxLength={5} // 16 digits + 3 spaces
-        placeholder="MM/YY"
-        value={expiryDate}
-        onChangeText={formatCardNumber}
-        style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
-      />
-    </View>
+    <FormTextInput
+      title="Expiry date"
+      {...props}
+      keyboardType="numeric"
+      maxLength={5}
+      placeholder="MM/YY"
+      value={expiryDate}
+      onChangeText={formatExpiryDate}
+    />
   );
 };
 

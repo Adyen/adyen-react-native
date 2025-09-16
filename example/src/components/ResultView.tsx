@@ -1,7 +1,8 @@
-import { Text, useColorScheme, View } from 'react-native';
+import { View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../State/RootStackParamList';
-import Styles from './utilities/Styles';
+import Styles from './common/Styles';
+import AdaptiveText from './common/AdaptiveText';
 
 export type ResultViewProps = NativeStackScreenProps<
   RootStackParamList,
@@ -9,17 +10,9 @@ export type ResultViewProps = NativeStackScreenProps<
 >;
 
 const ResultView = ({ route }: ResultViewProps) => {
-  const isDarkMode = useColorScheme() === 'dark';
   return (
-    <View style={Styles.content}>
-      <Text
-        style={[
-          isDarkMode ? Styles.textDark : Styles.textLight,
-          Styles.centeredText,
-        ]}
-      >
-        {route.params.resultCode}
-      </Text>
+    <View style={Styles.centeredContent}>
+      <AdaptiveText>{route.params.resultCode}</AdaptiveText>
     </View>
   );
 };

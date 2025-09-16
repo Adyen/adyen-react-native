@@ -1,19 +1,12 @@
 import { useCallback, useState } from 'react';
-import {
-  TextInput,
-  Text,
-  View,
-  useColorScheme,
-  type TextInputProps,
-} from 'react-native';
-import Styles from '../../utilities/Styles';
+import { type TextInputProps } from 'react-native';
+import FormTextInput from '../../common/FormTextInput';
 
 type CardNumberInputProps = {
   onChangeText: (value: string) => void;
 } & TextInputProps;
 
 const CardNumberInput = (props: CardNumberInputProps) => {
-  const isDarkMode = useColorScheme() === 'dark';
   const [cardNumber, setCardNumber] = useState('');
   const { onChangeText } = props;
 
@@ -35,26 +28,15 @@ const CardNumberInput = (props: CardNumberInputProps) => {
   );
 
   return (
-    <View style={Styles.item}>
-      <Text
-        style={[
-          isDarkMode ? Styles.textDark : Styles.textLight,
-          Styles.itemTitle,
-        ]}
-      >
-        {'Card number'}
-      </Text>
-      <TextInput
-        {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below
-        editable
-        keyboardType="numeric"
-        maxLength={19} // 16 digits + 3 spaces
-        placeholder="1234 5678 9012 3456"
-        value={cardNumber}
-        onChangeText={formatCardNumber}
-        style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
-      />
-    </View>
+    <FormTextInput
+      title="Card number"
+      {...props}
+      keyboardType="numeric"
+      maxLength={19}
+      placeholder="1234 5678 9012 3456"
+      value={cardNumber}
+      onChangeText={formatCardNumber}
+    />
   );
 };
 

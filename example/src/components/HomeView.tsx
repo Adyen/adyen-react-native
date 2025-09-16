@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { View, Button } from 'react-native';
 import type { PageProps } from '../State/RootStackParamList';
-import Styles from './utilities/Styles';
+import Styles from './common/Styles';
 
 function createOptions({ navigation }: PageProps) {
   return {
@@ -52,7 +52,7 @@ const Home = ({ navigation }: PageProps) => {
   ];
 
   return (
-    <View style={Styles.content}>
+    <View style={[Styles.page, Styles.content]}>
       {pagesWithButtons.map(({ title, route }) => (
         <Button
           title={title}

@@ -1,58 +1,39 @@
 import { StyleSheet } from 'react-native';
+import Colors from './Assets';
 
 const Styles = StyleSheet.create({
   page: {
     flex: 1,
   },
   centeredContent: {
-    alignItems: 'center',
     flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
-    alignItems: 'stretch',
-    flex: 1,
     justifyContent: 'center',
   },
   horizontalContent: {
-    alignItems: 'center',
-    padding: 16,
-    justifyContent: 'space-around',
     flexDirection: 'row',
   },
-  item: {
+  padded: {
     padding: 8,
   },
-  itemTitle: {
-    paddingLeft: 4,
+  topPadded: {
+    paddingTop: 16,
   },
-  textInputDark: {
-    color: 'white',
-    backgroundColor: 'grey',
-    padding: 8,
-    borderRadius: 8,
+  paddedTitle: {
+    paddingLeft: 8,
+    paddingTop: 8,
   },
-  textInputLight: {
-    color: 'black',
-    backgroundColor: 'lightgrey',
+  textInput: {
     padding: 8,
     borderRadius: 8,
-  },
-  textLight: {
-    color: 'black',
-  },
-  textDark: {
-    color: 'white',
-  },
-  slash: { paddingHorizontal: 4, textAlign: 'center' },
-  centeredText: { textAlign: 'center' },
-  centeredButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
+    fontSize: 16,
+    fontWeight: 'medium',
+    width: 'auto',
   },
   btnClickContain: {
-    backgroundColor: '#009D6E',
     borderRadius: 5,
     padding: 8,
     marginVertical: 4,
@@ -61,22 +42,33 @@ const Styles = StyleSheet.create({
   },
   btnContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   btnIcon: {
     height: 32,
     width: 46,
     borderRadius: 4,
-    resizeMode: 'center',
+    backgroundColor: Colors.textBackgroundDark,
+    resizeMode: 'stretch',
+    borderWidth: 0.5,
+    borderColor: Colors.textBackgroundDark,
   },
   btnText: {
     fontSize: 18,
-    color: '#FAFAFA',
+    marginLeft: 10,
+    marginTop: 2,
+  },
+  btnSubText: {
+    fontSize: 14,
     marginLeft: 10,
     marginTop: 2,
   },
   errorText: {
-    color: 'red',
+    color: Colors.errorForeground,
     textAlign: 'center',
+  },
+  scrollBottomPadding: {
+    height: 60,
   },
 });
 

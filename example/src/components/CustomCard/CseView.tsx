@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, View, Alert } from 'react-native';
+import { Button, View, Alert, ScrollView } from 'react-native';
 import { AdyenAction } from '@adyen/react-native';
-import Styles from '../utilities/Styles';
+import Styles from '../common/Styles';
 import { isSuccess } from '../utilities/isSuccess';
 import { payWithCard } from './utils/payWithCard';
 import { useAppContext } from '../../hooks/useAppContext';
@@ -10,6 +10,7 @@ import type { PaymentResponse } from '../../api/types';
 import CardNumberInput from './components/CardNumberInput';
 import ExpiryDateInput from './components/ExpiryDateInput';
 import SecureCodeInput from './components/SecureCodeInput';
+import { formatMinorUnits } from '../utilities/formatMinorUnits';
 
 const CseView = ({ navigation }: PageProps) => {
   const { configuration } = useAppContext();
@@ -42,16 +43,27 @@ const CseView = ({ navigation }: PageProps) => {
     navigation.push('Result', { resultCode: result.resultCode });
   }, [configuration, navigation, unencryptedCard]);
 
+  const amountLabel = useMemo(() => {
+    return formatMinorUnits(
+      configuration.amount,
+      configuration.currency,
+      configuration.shopperLocale
+    );
+  }, [configuration]);
+
   return (
-    <View style={Styles.content}>
-      <CardNumberInput onChangeText={setNumber} />
-      <View style={Styles.horizontalContent}>
+    <ScrollView style={[Styles.page, Styles.padded]}>
+      <CardNumberInput onChangeText={setNumber} style={Styles.padded} />
+      <View style={[Styles.horizontalContent]}>
         <ExpiryDateInput onChangeText={setExpiryDate} />
+        <View style={Styles.padded} />
         <SecureCodeInput bin={number.slice(0, 8)} onChangeText={setCvv} />
       </View>
 
-      <Button onPress={() => tryEncryptCard()} title="Pay" />
-    </View>
+      <View style={[Styles.topPadded]}>
+        <Button onPress={() => tryEncryptCard()} title={'Pay ' + amountLabel} />
+      </View>
+    </ScrollView>
   );
 };
 

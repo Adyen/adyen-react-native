@@ -10,7 +10,7 @@ import type {
   AdyenComponent,
 } from '@adyen/react-native';
 import PaymentMethods from './components/PaymentMethodsView';
-import Styles from '../utilities/Styles';
+import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
