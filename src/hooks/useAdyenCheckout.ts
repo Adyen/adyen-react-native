@@ -15,6 +15,9 @@ export interface AdyenCheckoutContextType {
 
   /** Payment methods available for payment. */
   paymentMethods?: PaymentMethodsResponse;
+
+  /** True if the checkout is ready to be used. */
+  isReady: boolean;
 }
 
 export const AdyenCheckoutContext =
