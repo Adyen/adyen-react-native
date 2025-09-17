@@ -23,11 +23,8 @@ const PaymentMethodsList = ({ regular }: PaymentMethodsListProps) => {
           <PaymentMethodListItem
             key={paymentMethod.type + paymentMethod.name}
             title={paymentMethod.name}
-            subtitle={undefined}
             icon={icon(paymentMethod)}
-            onPress={() => {
-              start(paymentMethod.type);
-            }}
+            onPress={() => start(paymentMethod.type)}
           />
         );
       })}

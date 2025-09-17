@@ -15,20 +15,22 @@ const StoredPaymentMethodsList = ({
   storedPaymentMethods,
   makePayment,
 }: StoredPaymentMethodsListProps) => {
-  const storedCards = useMemo<StoredCardPaymentMethod[] | undefined>(() => {
-    return storedPaymentMethods?.filter(
-      (paymentMethod) => paymentMethod.type === 'scheme'
-    ) as StoredCardPaymentMethod[];
+  const storedCards = useMemo(() => {
+    return (
+      storedPaymentMethods
+        ?.filter((paymentMethod) => paymentMethod.type === 'scheme')
+        .map((paymentMethod) => paymentMethod as StoredCardPaymentMethod) ?? []
+    );
   }, [storedPaymentMethods]);
 
-  if (!storedCards) {
+  if (storedCards.length === 0) {
     return null;
   }
 
   return (
     <View>
       <AdaptiveText style={Styles.paddedTitle}>Stored payments</AdaptiveText>
-      {storedCards?.map((paymentMethod) => {
+      {storedCards.map((paymentMethod) => {
         return (
           <PaymentMethodListItem
             key={`${paymentMethod.id}`}
