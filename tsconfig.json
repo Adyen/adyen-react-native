@@ -24,6 +24,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
-    "verbatimModuleSyntax": true
-  }
+    "verbatimModuleSyntax": true,
+    "noImplicitAny": true,
+  },
+  "exclude": ["**/__mocks__/*", "**/__tests__/*"],
 }

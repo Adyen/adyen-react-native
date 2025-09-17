@@ -1,3 +1,5 @@
+import type { ResultCode } from './constants';
+
 /**
  * General type for card.
  */
@@ -228,14 +230,6 @@ export interface SessionConfiguration {
 }
 
 /**
- * Session container
- */
-export interface SessionResponse {
-  paymentMethods: PaymentMethodsResponse;
-  [key: string]: any;
-}
-
-/**
  * Reason for payment termination
  */
 export interface AdyenError {
@@ -270,3 +264,26 @@ export interface Order {
   /** The remaining amount to complete the order. */
   remainingAmount?: PaymentAmount;
 }
+
+/**
+ * Represents the response structure specifically for session flow.
+ */
+export type SessionsResult = {
+  /**
+   * The session ID.
+   */
+  sessionId: string;
+  /**
+   * An encoded string that can be used to get the payment outcome on your server.
+   * @description Use this value with the new `/sessions/id` endpoint as a query string on your server to get a synchronous result for your payment.
+   */
+  sessionResult: string;
+  /**
+   * The primary result code indicating the overall status of the session operation.
+   */
+  resultCode: ResultCode;
+  /**
+   * The session data.
+   */
+  sessionData: string;
+};
