@@ -331,6 +331,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         start,
         config,
         paymentMethods: currentPaymentMethods,
+        isReady: currentPaymentMethods !== undefined,
       }}
     >
       {children}
