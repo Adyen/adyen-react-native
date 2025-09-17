@@ -35,7 +35,7 @@ describe('setApplicationContinueUserActivitySwift', () => {
     expect(result).toMatch(expectedExpoRedirect);
 
     const intaktDelegateClass =
-      /class ReactNativeDelegate\: ExpoReactNativeFactoryDelegate \{\s*override func sourceURL\(for bridge: RCTBridge\) \-\> URL\? \{\s*bridge\.bundleURL \?\? bundleURL\(\)\s*}\s*}/;
+      /class ReactNativeDelegate: ExpoReactNativeFactoryDelegate \{\s*override func sourceURL\(for bridge: RCTBridge\) -> URL\? \{\s*bridge\.bundleURL \?\? bundleURL\(\)\s*}\s*}/;
     expect(result).toMatch(intaktDelegateClass);
   });
 
