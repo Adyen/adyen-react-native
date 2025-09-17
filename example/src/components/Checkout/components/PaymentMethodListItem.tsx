@@ -5,14 +5,14 @@ import { getIconUrl } from '../../utilities/getIcon';
 import Colors from '../../common/Assets';
 import AdaptiveText from '../../common/AdaptiveText';
 
-interface PaymentMethodButtonProps {
+interface PaymentMethodListItemProps {
   onPress: () => void;
   title: string;
   subtitle?: string;
   icon: string;
 }
 
-const PaymentMethodButton = (props: PaymentMethodButtonProps) => {
+const PaymentMethodListItem = (props: PaymentMethodListItemProps) => {
   const iconURI = getIconUrl(ENVIRONMENT.environment, props.icon);
 
   return (
@@ -25,15 +25,15 @@ const PaymentMethodButton = (props: PaymentMethodButtonProps) => {
         <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
         <View>
           <AdaptiveText style={Styles.btnText}>{props.title}</AdaptiveText>
-          {props.subtitle ? (
+          {props.subtitle && (
             <AdaptiveText style={Styles.btnSubText}>
               {props.subtitle}
             </AdaptiveText>
-          ) : null}
+          )}
         </View>
       </View>
     </TouchableHighlight>
   );
 };
 
-export default PaymentMethodButton;
+export default PaymentMethodListItem;
