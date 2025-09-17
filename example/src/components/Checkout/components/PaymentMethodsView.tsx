@@ -1,17 +1,14 @@
 import { useAdyenCheckout } from '@adyen/react-native';
-import { Button, View, ScrollView } from 'react-native';
+import { View, ScrollView, ActivityIndicator } from 'react-native';
 import Styles from '../../common/Styles';
 import { useAppContext } from '../../../hooks/useAppContext';
-import PaymentMethodButton from './PaymentMethodButton';
 import type { StoredCardPaymentMethod } from '../../../api/types';
-import { storedSubtitle } from '../utils/storedSubtitle';
-import { storedIcon } from '../utils/storedIcon';
-import { storedTitle } from '../utils/storedTitle';
 import { handleStoredPayment } from '../utils/handleStoredPayment';
 import type { PageProps } from '../../../State/RootStackParamList';
-import { useCallback, useMemo } from 'react';
-import { icon } from '../utils/icon';
-import AdaptiveText from '../../common/AdaptiveText';
+import { useCallback } from 'react';
+import StoredPaymentMethodsList from './StoredPaymentMethodsList';
+import PaymentMethodsList from './PaymentMethodsList';
+import DropInButton from './DropInButton';
 
 interface PaymentMethodsProps {
   showComponents: boolean;
@@ -23,7 +20,7 @@ const PaymentMethods = ({
   navigation,
 }: PaymentMethodsProps) => {
   const { configuration } = useAppContext();
-  const { start, isReady, paymentMethods } = useAdyenCheckout();
+  const { isReady, paymentMethods } = useAdyenCheckout();
 
   const makePayment = useCallback(
     async (storedCard: StoredCardPaymentMethod) => {
@@ -32,65 +29,25 @@ const PaymentMethods = ({
     [configuration, navigation]
   );
 
-  const regular = useMemo(() => {
-    return paymentMethods?.paymentMethods ?? [];
-  }, [paymentMethods]);
-
-  const storedCards = useMemo(() => {
-    return paymentMethods?.storedPaymentMethods?.filter(
-      (paymentMethod) => paymentMethod.type === 'scheme'
-    ) as StoredCardPaymentMethod[];
-  }, [paymentMethods]);
+  if (!isReady) {
+    return <ActivityIndicator />;
+  }
 
   return (
     <ScrollView>
-      <View style={Styles.padded}>
-        <Button
-          title="Drop-in"
-          disabled={!isReady}
-          onPress={() => {
-            start('dropin');
-          }}
-        />
-      </View>
+      <DropInButton />
 
-      {showComponents ? (
-        <View>
-          {storedCards ? (
-            <View>
-              <AdaptiveText style={Styles.paddedTitle}>
-                Stored payments
-              </AdaptiveText>
-              {storedCards.map((paymentMethod) => {
-                return (
-                  <PaymentMethodButton
-                    key={`${paymentMethod.id}`}
-                    title={storedTitle(paymentMethod)}
-                    subtitle={storedSubtitle(paymentMethod)}
-                    icon={storedIcon(paymentMethod)}
-                    onPress={() => makePayment(paymentMethod)}
-                  />
-                );
-              })}
-            </View>
-          ) : null}
+      {showComponents && (
+        <>
+          <StoredPaymentMethodsList
+            storedPaymentMethods={paymentMethods?.storedPaymentMethods}
+            makePayment={makePayment}
+          />
 
-          <AdaptiveText style={Styles.paddedTitle}>Components</AdaptiveText>
-          {regular.map((paymentMethod) => {
-            return (
-              <PaymentMethodButton
-                key={paymentMethod.type + paymentMethod.name}
-                title={paymentMethod.name}
-                subtitle={undefined}
-                icon={icon(paymentMethod)}
-                onPress={() => {
-                  start(paymentMethod.type);
-                }}
-              />
-            );
-          })}
-        </View>
-      ) : null}
+          <PaymentMethodsList paymentMethods={paymentMethods?.paymentMethods} />
+        </>
+      )}
+
       <View style={Styles.scrollBottomPadding} />
     </ScrollView>
   );
