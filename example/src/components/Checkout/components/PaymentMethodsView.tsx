@@ -9,7 +9,7 @@ import { storedIcon } from '../utils/storedIcon';
 import { storedTitle } from '../utils/storedTitle';
 import { handleStoredPayment } from '../utils/handleStoredPayment';
 import type { PageProps } from '../../../State/RootStackParamList';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { icon } from '../utils/icon';
 import AdaptiveText from '../../common/AdaptiveText';
 
@@ -23,13 +23,7 @@ const PaymentMethods = ({
   navigation,
 }: PaymentMethodsProps) => {
   const { configuration } = useAppContext();
-  const { start, paymentMethods: paymentMethodsResponse } = useAdyenCheckout();
-  const regularPaymentMethods = paymentMethodsResponse?.paymentMethods ?? [];
-  const storedCards = paymentMethodsResponse?.storedPaymentMethods?.filter(
-    (paymentMethod) => paymentMethod.type === 'scheme'
-  ) as StoredCardPaymentMethod[];
-
-  const isNotReady = paymentMethodsResponse === undefined;
+  const { start, isReady, paymentMethods } = useAdyenCheckout();
 
   const makePayment = useCallback(
     async (storedCard: StoredCardPaymentMethod) => {
@@ -38,12 +32,22 @@ const PaymentMethods = ({
     [configuration, navigation]
   );
 
+  const regular = useMemo(() => {
+    return paymentMethods?.paymentMethods ?? [];
+  }, [paymentMethods]);
+
+  const storedCards = useMemo(() => {
+    return paymentMethods?.storedPaymentMethods?.filter(
+      (paymentMethod) => paymentMethod.type === 'scheme'
+    ) as StoredCardPaymentMethod[];
+  }, [paymentMethods]);
+
   return (
     <ScrollView>
       <View style={Styles.padded}>
         <Button
           title="Drop-in"
-          disabled={isNotReady}
+          disabled={!isReady}
           onPress={() => {
             start('dropin');
           }}
@@ -72,7 +76,7 @@ const PaymentMethods = ({
           ) : null}
 
           <AdaptiveText style={Styles.paddedTitle}>Components</AdaptiveText>
-          {regularPaymentMethods.map((paymentMethod) => {
+          {regular.map((paymentMethod) => {
             return (
               <PaymentMethodButton
                 key={paymentMethod.type + paymentMethod.name}
