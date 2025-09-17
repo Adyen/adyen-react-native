@@ -9,9 +9,21 @@ export interface HideOption {
 }
 
 /**
- * Universal interface for an Adyen Native payment component.
+ * Universal interface for an Adyen Native module.
  */
 export interface AdyenComponent {
+  /**
+   * Dismiss the component from the screen.
+   * @param success - Indicates whether the component was dismissed successfully.
+   * @param option - Additional options for dismissing the component (optional).
+   */
+  hide: (success: boolean, option?: HideOption) => void;
+}
+
+/**
+ * Universal interface for an Adyen Native payment component.
+ */
+export interface AdyenPaymentComponent extends AdyenComponent {
   /**
    * List of events supported by component
    */
@@ -23,19 +35,12 @@ export interface AdyenComponent {
    * @param configuration - The configuration for the component.
    */
   open: (paymentMethods: PaymentMethodsResponse, configuration: any) => void;
-
-  /**
-   * Dismiss the component from the screen.
-   * @param success - Indicates whether the component was dismissed successfully.
-   * @param option - Additional options for dismissing the component (optional).
-   */
-  hide: (success: boolean, option?: HideOption) => void;
 }
+
 /**
  * Describes an Adyen Component capable of handling payment actions.
  */
-
-export interface AdyenActionComponent extends AdyenComponent {
+export interface AdyenActionComponent extends AdyenPaymentComponent {
   /**
    * Handle a payment action received by the component.
    * @param action - The payment action to be handled.

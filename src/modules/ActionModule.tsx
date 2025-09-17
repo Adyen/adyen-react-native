@@ -1,9 +1,10 @@
 import { type NativeModule, NativeModules } from 'react-native';
-import type { PaymentAction, PaymentMethodData } from '../core/types';
+import type { PaymentAction, PaymentDetailsData } from '../core/types';
 import type { BaseConfiguration } from '../core/configurations/Configuration';
+import type { AdyenComponent } from '../core/AdyenNativeModules';
 
 /** Describes a native module capable of handling actions standalone. */
-export interface ActionModule {
+export interface ActionModule extends AdyenComponent {
   /** Returns current version of 3DS2 library */
   threeDS2SdkVersion: string;
 
@@ -14,7 +15,7 @@ export interface ActionModule {
   handle: (
     action: PaymentAction,
     configuration: BaseConfiguration
-  ) => Promise<PaymentMethodData>;
+  ) => Promise<PaymentDetailsData>;
 
   /**
    * Dismiss the component from the screen.

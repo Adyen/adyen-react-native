@@ -90,3 +90,12 @@ export enum ResultCode {
   /** The payment was refused. You'll receive a `refusalReason` in the same response that indicates why it was refused. */
   refused = 'Refused',
 }
+
+export enum BalanceResultCode {
+  /** Indicates that the balance check was successful. */
+  success = 'Success',
+  /** Indicates that the balance check failed. */
+  failed = 'Failed',
+  /** Commonly indicates that the card did not have enough balance to pay the amount in the request, or that the currency of the balance on the card did not match the currency of the requested amount. */
+  notEnoughBalance = 'NotEnoughBalance',
+}
