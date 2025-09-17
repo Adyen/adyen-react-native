@@ -44,7 +44,7 @@ const PaymentMethods = ({
             makePayment={makePayment}
           />
 
-          <PaymentMethodsList regular={paymentMethods?.paymentMethods} />
+          <PaymentMethodsList paymentMethods={paymentMethods?.paymentMethods} />
         </>
       )}
 
