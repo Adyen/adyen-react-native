@@ -11,7 +11,7 @@ export interface PartialPaymentListener {
   cancelOrder(order: Order): void;
 }
 
-export interface PartialPaymentComponent {
+export interface PartialPaymentComponent extends AdyenComponent {
   provideBalance(
     success: boolean,
     balance: Balance | undefined,

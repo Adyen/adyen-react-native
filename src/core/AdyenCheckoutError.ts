@@ -1,7 +1,3 @@
-interface CheckoutErrorOptions {
-  cause: any;
-}
-
 class AdyenCheckoutError extends Error {
   protected static errorTypes = {
     /** Network error. */
@@ -25,7 +21,7 @@ class AdyenCheckoutError extends Error {
   constructor(
     type: keyof typeof AdyenCheckoutError.errorTypes,
     message?: string,
-    options?: CheckoutErrorOptions
+    options?: Error
   ) {
     super(message);
 

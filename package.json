@@ -56,9 +56,10 @@
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "git clean -fxd",
     "prepare": "./scripts/set-version.sh && bob build && tsc --build plugin",
-    "start": "husky && yarn && yarn prepare"
+    "start": "rm yarn.lock && yarn && yarn prepare && husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.0",

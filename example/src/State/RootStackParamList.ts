@@ -1,7 +1,7 @@
 import type { ResultCode } from '@adyen/react-native';
 import {
   createNativeStackNavigator,
-  NativeStackNavigationProp,
+  type NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
