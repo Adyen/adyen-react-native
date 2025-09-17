@@ -1,6 +1,7 @@
-import { useColorScheme, View, Text } from 'react-native';
-import { formatMinorUnits } from '../utils/formatMinorUnits';
-import Styles from '../../utilities/Styles';
+import { formatMinorUnits } from '../../utilities/formatMinorUnits';
+import Styles from '../../common/Styles';
+import AdaptiveText from '../../common/AdaptiveText';
+import { View } from 'react-native';
 
 interface AmountViewProps {
   amount: number;
@@ -9,23 +10,13 @@ interface AmountViewProps {
 }
 
 const AmountView = ({ amount, currency, locale }: AmountViewProps) => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  if (!amount) {
-    return (
-      <View style={Styles.centeredContent}>
-        <Text style={isDarkMode ? Styles.textDark : Styles.textLight}>
-          Amount not defined
-        </Text>
-      </View>
-    );
-  }
+  const amountLable = amount
+    ? `${formatMinorUnits(amount, currency, locale)}`
+    : 'Amount not defined';
 
   return (
     <View style={Styles.centeredContent}>
-      <Text
-        style={isDarkMode ? Styles.textDark : Styles.textLight}
-      >{`${formatMinorUnits(amount, currency, locale)}`}</Text>
+      <AdaptiveText>{amountLable}</AdaptiveText>
     </View>
   );
 };

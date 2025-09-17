@@ -18,7 +18,7 @@ import * as Screens from './components';
 
 import { Stack } from './State/RootStackParamList';
 import AppContextProvider from './hooks/useAppContext';
-import Styles from './components/utilities/Styles';
+import Styles from './components/common/Styles';
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';

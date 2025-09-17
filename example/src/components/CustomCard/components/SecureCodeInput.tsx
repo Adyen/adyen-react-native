@@ -1,12 +1,6 @@
 import { useCallback, useState } from 'react';
-import {
-  TextInput,
-  Text,
-  View,
-  useColorScheme,
-  type TextInputProps,
-} from 'react-native';
-import Styles from '../../utilities/Styles';
+import { type TextInputProps } from 'react-native';
+import FormTextInput from '../../common/FormTextInput';
 
 type SecureCodeInputProps = {
   bin: string;
@@ -14,20 +8,17 @@ type SecureCodeInputProps = {
 } & TextInputProps;
 
 const SecureCodeInput = (props: SecureCodeInputProps) => {
-  const isDarkMode = useColorScheme() === 'dark';
   const [secureCode, setSecureCode] = useState('');
   const { onChangeText, bin } = props;
 
-  const formatCardNumber = useCallback(
+  const formatSecureCode = useCallback(
     (input: string) => {
       // Remove all non-digit characters
       const digits = input.replace(/\D/g, '');
 
-      let formatted = digits.slice(0, 4);
-      if (bin.startsWith('3')) {
-        // detect AMEX
-        formatted = digits.slice(0, 3);
-      }
+      // Detect AMEX
+      const length = bin.startsWith('3') ? 4 : 3;
+      let formatted = digits.slice(0, length);
 
       setSecureCode(formatted);
       onChangeText(formatted);
@@ -36,26 +27,15 @@ const SecureCodeInput = (props: SecureCodeInputProps) => {
   );
 
   return (
-    <View style={Styles.item}>
-      <Text
-        style={[
-          isDarkMode ? Styles.textDark : Styles.textLight,
-          Styles.itemTitle,
-        ]}
-      >
-        {'CVC / CVV'}
-      </Text>
-      <TextInput
-        {...props} // Inherit any props passed to it; e.g., multiline, numberOfLines below
-        editable
-        placeholder="123"
-        keyboardType="numeric"
-        maxLength={4}
-        value={secureCode}
-        onChangeText={formatCardNumber}
-        style={isDarkMode ? Styles.textInputDark : Styles.textInputLight}
-      />
-    </View>
+    <FormTextInput
+      title="CVC / CVV"
+      {...props}
+      keyboardType="numeric"
+      maxLength={4}
+      placeholder="123"
+      value={secureCode}
+      onChangeText={formatSecureCode}
+    />
   );
 };
 

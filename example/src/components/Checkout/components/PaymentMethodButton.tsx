@@ -1,7 +1,9 @@
-import { TouchableHighlight, View, Image, Text } from 'react-native';
+import { TouchableHighlight, View, Image } from 'react-native';
 import { ENVIRONMENT } from '../../../Configuration';
-import Styles from '../../utilities/Styles';
+import Styles from '../../common/Styles';
 import { getIconUrl } from '../../utilities/getIcon';
+import Colors from '../../common/Assets';
+import AdaptiveText from '../../common/AdaptiveText';
 
 interface PaymentMethodButtonProps {
   onPress: () => void;
@@ -17,17 +19,17 @@ const PaymentMethodButton = (props: PaymentMethodButtonProps) => {
     <TouchableHighlight
       onPress={props.onPress}
       style={Styles.btnClickContain}
-      underlayColor="#042417"
+      underlayColor={Colors.buttonOverlay}
     >
       <View style={Styles.btnContainer}>
         <Image source={{ uri: iconURI }} style={Styles.btnIcon} />
-        <View style={Styles.content}>
-          <Text style={Styles.btnText}>{props.title}</Text>
+        <View>
+          <AdaptiveText style={Styles.btnText}>{props.title}</AdaptiveText>
           {props.subtitle ? (
-            <Text style={Styles.btnText}>{props.subtitle}</Text>
-          ) : (
-            <View />
-          )}
+            <AdaptiveText style={Styles.btnSubText}>
+              {props.subtitle}
+            </AdaptiveText>
+          ) : null}
         </View>
       </View>
     </TouchableHighlight>

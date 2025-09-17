@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAppContext } from '../../hooks/useAppContext';
-import Styles from '../utilities/Styles';
-import { Button, View } from 'react-native';
-import FormTextInput from './components/FormTextInput';
+import Styles from '../common/Styles';
+import { Button, ScrollView, View } from 'react-native';
+import FormTextInput from '../common/FormTextInput';
 import type { PageProps } from '../../State/RootStackParamList';
 
 const SettingView = ({ navigation: { goBack } }: PageProps) => {
@@ -49,7 +49,7 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
   }, [settings, save, goBack]);
 
   return (
-    <View>
+    <ScrollView style={Styles.page}>
       <FormTextInput
         title="Country"
         value={countryCode}
@@ -89,10 +89,10 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
         value={shopperReference}
         onChangeText={setShopperReference}
       />
-      <View style={Styles.centeredButton}>
+      <View style={Styles.padded}>
         <Button title="Save" onPress={saveAndClose} />
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
