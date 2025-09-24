@@ -42,6 +42,40 @@ internal final class ApplePayModule: BaseModule {
         present(component: applePayComponent)
     }
 
+    @objc
+    func isAvailable(_ paymentMethodDict: NSDictionary,
+                     configuration: NSDictionary,
+                     resolver: @escaping RCTPromiseResolveBlock,
+                     rejecter: @escaping RCTPromiseRejectBlock) {
+      let parser = RootConfigurationParser(configuration: configuration)
+      let applePayParser = ApplepayConfigurationParser(configuration: configuration)
+      let paymentMethod: ApplePayPaymentMethod
+      let paymentRequest: PKPaymentRequest
+      guard let payment = parser.payment else {
+        return resolver(false)
+      }
+
+      do {
+        let data = try JSONSerialization.data(withJSONObject: paymentMethodDict, options: [])
+        paymentMethod = try JSONDecoder().decode(ApplePayPaymentMethod.self, from: data)
+        paymentRequest = try applePayParser.buildPaymentRequest(payment: payment)
+      } catch {
+        return resolver(false)
+      }
+
+      let supportedNetworks = paymentMethod.supportedNetworks
+      guard applePayParser.allowOnboarding || PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: supportedNetworks) else {
+          return resolver(false)
+      }
+
+      paymentRequest.supportedNetworks = supportedNetworks
+      guard let _ = PKPaymentAuthorizationViewController(paymentRequest: paymentRequest) else {
+        return resolver(false)
+      }
+
+      return resolver(true)
+    }
+
 }
 
 extension ApplePayModule: PaymentComponentDelegate {
@@ -110,4 +144,27 @@ extension PKContact {
 
         return dictionary
     }
+}
+
+extension ApplePayPaymentMethod {
+
+    internal var supportedNetworks: [PKPaymentNetwork] {
+        var networks = PKPaymentRequest.availableNetworks()
+        if let brands {
+            let brandsSet = Set(brands)
+            networks = networks.filter { brandsSet.contains($0.txVariantName) }
+        }
+        return networks
+    }
+
+}
+
+extension PKPaymentNetwork {
+
+    internal var txVariantName: String {
+        if self == .masterCard { return "mc" }
+        if self == .cartesBancaires { return "cartebancaire" }
+        return self.rawValue.lowercased()
+    }
+
 }

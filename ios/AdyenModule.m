@@ -39,8 +39,6 @@ RCT_EXTERN_METHOD(provideOrder:(nonnull NSNumber *)success
 RCT_EXTERN_METHOD(providePaymentMethods:(nonnull NSDictionary *)paymentMethods
                   order:(nullable NSDictionary *)order)
 
-
-
 @end
 
 @interface RCT_EXTERN_MODULE(AdyenInstant, NSObject)
@@ -63,6 +61,11 @@ RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
 RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
                   event:(NSDictionary *)event)
 
+RCT_EXTERN_METHOD(isAvailable:(nonnull NSDictionary *)paymentMethod
+                  configuration:(nonnull NSDictionary *)configuration
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end
 
 // Mock to prevent NativeModule check failure
@@ -70,6 +73,11 @@ RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
 
 RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
                   configuration:(NSDictionary *)configuration)
+
+RCT_EXTERN_METHOD(isAvailable:(nonnull NSDictionary *)paymentMethod
+                  configuration:(nonnull NSDictionary *)configuration
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 
 @end
 

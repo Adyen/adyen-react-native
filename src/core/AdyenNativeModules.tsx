@@ -1,4 +1,9 @@
-import type { PaymentAction, PaymentMethodsResponse } from './types';
+import type { Configuration } from './configurations/Configuration';
+import type {
+  PaymentAction,
+  PaymentMethod,
+  PaymentMethodsResponse,
+} from './types';
 
 /**
  * Options for dismissing the payment component.
@@ -46,4 +51,14 @@ export interface AdyenActionComponent extends AdyenPaymentComponent {
    * @param action - The payment action to be handled.
    */
   handle: (action: PaymentAction) => void;
+}
+
+/**
+ * Describes an Adyen Component capable of handling payment action if specific conditions are met.
+ */
+export interface ConditionalPaymentComponent extends AdyenComponent {
+  isAvailable(
+    paymentMethods: PaymentMethod,
+    configuration: Configuration
+  ): Promise<boolean>;
 }

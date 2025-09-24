@@ -6,17 +6,21 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
+import android.app.Application
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.components.core.paymentmethod.GooglePayPaymentMethod
 import com.adyen.checkout.googlepay.GooglePayComponent
+import com.adyen.checkout.googlepay.googlePay
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
@@ -93,6 +97,28 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
     fun hide(success: Boolean?, message: ReadableMap?) {
         cleanup()
         GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
+    }
+
+    @ReactMethod
+    fun isAvailable(paymentMethods: ReadableMap, configuration: ReadableMap, promise: Promise) {
+      val checkoutConfiguration: CheckoutConfiguration
+      val paymentMethod: PaymentMethod
+      try {
+        val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
+        paymentMethod = PaymentMethod.SERIALIZER.deserialize(jsonObject)
+        checkoutConfiguration = getCheckoutConfiguration(configuration)
+      } catch (e: java.lang.Exception) {
+        return promise.reject(e)
+      }
+      if (this.currentActivity != null) {
+        val application: Application = appCompatActivity.application
+        val callback: ComponentAvailableCallback = object : ComponentAvailableCallback {
+          override fun onAvailabilityResult(isAvailable: Boolean, paymentMethod: PaymentMethod) {
+            promise.resolve(isAvailable)
+          }
+        }
+        GooglePayComponent.PROVIDER.isAvailable(application, paymentMethod, checkoutConfiguration, callback)
+      }
     }
 
     companion object {
