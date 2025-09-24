@@ -94,7 +94,6 @@ export const ApplePayButton = ({
   style,
 }: ApplePayButtonProps) => {
   const onPressHandler = useCallback(() => {
-    console.log('Pressed');
     onPress?.();
   }, [onPress]);
 

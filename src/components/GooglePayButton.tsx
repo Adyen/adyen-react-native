@@ -68,7 +68,6 @@ export const GooglePayButton = ({
   style,
 }: GooglePayButtonProps) => {
   const onPressHandler = useCallback(() => {
-    console.log('Pressed');
     onPress?.();
   }, [onPress]);
 
