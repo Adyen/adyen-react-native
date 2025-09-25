@@ -41,9 +41,9 @@ function getButtonType(type: string): number {
   switch (type) {
     case 'BUY':
       return 1;
-    case 'CHECKOUT':
-      return 2;
     case 'BOOK':
+      return 2;
+    case 'CHECKOUT':
       return 3;
     case 'DONATE':
       return 4;

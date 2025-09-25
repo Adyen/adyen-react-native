@@ -7,7 +7,6 @@ import com.google.android.gms.wallet.button.ButtonConstants
 import com.google.android.gms.wallet.button.ButtonOptions
 import com.google.android.gms.wallet.button.PayButton
 
-
 enum class ButtonTheme(val value: Int) {
   Dark(ButtonConstants.ButtonTheme.DARK),
   Light(ButtonConstants.ButtonTheme.LIGHT);
@@ -18,14 +17,14 @@ enum class ButtonTheme(val value: Int) {
 }
 
 enum class ButtonType(val value: Int) {
-  Book(ButtonConstants.ButtonType.BOOK),
   Buy(ButtonConstants.ButtonType.BUY),
+  Book(ButtonConstants.ButtonType.BOOK),
   Checkout(ButtonConstants.ButtonType.CHECKOUT),
   Donate(ButtonConstants.ButtonType.DONATE),
   Order(ButtonConstants.ButtonType.ORDER),
   Pay(ButtonConstants.ButtonType.PAY),
-  Plain(ButtonConstants.ButtonType.PLAIN),
-  Subscribe(ButtonConstants.ButtonType.SUBSCRIBE);
+  Subscribe(ButtonConstants.ButtonType.SUBSCRIBE),
+  Plain(ButtonConstants.ButtonType.PLAIN);
 
   companion object {
     fun fromInt(value: Int): ButtonType = entries.find { it.value == value } ?: Buy
@@ -43,6 +42,7 @@ class PlatformPayView(private val context: ThemedReactContext) : FrameLayout(con
   private var googlePayButton: PayButton = PayButton(context)
 
   fun showButton() {
+    removeView(googlePayButton)
     scheduleUpdate()
     addView(googlePayButton)
     viewTreeObserver.addOnGlobalLayoutListener { requestLayout() }

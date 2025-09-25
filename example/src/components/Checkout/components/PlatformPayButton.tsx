@@ -51,7 +51,7 @@ const PlatformPayButton = () => {
         : googlePayAvailable && (
             <GooglePayButton
               theme={isDark ? 'LIGHT' : 'DARK'}
-              type="PLAIN"
+              type="PAY"
               style={Styles.btnClickContain}
               onPress={() => {
                 console.log('Paying with google');
