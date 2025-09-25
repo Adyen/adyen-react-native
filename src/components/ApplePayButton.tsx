@@ -100,7 +100,7 @@ export const ApplePayButton = ({
     onPress?.();
   }, [onPress]);
 
-  const defaultSize = { minWidth: 200, minHeight: 50 };
+  const defaultSize = { minWidth: 150, minHeight: 60 };
   return (
     <PlatformPayView
       theme={theme ? getButtonTheme(theme) : undefined}

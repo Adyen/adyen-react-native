@@ -5,7 +5,7 @@ import {
   AdyenApplePay,
   AdyenGooglePay,
 } from '@adyen/react-native';
-import { Platform, View, useColorScheme } from 'react-native';
+import { View, useColorScheme } from 'react-native';
 import Styles from '../../common/Styles';
 import { useEffect, useState } from 'react';
 
@@ -36,29 +36,28 @@ const PlatformPayButton = () => {
 
   return (
     <View>
-      {Platform.OS === 'ios'
-        ? applePayAvailable && (
-            <ApplePayButton
-              theme={isDark ? 'WHITE' : 'BLACK'}
-              type="PLAIN"
-              style={Styles.btnClickContain}
-              onPress={() => {
-                console.log('Paying with apple');
-                start('applepay');
-              }}
-            />
-          )
-        : googlePayAvailable && (
-            <GooglePayButton
-              theme={isDark ? 'LIGHT' : 'DARK'}
-              type="PAY"
-              style={Styles.btnClickContain}
-              onPress={() => {
-                console.log('Paying with google');
-                start('googlepay');
-              }}
-            />
-          )}
+      {applePayAvailable && (
+        <ApplePayButton
+          theme={isDark ? 'WHITE' : 'BLACK'}
+          type="PLAIN"
+          style={Styles.btnClickContain}
+          onPress={() => {
+            console.log('Paying with apple');
+            start('applepay');
+          }}
+        />
+      )}
+      {googlePayAvailable && (
+        <GooglePayButton
+          theme={isDark ? 'LIGHT' : 'DARK'}
+          type="PAY"
+          style={Styles.btnClickContain}
+          onPress={() => {
+            console.log('Paying with google');
+            start('googlepay');
+          }}
+        />
+      )}
     </View>
   );
 };

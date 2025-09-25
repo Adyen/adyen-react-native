@@ -33,7 +33,7 @@ function getButtonTheme(type: string): number {
     case 'LIGHT':
       return 2;
     default:
-      throw new Error(`Unhandled GooglePayButtonType: ${type}`);
+      return 1;
   }
 }
 
@@ -56,7 +56,7 @@ function getButtonType(type: string): number {
     case 'PLAIN':
       return 8;
     default:
-      throw new Error(`Unhandled GooglePayButtonType: ${type}`);
+      return 1;
   }
 }
 
@@ -71,7 +71,7 @@ export const GooglePayButton = ({
     onPress?.();
   }, [onPress]);
 
-  const defaultSize = { minWidth: 200, minHeight: 50 };
+  const defaultSize = { minWidth: 150, minHeight: 60 };
   return (
     <PlatformPayView
       theme={theme ? getButtonTheme(theme) : undefined}
