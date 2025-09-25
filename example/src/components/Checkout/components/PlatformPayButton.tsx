@@ -39,8 +39,8 @@ const PlatformPayButton = () => {
       {Platform.OS === 'ios'
         ? applePayAvailable && (
             <ApplePayButton
-              theme={isDark ? 'BLACK' : 'WHITE'}
-              type="CONTRIBUTE"
+              theme={isDark ? 'WHITE' : 'BLACK'}
+              type="PLAIN"
               style={Styles.btnClickContain}
               onPress={() => {
                 console.log('Paying with apple');
@@ -50,7 +50,8 @@ const PlatformPayButton = () => {
           )
         : googlePayAvailable && (
             <GooglePayButton
-              theme={isDark ? 'DARK' : 'LIGHT'}
+              theme={isDark ? 'LIGHT' : 'DARK'}
+              type="PLAIN"
               style={Styles.btnClickContain}
               onPress={() => {
                 console.log('Paying with google');
