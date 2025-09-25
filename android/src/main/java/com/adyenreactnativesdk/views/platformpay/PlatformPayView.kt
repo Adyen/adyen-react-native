@@ -2,7 +2,6 @@ package com.adyenreactnativesdk.views.platformpay
 
 import android.annotation.SuppressLint
 import android.widget.FrameLayout
-import android.view.ViewTreeObserver
 import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.wallet.button.ButtonConstants
 import com.google.android.gms.wallet.button.ButtonOptions

@@ -12,54 +12,40 @@
 using namespace facebook::react;
 
 static PKPaymentButtonType paymentButtonTypeFromProps(const int &type) {
-  if (type == 1)
-    return PKPaymentButtonTypeBuy;
-  if (type == 2)
-    return PKPaymentButtonTypeSetUp;
-  if (type == 3)
-    return PKPaymentButtonTypeInStore;
-  if (type == 4)
-    return PKPaymentButtonTypeDonate;
-  if (type == 5)
-    return PKPaymentButtonTypeCheckout;
-  if (type == 6)
-    return PKPaymentButtonTypeBook;
-  if (type == 7)
-    return PKPaymentButtonTypeSubscribe;
-  if (type == 8)
-    return PKPaymentButtonTypeReload;
-  if (type == 9)
-    return PKPaymentButtonTypeAddMoney;
-  if (type == 10)
-    return PKPaymentButtonTypeTopUp;
-  if (type == 11)
-    return PKPaymentButtonTypeOrder;
-  if (type == 12)
-    return PKPaymentButtonTypeRent;
-  if (type == 13)
-    return PKPaymentButtonTypeSupport;
-  if (type == 14)
-    return PKPaymentButtonTypeContribute;
-  if (type == 15)
-    return PKPaymentButtonTypeTip;
-  if (type == 16)
-    return PKPaymentButtonTypeContinue;
-  return PKPaymentButtonTypePlain;
+  switch (type) {
+    case 1: return PKPaymentButtonTypeBuy;
+    case 2: return PKPaymentButtonTypeSetUp;
+    case 3: return PKPaymentButtonTypeInStore;
+    case 4: return PKPaymentButtonTypeDonate;
+    case 5: return PKPaymentButtonTypeCheckout;
+    case 6: return PKPaymentButtonTypeBook;
+    case 7: return PKPaymentButtonTypeSubscribe;
+    case 8: return PKPaymentButtonTypeReload;
+    case 9: return PKPaymentButtonTypeAddMoney;
+    case 10: return PKPaymentButtonTypeTopUp;
+    case 11: return PKPaymentButtonTypeOrder;
+    case 12: return PKPaymentButtonTypeRent;
+    case 13: return PKPaymentButtonTypeSupport;
+    case 14: return PKPaymentButtonTypeContribute;
+    case 15: return PKPaymentButtonTypeTip;
+    case 16: return PKPaymentButtonTypeContinue;
+    default: return PKPaymentButtonTypePlain;
+  }
 }
 
 static PKPaymentButtonStyle paymentButtonStyleFromProps(const int &style) {
-  if (style == 1)
-    return PKPaymentButtonStyleWhite;
-  if (style == 2)
-    return PKPaymentButtonStyleWhiteOutline;
-  if (style == 3) {
-    if (@available(iOS 14.0, *)) {
-      return PKPaymentButtonStyleAutomatic;
-    } else {
-      return PKPaymentButtonStyleBlack;
+  switch (style) {
+    case 1: return PKPaymentButtonStyleWhite;
+    case 2: return PKPaymentButtonStyleWhiteOutline;
+    case 3: {
+      if (@available(iOS 14.0, *)) {
+        return PKPaymentButtonStyleAutomatic;
+      } else {
+        return PKPaymentButtonStyleBlack;
+      }
     }
+    default: return PKPaymentButtonStyleBlack;
   }
-  return PKPaymentButtonStyleBlack;
 }
 
 @interface ADYPlatformPayView () <RCTPlatformPayViewViewProtocol>
@@ -97,7 +83,8 @@ static PKPaymentButtonStyle paymentButtonStyleFromProps(const int &style) {
       *std::static_pointer_cast<PlatformPayViewProps const>(props);
 
   if (oldViewProps.type != newViewProps.type ||
-      oldViewProps.theme != newViewProps.theme) {
+      oldViewProps.theme != newViewProps.theme ||
+      oldViewProps.radius != newViewProps.radius) {
     [self createButton:newViewProps];
   }
 
@@ -113,6 +100,7 @@ static PKPaymentButtonStyle paymentButtonStyleFromProps(const int &style) {
   PKPaymentButtonStyle style = paymentButtonStyleFromProps(props.theme);
 
   _button = [PKPaymentButton buttonWithType:type style:style];
+  _button.cornerRadius = props.radius;
   [_button addTarget:self
                 action:@selector(onPress)
       forControlEvents:UIControlEventTouchUpInside];

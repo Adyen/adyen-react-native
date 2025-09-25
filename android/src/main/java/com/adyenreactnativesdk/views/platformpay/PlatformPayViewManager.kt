@@ -39,12 +39,12 @@ class PlatformPayViewManager : SimpleViewManager<PlatformPayView>(),
 
   @ReactProp(name = "theme", defaultInt = ButtonConstants.ButtonTheme.DARK)
   override fun setTheme(view: PlatformPayView?, value: Int) {
-    view?.theme = ButtonTheme.Companion.fromInt(value)
+    view?.theme = ButtonTheme.fromInt(value)
   }
 
   @ReactProp(name = "type", defaultInt = ButtonConstants.ButtonType.BUY)
   override fun setType(view: PlatformPayView?, value: Int) {
-    view?.type = ButtonType.Companion.fromInt(value)
+    view?.type = ButtonType.fromInt(value)
   }
 
   @ReactProp(name = "radius", defaultInt = 10)
