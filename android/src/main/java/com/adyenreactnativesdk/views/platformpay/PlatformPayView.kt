@@ -2,6 +2,7 @@ package com.adyenreactnativesdk.views.platformpay
 
 import android.annotation.SuppressLint
 import android.widget.FrameLayout
+import android.view.ViewTreeObserver
 import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.wallet.button.ButtonConstants
 import com.google.android.gms.wallet.button.ButtonOptions
@@ -45,7 +46,6 @@ class PlatformPayView(private val context: ThemedReactContext) : FrameLayout(con
     removeView(googlePayButton)
     scheduleUpdate()
     addView(googlePayButton)
-    viewTreeObserver.addOnGlobalLayoutListener { requestLayout() }
   }
 
   private fun scheduleUpdate() {

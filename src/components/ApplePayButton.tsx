@@ -25,6 +25,7 @@ export const ApplePayButtonType = {
   SUPPORT: 13,
   CONTRIBUTE: 14,
   TIP: 15,
+  CONTINUE: 16,
   PLAIN: 0,
 };
 
@@ -40,7 +41,7 @@ function getButtonTheme(type: string): number {
   switch (type) {
     case 'WHITE':
       return 1;
-    case 'WHITE_OUTLET':
+    case 'WHITE_OUTLINE':
       return 2;
     case 'AUTOMATIC':
       return 3;
@@ -81,6 +82,8 @@ function getButtonType(type: string): number {
       return 14;
     case 'TIP':
       return 15;
+    case 'CONTINUE':
+      return 16;
     default:
       return 0;
   }

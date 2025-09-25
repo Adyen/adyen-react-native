@@ -49,7 +49,7 @@ class PlatformPayViewManager : SimpleViewManager<PlatformPayView>(),
 
   @ReactProp(name = "radius", defaultInt = 10)
   override fun setRadius(view: PlatformPayView?, value: Int) {
-    view?.radius = PixelUtil.toPixelFromSP(value.toDouble()).toInt()
+    view?.radius = PixelUtil.toPixelFromDIP(value.toDouble()).toInt()
   }
 
   companion object {

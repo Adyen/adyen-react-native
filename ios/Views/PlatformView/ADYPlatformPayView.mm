@@ -42,6 +42,8 @@ static PKPaymentButtonType paymentButtonTypeFromProps(const int &type) {
     return PKPaymentButtonTypeContribute;
   if (type == 15)
     return PKPaymentButtonTypeTip;
+  if (type == 16)
+    return PKPaymentButtonTypeContinue;
   return PKPaymentButtonTypePlain;
 }
 
