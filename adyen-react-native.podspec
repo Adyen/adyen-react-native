@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.private_header_files = "ios/**/*.h"
 
-  s.dependency "Adyen", '5.19.2'
+  s.dependency "Adyen", '5.20.1'
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
 
   install_modules_dependencies(s)
