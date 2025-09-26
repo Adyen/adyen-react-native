@@ -1,0 +1,62 @@
+name: Update SDK Versions
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to update (iOS or Android)'
+        required: true
+        type: choice
+        options:
+          - iOS
+          - Android
+      version:
+        description: 'New SDK version'
+        required: true
+        type: string
+
+jobs:
+  update-sdk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Update SDK version and badges ${{ github.event.inputs.platform }} SDK to ${{ github.event.inputs.version }}
+      run: |
+        # Set platform-specific prefix and update SDK version
+        if [ "${{ github.event.inputs.platform }}" = "iOS" ]; then
+          PLATFORM_PREFIX="ios"
+          SDK_FILE="adyen-react-native.podspec"
+          SDK_PATTERN="s\.dependency \"Adyen\","
+          sed -i "s/$SDK_PATTERN '[^']*'/$SDK_PATTERN '${{ github.event.inputs.version }}'/" "$SDK_FILE"
+        else
+          PLATFORM_PREFIX="android"
+          SDK_FILE="android/dependencies.gradle"
+          SDK_PATTERN="adyen_version ="
+          sed -i "s/$SDK_PATTERN \"[^\"]*\"/$SDK_PATTERN \"${{ github.event.inputs.version }}\"/" "$SDK_FILE"
+        fi
+        
+        # Update badge in README.md
+        sed -i "s|${PLATFORM_PREFIX}-v[^-]*|${PLATFORM_PREFIX}-v${{ github.event.inputs.version }}|g" README.md
+        sed -i "s|${PLATFORM_PREFIX}/releases/tag/[^)]*|${PLATFORM_PREFIX}/releases/tag/${{ github.event.inputs.version }}|g" README.md
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "chore: update ${{ github.event.inputs.platform }} SDK to ${{ github.event.inputs.version }}"
+        title: "Update ${{ github.event.inputs.platform }} SDK to ${{ github.event.inputs.version }}"
+        body: |
+          # Open PR
+          This PR updates the ${{ github.event.inputs.platform }} SDK version to ${{ github.event.inputs.version }}.
+
+          ## Changes:
+          - Updated ${{ github.event.inputs.platform }} SDK version in configuration files
+          - Updated README.md badge for ${{ github.event.inputs.platform }} SDK
+        branch: update-${{ github.event.inputs.platform }}-sdk-${{ github.event.inputs.version }}
+        delete-branch: true
+        draft: false
