@@ -17,4 +17,12 @@ internal class GooglePayModuleMock: BaseModule {
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         sendEvent(error: NativeModuleError.notSupported)
     }
+
+    @objc
+    func isAvailable(_ paymentMethodDict: NSDictionary,
+                     configuration: NSDictionary,
+                     resolver: @escaping RCTPromiseResolveBlock,
+                     rejecter: @escaping RCTPromiseRejectBlock) {
+      resolver(false)
+    }
 }

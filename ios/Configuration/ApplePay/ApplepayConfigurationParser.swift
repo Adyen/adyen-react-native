@@ -119,7 +119,7 @@ public struct ApplepayConfigurationParser {
         return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
     }
 
-    internal func buildPaymentRequest(payment: Payment) throws -> PKPaymentRequest {
+    public func buildPaymentRequest(payment: Payment) throws -> PKPaymentRequest {
         guard let merchantID else {
             throw ApplePayError.invalidMerchantID
         }

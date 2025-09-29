@@ -1,3 +1,9 @@
+export { default as PlatformPayView } from './specs/PlatformPayViewNativeComponent';
+export * from './specs/PlatformPayViewNativeComponent';
+
+export * from './components/GooglePayButton';
+export * from './components/ApplePayButton';
+
 export { Card } from './core/types';
 export type * from './core/types';
 

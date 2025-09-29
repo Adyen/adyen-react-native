@@ -23,6 +23,7 @@
 		E77D207C2CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77D20782CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift */; };
 		E788D7AD2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E788D7AC2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift */; };
 		E79C3AD02BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79C3ACF2BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift */; };
+		E7BBA45D2E8AB9040068997A /* ApplePayModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7BBA45B2E8AB9040068997A /* ApplePayModuleTests.swift */; };
 		F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */; };
 /* End PBXBuildFile section */
 
@@ -63,6 +64,7 @@
 		E77D20792CDBB31900FED3F0 /* RooConfigurationtParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RooConfigurationtParserTests.swift; sourceTree = "<group>"; };
 		E788D7AC2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ApplePayRecurringConfigurationParserTests.swift; sourceTree = "<group>"; };
 		E79C3ACF2BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThreeDSConfigurationParserTests.swift; sourceTree = "<group>"; };
+		E7BBA45B2E8AB9040068997A /* ApplePayModuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayModuleTests.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F5C555F329F6C9F5008E7AA8 /* AdyenAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdyenAppearance.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -90,6 +92,7 @@
 		00E356EF1AD99517003FC87E /* AdyenExampleTests */ = {
 			isa = PBXGroup;
 			children = (
+				E7BBA45C2E8AB9040068997A /* Modules */,
 				E77AE11E2E605FBC00607717 /* Encoders */,
 				E773B10A2BE3B5B000638431 /* Parsers */,
 				00E356F01AD99517003FC87E /* Supporting Files */,
@@ -194,6 +197,14 @@
 				E77AE11F2E605FCB00607717 /* EncodablePaymentComponentDataTests.swift */,
 			);
 			path = Encoders;
+			sourceTree = "<group>";
+		};
+		E7BBA45C2E8AB9040068997A /* Modules */ = {
+			isa = PBXGroup;
+			children = (
+				E7BBA45B2E8AB9040068997A /* ApplePayModuleTests.swift */,
+			);
+			path = Modules;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -443,6 +454,7 @@
 				E77AE1202E605FCD00607717 /* EncodablePaymentComponentDataTests.swift in Sources */,
 				E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */,
 				948B9B022A83D269003D15B4 /* DropInTest.swift in Sources */,
+				E7BBA45D2E8AB9040068997A /* ApplePayModuleTests.swift in Sources */,
 				E79C3AD02BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

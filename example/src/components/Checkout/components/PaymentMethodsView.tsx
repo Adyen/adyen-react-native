@@ -9,6 +9,7 @@ import { useCallback } from 'react';
 import StoredPaymentMethodsList from './StoredPaymentMethodsList';
 import PaymentMethodsList from './PaymentMethodsList';
 import DropInButton from './DropInButton';
+import PlatformPayButton from './PlatformPayButton';
 
 interface PaymentMethodsProps {
   showComponents: boolean;
@@ -36,6 +37,8 @@ const PaymentMethods = ({
   return (
     <ScrollView>
       <DropInButton />
+
+      <PlatformPayButton />
 
       {showComponents && (
         <>

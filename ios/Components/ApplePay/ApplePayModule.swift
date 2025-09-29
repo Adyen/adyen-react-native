@@ -10,7 +10,19 @@ import PassKit
 import React
 
 @objc(AdyenApplePay)
-internal final class ApplePayModule: BaseModule {
+internal class ApplePayModule: BaseModule {
+
+    private let paymentAuthorizationService: PKPaymentAuthorizationService
+
+    override init() {
+      self.paymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()
+      super.init()
+    }
+
+    init(pkPaymentAuthorizationService: PKPaymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()) {
+      self.paymentAuthorizationService = pkPaymentAuthorizationService
+      super.init()
+    }
 
     override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
 
@@ -40,6 +52,40 @@ internal final class ApplePayModule: BaseModule {
         SessionHelperModule.sessionListener = self
         applePayComponent.delegate = BaseModule.session ?? self
         present(component: applePayComponent)
+    }
+
+    @objc
+    func isAvailable(_ paymentMethodDict: NSDictionary,
+                     configuration: NSDictionary,
+                     resolver: @escaping RCTPromiseResolveBlock,
+                     rejecter: @escaping RCTPromiseRejectBlock) {
+      let parser = RootConfigurationParser(configuration: configuration)
+      let applePayParser = ApplepayConfigurationParser(configuration: configuration)
+      let paymentMethod: ApplePayPaymentMethod
+      let paymentRequest: PKPaymentRequest
+      guard let payment = parser.payment else {
+        return resolver(false)
+      }
+
+      do {
+        let data = try JSONSerialization.data(withJSONObject: paymentMethodDict, options: [])
+        paymentMethod = try JSONDecoder().decode(ApplePayPaymentMethod.self, from: data)
+        paymentRequest = try applePayParser.buildPaymentRequest(payment: payment)
+      } catch {
+        return resolver(false)
+      }
+
+      let supportedNetworks = paymentMethod.supportedNetworks
+      guard applePayParser.allowOnboarding || paymentAuthorizationService.canMakePayments(usingNetworks: supportedNetworks) else {
+          return resolver(false)
+      }
+
+      paymentRequest.supportedNetworks = supportedNetworks
+      guard let _ = paymentAuthorizationService.getAuthorizationViewController(paymentRequest: paymentRequest) else {
+        return resolver(false)
+      }
+
+      return resolver(true)
     }
 
 }
@@ -75,39 +121,17 @@ extension ApplePayDetails {
     }
 }
 
-extension PKContact {
-    var jsonObject: [String: Any] {
-        var dictionary: [String: Any] = [:]
+protocol PKPaymentAuthorizationService {
+    func canMakePayments(usingNetworks: [PKPaymentNetwork]) -> Bool
+    func getAuthorizationViewController(paymentRequest: PKPaymentRequest) -> PKPaymentAuthorizationViewController?
+}
 
-        if let email = self.emailAddress {
-            dictionary[ApplePayKeys.Contact.emailAddress] = email
-        }
-
-        if let phoneNumber = self.phoneNumber {
-            dictionary[ApplePayKeys.Contact.phoneNumber] = phoneNumber.stringValue
-        }
-
-        if let name = self.name {
-            dictionary[ApplePayKeys.Contact.givenName] = name.givenName
-            dictionary[ApplePayKeys.Contact.familyName] = name.familyName
-        }
-
-        if let name = self.name?.phoneticRepresentation {
-            dictionary[ApplePayKeys.Contact.phoneticGivenName] = name.givenName
-            dictionary[ApplePayKeys.Contact.phoneticFamilyName] = name.familyName
-        }
-
-        if let postalAddress = self.postalAddress {
-            dictionary[ApplePayKeys.Contact.addressLines] = postalAddress.street
-            dictionary[ApplePayKeys.Contact.subLocality] = postalAddress.subLocality
-            dictionary[ApplePayKeys.Contact.locality] = postalAddress.city
-            dictionary[ApplePayKeys.Contact.postalCode] = postalAddress.postalCode
-            dictionary[ApplePayKeys.Contact.subAdministrativeArea] = postalAddress.subAdministrativeArea
-            dictionary[ApplePayKeys.Contact.administrativeArea] = postalAddress.state
-            dictionary[ApplePayKeys.Contact.country] = postalAddress.country
-            dictionary[ApplePayKeys.Contact.countryCode] = postalAddress.isoCountryCode
-        }
-
-        return dictionary
+struct PKPaymentAuthorizationServiceAdapter: PKPaymentAuthorizationService {
+    func canMakePayments(usingNetworks: [PKPaymentNetwork]) -> Bool {
+      return PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: usingNetworks)
+    }
+    
+    func getAuthorizationViewController(paymentRequest: PKPaymentRequest) -> PKPaymentAuthorizationViewController? {
+        return PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
     }
 }
