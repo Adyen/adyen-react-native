@@ -1,11 +1,12 @@
 import { type StyleProp, type ViewStyle } from 'react-native';
 import { useCallback } from 'react';
 import { PlatformPayView } from '..';
+import Styles from './common/Styles';
 
 export const GooglePayButtonTheme = {
   DARK: 1,
   LIGHT: 2,
-};
+} as const;
 
 export const GooglePayButtonType = {
   BUY: 1,
@@ -16,7 +17,7 @@ export const GooglePayButtonType = {
   PAY: 6,
   SUBSCRIBE: 7,
   PLAIN: 8,
-};
+} as const;
 
 export interface GooglePayButtonProps {
   theme?: keyof typeof GooglePayButtonTheme;
@@ -26,38 +27,12 @@ export interface GooglePayButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-function getButtonTheme(type: string): number {
-  switch (type) {
-    case 'DARK':
-      return 1;
-    case 'LIGHT':
-      return 2;
-    default:
-      return 1;
-  }
+function getButtonTheme(type: keyof typeof GooglePayButtonTheme): number {
+  return GooglePayButtonTheme[type] ?? GooglePayButtonTheme.DARK;
 }
 
-function getButtonType(type: string): number {
-  switch (type) {
-    case 'BUY':
-      return 1;
-    case 'BOOK':
-      return 2;
-    case 'CHECKOUT':
-      return 3;
-    case 'DONATE':
-      return 4;
-    case 'ORDER':
-      return 5;
-    case 'PAY':
-      return 6;
-    case 'SUBSCRIBE':
-      return 7;
-    case 'PLAIN':
-      return 8;
-    default:
-      return 1;
-  }
+function getButtonType(type: keyof typeof GooglePayButtonType): number {
+  return GooglePayButtonType[type] ?? GooglePayButtonType.PAY;
 }
 
 export const GooglePayButton = ({
@@ -71,14 +46,13 @@ export const GooglePayButton = ({
     onPress?.();
   }, [onPress]);
 
-  const defaultSize = { minWidth: 150, minHeight: 60 };
   return (
     <PlatformPayView
       theme={theme ? getButtonTheme(theme) : undefined}
       type={type ? getButtonType(type) : undefined}
       radius={radius}
       onButtonPress={onPressHandler}
-      style={[defaultSize, style]}
+      style={[Styles.defaultButton, style]}
     />
   );
 };

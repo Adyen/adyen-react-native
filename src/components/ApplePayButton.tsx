@@ -1,13 +1,14 @@
 import { type StyleProp, type ViewStyle } from 'react-native';
 import { useCallback } from 'react';
 import { PlatformPayView } from '..';
+import Styles from './common/Styles';
 
 export const ApplePayButtonTheme = {
   WHITE: 1,
   WHITE_OUTLINE: 2,
   AUTOMATIC: 3,
   BLACK: 4,
-};
+} as const;
 
 export const ApplePayButtonType = {
   BUY: 1,
@@ -27,7 +28,7 @@ export const ApplePayButtonType = {
   TIP: 15,
   CONTINUE: 16,
   PLAIN: 0,
-};
+} as const;
 
 export interface ApplePayButtonProps {
   theme?: keyof typeof ApplePayButtonTheme;
@@ -37,56 +38,12 @@ export interface ApplePayButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-function getButtonTheme(type: string): number {
-  switch (type) {
-    case 'WHITE':
-      return 1;
-    case 'WHITE_OUTLINE':
-      return 2;
-    case 'AUTOMATIC':
-      return 3;
-    default:
-      return 0;
-  }
+function getButtonTheme(type: keyof typeof ApplePayButtonTheme): number {
+  return ApplePayButtonTheme[type] ?? ApplePayButtonTheme.WHITE;
 }
 
-function getButtonType(type: string): number {
-  switch (type) {
-    case 'BUY':
-      return 1;
-    case 'SETUP':
-      return 2;
-    case 'INSTORE':
-      return 3;
-    case 'DONATE':
-      return 4;
-    case 'CHECKOUT':
-      return 5;
-    case 'BOOK':
-      return 6;
-    case 'SUBSCRIBE':
-      return 7;
-    case 'RELOAD':
-      return 8;
-    case 'ADDMONEY':
-      return 9;
-    case 'TOPUP':
-      return 10;
-    case 'ORDER':
-      return 11;
-    case 'RENT':
-      return 12;
-    case 'SUPPORT':
-      return 13;
-    case 'CONTRIBUTE':
-      return 14;
-    case 'TIP':
-      return 15;
-    case 'CONTINUE':
-      return 16;
-    default:
-      return 0;
-  }
+function getButtonType(type: keyof typeof ApplePayButtonType): number {
+  return ApplePayButtonType[type] ?? ApplePayButtonType.BUY;
 }
 
 export const ApplePayButton = ({
@@ -100,14 +57,13 @@ export const ApplePayButton = ({
     onPress?.();
   }, [onPress]);
 
-  const defaultSize = { minWidth: 150, minHeight: 60 };
   return (
     <PlatformPayView
       theme={theme ? getButtonTheme(theme) : undefined}
       type={type ? getButtonType(type) : undefined}
       radius={radius}
       onButtonPress={onPressHandler}
-      style={[defaultSize, style]}
+      style={[Styles.defaultButton, style]}
     />
   );
 };
