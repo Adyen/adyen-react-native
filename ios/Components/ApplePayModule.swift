@@ -10,7 +10,14 @@ import PassKit
 import React
 
 @objc(AdyenApplePay)
-internal final class ApplePayModule: BaseModule {
+internal class ApplePayModule: BaseModule {
+
+    private let paymentAuthorizationService: PKPaymentAuthorizationService
+
+    init(pkPaymentAuthorizationService: PKPaymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()) {
+      self.paymentAuthorizationService = pkPaymentAuthorizationService
+      super.init()
+    }
 
     override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
 
@@ -64,12 +71,12 @@ internal final class ApplePayModule: BaseModule {
       }
 
       let supportedNetworks = paymentMethod.supportedNetworks
-      guard applePayParser.allowOnboarding || PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: supportedNetworks) else {
+      guard applePayParser.allowOnboarding || paymentAuthorizationService.canMakePayments(usingNetworks: supportedNetworks) else {
           return resolver(false)
       }
 
       paymentRequest.supportedNetworks = supportedNetworks
-      guard let _ = PKPaymentAuthorizationViewController(paymentRequest: paymentRequest) else {
+      guard let _ = paymentAuthorizationService.getAuthorizationViewController(paymentRequest: paymentRequest) else {
         return resolver(false)
       }
 
@@ -169,4 +176,19 @@ extension PKPaymentNetwork {
         }
     }
 
+}
+
+protocol PKPaymentAuthorizationService {
+    func canMakePayments(usingNetworks: [PKPaymentNetwork]) -> Bool
+    func getAuthorizationViewController(paymentRequest: PKPaymentRequest) -> PKPaymentAuthorizationViewController?
+}
+
+struct PKPaymentAuthorizationServiceAdapter: PKPaymentAuthorizationService {
+    func canMakePayments(usingNetworks: [PKPaymentNetwork]) -> Bool {
+      return PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: usingNetworks)
+    }
+    
+    func getAuthorizationViewController(paymentRequest: PKPaymentRequest) -> PKPaymentAuthorizationViewController? {
+        return PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
+    }
 }
