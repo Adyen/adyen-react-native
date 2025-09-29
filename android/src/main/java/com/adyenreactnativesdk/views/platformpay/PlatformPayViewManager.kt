@@ -17,9 +17,9 @@ import com.google.android.gms.wallet.button.ButtonConstants
 @ReactModule(name = PlatformPayViewManager.NAME)
 class PlatformPayViewManager : SimpleViewManager<PlatformPayView>(),
   PlatformPayViewManagerInterface<PlatformPayView> {
-  private val mDelegate: ViewManagerDelegate<PlatformPayView> = PlatformPayViewManagerDelegate(this)
+  private val delegate: ViewManagerDelegate<PlatformPayView> = PlatformPayViewManagerDelegate(this)
 
-  override fun getDelegate(): ViewManagerDelegate<PlatformPayView> = mDelegate
+  override fun getDelegate(): ViewManagerDelegate<PlatformPayView> = delegate
 
   override fun getName(): String {
     return NAME

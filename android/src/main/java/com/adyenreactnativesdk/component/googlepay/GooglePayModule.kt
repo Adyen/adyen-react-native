@@ -108,13 +108,17 @@ class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
       } catch (e: java.lang.Exception) {
         return promise.reject(e)
       }
-      val application: Application = appCompatActivity.application
       val callback: ComponentAvailableCallback = object : ComponentAvailableCallback {
         override fun onAvailabilityResult(isAvailable: Boolean, paymentMethod: PaymentMethod) {
           promise.resolve(isAvailable)
         }
       }
-      GooglePayComponent.PROVIDER.isAvailable(application, paymentMethod, checkoutConfiguration, callback)
+      GooglePayComponent.PROVIDER.isAvailable(
+        appCompatActivity.application,
+        paymentMethod,
+        checkoutConfiguration,
+        callback
+      )
     }
 
     companion object {
