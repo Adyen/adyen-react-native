@@ -22,7 +22,7 @@ __metadata:
     "@react-navigation/native": "npm:^7.0.9"
     "@react-navigation/native-stack": "npm:^7.3.3"
     "@types/react": "npm:^19.0.0"
-    react: "npm:19.0.0"
+    react: "npm:19.1.1"
     react-native: "npm:^0.78.0"
     react-native-builder-bob: "npm:^0.40.11"
     react-native-safe-area-context: "npm:^5.4.1"
@@ -53,7 +53,7 @@ __metadata:
     husky: "npm:^9.0.11"
     jest: "npm:^29.7.0"
     prettier: "npm:^3.0.3"
-    react: "npm:19.0.0"
+    react: "npm:19.1.1"
     react-native: "npm:0.78.3"
     react-native-builder-bob: "npm:^0.40.11"
     typescript: "npm:^5.2.2"
@@ -3398,11 +3398,11 @@ __metadata:
   linkType: hard
 
 "@types/react@npm:^19.0.0":
-  version: 19.1.12
-  resolution: "@types/react@npm:19.1.12"
+  version: 19.1.16
+  resolution: "@types/react@npm:19.1.16"
   dependencies:
     csstype: "npm:^3.0.2"
-  checksum: 10c0/e35912b43da0caaab5252444bab87a31ca22950cde2822b3b3dc32e39c2d42dad1a4cf7b5dde9783aa2d007f0b2cba6ab9563fc6d2dbcaaa833b35178118767c
+  checksum: 10c0/3d781f715f15f308b601d74142fae77c65679c318a3bb0a319df898f39095e738ba7ed7061cec971b19b6d33969ef9cd50fec92b034024ef3fcc25bb9a2eb3d0
   languageName: node
   linkType: hard
 
@@ -10458,10 +10458,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:19.0.0":
-  version: 19.0.0
-  resolution: "react@npm:19.0.0"
-  checksum: 10c0/9cad8f103e8e3a16d15cb18a0d8115d8bd9f9e1ce3420310aea381eb42aa0a4f812cf047bb5441349257a05fba8a291515691e3cb51267279b2d2c3253f38471
+"react@npm:19.1.1":
+  version: 19.1.1
+  resolution: "react@npm:19.1.1"
+  checksum: 10c0/8c9769a2dfd02e603af6445058325e6c8a24b47b185d0e461f66a6454765ddcaecb3f0a90184836c68bb509f3c38248359edbc42f0d07c23eb500a5c30c87b4e
   languageName: node
   linkType: hard
 
