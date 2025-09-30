@@ -1,3 +1,4 @@
 yarn test
 yarn lint
 yarn typecheck
+swiftformat --lint .
