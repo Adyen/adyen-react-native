@@ -87,30 +87,30 @@ public struct CardConfigurationParser {
     }
 
     public var configuration: CardComponent.Configuration {
-        return .init(style: FormComponentStyle(),
-                     shopperInformation: nil,
-                     localizationParameters: nil,
-                     showsHolderNameField: showsHolderNameField,
-                     showsStorePaymentMethodField: showsStorePaymentMethodField,
-                     showsSecurityCodeField: showsSecurityCodeField,
-                     koreanAuthenticationMode: kcpVisibility,
-                     socialSecurityNumberMode: socialSecurityVisibility,
-                     storedCardConfiguration: storedCardConfiguration,
-                     allowedCardTypes: allowedCardTypes,
-                     installmentConfiguration: nil,
-                     billingAddress: billingAddressConfiguration)
+        .init(style: FormComponentStyle(),
+              shopperInformation: nil,
+              localizationParameters: nil,
+              showsHolderNameField: showsHolderNameField,
+              showsStorePaymentMethodField: showsStorePaymentMethodField,
+              showsSecurityCodeField: showsSecurityCodeField,
+              koreanAuthenticationMode: kcpVisibility,
+              socialSecurityNumberMode: socialSecurityVisibility,
+              storedCardConfiguration: storedCardConfiguration,
+              allowedCardTypes: allowedCardTypes,
+              installmentConfiguration: nil,
+              billingAddress: billingAddressConfiguration)
     }
 
     public var dropinConfiguration: DropInComponent.Card {
-        return .init(showsHolderNameField: showsHolderNameField,
-                     showsStorePaymentMethodField: showsStorePaymentMethodField,
-                     showsSecurityCodeField: showsSecurityCodeField,
-                     koreanAuthenticationMode: kcpVisibility,
-                     socialSecurityNumberMode: socialSecurityVisibility,
-                     storedCardConfiguration: storedCardConfiguration,
-                     allowedCardTypes: allowedCardTypes,
-                     installmentConfiguration: nil,
-                     billingAddress: billingAddressConfiguration)
+        .init(showsHolderNameField: showsHolderNameField,
+              showsStorePaymentMethodField: showsStorePaymentMethodField,
+              showsSecurityCodeField: showsSecurityCodeField,
+              koreanAuthenticationMode: kcpVisibility,
+              socialSecurityNumberMode: socialSecurityVisibility,
+              storedCardConfiguration: storedCardConfiguration,
+              allowedCardTypes: allowedCardTypes,
+              installmentConfiguration: nil,
+              billingAddress: billingAddressConfiguration)
     }
 
     private func parseVisibility(_ key: String) -> CardComponent.FieldVisibility {

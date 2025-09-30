@@ -4,83 +4,161 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import XCTest
 import Adyen
 @testable import adyen_react_native
+import XCTest
 
 class RootParserTests: XCTestCase {
 
-  func testInit() {
-    let sut = RootConfigurationParser(configuration: [:])
-    XCTAssertNotNil(sut)
-    XCTAssertEqual(sut.environment, .test)
-    XCTAssertNil(sut.amount)
-    XCTAssertNil(sut.countryCode)
-    XCTAssertNil(sut.shopperLocale)
-  }
+    func test_initialization_usesDefaultValues_withEmptyConfiguration() {
+        // GIVEN
+        let configDict: NSDictionary = [:]
 
-  func testEUEnvironment() {
-    let sut = RootConfigurationParser(configuration: ["environment": "live-eu"])
-    XCTAssertEqual(sut.environment, .liveEurope)
-  }
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertNotNil(sut)
+        XCTAssertEqual(sut.environment, .test)
+        XCTAssertNil(sut.amount)
+        XCTAssertNil(sut.countryCode)
+        XCTAssertNil(sut.shopperLocale)
+    }
 
-  func testIndiaEnvironment() {
-    let sut = RootConfigurationParser(configuration: ["environment": "live-in"])
-    XCTAssertEqual(sut.environment, .liveIndia)
-  }
+    func test_environment_returnsLiveEurope_whenConfiguredWithLiveEU() {
+        // GIVEN
+        let configDict: NSDictionary = ["environment": "live-eu"]
 
-  func testUSEnvironment() {
-    let sut = RootConfigurationParser(configuration: ["environment": "live-us"])
-    XCTAssertEqual(sut.environment, .liveUnitedStates)
-  }
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.environment, .liveEurope)
+    }
 
-  func testAustraliaEnvironment() {
-    let sut = RootConfigurationParser(configuration: ["environment": "live-au"])
-    XCTAssertEqual(sut.environment, .liveAustralia)
-  }
+    func test_environment_returnsLiveIndia_whenConfiguredWithLiveIN() {
+        // GIVEN
+        let configDict: NSDictionary = ["environment": "live-in"]
 
-  func testAPACEnvironment() {
-    let sut = RootConfigurationParser(configuration:  ["environment": "live-apse"])
-    XCTAssertEqual(sut.environment, .liveApse)
-  }
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.environment, .liveIndia)
+    }
 
-  func testClientKey() {
-    let sut = RootConfigurationParser(configuration: ["clientKey": "client-key"])
-    XCTAssertEqual(sut.clientKey, "client-key")
-  }
+    func test_environment_returnsLiveUnitedStates_whenConfiguredWithLiveUS() {
+        // GIVEN
+        let configDict: NSDictionary = ["environment": "live-us"]
 
-  func testAmount() {
-    let sut = RootConfigurationParser(configuration: ["amount": ["value": 100, "currency": "EUR"]])
-    XCTAssertEqual(sut.amount?.value, 100)
-    XCTAssertEqual(sut.amount?.currencyCode, "EUR")
-  }
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.environment, .liveUnitedStates)
+    }
 
-  func testAmountAsString() {
-    let sut = RootConfigurationParser(configuration: ["amount": ["value": "100", "currency": "EUR"]])
-    XCTAssertEqual(sut.amount?.value, 100)
-    XCTAssertEqual(sut.amount?.currencyCode, "EUR")
-  }
+    func test_environment_returnsLiveAustralia_whenConfiguredWithLiveAU() {
+        // GIVEN
+        let configDict: NSDictionary = ["environment": "live-au"]
 
-  func testAmountAsFloat() {
-    let sut = RootConfigurationParser(configuration: ["amount": ["value": 100.3, "currency": "EUR"]])
-    XCTAssertEqual(sut.amount?.value, 100)
-    XCTAssertEqual(sut.amount?.currencyCode, "EUR")
-  }
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.environment, .liveAustralia)
+    }
 
-  func testCountryCode() {
-    let sut = RootConfigurationParser(configuration: ["countryCode": "US"])
-    XCTAssertEqual(sut.countryCode, "US")
-  }
+    func test_environment_returnsLiveAPSE_whenConfiguredWithLiveAPSE() {
+        // GIVEN
+        let configDict: NSDictionary = ["environment": "live-apse"]
 
-  func testPayment() {
-    let sut = RootConfigurationParser(configuration: ["amount": ["value": 100, "currency": "EUR"], "countryCode": "US"])
-    XCTAssertEqual(sut.payment?.amount.value, 100)
-    XCTAssertEqual(sut.payment?.amount.currencyCode, "EUR")
-  }
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.environment, .liveApse)
+    }
 
-  func testShopperLocale() {
-    let sut = RootConfigurationParser(configuration: ["locale": "en-US"])
-    XCTAssertEqual(sut.shopperLocale, "en-US")
-  }
+    func test_clientKey_returnsConfiguredValue_whenProvided() {
+        // GIVEN
+        let configDict: NSDictionary = ["clientKey": "client-key"]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.clientKey, "client-key")
+    }
+
+    func test_amount_parsesNumericValue_whenConfiguredWithIntegerAmount() {
+        // GIVEN
+        let configDict: NSDictionary = ["amount": ["value": 100, "currency": "EUR"]]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.amount?.value, 100)
+        XCTAssertEqual(sut.amount?.currencyCode, "EUR")
+    }
+
+    func test_amount_parsesStringValue_whenConfiguredWithStringAmount() {
+        // GIVEN
+        let configDict: NSDictionary = ["amount": ["value": "100", "currency": "EUR"]]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.amount?.value, 100)
+        XCTAssertEqual(sut.amount?.currencyCode, "EUR")
+    }
+
+    func test_amount_truncatesToInteger_whenConfiguredWithFloatAmount() {
+        // GIVEN
+        let configDict: NSDictionary = ["amount": ["value": 100.3, "currency": "EUR"]]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.amount?.value, 100)
+        XCTAssertEqual(sut.amount?.currencyCode, "EUR")
+    }
+
+    func test_countryCode_returnsConfiguredValue_whenProvided() {
+        // GIVEN
+        let configDict: NSDictionary = ["countryCode": "US"]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.countryCode, "US")
+    }
+
+    func test_payment_createsPaymentObject_whenAmountAndCountryProvided() {
+        // GIVEN
+        let configDict: NSDictionary = ["amount": ["value": 100, "currency": "EUR"], "countryCode": "US"]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.payment?.amount.value, 100)
+        XCTAssertEqual(sut.payment?.amount.currencyCode, "EUR")
+    }
+
+    func test_shopperLocale_returnsConfiguredValue_whenProvided() {
+        // GIVEN
+        let configDict: NSDictionary = ["locale": "en-US"]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.shopperLocale, "en-US")
+    }
 
 }

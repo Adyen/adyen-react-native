@@ -6,182 +6,210 @@
 
 import XCTest
 @_spi(AdyenInternal) import Adyen
-import PassKit
-import Contacts
 @testable import adyen_react_native
+import Contacts
+import PassKit
 
 let paymentMethodDict: NSDictionary = [
-  "type": "applepay",
-  "name": "Apple Pay",
-  "brands": ["mc", "visa"]
+    "type": "applepay",
+    "name": "Apple Pay",
+    "brands": ["mc", "visa"]
 ]
 
 let configuration: NSDictionary = [
-  "clientKey": "test_client_key",
-  "amount": [
-    "value": 1000,
-    "currency": "USD"
-  ],
-  "countryCode": "US",
-  "applepay": [
-    "merchantID": "merchant.com.adyen.test",
-    "merchantName": "Test Merchant"
-  ]
+    "clientKey": "test_client_key",
+    "amount": [
+        "value": 1000,
+        "currency": "USD"
+    ],
+    "countryCode": "US",
+    "applepay": [
+        "merchantID": "merchant.com.adyen.test",
+        "merchantName": "Test Merchant"
+    ]
 ]
 
 let mockApplePaymentMethod = try! JSONDecoder().decode(ApplePayPaymentMethod.self,
-                                                   from: try! JSONSerialization.data(withJSONObject: paymentMethodDict) )
+                                                       from: try! JSONSerialization.data(withJSONObject: paymentMethodDict))
 
-let mockApplePayDetails = ApplePayDetails(
-  paymentMethod: mockApplePaymentMethod,
-  token: "",
-  network: "visa",
-  billingContact: PKContact(),
-  shippingContact: nil,
-  shippingMethod: .init(label: "Cargo", amount: 10, type: .final)
-)
-
-var mockPaymentRequest: PKPaymentRequest{
-  let paymentRequest = PKPaymentRequest()
-  paymentRequest.supportedNetworks = [.visa, .masterCard]
-  paymentRequest.countryCode = "US"
-  paymentRequest.currencyCode = "USD"
-  paymentRequest.merchantIdentifier = "merchant.com.test"
-  paymentRequest.paymentSummaryItems = [.init(label: "total", amount: 10)]
-  paymentRequest.merchantCapabilities = [.threeDSecure]
-  return paymentRequest
+var mockPaymentRequest: PKPaymentRequest {
+    let paymentRequest = PKPaymentRequest()
+    paymentRequest.supportedNetworks = [.visa, .masterCard]
+    paymentRequest.countryCode = "US"
+    paymentRequest.currencyCode = "USD"
+    paymentRequest.merchantIdentifier = "merchant.com.test"
+    paymentRequest.paymentSummaryItems = [.init(label: "total", amount: 10)]
+    paymentRequest.merchantCapabilities = [.threeDSecure]
+    return paymentRequest
 }
 
 final class ApplePayModuleTests: XCTestCase {
 
-  var sut: ApplePayModule!
-  fileprivate var mockPaymentAuthorizationService: MockPKPaymentAuthorizationService!
+    var sut: ApplePayModule!
+    fileprivate var mockPaymentAuthorizationService: MockPKPaymentAuthorizationService!
 
-  override func setUp() {
-    super.setUp()
-    mockPaymentAuthorizationService = MockPKPaymentAuthorizationService()
-    sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
-  }
-
-  override func tearDown() {
-    sut = nil
-    mockPaymentAuthorizationService = nil
-    super.tearDown()
-  }
-
-  func testIsAvailableSuccess() throws {
-      // Given
-    let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
-    mockPaymentAuthorizationService.authorizationViewControllerResult = PKPaymentAuthorizationViewController(paymentRequest: mockPaymentRequest)
-
-      // Then
-    sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
-      let isSuccess = try! XCTUnwrap(resolve as? Bool )
-      XCTAssertTrue(isSuccess)
-    } rejecter: { title, message, error in
-      XCTFail("Shou not throw error")
+    override func setUp() {
+        super.setUp()
+        mockPaymentAuthorizationService = MockPKPaymentAuthorizationService()
+        sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
     }
-  }
 
-  func testIsAvailableReturnFalseWhenNoAmount() throws {
-      // Given
-    mockPaymentAuthorizationService.canMakePaymentsResult = false
-    let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
-    let configuration: NSDictionary = [
-      "clientKey": "test_client_key",
-      "countryCode": "US",
-      "applepay": [
-        "merchantID": "merchant.com.adyen.test",
-        "merchantName": "Test Merchant"
-      ]
-    ]
-
-      // Then
-    sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
-      let isSuccess = try! XCTUnwrap(resolve as? Bool )
-      XCTAssertFalse(isSuccess)
-    } rejecter: { title, message, error in
-      XCTFail("Shou not throw error")
+    override func tearDown() {
+        sut = nil
+        mockPaymentAuthorizationService = nil
+        super.tearDown()
     }
-  }
 
-  func testIsAvailableReturnFalseWhenNoViewController() throws {
-      // Given
-    mockPaymentAuthorizationService.canMakePaymentsResult = false
-    let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
+    func test_isAvailable_returnsTrue_whenCanMakePaymentsAndHasAuthorizationViewController() throws {
+        // GIVEN
+        let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
+        mockPaymentAuthorizationService.authorizationViewControllerResult = PKPaymentAuthorizationViewController(paymentRequest: mockPaymentRequest)
 
-      // Then
-    sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
-      let isSuccess = try! XCTUnwrap(resolve as? Bool )
-      XCTAssertFalse(isSuccess)
-    } rejecter: { title, message, error in
-      XCTFail("Shou not throw error")
+        // WHEN
+        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+            // THEN
+            let isSuccess = try! XCTUnwrap(resolve as? Bool)
+            XCTAssertTrue(isSuccess)
+        } rejecter: { title, message, error in
+            XCTFail("Should not throw error")
+        }
     }
-  }
 
-  func testApplePayDetailsExtraData() {
-      // When
-    let extraData = mockApplePayDetails.extraData
-    XCTAssertNotNil(extraData)
-  }
+    func test_isAvailable_returnsFalse_whenNoAmount() throws {
+        // GIVEN
+        mockPaymentAuthorizationService.canMakePaymentsResult = true
+        let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
+        let configuration: NSDictionary = [
+            "clientKey": "test_client_key",
+            "countryCode": "US",
+            "applepay": [
+                "merchantID": "merchant.com.adyen.test",
+                "merchantName": "Test Merchant"
+            ]
+        ]
 
-    // Then
-  func testPKContactJsonObject() {
-      // Given
-    let contact = PKContact()
-    contact.emailAddress = "test@example.com"
-    contact.phoneNumber = CNPhoneNumber(stringValue: "+1234567890")
-
-    var name = PersonNameComponents()
-    name.givenName = "John"
-    name.familyName = "Doe"
-    contact.name = name
-
-      // When
-    let jsonObject = contact.jsonObject
-
-      // Then
-    XCTAssertNotNil(jsonObject)
-  }
-
-  func testPKPaymentNetworkTxVariantName() {
-      // Given/When/Then
-    XCTAssertEqual(PKPaymentNetwork.masterCard.txVariantName, "mc")
-    XCTAssertEqual(PKPaymentNetwork.cartesBancaires.txVariantName, "cartebancaire")
-    XCTAssertEqual(PKPaymentNetwork.visa.txVariantName, "visa")
-    XCTAssertEqual(PKPaymentNetwork.amex.txVariantName, "amex")
-  }
-
-  func testPKPaymentAuthorizationServiceAdapter() {
-      // Given
-    let adapter = PKPaymentAuthorizationServiceAdapter()
-
-      // When
-    let canMakePayments = adapter.canMakePayments(usingNetworks: [.visa, .masterCard])
-    let viewController = adapter.getAuthorizationViewController(paymentRequest: mockPaymentRequest)
-
-      // Then
-      // These methods delegate to the real PKPaymentAuthorizationViewController
-      // so we can't easily test the exact behavior without mocking the static methods
-      // But we can at least test that the methods don't crash and return expected types
-    XCTAssertNotNil(viewController)
-    XCTAssertTrue(canMakePayments)
-  }
-
-  func testHide() {
-      // Given
-    let expectation = self.expectation(description: "dismiss should be called")
-    let testModule = TestableApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
-
-      // When
-    testModule.hide(NSNumber(value: true), event: NSDictionary())
-
-      // Then
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-      expectation.fulfill()
+        // WHEN
+        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+            // THEN
+            let isSuccess = try! XCTUnwrap(resolve as? Bool)
+            XCTAssertFalse(isSuccess)
+        } rejecter: { title, message, error in
+            XCTFail("Should not throw error")
+        }
     }
-    wait(for: [expectation], timeout: 1.0)
-  }
+
+    func test_isAvailable_returnsFalse_whenHasNoAuthorizationViewController() throws {
+        // GIVEN
+        mockPaymentAuthorizationService.canMakePaymentsResult = true
+        let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
+
+        // WHEN
+        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+            // THEN
+            let isSuccess = try! XCTUnwrap(resolve as? Bool)
+            XCTAssertFalse(isSuccess)
+        } rejecter: { title, message, error in
+            XCTFail("Should not throw error")
+        }
+    }
+
+    func test_isAvailable_returnsFalse_whenCanMakePaymentsIsFalse() throws {
+        // GIVEN
+        mockPaymentAuthorizationService.canMakePaymentsResult = false
+        let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
+
+        // WHEN
+        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+            // THEN
+            let isSuccess = try! XCTUnwrap(resolve as? Bool)
+            XCTAssertFalse(isSuccess)
+        } rejecter: { title, message, error in
+            XCTFail("Should not throw error")
+        }
+    }
+
+    func test_applePayDetails_hasExtraData() {
+        // GIVEN
+        let mockApplePayDetails = ApplePayDetails(
+            paymentMethod: mockApplePaymentMethod,
+            token: "",
+            network: "visa",
+            billingContact: PKContact(),
+            shippingContact: nil,
+            shippingMethod: .init(label: "Cargo", amount: 10, type: .final)
+        )
+        
+        // WHEN
+        let extraData = mockApplePayDetails.extraData
+        
+        // THEN
+        XCTAssertNotNil(extraData)
+    }
+
+    func test_pkContact_providesJsonObject() {
+        // GIVEN
+        let contact = PKContact()
+        contact.emailAddress = "test@example.com"
+        contact.phoneNumber = CNPhoneNumber(stringValue: "+1234567890")
+
+        var name = PersonNameComponents()
+        name.givenName = "John"
+        name.familyName = "Doe"
+        contact.name = name
+
+        // WHEN
+        let jsonObject = contact.jsonObject
+
+        // THEN
+        XCTAssertNotNil(jsonObject)
+    }
+
+    func test_pkPaymentNetwork_hasTxVariantName() {
+        // GIVEN
+        let networks = [
+            PKPaymentNetwork.masterCard,
+            PKPaymentNetwork.cartesBancaires,
+            PKPaymentNetwork.visa,
+            PKPaymentNetwork.amex
+        ]
+        
+        // WHEN/THEN
+        XCTAssertEqual(networks[0].txVariantName, "mc")
+        XCTAssertEqual(networks[1].txVariantName, "cartebancaire")
+        XCTAssertEqual(networks[2].txVariantName, "visa")
+        XCTAssertEqual(networks[3].txVariantName, "amex")
+    }
+
+    func test_pkPaymentAuthorizationServiceAdapter_providesPaymentServices() {
+        // GIVEN
+        let adapter = PKPaymentAuthorizationServiceAdapter()
+
+        // WHEN
+        let canMakePayments = adapter.canMakePayments(usingNetworks: [.visa, .masterCard])
+        let viewController = adapter.getAuthorizationViewController(paymentRequest: mockPaymentRequest)
+
+        // THEN
+        // These methods delegate to the real PKPaymentAuthorizationViewController
+        // so we can't easily test the exact behavior without mocking the static methods
+        // But we can at least test that the methods don't crash and return expected types
+        XCTAssertNotNil(viewController)
+        XCTAssertTrue(canMakePayments)
+    }
+
+    func test_hide_callsDismiss() {
+        // GIVEN
+        let expectation = self.expectation(description: "dismiss should be called")
+        let testModule = TestableApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
+
+        // WHEN
+        testModule.hide(NSNumber(value: true), event: NSDictionary())
+
+        // THEN
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+    }
 }
 
 private class TestableApplePayModule: ApplePayModule {
@@ -194,7 +222,7 @@ private class TestableApplePayModule: ApplePayModule {
     }
 }
 
-fileprivate class MockPKPaymentAuthorizationService: PKPaymentAuthorizationService {
+private class MockPKPaymentAuthorizationService: PKPaymentAuthorizationService {
     var canMakePaymentsResult = true
     var authorizationViewControllerResult: PKPaymentAuthorizationViewController?
 

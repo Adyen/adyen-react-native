@@ -5,8 +5,8 @@
 //
 
 import Adyen
-import UIKit
 import React
+import UIKit
 
 protocol SessionResultListener {
     func didComplete(with result: Adyen.AdyenSessionResult)
@@ -28,7 +28,7 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
 
     func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {}
 
-    override public func supportedEvents() -> [String]! { [Events.didComplete.rawValue, Events.didFail.rawValue] }
+    override func supportedEvents() -> [String]! { [Events.didComplete.rawValue, Events.didFail.rawValue] }
 
     @objc
     func createSession(_ sessionModelJSON: NSDictionary,

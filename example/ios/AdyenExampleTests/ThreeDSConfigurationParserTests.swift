@@ -10,24 +10,48 @@ import XCTest
 
 final class ThreeDSConfigurationParserTests: XCTestCase {
 
-  func testNewDictionary() throws {
-      let sut = ThreeDS2ConfigurationParser(configuration: NSDictionary())
-      XCTAssertNil(sut.requestorAppUrl)
-  }
+    func test_requestorAppUrl_returnsNil_withEmptyConfiguration() throws {
+        // GIVEN
+        let configDict = NSDictionary()
+        
+        // WHEN
+        let sut = ThreeDS2ConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertNil(sut.requestorAppUrl)
+    }
 
-  func testEmptyDictionary() throws {
-      let sut = ThreeDS2ConfigurationParser(configuration: ["requestorAppUrl": "https://testing.com"])
-      XCTAssertEqual(sut.requestorAppUrl, "https://testing.com")
-  }
+    func test_requestorAppUrl_returnsConfiguredValue_whenProvidedInRootDictionary() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["requestorAppUrl": "https://testing.com"]
 
-  func testEmptySubDictionary() throws {
-      let sut = ThreeDS2ConfigurationParser(configuration: ["threeDS2": [:]])
-      XCTAssertNil(sut.requestorAppUrl)
-  }
+        // WHEN
+        let sut = ThreeDS2ConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.requestorAppUrl, "https://testing.com")
+    }
 
-  func testRequestorAppUrl() throws {
-      let sut = ThreeDS2ConfigurationParser(configuration: ["threeDS2": ["requestorAppUrl": "https://testing.com"]])
-      XCTAssertEqual(sut.requestorAppUrl, "https://testing.com")
-  }
+    func test_requestorAppUrl_returnsNil_withEmptyThreeDS2Dictionary() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["threeDS2": [:]]
+
+        // WHEN
+        let sut = ThreeDS2ConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertNil(sut.requestorAppUrl)
+    }
+
+    func test_requestorAppUrl_returnsConfiguredValue_whenProvidedInThreeDS2Dictionary() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["threeDS2": ["requestorAppUrl": "https://testing.com"]]
+        
+        // WHEN
+        let sut = ThreeDS2ConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.requestorAppUrl, "https://testing.com")
+    }
 
 }

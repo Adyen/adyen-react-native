@@ -15,13 +15,13 @@ internal class ApplePayModule: BaseModule {
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
     override init() {
-      self.paymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()
-      super.init()
+        self.paymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()
+        super.init()
     }
 
     init(pkPaymentAuthorizationService: PKPaymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()) {
-      self.paymentAuthorizationService = pkPaymentAuthorizationService
-      super.init()
+        self.paymentAuthorizationService = pkPaymentAuthorizationService
+        super.init()
     }
 
     override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
@@ -59,33 +59,33 @@ internal class ApplePayModule: BaseModule {
                      configuration: NSDictionary,
                      resolver: @escaping RCTPromiseResolveBlock,
                      rejecter: @escaping RCTPromiseRejectBlock) {
-      let parser = RootConfigurationParser(configuration: configuration)
-      let applePayParser = ApplepayConfigurationParser(configuration: configuration)
-      let paymentMethod: ApplePayPaymentMethod
-      let paymentRequest: PKPaymentRequest
-      guard let payment = parser.payment else {
-        return resolver(false)
-      }
+        let parser = RootConfigurationParser(configuration: configuration)
+        let applePayParser = ApplepayConfigurationParser(configuration: configuration)
+        let paymentMethod: ApplePayPaymentMethod
+        let paymentRequest: PKPaymentRequest
+        guard let payment = parser.payment else {
+            return resolver(false)
+        }
 
-      do {
-        let data = try JSONSerialization.data(withJSONObject: paymentMethodDict, options: [])
-        paymentMethod = try JSONDecoder().decode(ApplePayPaymentMethod.self, from: data)
-        paymentRequest = try applePayParser.buildPaymentRequest(payment: payment)
-      } catch {
-        return resolver(false)
-      }
+        do {
+            let data = try JSONSerialization.data(withJSONObject: paymentMethodDict, options: [])
+            paymentMethod = try JSONDecoder().decode(ApplePayPaymentMethod.self, from: data)
+            paymentRequest = try applePayParser.buildPaymentRequest(payment: payment)
+        } catch {
+            return resolver(false)
+        }
 
-      let supportedNetworks = paymentMethod.supportedNetworks
-      guard applePayParser.allowOnboarding || paymentAuthorizationService.canMakePayments(usingNetworks: supportedNetworks) else {
-          return resolver(false)
-      }
+        let supportedNetworks = paymentMethod.supportedNetworks
+        guard applePayParser.allowOnboarding || paymentAuthorizationService.canMakePayments(usingNetworks: supportedNetworks) else {
+            return resolver(false)
+        }
 
-      paymentRequest.supportedNetworks = supportedNetworks
-      guard let _ = paymentAuthorizationService.getAuthorizationViewController(paymentRequest: paymentRequest) else {
-        return resolver(false)
-      }
+        paymentRequest.supportedNetworks = supportedNetworks
+        guard let _ = paymentAuthorizationService.getAuthorizationViewController(paymentRequest: paymentRequest) else {
+            return resolver(false)
+        }
 
-      return resolver(true)
+        return resolver(true)
     }
 
 }
@@ -128,10 +128,10 @@ protocol PKPaymentAuthorizationService {
 
 struct PKPaymentAuthorizationServiceAdapter: PKPaymentAuthorizationService {
     func canMakePayments(usingNetworks: [PKPaymentNetwork]) -> Bool {
-      return PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: usingNetworks)
+        PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: usingNetworks)
     }
     
     func getAuthorizationViewController(paymentRequest: PKPaymentRequest) -> PKPaymentAuthorizationViewController? {
-        return PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
+        PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
     }
 }

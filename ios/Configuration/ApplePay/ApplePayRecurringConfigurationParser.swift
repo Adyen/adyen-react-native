@@ -10,7 +10,7 @@ class ApplePayRecurringConfigurationParser {
     
     private var dict: [String: Any]
 
-    public init(configuration: NSDictionary) {
+    init(configuration: NSDictionary) {
         guard let configuration = configuration as? [String: Any] else {
             self.dict = [:]
             return
@@ -24,7 +24,7 @@ class ApplePayRecurringConfigurationParser {
 
     // A description of the recurring payment, for example "Apple News+".
     var paymentDescription: String? {
-        return dict[ApplePayKeys.Recurring.paymentDescription] as? String
+        dict[ApplePayKeys.Recurring.paymentDescription] as? String
     }
 
     // The regular billing cycle, for example "$9.99 monthly".
@@ -47,7 +47,7 @@ class ApplePayRecurringConfigurationParser {
 
     // Optional, localized billing agreement to be displayed to the user prior to payment authorization.
     var billingAgreement: String? {
-        return dict[ApplePayKeys.Recurring.billingAgreement] as? String
+        dict[ApplePayKeys.Recurring.billingAgreement] as? String
     }
 
     // A URL that links to a page on your web site where the user can manage the payment method for this
@@ -66,7 +66,7 @@ class ApplePayRecurringConfigurationParser {
     }
 
     @available(iOS 16.0, *)
-    public var paymentRequest: PKRecurringPaymentRequest? {
+    var paymentRequest: PKRecurringPaymentRequest? {
         guard let paymentDescription, let regularBilling, let managementURL else {
             return nil
         }

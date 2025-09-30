@@ -12,40 +12,61 @@ import XCTest
 
 final class DropInConfigurationParserTests: XCTestCase {
 
-  func testNewDictionary() throws {
-      let sut = DropInConfigurationParser(configuration: NSDictionary())
-      XCTAssertTrue(sut.showPreselectedStoredPaymentMethod)
-  }
+    func test_initialization_usesDefaultValues_withNewDictionary() throws {
+        // GIVEN
+        let configDict = NSDictionary()
+        
+        // WHEN
+        let sut = DropInConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertTrue(sut.showPreselectedStoredPaymentMethod)
+    }
 
-  func testEmptyDictionary() throws {
-      let sut = DropInConfigurationParser(configuration: 
-                                            [
-                                                "showPreselectedStoredPaymentMethod": false,
-                                                "skipListWhenSinglePaymentMethod": false,
-                                                "title": "MY_DROPIN",
-                                                "showRemovePaymentMethodButton": true,
-                                            ]
-      )
+    func test_initialization_appliesProvidedSettings_withFullConfiguration() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "showPreselectedStoredPaymentMethod": false,
+            "skipListWhenSinglePaymentMethod": false,
+            "title": "MY_DROPIN",
+            "showRemovePaymentMethodButton": true
+        ]
 
-      XCTAssertFalse(sut.showPreselectedStoredPaymentMethod)
-      XCTAssertFalse(sut.skipListWhenSinglePaymentMethod)
-      XCTAssertEqual(sut.title, "MY_DROPIN")
-      XCTAssertTrue(sut.showRemovePaymentMethodButton)
+        // WHEN
+        let sut = DropInConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertFalse(sut.showPreselectedStoredPaymentMethod)
+        XCTAssertFalse(sut.skipListWhenSinglePaymentMethod)
+        XCTAssertEqual(sut.title, "MY_DROPIN")
+        XCTAssertTrue(sut.showRemovePaymentMethodButton)
 
-      XCTAssertNotNil(sut.configuration)
-      XCTAssertFalse(sut.configuration.allowPreselectedPaymentView)
-      XCTAssertFalse(sut.configuration.allowsSkippingPaymentList)
-      XCTAssertTrue(sut.configuration.paymentMethodsList.allowDisablingStoredPaymentMethods)
-  }
+        XCTAssertNotNil(sut.configuration)
+        XCTAssertFalse(sut.configuration.allowPreselectedPaymentView)
+        XCTAssertFalse(sut.configuration.allowsSkippingPaymentList)
+        XCTAssertTrue(sut.configuration.paymentMethodsList.allowDisablingStoredPaymentMethods)
+    }
 
-  func testEmptySubDictionary() throws {
-      let sut = DropInConfigurationParser(configuration: ["dropin": [:]])
-      XCTAssertTrue(sut.showPreselectedStoredPaymentMethod)
-  }
+    func test_initialization_usesDefaultValues_withEmptySubDictionary() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["dropin": [:]]
 
-  func testRequestorAppUrl() throws {
-      let sut = DropInConfigurationParser(configuration: ["dropin": ["showPreselectedStoredPaymentMethod": false]])
-      XCTAssertFalse(sut.showPreselectedStoredPaymentMethod)
-  }
+        // WHEN
+        let sut = DropInConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertTrue(sut.showPreselectedStoredPaymentMethod)
+    }
+
+    func test_showPreselectedStoredPaymentMethod_returnsFalse_whenExplicitlySet() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["dropin": ["showPreselectedStoredPaymentMethod": false]]
+        
+        // WHEN
+        let sut = DropInConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertFalse(sut.showPreselectedStoredPaymentMethod)
+    }
   
 }

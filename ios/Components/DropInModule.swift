@@ -16,7 +16,7 @@ internal final class DropInModule: BaseModule {
     private var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
     private var disableStoredPaymentMethodHandler: Adyen.Completion<Bool>?
 
-    override public func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+    override func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
     private var dropInComponent: DropInComponent? {
         currentComponent as? DropInComponent
@@ -31,7 +31,7 @@ internal final class DropInModule: BaseModule {
     func update(_ results: NSArray) {
         guard let lookupHandler else { return }
 
-        let addressModels: [LookupAddressModel] = results.compactMap{ $0 as? NSDictionary }.compactMap { try? $0.decode() }
+        let addressModels: [LookupAddressModel] = results.compactMap { $0 as? NSDictionary }.compactMap { try? $0.decode() }
         DispatchQueue.main.async {
             lookupHandler(addressModels)
         }
@@ -43,7 +43,7 @@ internal final class DropInModule: BaseModule {
 
         DispatchQueue.main.async {
             if !success.boolValue, let message = address[Keys.message] as? String {
-                return lookupCompliationHandler(.failure(AddressError(message: message) ))
+                return lookupCompliationHandler(.failure(AddressError(message: message)))
             }
 
             do {
@@ -210,7 +210,7 @@ extension DropInModule: PartialPaymentDelegate {
     }
 
     @objc
-    public func provideBalance(_ success: NSNumber, balance: NSDictionary?, error: NSDictionary?) {
+    func provideBalance(_ success: NSNumber, balance: NSDictionary?, error: NSDictionary?) {
         guard let checkBalanceHandler else { return }
 
         DispatchQueue.main.async {
@@ -228,9 +228,10 @@ extension DropInModule: PartialPaymentDelegate {
     }
 
     @objc
-    public func provideOrder(_ success: NSNumber, order: NSDictionary?, error: NSDictionary?) {
+    func provideOrder(_ success: NSNumber, order: NSDictionary?, error: NSDictionary?) {
         guard let requestOrderHandler else {
-            return }
+            return
+        }
         DispatchQueue.main.async {
             guard success.boolValue, let order: PartialPaymentOrder = try? order?.decode() else {
                 let message = error?.value(forKey: Keys.message) as? String ?? "Unknown"
@@ -246,7 +247,7 @@ extension DropInModule: PartialPaymentDelegate {
     }
 
     @objc(providePaymentMethods:order:)
-    public func providePaymentMethods(_ paymentMethodsJson: NSDictionary, orderJson: NSDictionary) {
+    func providePaymentMethods(_ paymentMethodsJson: NSDictionary, orderJson: NSDictionary) {
         let paymentMethods: PaymentMethods
         let order: PartialPaymentOrder
         do {
