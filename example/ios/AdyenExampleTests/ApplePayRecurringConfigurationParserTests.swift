@@ -93,4 +93,14 @@ final class ApplePayRecurringConfigurationParserTests: XCTestCase {
         XCTAssertEqual(sut.billingAgreement, "Some billing agreement")
     }
 
+    func test_iso8601Formatter_parsesMultipleFormats() {
+        // GIVEN/WHEN/THEN
+        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01"))
+        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00Z"))
+        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00"))
+        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00.000"))
+        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00+00:00"))
+        XCTAssertNotNil(iso8601Formatter.date(from: "2024-01-10T05:38:30−07:00"))
+    }
+
 }

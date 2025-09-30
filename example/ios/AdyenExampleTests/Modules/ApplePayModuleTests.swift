@@ -62,7 +62,6 @@ final class ApplePayModuleTests: XCTestCase {
 
     func test_isAvailable_returnsTrue_whenCanMakePaymentsAndHasAuthorizationViewController() throws {
         // GIVEN
-        let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
         mockPaymentAuthorizationService.authorizationViewControllerResult = PKPaymentAuthorizationViewController(paymentRequest: mockPaymentRequest)
 
         // WHEN
@@ -206,6 +205,9 @@ final class ApplePayModuleTests: XCTestCase {
 
         // THEN
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+
+            XCTAssertTrue(testModule.dismissCalled)
+            XCTAssertTrue(testModule.dismissSuccessValue)
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)

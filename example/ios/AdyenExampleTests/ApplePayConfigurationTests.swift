@@ -13,6 +13,22 @@ final class ApplePayConfigurationTests: XCTestCase {
 
     let mockAmount = Amount(value: 1000, currencyCode: "USD", localeIdentifier: "en-US")
     lazy var mockPayment = Payment(amount: mockAmount, countryCode: "US")
+    let contactDetails: [String: Any] = [
+        "phoneNumber": "123-456-7890",
+        "emailAddress": "example@email.com",
+        "givenName": "John",
+        "familyName": "Doe",
+        "phoneticGivenName": "John",
+        "phoneticFamilyName": "Doe",
+        "addressLines": ["123 Main St", "Apt 4B"],
+        "subLocality": "Suburb",
+        "locality": "City",
+        "postalCode": "12345",
+        "subAdministrativeArea": "County",
+        "administrativeArea": "State",
+        "country": "Country",
+        "countryCode": "US"
+    ]
 
     func test_initialization_succeeds_withNewDictionary() throws {
         // GIVEN
@@ -23,6 +39,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         
         // THEN
         XCTAssertNotNil(sut)
+        XCTAssertFalse(sut.allowOnboarding)
     }
 
     func test_initialization_succeeds_withEmptyDictionary() throws {
@@ -39,10 +56,12 @@ final class ApplePayConfigurationTests: XCTestCase {
     func test_buildConfiguration_throwsInvalidMerchantID_withEmptySubDictionary() throws {
         // GIVEN
         let configDict: NSDictionary = ["applepay": [:]]
-        let sut = ApplepayConfigurationParser(configuration: configDict)
-        XCTAssertNotNil(sut)
 
-        // WHEN/THEN
+        // WHEN
+        let sut = ApplepayConfigurationParser(configuration: configDict)
+
+        // THEN
+        XCTAssertNotNil(sut)
         let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
             XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantID.localizedDescription)
@@ -55,9 +74,11 @@ final class ApplePayConfigurationTests: XCTestCase {
     func test_buildConfiguration_throwsInvalidMerchantID_withWrongSubDictionary() throws {
         // GIVEN
         let configDict: NSDictionary = ["applepay": "some value"]
+
+        // WHEN
         let sut = ApplepayConfigurationParser(configuration: configDict)
         
-        // WHEN/THEN
+        // THEN
         let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
             XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantID.localizedDescription)
@@ -74,9 +95,11 @@ final class ApplePayConfigurationTests: XCTestCase {
                 "merchantID": "someID"
             ]
         ]
+
+        // WHEN
         let sut = ApplepayConfigurationParser(configuration: configDict)
 
-        // WHEN/THEN
+        // THEN
         let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
             XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantName.localizedDescription)
@@ -172,9 +195,11 @@ final class ApplePayConfigurationTests: XCTestCase {
             "merchantID": "merchant.com.adyen.test",
             "summaryItems": []
         ]]
+
+        // WHEN
         let sut = ApplepayConfigurationParser(configuration: configDict)
         
-        // WHEN/THEN
+        // THEN
         let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
             XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantName.localizedDescription)
@@ -235,36 +260,8 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.allowOnboarding)
     }
 
-    func test_billingContact_parsesAllFields_whenFullyConfigured() throws {
-        // GIVEN
-        let configDict: NSDictionary = [
-            "applepay": [
-                "merchantID": "merchant.com.adyen.test",
-                "merchantName": "SomeName",
-                "billingContact": [
-                    "phoneNumber": "123-456-7890",
-                    "emailAddress": "example@email.com",
-                    "givenName": "John",
-                    "familyName": "Doe",
-                    "phoneticGivenName": "John",
-                    "phoneticFamilyName": "Doe",
-                    "addressLines": ["123 Main St", "Apt 4B"],
-                    "subLocality": "Suburb",
-                    "locality": "City",
-                    "postalCode": "12345",
-                    "subAdministrativeArea": "County",
-                    "administrativeArea": "State",
-                    "country": "Country",
-                    "countryCode": "US"
-                ]
-            ]
-        ]
-        
-        // WHEN
-        let sut = ApplepayConfigurationParser(configuration: configDict)
-
+    fileprivate func testContactDetails(_ contact: PKContact) {
         // THEN
-        let contact = try XCTUnwrap(sut.billingContact)
         XCTAssertEqual(contact.phoneNumber?.stringValue, "123-456-7890")
         XCTAssertEqual(contact.emailAddress, "example@email.com")
         XCTAssertEqual(contact.name?.givenName, "John")
@@ -280,6 +277,24 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertEqual(contact.postalAddress?.country, "Country")
         XCTAssertEqual(contact.postalAddress?.isoCountryCode, "US")
     }
+  
+    func test_billingContact_parsesAllFields_whenFullyConfigured() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "applepay": [
+                "merchantID": "merchant.com.adyen.test",
+                "merchantName": "SomeName",
+                "billingContact": contactDetails
+            ]
+        ]
+        
+        // WHEN
+        let sut = ApplepayConfigurationParser(configuration: configDict)
+
+        // THEN
+        let contact = try XCTUnwrap(sut.billingContact)
+        testContactDetails(contact)
+    }
 
     func test_shippingContact_parsesAllFields_whenFullyConfigured() throws {
         // GIVEN
@@ -287,22 +302,7 @@ final class ApplePayConfigurationTests: XCTestCase {
             "applepay": [
                 "merchantID": "merchant.com.adyen.test",
                 "merchantName": "SomeName",
-                "shippingContact": [
-                    "phoneNumber": "123-456-7890",
-                    "emailAddress": "example@email.com",
-                    "givenName": "John",
-                    "familyName": "Doe",
-                    "phoneticGivenName": "John",
-                    "phoneticFamilyName": "Doe",
-                    "addressLines": ["123 Main St", "Apt 4B"],
-                    "subLocality": "Suburb",
-                    "locality": "City",
-                    "postalCode": "12345",
-                    "subAdministrativeArea": "County",
-                    "administrativeArea": "State",
-                    "country": "Country",
-                    "countryCode": "US"
-                ]
+                "shippingContact": contactDetails
             ]
         ]
         
@@ -311,20 +311,7 @@ final class ApplePayConfigurationTests: XCTestCase {
 
         // THEN
         let contact = try XCTUnwrap(sut.shippingContact)
-        XCTAssertEqual(contact.phoneNumber?.stringValue, "123-456-7890")
-        XCTAssertEqual(contact.emailAddress, "example@email.com")
-        XCTAssertEqual(contact.name?.givenName, "John")
-        XCTAssertEqual(contact.name?.familyName, "Doe")
-        XCTAssertEqual(contact.name?.phoneticRepresentation?.givenName, "John")
-        XCTAssertEqual(contact.name?.phoneticRepresentation?.familyName, "Doe")
-        XCTAssertEqual(contact.postalAddress?.street, "123 Main St\nApt 4B")
-        XCTAssertEqual(contact.postalAddress?.subLocality, "Suburb")
-        XCTAssertEqual(contact.postalAddress?.city, "City")
-        XCTAssertEqual(contact.postalAddress?.postalCode, "12345")
-        XCTAssertEqual(contact.postalAddress?.subAdministrativeArea, "County")
-        XCTAssertEqual(contact.postalAddress?.state, "State")
-        XCTAssertEqual(contact.postalAddress?.country, "Country")
-        XCTAssertEqual(contact.postalAddress?.isoCountryCode, "US")
+        testContactDetails(contact)
     }
 
     func test_billingContact_handlesPartialData_withoutPhoneticNameAndAddress() throws {
@@ -573,16 +560,6 @@ final class ApplePayConfigurationTests: XCTestCase {
         
         // THEN
         XCTAssertNotNil(paymentRequest.recurringPaymentRequest)
-    }
-
-    func test_iso8601Formatter_parsesMultipleFormats() {
-        // GIVEN/WHEN/THEN
-        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01"))
-        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00Z"))
-        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00"))
-        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00:00.000"))
-        XCTAssertNotNil(iso8601Formatter.date(from: "2025-01-01T00:00+00:00"))
-        XCTAssertNotNil(iso8601Formatter.date(from: "2024-01-10T05:38:30−07:00"))
     }
 
 }

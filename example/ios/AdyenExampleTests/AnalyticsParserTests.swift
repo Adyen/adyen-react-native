@@ -12,7 +12,7 @@ class AnalyticsParserTests: XCTestCase {
 
     func test_initialization_createsDefaultConfiguration() {
         // GIVEN
-        let configuration: NSDictionary = ["analitics": [:]]
+        let configuration: NSDictionary = ["analytics": [:]]
 
         // WHEN
         let sut = AnalyticsParser(configuration: configuration)
