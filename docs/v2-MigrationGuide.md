@@ -4,7 +4,7 @@
 
 ### Android
 
-* Merchant's app theme must be a descendent of `Theme.MaterialComponents` to operate with "instant" payment components (ex. Paypal, Klarna). Example:
+* Merchant's app theme must be a descendant of `Theme.MaterialComponents` to operate with "instant" payment components (ex. Paypal, Klarna). Example:
 ```xml
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar"> 
 ```
