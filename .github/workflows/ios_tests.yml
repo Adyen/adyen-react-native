@@ -8,12 +8,8 @@ on:
     inputs:
       device-version:
         required: false
-        default: 15
+        default: 17
         type: number
-      react-native-version:
-        required: false
-        default: '0.71.14'
-        type: string
 
 jobs:
   ios_tests:
