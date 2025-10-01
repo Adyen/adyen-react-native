@@ -24,116 +24,135 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 
-class GooglePayModule(context: ReactApplicationContext?) : BaseModule(context),
-    CheckoutProxy.ComponentEventListener {
+class GooglePayModule(
+  context: ReactApplicationContext?,
+) : BaseModule(context),
+  CheckoutProxy.ComponentEventListener {
+  override fun getName(): String = COMPONENT_NAME
 
-    override fun getName(): String = COMPONENT_NAME
+  @ReactMethod
+  fun addListener(eventName: String?) { // No JS events expected
+  }
 
-    @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */
+  @ReactMethod
+  fun removeListeners(count: Int?) { // No JS events expected
+  }
+
+  @ReactMethod
+  fun open(
+    paymentMethodsData: ReadableMap,
+    configuration: ReadableMap,
+  ) {
+    val checkoutConfiguration: CheckoutConfiguration
+    val paymentMethodsResponse: PaymentMethodsApiResponse
+    try {
+      paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
+      checkoutConfiguration = getCheckoutConfiguration(configuration)
+    } catch (e: java.lang.Exception) {
+      return sendErrorEvent(e)
     }
 
-    @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */
+    val googlePayPaymentMethod = getPaymentMethod(paymentMethodsResponse, PAYMENT_METHOD_KEYS)
+    if (googlePayPaymentMethod == null) {
+      sendErrorEvent(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
+      return
     }
 
-    @ReactMethod
-    fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val checkoutConfiguration: CheckoutConfiguration
-        val paymentMethodsResponse: PaymentMethodsApiResponse
-        try {
-            paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-            checkoutConfiguration = getCheckoutConfiguration(configuration)
-        } catch (e: java.lang.Exception) {
-            return sendErrorEvent(e)
-        }
-
-        val googlePayPaymentMethod = getPaymentMethod(paymentMethodsResponse, PAYMENT_METHOD_KEYS)
-        if (googlePayPaymentMethod == null) {
-            sendErrorEvent(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
-            return
-        }
-
-        val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
-        CheckoutProxy.shared.componentListener = this
-        GooglePayComponent.run {
-            PROVIDER.isAvailable(appCompatActivity.application,
-                payPaymentMethod,
-                checkoutConfiguration,
-                object : ComponentAvailableCallback {
-                    override fun onAvailabilityResult(
-                        isAvailable: Boolean,
-                        paymentMethod: PaymentMethod
-                    ) {
-                        if (!isAvailable) {
-                            sendErrorEvent(GooglePayException.NotSupported())
-                            return
-                        }
-                        GooglePayFragment.show(
-                            appCompatActivity.supportFragmentManager,
-                            checkoutConfiguration,
-                            paymentMethod,
-                            session
-                        )
-                    }
-                })
-        }
+    val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
+    CheckoutProxy.shared.componentListener = this
+    GooglePayComponent.run {
+      PROVIDER.isAvailable(
+        appCompatActivity.application,
+        payPaymentMethod,
+        checkoutConfiguration,
+        object : ComponentAvailableCallback {
+          override fun onAvailabilityResult(
+            isAvailable: Boolean,
+            paymentMethod: PaymentMethod,
+          ) {
+            if (!isAvailable) {
+              sendErrorEvent(GooglePayException.NotSupported())
+              return
+            }
+            GooglePayFragment.show(
+              appCompatActivity.supportFragmentManager,
+              checkoutConfiguration,
+              paymentMethod,
+              session,
+            )
+          }
+        },
+      )
     }
+  }
 
-    @ReactMethod
-    fun handle(actionMap: ReadableMap?) {
-        try {
-            val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
-            val action = Action.SERIALIZER.deserialize(jsonObject)
-            GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
-        } catch (e: JSONException) {
-            sendErrorEvent(ModuleException.InvalidAction(e))
-        }
+  @ReactMethod
+  fun handle(actionMap: ReadableMap?) {
+    try {
+      val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
+      val action = Action.SERIALIZER.deserialize(jsonObject)
+      GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
+    } catch (e: JSONException) {
+      sendErrorEvent(ModuleException.InvalidAction(e))
     }
+  }
 
-    @ReactMethod
-    fun hide(success: Boolean?, message: ReadableMap?) {
-        cleanup()
-        GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
+  @ReactMethod
+  fun hide(
+    success: Boolean?,
+    message: ReadableMap?,
+  ) {
+    cleanup()
+    GooglePayFragment.hide(appCompatActivity.supportFragmentManager)
+  }
+
+  @ReactMethod
+  fun isAvailable(
+    paymentMethods: ReadableMap,
+    configuration: ReadableMap,
+    promise: Promise,
+  ) {
+    val checkoutConfiguration: CheckoutConfiguration
+    val paymentMethod: PaymentMethod
+    try {
+      val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
+      paymentMethod = PaymentMethod.SERIALIZER.deserialize(jsonObject)
+      checkoutConfiguration = getCheckoutConfiguration(configuration)
+    } catch (e: java.lang.Exception) {
+      return promise.reject(e)
     }
-
-    @ReactMethod
-    fun isAvailable(paymentMethods: ReadableMap, configuration: ReadableMap, promise: Promise) {
-      val checkoutConfiguration: CheckoutConfiguration
-      val paymentMethod: PaymentMethod
-      try {
-        val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
-        paymentMethod = PaymentMethod.SERIALIZER.deserialize(jsonObject)
-        checkoutConfiguration = getCheckoutConfiguration(configuration)
-      } catch (e: java.lang.Exception) {
-        return promise.reject(e)
-      }
-      val callback: ComponentAvailableCallback = object : ComponentAvailableCallback {
-        override fun onAvailabilityResult(isAvailable: Boolean, paymentMethod: PaymentMethod) {
+    val callback: ComponentAvailableCallback =
+      object : ComponentAvailableCallback {
+        override fun onAvailabilityResult(
+          isAvailable: Boolean,
+          paymentMethod: PaymentMethod,
+        ) {
           promise.resolve(isAvailable)
         }
       }
-      GooglePayComponent.PROVIDER.isAvailable(
-        appCompatActivity.application,
-        paymentMethod,
-        checkoutConfiguration,
-        callback
-      )
-    }
+    GooglePayComponent.PROVIDER.isAvailable(
+      appCompatActivity.application,
+      paymentMethod,
+      checkoutConfiguration,
+      callback,
+    )
+  }
 
-    companion object {
-        private const val COMPONENT_NAME = "AdyenGooglePay"
-        internal const val GOOGLEPAY_REQUEST_CODE = 1001
-        private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
-    }
+  companion object {
+    private const val COMPONENT_NAME = "AdyenGooglePay"
+    internal const val GOOGLEPAY_REQUEST_CODE = 1001
+    private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
+  }
 }
 
-sealed class GooglePayException(code: String, message: String, cause: Throwable? = null) :
-    KnownException(code = code, errorMessage = message, cause) {
-    class NotSupported : GooglePayException(
-        code = "notSupported",
-        message = "GooglePay unavailable"
+sealed class GooglePayException(
+  code: String,
+  message: String,
+  cause: Throwable? = null,
+) : KnownException(code = code, errorMessage = message, cause) {
+  class NotSupported :
+    GooglePayException(
+      code = "notSupported",
+      message = "GooglePay unavailable",
     )
 }
-
-

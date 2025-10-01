@@ -11,7 +11,6 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnable
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 class MainActivity : ReactActivity() {
-
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule
    * rendering of the component.
@@ -22,21 +21,24 @@ class MainActivity : ReactActivity() {
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
    * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
    */
-  override fun createReactActivityDelegate(): ReactActivityDelegate =
-      DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+  override fun createReactActivityDelegate(): ReactActivityDelegate = DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        AdyenCheckout.setLauncherActivity(this);
-    }
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    AdyenCheckout.setLauncherActivity(this)
+  }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        intent.let { AdyenCheckout.handleIntent(it) };
-    }
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    intent.let { AdyenCheckout.handleIntent(it) }
+  }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        AdyenCheckout.handleActivityResult(requestCode, resultCode, data);
-    }
+  override fun onActivityResult(
+    requestCode: Int,
+    resultCode: Int,
+    data: Intent?,
+  ) {
+    super.onActivityResult(requestCode, resultCode, data)
+    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)
+  }
 }

@@ -22,27 +22,25 @@ import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 
 class AdyenPaymentPackage : ReactPackage {
-    override fun createViewManagers(
-        reactContext: ReactApplicationContext
-    ) = listOf(PlatformPayViewManager())
+  override fun createViewManagers(reactContext: ReactApplicationContext) = listOf(PlatformPayViewManager())
 
-    override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        configureAnalytics()
-        return listOf(
-            DropInModule(reactContext),
-            InstantModule(reactContext),
-            GooglePayModule(reactContext),
-            ApplePayModuleMock(reactContext),
-            AdyenCSEModule(reactContext),
-            SessionHelperModule(reactContext),
-            ActionModule(reactContext),
-        )
-    }
+  override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+    configureAnalytics()
+    return listOf(
+      DropInModule(reactContext),
+      InstantModule(reactContext),
+      GooglePayModule(reactContext),
+      ApplePayModuleMock(reactContext),
+      AdyenCSEModule(reactContext),
+      SessionHelperModule(reactContext),
+      ActionModule(reactContext),
+    )
+  }
 
-    // This is intended.
-    @SuppressLint("RestrictedApi")
-    private fun configureAnalytics() {
-        val version = BuildConfig.CHECKOUT_VERSION
-        AnalyticsPlatformParams.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, version)
-    }
+  // This is intended.
+  @SuppressLint("RestrictedApi")
+  private fun configureAnalytics() {
+    val version = BuildConfig.CHECKOUT_VERSION
+    AnalyticsPlatformParams.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, version)
+  }
 }

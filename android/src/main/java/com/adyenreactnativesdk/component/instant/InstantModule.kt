@@ -19,68 +19,74 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 
-class InstantModule(context: ReactApplicationContext?) : BaseModule(context),
-    CheckoutProxy.ComponentEventListener {
+class InstantModule(
+  context: ReactApplicationContext?,
+) : BaseModule(context),
+  CheckoutProxy.ComponentEventListener {
+  override fun getName(): String = COMPONENT_NAME
 
-    override fun getName(): String = COMPONENT_NAME
+  @ReactMethod
+  fun addListener(eventName: String?) { // No JS events expected
+  }
 
-    @ReactMethod
-    fun addListener(eventName: String?) { /* No JS events expected */
+  @ReactMethod
+  fun removeListeners(count: Int?) { // No JS events expected
+  }
+
+  @ReactMethod
+  fun open(
+    paymentMethodsData: ReadableMap,
+    configuration: ReadableMap,
+  ) {
+    val checkoutConfiguration: CheckoutConfiguration
+    val paymentMethod: PaymentMethod
+    try {
+      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      paymentMethod =
+        getPaymentMethodsApiResponse(paymentMethodsData).paymentMethods?.firstOrNull()
+          ?: throw ModuleException.InvalidPaymentMethods(null)
+    } catch (e: Exception) {
+      return sendErrorEvent(e)
     }
 
-    @ReactMethod
-    fun removeListeners(count: Int?) { /* No JS events expected */
+    CheckoutProxy.shared.componentListener = this
+    fragment =
+      when (paymentMethod.type) {
+        PaymentMethodTypes.IDEAL -> IdealFragment
+        else -> InstantFragment
+      }
+
+    fragment?.show(
+      appCompatActivity.supportFragmentManager,
+      checkoutConfiguration,
+      paymentMethod,
+      session,
+    )
+  }
+
+  @ReactMethod
+  fun handle(actionMap: ReadableMap?) {
+    try {
+      val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
+      val action = Action.SERIALIZER.deserialize(jsonObject)
+      fragment?.handle(appCompatActivity.supportFragmentManager, action)
+    } catch (e: JSONException) {
+      sendErrorEvent(ModuleException.InvalidAction(e))
     }
+  }
 
-    @ReactMethod
-    fun open(paymentMethodsData: ReadableMap, configuration: ReadableMap) {
-        val checkoutConfiguration: CheckoutConfiguration
-        val paymentMethod: PaymentMethod
-        try {
-            checkoutConfiguration = getCheckoutConfiguration(configuration)
-            paymentMethod =
-                getPaymentMethodsApiResponse(paymentMethodsData).paymentMethods?.firstOrNull()
-                    ?: throw ModuleException.InvalidPaymentMethods(null)
-        } catch (e: Exception) {
-            return sendErrorEvent(e)
-        }
+  @ReactMethod
+  fun hide(
+    success: Boolean?,
+    message: ReadableMap?,
+  ) {
+    cleanup()
+    fragment?.hide(appCompatActivity.supportFragmentManager)
+    fragment = null
+  }
 
-        CheckoutProxy.shared.componentListener = this
-        fragment = when (paymentMethod.type) {
-            PaymentMethodTypes.IDEAL -> IdealFragment
-            else -> InstantFragment
-        }
-
-        fragment?.show(
-            appCompatActivity.supportFragmentManager,
-            checkoutConfiguration,
-            paymentMethod,
-            session
-        )
-    }
-
-    @ReactMethod
-    fun handle(actionMap: ReadableMap?) {
-        try {
-            val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
-            val action = Action.SERIALIZER.deserialize(jsonObject)
-            fragment?.handle(appCompatActivity.supportFragmentManager, action)
-        } catch (e: JSONException) {
-            sendErrorEvent(ModuleException.InvalidAction(e))
-        }
-    }
-
-    @ReactMethod
-    fun hide(success: Boolean?, message: ReadableMap?) {
-        cleanup()
-        fragment?.hide(appCompatActivity.supportFragmentManager)
-        fragment = null
-    }
-
-    companion object {
-        private const val COMPONENT_NAME = "AdyenInstant"
-        private var fragment: IInstantFragment? = null
-    }
-
+  companion object {
+    private const val COMPONENT_NAME = "AdyenInstant"
+    private var fragment: IInstantFragment? = null
+  }
 }
-

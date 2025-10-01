@@ -7,16 +7,21 @@ import com.google.android.gms.wallet.button.ButtonConstants
 import com.google.android.gms.wallet.button.ButtonOptions
 import com.google.android.gms.wallet.button.PayButton
 
-enum class ButtonTheme(val value: Int) {
+enum class ButtonTheme(
+  val value: Int,
+) {
   Dark(ButtonConstants.ButtonTheme.DARK),
-  Light(ButtonConstants.ButtonTheme.LIGHT);
+  Light(ButtonConstants.ButtonTheme.LIGHT),
+  ;
 
   companion object {
     fun fromInt(value: Int): ButtonTheme = ButtonTheme.entries.find { it.value == value } ?: Dark
   }
 }
 
-enum class ButtonType(val value: Int) {
+enum class ButtonType(
+  val value: Int,
+) {
   Buy(ButtonConstants.ButtonType.BUY),
   Book(ButtonConstants.ButtonType.BOOK),
   Checkout(ButtonConstants.ButtonType.CHECKOUT),
@@ -24,7 +29,8 @@ enum class ButtonType(val value: Int) {
   Order(ButtonConstants.ButtonType.ORDER),
   Pay(ButtonConstants.ButtonType.PAY),
   Subscribe(ButtonConstants.ButtonType.SUBSCRIBE),
-  Plain(ButtonConstants.ButtonType.PLAIN);
+  Plain(ButtonConstants.ButtonType.PLAIN),
+  ;
 
   companion object {
     fun fromInt(value: Int): ButtonType = entries.find { it.value == value } ?: Buy
@@ -32,8 +38,9 @@ enum class ButtonType(val value: Int) {
 }
 
 @SuppressLint("ViewConstructor")
-class PlatformPayView(private val context: ThemedReactContext) : FrameLayout(context) {
-
+class PlatformPayView(
+  private val context: ThemedReactContext,
+) : FrameLayout(context) {
   lateinit var onClick: () -> Unit
   var theme: ButtonTheme = ButtonTheme.Dark
   var type: ButtonType = ButtonType.Buy
@@ -48,19 +55,21 @@ class PlatformPayView(private val context: ThemedReactContext) : FrameLayout(con
   }
 
   private fun scheduleUpdate() {
-    googlePayButton = PayButton(context).apply {
-      initialize(
-        ButtonOptions.newBuilder()
-          .setButtonType(type.value)
-          .setButtonTheme(theme.value)
-          .setCornerRadius(radius)
-          .setAllowedPaymentMethods(allowedPaymentMethods)
-          .build()
-      )
-      setOnClickListener {
-        onClick.invoke()
+    googlePayButton =
+      PayButton(context).apply {
+        initialize(
+          ButtonOptions
+            .newBuilder()
+            .setButtonType(type.value)
+            .setButtonTheme(theme.value)
+            .setCornerRadius(radius)
+            .setAllowedPaymentMethods(allowedPaymentMethods)
+            .build(),
+        )
+        setOnClickListener {
+          onClick.invoke()
+        }
       }
-    }
   }
 
   override fun requestLayout() {
@@ -68,23 +77,24 @@ class PlatformPayView(private val context: ThemedReactContext) : FrameLayout(con
     post {
       measure(
         MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY),
       )
       layout(left, top, right, bottom)
     }
   }
 
   companion object {
-    private val allowedPaymentMethods: String = """
-           [
-             {
-               "type": "CARD",
-               "parameters": {
-                 "allowedAuthMethods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
-                 "allowedCardNetworks": ["AMEX", "DISCOVER", "JCB", "MASTERCARD", "VISA"]
-               }
-             }
-           ]
-       """.trimIndent()
+    private val allowedPaymentMethods: String =
+      """
+      [
+        {
+          "type": "CARD",
+          "parameters": {
+            "allowedAuthMethods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
+            "allowedCardNetworks": ["AMEX", "DISCOVER", "JCB", "MASTERCARD", "VISA"]
+          }
+        }
+      ]
+      """.trimIndent()
   }
 }
