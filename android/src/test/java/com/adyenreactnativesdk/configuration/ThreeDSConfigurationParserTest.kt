@@ -16,84 +16,83 @@ import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 
 class ThreeDSConfigurationParserTest {
+  @Test
+  fun test_requestorAppUrl_returnsNull_withEmptyConfiguration() {
+    // GIVEN
+    val config = WritableMapMock()
 
-    @Test
-    fun test_requestorAppUrl_returnsNull_withEmptyConfiguration() {
-        // GIVEN
-        val config = WritableMapMock()
-        
-        // WHEN
-        val sut = ThreeDSConfigurationParser(config)
-        
-        // THEN
-        assertNull(sut.requestorAppUrl)
-    }
+    // WHEN
+    val sut = ThreeDSConfigurationParser(config)
 
-    @Test
-    fun test_applyConfiguration_doesNotModifyBuilder_whenGivenEmptySubDictionary() {
-        // GIVEN
-        val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
-        val config = WritableMapMock()
-        val threedsConfig = WritableMapMock()
-        config.putMap(ThreeDSConfigurationParser.ROOT_KEY, threedsConfig)
+    // THEN
+    assertNull(sut.requestorAppUrl)
+  }
 
-        // WHEN
-        val sut = ThreeDSConfigurationParser(config)
-        sut.applyConfiguration(mockBuilder)
+  @Test
+  fun test_applyConfiguration_doesNotModifyBuilder_whenGivenEmptySubDictionary() {
+    // GIVEN
+    val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
+    val config = WritableMapMock()
+    val threedsConfig = WritableMapMock()
+    config.putMap(ThreeDSConfigurationParser.ROOT_KEY, threedsConfig)
 
-        // THEN
-        verify(mockBuilder, times(0)).setThreeDSRequestorAppURL(any())
-    }
-    
-    @Test
-    fun test_requestorAppUrl_returnsConfiguredValue_whenProvidedInRootDictionary() {
-        // GIVEN
-        val config = WritableMapMock()
-        config.putString(
-            ThreeDSConfigurationParser.REQUESTOR_APP_URL_KEY,
-            "https://testing.com"
-        )
+    // WHEN
+    val sut = ThreeDSConfigurationParser(config)
+    sut.applyConfiguration(mockBuilder)
 
-        // WHEN
-        val sut = ThreeDSConfigurationParser(config)
-        
-        // THEN
-        assertEquals("https://testing.com", sut.requestorAppUrl)
-    }
+    // THEN
+    verify(mockBuilder, times(0)).setThreeDSRequestorAppURL(any())
+  }
 
-    @Test
-    fun test_requestorAppUrl_appliesCorrectValue_whenExplicitlySet() {
-        // GIVEN
-        val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
-        val config = WritableMapMock()
-        config.putString(
-            ThreeDSConfigurationParser.REQUESTOR_APP_URL_KEY,
-            "https://testing.com"
-        )
+  @Test
+  fun test_requestorAppUrl_returnsConfiguredValue_whenProvidedInRootDictionary() {
+    // GIVEN
+    val config = WritableMapMock()
+    config.putString(
+      ThreeDSConfigurationParser.REQUESTOR_APP_URL_KEY,
+      "https://testing.com",
+    )
 
-        // WHEN
-        val sut = ThreeDSConfigurationParser(config)
-        sut.applyConfiguration(mockBuilder)
+    // WHEN
+    val sut = ThreeDSConfigurationParser(config)
 
-        // THEN
-        verify(mockBuilder, times(1)).setThreeDSRequestorAppURL("https://testing.com")
-    }
-    
-    @Test
-    fun test_requestorAppUrl_returnsConfiguredValue_whenProvidedInThreeDSDictionary() {
-        // GIVEN
-        val config = WritableMapMock()
-        val threedsConfig = WritableMapMock()
-        threedsConfig.putString(
-            ThreeDSConfigurationParser.REQUESTOR_APP_URL_KEY,
-            "https://testing.com"
-        )
-        config.putMap(ThreeDSConfigurationParser.ROOT_KEY, threedsConfig)
+    // THEN
+    assertEquals("https://testing.com", sut.requestorAppUrl)
+  }
 
-        // WHEN
-        val sut = ThreeDSConfigurationParser(config)
-        
-        // THEN
-        assertEquals("https://testing.com", sut.requestorAppUrl)
-    }
+  @Test
+  fun test_requestorAppUrl_appliesCorrectValue_whenExplicitlySet() {
+    // GIVEN
+    val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
+    val config = WritableMapMock()
+    config.putString(
+      ThreeDSConfigurationParser.REQUESTOR_APP_URL_KEY,
+      "https://testing.com",
+    )
+
+    // WHEN
+    val sut = ThreeDSConfigurationParser(config)
+    sut.applyConfiguration(mockBuilder)
+
+    // THEN
+    verify(mockBuilder, times(1)).setThreeDSRequestorAppURL("https://testing.com")
+  }
+
+  @Test
+  fun test_requestorAppUrl_returnsConfiguredValue_whenProvidedInThreeDSDictionary() {
+    // GIVEN
+    val config = WritableMapMock()
+    val threedsConfig = WritableMapMock()
+    threedsConfig.putString(
+      ThreeDSConfigurationParser.REQUESTOR_APP_URL_KEY,
+      "https://testing.com",
+    )
+    config.putMap(ThreeDSConfigurationParser.ROOT_KEY, threedsConfig)
+
+    // WHEN
+    val sut = ThreeDSConfigurationParser(config)
+
+    // THEN
+    assertEquals("https://testing.com", sut.requestorAppUrl)
+  }
 }

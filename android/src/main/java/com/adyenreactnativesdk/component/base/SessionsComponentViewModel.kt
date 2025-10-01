@@ -12,24 +12,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SessionsComponentViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>> :
-    BaseViewModel<TState, TComponentData>(),
-    SessionComponentCallback<TState> {
-
-    override fun startPayment(paymentMethod: PaymentMethod, session: CheckoutSession?) {
-        val sessionCallback = this
-        viewModelScope.launch(Dispatchers.IO) {
-            val componentData = ComponentData(paymentMethod, sessionCallback, null)
-            emitData(componentData)
-        }
+  BaseViewModel<TState, TComponentData>(),
+  SessionComponentCallback<TState> {
+  override fun startPayment(
+    paymentMethod: PaymentMethod,
+    session: CheckoutSession?,
+  ) {
+    val sessionCallback = this
+    viewModelScope.launch(Dispatchers.IO) {
+      val componentData = ComponentData(paymentMethod, sessionCallback, null)
+      emitData(componentData)
     }
+  }
 
-    override fun onFinished(result: SessionPaymentResult) {
-        CheckoutProxy.shared.componentListener?.let { it.onFinished(result) } ?: {
-            Log.e(TAG, COMPONENT_LISTENER_IS_NULL)
-        }
+  override fun onFinished(result: SessionPaymentResult) {
+    CheckoutProxy.shared.componentListener?.let { it.onFinished(result) } ?: {
+      Log.e(TAG, COMPONENT_LISTENER_IS_NULL)
     }
+  }
 
-    companion object {
-        private const val TAG = "SessionsViewModel"
-    }
+  companion object {
+    private const val TAG = "SessionsViewModel"
+  }
 }

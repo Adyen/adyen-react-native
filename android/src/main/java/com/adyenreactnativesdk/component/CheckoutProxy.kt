@@ -18,32 +18,35 @@ import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 class CheckoutProxy private constructor() {
-    private var _componentListener = WeakReference<ComponentEventListener>(null)
+  private var _componentListener = WeakReference<ComponentEventListener>(null)
 
-    var sessionService: BaseDropInServiceContract? = null
+  var sessionService: BaseDropInServiceContract? = null
 
-    var advancedService: BaseDropInServiceContract? = null
+  var advancedService: BaseDropInServiceContract? = null
 
-    var componentListener: ComponentEventListener?
-        get() = _componentListener.get()
-        set(value) {
-            _componentListener = WeakReference(value)
-        }
-
-    /** Base events coming from Components */
-    interface ComponentEventListener: DropInServiceContract {
-        fun onException(exception: CheckoutException)
-        fun onFinished(result: SessionPaymentResult)
-        fun onRemove(storedPaymentMethod: StoredPaymentMethod)
+  var componentListener: ComponentEventListener?
+    get() = _componentListener.get()
+    set(value) {
+      _componentListener = WeakReference(value)
     }
 
-    /** Events coming from Card Component */
-    interface CardComponentEventListener: ComponentEventListener {
-        fun onBinValue(binValue: String)
-        fun onBinLookup(data: List<BinLookupData>)
-    }
+  /** Base events coming from Components */
+  interface ComponentEventListener : DropInServiceContract {
+    fun onException(exception: CheckoutException)
 
-    companion object {
-        var shared = CheckoutProxy()
-    }
+    fun onFinished(result: SessionPaymentResult)
+
+    fun onRemove(storedPaymentMethod: StoredPaymentMethod)
+  }
+
+  /** Events coming from Card Component */
+  interface CardComponentEventListener : ComponentEventListener {
+    fun onBinValue(binValue: String)
+
+    fun onBinLookup(data: List<BinLookupData>)
+  }
+
+  companion object {
+    var shared = CheckoutProxy()
+  }
 }

@@ -10,35 +10,31 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableNativeMap
 
 object ReactNativeError {
+  private const val MESSAGE_KEY = "message"
+  private const val REASON_KEY = "reason"
+  private const val DESCRIPTION_KEY = "description"
+  private const val RECOVERY_KEY = "recovery"
+  private const val ERROR_CODE = "errorCode"
 
-    private const val MESSAGE_KEY = "message"
-    private const val REASON_KEY = "reason"
-    private const val DESCRIPTION_KEY = "description"
-    private const val RECOVERY_KEY = "recovery"
-    private const val ERROR_CODE = "errorCode"
-
-    fun mapError(message: String?): ReadableMap {
-        return WritableNativeMap().apply {
-            putString(MESSAGE_KEY, message)
-        }
+  fun mapError(message: String?): ReadableMap =
+    WritableNativeMap().apply {
+      putString(MESSAGE_KEY, message)
     }
 
-    fun mapError(error: Exception): ReadableMap {
-        return WritableNativeMap().apply {
-            putString(MESSAGE_KEY, error.localizedMessage)
-            error.cause?.let {
-                putString(REASON_KEY, it.localizedMessage)
-            }
+  fun mapError(error: Exception): ReadableMap =
+    WritableNativeMap().apply {
+      putString(MESSAGE_KEY, error.localizedMessage)
+      error.cause?.let {
+        putString(REASON_KEY, it.localizedMessage)
+      }
 
-            val stackTrace = error.stackTrace
-            if (stackTrace.isNotEmpty()) {
-                putString(DESCRIPTION_KEY, stackTrace.toString())
-            }
+      val stackTrace = error.stackTrace
+      if (stackTrace.isNotEmpty()) {
+        putString(DESCRIPTION_KEY, stackTrace.toString())
+      }
 
-            (error as? KnownException)?.let {
-                putString(ERROR_CODE, it.code)
-            }
-        }
+      (error as? KnownException)?.let {
+        putString(ERROR_CODE, it.code)
+      }
     }
-
 }

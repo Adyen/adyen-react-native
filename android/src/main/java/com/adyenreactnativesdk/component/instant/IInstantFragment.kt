@@ -7,13 +7,17 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
 
 interface IInstantFragment {
-    fun show(
-        fragmentManager: FragmentManager,
-        configuration: CheckoutConfiguration,
-        paymentMethod: PaymentMethod,
-        session: CheckoutSession?
-    )
+  fun show(
+    fragmentManager: FragmentManager,
+    configuration: CheckoutConfiguration,
+    paymentMethod: PaymentMethod,
+    session: CheckoutSession?,
+  )
 
-    fun handle(fragmentManager: FragmentManager, action: Action)
-    fun hide(fragmentManager: FragmentManager)
+  fun handle(
+    fragmentManager: FragmentManager,
+    action: Action,
+  )
+
+  fun hide(fragmentManager: FragmentManager)
 }

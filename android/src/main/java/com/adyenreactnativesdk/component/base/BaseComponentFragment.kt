@@ -26,76 +26,82 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
 abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<*>>(
-    private val paymentMethod: PaymentMethod,
-    protected var session: CheckoutSession? = null
-) :
-    BottomSheetDialogFragment() where TComponent : Component,
-                                      TComponent : ActionHandlingComponent {
+  private val paymentMethod: PaymentMethod,
+  protected var session: CheckoutSession? = null,
+) : BottomSheetDialogFragment() where TComponent : Component,
+        TComponent : ActionHandlingComponent {
+  var component: TComponent? = null
 
-    var component: TComponent? = null
+  private val advancedViewModel: AdvancedComponentViewModel<TState, ComponentData<TState>> by viewModels()
+  private val sessionViewModel: SessionsComponentViewModel<TState, ComponentData<TState>> by viewModels()
 
-    private val advancedViewModel: AdvancedComponentViewModel<TState, ComponentData<TState>> by viewModels()
-    private val sessionViewModel: SessionsComponentViewModel<TState, ComponentData<TState>> by viewModels()
-
-    internal val viewModel: ViewModelInterface<TState>
-        get() {
-            return if (session == null) advancedViewModel else sessionViewModel
-        }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.fragment_instant, container)
+  internal val viewModel: ViewModelInterface<TState>
+    get() {
+      return if (session == null) advancedViewModel else sessionViewModel
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { viewModel.componentDataFlow.collect(::setupComponent) }
-                launch { viewModel.events.collect(::onEvent) }
-            }
-        }
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?,
+  ): View = inflater.inflate(R.layout.fragment_instant, container)
 
-        viewModel.startPayment(paymentMethod, session)
+  override fun onViewCreated(
+    view: View,
+    savedInstanceState: Bundle?,
+  ) {
+    super.onViewCreated(view, savedInstanceState)
+    viewLifecycleOwner.lifecycleScope.launch {
+      repeatOnLifecycle(Lifecycle.State.STARTED) {
+        launch { viewModel.componentDataFlow.collect(::setupComponent) }
+        launch { viewModel.events.collect(::onEvent) }
+      }
     }
 
-    abstract fun setupComponent(componentData: ComponentData<TState>)
+    viewModel.startPayment(paymentMethod, session)
+  }
 
-    abstract fun runComponent()
+  abstract fun setupComponent(componentData: ComponentData<TState>)
 
-    private fun onEvent(event: ComponentEvent) {
-        when (event) {
-            is ComponentEvent.AdditionalAction -> {
-                component?.handleAction(event.action, requireActivity())
-            }
+  abstract fun runComponent()
 
-            is ComponentEvent.ComponentCreated -> {
-                runComponent()
-            }
-        }
+  private fun onEvent(event: ComponentEvent) {
+    when (event) {
+      is ComponentEvent.AdditionalAction -> {
+        component?.handleAction(event.action, requireActivity())
+      }
+
+      is ComponentEvent.ComponentCreated -> {
+        runComponent()
+      }
+    }
+  }
+
+  override fun onDestroyView() {
+    super.onDestroyView()
+    component = null
+  }
+
+  companion object {
+    const val FRAGMENT_ERROR =
+      "Not able to find AdyenComponentView in `component_view` fragment"
+
+    fun handle(
+      fragmentManager: FragmentManager,
+      action: Action,
+      tag: String,
+    ) {
+      val fragment = fragmentManager.findFragmentByTag(tag) as? BaseComponentFragment<*, *>
+      fragment?.isCancelable = false
+      fragment?.viewModel?.onAction(action)
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        component = null
+    fun hide(
+      fragmentManager: FragmentManager,
+      tag: String,
+    ) {
+      val fragment = fragmentManager.findFragmentByTag(tag) as? BottomSheetDialogFragment
+      fragment?.dismiss()
     }
-
-    companion object {
-        const val FRAGMENT_ERROR =
-            "Not able to find AdyenComponentView in `component_view` fragment"
-
-        fun handle(fragmentManager: FragmentManager, action: Action, tag: String) {
-            val fragment = fragmentManager.findFragmentByTag(tag) as? BaseComponentFragment<*, *>
-            fragment?.isCancelable = false
-            fragment?.viewModel?.onAction(action)
-        }
-
-        fun hide(fragmentManager: FragmentManager, tag: String) {
-            val fragment = fragmentManager.findFragmentByTag(tag) as? BottomSheetDialogFragment
-            fragment?.dismiss()
-        }
-    }
+  }
 }

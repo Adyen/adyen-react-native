@@ -9,6 +9,9 @@ package com.adyenreactnativesdk.component.base
 import com.adyen.checkout.components.core.action.Action
 
 sealed class ComponentEvent {
-    object ComponentCreated : ComponentEvent()
-    data class AdditionalAction(val action: Action) : ComponentEvent()
+  object ComponentCreated : ComponentEvent()
+
+  data class AdditionalAction(
+    val action: Action,
+  ) : ComponentEvent()
 }

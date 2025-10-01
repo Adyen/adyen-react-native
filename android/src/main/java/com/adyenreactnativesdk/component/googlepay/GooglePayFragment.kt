@@ -22,70 +22,77 @@ import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
 class GooglePayFragment(
-    private val configuration: CheckoutConfiguration,
-    paymentMethod: PaymentMethod,
-    session: CheckoutSession?
-) :
-    BaseComponentFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod, session) {
-
-    override fun setupComponent(componentData: ComponentData<GooglePayComponentState>) {
-        val session = session
-        val component = (if (session == null) componentData.callback?.let {
+  private val configuration: CheckoutConfiguration,
+  paymentMethod: PaymentMethod,
+  session: CheckoutSession?,
+) : BaseComponentFragment<GooglePayComponent, GooglePayComponentState>(paymentMethod, session) {
+  override fun setupComponent(componentData: ComponentData<GooglePayComponentState>) {
+    val session = session
+    val component =
+      (
+        if (session == null) {
+          componentData.callback?.let {
             GooglePayComponent.PROVIDER.get(
-                this,
-                componentData.paymentMethod,
-                configuration,
-                it,
+              this,
+              componentData.paymentMethod,
+              configuration,
+              it,
             )
-        } else componentData.sessionCallback?.let {
+          }
+        } else {
+          componentData.sessionCallback?.let {
             GooglePayComponent.PROVIDER.get(
-                this,
-                session,
-                componentData.paymentMethod,
-                configuration,
-                it
+              this,
+              session,
+              componentData.paymentMethod,
+              configuration,
+              it,
             )
-        }) ?: throw ModuleException.WrongFlow()
+          }
+        }
+      ) ?: throw ModuleException.WrongFlow()
 
-        this.component = component
-        AdyenCheckout.setComponent(component)
-        view?.findViewById<AdyenComponentView>(R.id.component_view)
-            ?.attach(component, this)
-            ?: { Log.e(TAG, FRAGMENT_ERROR) }
+    this.component = component
+    AdyenCheckout.setComponent(component)
+    view
+      ?.findViewById<AdyenComponentView>(R.id.component_view)
+      ?.attach(component, this)
+      ?: { Log.e(TAG, FRAGMENT_ERROR) }
 
-        viewModel.componentStarted()
+    viewModel.componentStarted()
+  }
+
+  companion object {
+    internal const val TAG = "GooglePayFragment"
+
+    private var googlePayScreenVisible = false
+
+    fun show(
+      fragmentManager: FragmentManager,
+      configuration: CheckoutConfiguration,
+      paymentMethod: PaymentMethod,
+      session: CheckoutSession?,
+    ) {
+      googlePayScreenVisible = false
+      GooglePayFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
     }
 
-    companion object {
-
-        internal const val TAG = "GooglePayFragment"
-
-        private var googlePayScreenVisible = false
-
-        fun show(
-            fragmentManager: FragmentManager,
-            configuration: CheckoutConfiguration,
-            paymentMethod: PaymentMethod,
-            session: CheckoutSession?
-        ) {
-            googlePayScreenVisible = false
-            GooglePayFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
-        }
-
-        fun handle(fragmentManager: FragmentManager, action: Action) {
-            handle(fragmentManager, action, TAG)
-        }
-
-        fun hide(fragmentManager: FragmentManager) {
-            hide(fragmentManager, TAG)
-        }
-
+    fun handle(
+      fragmentManager: FragmentManager,
+      action: Action,
+    ) {
+      handle(fragmentManager, action, TAG)
     }
 
-    override fun runComponent() {
-        if (!googlePayScreenVisible) {
-            component?.submit()
-            googlePayScreenVisible = true
-        }
+    fun hide(fragmentManager: FragmentManager) {
+      hide(fragmentManager, TAG)
     }
+  }
+
+  override fun runComponent() {
+    if (!googlePayScreenVisible) {
+      component?.submit()
+      googlePayScreenVisible = true
+    }
+  }
 }

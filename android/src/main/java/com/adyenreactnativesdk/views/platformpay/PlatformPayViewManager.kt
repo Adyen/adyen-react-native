@@ -13,17 +13,15 @@ import com.facebook.react.viewmanagers.PlatformPayViewManagerDelegate
 import com.facebook.react.viewmanagers.PlatformPayViewManagerInterface
 import com.google.android.gms.wallet.button.ButtonConstants
 
-
 @ReactModule(name = PlatformPayViewManager.NAME)
-class PlatformPayViewManager : SimpleViewManager<PlatformPayView>(),
+class PlatformPayViewManager :
+  SimpleViewManager<PlatformPayView>(),
   PlatformPayViewManagerInterface<PlatformPayView> {
   private val delegate: ViewManagerDelegate<PlatformPayView> = PlatformPayViewManagerDelegate(this)
 
   override fun getDelegate(): ViewManagerDelegate<PlatformPayView> = delegate
 
-  override fun getName(): String {
-    return NAME
-  }
+  override fun getName(): String = NAME
 
   public override fun createViewInstance(context: ThemedReactContext): PlatformPayView =
     PlatformPayView(context).apply {
@@ -38,17 +36,26 @@ class PlatformPayViewManager : SimpleViewManager<PlatformPayView>(),
   }
 
   @ReactProp(name = "theme", defaultInt = ButtonConstants.ButtonTheme.DARK)
-  override fun setTheme(view: PlatformPayView?, value: Int) {
+  override fun setTheme(
+    view: PlatformPayView?,
+    value: Int,
+  ) {
     view?.theme = ButtonTheme.fromInt(value)
   }
 
   @ReactProp(name = "type", defaultInt = ButtonConstants.ButtonType.BUY)
-  override fun setType(view: PlatformPayView?, value: Int) {
+  override fun setType(
+    view: PlatformPayView?,
+    value: Int,
+  ) {
     view?.type = ButtonType.fromInt(value)
   }
 
   @ReactProp(name = "radius", defaultInt = 10)
-  override fun setRadius(view: PlatformPayView?, value: Int) {
+  override fun setRadius(
+    view: PlatformPayView?,
+    value: Int,
+  ) {
     view?.radius = PixelUtil.toPixelFromDIP(value.toDouble()).toInt()
   }
 
@@ -56,21 +63,23 @@ class PlatformPayViewManager : SimpleViewManager<PlatformPayView>(),
     const val NAME = "PlatformPayView"
   }
 
-  private fun emitOnPressEvent(context: ReactContext, viewId: Int) {
+  private fun emitOnPressEvent(
+    context: ReactContext,
+    viewId: Int,
+  ) {
     val surfaceId = UIManagerHelper.getSurfaceId(context)
     val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, viewId)
     val event = OnPressEvent(surfaceId, viewId)
     eventDispatcher?.dispatchEvent(event)
   }
 
-  override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> {
-    return mapOf(OnPressEvent.EVENT_NAME to mapOf("registrationName" to "onButtonPress"))
-  }
+  override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> =
+    mapOf(OnPressEvent.EVENT_NAME to mapOf("registrationName" to "onButtonPress"))
 }
 
 class OnPressEvent(
   surfaceId: Int,
-  viewId: Int
+  viewId: Int,
 ) : Event<OnPressEvent>(surfaceId, viewId) {
   override fun getEventName() = EVENT_NAME
 

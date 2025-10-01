@@ -26,60 +26,68 @@ import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
 class IdealFragment(
-    private val configuration: CheckoutConfiguration,
-    paymentMethod: PaymentMethod,
-    session: CheckoutSession?
-) :
-    BaseComponentFragment<IdealComponent, IdealComponentState>(paymentMethod, session) {
-
-    override fun setupComponent(componentData: ComponentData<IdealComponentState>) {
-        val session = session
-        val component = (if (session == null) componentData.callback?.let {
+  private val configuration: CheckoutConfiguration,
+  paymentMethod: PaymentMethod,
+  session: CheckoutSession?,
+) : BaseComponentFragment<IdealComponent, IdealComponentState>(paymentMethod, session) {
+  override fun setupComponent(componentData: ComponentData<IdealComponentState>) {
+    val session = session
+    val component =
+      (
+        if (session == null) {
+          componentData.callback?.let {
             IdealComponent.PROVIDER.get(
-                this,
-                componentData.paymentMethod,
-                configuration,
-                it,
+              this,
+              componentData.paymentMethod,
+              configuration,
+              it,
             )
-        } else componentData.sessionCallback?.let {
+          }
+        } else {
+          componentData.sessionCallback?.let {
             IdealComponent.PROVIDER.get(
-                this,
-                session,
-                componentData.paymentMethod,
-                configuration,
-                it
+              this,
+              session,
+              componentData.paymentMethod,
+              configuration,
+              it,
             )
-        }) ?: throw ModuleException.WrongFlow()
+          }
+        }
+      ) ?: throw ModuleException.WrongFlow()
 
-        this.component = component
-        AdyenCheckout.setComponent(component)
-        view?.findViewById<AdyenComponentView>(R.id.component_view)
-            ?.attach(component, this)
-            ?: { Log.e(TAG, FRAGMENT_ERROR) }
+    this.component = component
+    AdyenCheckout.setComponent(component)
+    view
+      ?.findViewById<AdyenComponentView>(R.id.component_view)
+      ?.attach(component, this)
+      ?: { Log.e(TAG, FRAGMENT_ERROR) }
+  }
+
+  companion object : IInstantFragment {
+    internal const val TAG = "IdealFragment"
+
+    override fun show(
+      fragmentManager: FragmentManager,
+      configuration: CheckoutConfiguration,
+      paymentMethod: PaymentMethod,
+      session: CheckoutSession?,
+    ) {
+      IdealFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
     }
 
-    companion object : IInstantFragment {
-        internal const val TAG = "IdealFragment"
-
-        override fun show(
-            fragmentManager: FragmentManager,
-            configuration: CheckoutConfiguration,
-            paymentMethod: PaymentMethod,
-            session: CheckoutSession?
-        ) {
-            IdealFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
-        }
-
-        override fun handle(fragmentManager: FragmentManager, action: Action) {
-            handle(fragmentManager, action, TAG)
-        }
-
-        override fun hide(fragmentManager: FragmentManager) {
-            hide(fragmentManager, TAG)
-        }
-
+    override fun handle(
+      fragmentManager: FragmentManager,
+      action: Action,
+    ) {
+      handle(fragmentManager, action, TAG)
     }
 
-    override fun runComponent() { /* No action needed */
+    override fun hide(fragmentManager: FragmentManager) {
+      hide(fragmentManager, TAG)
     }
+  }
+
+  override fun runComponent() { // No action needed
+  }
 }
