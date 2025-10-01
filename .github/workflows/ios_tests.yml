@@ -8,17 +8,13 @@ on:
     inputs:
       device-version:
         required: false
-        default: 15
+        default: 17
         type: number
-      react-native-version:
-        required: false
-        default: '0.71.14'
-        type: string
 
 jobs:
   ios_tests:
     name: Test iOS
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
