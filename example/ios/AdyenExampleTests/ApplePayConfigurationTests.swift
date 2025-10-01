@@ -408,13 +408,34 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertTrue(paymentRequest.requiredBillingContactFields.contains(.postalAddress))
     }
 
+    func test_requiredBillingContactFields_parsesCorrectFields_includingAliases() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "applepay": [
+                "merchantID": "merchant.com.adyen.test",
+                "merchantName": "SomeName",
+                "requiredBillingContactFields": ["phone", "email", "post", "invalid"]
+            ]
+        ]
+        let sut = ApplepayConfigurationParser(configuration: configDict)
+
+        // WHEN
+        let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+
+        // THEN
+        XCTAssertEqual(paymentRequest.requiredBillingContactFields.count, 4)
+        XCTAssertTrue(paymentRequest.requiredBillingContactFields.contains(.phoneNumber))
+        XCTAssertTrue(paymentRequest.requiredBillingContactFields.contains(.emailAddress))
+        XCTAssertTrue(paymentRequest.requiredBillingContactFields.contains(.postalAddress))
+    }
+
     func test_requiredShippingContactFields_returnsCorrectFields_whenProvided() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "applepay": [
                 "merchantID": "merchant.com.adyen.test",
                 "merchantName": "SomeName",
-                "requiredShippingContactFields": ["email", "phone", "phoneticName", "name", "post"]
+                "requiredShippingContactFields": ["emailAddress", "phoneNumber", "phoneticName", "name", "postalAddress"]
             ]
         ]
         let sut = ApplepayConfigurationParser(configuration: configDict)
@@ -429,25 +450,6 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.name))
         XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.phoneticName))
         XCTAssertTrue(paymentRequest.requiredShippingContactFields.contains(.postalAddress))
-    }
-
-    // 'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email';
-    func test_pkContactField_mapsCorrectly_forAllTypes() throws {
-        // GIVEN
-        let contactFields: [String] = ["phoneNumber", "phone", "emailAddress", "email", "postalAddress", "post", "phoneticName", "name"]
-        
-        // WHEN
-        let mappedFields: [PKContactField] = contactFields.compactMap { PKContactField(rawValue: $0) }
-        
-        // THEN
-        XCTAssertEqual(mappedFields.count, 8)
-        XCTAssertTrue(mappedFields.contains(.phoneNumber))
-        XCTAssertTrue(mappedFields.contains(.emailAddress))
-        XCTAssertTrue(mappedFields.contains(.postalAddress))
-        XCTAssertTrue(mappedFields.contains(.phoneticName))
-        XCTAssertTrue(mappedFields.contains(.name))
-        XCTAssertEqual(PKContactField(rawValue: "phoneticName"), PKContactField.phoneticName)
-        XCTAssertEqual(PKContactField(rawValue: "name"), PKContactField.name)
     }
 
     func test_shippingType_returnsCorrectValue_whenConfigured() {
