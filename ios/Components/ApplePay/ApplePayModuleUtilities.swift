@@ -18,9 +18,9 @@ extension PKPaymentNetwork {
 
     internal var txVariantName: String {
         switch self {
-            case .masterCard: return "mc"
-            case .cartesBancaires: return "cartebancaire"
-            default: return self.rawValue.lowercased()
+        case .masterCard: return "mc"
+        case .cartesBancaires: return "cartebancaire"
+        default: return self.rawValue.lowercased()
         }
     }
 

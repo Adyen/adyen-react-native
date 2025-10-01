@@ -208,9 +208,9 @@ extension BaseModule {
                 return "noPaymentMethod"
             case .notKeyWindow:
                 return "notKeyWindow"
-            case .balanceCheck(_):
+            case .balanceCheck:
                 return "balanceCheck"
-            case .orderRequest(_):
+            case .orderRequest:
                 return "orderRequest"
             }
         }

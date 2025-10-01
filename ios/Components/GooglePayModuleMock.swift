@@ -23,6 +23,6 @@ internal class GooglePayModuleMock: BaseModule {
                      configuration: NSDictionary,
                      resolver: @escaping RCTPromiseResolveBlock,
                      rejecter: @escaping RCTPromiseRejectBlock) {
-      resolver(false)
+        resolver(false)
     }
 }

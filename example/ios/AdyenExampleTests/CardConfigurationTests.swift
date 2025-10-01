@@ -10,9 +10,9 @@ import PassKit
 import XCTest
 
 class AddressLookupProviderMock: AddressLookupProvider {
-  func lookUp(searchTerm: String, resultHandler: @escaping ([Adyen.LookupAddressModel]) -> Void) {
-    // Do nothing
-  }
+    func lookUp(searchTerm: String, resultHandler: @escaping ([Adyen.LookupAddressModel]) -> Void) {
+        // Do nothing
+    }
 }
 
 final class CardConfigurationTests: XCTestCase {
@@ -20,96 +20,175 @@ final class CardConfigurationTests: XCTestCase {
     let mockAmount = Amount(value: 1000, currencyCode: "USD", localeIdentifier: "en-US")
     let mockAddressLookupProvider = AddressLookupProviderMock()
 
-    func testNewDictionary() throws {
-      let sut = CardConfigurationParser(configuration: NSDictionary(), delegate: mockAddressLookupProvider)
+    func test_initialization_createsConfiguration_withEmptyDictionary() throws {
+        // GIVEN
+        let emptyDict = NSDictionary()
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: emptyDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
         XCTAssertNotNil(sut.configuration)
     }
 
-    func testEmptyDictionary() throws {
-        let sut = CardConfigurationParser(configuration: [:], delegate: mockAddressLookupProvider)
+    func test_initialization_createsConfiguration_withEmptySubDictionary() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": [:]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
         XCTAssertNotNil(sut.configuration)
     }
 
-    func testEmptySubDictionary() throws {
-        let sut = CardConfigurationParser(configuration: ["card": [:]], delegate: mockAddressLookupProvider)
-        XCTAssertNotNil(sut.configuration)
-    }
-
-    func testShowStorePaymentField() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["showStorePaymentField": false]], delegate: mockAddressLookupProvider)
+    func test_configuration_setsShowStorePaymentField_whenProvided() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["showStorePaymentField": false]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
         XCTAssertFalse(sut.configuration.showsStorePaymentMethodField)
     }
 
-    func testHolderNameRequired() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["holderNameRequired": true]], delegate: mockAddressLookupProvider)
+    func test_configuration_setsShowsHolderNameField_whenHolderNameRequired() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["holderNameRequired": true]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
         XCTAssertTrue(sut.configuration.showsHolderNameField)
     }
 
-    func testHideCvcStoredCard() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["hideCvcStoredCard": false]], delegate: mockAddressLookupProvider)
+    func test_configuration_setsShowsSecurityCodeField_forStoredCard() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["hideCvcStoredCard": false]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
         XCTAssertTrue(sut.configuration.stored.showsSecurityCodeField) // inverted
     }
 
-    func testHideCvc() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["hideCvc": false]], delegate: mockAddressLookupProvider)
-      XCTAssertTrue(sut.configuration.showsSecurityCodeField) // inverted
+    func test_configuration_setsShowsSecurityCodeField_whenHideCvcIsFalse() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["hideCvc": false]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertTrue(sut.configuration.showsSecurityCodeField) // inverted
     }
 
-    func testFullAddressVisibility() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "full"]], delegate: mockAddressLookupProvider)
-      XCTAssertEqual(sut.configuration.billingAddress.mode, .full)
+    func test_configuration_setsBillingAddressMode_toFull() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["addressVisibility": "full"]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.billingAddress.mode, .full)
     }
 
-  func testPostalAddressVisibility() throws {
-      let sut = CardConfigurationParser(configuration: ["card": ["addressVisibility": "postal"]], delegate: mockAddressLookupProvider)
-    XCTAssertEqual(sut.configuration.billingAddress.mode, .postalCode)
-  }
-
-    func testHideKcpVisibility() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["kcpVisibility": "hide"]], delegate: mockAddressLookupProvider)
-      XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .hide)
+    func test_configuration_setsBillingAddressMode_toPostalCode() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["addressVisibility": "postal"]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.billingAddress.mode, .postalCode)
     }
 
-  func testShowKcpVisibility() throws {
-      let sut = CardConfigurationParser(configuration: ["card": ["kcpVisibility": "show"]], delegate: mockAddressLookupProvider)
-    XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .show)
-  }
-
-    func testHideSocialSecurity() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["socialSecurity": "hide"]], delegate: mockAddressLookupProvider)
-      XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .hide)
+    func test_configuration_setsKoreanAuthenticationMode_toHide() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["kcpVisibility": "hide"]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .hide)
     }
 
-  func testShowSocialSecurity() throws {
-      let sut = CardConfigurationParser(configuration: ["card": ["socialSecurity": "show"]], delegate: mockAddressLookupProvider)
-    XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .show)
-  }
-
-    func testAllowedCardTypes() throws {
-      let sut = CardConfigurationParser(configuration: ["card": ["supported": ["visa", "mc", "maestro"]]], delegate: mockAddressLookupProvider)
-      XCTAssertEqual(sut.configuration.allowedCardTypes?.count, 3)
+    func test_configuration_setsKoreanAuthenticationMode_toShow() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["kcpVisibility": "show"]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .show)
     }
 
-    func testBillingAddressCountryCodes() throws {
-        let sut = CardConfigurationParser(configuration: ["card": ["allowedAddressCountryCodes": ["GB", "US"]]], delegate: mockAddressLookupProvider)
-      XCTAssertEqual(sut.configuration.billingAddress.countryCodes?.count, 2)
+    func test_configuration_setsSocialSecurityNumberMode_toHide() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["socialSecurity": "hide"]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .hide)
+    }
+
+    func test_configuration_setsSocialSecurityNumberMode_toShow() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["socialSecurity": "show"]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .show)
+    }
+
+    func test_configuration_setsAllowedCardTypes_whenProvided() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["supported": ["visa", "mc", "maestro"]]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.allowedCardTypes?.count, 3)
+    }
+
+    func test_configuration_setsBillingAddressCountryCodes_whenProvided() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["allowedAddressCountryCodes": ["GB", "US"]]]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertEqual(sut.configuration.billingAddress.countryCodes?.count, 2)
     }
 
 }
 
 extension CardComponent.AddressFormType: Equatable {
 
-  public static func == (lhs: Self, rhs: Self) -> Bool {
-    switch (lhs, rhs) {
-    case (.full, .full):
-      return true
-    case (.none, .none):
-      return true
-    case (.postalCode, .postalCode):
-      return true
-    default:
-      return false
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        switch (lhs, rhs) {
+        case (.full, .full):
+            return true
+        case (.none, .none):
+            return true
+        case (.postalCode, .postalCode):
+            return true
+        default:
+            return false
+        }
     }
-  }
 
 }

@@ -4,26 +4,43 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-
-import XCTest
 import Adyen
 @testable import adyen_react_native
+import XCTest
 
 class PartialPaymentParserTests: XCTestCase {
 
-  func testInit() {
-    let sut = PartialPaymentParser(configuration: ["partialPayment": [:]])
-    XCTAssertNotNil(sut)
-    XCTAssertTrue(sut.pinRequired)
-  }
+    func test_initialization_defaultsToPinRequired_withEmptyConfiguration() {
+        // GIVEN
+        let configDict: NSDictionary = ["partialPayment": [:]]
+        
+        // WHEN
+        let sut = PartialPaymentParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertNotNil(sut)
+        XCTAssertTrue(sut.pinRequired)
+    }
 
-  func testRequiredPinFalse() {
-    let sut = PartialPaymentParser(configuration: ["pinRequired": false as NSNumber])
-    XCTAssertFalse(sut.pinRequired)
-  }
+    func test_pinRequired_returnsFalse_whenConfiguredAsFalse() {
+        // GIVEN
+        let configDict: NSDictionary = ["pinRequired": false as NSNumber]
 
-  func testRequiredPinTrue() {
-    let sut = PartialPaymentParser(configuration: ["pinRequired": true as NSNumber])
-    XCTAssertTrue(sut.pinRequired)
-  }
+        // WHEN
+        let sut = PartialPaymentParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertFalse(sut.pinRequired)
+    }
+
+    func test_pinRequired_returnsTrue_whenConfiguredAsTrue() {
+        // GIVEN
+        let configDict: NSDictionary = ["pinRequired": true as NSNumber]
+
+        // WHEN
+        let sut = PartialPaymentParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertTrue(sut.pinRequired)
+    }
 }

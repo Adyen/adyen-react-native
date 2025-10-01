@@ -1,39 +1,69 @@
-  //
-  // Copyright (c) 2024 Adyen N.V.
-  //
-  // This file is open source and available under the MIT license. See the LICENSE file for more info.
-  //
+//
+// Copyright (c) 2024 Adyen N.V.
+//
+// This file is open source and available under the MIT license. See the LICENSE file for more info.
+//
 
-  import XCTest
-  import Adyen
-  @testable import adyen_react_native
+import Adyen
+@testable import adyen_react_native
+import XCTest
 
-  class AnalyticsParserTests: XCTestCase {
+class AnalyticsParserTests: XCTestCase {
 
-    func testInit() {
-      let sut = AnalyticsParser(configuration: ["analitics":[:]])
-      XCTAssertNotNil(sut)
-      XCTAssertTrue(sut.analyticsOn)
-      XCTAssertFalse(sut.verboseLogsOn)
+    func test_initialization_createsDefaultConfiguration() {
+        // GIVEN
+        let configuration: NSDictionary = ["analytics": [:]]
+
+        // WHEN
+        let sut = AnalyticsParser(configuration: configuration)
+        
+        // THEN
+        XCTAssertNotNil(sut)
+        XCTAssertTrue(sut.analyticsOn)
+        XCTAssertFalse(sut.verboseLogsOn)
     }
 
-    func testEnableAnalyticFalse() {
-      let sut = AnalyticsParser(configuration: ["enabled": false as NSNumber])
-      XCTAssertFalse(sut.analyticsOn)
+    func test_analyticsOn_returnsFalse_whenEnabledIsFalse() {
+        // GIVEN
+        let configuration: NSDictionary = ["enabled": false as NSNumber]
+
+        // WHEN
+        let sut = AnalyticsParser(configuration: configuration)
+        
+        // THEN
+        XCTAssertFalse(sut.analyticsOn)
     }
 
-    func testEnableAnalyticTrue() {
-      let sut = AnalyticsParser(configuration: ["enabled": true as NSNumber])
-      XCTAssertTrue(sut.analyticsOn)
+    func test_analyticsOn_returnsTrue_whenEnabledIsTrue() {
+        // GIVEN
+        let configuration: NSDictionary = ["enabled": true as NSNumber]
+
+        // WHEN
+        let sut = AnalyticsParser(configuration: configuration)
+        
+        // THEN
+        XCTAssertTrue(sut.analyticsOn)
     }
 
-    func testVerboseLogsTrue() {
-      let sut = AnalyticsParser(configuration: ["verboseLogs": true as NSNumber])
-      XCTAssertTrue(sut.verboseLogsOn)
+    func test_verboseLogsOn_returnsTrue_whenVerboseLogsIsTrue() {
+        // GIVEN
+        let configuration: NSDictionary = ["verboseLogs": true as NSNumber]
+
+        // WHEN
+        let sut = AnalyticsParser(configuration: configuration)
+        
+        // THEN
+        XCTAssertTrue(sut.verboseLogsOn)
     }
 
-    func testVerboseLogsFalse() {
-      let sut = AnalyticsParser(configuration: ["verboseLogs": false as NSNumber])
-      XCTAssertFalse(sut.verboseLogsOn)
+    func test_verboseLogsOn_returnsFalse_whenVerboseLogsIsFalse() {
+        // GIVEN
+        let configuration: NSDictionary = ["verboseLogs": false as NSNumber]
+        
+        // WHEN
+        let sut = AnalyticsParser(configuration: configuration)
+        
+        // THEN
+        XCTAssertFalse(sut.verboseLogsOn)
     }
-  }
+}

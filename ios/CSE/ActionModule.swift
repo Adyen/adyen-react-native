@@ -12,7 +12,7 @@ import React
 @objc(AdyenAction)
 internal final class ActionModule: BaseModule, ActionComponentDelegate {
 
-    @objc override public func supportedEvents() -> [String]! { [] }
+    @objc override func supportedEvents() -> [String]! { [] }
 
     @objc override func constantsToExport() -> [AnyHashable: Any]! {
         [Constant.threeDS2SdkVersionName: threeDS2SdkVersion]
