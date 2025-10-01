@@ -72,6 +72,7 @@ class RootConfigurationParserTest {
 
     // THEN
     assertNotNull(sut.amount)
+    assertEquals(sut.amount?.value, 123456L)
   }
 
   @Test
@@ -87,6 +88,7 @@ class RootConfigurationParserTest {
 
     // THEN
     assertNotNull(sut.amount)
+    assertEquals(sut.amount?.value, -1L)
   }
 
   @Test
