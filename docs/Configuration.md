@@ -33,7 +33,7 @@
 | `skipListWhenSinglePaymentMethod`                                          | When set to **true**, allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.                                                                                                                                                                              | No       |
 | `title`                                                                    | Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name is used. This property has no effect on Android.                                                                                                                                                                   | No       |
 | `showRemovePaymentMethodButton`                                            | When set to **true**, the shopper can remove stored payment details using the UI. Defaults to **false**. For the `/sessions` flow, this option works out of the box. For the `/payments`(aka Advanced) flow, you must also use the `onDisableStorePaymentMethod` callback.                                           | No       |
-| `onDisableStoredPaymentMethod(storedPaymentMethod, resolve, reject) => {}` | Called when `showRemovePaymentMethodButton` is **true** and the shopper selects to remove stored payment details during the `/payments` (aka Advanced) flow. Make a POST [`/disable`](https://docs.adyen.com/api-explorer/Recurring/68/post/disable) request. If succesfull, call `resolve()`, otherwise `reject()`. | No       |
+| `onDisableStoredPaymentMethod(storedPaymentMethod, resolve, reject) => {}` | Called when `showRemovePaymentMethodButton` is **true** and the shopper selects to remove stored payment details during the `/payments` (aka Advanced) flow. Make a POST [`/disable`](https://docs.adyen.com/api-explorer/Recurring/68/post/disable) request. If successful, call `resolve()`, otherwise `reject()`. | No       |
 
 ### Card component
 
@@ -47,7 +47,7 @@
 | `kcpVisibility`                             | Indicates whether to show the security fields for South Korea-issued cards. Options: **"show"** or **"hide"**. Defaults to **"hide"**.                    | No       |
 | `showStorePaymentField`                     | Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**.                                         | No       |
 | `socialSecurity`                            | Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**. | No       |
-| `supported`                                 | The list of allowed card types. By default, a list of `brands` from the payment method is used. Fallbacks to list of all known cards.                     | No       |
+| `supported`                                 | The list of allowed card types. By default, a list of `brands` from the payment method is used. Fallbacks to a list of all known cards.                     | No       |
 | `onUpdateAddress: (prompt, lookup) => {}`   | The callback to provide `lookup` results for shopper-selected `prompt`. Used when `addressVisibility` is set to **lookup**                                | No       |
 | `onConfirmAddress: (address, lookup) => {}` | The callback to confirm the selected `address` to the `lookup`. Used when `addressVisibility` is set to **lookup**                                        | No       |
 | `onBinLookup: (binData) => {}`              | An optional callback that is triggered when the BIN lookup data is available.                                                                             | No       |
@@ -77,7 +77,7 @@
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | `merchantID`                    | The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.                                                                                                                                                                                                                                                                             | Yes                                     |
 | `merchantName`                  | The merchant name. This value will be used to generate a single _PKPaymentSummaryItem_.                                                                                                                                                                                                                                                                                                     | Yes, if `summaryItems` is not provided. |
-| `allowOnboarding`               | The flag to toggle onboarding. If **true**, allow the shopper to add cards to Apple Pay if none exist yet or none is applicable. If **false**, Apple Pay is disabled when the shopper doesn’t have supported cards on the Apple Pay wallet. The default is **false**.                                                                                                                       | No                                      |
+| `allowOnboarding`               | The flag to toggle onboarding. If **true**, allow the shopper to add cards to Apple Pay if none exist yet or none are applicable. If **false**, Apple Pay is disabled when the shopper doesn’t have supported cards on the Apple Pay wallet. The default is **false**.                                                                                                                       | No                                      |
 | `summaryItems`                  | An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. <br>**WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. | Yes, if `merchantName` is not provided. |
 | `requiredShippingContactFields` | A list of fields that you need for a shipping contact to process the transaction. The list is empty by default.                                                                                                                                                                                                                                                                             | No                                      |
 | `requiredBillingContactFields`  | A list of fields that you need for a billing contact to process the transaction. The list is empty by default.                                                                                                                                                                                                                                                                              | No                                      |
@@ -243,7 +243,7 @@ const configuration = {
             description: 'My Subscription',
             regularBilling: {
               amount: 1000,
-              label: 'Monthy payment',
+              label: 'Monthly payment',
               intervalCount: 1,
               intervalUnit: 'month',
               startDate: new Date('2025-04-28'),
@@ -251,7 +251,7 @@ const configuration = {
             managementURL: 'https://my-domain.com/managementURL',
             trialBilling: {
               amount: 10,
-              label: 'Trail week',
+              label: 'Trial week',
               intervalCount: 7,
               intervalUnit: 'day',
               endDate: new Date('2025-04-21'),
