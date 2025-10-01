@@ -18,7 +18,7 @@ class ThreeDSConfigurationParser(config: ReadableMap) {
         } else this.config = config
     }
 
-    private val requestorAppUrl: String?
+    internal val requestorAppUrl: String?
         get() = if (config.hasKey(REQUESTOR_APP_URL_KEY)) {
             config.getString(REQUESTOR_APP_URL_KEY)
         } else null

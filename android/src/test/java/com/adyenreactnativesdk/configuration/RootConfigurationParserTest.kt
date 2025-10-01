@@ -1,26 +1,49 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.configuration
 
 import com.adyen.checkout.core.Environment
-import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RootConfigurationParserTest {
 
     @Test
-    fun getClientKeyParameters() {
+    fun test_initialization_usesDefaultValues_withEmptyConfiguration() {
+        // GIVEN
+        val map = WritableMapMock()
+        
+        // WHEN
+        val sut = RootConfigurationParser(map)
+        
+        // THEN
+        assertEquals(Environment.TEST, sut.environment)
+        assertNull(sut.amount)
+        assertNull(sut.clientKey)
+        assertNull(sut.countryCode)
+    }
+
+    @Test
+    fun test_clientKey_returnsConfiguredValue_whenProvided() {
         // GIVEN
         val map = WritableMapMock()
         map.putString(RootConfigurationParser.CLIENT_KEY_KEY, "test_SOMEVALUE")
 
         // WHEN
-        val rootParser = RootConfigurationParser(map)
+        val sut = RootConfigurationParser(map)
 
         // THEN
-        Assert.assertNotNull(rootParser.clientKey)
+        assertEquals("test_SOMEVALUE", sut.clientKey)
     }
 
     @Test
-    fun getAmountParameters() {
+    fun test_amount_parsesNumericValue_whenConfiguredWithIntegerAmount() {
         // GIVEN
         val map = WritableMapMock()
         val amountmap = WritableMapMock()
@@ -29,39 +52,106 @@ class RootConfigurationParserTest {
         map.putMap(RootConfigurationParser.AMOUNT_KEY, amountmap)
 
         // WHEN
-        val rootParser = RootConfigurationParser(map)
+        val sut = RootConfigurationParser(map)
 
         // THEN
-        Assert.assertNotNull(rootParser.amount)
-        Assert.assertEquals(rootParser.amount?.value, 123456.toLong())
-        Assert.assertEquals(rootParser.amount?.currency, "USD")
+        assertNotNull(sut.amount)
+        assertEquals(123456.toLong(), sut.amount?.value)
+        assertEquals("USD", sut.amount?.currency)
+    }
+    
+    @Test
+    fun test_amount_returns_whenCurrencyIsMissing() {
+        // GIVEN
+        val map = WritableMapMock()
+        val amountmap = WritableMapMock()
+        amountmap.putInt("value", 123456)
+        map.putMap(RootConfigurationParser.AMOUNT_KEY, amountmap)
+        
+        // WHEN
+        val sut = RootConfigurationParser(map)
+        
+        // THEN
+        assertNotNull(sut.amount)
+    }
+    
+    @Test
+    fun test_amount_returns_whenValueIsMissing() {
+        // GIVEN
+        val map = WritableMapMock()
+        val amountmap = WritableMapMock()
+        amountmap.putString("currency", "USD")
+        map.putMap(RootConfigurationParser.AMOUNT_KEY, amountmap)
+        
+        // WHEN
+        val sut = RootConfigurationParser(map)
+        
+        // THEN
+        assertNotNull(sut.amount)
     }
 
     @Test
-    fun getLiveEnvironment() {
+    fun test_environment_returnsLiveEurope_whenConfiguredWithLive() {
         // GIVEN
         val map = WritableMapMock()
         map.putString(RootConfigurationParser.ENVIRONMENT_KEY, "live")
 
         // WHEN
-        val rootParser = RootConfigurationParser(map)
-        val environment = rootParser.environment
+        val sut = RootConfigurationParser(map)
 
         // THEN
-        Assert.assertEquals(Environment.EUROPE, environment)
+        assertEquals(Environment.EUROPE, sut.environment)
     }
-
+    
     @Test
-    fun getInvalidEnvironment() {
+    fun test_environment_returnsLiveUnitedStates_whenConfiguredWithLiveUS() {
+        // GIVEN
+        val map = WritableMapMock()
+        map.putString(RootConfigurationParser.ENVIRONMENT_KEY, "live-us")
+
+        // WHEN
+        val sut = RootConfigurationParser(map)
+
+        // THEN
+        assertEquals(Environment.UNITED_STATES, sut.environment)
+    }
+    
+    @Test
+    fun test_environment_returnsLiveAustralia_whenConfiguredWithLiveAU() {
+        // GIVEN
+        val map = WritableMapMock()
+        map.putString(RootConfigurationParser.ENVIRONMENT_KEY, "live-au")
+
+        // WHEN
+        val sut = RootConfigurationParser(map)
+
+        // THEN
+        assertEquals(Environment.AUSTRALIA, sut.environment)
+    }
+    
+    @Test
+    fun test_environment_returnsTest_whenConfiguredWithInvalidValue() {
         // GIVEN
         val map = WritableMapMock()
         map.putString(RootConfigurationParser.ENVIRONMENT_KEY, "beta")
 
         // WHEN
-        val rootParser = RootConfigurationParser(map)
-        val environment = rootParser.environment
+        val sut = RootConfigurationParser(map)
 
         // THEN
-        Assert.assertEquals(Environment.TEST, environment)
+        assertEquals(Environment.TEST, sut.environment)
+    }
+    
+    @Test
+    fun test_countryCode_returnsConfiguredValue_whenProvided() {
+        // GIVEN
+        val map = WritableMapMock()
+        map.putString(RootConfigurationParser.COUNTRY_CODE_KEY, "US")
+        
+        // WHEN
+        val sut = RootConfigurationParser(map)
+        
+        // THEN
+        assertEquals("US", sut.countryCode)
     }
 }
