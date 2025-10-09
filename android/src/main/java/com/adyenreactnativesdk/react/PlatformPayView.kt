@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.views.platformpay
+package com.adyenreactnativesdk.react
 
 import android.annotation.SuppressLint
 import android.widget.FrameLayout

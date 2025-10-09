@@ -140,7 +140,7 @@
     "type": "all",
     "jsSrcsDir": "src/specs",
     "android": {
-      "javaPackageName": "com.adyen.reactnative"
+      "javaPackageName": "com.adyenreactnativesdk.react"
     },
     "ios": {
       "componentProvider": {

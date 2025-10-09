@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.views.platformpay
+package com.adyenreactnativesdk.react
 
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.module.annotations.ReactModule
