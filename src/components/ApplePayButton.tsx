@@ -1,6 +1,6 @@
 import { type StyleProp, type ViewStyle } from 'react-native';
 import { useCallback } from 'react';
-import { PlatformPayView } from '..';
+import PlatformPayView from '../specs/NativePlatformPayView';
 import Styles from './common/Styles';
 
 export const ApplePayButtonTheme = {
