@@ -27,7 +27,7 @@ class AdyenCheckoutError extends Error {
 
     this.name = AdyenCheckoutError.errorTypes[type];
 
-    this.cause = options?.cause;
+    this.cause = options;
   }
 }
 

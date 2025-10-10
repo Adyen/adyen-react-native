@@ -18,16 +18,10 @@
     "payments",
     "components"
   ],
-  "main": "./lib/module/index.js",
+  "main": "./lib/commonjs/index.js",
+  "module": "lib/module/index.js",
   "source": "./src/index.ts",
   "types": "./lib/typescript/src/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./lib/typescript/src/index.d.ts",
-      "default": "./lib/module/index.js"
-    },
-    "./package.json": "./package.json"
-  },
   "files": [
     "lib",
     "android",
@@ -112,18 +106,9 @@
     "source": "src",
     "output": "lib",
     "targets": [
-      [
-        "module",
-        {
-          "esm": true
-        }
-      ],
-      [
-        "typescript",
-        {
-          "project": "tsconfig.build.json"
-        }
-      ]
+      "commonjs",
+      "module",
+      "typescript"
     ]
   },
   "jest": {
