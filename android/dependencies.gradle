@@ -1,6 +1,6 @@
 ext {
     // Code quality
-    jacoco_version = '0.8.12'
+    jacoco_version = '0.8.14'
 
     // Adyen Dependencies
     adyen_version = "5.14.0"
