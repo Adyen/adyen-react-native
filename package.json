@@ -18,6 +18,7 @@
     "payments",
     "components"
   ],
+  "react-native": "src/index.ts",
   "main": "./lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "source": "./src/index.ts",
