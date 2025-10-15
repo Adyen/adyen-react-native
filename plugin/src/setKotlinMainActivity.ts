@@ -24,8 +24,8 @@ export function setKotlinMainActivity(
   const importBlock = uniqueImports.join('\n') + '\n';
 
   contents = contents.replace(
-    'class MainActivity : ReactActivity() {',
-    importBlock + 'class MainActivity : ReactActivity() {'
+    'class MainActivity : ReactActivity(',
+    importBlock + '\n' + 'class MainActivity : ReactActivity('
   );
 
   // on Create
