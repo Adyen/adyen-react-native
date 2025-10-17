@@ -24,14 +24,14 @@ export function setKotlinMainActivity(
   const importBlock = uniqueImports.join('\n') + '\n';
 
   contents = contents.replace(
-    'class MainActivity : ReactActivity(',
-    importBlock + '\n' + 'class MainActivity : ReactActivity('
+    /class\s+MainActivity\s*:\s*ReactActivity\s*\(/,
+    (match) => `${importBlock}\n${match}`
   );
 
   // on Create
   contents = contents.replace(
-    'super.onCreate(null)',
-    'super.onCreate(null)\n    AdyenCheckout.setLauncherActivity(this)'
+    /super\.onCreate\(null\)/,
+    (match) => `${match}\n    AdyenCheckout.setLauncherActivity(this)`
   );
 
   // on NewIntent
@@ -46,22 +46,13 @@ export function setKotlinMainActivity(
 
   if (contents.includes(onNewIntentSignature)) {
     contents = contents.replace(
-      'super.onNewIntent(intent)\n',
-      'super.onNewIntent(intent)\n    ' + onNewIntentMethod + '\n'
+      /super\.onNewIntent\(intent\)\n/,
+      (match) => `${match}    ${onNewIntentMethod}\n`
     );
   } else {
     contents = contents.replace(
-      /}\n$/,
-      '\n' +
-        '  ' +
-        onNewIntentSignature +
-        '\n' +
-        '    super.onNewIntent(intent)\n' +
-        '    ' +
-        onNewIntentMethod +
-        '\n' +
-        '  }\n' +
-        '}\n'
+      /}\n?$/,
+      (match) => `\n  ${onNewIntentSignature}\n    super.onNewIntent(intent)\n    ${onNewIntentMethod}\n  }\n${match}`
     );
   }
 
@@ -75,25 +66,17 @@ export function setKotlinMainActivity(
       ? 'super.onActivityResult(requestCode, resultCode, data)'
       : 'super.onActivityResult(requestCode, resultCode, data, caller)';
 
+  const handleActivityResult = "AdyenCheckout.handleActivityResult(requestCode, resultCode, data)"
+    
   if (contents.includes(onActivityResultSignature)) {
     contents = contents.replace(
-      onActivityResultSuper + '\n',
-      onActivityResultSuper +
-        '\n    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n'
+      onActivityResultSuper,
+      (match) => `${match}\n    ${handleActivityResult}\n`
     );
   } else {
     contents = contents.replace(
-      /}\n$/,
-      '\n' +
-        '  ' +
-        onActivityResultSignature +
-        '\n' +
-        '    ' +
-        onActivityResultSuper +
-        '\n' +
-        '    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)\n' +
-        '  }\n' +
-        '}\n'
+      /}\n?$/,
+      (match) => `\n  ${onActivityResultSignature}\n    ${onActivityResultSuper}\n    ${handleActivityResult}\n  }\n${match}`
     );
   }
 
