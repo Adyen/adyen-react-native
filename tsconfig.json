@@ -25,7 +25,8 @@
     "strict": true,
     "target": "ESNext",
     "verbatimModuleSyntax": true,
-    "noImplicitAny": true,
+    "noImplicitAny": true
   },
-  "exclude": ["**/__mocks__/*", "**/__tests__/*"],
+  "include": ["src"],
+  "exclude": ["**/__mocks__/*", "**/__tests__/*"]
 }
