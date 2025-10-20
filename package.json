@@ -29,7 +29,6 @@
     "ios",
     "src",
     "cpp",
-    "plugin",
     "app.plugin.js",
     "*.podspec",
     "LICENSE",
