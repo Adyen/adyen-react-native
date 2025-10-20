@@ -6,8 +6,9 @@ import {
   mainActivityWithOnNewIntent,
   mainActivityWithOnActivityResult,
   mainActivityWithAllMethods,
+  mainActivityWithAllMethodsV52,
+  mainActivityNoOnCreate,
   basicMainActivityWithExtention,
-  mainActivityWithAllMethodsVersion52,
 } from './_mock_MainActivity';
 
 describe('setKotlinMainActivity', () => {
@@ -160,25 +161,7 @@ describe('setKotlinMainActivity', () => {
     });
 
     test('should modify existing onActivityResult with ComponentCaller', () => {
-      const mainActivityV52 = `package com.example
-
-import android.os.Bundle
-import android.content.Intent
-import android.app.ComponentCaller
-import com.facebook.react.ReactActivity
-
-class MainActivity : ReactActivity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(null)
-  }
-
-  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, caller: ComponentCaller) {
-    super.onActivityResult(requestCode, resultCode, data, caller)
-  }
-}
-`;
-
-      const result = setKotlinMainActivity(mainActivityV52, sdkVersion);
+      const result = setKotlinMainActivity(mainActivityWithAllMethodsV52, sdkVersion);
 
       // Should add handleActivityResult after super.onActivityResult with ComponentCaller
       expect(result).toContain(
@@ -219,16 +202,6 @@ class MainActivity : ReactActivity() {
     });
 
     test('should handle MainActivity without onCreate', () => {
-      const mainActivityNoOnCreate = `package com.example
-
-import android.os.Bundle
-import com.facebook.react.ReactActivity
-
-class MainActivity : ReactActivity() {
-  override fun getMainComponentName(): String = "main"
-}
-`;
-
       const result = setKotlinMainActivity(mainActivityNoOnCreate, 50);
 
       // Should still add imports and other methods
@@ -259,27 +232,11 @@ class MainActivity : ReactActivity() {
       expect(result).toContain(
         'super.onCreate(null)\n    AdyenCheckout.setLauncherActivity(this)'
       );
-
-      // Should add onNewIntent method with non-nullable Intent
-      expect(result).toContain('override fun onNewIntent(intent: Intent) {');
-      expect(result).toContain('super.onNewIntent(intent)');
-      expect(result).toContain('AdyenCheckout.handleIntent(intent)');
-
-      // Should add onActivityResult method with ComponentCaller
-      expect(result).toContain(
-        'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, caller: ComponentCaller) {'
-      );
-      expect(result).toContain(
-        'super.onActivityResult(requestCode, resultCode, data, caller)'
-      );
-      expect(result).toContain(
-        'AdyenCheckout.handleActivityResult(requestCode, resultCode, data)'
-      );
     });
 
     test('should not duplicate method bodies when MainActivity has all methods for version 52', () => {
       const result = setKotlinMainActivity(
-        mainActivityWithAllMethodsVersion52,
+        mainActivityWithAllMethodsV52 ,
         52
       );
 

@@ -167,3 +167,41 @@ class MainActivity : ReactActivity() {
   }
 }
 `;
+
+export const mainActivityWithAllMethodsV52 = `package com.example
+
+import android.os.Bundle
+import com.facebook.react.ReactActivity
+import com.facebook.react.ReactActivityDelegate
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
+import com.facebook.react.defaults.DefaultReactActivityDelegate
+
+class MainActivity : ReactActivity() {
+  override fun getMainComponentName(): String = "main"
+
+  override fun createReactActivityDelegate(): ReactActivityDelegate =
+      DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+  }
+
+  override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+  }
+
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, caller: ComponentCaller) {
+    super.onActivityResult(requestCode, resultCode, data, caller)
+  }
+}
+`;
+
+export const mainActivityNoOnCreate = `package com.example
+
+import android.os.Bundle
+import com.facebook.react.ReactActivity
+
+class MainActivity : ReactActivity() {
+  override fun getMainComponentName(): String = "main"
+}
+`;
