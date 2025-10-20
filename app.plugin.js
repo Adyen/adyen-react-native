@@ -1,1 +1,1 @@
-module.exports = require('./plugin/build/withAdyen');
+module.exports = require('./lib/commonjs/plugin/withAdyen.js');
