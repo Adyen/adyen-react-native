@@ -22,7 +22,7 @@ import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 
 class AdyenPaymentPackage : ReactPackage {
-  override fun createViewManagers(reactContext: ReactApplicationContext) = listOf(PlatformPayViewManager())
+  override fun createViewManagers(reactContext: ReactApplicationContext) = listOf(PlatformPayViewManager(), CardViewManager())
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     configureAnalytics()

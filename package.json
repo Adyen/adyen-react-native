@@ -129,7 +129,8 @@
     },
     "ios": {
       "componentProvider": {
-        "PlatformPayView": "ADYPlatformPayView"
+        "PlatformPayView": "ADYPlatformPayView",
+        "CardView": "ADYCardView"
       }
     }
   }
