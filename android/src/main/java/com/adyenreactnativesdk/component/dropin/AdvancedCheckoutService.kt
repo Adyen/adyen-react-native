@@ -43,12 +43,12 @@ open class AdvancedCheckoutService : DropInService() {
   }
 
   override fun onAddressLookupQueryChanged(query: String) {
-    val listener = CheckoutProxy.shared.componentListener as? AddressLookupCallback
+    val listener = CheckoutProxy.shared.addressListener
     listener?.onQueryChanged(query)
   }
 
   override fun onAddressLookupCompletion(lookupAddress: LookupAddress): Boolean {
-    val listener = CheckoutProxy.shared.componentListener as? AddressLookupCallback
+    val listener = CheckoutProxy.shared.addressListener
     return listener?.onLookupCompletion(lookupAddress) ?: false
   }
 
@@ -81,7 +81,7 @@ open class AdvancedCheckoutService : DropInService() {
   }
 
   override fun onRemoveStoredPaymentMethod(storedPaymentMethod: StoredPaymentMethod) {
-    val listener = CheckoutProxy.shared.componentListener as? CardComponentEventListener
+    val listener = CheckoutProxy.shared.dropInListener
     listener?.onRemove(storedPaymentMethod)
   }
 

@@ -33,7 +33,9 @@ import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.model.AddressDataAdapter
 import com.adyenreactnativesdk.component.model.BinLookupDataDTO
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
+import com.adyenreactnativesdk.util.MessageBus
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
@@ -49,12 +51,15 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class DropInModule(
-  context: ReactApplicationContext?,
+  val context: ReactApplicationContext?
 ) : BaseModule(context),
   ReactDropInCallback,
   AddressLookupCallback,
-  CheckoutProxy.CardComponentEventListener {
+  CheckoutProxy.CardComponentEventListener,
+  CheckoutProxy.DropInStoredPaymentEventListener {
+
   private var taskId: Int? = null
+  override var messageBus = MessageBus(reactApplicationContext, getRedirectUrl())
 
   private fun getService(): BaseDropInServiceContract? =
     if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
@@ -85,12 +90,13 @@ class DropInModule(
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
       paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: java.lang.Exception) {
-      return sendErrorEvent(e)
+      return messageBus.sendErrorEvent(e)
     }
 
-    CheckoutProxy.shared.componentListener = this
+    CheckoutProxy.shared.componentListener = messageBus
+    CheckoutProxy.shared.dropInListener = this
     AdyenCheckout.addDropInListener(this)
     val session = session
     if (session != null) {
@@ -122,7 +128,7 @@ class DropInModule(
   fun handle(actionMap: ReadableMap?) {
     val listener = getService()
     if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
+      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
       return
     }
     try {
@@ -130,7 +136,7 @@ class DropInModule(
       val action = Action.SERIALIZER.deserialize(jsonObject)
       listener.sendResult(DropInServiceResult.Action(action))
     } catch (e: Exception) {
-      sendErrorEvent(ModuleException.InvalidAction(e))
+      messageBus.sendErrorEvent(ModuleException.InvalidAction(e))
     }
   }
 
@@ -152,7 +158,7 @@ class DropInModule(
     if (results == null) return
     val listener = getService()
     if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
+      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
       return
     }
 
@@ -178,7 +184,7 @@ class DropInModule(
   ) {
     val listener = getService()
     if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
+      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
       return
     }
 
@@ -237,7 +243,7 @@ class DropInModule(
   ) {
     val listener = getService()
     if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
+      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
       return
     }
     if (success) {
@@ -258,7 +264,7 @@ class DropInModule(
   ) {
     val listener = getService()
     if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
+      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
       return
     }
     if (success) {
@@ -278,7 +284,7 @@ class DropInModule(
   ) {
     val listener = getService()
     if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
+      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
       return
     }
     val pmJsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
@@ -295,20 +301,24 @@ class DropInModule(
   override fun getRedirectUrl(): String? = RedirectComponent.getReturnUrl(reactApplicationContext)
 
   override fun onCancel() {
-    sendErrorEvent(ModuleException.Canceled())
+    messageBus.sendErrorEvent(ModuleException.Canceled())
   }
 
   override fun onError(reason: String?) {
     if (reason == THREEDS_CANCELED_MESSAGE) { // for canceled 3DS
-      sendErrorEvent(ModuleException.Canceled())
+      messageBus.sendErrorEvent(ModuleException.Canceled())
     } else {
-      sendErrorEvent(ModuleException.Unknown(reason))
+      messageBus.sendErrorEvent(ModuleException.Unknown(reason))
     }
   }
 
   override fun onCompleted(result: String) {
     val jsonObject = JSONObject("{\"resultCode\": ${RESULT_CODE_PRESENTED}}")
-    sendEvent(DID_COMPLETE, jsonObject)
+    messageBus.sendEvent(DID_COMPLETE, jsonObject)
+  }
+
+  override fun onFinished(result: SessionPaymentResult) {
+    TODO("Not yet implemented")
   }
 
   private fun proxyHideDropInCommand(
@@ -317,7 +327,7 @@ class DropInModule(
   ) {
     val listener = getService()
     if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
+      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
       return
     }
     val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)

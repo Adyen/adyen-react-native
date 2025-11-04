@@ -1,4 +1,4 @@
-import { useAdyenCheckout } from '@adyen/react-native';
+import { useAdyenCheckout, CardView } from '@adyen/react-native';
 import { View, ScrollView, ActivityIndicator } from 'react-native';
 import Styles from '../../common/Styles';
 import { useAppContext } from '../../../hooks/useAppContext';
@@ -39,6 +39,8 @@ const PaymentMethods = ({
       <DropInButton />
 
       <PlatformPayButton />
+
+      <CardView />
 
       {showComponents && (
         <>

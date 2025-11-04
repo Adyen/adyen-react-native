@@ -13,6 +13,8 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
+import com.adyenreactnativesdk.util.MessageBus
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -21,9 +23,9 @@ import org.json.JSONException
 
 class InstantModule(
   context: ReactApplicationContext?,
-) : BaseModule(context),
-  CheckoutProxy.ComponentEventListener {
+) : BaseModule(context) {
   override fun getName(): String = COMPONENT_NAME
+  override var messageBus = MessageBus(reactApplicationContext)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -41,15 +43,15 @@ class InstantModule(
     val checkoutConfiguration: CheckoutConfiguration
     val paymentMethod: PaymentMethod
     try {
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
       paymentMethod =
         getPaymentMethodsApiResponse(paymentMethodsData).paymentMethods?.firstOrNull()
           ?: throw ModuleException.InvalidPaymentMethods(null)
     } catch (e: Exception) {
-      return sendErrorEvent(e)
+      return messageBus.sendErrorEvent(e)
     }
 
-    CheckoutProxy.shared.componentListener = this
+    CheckoutProxy.shared.componentListener = messageBus
     fragment =
       when (paymentMethod.type) {
         PaymentMethodTypes.IDEAL -> IdealFragment
@@ -71,7 +73,7 @@ class InstantModule(
       val action = Action.SERIALIZER.deserialize(jsonObject)
       fragment?.handle(appCompatActivity.supportFragmentManager, action)
     } catch (e: JSONException) {
-      sendErrorEvent(ModuleException.InvalidAction(e))
+      messageBus.sendErrorEvent(ModuleException.InvalidAction(e))
     }
   }
 

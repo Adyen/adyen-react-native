@@ -17,6 +17,8 @@ import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
+import com.adyenreactnativesdk.util.MessageBus
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -26,9 +28,9 @@ import org.json.JSONException
 
 class GooglePayModule(
   context: ReactApplicationContext?,
-) : BaseModule(context),
-  CheckoutProxy.ComponentEventListener {
+) : BaseModule(context) {
   override fun getName(): String = COMPONENT_NAME
+  override var messageBus = MessageBus(reactApplicationContext)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -47,19 +49,19 @@ class GooglePayModule(
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
       paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: java.lang.Exception) {
-      return sendErrorEvent(e)
+      return messageBus.sendErrorEvent(e)
     }
 
     val googlePayPaymentMethod = getPaymentMethod(paymentMethodsResponse, PAYMENT_METHOD_KEYS)
     if (googlePayPaymentMethod == null) {
-      sendErrorEvent(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
+      messageBus.sendErrorEvent(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
       return
     }
 
     val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
-    CheckoutProxy.shared.componentListener = this
+    CheckoutProxy.shared.componentListener = messageBus
     GooglePayComponent.run {
       PROVIDER.isAvailable(
         appCompatActivity.application,
@@ -71,7 +73,7 @@ class GooglePayModule(
             paymentMethod: PaymentMethod,
           ) {
             if (!isAvailable) {
-              sendErrorEvent(GooglePayException.NotSupported())
+              messageBus.sendErrorEvent(GooglePayException.NotSupported())
               return
             }
             GooglePayFragment.show(
@@ -93,7 +95,7 @@ class GooglePayModule(
       val action = Action.SERIALIZER.deserialize(jsonObject)
       GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
     } catch (e: JSONException) {
-      sendErrorEvent(ModuleException.InvalidAction(e))
+      messageBus.sendErrorEvent(ModuleException.InvalidAction(e))
     }
   }
 
@@ -117,7 +119,7 @@ class GooglePayModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
       paymentMethod = PaymentMethod.SERIALIZER.deserialize(jsonObject)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: java.lang.Exception) {
       return promise.reject(e)
     }

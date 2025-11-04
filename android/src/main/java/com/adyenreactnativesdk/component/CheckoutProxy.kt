@@ -24,6 +24,10 @@ class CheckoutProxy private constructor() {
 
   var advancedService: BaseDropInServiceContract? = null
 
+  var addressListener: AddressLookupCallback? = null
+
+  var dropInListener: DropInStoredPaymentEventListener? = null
+
   var componentListener: ComponentEventListener?
     get() = _componentListener.get()
     set(value) {
@@ -35,15 +39,17 @@ class CheckoutProxy private constructor() {
     fun onException(exception: CheckoutException)
 
     fun onFinished(result: SessionPaymentResult)
-
-    fun onRemove(storedPaymentMethod: StoredPaymentMethod)
   }
 
   /** Events coming from Card Component */
-  interface CardComponentEventListener : ComponentEventListener {
+  interface CardComponentEventListener {
     fun onBinValue(binValue: String)
 
     fun onBinLookup(data: List<BinLookupData>)
+  }
+
+  interface DropInStoredPaymentEventListener {
+    fun onRemove(storedPaymentMethod: StoredPaymentMethod)
   }
 
   companion object {

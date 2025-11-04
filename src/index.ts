@@ -1,5 +1,6 @@
 export * from './components/GooglePayButton';
 export * from './components/ApplePayButton';
+export * from './components/CardView';
 
 export { Card } from './core/types';
 export type * from './core/types';

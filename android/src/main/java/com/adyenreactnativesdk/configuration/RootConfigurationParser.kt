@@ -33,7 +33,7 @@ class RootConfigurationParser(
           try {
             ReactNativeJson.convertMapToJson(map)
           } catch (e: Throwable) {
-            Log.w(TAG, "Amount" + map.toString() + " not valid", e)
+            Log.w(TAG, "Amount $map not valid", e)
             return null
           }
         return Amount.SERIALIZER.deserialize(jsonObject)

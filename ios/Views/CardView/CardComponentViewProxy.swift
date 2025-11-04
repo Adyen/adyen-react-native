@@ -1,37 +1,31 @@
 import Adyen
-import AdyenCard
 import UIKit
 
 @objc(CardComponentViewProxy)
-final class CardComponentViewProxy: NSObject {
+final class CardComponentViewProxy: UIView {
 
-    @objc
-    let viewController: UIViewController
+  private let component: CardComponent
 
-    private let component: CardComponent
+  @objc
+  init(
+    paymentMethod: CardPaymentMethod,
+    dictiomnary
+  ) {
+    component = CardComponent(paymentMethod: paymentMethod, context: BaseModule.)
+    super.init()
 
-    @objc
-    init(
-        paymentMethod: PaymentMethod, context: AdyenContext,
-        configuration: CardComponent.Configuration
-    ) {
-        component = CardComponent(
-            paymentMethod: paymentMethod,
-            context: context,
-            configuration: configuration
-        )
-        viewController = component.viewController
-        super.init()
-    }
+    self.addSubview(component.viewController.view)
+    self.
+  }
 
-    @objc
-    func setDelegate(delegate: PaymentComponentDelegate) {
-        component.delegate = delegate
-    }
+  @objc
+  func setDelegate(delegate: PaymentComponentDelegate) {
+    component.delegate = delegate
+  }
 
-    @objc
-    func getPaymentComponentData(from data: PaymentComponentData) -> NSDictionary? {
-        let encodableData = EncodablePaymentComponentData(data: data)
-        return try? encodableData.jsonDictionary()
-    }
+  @objc
+  func getPaymentComponentData(from data: PaymentComponentData) -> NSDictionary? {
+    let encodableData = EncodablePaymentComponentData(data: data)
+    return try? encodableData.jsonDictionary()
+  }
 }

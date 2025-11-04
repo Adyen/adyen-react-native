@@ -11,6 +11,8 @@ import com.adyen.threeds2.ThreeDS2Service
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
+import com.adyenreactnativesdk.util.MessageBus
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -20,11 +22,11 @@ import com.facebook.react.bridge.ReadableMap
 class ActionModule(
   context: ReactApplicationContext?,
 ) : BaseModule(context),
-  CheckoutProxy.ComponentEventListener,
   ActionComponentCallback {
   private var promise: Promise? = null
 
   override fun getName(): String = COMPONENT_NAME
+  override var messageBus = MessageBus(reactApplicationContext)
 
   override fun getConstants(): MutableMap<String, Any> = hashMapOf(THREEDS_VERSION_NAME to THREEDS_VERSION)
 
@@ -48,7 +50,7 @@ class ActionModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       action = Action.SERIALIZER.deserialize(jsonObject)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: ModuleException) {
       promise.reject(e.code, e.message, e)
       return

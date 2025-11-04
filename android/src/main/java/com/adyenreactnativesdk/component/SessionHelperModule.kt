@@ -3,6 +3,7 @@ package com.adyenreactnativesdk.component
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.util.MessageBus
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -13,6 +14,9 @@ import kotlinx.coroutines.launch
 class SessionHelperModule(
   context: ReactApplicationContext?,
 ) : BaseModule(context) {
+
+  override var messageBus = MessageBus(reactApplicationContext)
+
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
   }
@@ -36,8 +40,6 @@ class SessionHelperModule(
   }
 
   override fun getName(): String = COMPONENT_NAME
-
-  override fun onFinished(result: SessionPaymentResult): Unit = throw NotImplementedError("This Module have no events")
 
   @ReactMethod
   fun createSession(

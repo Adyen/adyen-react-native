@@ -16,13 +16,20 @@ import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import com.adyenreactnativesdk.component.instant.InstantModule
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
+import com.adyenreactnativesdk.react.CardViewManager
 import com.adyenreactnativesdk.react.PlatformPayViewManager
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
 
 class AdyenPaymentPackage : ReactPackage {
-  override fun createViewManagers(reactContext: ReactApplicationContext) = listOf(PlatformPayViewManager(), CardViewManager())
+  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
+    return listOf(
+      PlatformPayViewManager(),
+      CardViewManager()
+    )
+  }
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     configureAnalytics()
