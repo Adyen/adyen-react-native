@@ -28,6 +28,7 @@ constructor(
   private var ignoreLayoutChanges = false
   private var interactionBlocked = false
   var layoutListener: LayoutListener? = null
+  var hasComponent = false
 
   // Usage of complete component height also when having error hints
   override fun onMeasure(
@@ -62,6 +63,7 @@ constructor(
         attach(component, activity)
       }
 
+    hasComponent = true
     addView(adyenComponentView)
   }
 

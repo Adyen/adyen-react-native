@@ -11,6 +11,7 @@ import com.adyenreactnativesdk.react.base.LayoutListener
 import com.adyenreactnativesdk.react.card.CardComponentFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.ifNotNull
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableNativeMap
@@ -28,6 +29,7 @@ import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.uimanager.common.UIManagerType
+import com.facebook.react.uimanager.events.Event
 import com.facebook.react.viewmanagers.CardViewManagerDelegate
 import com.facebook.react.viewmanagers.CardViewManagerInterface
 import org.json.JSONObject
@@ -51,6 +53,10 @@ class CardViewManager :
 
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
     fragmentActivity = context.currentActivity as? FragmentActivity
+    if (dynamicComponentView != null) {
+      dynamicComponentView?.onDispose()
+    }
+
     dynamicComponentView = DynamicComponentView(context)
     dynamicComponentView?.layoutListener = this
 
@@ -69,6 +75,10 @@ class CardViewManager :
   override fun onAfterUpdateTransaction(view: DynamicComponentView) {
     super.onAfterUpdateTransaction(view)
 
+    if (dynamicComponentView?.hasComponent ?: false) {
+      return
+    }
+
     ifNotNull(
       paymentMethod,
       configuration,
@@ -77,9 +87,7 @@ class CardViewManager :
       val cardComponent =
         CardComponentFactory.build(fragmentActivity, configuration, paymentMethodJson)
       dynamicComponentView?.addComponent(cardComponent, fragmentActivity)
-
       this.cardComponent = cardComponent
-
     }
   }
 
@@ -125,8 +133,23 @@ class CardViewManager :
     eventDispatcher?.dispatchEvent(event)
   }
 
+  private fun emitResizableCustomViewEvent(
+    context: ReactContext,
+    viewId: Int,
+    width: Int,
+    height: Int,
+  ) {
+    val surfaceId = UIManagerHelper.getSurfaceId(context)
+    val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, viewId)
+    val event = ResizableCustomViewEvent(surfaceId, viewId, width, height)
+    eventDispatcher?.dispatchEvent(event)
+  }
+
   override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> =
-    mapOf(OnPressEvent.EVENT_NAME to mapOf("registrationName" to "onButtonPress"))
+    mapOf(
+      OnPressEvent.EVENT_NAME to mapOf("registrationName" to "onButtonPress"),
+      ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView")
+    )
 
   private fun onAction(action: Action) = ifNotNull(
     cardComponent,
@@ -136,13 +159,34 @@ class CardViewManager :
   }
 
   override fun onLayoutSizeUpdate(size: Size) {
-    val props = WritableNativeMap().apply {
-      putDouble("width", size.width.toDouble())
-      putDouble("height", size.height.toDouble())
-    }
 
-    stateWrapper?.updateState(props)
 //    this.updateState(dynamicComponentView!!, ReactStylesDiffMap(props), stateWrapper)
+
+    // Emit ResizableCustomView event
+    dynamicComponentView?.let { view ->
+      val context = view.context as? ReactContext
+      context?.let {
+        emitResizableCustomViewEvent(it, view.id, size.width, size.height)
+      }
+    }
   }
 
+}
+
+class ResizableCustomViewEvent(
+  surfaceId: Int,
+  viewId: Int,
+  private val width: Int,
+  private val height: Int,
+) : Event<ResizableCustomViewEvent>(surfaceId, viewId) {
+  override fun getEventName() = EVENT_NAME
+
+  override fun getEventData(): WritableMap = Arguments.createMap().apply {
+    putInt("width", width)
+    putInt("height", height)
+  }
+
+  companion object {
+    const val EVENT_NAME: String = "onLayoutChange"
+  }
 }

@@ -44,7 +44,7 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
       },
     },
     card: {
-      addressVisibility: 'lookup',
+      addressVisibility:  'full',
       allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
       onUpdateAddress: (_prompt: string, lookup: AddressLookup) => {
         // Make request to Google Maps API or other address provider.
