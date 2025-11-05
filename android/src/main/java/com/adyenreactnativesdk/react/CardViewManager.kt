@@ -2,24 +2,17 @@ package com.adyenreactnativesdk.react
 
 import android.util.Size
 import androidx.fragment.app.FragmentActivity
-import com.adyen.checkout.card.CardComponent
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.action.Action
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
 import com.adyenreactnativesdk.react.base.LayoutListener
-import com.adyenreactnativesdk.react.card.CardComponentFactory
+import com.adyenreactnativesdk.react.card.CardComponentManager
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.ifNotNull
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactContext
-import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.ReadableNativeMap
-import com.facebook.react.bridge.UIManager
 import com.facebook.react.bridge.WritableMap
-import com.facebook.react.bridge.WritableNativeMap
-import com.facebook.react.common.MapBuilder
-import com.facebook.react.fabric.FabricUIManager
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.ReactStylesDiffMap
 import com.facebook.react.uimanager.SimpleViewManager
@@ -28,7 +21,6 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.uimanager.common.UIManagerType
 import com.facebook.react.uimanager.events.Event
 import com.facebook.react.viewmanagers.CardViewManagerDelegate
 import com.facebook.react.viewmanagers.CardViewManagerInterface
@@ -41,7 +33,7 @@ class CardViewManager :
 
   private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
   private var dynamicComponentView: DynamicComponentView? = null
-  private var cardComponent: CardComponent? = null
+  private var cardComponentManager: CardComponentManager? = null
   private var configuration: CheckoutConfiguration? = null
   private var paymentMethod: JSONObject? = null
   private var fragmentActivity: FragmentActivity? = null
@@ -53,6 +45,7 @@ class CardViewManager :
 
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
     fragmentActivity = context.currentActivity as? FragmentActivity
+    cardComponentManager = CardComponentManager(context)
     if (dynamicComponentView != null) {
       dynamicComponentView?.onDispose()
     }
@@ -84,10 +77,10 @@ class CardViewManager :
       configuration,
       fragmentActivity
     ) { paymentMethodJson, configuration, fragmentActivity ->
-      val cardComponent =
-        CardComponentFactory.build(fragmentActivity, configuration, paymentMethodJson)
-      dynamicComponentView?.addComponent(cardComponent, fragmentActivity)
-      this.cardComponent = cardComponent
+      cardComponentManager?.init(configuration, paymentMethodJson)
+      cardComponentManager?.component?.let { cardComponent ->
+        dynamicComponentView?.addComponent(cardComponent, fragmentActivity)
+      }
     }
   }
 
@@ -151,18 +144,7 @@ class CardViewManager :
       ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView")
     )
 
-  private fun onAction(action: Action) = ifNotNull(
-    cardComponent,
-    fragmentActivity
-  ) { cardComponent, fragmentActivity ->
-    cardComponent.handleAction(action, fragmentActivity)
-  }
-
   override fun onLayoutSizeUpdate(size: Size) {
-
-//    this.updateState(dynamicComponentView!!, ReactStylesDiffMap(props), stateWrapper)
-
-    // Emit ResizableCustomView event
     dynamicComponentView?.let { view ->
       val context = view.context as? ReactContext
       context?.let {
@@ -170,7 +152,6 @@ class CardViewManager :
       }
     }
   }
-
 }
 
 class ResizableCustomViewEvent(

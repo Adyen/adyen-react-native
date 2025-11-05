@@ -20,12 +20,13 @@ import com.adyenreactnativesdk.component.base.BaseModule.Companion.DID_SUBMIT
 import com.adyenreactnativesdk.component.base.BaseModule.Companion.RESULT_CODE_PRESENTED
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.model.SubmitMap
-import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContext
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.facebook.react.uimanager.ThemedReactContext
 import org.json.JSONException
 import org.json.JSONObject
 
-class MessageBus(val context: ReactApplicationContext, val redirectUrl: String? = null): CheckoutProxy.ComponentEventListener {
+class MessageBus(val context: ReactContext, val redirectUrl: String? = null): CheckoutProxy.ComponentEventListener {
   fun sendEvent(
       eventName: String,
       jsonObject: JSONObject,

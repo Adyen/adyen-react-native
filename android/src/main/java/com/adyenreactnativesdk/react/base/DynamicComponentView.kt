@@ -117,12 +117,12 @@ constructor(
 
   // This is necessary because the RippleAnimation leads to an crash on older Android devices: https://github.com/Adyen/adyen-flutter/issues/335
   private fun disableRippleAnimationOnPayButton() {
-
+    // TODO: check if relevant
   }
 
   // This is necessary because the RippleAnimation leads to an crash on older Android devices: https://github.com/Adyen/adyen-flutter/issues/335
   private fun disableRippleAnimationOnStorePaymentMethodSwitch() {
-
+    // TODO: check if relevant
   }
 
   private fun calculateViewportHeight(): Int {

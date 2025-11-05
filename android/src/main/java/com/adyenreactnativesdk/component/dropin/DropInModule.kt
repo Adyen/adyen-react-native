@@ -413,7 +413,7 @@ class DropInModule(
   }
 }
 
-internal interface ReactDropInCallback {
+interface ReactDropInCallback {
   fun onCancel()
 
   fun onError(reason: String?)
