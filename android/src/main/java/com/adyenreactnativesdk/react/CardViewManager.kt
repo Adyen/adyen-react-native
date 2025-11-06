@@ -1,9 +1,15 @@
 package com.adyenreactnativesdk.react
 
+import android.os.Bundle
 import android.util.Size
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.dropin.BalanceDropInServiceResult
+import com.adyen.checkout.dropin.BaseDropInServiceContract
+import com.adyen.checkout.dropin.DropInServiceResult
+import com.adyen.checkout.dropin.OrderDropInServiceResult
+import com.adyen.checkout.dropin.RecurringDropInServiceResult
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
 import com.adyenreactnativesdk.react.base.LayoutListener
@@ -27,9 +33,9 @@ import com.facebook.react.viewmanagers.CardViewManagerInterface
 import org.json.JSONObject
 
 @ReactModule(name = CardViewManager.NAME)
-class CardViewManager :
+class CardViewManager() :
   SimpleViewManager<DynamicComponentView>(),
-  CardViewManagerInterface<DynamicComponentView>, LayoutListener {
+  CardViewManagerInterface<DynamicComponentView>, LayoutListener, ComponentContract {
 
   private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
   private var dynamicComponentView: DynamicComponentView? = null
@@ -152,6 +158,15 @@ class CardViewManager :
       }
     }
   }
+
+  override fun onAction(action: Action) {
+    ifNotNull(
+      fragmentActivity,
+      cardComponentManager?.component
+    ) { activity, component ->
+      component.handleAction(action, activity)
+    }
+  }
 }
 
 class ResizableCustomViewEvent(
@@ -170,4 +185,8 @@ class ResizableCustomViewEvent(
   companion object {
     const val EVENT_NAME: String = "onLayoutChange"
   }
+}
+
+interface ComponentContract {
+  fun onAction(action: Action)
 }

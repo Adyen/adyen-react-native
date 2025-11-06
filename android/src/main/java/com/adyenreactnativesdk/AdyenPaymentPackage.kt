@@ -9,25 +9,32 @@ package com.adyenreactnativesdk
 import android.annotation.SuppressLint
 import com.adyen.checkout.components.core.internal.analytics.AnalyticsPlatform
 import com.adyen.checkout.components.core.internal.analytics.AnalyticsPlatformParams
+import com.adyen.checkout.dropin.BaseDropInServiceContract
 import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
 import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import com.adyenreactnativesdk.component.instant.InstantModule
+import com.adyenreactnativesdk.component.message.MessageBusModule
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
 import com.adyenreactnativesdk.react.CardViewManager
 import com.adyenreactnativesdk.react.PlatformPayViewManager
+import com.adyenreactnativesdk.util.MessageBus
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
 
 class AdyenPaymentPackage : ReactPackage {
+
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
+    val cardView = CardViewManager()
+    MessageBusModule.consumers.set("cardView", cardView)
+
     return listOf(
       PlatformPayViewManager(),
-      CardViewManager()
+      cardView
     )
   }
 
@@ -41,6 +48,7 @@ class AdyenPaymentPackage : ReactPackage {
       AdyenCSEModule(reactContext),
       SessionHelperModule(reactContext),
       ActionModule(reactContext),
+      MessageBusModule(reactContext)
     )
   }
 

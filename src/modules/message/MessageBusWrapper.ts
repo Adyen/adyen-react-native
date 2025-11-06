@@ -2,6 +2,7 @@ import { type NativeModule } from 'react-native';
 import { Event } from '../../core/constants';
 import { EventListenerWrapper } from '../base/EventListenerWrapper';
 import type { MessageBusModule } from './MessageBusModule';
+import type { PaymentAction } from '../../core/types';
 
 /**
  *  Communication bus for all embeded Native Modules.
@@ -33,5 +34,11 @@ export class MessageBusWrapper
   }
   subscribe(componentId: String) {
     this.nativeModule.subscribe(componentId);
+  }
+  hide(success: boolean, message: string) {
+    this.nativeModule.hide(success, message);
+  }
+  handle(action: PaymentAction) {
+    this.nativeModule.handle(action);
   }
 }

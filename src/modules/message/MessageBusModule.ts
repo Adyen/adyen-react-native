@@ -8,7 +8,7 @@ export interface MessageBusModule extends EventListenerWrapper {
   unsubscribe(componentId: String): void;
 }
 
-/**Encryption helper. */
-export const AdyenMessageBus: MessageBusModule = new MessageBusWrapper(
+/** Communication bus for all embeded Native Modules. */
+export const MessageBus: MessageBusModule = new MessageBusWrapper(
   NativeModules.AdyenMessageBus ?? ModuleMock
 );

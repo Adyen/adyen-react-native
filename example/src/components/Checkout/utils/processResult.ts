@@ -11,5 +11,5 @@ export function processResult(
   const success = isSuccess(result.resultCode);
   nativeComponent.hide(success);
   navigation?.popToTop();
-  navigation?.push('Result', { resultCode: result.resultCode });
+  navigation?.push('Result', result);
 }

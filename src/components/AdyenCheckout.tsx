@@ -36,7 +36,7 @@ import type {
 import { checkPaymentMethodsResponse, checkConfiguration } from '../core/utils';
 import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
 import type { EventListenerWrapper } from '../modules/base/EventListenerWrapper';
-import { AdyenMessageBus } from '../modules/message/MessageBusModule';
+import { MessageBus } from '../modules/message/MessageBusModule';
 
 /**
  * Props for AdyenCheckout
@@ -142,13 +142,13 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const startEventListeners = useCallback(
     (nativeComponent: EventListenerWrapper) => {
       const eventEmitter = new NativeEventEmitter(nativeComponent);
-      const prefix = nativeComponent.name;
       var dump: EmitterSubscription[] = [];
       function submitPayment(data: PaymentMethodData, extra: any) {
         const payload = {
           ...data,
           returnUrl: data.returnUrl ?? config.returnUrl,
         };
+        console.log('AdyenCheckout submitPayment', payload);
         onSubmit?.(
           payload,
           nativeComponent as unknown as AdyenActionComponent,
@@ -157,24 +157,22 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       }
 
       dump.push(
-        eventEmitter.addListener(prefix + Event.onError, (error: AdyenError) =>
+        eventEmitter.addListener(Event.onError, (error: AdyenError) =>
           onError(error, nativeComponent as unknown as AdyenComponent)
         )
       );
 
       if (nativeComponent.isSupported(Event.onSubmit)) {
         dump.push(
-          eventEmitter.addListener(
-            prefix + Event.onSubmit,
-            (response: SubmitModel) =>
-              submitPayment(response.paymentData, response.extra)
+          eventEmitter.addListener(Event.onSubmit, (response: SubmitModel) =>
+            submitPayment(response.paymentData, response.extra)
           )
         );
       }
 
       if (nativeComponent.isSupported(Event.onComplete)) {
         dump.push(
-          eventEmitter.addListener(prefix + Event.onComplete, (data: any) =>
+          eventEmitter.addListener(Event.onComplete, (data: any) =>
             onComplete?.(
               data,
               nativeComponent as unknown as AdyenActionComponent
@@ -186,7 +184,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       if (nativeComponent.isSupported(Event.onAdditionalDetails)) {
         dump.push(
           eventEmitter.addListener(
-            prefix + Event.onAdditionalDetails,
+            Event.onAdditionalDetails,
             (data: PaymentDetailsData) =>
               onAdditionalDetails?.(
                 data,
@@ -205,7 +203,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
         dump.push(
           eventEmitter.addListener(
-            prefix + Event.onDisableStoredPaymentMethod,
+            Event.onDisableStoredPaymentMethod,
             (data: StoredPaymentMethod) =>
               onDisableStoredPaymentMethodCallback(
                 data,
@@ -226,14 +224,11 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       ) {
         const nativeModule = nativeComponent as unknown as AddressLookup;
         dump.push(
+          eventEmitter.addListener(Event.onAddressUpdate, (prompt: string) => {
+            onUpdateAddressCallback(prompt, nativeModule);
+          }),
           eventEmitter.addListener(
-            prefix + Event.onAddressUpdate,
-            (prompt: string) => {
-              onUpdateAddressCallback(prompt, nativeModule);
-            }
-          ),
-          eventEmitter.addListener(
-            prefix + Event.onAddressConfirm,
+            Event.onAddressConfirm,
             (address: AddressLookupItem) => {
               onConfirmAddressCallback(address, nativeModule);
             }
@@ -255,7 +250,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         const component = nativeComponent as unknown as PartialPaymentComponent;
         dump.push(
           eventEmitter.addListener(
-            prefix + Event.onCheckBalance,
+            Event.onCheckBalance,
             async (paymentData) => {
               onBalanceCheckCallback(
                 paymentData,
@@ -268,7 +263,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
               );
             }
           ),
-          eventEmitter.addListener(prefix + Event.onRequestOrder, () => {
+          eventEmitter.addListener(Event.onRequestOrder, () => {
             onOrderRequestCallback(
               (order: Order) => {
                 component.provideOrder(true, order, undefined);
@@ -279,7 +274,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
             );
           }),
           eventEmitter.addListener(
-            prefix + Event.onCancelOrder,
+            Event.onCancelOrder,
             ({ order, shouldUpdatePaymentMethods }) => {
               onOrderCancelCallback(
                 order,
@@ -297,20 +292,14 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         nativeComponent.isSupported(Event.onBinLookuop)
       ) {
         dump.push(
-          eventEmitter.addListener(
-            prefix + Event.onBinLookuop,
-            onBinLookupCallback
-          )
+          eventEmitter.addListener(Event.onBinLookuop, onBinLookupCallback)
         );
       }
 
       const onBinValueCallback = config.card?.onBinValue;
       if (onBinValueCallback && nativeComponent.isSupported(Event.onBinValue)) {
         dump.push(
-          eventEmitter.addListener(
-            prefix + Event.onBinValue,
-            onBinValueCallback
-          )
+          eventEmitter.addListener(Event.onBinValue, onBinValueCallback)
         );
       }
 
@@ -320,8 +309,8 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   );
 
   useEffect(() => {
-    subscriptions.current.set(AdyenMessageBus.name, []);
-    startEventListeners(AdyenMessageBus);
+    subscriptions.current.set(MessageBus.name, []);
+    startEventListeners(MessageBus);
   }, [startEventListeners]);
 
   const start = useCallback(
