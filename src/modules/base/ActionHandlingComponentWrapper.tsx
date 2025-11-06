@@ -1,14 +1,14 @@
-import type { PaymentAction } from '../core/types';
-import { ComponentWrapper } from './ComponentWrapper';
-import type { AdyenActionComponent } from '../core/AdyenNativeModules';
+import type { PaymentAction } from '../../core/types';
+import { ModuleWrapper } from './ModuleWrapper';
+import type { AdyenActionComponent } from '../../core/types';
 import type { NativeModule } from 'react-native';
-import { Event } from '../core/constants';
+import { Event } from '../../core/constants';
 
 /**
  *  Wrapper for all Native Modules that support Action handling.
  * */
-export class ActionHandlingComponentWrapper
-  extends ComponentWrapper
+export abstract class ActionHandlingComponentWrapper
+  extends ModuleWrapper
   implements AdyenActionComponent
 {
   constructor(nativeModule: NativeModule, events?: Event[]) {

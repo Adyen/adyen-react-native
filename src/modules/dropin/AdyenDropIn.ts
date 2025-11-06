@@ -1,16 +1,16 @@
-import type { NativeModule } from 'react-native';
 import { NativeModules } from 'react-native';
-import type { AddressLookup } from '../core/configurations/AddressLookup';
-import type { AdyenActionComponent } from '../core/AdyenNativeModules';
-import { ModuleMock } from './ModuleMock';
-import type { Order, PaymentMethodsResponse } from '../core/types';
+import type { AddressLookup } from '../../core/configurations';
+import { ModuleMock } from '../base/ModuleMock';
+import type {
+  Order,
+  PaymentMethodsResponse,
+  AdyenActionComponent,
+} from '../../core/types';
+import { DropInWrapper } from './DropInWrapper';
 
 /** Describes Drop-in module. */
 
-export interface DropInModule
-  extends AdyenActionComponent,
-    NativeModule,
-    AddressLookup {
+export interface DropInModule extends AdyenActionComponent, AddressLookup {
   /**
    * Provides return URL for current application.
    */
@@ -28,5 +28,6 @@ export interface DropInModule
 }
 
 /** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
-export const AdyenDropIn: DropInModule =
-  NativeModules.AdyenDropIn ?? ModuleMock;
+export const AdyenDropIn: DropInModule = new DropInWrapper(
+  NativeModules.AdyenDropIn ?? ModuleMock
+);

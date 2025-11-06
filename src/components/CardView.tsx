@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import NativeCardView, {
   type LayoutChangeEvent,
 } from '../specs/NativeCardView';
 import { useAdyenCheckout } from '../hooks/useAdyenCheckout';
 import type { PaymentMethod } from '../core/types';
+import Styles from './common/Styles';
 
 export interface CardViewProps {
   /** PaymentMethod object. If not provided, the first available payment method will be used. */
@@ -40,6 +41,8 @@ export const CardView: React.FC<CardViewProps> = ({
     onButtonPress?.();
   }, [onButtonPress]);
 
+  useEffect(() => {}, []);
+
   return (
     <NativeCardView
       paymentMethod={JSON.stringify(_paymentMethod)}
@@ -49,7 +52,11 @@ export const CardView: React.FC<CardViewProps> = ({
       onLayoutChange={(event) => {
         setSize(event.nativeEvent);
       }}
-      style={{ minHeight: 100, height: size?.height, width: size?.width }}
+      style={{
+        minHeight: Styles.defaultComponent.minHeight,
+        height: size?.height,
+        width: size?.width,
+      }}
     />
   );
 };

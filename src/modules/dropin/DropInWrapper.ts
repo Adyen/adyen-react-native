@@ -1,13 +1,18 @@
-import type { AddressLookupItem } from '../core/configurations/AddressLookup';
-import type { Balance, Order, PaymentMethodsResponse } from '../core/types';
-import { AdyenDropIn, type DropInModule } from '../modules/DropInModule';
-import { ActionHandlingComponentWrapper } from './ActionHandlingComponentWrapper';
-import type { AddressLookup } from './AddressLookupComponentWrapper';
-import type { PartialPaymentComponent } from './PartialPaymentsComponentWrapper';
-import type { RemovesStoredPayment } from './RemoveStoredPaymentComponentWrapper';
-import { Event } from '../core/constants';
+import type {
+  AddressLookup,
+  AddressLookupItem,
+} from '../../core/configurations';
+import type { Balance, Order, PaymentMethodsResponse } from '../../core/types';
+import { ActionHandlingComponentWrapper } from '../base/ActionHandlingComponentWrapper';
+import type { DropInModule } from './AdyenDropIn';
+import { Event } from '../../core/constants';
+import type { NativeModule } from 'react-native';
+import type {
+  PartialPaymentComponent,
+  RemovesStoredPayment,
+} from '../../core/configurations';
 
-export class DropInComponentWrapper
+export class DropInWrapper
   extends ActionHandlingComponentWrapper
   implements
     DropInModule,
@@ -15,8 +20,10 @@ export class DropInComponentWrapper
     RemovesStoredPayment,
     PartialPaymentComponent
 {
-  constructor() {
-    super(AdyenDropIn, [
+  name: string = 'DropIn';
+
+  constructor(nativeModule: NativeModule) {
+    super(nativeModule, [
       Event.onBinValue,
       Event.onBinLookuop,
       Event.onCancelOrder,

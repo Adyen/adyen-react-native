@@ -22,7 +22,6 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.modules.core.DeviceEventManagerModule
-import com.facebook.react.uimanager.ThemedReactContext
 import org.json.JSONException
 import org.json.JSONObject
 

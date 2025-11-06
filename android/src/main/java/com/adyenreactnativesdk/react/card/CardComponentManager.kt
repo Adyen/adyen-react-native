@@ -10,7 +10,6 @@ import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.react.CardViewManager.Companion.NAME
 import com.adyenreactnativesdk.react.base.ComponentAdvancedCallback
 import com.adyenreactnativesdk.react.base.ComponentSessionCallback
-import com.facebook.react.bridge.ReactApplicationContext
 import com.adyen.checkout.components.core.action.Action
 import com.facebook.react.uimanager.ThemedReactContext
 import org.json.JSONObject
@@ -47,7 +46,6 @@ class CardComponentManager(
     configuration: CheckoutConfiguration,
     paymentMethodJson: JSONObject
   ): CardComponent {
-
     val isStoredPaymentMethod = false
     when (isStoredPaymentMethod) {
       true -> {
