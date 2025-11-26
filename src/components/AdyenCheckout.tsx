@@ -289,10 +289,10 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       const onBinLookupCallback = config.card?.onBinLookup;
       if (
         onBinLookupCallback &&
-        nativeComponent.isSupported(Event.onBinLookuop)
+        nativeComponent.isSupported(Event.onBinLookup)
       ) {
         dump.push(
-          eventEmitter.addListener(Event.onBinLookuop, onBinLookupCallback)
+          eventEmitter.addListener(Event.onBinLookup, onBinLookupCallback)
         );
       }
 

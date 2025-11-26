@@ -25,7 +25,7 @@ export class DropInWrapper
   constructor(nativeModule: NativeModule) {
     super(nativeModule, [
       Event.onBinValue,
-      Event.onBinLookuop,
+      Event.onBinLookup,
       Event.onCancelOrder,
       Event.onRequestOrder,
       Event.onCheckBalance,

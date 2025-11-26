@@ -20,7 +20,7 @@ export class MessageBusWrapper
       Event.onComplete,
       Event.onAdditionalDetails,
       Event.onBinValue,
-      Event.onBinLookuop,
+      Event.onBinLookup,
       Event.onCancelOrder,
       Event.onRequestOrder,
       Event.onCheckBalance,
