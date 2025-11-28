@@ -49,6 +49,10 @@ const Home = ({ navigation }: PageProps) => {
       title: 'Custom Card Integration',
       route: { name: 'CustomCard', params: undefined },
     },
+    {
+      title: 'Card Component',
+      route: { name: 'CardForm', params: undefined },
+    },
   ];
 
   return (

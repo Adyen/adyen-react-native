@@ -10,6 +10,7 @@ export type RootStackParamList = {
   AdvancedCheckout: undefined;
   Settings: undefined;
   CustomCard: undefined;
+  CardForm: undefined;
   Result: { resultCode: ResultCode };
   PartialPaymentCheckout: undefined;
 };

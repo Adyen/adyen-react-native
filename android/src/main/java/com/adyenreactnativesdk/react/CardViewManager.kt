@@ -1,15 +1,9 @@
 package com.adyenreactnativesdk.react
 
-import android.os.Bundle
 import android.util.Size
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.dropin.BalanceDropInServiceResult
-import com.adyen.checkout.dropin.BaseDropInServiceContract
-import com.adyen.checkout.dropin.DropInServiceResult
-import com.adyen.checkout.dropin.OrderDropInServiceResult
-import com.adyen.checkout.dropin.RecurringDropInServiceResult
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
 import com.adyenreactnativesdk.react.base.LayoutListener

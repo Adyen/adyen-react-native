@@ -52,6 +52,7 @@ const App = () => {
             <Stack.Screen name="Settings" component={Screens.SettingView} />
             <Stack.Screen name="Result" component={Screens.ResultView} />
             <Stack.Screen name="CustomCard" component={Screens.CseView} />
+            <Stack.Screen name="CardForm" component={Screens.CardForm} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>
