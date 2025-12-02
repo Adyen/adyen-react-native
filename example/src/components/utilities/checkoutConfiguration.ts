@@ -6,9 +6,9 @@ import type {
   Configuration,
   StoredPaymentMethod,
 } from '@adyen/react-native';
-import { ENVIRONMENT } from '../Configuration';
-import ApiClient from '../api/APIClient';
-import type { PaymentConfiguration } from '../api/types';
+import { ENVIRONMENT } from '../../Configuration';
+import ApiClient from '../../api/APIClient';
+import type { PaymentConfiguration } from '../../api/types';
 
 export const checkoutConfiguration = (config: PaymentConfiguration) => {
   const configuration: Configuration = {
@@ -44,7 +44,7 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
       },
     },
     card: {
-      addressVisibility:  'full',
+      addressVisibility: 'none',
       allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
       onUpdateAddress: (_prompt: string, lookup: AddressLookup) => {
         // Make request to Google Maps API or other address provider.

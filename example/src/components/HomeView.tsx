@@ -1,57 +1,40 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { View, Button } from 'react-native';
-import type { PageProps } from '../State/RootStackParamList';
+import { HomeStackParamList } from '../router/HomeStackNavigator';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Styles from './common/Styles';
 
-function createOptions({ navigation }: PageProps) {
-  return {
-    headerRight: () => (
-      <Button
-        title="Settings"
-        onPress={() => navigation.navigate('Settings')}
-      />
-    ),
-  };
-}
+type HomeScreenProps = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 
-const Home = ({ navigation }: PageProps) => {
-  useEffect(() => {
-    const options = createOptions({ navigation });
-    navigation.setOptions(options);
-  }, [navigation]);
-
+const Home = ({ navigation }: HomeScreenProps) => {
   const navigationHandler = useCallback(
-    (targetScreen: Parameters<typeof navigation.navigate>[0]) => {
-      navigation.navigate(targetScreen);
+    (screenName: keyof HomeStackParamList) => {
+      navigation.navigate(screenName as any);
     },
     [navigation]
   );
 
   type PageType = {
     title: string;
-    route: Parameters<typeof navigation.navigate>[0];
+    route: keyof HomeStackParamList;
   };
 
   const pagesWithButtons: PageType[] = [
     {
       title: 'Checkout',
-      route: { name: 'SessionsCheckout', params: undefined },
+      route: 'SessionsCheckout',
     },
     {
       title: 'Advanced case',
-      route: { name: 'AdvancedCheckout', params: undefined },
+      route: 'AdvancedCheckout',
     },
     {
       title: 'Advanced partial payment case',
-      route: { name: 'PartialPaymentCheckout', params: undefined },
+      route: 'PartialPaymentCheckout',
     },
     {
       title: 'Custom Card Integration',
-      route: { name: 'CustomCard', params: undefined },
-    },
-    {
-      title: 'Card Component',
-      route: { name: 'CardForm', params: undefined },
+      route: 'CustomCard',
     },
   ];
 

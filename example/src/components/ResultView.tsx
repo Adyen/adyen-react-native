@@ -1,8 +1,9 @@
-import { View } from 'react-native';
+import { Button, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../State/RootStackParamList';
+import type { RootStackParamList } from '../router/RootStackNavigator';
 import Styles from './common/Styles';
 import AdaptiveText from './common/AdaptiveText';
+import { useAppContext } from '../hooks/useAppContext';
 
 export type ResultViewProps = NativeStackScreenProps<
   RootStackParamList,
@@ -10,9 +11,14 @@ export type ResultViewProps = NativeStackScreenProps<
 >;
 
 const ResultView = ({ route }: ResultViewProps) => {
+  const { navigateToRoot } = useAppContext();
+
   return (
     <View style={Styles.centeredContent}>
       <AdaptiveText>{route.params.resultCode}</AdaptiveText>
+      <View style={Styles.padded}>
+        <Button title="Back to Home" onPress={() => navigateToRoot()} />
+      </View>
     </View>
   );
 };

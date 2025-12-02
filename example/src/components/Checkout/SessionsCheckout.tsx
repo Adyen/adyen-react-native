@@ -7,19 +7,17 @@ import type {
   SessionsResult,
   SessionConfiguration,
 } from '@adyen/react-native';
-import PaymentMethods from './components/PaymentMethodsView';
+import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
-import { checkoutConfiguration } from '../../State/checkoutConfiguration';
-import type { PageProps } from '../../State/RootStackParamList';
+import { checkoutConfiguration } from '../utilities/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
-import { processResult } from './utils/processResult';
 
-const SessionsCheckout = ({ navigation }: PageProps) => {
-  const { configuration } = useAppContext();
+const SessionsCheckout = () => {
+  const { configuration, processResult } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [session, setSession] = useState<SessionConfiguration | undefined>(
@@ -28,11 +26,12 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
 
   useEffect(() => {
     const refreshSession = async () => {
-      const returnUrl = Platform.select({
-        android: await AdyenDropIn.getReturnURL(),
-        default: ENVIRONMENT.returnUrl,
-      });
       try {
+        const returnUrl = Platform.select({
+          android: await AdyenDropIn.getReturnURL(),
+          default: ENVIRONMENT.returnUrl,
+        });
+        console.log('returnUrl', returnUrl);
         const newSession = await ApiClient.requestSession(
           configuration,
           returnUrl
@@ -57,16 +56,16 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
   const didComplete = useCallback(
     async (result: SessionsResult, nativeComponent: AdyenComponent) => {
       if (result.resultCode === 'PresentToShopper') {
-        processResult(result, nativeComponent, navigation);
+        processResult(result, nativeComponent);
         return;
       }
       const status = await ApiClient.requestSessionResult(
         result.sessionId,
         result.sessionResult
       );
-      processResult(status, nativeComponent, navigation);
+      processResult(status, nativeComponent);
     },
-    [navigation]
+    [processResult]
   );
 
   if (loading) {
@@ -86,7 +85,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
   }
 
   return (
-    <View>
+    <View style={Styles.page}>
       <TopView />
       <AdyenCheckout
         config={checkoutConfiguration(configuration)}
@@ -94,7 +93,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
         onComplete={didComplete}
         onError={didFail}
       >
-        <PaymentMethods showComponents={false} />
+        <CheckoutNavigator showComponents={false} />
       </AdyenCheckout>
     </View>
   );

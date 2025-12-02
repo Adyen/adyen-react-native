@@ -9,19 +9,18 @@ import type {
   AdyenError,
   AdyenComponent,
 } from '@adyen/react-native';
-import PaymentMethods from './components/PaymentMethodsView';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
-import { checkoutConfiguration } from '../../State/checkoutConfiguration';
-import type { PageProps } from '../../State/RootStackParamList';
-import { processResult } from './utils/processResult';
+import { checkoutConfiguration } from '../utilities/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
+import { PaymentResponse } from '../../api/types';
+import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 
-const AdvancedCheckout = ({ navigation }: PageProps) => {
-  const { configuration } = useAppContext();
+const AdvancedCheckout = () => {
+  const { configuration, processResult } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [paymentMethods, setPaymentMethods] = useState<
@@ -58,25 +57,25 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
         if (result.action) {
           nativeComponent.handle(result.action);
         } else {
-          processResult(result, nativeComponent, navigation);
+          processResult(result, nativeComponent);
         }
       } catch (error) {
         processError(error, nativeComponent);
       }
     },
-    [configuration, navigation]
+    [configuration, processResult]
   );
 
   const didProvide = useCallback(
     async (data: PaymentDetailsData, nativeComponent: AdyenActionComponent) => {
       try {
         const result = await ApiClient.paymentDetails(data);
-        processResult(result, nativeComponent, navigation);
+        processResult(result, nativeComponent);
       } catch (error) {
         processError(error, nativeComponent);
       }
     },
-    [navigation]
+    [processResult]
   );
 
   const didFail = useCallback(
@@ -85,6 +84,13 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
       processAdyenError(error, nativeComponent);
     },
     []
+  );
+
+  const didComplete = useCallback(
+    async (result: PaymentResponse, nativeComponent: AdyenComponent) => {
+      processResult(result, nativeComponent);
+    },
+    [processResult]
   );
 
   if (loading) {
@@ -104,20 +110,17 @@ const AdvancedCheckout = ({ navigation }: PageProps) => {
   }
 
   return (
-    <View>
+    <View style={Styles.page}>
       <TopView />
       <AdyenCheckout
         config={checkoutConfiguration(configuration)}
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
         onAdditionalDetails={didProvide}
-        onComplete={(result, component) => {
-          // `onComplete` is only called for Voucher payment methods
-          processResult(result, component, navigation);
-        }}
+        onComplete={didComplete}
         onError={didFail}
       >
-        <PaymentMethods showComponents={true} navigation={navigation} />
+        <CheckoutNavigator showComponents={true} />
       </AdyenCheckout>
     </View>
   );

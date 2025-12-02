@@ -1,9 +1,7 @@
 import { ResultCode } from '@adyen/react-native';
-import { isSuccess } from '../../utilities/isSuccess';
 import type { PaymentResponse } from '../../../api/types';
 import type { DropInModule, Order } from '@adyen/react-native';
 import ApiClient from '../../../api/APIClient';
-import type { PageProps } from '../../../State/RootStackParamList';
 import type { PaymentConfiguration } from '../../../api/types';
 
 function isRefusedInPartialPaymentFlow(response: PaymentResponse) {
@@ -23,10 +21,8 @@ function isNonFullyPaidOrder(order: Order) {
 export async function processPartialPaymentResult(
   result: PaymentResponse,
   dropInComponent: DropInModule,
-  navigation: PageProps['navigation'],
   configuration: PaymentConfiguration
-) {
-  let success = isSuccess(result.resultCode);
+): Promise<PaymentResponse | undefined> {
   var outcome: ResultCode = result.resultCode;
   const action = result.action;
   const order = result?.order;
@@ -34,7 +30,6 @@ export async function processPartialPaymentResult(
     dropInComponent.handle(action);
     return;
   } else if (isRefusedInPartialPaymentFlow(result)) {
-    success = false;
     outcome = ResultCode.refused;
   } else if (order && isNonFullyPaidOrder(order)) {
     try {
@@ -45,12 +40,9 @@ export async function processPartialPaymentResult(
       dropInComponent.providePaymentMethods(paymentMethods, order);
       return;
     } catch (error) {
-      success = false;
       outcome = ResultCode.error;
       console.error(error);
     }
   }
-  dropInComponent.hide(success);
-  navigation.popToTop();
-  navigation.push('Result', { resultCode: outcome });
+  return { resultCode: outcome };
 }

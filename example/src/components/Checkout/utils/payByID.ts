@@ -1,18 +1,19 @@
 import {
   AdyenCSE,
   AdyenAction,
+  type PaymentResponse,
   type PaymentMethodData,
 } from '@adyen/react-native';
 import type { PaymentConfiguration } from '../../../api/types';
 import { ENVIRONMENT } from '../../../Configuration';
 import ApiClient from '../../../api/APIClient';
-import { checkoutConfiguration } from '../../../State/checkoutConfiguration';
+import { checkoutConfiguration } from '../../utilities/checkoutConfiguration';
 
 export async function payByID(
   id: string,
   cvv: string,
   configuration: PaymentConfiguration
-) {
+): Promise<PaymentResponse> {
   const encryptedCard = await AdyenCSE.encryptCard(
     { cvv },
     ENVIRONMENT.publicKey

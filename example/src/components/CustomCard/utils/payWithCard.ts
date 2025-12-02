@@ -6,7 +6,7 @@ import {
 } from '@adyen/react-native';
 import { ENVIRONMENT } from '../../../Configuration';
 import ApiClient from '../../../api/APIClient';
-import { checkoutConfiguration } from '../../../State/checkoutConfiguration';
+import { checkoutConfiguration } from '../../utilities/checkoutConfiguration';
 import type { PaymentConfiguration } from '../../../api/types';
 
 export async function payWithCard(

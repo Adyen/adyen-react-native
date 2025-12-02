@@ -1,33 +1,42 @@
-import { useAdyenCheckout } from '@adyen/react-native';
+import { useAdyenCheckout, AdyenAction } from '@adyen/react-native';
 import { View, ScrollView, ActivityIndicator } from 'react-native';
 import Styles from '../../common/Styles';
 import { useAppContext } from '../../../hooks/useAppContext';
 import type { StoredCardPaymentMethod } from '../../../api/types';
-import { handleStoredPayment } from '../utils/handleStoredPayment';
-import type { PageProps } from '../../../State/RootStackParamList';
 import { useCallback } from 'react';
 import StoredPaymentMethodsList from './StoredPaymentMethodsList';
 import PaymentMethodsList from './PaymentMethodsList';
 import DropInButton from './DropInButton';
 import PlatformPayButton from './PlatformPayButton';
+import { processError } from '../utils/processError';
+import { payByID } from '../utils/payByID';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { CheckoutStackParamList } from '../../../router/CheckoutNavigator';
+import PaymentMethodListItem from './PaymentMethodListItem';
 
-interface PaymentMethodsProps {
-  showComponents: boolean;
-  navigation?: PageProps['navigation'];
-}
+export type PaymentMethodsProps = NativeStackScreenProps<
+  CheckoutStackParamList,
+  'PaymentMethods'
+>;
 
-const PaymentMethods = ({
-  showComponents,
-  navigation,
-}: PaymentMethodsProps) => {
-  const { configuration } = useAppContext();
+const PaymentMethods = (prop: PaymentMethodsProps) => {
+  const { configuration, processResult } = useAppContext();
   const { isReady, paymentMethods } = useAdyenCheckout();
+
+  const showComponents = prop.route.params?.showComponents ?? false;
 
   const makePayment = useCallback(
     async (storedCard: StoredCardPaymentMethod) => {
-      await handleStoredPayment(storedCard, configuration, navigation);
+      let result: PaymentResponse;
+      try {
+        let cvv = '737'; /** Collect CVV from shopper if nececery */
+        result = await payByID(storedCard.id, cvv, configuration);
+        processResult(result, AdyenAction);
+      } catch (e) {
+        processError(e, AdyenAction);
+      }
     },
-    [configuration, navigation]
+    [configuration, processResult]
   );
 
   if (!isReady) {
@@ -38,16 +47,22 @@ const PaymentMethods = ({
     <ScrollView>
       <DropInButton />
 
-      {showComponents && (
+      {showComponents && paymentMethods && (
         <>
           <PlatformPayButton />
 
+          <PaymentMethodListItem
+            title="Card Component"
+            icon="card"
+            onPress={() => prop.navigation.navigate('CardForm')}
+          />
+
           <StoredPaymentMethodsList
-            storedPaymentMethods={paymentMethods?.storedPaymentMethods}
+            storedPaymentMethods={paymentMethods.storedPaymentMethods}
             makePayment={makePayment}
           />
 
-          <PaymentMethodsList paymentMethods={paymentMethods?.paymentMethods} />
+          <PaymentMethodsList paymentMethods={paymentMethods.paymentMethods} />
         </>
       )}
 
