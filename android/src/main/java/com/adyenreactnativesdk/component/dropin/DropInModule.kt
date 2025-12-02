@@ -318,7 +318,7 @@ class DropInModule(
   }
 
   override fun onFinished(result: SessionPaymentResult) {
-    TODO("Not yet implemented")
+    messageBus.sendFinishEvent(result)
   }
 
   private fun proxyHideDropInCommand(
