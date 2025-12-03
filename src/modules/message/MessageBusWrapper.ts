@@ -2,7 +2,7 @@ import { type NativeModule } from 'react-native';
 import { Event } from '../../core/constants';
 import { EventListenerWrapper } from '../base/EventListenerWrapper';
 import type { MessageBusModule } from './MessageBusModule';
-import type { PaymentAction } from '../../core/types';
+import type { HideOption, PaymentAction } from '../../core/types';
 
 /**
  *  Communication bus for all embeded Native Modules.
@@ -29,14 +29,12 @@ export class MessageBusWrapper
       Event.onAddressUpdate,
     ]);
   }
-  unsubscribe(componentId: String): void {
-    this.nativeModule.unsubscribe(componentId);
-  }
-  subscribe(componentId: String) {
-    this.nativeModule.subscribe(componentId);
-  }
-  hide(success: boolean, message: string) {
-    this.nativeModule.hide(success, message);
+  hide(success: boolean, option?: HideOption): void {
+    if (option?.message) {
+      this.nativeModule.hide(success, option);
+    } else {
+      this.nativeModule.hide(success, { message: '' });
+    }
   }
   handle(action: PaymentAction) {
     this.nativeModule.handle(action);

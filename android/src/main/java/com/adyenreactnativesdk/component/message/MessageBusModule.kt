@@ -18,23 +18,16 @@ class MessageBusModule(
 
   override fun getName(): String = COMPONENT_NAME
 
-  var listenerCouunt = 0
+  var listenerCount = 0
 
   @ReactMethod
-  fun addListener(eventName: String?) { // No JS events expected
-    listenerCouunt = listenerCouunt++
+  fun addListener(eventName: String?) {
+    listenerCount = listenerCount++
   }
 
   @ReactMethod
-  fun removeListeners(count: Int?) { // No JS events expected
-  }
-
-  @ReactMethod
-  fun subscribe(id: String) {
-  }
-
-  @ReactMethod
-  fun unsubscribe(id: String) {
+  fun removeListeners(count: Int?) {
+    listenerCount = listenerCount - (count ?: 1)
   }
 
   @ReactMethod
