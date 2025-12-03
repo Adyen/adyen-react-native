@@ -2,3 +2,4 @@ yarn test > /dev/null 2>&1 || yarn test
 yarn lint > /dev/null 2>&1 || yarn lint
 yarn typecheck > /dev/null 2>&1 || yarn typecheck
 swiftformat --lint . > /dev/null 2>&1 || swiftformat --lint .
+ktlint "!**node_modules**"  > /dev/null 2>&1 || ktlint "!**node_modules**"

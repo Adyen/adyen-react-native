@@ -11,9 +11,8 @@ import com.facebook.react.uimanager.ThemedReactContext
 class ComponentSessionCallback<T : PaymentComponentState<*>>(
   context: ThemedReactContext,
   private val onActionCallback: (Action) -> Unit,
-  private val componentId: String
+  private val componentId: String,
 ) : SessionComponentCallback<T> {
-
   var messageBus = MessageBus(context)
 
   override fun onAction(action: Action) {
@@ -28,4 +27,3 @@ class ComponentSessionCallback<T : PaymentComponentState<*>>(
     messageBus.onException(componentError.exception)
   }
 }
-

@@ -12,17 +12,17 @@ import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 
 class MessageBusModule(
-  val context: ReactApplicationContext?
+  val context: ReactApplicationContext?,
 ) : BaseModule(context) {
-
   override var messageBus = MessageBus(reactApplicationContext)
+
   override fun getName(): String = COMPONENT_NAME
 
   var listenerCouunt = 0
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
-    listenerCouunt = listenerCouunt++;
+    listenerCouunt = listenerCouunt++
   }
 
   @ReactMethod
@@ -31,12 +31,10 @@ class MessageBusModule(
 
   @ReactMethod
   fun subscribe(id: String) {
-
   }
 
   @ReactMethod
   fun unsubscribe(id: String) {
-
   }
 
   @ReactMethod
@@ -52,7 +50,10 @@ class MessageBusModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       val action = Action.SERIALIZER.deserialize(jsonObject)
-      consumers.entries.first().value.onAction(action)
+      consumers.entries
+        .first()
+        .value
+        .onAction(action)
     } catch (e: JSONException) {
       messageBus.sendErrorEvent(ModuleException.InvalidAction(e))
     }

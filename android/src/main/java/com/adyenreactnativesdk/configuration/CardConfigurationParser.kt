@@ -127,7 +127,9 @@ class CardConfigurationParser(
           }
         }
 
-        else -> null
+        else -> {
+          null
+        }
       }
     }
 
@@ -159,7 +161,9 @@ class CardConfigurationParser(
           }
         }
 
-        else -> null
+        else -> {
+          null
+        }
       }
     }
 

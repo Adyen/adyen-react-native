@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 class SessionHelperModule(
   context: ReactApplicationContext?,
 ) : BaseModule(context) {
-
   override var messageBus = MessageBus(reactApplicationContext)
 
   @ReactMethod

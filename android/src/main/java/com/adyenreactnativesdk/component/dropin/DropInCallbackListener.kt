@@ -8,10 +8,9 @@ import java.lang.ref.WeakReference
 
 class DropInCallbackListener :
   DropInCallback,
-    SessionDropInCallback {
-
+  SessionDropInCallback {
   var callback: WeakReference<ReactDropInCallback> =
-      WeakReference(null)
+    WeakReference(null)
 
   override fun onDropInResult(dropInResult: DropInResult?) {
     callback.get()?.let {

@@ -25,6 +25,7 @@ class InstantModule(
   context: ReactApplicationContext?,
 ) : BaseModule(context) {
   override fun getName(): String = COMPONENT_NAME
+
   override var messageBus = MessageBus(reactApplicationContext)
 
   @ReactMethod

@@ -25,10 +25,13 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
 import org.json.JSONException
 import org.json.JSONObject
 
-class MessageBus(val context: ReactContext, val redirectUrl: String? = null): CheckoutProxy.ComponentEventListener {
+class MessageBus(
+  val context: ReactContext,
+  val redirectUrl: String? = null,
+) : CheckoutProxy.ComponentEventListener {
   fun sendEvent(
-      eventName: String,
-      jsonObject: JSONObject,
+    eventName: String,
+    jsonObject: JSONObject,
   ) {
     try {
       context

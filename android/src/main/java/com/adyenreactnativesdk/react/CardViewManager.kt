@@ -27,10 +27,11 @@ import com.facebook.react.viewmanagers.CardViewManagerInterface
 import org.json.JSONObject
 
 @ReactModule(name = CardViewManager.NAME)
-class CardViewManager() :
+class CardViewManager :
   SimpleViewManager<DynamicComponentView>(),
-  CardViewManagerInterface<DynamicComponentView>, LayoutListener, ComponentContract {
-
+  CardViewManagerInterface<DynamicComponentView>,
+  LayoutListener,
+  ComponentContract {
   private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
   private var dynamicComponentView: DynamicComponentView? = null
   private var cardComponentManager: CardComponentManager? = null
@@ -59,7 +60,7 @@ class CardViewManager() :
   override fun updateState(
     view: DynamicComponentView,
     props: ReactStylesDiffMap?,
-    stateWrapper: StateWrapper?
+    stateWrapper: StateWrapper?,
   ): Any? {
     this.stateWrapper = stateWrapper
     return super.updateState(view, props, stateWrapper)
@@ -75,7 +76,7 @@ class CardViewManager() :
     ifNotNull(
       paymentMethod,
       configuration,
-      fragmentActivity
+      fragmentActivity,
     ) { paymentMethodJson, configuration, fragmentActivity ->
       cardComponentManager?.init(configuration, paymentMethodJson)
       cardComponentManager?.component?.let { cardComponent ->
@@ -86,7 +87,7 @@ class CardViewManager() :
 
   override fun setPaymentMethod(
     view: DynamicComponentView?,
-    value: String?
+    value: String?,
   ) {
     value?.let {
       paymentMethod = JSONObject(it)
@@ -95,7 +96,7 @@ class CardViewManager() :
 
   override fun setConfiguration(
     view: DynamicComponentView?,
-    value: String?
+    value: String?,
   ) {
     value?.let {
       val json = JSONObject(it)
@@ -141,7 +142,7 @@ class CardViewManager() :
   override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> =
     mapOf(
       OnPressEvent.EVENT_NAME to mapOf("registrationName" to "onButtonPress"),
-      ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView")
+      ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView"),
     )
 
   override fun onLayoutSizeUpdate(size: Size) {
@@ -156,7 +157,7 @@ class CardViewManager() :
   override fun onAction(action: Action) {
     ifNotNull(
       fragmentActivity,
-      cardComponentManager?.component
+      cardComponentManager?.component,
     ) { activity, component ->
       component.handleAction(action, activity)
     }
@@ -171,10 +172,11 @@ class ResizableCustomViewEvent(
 ) : Event<ResizableCustomViewEvent>(surfaceId, viewId) {
   override fun getEventName() = EVENT_NAME
 
-  override fun getEventData(): WritableMap = Arguments.createMap().apply {
-    putInt("width", width)
-    putInt("height", height)
-  }
+  override fun getEventData(): WritableMap =
+    Arguments.createMap().apply {
+      putInt("width", width)
+      putInt("height", height)
+    }
 
   companion object {
     const val EVENT_NAME: String = "onLayoutChange"

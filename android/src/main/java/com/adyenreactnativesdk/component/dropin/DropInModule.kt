@@ -51,13 +51,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class DropInModule(
-  val context: ReactApplicationContext?
+  val context: ReactApplicationContext?,
 ) : BaseModule(context),
   ReactDropInCallback,
   AddressLookupCallback,
   CheckoutProxy.CardComponentEventListener,
   CheckoutProxy.DropInStoredPaymentEventListener {
-
   private var taskId: Int? = null
   override var messageBus = MessageBus(reactApplicationContext, getRedirectUrl())
 
@@ -393,6 +392,7 @@ class DropInModule(
       data.isEmpty() -> {
         return
       }
+
       else -> {
         val brandOnlyMap = data.map { BinLookupDataDTO(it.brand) }
         val jsonString = gson.toJson(brandOnlyMap)

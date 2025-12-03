@@ -27,14 +27,13 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
 
 class AdyenPaymentPackage : ReactPackage {
-
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
     val cardView = CardViewManager()
-    MessageBusModule.consumers.set("cardView", cardView)
+    MessageBusModule.consumers["cardView"] = cardView
 
     return listOf(
       PlatformPayViewManager(),
-      cardView
+      cardView,
     )
   }
 
@@ -48,7 +47,7 @@ class AdyenPaymentPackage : ReactPackage {
       AdyenCSEModule(reactContext),
       SessionHelperModule(reactContext),
       ActionModule(reactContext),
-      MessageBusModule(reactContext)
+      MessageBusModule(reactContext),
     )
   }
 

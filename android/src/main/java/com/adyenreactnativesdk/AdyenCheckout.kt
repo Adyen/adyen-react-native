@@ -52,7 +52,7 @@ object AdyenCheckout {
     dropInLauncher =
       DropIn.registerForDropInResult(
         activity,
-        dropInCallback as DropInCallback
+        dropInCallback as DropInCallback,
       )
     dropInSessionLauncher =
       DropIn.registerForDropInResult(
@@ -116,4 +116,3 @@ object AdyenCheckout {
 
   private const val TAG = "AdyenCheckout"
 }
-

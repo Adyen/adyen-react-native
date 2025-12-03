@@ -12,12 +12,10 @@ class ComponentAdvancedCallback<T : PaymentComponentState<*>>(
   private val context: ThemedReactContext,
   private val componentId: String,
 ) : ComponentCallback<T> {
-
   var messageBus = MessageBus(context)
 
   override fun onSubmit(state: T) {
     messageBus.onSubmit(state)
-
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {

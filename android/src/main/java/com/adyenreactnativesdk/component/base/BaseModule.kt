@@ -29,7 +29,6 @@ import org.json.JSONException
 abstract class BaseModule(
   context: ReactApplicationContext?,
 ) : ReactContextBaseJavaModule(context) {
-
   internal var integration = if (session == null) "advanced" else "session"
 
   abstract var messageBus: MessageBus
@@ -71,7 +70,10 @@ abstract class BaseModule(
 
     session =
       when (val result = CheckoutSessionProvider.createSession(sessionModel, configuration)) {
-        is CheckoutSessionResult.Success -> result.checkoutSession
+        is CheckoutSessionResult.Success -> {
+          result.checkoutSession
+        }
+
         is CheckoutSessionResult.Error -> {
           promise.reject(ModuleException.SessionError(null))
           return
@@ -120,4 +122,3 @@ abstract class BaseModule(
       private set
   }
 }
-

@@ -26,9 +26,10 @@ class ActionModule(
   private var promise: Promise? = null
 
   override fun getName(): String = COMPONENT_NAME
+
   override var messageBus = MessageBus(reactApplicationContext)
 
-  override fun getConstants(): MutableMap<String, Any> = hashMapOf(THREEDS_VERSION_NAME to THREEDS_VERSION)
+  override fun getConstants(): MutableMap<String, Any> = hashMapOf(THREEDS_VERSION_NAME to threeDS2SdkVersion)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -76,7 +77,7 @@ class ActionModule(
   companion object {
     private const val COMPONENT_NAME = "AdyenAction"
     private const val TAG = "ActionModule"
-    private var THREEDS_VERSION = ThreeDS2Service.INSTANCE.sdkVersion
+    private var threeDS2SdkVersion = ThreeDS2Service.INSTANCE.sdkVersion
     private const val THREEDS_VERSION_NAME = "threeDS2SdkVersion"
     private const val COMPONENT_ERROR = "actionError"
     private const val PARSING_ERROR = "parsingError"

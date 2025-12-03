@@ -5,27 +5,26 @@ import com.adyen.checkout.card.CardComponent
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.StoredPaymentMethod
+import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.react.CardViewManager.Companion.NAME
 import com.adyenreactnativesdk.react.base.ComponentAdvancedCallback
 import com.adyenreactnativesdk.react.base.ComponentSessionCallback
-import com.adyen.checkout.components.core.action.Action
 import com.facebook.react.uimanager.ThemedReactContext
 import org.json.JSONObject
 import java.util.UUID
 
 class CardComponentManager(
-  val context: ThemedReactContext
+  val context: ThemedReactContext,
 ) {
-
   val activity = context.currentActivity as FragmentActivity
 
   var component: CardComponent? = null
 
   fun init(
     configuration: CheckoutConfiguration,
-    paymentMethodJson: JSONObject
+    paymentMethodJson: JSONObject,
   ) {
     val session = BaseModule.Companion.session
     component =
@@ -35,7 +34,7 @@ class CardComponentManager(
           activity,
           session,
           configuration,
-          paymentMethodJson
+          paymentMethodJson,
         )
       } else {
         createAdvancedCardComponent(configuration, paymentMethodJson)
@@ -44,7 +43,7 @@ class CardComponentManager(
 
   private fun createAdvancedCardComponent(
     configuration: CheckoutConfiguration,
-    paymentMethodJson: JSONObject
+    paymentMethodJson: JSONObject,
   ): CardComponent {
     val isStoredPaymentMethod = false
     when (isStoredPaymentMethod) {
@@ -55,7 +54,7 @@ class CardComponentManager(
           storedPaymentMethod = storedPaymentMethod,
           checkoutConfiguration = configuration,
           callback = ComponentAdvancedCallback(context, NAME),
-          key = UUID.randomUUID().toString()
+          key = UUID.randomUUID().toString(),
         )
       }
 
@@ -66,7 +65,7 @@ class CardComponentManager(
           paymentMethod = paymentMethod,
           checkoutConfiguration = configuration,
           callback = ComponentAdvancedCallback(context, NAME),
-          key = UUID.randomUUID().toString()
+          key = UUID.randomUUID().toString(),
         )
       }
     }
@@ -77,7 +76,7 @@ class CardComponentManager(
     activity: FragmentActivity,
     session: CheckoutSession,
     configuration: CheckoutConfiguration,
-    paymentMethodJson: JSONObject
+    paymentMethodJson: JSONObject,
   ): CardComponent {
     val isStoredPaymentMethod = false
     when (isStoredPaymentMethod) {
@@ -89,7 +88,7 @@ class CardComponentManager(
           storedPaymentMethod = storedPaymentMethod,
           checkoutConfiguration = configuration,
           componentCallback = ComponentSessionCallback(context, ::actionHandle, NAME),
-          key = UUID.randomUUID().toString()
+          key = UUID.randomUUID().toString(),
         )
       }
 
@@ -101,7 +100,7 @@ class CardComponentManager(
           paymentMethod = paymentMethod,
           checkoutConfiguration = configuration,
           componentCallback = ComponentSessionCallback(context, ::actionHandle, NAME),
-          key = UUID.randomUUID().toString()
+          key = UUID.randomUUID().toString(),
         )
       }
     }
@@ -111,4 +110,3 @@ class CardComponentManager(
     component?.handleAction(action, activity)
   }
 }
-
