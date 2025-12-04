@@ -36,7 +36,7 @@ export class MessageBusWrapper
       this.nativeModule.hide(success, { message: '' });
     }
   }
-  handle(action: PaymentAction) {
+  handle(action: PaymentAction): void {
     this.nativeModule.handle(action);
   }
 }

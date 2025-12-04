@@ -5,7 +5,7 @@ import NativeCardView, {
 import { useAdyenCheckout } from '../hooks/useAdyenCheckout';
 import type { PaymentMethod } from '../core/types';
 import Styles from './common/Styles';
-import { MessageBus } from '../modules/message/MessageBusModule';
+import { useComponent } from '../hooks/useComponent';
 
 export interface CardViewProps {
   /** PaymentMethod object. If not provided, the first available payment method will be used. */
@@ -26,6 +26,7 @@ export const CardView: React.FC<CardViewProps> = ({
   onButtonPress,
 }) => {
   const { config, paymentMethods } = useAdyenCheckout();
+  const { subscribe, unsubscribe } = useComponent();
 
   const [size, setSize] = useState<LayoutChangeEvent>();
 
@@ -43,11 +44,11 @@ export const CardView: React.FC<CardViewProps> = ({
   }, [onButtonPress]);
 
   useEffect(() => {
-    MessageBus.subscribe(type);
+    subscribe(type);
     return () => {
-      MessageBus.unsubscribe(type);
+      unsubscribe(type);
     };
-  }, []);
+  }, [subscribe, unsubscribe]);
 
   useEffect(() => {
     if (!_paymentMethod) {

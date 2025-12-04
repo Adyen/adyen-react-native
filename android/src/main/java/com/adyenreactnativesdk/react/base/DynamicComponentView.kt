@@ -68,9 +68,18 @@ class DynamicComponentView
     }
 
     fun onDispose() {
+      // Clean up any child views to prevent Fragment lifecycle issues
+      removeAllViews()
       activity = null
       ignoreLayoutChanges = false
       interactionBlocked = false
+      hasComponent = false
+    }
+
+    override fun onDetachedFromWindow() {
+      super.onDetachedFromWindow()
+      // Ensure cleanup when view is detached to prevent Fragment lifecycle issues
+      onDispose()
     }
 
     private fun <T> onComponentViewGlobalLayout(

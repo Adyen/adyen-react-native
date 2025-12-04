@@ -107,6 +107,9 @@ class CardComponentManager(
   }
 
   private fun actionHandle(action: Action) {
-    component?.handleAction(action, activity)
+    // Check if FragmentActivity is still valid before handling action
+    if (!activity.isDestroyed && !activity.isFinishing) {
+      component?.handleAction(action, activity)
+    }
   }
 }

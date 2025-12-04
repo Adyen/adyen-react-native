@@ -4,6 +4,7 @@ import android.util.Size
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.action.Action
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
 import com.adyenreactnativesdk.react.base.LayoutListener
@@ -57,6 +58,17 @@ class CardViewManager :
     return dynamicComponentView!!
   }
 
+  override fun onDropViewInstance(view: DynamicComponentView) {
+    super.onDropViewInstance(view)
+    // Ensure proper cleanup when view is dropped
+    view.onDispose()
+    if (view == dynamicComponentView) {
+      dynamicComponentView = null
+      cardComponentManager = null
+      fragmentActivity = null
+    }
+  }
+
   override fun updateState(
     view: DynamicComponentView,
     props: ReactStylesDiffMap?,
@@ -78,9 +90,12 @@ class CardViewManager :
       configuration,
       fragmentActivity,
     ) { paymentMethodJson, configuration, fragmentActivity ->
-      cardComponentManager?.init(configuration, paymentMethodJson)
-      cardComponentManager?.component?.let { cardComponent ->
-        dynamicComponentView?.addComponent(cardComponent, fragmentActivity)
+      // Check if FragmentActivity is still valid and not destroyed
+      if (!fragmentActivity.isDestroyed && !fragmentActivity.isFinishing) {
+        cardComponentManager?.init(configuration, paymentMethodJson)
+        cardComponentManager?.component?.let { cardComponent ->
+          dynamicComponentView?.addComponent(cardComponent, fragmentActivity)
+        }
       }
     }
   }
@@ -159,7 +174,11 @@ class CardViewManager :
       fragmentActivity,
       cardComponentManager?.component,
     ) { activity, component ->
-      component.handleAction(action, activity)
+      // Check if FragmentActivity is still valid before handling action
+      if (!activity.isDestroyed && !activity.isFinishing) {
+        AdyenCheckout.setComponent(component)
+        component.handleAction(action, activity)
+      }
     }
   }
 }

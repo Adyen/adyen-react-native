@@ -34,7 +34,14 @@ import type {
   AddressLookupItem,
 } from '../core/configurations';
 import { checkPaymentMethodsResponse, checkConfiguration } from '../core/utils';
-import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
+import {
+  AdyenCheckoutContext,
+  type AdyenCheckoutContextType,
+} from '../hooks/useAdyenCheckout';
+import {
+  AdyenComponentContext,
+  type AdyenComponentContextType,
+} from '../hooks/useComponent';
 import type { EventListenerWrapper } from '../modules/base/EventListenerWrapper';
 import { MessageBus } from '../modules/message/MessageBusModule';
 
@@ -308,10 +315,32 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     [onSubmit, onAdditionalDetails, onComplete, onError, config]
   );
 
-  useEffect(() => {
-    subscriptions.current.set(MessageBus.name, []);
-    startEventListeners(MessageBus);
-  }, [startEventListeners]);
+  const subscribedComponents = useRef<Set<string>>(new Set());
+
+  const subscribe = useCallback(
+    (componentType: string) => {
+      if (!subscribedComponents.current.has(componentType)) {
+        subscribedComponents.current.add(componentType);
+        if (subscribedComponents.current.size === 1) {
+          subscriptions.current.set(MessageBus.name, []);
+          startEventListeners(MessageBus);
+        }
+      }
+    },
+    [startEventListeners]
+  );
+
+  const unsubscribe = useCallback((componentType: string) => {
+    subscribedComponents.current.delete(componentType);
+    if (subscribedComponents.current.size === 0) {
+      removeEventListeners(MessageBus);
+    }
+  }, []);
+
+  const componentContextValue = useMemo<AdyenComponentContextType>(
+    () => ({ subscribe, unsubscribe }),
+    [subscribe, unsubscribe]
+  );
 
   const start = useCallback(
     (typeName: string) => {
@@ -341,16 +370,21 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     [config, currentPaymentMethods, startEventListeners]
   );
 
+  const checkoutContextValue = useMemo<AdyenCheckoutContextType>(
+    () => ({
+      start,
+      config,
+      paymentMethods: currentPaymentMethods,
+      isReady: currentPaymentMethods !== undefined,
+    }),
+    [config, currentPaymentMethods, start]
+  );
+
   return (
-    <AdyenCheckoutContext.Provider
-      value={{
-        start,
-        config,
-        paymentMethods: currentPaymentMethods,
-        isReady: currentPaymentMethods !== undefined,
-      }}
-    >
-      {children}
+    <AdyenCheckoutContext.Provider value={checkoutContextValue}>
+      <AdyenComponentContext.Provider value={componentContextValue}>
+        {children}
+      </AdyenComponentContext.Provider>
     </AdyenCheckoutContext.Provider>
   );
 };

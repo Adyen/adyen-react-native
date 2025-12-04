@@ -1,6 +1,7 @@
 package com.adyenreactnativesdk.react.platformpay
 
 import android.annotation.SuppressLint
+import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.wallet.button.ButtonConstants
@@ -46,12 +47,14 @@ class PlatformPayView(
   var type: ButtonType = ButtonType.Buy
   var radius: Int = 50
 
-  private var googlePayButton: PayButton = PayButton(context)
+  private var googlePayButton: PayButton? = null
+  private val onGlobalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener { requestLayout() }
 
   fun showButton() {
-    removeView(googlePayButton)
+    googlePayButton?.let { removeView(it) }
     scheduleUpdate()
     addView(googlePayButton)
+    viewTreeObserver.addOnGlobalLayoutListener(onGlobalLayoutListener)
   }
 
   private fun scheduleUpdate() {
@@ -81,6 +84,11 @@ class PlatformPayView(
       )
       layout(left, top, right, bottom)
     }
+  }
+
+  override fun onDetachedFromWindow() {
+    super.onDetachedFromWindow()
+    viewTreeObserver.removeOnGlobalLayoutListener(onGlobalLayoutListener)
   }
 
   companion object {
