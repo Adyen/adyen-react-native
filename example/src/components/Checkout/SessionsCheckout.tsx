@@ -17,7 +17,7 @@ import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 
 const SessionsCheckout = () => {
-  const { configuration, processResult } = useAppContext();
+  const { configuration, processResult, navigateToRoot } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [session, setSession] = useState<SessionConfiguration | undefined>(
@@ -31,7 +31,7 @@ const SessionsCheckout = () => {
           android: await AdyenDropIn.getReturnURL(),
           default: ENVIRONMENT.returnUrl,
         });
-        console.log('returnUrl', returnUrl);
+        console.log('Session returnUrl', returnUrl);
         const newSession = await ApiClient.requestSession(
           configuration,
           returnUrl
@@ -49,6 +49,7 @@ const SessionsCheckout = () => {
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
       processAdyenError(error, nativeComponent);
+      navigateToRoot()
     },
     []
   );

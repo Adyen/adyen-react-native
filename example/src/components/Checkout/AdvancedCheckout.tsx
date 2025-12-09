@@ -80,7 +80,6 @@ const AdvancedCheckout = () => {
 
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
-      console.log(`didFailed: ${error.message}`);
       processAdyenError(error, nativeComponent);
     },
     []

@@ -9,10 +9,9 @@ export abstract class EventListenerWrapper {
   protected supportedEvents: string[];
   abstract name: string;
 
-  constructor(nativeModule: NativeModule, events?: Event[]) {
+  constructor(nativeModule: NativeModule, events: Event[]) {
     this.nativeModule = nativeModule;
-    this.supportedEvents = [Event.onError];
-    events?.forEach((element: string) => this.supportedEvents.push(element));
+    this.supportedEvents = events;
   }
   addListener(eventType: string) {
     this.nativeModule.addListener(eventType);

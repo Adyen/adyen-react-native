@@ -12,7 +12,7 @@ export abstract class ActionHandlingComponentWrapper
   implements AdyenActionComponent
 {
   constructor(nativeModule: NativeModule, events?: Event[]) {
-    const allEvents = [Event.onAdditionalDetails];
+    const allEvents = [Event.onSubmit, Event.onAdditionalDetails];
     events?.forEach((element: Event) => allEvents.push(element));
     super(nativeModule, allEvents);
   }

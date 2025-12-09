@@ -2,9 +2,9 @@ import { NativeModules } from 'react-native';
 import { MessageBusWrapper } from './MessageBusWrapper';
 import { ModuleMock } from '../base/ModuleMock';
 import type { AdyenComponent, PaymentAction } from '../../core/types';
-import { EventListenerWrapper } from '../base/EventListenerWrapper';
+import type { EventListenerWrapper } from '../base/EventListenerWrapper';
 
-export interface MessageBusModule extends EventListenerWrapper, AdyenComponent {
+export interface MessageBusModule extends AdyenComponent, EventListenerWrapper {
   /**
    * Handle a payment action received by the component.
    * @param action - The payment action to be handled.

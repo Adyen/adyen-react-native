@@ -38,7 +38,6 @@ export class DropInWrapper
   getReturnURL(): Promise<string> {
     return this.nativeModule.getReturnURL();
   }
-
   removeStored(success: boolean): void {
     this.nativeModule.removeStored(success);
   }

@@ -16,15 +16,11 @@ export class MessageBusWrapper
   constructor(nativeModule: NativeModule) {
     super(nativeModule, [
       Event.onError,
-      Event.onSubmit,
       Event.onComplete,
+      Event.onSubmit,
       Event.onAdditionalDetails,
       Event.onBinValue,
       Event.onBinLookup,
-      Event.onCancelOrder,
-      Event.onRequestOrder,
-      Event.onCheckBalance,
-      Event.onDisableStoredPaymentMethod,
       Event.onAddressConfirm,
       Event.onAddressUpdate,
     ]);
