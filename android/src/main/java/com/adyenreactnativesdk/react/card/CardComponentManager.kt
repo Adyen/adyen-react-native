@@ -11,12 +11,14 @@ import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.react.CardViewManager.Companion.NAME
 import com.adyenreactnativesdk.react.base.ComponentAdvancedCallback
 import com.adyenreactnativesdk.react.base.ComponentSessionCallback
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.uimanager.ThemedReactContext
 import org.json.JSONObject
 import java.util.UUID
 
 class CardComponentManager(
   val context: ThemedReactContext,
+  val messageBus: MessageBus,
 ) {
   val activity = context.currentActivity as FragmentActivity
 
@@ -26,7 +28,7 @@ class CardComponentManager(
     configuration: CheckoutConfiguration,
     paymentMethodJson: JSONObject,
   ) {
-    val session = BaseModule.Companion.session
+    val session = BaseModule.session
     component =
       if (session != null) {
         createSessionCardComponent(
@@ -53,7 +55,7 @@ class CardComponentManager(
           activity = activity,
           storedPaymentMethod = storedPaymentMethod,
           checkoutConfiguration = configuration,
-          callback = ComponentAdvancedCallback(context, NAME),
+          callback = ComponentAdvancedCallback(messageBus, NAME),
           key = UUID.randomUUID().toString(),
         )
       }
@@ -64,7 +66,7 @@ class CardComponentManager(
           activity = activity,
           paymentMethod = paymentMethod,
           checkoutConfiguration = configuration,
-          callback = ComponentAdvancedCallback(context, NAME),
+          callback = ComponentAdvancedCallback(messageBus, NAME),
           key = UUID.randomUUID().toString(),
         )
       }
@@ -87,7 +89,7 @@ class CardComponentManager(
           checkoutSession = session,
           storedPaymentMethod = storedPaymentMethod,
           checkoutConfiguration = configuration,
-          componentCallback = ComponentSessionCallback(context, ::actionHandle, NAME),
+          componentCallback = ComponentSessionCallback(messageBus, ::actionHandle, NAME),
           key = UUID.randomUUID().toString(),
         )
       }
@@ -99,7 +101,7 @@ class CardComponentManager(
           checkoutSession = session,
           paymentMethod = paymentMethod,
           checkoutConfiguration = configuration,
-          componentCallback = ComponentSessionCallback(context, ::actionHandle, NAME),
+          componentCallback = ComponentSessionCallback(messageBus, ::actionHandle, NAME),
           key = UUID.randomUUID().toString(),
         )
       }

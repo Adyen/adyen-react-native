@@ -6,20 +6,18 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
-import android.app.Application
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
-import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
-import com.adyenreactnativesdk.util.MessageBus
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -28,10 +26,9 @@ import org.json.JSONException
 
 class GooglePayModule(
   context: ReactApplicationContext?,
+  val messageBus: MessageBus,
 ) : BaseModule(context) {
   override fun getName(): String = COMPONENT_NAME
-
-  override var messageBus = MessageBus(reactApplicationContext)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -62,7 +59,6 @@ class GooglePayModule(
     }
 
     val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
-    CheckoutProxy.shared.componentListener = messageBus
     GooglePayComponent.run {
       PROVIDER.isAvailable(
         appCompatActivity.application,

@@ -6,7 +6,6 @@
 
 package com.adyenreactnativesdk.component.base
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.adyen.checkout.components.core.ComponentError
@@ -14,7 +13,7 @@ import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
-import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.AdyenPaymentPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -59,22 +58,10 @@ abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData :
   }
 
   fun onError(componentError: ComponentError) {
-    CheckoutProxy.shared.componentListener?.let { it.onException(componentError.exception) }
-      ?: {
-        Log.e(
-          TAG,
-          COMPONENT_LISTENER_IS_NULL,
-        )
-      }
+    AdyenPaymentPackage.messageBus?.onException(componentError.exception)
   }
 
   protected suspend fun emitData(componentData: ComponentData<TState>) {
     _componentDataFlow.emit(componentData as TComponentData)
-  }
-
-  companion object {
-    const val COMPONENT_LISTENER_IS_NULL =
-      "CheckoutProxy.shared.componentListener is null"
-    private const val TAG = "ComponentViewModel"
   }
 }

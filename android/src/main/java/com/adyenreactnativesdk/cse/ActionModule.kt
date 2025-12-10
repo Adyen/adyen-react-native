@@ -8,12 +8,11 @@ import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.threeds2.ThreeDS2Service
-import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
-import com.adyenreactnativesdk.util.MessageBus
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -26,8 +25,6 @@ class ActionModule(
   private var promise: Promise? = null
 
   override fun getName(): String = COMPONENT_NAME
-
-  override var messageBus = MessageBus(reactApplicationContext)
 
   override fun getConstants(): MutableMap<String, Any> = hashMapOf(THREEDS_VERSION_NAME to threeDS2SdkVersion)
 

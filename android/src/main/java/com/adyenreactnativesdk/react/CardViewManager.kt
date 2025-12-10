@@ -11,6 +11,7 @@ import com.adyenreactnativesdk.react.base.LayoutListener
 import com.adyenreactnativesdk.react.card.CardComponentManager
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.ifNotNull
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
@@ -28,8 +29,9 @@ import com.facebook.react.viewmanagers.CardViewManagerInterface
 import org.json.JSONObject
 
 @ReactModule(name = CardViewManager.NAME)
-class CardViewManager :
-  SimpleViewManager<DynamicComponentView>(),
+class CardViewManager(
+  val messageBus: MessageBus,
+) : SimpleViewManager<DynamicComponentView>(),
   CardViewManagerInterface<DynamicComponentView>,
   LayoutListener,
   ComponentContract {
@@ -47,7 +49,7 @@ class CardViewManager :
 
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
     fragmentActivity = context.currentActivity as? FragmentActivity
-    cardComponentManager = CardComponentManager(context)
+    cardComponentManager = CardComponentManager(context, messageBus)
     if (dynamicComponentView != null) {
       dynamicComponentView?.onDispose()
     }

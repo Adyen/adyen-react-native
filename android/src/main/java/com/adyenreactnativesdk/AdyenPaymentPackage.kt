@@ -7,28 +7,33 @@
 package com.adyenreactnativesdk
 
 import android.annotation.SuppressLint
+import com.adyen.checkout.components.core.AddressData
 import com.adyen.checkout.components.core.internal.analytics.AnalyticsPlatform
 import com.adyen.checkout.components.core.internal.analytics.AnalyticsPlatformParams
-import com.adyen.checkout.dropin.BaseDropInServiceContract
+import com.adyenreactnativesdk.component.MessageBusModule
 import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
 import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import com.adyenreactnativesdk.component.instant.InstantModule
-import com.adyenreactnativesdk.component.message.MessageBusModule
+import com.adyenreactnativesdk.component.model.AddressDataAdapter
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
 import com.adyenreactnativesdk.react.CardViewManager
 import com.adyenreactnativesdk.react.PlatformPayViewManager
-import com.adyenreactnativesdk.util.MessageBus
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
+import com.google.gson.GsonBuilder
 
 class AdyenPaymentPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
-    val cardView = CardViewManager()
+    val bus = messageBus ?: MessageBus(reactContext, gson)
+    messageBus = bus
+
+    val cardView = CardViewManager(bus)
     MessageBusModule.consumers["cardView"] = cardView
 
     return listOf(
@@ -39,15 +44,18 @@ class AdyenPaymentPackage : ReactPackage {
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     configureAnalytics()
+    val bus = messageBus ?: MessageBus(reactContext, gson)
+    messageBus = bus
+
     return listOf(
-      DropInModule(reactContext),
-      InstantModule(reactContext),
-      GooglePayModule(reactContext),
-      ApplePayModuleMock(reactContext),
+      DropInModule(reactContext, bus, gson),
+      InstantModule(reactContext, bus),
+      GooglePayModule(reactContext, bus),
+      ApplePayModuleMock(reactContext, bus),
+      MessageBusModule(reactContext, bus),
       AdyenCSEModule(reactContext),
       SessionHelperModule(reactContext),
       ActionModule(reactContext),
-      MessageBusModule(reactContext),
     )
   }
 
@@ -56,5 +64,13 @@ class AdyenPaymentPackage : ReactPackage {
   private fun configureAnalytics() {
     val version = BuildConfig.CHECKOUT_VERSION
     AnalyticsPlatformParams.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, version)
+  }
+
+  companion object {
+    internal var messageBus: MessageBus? = null
+    private val gson =
+      GsonBuilder()
+        .registerTypeAdapter(AddressData::class.java, AddressDataAdapter())
+        .create()
   }
 }

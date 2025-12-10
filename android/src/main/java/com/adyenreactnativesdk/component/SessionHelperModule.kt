@@ -1,9 +1,15 @@
 package com.adyenreactnativesdk.component
 
 import androidx.lifecycle.lifecycleScope
-import com.adyen.checkout.sessions.core.SessionPaymentResult
+import com.adyen.checkout.components.core.CheckoutConfiguration
+import com.adyen.checkout.sessions.core.CheckoutSessionProvider
+import com.adyen.checkout.sessions.core.CheckoutSessionResult
+import com.adyen.checkout.sessions.core.SessionModel
+import com.adyen.checkout.sessions.core.SessionSetupResponse
 import com.adyenreactnativesdk.component.base.BaseModule
-import com.adyenreactnativesdk.util.MessageBus
+import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
+import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -14,28 +20,12 @@ import kotlinx.coroutines.launch
 class SessionHelperModule(
   context: ReactApplicationContext?,
 ) : BaseModule(context) {
-  override var messageBus = MessageBus(reactApplicationContext)
-
-  @ReactMethod
-  fun addListener(eventName: String?) { // No JS events expected
-  }
-
-  @ReactMethod
-  fun removeListeners(count: Int?) { // No JS events expected
-  }
-
-  @ReactMethod
-  fun open(
-    paymentMethodsData: ReadableMap?,
-    configuration: ReadableMap,
-  ) { // No UI
-  }
-
   @ReactMethod
   fun hide(
     success: Boolean,
     message: ReadableMap?,
   ) { // No UI
+    cleanup()
   }
 
   override fun getName(): String = COMPONENT_NAME
@@ -47,8 +37,46 @@ class SessionHelperModule(
     promise: Promise,
   ) {
     appCompatActivity.lifecycleScope.launch(Dispatchers.IO) {
-      super.createSessionAsync(sessionModelJSON, configurationJSON, promise)
+      createSessionAsync(sessionModelJSON, configurationJSON, promise)
     }
+  }
+
+  suspend fun createSessionAsync(
+    sessionModelJSON: ReadableMap,
+    configurationJSON: ReadableMap,
+    promise: Promise,
+  ) {
+    val sessionModel: SessionModel
+    val configuration: CheckoutConfiguration
+    try {
+      sessionModel = parseSessionModel(sessionModelJSON)
+      configuration = CheckoutConfigurationFactory.get(configurationJSON)
+    } catch (e: java.lang.Exception) {
+      promise.reject(ModuleException.SessionError(e))
+      return
+    }
+
+    val session =
+      when (val result = CheckoutSessionProvider.createSession(sessionModel, configuration)) {
+        is CheckoutSessionResult.Success -> {
+          result.checkoutSession
+        }
+
+        is CheckoutSessionResult.Error -> {
+          promise.reject(ModuleException.SessionError(result.exception))
+          return
+        }
+      }
+
+    val json = SessionSetupResponse.SERIALIZER.serialize(session.sessionSetupResponse)
+    val map = ReactNativeJson.convertJsonToMap(json)
+    setSession(session)
+    promise.resolve(map)
+  }
+
+  private fun parseSessionModel(json: ReadableMap): SessionModel {
+    val sessionModelJSON = ReactNativeJson.convertMapToJson(json)
+    return SessionModel.SERIALIZER.deserialize(sessionModelJSON)
   }
 
   companion object {

@@ -4,18 +4,15 @@ import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.PaymentComponentState
-import com.adyenreactnativesdk.component.CheckoutProxy
-import com.adyenreactnativesdk.util.MessageBus
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.uimanager.ThemedReactContext
 
 class ComponentAdvancedCallback<T : PaymentComponentState<*>>(
-  private val context: ThemedReactContext,
+  private val messageBus: MessageBus,
   private val componentId: String,
 ) : ComponentCallback<T> {
-  var messageBus = MessageBus(context)
-
   override fun onSubmit(state: T) {
-    messageBus.onSubmit(state)
+    messageBus.onSubmit(state, null)
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {

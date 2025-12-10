@@ -5,16 +5,14 @@ import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyen.checkout.sessions.core.SessionPaymentResult
-import com.adyenreactnativesdk.util.MessageBus
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.uimanager.ThemedReactContext
 
 class ComponentSessionCallback<T : PaymentComponentState<*>>(
-  context: ThemedReactContext,
+  private val messageBus: MessageBus,
   private val onActionCallback: (Action) -> Unit,
   private val componentId: String,
 ) : SessionComponentCallback<T> {
-  var messageBus = MessageBus(context)
-
   override fun onAction(action: Action) {
     onActionCallback(action)
   }
