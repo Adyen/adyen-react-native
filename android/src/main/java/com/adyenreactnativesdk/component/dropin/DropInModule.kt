@@ -49,7 +49,8 @@ class DropInModule(
   ReactDropInCallback {
   private var taskId: Int? = null
 
-  private fun getService(): BaseDropInServiceContract? = if (session != null) sessionService else advancedService
+  private var service: BaseDropInServiceContract? =
+    if (session != null) sessionService else advancedService
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -109,15 +110,10 @@ class DropInModule(
 
   @ReactMethod
   fun handle(actionMap: ReadableMap?) {
-    val listener = getService()
-    if (listener == null) {
-      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       val action = Action.SERIALIZER.deserialize(jsonObject)
-      listener.sendResult(DropInServiceResult.Action(action))
+      service?.sendResult(DropInServiceResult.Action(action))
     } catch (e: Exception) {
       messageBus.sendErrorEvent(ModuleException.InvalidAction(e))
     }
@@ -137,27 +133,17 @@ class DropInModule(
   }
 
   @ReactMethod
-  fun update(results: ReadableArray?) {
-    if (results == null) return
-    val listener = getService()
-    if (listener == null) {
-      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-
-    try {
-      val jsonString = ReactNativeJson.convertArrayToJson(results).toString()
-      val addresses = gson.fromJson(jsonString, Array<LookupAddress>::class.java)
-      val result = AddressLookupDropInServiceResult.LookupResult(addresses.toList())
-      listener.sendAddressLookupResult(result)
-    } catch (error: Throwable) {
-      Log.w(TAG, error)
-      val result =
-        AddressLookupDropInServiceResult.LookupResult(
-          arrayListOf(),
-        )
-      listener.sendAddressLookupResult(result)
-    }
+  fun update(array: ReadableArray) {
+    val result =
+      try {
+        val jsonString = ReactNativeJson.convertArrayToJson(array).toString()
+        val addresses = gson.fromJson(jsonString, Array<LookupAddress>::class.java)
+        AddressLookupDropInServiceResult.LookupResult(addresses.toList())
+      } catch (error: Throwable) {
+        Log.w(TAG, error)
+        AddressLookupDropInServiceResult.LookupResult(arrayListOf())
+      }
+    service?.sendAddressLookupResult(result)
   }
 
   @ReactMethod
@@ -165,50 +151,39 @@ class DropInModule(
     success: Boolean,
     address: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-
-    if (success) {
-      try {
-        val jsonString = ReactNativeJson.convertMapToJson(address).toString()
-        val lookupAddress = gson.fromJson(jsonString, LookupAddress::class.java)
-        listener.sendAddressLookupResult(
-          AddressLookupDropInServiceResult.LookupComplete(
-            lookupAddress,
-          ),
-        )
-      } catch (error: Throwable) {
-        listener.sendAddressLookupResult(
+    val result =
+      if (success) {
+        try {
+          val jsonString = ReactNativeJson.convertMapToJson(address).toString()
+          val lookupAddress = gson.fromJson(jsonString, LookupAddress::class.java)
+          AddressLookupDropInServiceResult.LookupComplete(lookupAddress)
+        } catch (error: Throwable) {
           AddressLookupDropInServiceResult.Error(
             ErrorDialog(
               message = error.localizedMessage,
             ),
             null,
             false,
-          ),
-        )
-      }
-    } else {
-      val error = address?.getString("message")?.let { ErrorDialog(message = it) }
-      listener.sendAddressLookupResult(
+          )
+        }
+      } else {
+        val error = address?.getString("message")?.let { ErrorDialog(message = it) }
         AddressLookupDropInServiceResult.Error(
           error,
           null,
           false,
-        ),
-      )
-    }
+        )
+      }
+    service?.sendAddressLookupResult(result)
   }
 
   @ReactMethod
   fun removeStored(success: Boolean) {
-    if (storedPaymentMethodID == null) {
+    val id = storedPaymentMethodID
+    if (id == null) {
       Log.w(TAG, "No stored payment method was marked for removal")
+      return
     }
-    val id = storedPaymentMethodID ?: return
 
     val result =
       when {
@@ -230,19 +205,16 @@ class DropInModule(
     balance: ReadableMap?,
     error: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-    if (success) {
-      val jsonObject = ReactNativeJson.convertMapToJson(balance)
-      val balanceResult = BalanceResult.SERIALIZER.deserialize(jsonObject)
-      listener.sendBalanceResult(BalanceDropInServiceResult.Balance(balanceResult))
-    } else {
-      val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
-      listener.sendBalanceResult(BalanceDropInServiceResult.Error(null, message, true))
-    }
+    val result =
+      if (success) {
+        val jsonObject = ReactNativeJson.convertMapToJson(balance)
+        val balanceResult = BalanceResult.SERIALIZER.deserialize(jsonObject)
+        BalanceDropInServiceResult.Balance(balanceResult)
+      } else {
+        val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
+        BalanceDropInServiceResult.Error(null, message, true)
+      }
+    service?.sendBalanceResult(result)
   }
 
   @ReactMethod
@@ -251,40 +223,32 @@ class DropInModule(
     order: ReadableMap?,
     error: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-    if (success) {
-      val jsonObject = ReactNativeJson.convertMapToJson(order)
-      val orderResponse = OrderResponse.SERIALIZER.deserialize(jsonObject)
-      listener.sendOrderResult(OrderDropInServiceResult.OrderCreated(orderResponse))
-    } else {
-      val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
-      listener.sendOrderResult(OrderDropInServiceResult.Error(null, message, true))
-    }
+    val result =
+      if (success) {
+        val jsonObject = ReactNativeJson.convertMapToJson(order)
+        val orderResponse = OrderResponse.SERIALIZER.deserialize(jsonObject)
+        OrderDropInServiceResult.OrderCreated(orderResponse)
+      } else {
+        val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
+        OrderDropInServiceResult.Error(null, message, true)
+      }
+    service?.sendOrderResult(result)
   }
 
   @ReactMethod
   fun providePaymentMethods(
     paymentMethods: ReadableMap,
-    order: ReadableMap?,
+    map: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      messageBus.sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
     val pmJsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
     val paymentMethods = PaymentMethodsApiResponse.SERIALIZER.deserialize(pmJsonObject)
     val order =
-      order?.let {
+      map?.let {
         val jsonObject = ReactNativeJson.convertMapToJson(it)
-        return@let OrderResponse.SERIALIZER.deserialize(jsonObject)
+        OrderResponse.SERIALIZER.deserialize(jsonObject)
       }
 
-    listener.sendResult(DropInServiceResult.Update(paymentMethods, order))
+    service?.sendResult(DropInServiceResult.Update(paymentMethods, order))
   }
 
   override fun onCancel() {
@@ -312,17 +276,14 @@ class DropInModule(
     success: Boolean,
     message: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      Log.e(TAG, ModuleException.NoModuleListener(integration).toString())
-      return
-    }
     val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
-    if (success && messageString != null) {
-      listener.sendResult(DropInServiceResult.Finished(messageString))
-    } else {
-      listener.sendResult(DropInServiceResult.Error(null, messageString, true))
-    }
+    val result =
+      if (success && messageString != null) {
+        DropInServiceResult.Finished(messageString)
+      } else {
+        DropInServiceResult.Error(null, messageString, true)
+      }
+    service?.sendResult(result)
   }
 
   private fun startBackgroundService() {
@@ -349,7 +310,6 @@ class DropInModule(
     private const val TASK_NAME = "ADYEN_DROPIN_TASK"
     var sessionService: BaseDropInServiceContract? = null
     var advancedService: BaseDropInServiceContract? = null
-
     var storedPaymentMethodID: String? = null
   }
 }

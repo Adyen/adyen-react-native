@@ -20,6 +20,8 @@ import org.json.JSONException
 abstract class BaseModule(
   context: ReactApplicationContext?,
 ) : ReactContextBaseJavaModule(context) {
+  internal var integration = if (session == null) "advanced" else "session"
+
   protected fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse =
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
