@@ -15,7 +15,7 @@ export function find(paymentMethods: PaymentMethodsResponse, typeName: string) {
  * @param {string} pmType
  * @returns {string} matching txVariable name or original name
  */
-export function mapCreatedComponentType(pmType: string) {
+function mapCreatedComponentType(pmType: string) {
   // Components created as 'card' need to be matched with paymentMethod response objects with type 'scheme'
   return pmType === 'card' ? 'scheme' : pmType;
 }

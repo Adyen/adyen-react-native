@@ -17,7 +17,7 @@ export function setAppTheme(androidStyles: any) {
 
   let appTheme = styles.find((item: any) => item.$.name === defaultTheme);
   if (!appTheme) {
-    console.log(
+    console.warn(
       `Default theme is not '${defaultTheme}'. Please set your theme parent as descendent of 'Theme.MaterialComponents'`
     );
   } else {
