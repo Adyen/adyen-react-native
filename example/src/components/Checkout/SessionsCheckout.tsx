@@ -49,9 +49,9 @@ const SessionsCheckout = () => {
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
       processAdyenError(error, nativeComponent);
-      navigateToRoot()
+      navigateToRoot();
     },
-    []
+    [navigateToRoot]
   );
 
   const didComplete = useCallback(
