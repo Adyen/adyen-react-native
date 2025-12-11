@@ -115,9 +115,11 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, [paymentMethods, sessionContext]);
 
   useEffect(() => {
+    console.debug('AdyenCheckout created');
     const dump = subscriptions.current;
     return () => {
       dump.forEach((module) => module.forEach((s) => s.remove()));
+      console.debug('AdyenCheckout destroyed');
     };
   }, []);
 
