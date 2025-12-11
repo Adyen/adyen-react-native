@@ -17,16 +17,12 @@ class MessageBusModule(
 ) : BaseModule(context) {
   override fun getName(): String = COMPONENT_NAME
 
-  var listenerCount = 0
-
   @ReactMethod
   fun addListener(eventName: String?) {
-    listenerCount = listenerCount++
   }
 
   @ReactMethod
   fun removeListeners(count: Int?) {
-    listenerCount = listenerCount - (count ?: 1)
   }
 
   @ReactMethod
@@ -38,14 +34,18 @@ class MessageBusModule(
   }
 
   @ReactMethod
-  fun handle(actionMap: ReadableMap?) {
+  fun handle(
+    actionMap: ReadableMap?,
+    name: String,
+  ) {
+    val component =
+      consumers[name]
+        ?: return messageBus.sendErrorEvent(ModuleException.NoConsumer())
+
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       val action = Action.Companion.SERIALIZER.deserialize(jsonObject)
-      consumers.entries
-        .first()
-        .value
-        .onAction(action)
+      component.onAction(action)
     } catch (e: JSONException) {
       messageBus.sendErrorEvent(ModuleException.InvalidAction(e))
     }

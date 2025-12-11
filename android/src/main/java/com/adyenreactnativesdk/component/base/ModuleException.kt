@@ -106,4 +106,10 @@ sealed class ModuleException(
       code = "noActivity",
       message = "ViewModel callback is inconsistent",
     )
+
+  class NoConsumer :
+    ModuleException(
+      code = "noConsumer",
+      message = "This View is not registered in MessageBus",
+    )
 }

@@ -5,7 +5,6 @@ import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.facebook.react.uimanager.ThemedReactContext
 
 class ComponentAdvancedCallback<T : PaymentComponentState<*>>(
   private val messageBus: MessageBus,

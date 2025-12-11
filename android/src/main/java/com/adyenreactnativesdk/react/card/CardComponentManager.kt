@@ -47,6 +47,7 @@ class CardComponentManager(
     configuration: CheckoutConfiguration,
     paymentMethodJson: JSONObject,
   ): CardComponent {
+    // TODO: make work with stored cards
     val isStoredPaymentMethod = false
     when (isStoredPaymentMethod) {
       true -> {
@@ -80,6 +81,7 @@ class CardComponentManager(
     configuration: CheckoutConfiguration,
     paymentMethodJson: JSONObject,
   ): CardComponent {
+    // TODO: make work with stored cards
     val isStoredPaymentMethod = false
     when (isStoredPaymentMethod) {
       true -> {

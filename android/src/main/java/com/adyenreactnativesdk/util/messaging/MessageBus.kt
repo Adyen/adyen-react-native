@@ -28,8 +28,8 @@ import org.json.JSONException
 import org.json.JSONObject
 
 class MessageBus(
-  val context: ReactContext,
-  val gson: Gson,
+  private val context: ReactContext,
+  private val gson: Gson,
 ) : ComponentEventListener,
   DropInStoredPaymentEventListener,
   CardComponentEventListener,

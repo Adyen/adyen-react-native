@@ -25,10 +25,10 @@ class AdvancedComponentViewModel<TState : PaymentComponentState<*>, TComponentDa
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
-    AdyenPaymentPackage.messageBus?.onAdditionalDetails(actionComponentData)
+    AdyenPaymentPackage.messageBus.onAdditionalDetails(actionComponentData)
   }
 
   override fun onSubmit(state: TState) {
-    AdyenPaymentPackage.messageBus?.onSubmit(state, null)
+    AdyenPaymentPackage.messageBus.onSubmit(state, null)
   }
 }

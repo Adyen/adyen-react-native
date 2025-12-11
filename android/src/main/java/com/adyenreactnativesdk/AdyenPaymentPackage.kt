@@ -30,10 +30,8 @@ import com.google.gson.GsonBuilder
 
 class AdyenPaymentPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
-    val bus = messageBus ?: MessageBus(reactContext, gson)
-    messageBus = bus
-
-    val cardView = CardViewManager(bus)
+    val messageBus = getOrCreateMessageBus(reactContext)
+    val cardView = CardViewManager(messageBus)
     MessageBusModule.consumers["cardView"] = cardView
 
     return listOf(
@@ -44,15 +42,14 @@ class AdyenPaymentPackage : ReactPackage {
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     configureAnalytics()
-    val bus = messageBus ?: MessageBus(reactContext, gson)
-    messageBus = bus
+    val messageBus = getOrCreateMessageBus(reactContext)
 
     return listOf(
-      DropInModule(reactContext, bus, gson),
-      InstantModule(reactContext, bus),
-      GooglePayModule(reactContext, bus),
-      ApplePayModuleMock(reactContext, bus),
-      MessageBusModule(reactContext, bus),
+      DropInModule(reactContext, messageBus, gson),
+      InstantModule(reactContext, messageBus),
+      GooglePayModule(reactContext, messageBus),
+      ApplePayModuleMock(reactContext, messageBus),
+      MessageBusModule(reactContext, messageBus),
       AdyenCSEModule(reactContext),
       SessionHelperModule(reactContext),
       ActionModule(reactContext),
@@ -67,7 +64,20 @@ class AdyenPaymentPackage : ReactPackage {
   }
 
   companion object {
-    internal var messageBus: MessageBus? = null
+    internal val messageBus: MessageBus
+      get() {
+        return _messageBus ?: throw Exception("AdyenCheckout MessageBus is not initialized")
+      }
+
+    @Volatile
+    private var _messageBus: MessageBus? = null
+    private val lock = Any()
+
+    private fun getOrCreateMessageBus(context: ReactApplicationContext): MessageBus =
+      _messageBus ?: synchronized(lock) {
+        _messageBus ?: MessageBus(context, gson).also { _messageBus = it }
+      }
+
     private val gson =
       GsonBuilder()
         .registerTypeAdapter(AddressData::class.java, AddressDataAdapter())

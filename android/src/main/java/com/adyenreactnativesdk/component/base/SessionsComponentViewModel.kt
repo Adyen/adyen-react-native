@@ -26,6 +26,6 @@ class SessionsComponentViewModel<TState : PaymentComponentState<*>, TComponentDa
   }
 
   override fun onFinished(result: SessionPaymentResult) {
-    AdyenPaymentPackage.messageBus?.onFinished(result)
+    AdyenPaymentPackage.messageBus.onFinished(result)
   }
 }
