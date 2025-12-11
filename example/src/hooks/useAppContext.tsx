@@ -79,7 +79,10 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
 
   const navigateToRoot = useCallback(() => {
     if (navigationRef.isReady()) {
-      navigationRef.navigate('HomeStack', { screen: 'Home' });
+      navigationRef.reset({
+        index: 0,
+        routes: [{ name: 'HomeStack', state: { routes: [{ name: 'Home' }] } }],
+      });
     }
   }, [navigationRef]);
 

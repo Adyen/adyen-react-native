@@ -55,10 +55,10 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
         lookup.confirm(address);
       },
       onBinValue: (binValue: string) => {
-        console.log('BIN: ', binValue);
+        console.debug('BIN: ', binValue);
       },
       onBinLookup: (binData: BinLookupData[]) => {
-        console.log('BIN data: ', JSON.stringify(binData));
+        console.debug('BIN data: ', JSON.stringify(binData));
       },
     },
     applepay: {
