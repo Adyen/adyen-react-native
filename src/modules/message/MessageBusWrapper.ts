@@ -1,19 +1,25 @@
-import { type NativeModule } from 'react-native';
+import type { NativeModule } from 'react-native';
 import { Event } from '../../core/constants';
 import { EventListenerWrapper } from '../base/EventListenerWrapper';
 import type { MessageBusModule } from './MessageBusModule';
 import type { HideOption, PaymentAction } from '../../core/types';
 
+/** Native module interface specific to MessageBus */
+export interface MessageBusNativeModule extends NativeModule {
+  hide(success: boolean, option?: HideOption): void;
+  handle(action: PaymentAction, name: string): void;
+}
+
 /**
- *  Communication bus for all embeded Native Modules.
+ *  Communication bus for all embedded Native Modules.
  * */
 export class MessageBusWrapper
-  extends EventListenerWrapper
+  extends EventListenerWrapper<MessageBusNativeModule>
   implements MessageBusModule
 {
   name: string = 'MessageBus';
 
-  constructor(nativeModule: NativeModule) {
+  constructor(nativeModule: MessageBusNativeModule) {
     super(nativeModule, [
       Event.onError,
       Event.onComplete,
@@ -32,7 +38,7 @@ export class MessageBusWrapper
       this.nativeModule.hide(success, { message: '' });
     }
   }
-  handle(action: PaymentAction): void {
-    this.nativeModule.handle(action);
+  handle(action: PaymentAction, name: string): void {
+    this.nativeModule.handle(action, name);
   }
 }

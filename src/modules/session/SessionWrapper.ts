@@ -6,10 +6,19 @@ import type {
   SessionHelperModule,
 } from './SessionHelperModule';
 
-export class SessionWrapper implements SessionHelperModule {
-  nativeModule: NativeModule | any;
+/** Native module interface specific to Session */
+export interface SessionNativeModule extends NativeModule {
+  hide(success: boolean, option?: { message?: string }): void;
+  createSession(
+    session: SessionConfiguration,
+    configuration: EnvironmentConfiguration
+  ): Promise<SessionContext>;
+}
 
-  constructor(nativeModule: NativeModule) {
+export class SessionWrapper implements SessionHelperModule {
+  private nativeModule: SessionNativeModule;
+
+  constructor(nativeModule: SessionNativeModule) {
     this.nativeModule = nativeModule;
   }
 

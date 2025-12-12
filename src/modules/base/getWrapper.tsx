@@ -61,14 +61,13 @@ export function getWrapper(
   if (ADDRESS_COMPONENTS.includes(typeName)) {
     nativeComponent = AdyenDropIn as DropInWrapper;
   } else {
-    var extendedComponentList = NATIVE_COMPONENTS;
-    nativeComponent = extendedComponentList.includes(typeName)
+    nativeComponent = NATIVE_COMPONENTS.includes(typeName)
       ? (AdyenDropIn as DropInWrapper)
       : (AdyenInstant as InstantWrapper);
   }
 
   return {
-    nativeComponent: nativeComponent,
-    paymentMethod: paymentMethod,
+    nativeComponent,
+    paymentMethod,
   };
 }

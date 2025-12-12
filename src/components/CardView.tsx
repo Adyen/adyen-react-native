@@ -56,6 +56,10 @@ export const CardView: React.FC<CardViewProps> = ({
     }
   }, [_paymentMethod]);
 
+  if (!_paymentMethod) {
+    return null;
+  }
+
   return (
     <NativeCardView
       paymentMethod={JSON.stringify(_paymentMethod)}

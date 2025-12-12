@@ -1,14 +1,24 @@
 import type { NativeModule } from 'react-native';
 import type { BaseConfiguration } from '../../core/configurations';
-import type { PaymentAction } from '../../core/types';
+import type { PaymentAction, PaymentDetailsData } from '../../core/types';
 import type { ActionModule } from './AdyenAction';
 
+/** Native module interface specific to Action */
+export interface ActionNativeModule extends NativeModule {
+  handle(
+    action: PaymentAction,
+    configuration: BaseConfiguration
+  ): Promise<PaymentDetailsData>;
+  hide(success: boolean): void;
+  getConstants(): { threeDS2SdkVersion: string };
+}
+
 export class ActionModuleWrapper implements ActionModule {
-  nativeModule: NativeModule | any;
+  private nativeModule: ActionNativeModule;
 
   public threeDS2SdkVersion: string;
 
-  constructor(nativeModule: NativeModule | any) {
+  constructor(nativeModule: ActionNativeModule) {
     this.nativeModule = nativeModule;
     this.threeDS2SdkVersion = nativeModule.getConstants().threeDS2SdkVersion;
   }

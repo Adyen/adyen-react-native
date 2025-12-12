@@ -2,10 +2,16 @@ import type { NativeModule } from 'react-native';
 import type { Card } from '../../core/types';
 import type { AdyenCSEModule } from './AdyenCSEModule';
 
-export class AdyenCSEModuleWrapper implements AdyenCSEModule {
-  nativeModule: NativeModule | any;
+/** Native module interface specific to CSE */
+export interface CSENativeModule extends NativeModule {
+  encryptCard(payload: Card, publicKey: string): Promise<Card>;
+  encryptBin(payload: string, publicKey: string): Promise<string>;
+}
 
-  constructor(nativeModule: NativeModule | any) {
+export class AdyenCSEModuleWrapper implements AdyenCSEModule {
+  private nativeModule: CSENativeModule;
+
+  constructor(nativeModule: CSENativeModule) {
     this.nativeModule = nativeModule;
   }
 

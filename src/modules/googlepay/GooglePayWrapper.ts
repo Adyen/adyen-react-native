@@ -1,10 +1,21 @@
 import type { Configuration } from '../../core/configurations';
 import type { PaymentMethod } from '../../core/types';
 import type { GooglePayModule } from './AdyenGooglePay';
-import { ActionHandlingComponentWrapper } from '../base/ActionHandlingComponentWrapper';
+import {
+  ActionHandlingComponentWrapper,
+  type ActionHandlingNativeModule,
+} from '../base/ActionHandlingComponentWrapper';
+
+/** Native module interface specific to GooglePay */
+export interface GooglePayNativeModule extends ActionHandlingNativeModule {
+  isAvailable(
+    paymentMethod: PaymentMethod,
+    configuration: Configuration
+  ): Promise<boolean>;
+}
 
 export class GooglePayWrapper
-  extends ActionHandlingComponentWrapper
+  extends ActionHandlingComponentWrapper<GooglePayNativeModule>
   implements GooglePayModule
 {
   name: string = 'GooglePay';

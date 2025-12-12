@@ -2,14 +2,17 @@ import type { NativeModule } from 'react-native';
 import { Event } from '../../core/constants';
 
 /**
- *  Generic wrapper for all Native Modules. Controlls sunscriptions and supported events.
+ *  Generic wrapper for all Native Modules. Controls subscriptions and supported events.
+ *  @typeParam T - The specific native module interface for the concrete wrapper
  * */
-export abstract class EventListenerWrapper {
-  nativeModule: NativeModule | any;
+export abstract class EventListenerWrapper<
+  T extends NativeModule = NativeModule,
+> {
+  protected nativeModule: T;
   protected supportedEvents: string[];
   abstract name: string;
 
-  constructor(nativeModule: NativeModule, events: Event[]) {
+  constructor(nativeModule: T, events: Event[]) {
     this.nativeModule = nativeModule;
     this.supportedEvents = events;
   }

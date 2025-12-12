@@ -3,17 +3,36 @@ import type {
   AddressLookupItem,
 } from '../../core/configurations';
 import type { Balance, Order, PaymentMethodsResponse } from '../../core/types';
-import { ActionHandlingComponentWrapper } from '../base/ActionHandlingComponentWrapper';
+import {
+  ActionHandlingComponentWrapper,
+  type ActionHandlingNativeModule,
+} from '../base/ActionHandlingComponentWrapper';
 import type { DropInModule } from './AdyenDropIn';
 import { Event } from '../../core/constants';
-import type { NativeModule } from 'react-native';
 import type {
   PartialPaymentComponent,
   RemovesStoredPayment,
 } from '../../core/configurations';
 
+/** Native module interface specific to DropIn */
+export interface DropInNativeModule extends ActionHandlingNativeModule {
+  getReturnURL(): Promise<string>;
+  removeStored(success: boolean): void;
+  update(results: AddressLookupItem[]): void;
+  confirm(
+    success: boolean,
+    addressOrError?: AddressLookupItem | { message?: string }
+  ): void;
+  provideBalance(success: boolean, balance?: Balance, error?: Error): void;
+  provideOrder(success: boolean, order?: Order, error?: Error): void;
+  providePaymentMethods(
+    paymentMethods: PaymentMethodsResponse,
+    order?: Order
+  ): void;
+}
+
 export class DropInWrapper
-  extends ActionHandlingComponentWrapper
+  extends ActionHandlingComponentWrapper<DropInNativeModule>
   implements
     DropInModule,
     AddressLookup,
@@ -22,7 +41,7 @@ export class DropInWrapper
 {
   name: string = 'DropIn';
 
-  constructor(nativeModule: NativeModule) {
+  constructor(nativeModule: DropInNativeModule) {
     super(nativeModule, [
       Event.onBinValue,
       Event.onBinLookup,

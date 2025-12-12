@@ -8,11 +8,12 @@ export interface MessageBusModule extends AdyenComponent, EventListenerWrapper {
   /**
    * Handle a payment action received by the component.
    * @param action - The payment action to be handled.
+   * @param name - The name of the component handling the action.
    */
-  handle(action: PaymentAction): void;
+  handle(action: PaymentAction, name: string): void;
 }
 
-/** Communication bus for all embeded Native Modules. */
+/** Communication bus for all embedded Native Modules. */
 export const MessageBus: MessageBusModule = new MessageBusWrapper(
   NativeModules.AdyenMessageBus ?? ModuleMock
 );
