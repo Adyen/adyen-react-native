@@ -13,6 +13,7 @@ export type HomeStackParamList = {
   AdvancedCheckout: undefined;
   PartialPaymentCheckout: undefined;
   CustomCard: undefined;
+  StoredCards: undefined;
 };
 
 // Home stack with main navigation (back button navigation)
@@ -54,6 +55,11 @@ export const HomeStackNavigator = () => {
         name="CustomCard"
         component={Screens.CseView}
         options={{ title: 'Custom Card' }}
+      />
+      <HomeStack.Screen
+        name="StoredCards"
+        component={Screens.StoredCards}
+        options={{ title: 'Stored Cards' }}
       />
     </HomeStack.Navigator>
   );

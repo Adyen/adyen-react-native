@@ -17,7 +17,9 @@ const PaymentMethodsList = ({ paymentMethods }: PaymentMethodsListProps) => {
 
   return (
     <View>
-      <AdaptiveText style={Styles.paddedTitle}>Components</AdaptiveText>
+      <AdaptiveText style={Styles.paddedTitle}>
+        Components(obsolete)
+      </AdaptiveText>
       {paymentMethods.map((paymentMethod) => {
         return (
           <PaymentMethodListItem

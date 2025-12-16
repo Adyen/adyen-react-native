@@ -6,4 +6,5 @@ export { default as SessionsComponentsCheckout } from './Checkout/SessionsCompon
 export { default as AdvancedCheckout } from './Checkout/AdvancedCheckout';
 export { default as Home } from './Home/HomeView';
 export { default as PartialPaymentCheckout } from './Checkout/PartialPaymentCheckout';
+export { default as StoredCards } from './Checkout/StoredCardsCheckout';
 export { default as CardForm } from './CardForm';

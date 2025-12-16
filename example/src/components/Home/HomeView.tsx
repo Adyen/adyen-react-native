@@ -26,7 +26,10 @@ const TAB_CONTENT: Record<TabName, PageType[]> = {
     { title: 'Advanced Checkout', route: 'AdvancedCheckout' },
     { title: 'Partial Payment', route: 'PartialPaymentCheckout' },
   ],
-  'API-Only': [{ title: 'Custom Card (CSE)', route: 'CustomCard' }],
+  'API-Only': [
+    { title: 'Custom Card (CSE)', route: 'CustomCard' },
+    { title: 'Stored Cards', route: 'StoredCards' },
+  ],
 };
 
 const Home = ({ navigation }: HomeScreenProps) => {
