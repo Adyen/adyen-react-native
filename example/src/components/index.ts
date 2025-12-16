@@ -4,6 +4,6 @@ export { default as ResultView } from './ResultView';
 export { default as SessionsDropInCheckout } from './Checkout/SessionsDropInCheckout';
 export { default as SessionsComponentsCheckout } from './Checkout/SessionsComponentsCheckout';
 export { default as AdvancedCheckout } from './Checkout/AdvancedCheckout';
-export { default as Home } from './HomeView';
+export { default as Home } from './Home/HomeView';
 export { default as PartialPaymentCheckout } from './Checkout/PartialPaymentCheckout';
 export { default as CardForm } from './CardForm';
