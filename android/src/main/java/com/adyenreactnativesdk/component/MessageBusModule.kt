@@ -34,13 +34,13 @@ class MessageBusModule(
   }
 
   @ReactMethod
-  fun handle(
-    actionMap: ReadableMap?,
-    name: String,
-  ) {
+  fun handle(actionMap: ReadableMap?) {
+    val name =
+      currentComponent ?: return messageBus.sendErrorEvent(ModuleException.NoPaymentRegistered())
+
     val component =
       consumers[name]
-        ?: return messageBus.sendErrorEvent(ModuleException.NoConsumer())
+        ?: return messageBus.sendErrorEvent(ModuleException.NoConsumer(name))
 
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
@@ -55,5 +55,6 @@ class MessageBusModule(
     private const val TAG = "MessageBusModule"
     private const val COMPONENT_NAME = "AdyenMessageBus"
     var consumers: MutableMap<String, ComponentContract> = mutableMapOf()
+    var currentComponent: String? = null
   }
 }

@@ -32,7 +32,7 @@ class AdyenPaymentPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
     val messageBus = getOrCreateMessageBus(reactContext)
     val cardView = CardViewManager(messageBus)
-    MessageBusModule.consumers["cardView"] = cardView
+    MessageBusModule.consumers[CardViewManager.NAME] = cardView
 
     return listOf(
       PlatformPayViewManager(),

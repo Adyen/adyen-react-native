@@ -49,8 +49,8 @@ class DropInModule(
   ReactDropInCallback {
   private var taskId: Int? = null
 
-  private var service: BaseDropInServiceContract? =
-    if (session != null) sessionService else advancedService
+  private val service: BaseDropInServiceContract?
+    get() = if (session != null) sessionService else advancedService
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected

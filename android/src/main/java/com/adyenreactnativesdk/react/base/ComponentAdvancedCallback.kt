@@ -4,6 +4,7 @@ import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyenreactnativesdk.component.MessageBusModule
 import com.adyenreactnativesdk.util.messaging.MessageBus
 
 class ComponentAdvancedCallback<T : PaymentComponentState<*>>(
@@ -11,6 +12,7 @@ class ComponentAdvancedCallback<T : PaymentComponentState<*>>(
   private val componentId: String,
 ) : ComponentCallback<T> {
   override fun onSubmit(state: T) {
+    MessageBusModule.currentComponent = componentId
     messageBus.onSubmit(state, null)
   }
 
@@ -19,6 +21,7 @@ class ComponentAdvancedCallback<T : PaymentComponentState<*>>(
   }
 
   override fun onError(componentError: ComponentError) {
+    MessageBusModule.currentComponent = null
     messageBus.onException(componentError.exception)
   }
 }

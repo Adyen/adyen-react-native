@@ -7,7 +7,7 @@ import type { HideOption, PaymentAction } from '../../core/types';
 /** Native module interface specific to MessageBus */
 export interface MessageBusNativeModule extends NativeModule {
   hide(success: boolean, option?: HideOption): void;
-  handle(action: PaymentAction, name: string): void;
+  handle(action: PaymentAction): void;
 }
 
 /**
@@ -38,7 +38,7 @@ export class MessageBusWrapper
       this.nativeModule.hide(success, { message: '' });
     }
   }
-  handle(action: PaymentAction, name: string): void {
-    this.nativeModule.handle(action, name);
+  handle(action: PaymentAction): void {
+    this.nativeModule.handle(action);
   }
 }

@@ -54,10 +54,11 @@ class CardViewManager(
       dynamicComponentView?.onDispose()
     }
 
-    dynamicComponentView = DynamicComponentView(context)
-    dynamicComponentView?.layoutListener = this
+    val view = DynamicComponentView(context)
+    view.layoutListener = this
 
-    return dynamicComponentView!!
+    dynamicComponentView = view
+    return view
   }
 
   override fun onDropViewInstance(view: DynamicComponentView) {
@@ -83,7 +84,7 @@ class CardViewManager(
   override fun onAfterUpdateTransaction(view: DynamicComponentView) {
     super.onAfterUpdateTransaction(view)
 
-    if (dynamicComponentView?.hasComponent ?: false) {
+    if (dynamicComponentView?.hasComponent == true) {
       return
     }
 

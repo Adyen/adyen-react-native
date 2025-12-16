@@ -16,6 +16,12 @@ export abstract class EventListenerWrapper<
     this.nativeModule = nativeModule;
     this.supportedEvents = events;
   }
+
+  /** Returns the underlying native module for use with NativeEventEmitter */
+  get module(): T {
+    return this.nativeModule;
+  }
+
   addListener(eventType: string) {
     this.nativeModule.addListener(eventType);
   }

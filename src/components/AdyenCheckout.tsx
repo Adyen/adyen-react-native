@@ -152,14 +152,13 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 
   const startEventListeners = useCallback(
     (nativeComponent: EventListenerWrapper) => {
-      const eventEmitter = new NativeEventEmitter(nativeComponent);
+      const eventEmitter = new NativeEventEmitter(nativeComponent.module);
       const eventSubscriptions: EmitterSubscription[] = [];
       function submitPayment(data: PaymentMethodData, extra: any) {
         const payload = {
           ...data,
           returnUrl: data.returnUrl ?? config.returnUrl,
         };
-        console.log('AdyenCheckout submitPayment', payload);
         onSubmit?.(
           payload,
           nativeComponent as unknown as AdyenActionComponent,

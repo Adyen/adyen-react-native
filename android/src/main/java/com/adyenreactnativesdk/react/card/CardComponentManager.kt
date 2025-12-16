@@ -32,7 +32,6 @@ class CardComponentManager(
     component =
       if (session != null) {
         createSessionCardComponent(
-          context,
           activity,
           session,
           configuration,
@@ -75,7 +74,6 @@ class CardComponentManager(
   }
 
   private fun createSessionCardComponent(
-    context: ThemedReactContext,
     activity: FragmentActivity,
     session: CheckoutSession,
     configuration: CheckoutConfiguration,
