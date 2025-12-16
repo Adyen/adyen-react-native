@@ -21,8 +21,12 @@ const Home = ({ navigation }: HomeScreenProps) => {
 
   const pagesWithButtons: PageType[] = [
     {
-      title: 'Checkout',
-      route: 'SessionsCheckout',
+      title: 'Sessions DropIn',
+      route: 'SessionsDropInCheckout',
+    },
+    {
+      title: 'Sessions Components',
+      route: 'SessionsComponentsCheckout',
     },
     {
       title: 'Advanced case',

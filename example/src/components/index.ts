@@ -2,6 +2,8 @@ export { default as CseView } from './CustomCard/CseView';
 export { default as SettingView } from './Settings/SettingsView';
 export { default as ResultView } from './ResultView';
 export { default as SessionsCheckout } from './Checkout/SessionsCheckout';
+export { default as SessionsDropInCheckout } from './Checkout/SessionsDropInCheckout';
+export { default as SessionsComponentsCheckout } from './Checkout/SessionsComponentsCheckout';
 export { default as AdvancedCheckout } from './Checkout/AdvancedCheckout';
 export { default as Home } from './HomeView';
 export { default as PartialPaymentCheckout } from './Checkout/PartialPaymentCheckout';

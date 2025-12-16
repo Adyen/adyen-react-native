@@ -9,6 +9,8 @@ export const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 export type HomeStackParamList = {
   Home: undefined;
   SessionsCheckout: undefined;
+  SessionsDropInCheckout: undefined;
+  SessionsComponentsCheckout: undefined;
   AdvancedCheckout: undefined;
   PartialPaymentCheckout: undefined;
   CustomCard: undefined;
@@ -33,6 +35,16 @@ export const HomeStackNavigator = () => {
         name="SessionsCheckout"
         component={Screens.SessionsCheckout}
         options={{ title: 'Sessions Checkout' }}
+      />
+      <HomeStack.Screen
+        name="SessionsDropInCheckout"
+        component={Screens.SessionsDropInCheckout}
+        options={{ title: 'Sessions DropIn' }}
+      />
+      <HomeStack.Screen
+        name="SessionsComponentsCheckout"
+        component={Screens.SessionsComponentsCheckout}
+        options={{ title: 'Sessions Components' }}
       />
       <HomeStack.Screen
         name="AdvancedCheckout"
