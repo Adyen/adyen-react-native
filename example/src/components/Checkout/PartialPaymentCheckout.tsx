@@ -13,7 +13,7 @@ import type {
   Balance,
   PartialPaymentComponent,
 } from '@adyen/react-native';
-import PaymentMethods from './components/PaymentMethodsView';
+import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import ApiClient from '../../api/APIClient';
@@ -174,7 +174,7 @@ const PartialPaymentCheckout = () => {
   }
 
   return (
-    <View>
+    <View style={Styles.page}>
       <TopView />
       <AdyenCheckout
         config={{
@@ -190,7 +190,7 @@ const PartialPaymentCheckout = () => {
         onAdditionalDetails={didProvide}
         onError={didFail}
       >
-        <PaymentMethods showComponents={false} />
+        <CheckoutNavigator showComponents={false} />
       </AdyenCheckout>
     </View>
   );
