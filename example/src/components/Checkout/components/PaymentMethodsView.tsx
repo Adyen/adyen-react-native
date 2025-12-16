@@ -1,5 +1,5 @@
 import { useAdyenCheckout, AdyenAction } from '@adyen/react-native';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import Styles from '../../common/Styles';
 import { useAppContext } from '../../../hooks/useAppContext';
 import type { StoredCardPaymentMethod } from '../../../api/types';
@@ -14,6 +14,12 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CheckoutStackParamList } from '../../../router/CheckoutNavigator';
 import PaymentMethodListItem from './PaymentMethodListItem';
 
+export type PaymentMethodsParams = {
+  showDropIn?: boolean;
+  showEmbeddedComponents?: boolean;
+  showDropBasedComponents?: boolean;
+};
+
 export type PaymentMethodsProps = NativeStackScreenProps<
   CheckoutStackParamList,
   'PaymentMethods'
@@ -23,7 +29,11 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
   const { configuration, processResult } = useAppContext();
   const { isReady, paymentMethods } = useAdyenCheckout();
 
-  const showComponents = prop.route.params?.showComponents ?? false;
+  const showDropIn = prop.route.params?.showDropIn ?? false;
+  const showEmbeddedComponents =
+    prop.route.params?.showEmbeddedComponents ?? false;
+  const showDropinBasedComponents =
+    prop.route.params?.showDropBasedComponents ?? false;
 
   const makePayment = useCallback(
     async (storedCard: StoredCardPaymentMethod) => {
@@ -43,11 +53,15 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
     return <ActivityIndicator />;
   }
 
+  if (!paymentMethods) {
+    return <Text>No payment methods available</Text>;
+  }
+
   return (
     <ScrollView>
-      <DropInButton />
+      {showDropIn && <DropInButton />}
 
-      {showComponents && paymentMethods && (
+      {showEmbeddedComponents && (
         <>
           <PlatformPayButton />
 
@@ -56,7 +70,11 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
             icon="card"
             onPress={() => prop.navigation.navigate('CardForm')}
           />
+        </>
+      )}
 
+      {showDropinBasedComponents && (
+        <>
           <StoredPaymentMethodsList
             storedPaymentMethods={paymentMethods.storedPaymentMethods}
             makePayment={makePayment}

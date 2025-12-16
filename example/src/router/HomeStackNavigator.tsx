@@ -8,7 +8,6 @@ export const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 // Home stack screens (main navigation with back button)
 export type HomeStackParamList = {
   Home: undefined;
-  SessionsCheckout: undefined;
   SessionsDropInCheckout: undefined;
   SessionsComponentsCheckout: undefined;
   AdvancedCheckout: undefined;
@@ -30,11 +29,6 @@ export const HomeStackNavigator = () => {
             <Button title="Settings" onPress={navigateToSettings} />
           ),
         }}
-      />
-      <HomeStack.Screen
-        name="SessionsCheckout"
-        component={Screens.SessionsCheckout}
-        options={{ title: 'Sessions Checkout' }}
       />
       <HomeStack.Screen
         name="SessionsDropInCheckout"

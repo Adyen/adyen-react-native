@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from 'react';
-import { Text, ActivityIndicator, View, Platform } from 'react-native';
-import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
+import { Text, ActivityIndicator, View } from 'react-native';
+import { AdyenCheckout } from '@adyen/react-native';
 import type {
   AdyenError,
   AdyenComponent,
@@ -27,10 +27,7 @@ const SessionsComponentsCheckout = () => {
   useEffect(() => {
     const refreshSession = async () => {
       try {
-        const returnUrl = Platform.select({
-          android: await AdyenDropIn.getReturnURL(),
-          default: ENVIRONMENT.returnUrl,
-        });
+        const returnUrl = ENVIRONMENT.returnUrl;
         console.log('Session returnUrl', returnUrl);
         const newSession = await ApiClient.requestSession(
           configuration,
@@ -94,7 +91,7 @@ const SessionsComponentsCheckout = () => {
         onComplete={didComplete}
         onError={didFail}
       >
-        <CheckoutNavigator showComponents={true} />
+        <CheckoutNavigator showEmbeddedComponents={true} />
       </AdyenCheckout>
     </View>
   );

@@ -119,7 +119,11 @@ const AdvancedCheckout = () => {
         onComplete={didComplete}
         onError={didFail}
       >
-        <CheckoutNavigator showComponents={true} />
+        <CheckoutNavigator
+          showDropIn={true}
+          showEmbeddedComponents={true}
+          showDropBasedComponents={true}
+        />
       </AdyenCheckout>
     </View>
   );

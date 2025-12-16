@@ -8,7 +8,11 @@ import PaymentMethodsView from '../components/Checkout/components/PaymentMethods
 
 // Checkout stack screens (for CardForm modal)
 export type CheckoutStackParamList = {
-  PaymentMethods: { showComponents: boolean };
+  PaymentMethods: {
+    showDropIn?: boolean;
+    showEmbeddedComponents?: boolean;
+    showDropBasedComponents?: boolean;
+  };
   CardForm: undefined;
 };
 
@@ -19,19 +23,25 @@ export type CheckoutStackNavigationProp =
   NativeStackNavigationProp<CheckoutStackParamList>;
 
 export interface CheckoutNavigatorProps {
-  showComponents: boolean;
+  showDropIn?: boolean;
+  showEmbeddedComponents?: boolean;
+  showDropBasedComponents?: boolean;
 }
 
 // Generic Checkout Navigator with CardForm modal
-export const CheckoutNavigator = ({
-  showComponents,
-}: CheckoutNavigatorProps) => {
+export const CheckoutNavigator = (prop: CheckoutNavigatorProps) => {
+  const { showDropIn, showEmbeddedComponents, showDropBasedComponents } = prop;
+
   return (
     <CheckoutStack.Navigator>
       <CheckoutStack.Screen
         name="PaymentMethods"
         component={PaymentMethodsView}
-        initialParams={{ showComponents }}
+        initialParams={{
+          showDropIn,
+          showEmbeddedComponents,
+          showDropBasedComponents,
+        }}
         options={{ headerShown: false }}
       />
       <CheckoutStack.Screen

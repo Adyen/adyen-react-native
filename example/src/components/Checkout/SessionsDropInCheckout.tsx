@@ -94,7 +94,7 @@ const SessionsDropInCheckout = () => {
         onComplete={didComplete}
         onError={didFail}
       >
-        <CheckoutNavigator showComponents={false} />
+        <CheckoutNavigator showDropIn={true} />
       </AdyenCheckout>
     </View>
   );
