@@ -31,7 +31,9 @@ internal final class DropInModule: BaseModule {
     func update(_ results: NSArray) {
         guard let lookupHandler else { return }
 
-        let addressModels: [LookupAddressModel] = results.compactMap { $0 as? NSDictionary }.compactMap { try? $0.decode() }
+        let addressModels: [LookupAddressModel] = results
+            .compactMap { $0 as? NSDictionary }
+            .compactMap { try? $0.decode() }
         DispatchQueue.main.async {
             lookupHandler(addressModels)
         }
@@ -136,7 +138,11 @@ internal final class DropInModule: BaseModule {
 }
 
 extension DropInModule: DropInComponentDelegate {
-    func didSubmit(_ data: Adyen.PaymentComponentData, from component: Adyen.PaymentComponent, in dropInComponent: Adyen.AnyDropInComponent) {
+    func didSubmit(
+        _ data: Adyen.PaymentComponentData,
+        from component: Adyen.PaymentComponent,
+        in dropInComponent: Adyen.AnyDropInComponent
+    ) {
         let response: SubmitData
         if let appleData = data.paymentMethod as? ApplePayDetails {
             response = SubmitData(paymentData: data.jsonObject, extra: appleData.extraData)
@@ -146,11 +152,19 @@ extension DropInModule: DropInComponentDelegate {
         sendEvent(event: .didSubmit, body: response.jsonObject)
     }
 
-    func didFail(with error: Error, from component: Adyen.PaymentComponent, in dropInComponent: Adyen.AnyDropInComponent) {
+    func didFail(
+        with error: Error,
+        from component: Adyen.PaymentComponent,
+        in dropInComponent: Adyen.AnyDropInComponent
+    ) {
         sendEvent(error: error)
     }
 
-    func didProvide(_ data: Adyen.ActionComponentData, from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
+    func didProvide(
+        _ data: Adyen.ActionComponentData,
+        from component: Adyen.ActionComponent,
+        in dropInComponent: Adyen.AnyDropInComponent
+    ) {
         sendEvent(event: .didProvide, body: data.jsonObject)
     }
 
@@ -159,7 +173,11 @@ extension DropInModule: DropInComponentDelegate {
         sendEvent(event: .didComplete, body: result.jsonObject)
     }
 
-    func didFail(with error: Error, from component: Adyen.ActionComponent, in dropInComponent: Adyen.AnyDropInComponent) {
+    func didFail(
+        with error: Error,
+        from component: Adyen.ActionComponent,
+        in dropInComponent: Adyen.AnyDropInComponent
+    ) {
         sendEvent(error: error)
     }
 
@@ -175,7 +193,10 @@ extension DropInModule: AddressLookupProvider {
         sendEvent(event: .didUpdateAddress, body: searchTerm)
     }
 
-    func complete(incompleteAddress: LookupAddressModel, resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void) {
+    func complete(
+        incompleteAddress: LookupAddressModel,
+        resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void
+    ) {
         lookupCompliationHandler = resultHandler
         sendEvent(event: .didConfirmAddress, body: incompleteAddress.jsonObject)
     }
@@ -204,7 +225,11 @@ struct AddressError: Error, LocalizedError, Codable {
 
 extension DropInModule: PartialPaymentDelegate {
 
-    func checkBalance(with data: PaymentComponentData, component: any Adyen.Component, completion: @escaping (Result<Balance, any Error>) -> Void) {
+    func checkBalance(
+        with data: PaymentComponentData,
+        component: any Adyen.Component,
+        completion: @escaping (Result<Balance, any Error>) -> Void
+    ) {
         sendEvent(event: .didCheckBalance, body: data.jsonObject)
         checkBalanceHandler = completion
     }
@@ -222,7 +247,10 @@ extension DropInModule: PartialPaymentDelegate {
         }
     }
 
-    func requestOrder(for component: any Adyen.Component, completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void) {
+    func requestOrder(
+        for component: any Adyen.Component,
+        completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void
+    ) {
         sendEvent(event: .didRequestOrder)
         requestOrderHandler = completion
     }
@@ -270,11 +298,11 @@ extension DropInModule: CardComponentDelegate {
     func didSubmit(lastFour: String, finalBIN: String, component: Adyen.CardComponent) {
         /* No Callback implemented */
     }
-    
+
     func didChangeBIN(_ value: String, component: Adyen.CardComponent) {
         sendEvent(event: .didChangeBinValue, body: value)
     }
-    
+
     func didChangeCardBrand(_ value: [Adyen.CardBrand]?, component: Adyen.CardComponent) {
         guard let value, !value.isEmpty else { return }
         let jsonData = value.map { BinLookupDataDTO(brand: $0.type.rawValue).jsonObject }

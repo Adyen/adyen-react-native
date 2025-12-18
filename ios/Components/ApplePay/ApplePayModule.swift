@@ -76,12 +76,14 @@ internal class ApplePayModule: BaseModule {
         }
 
         let supportedNetworks = paymentMethod.supportedNetworks
-        guard applePayParser.allowOnboarding || paymentAuthorizationService.canMakePayments(usingNetworks: supportedNetworks) else {
+        let canMakePayments = paymentAuthorizationService.canMakePayments(usingNetworks: supportedNetworks)
+        guard applePayParser.allowOnboarding || canMakePayments else {
             return resolver(false)
         }
 
         paymentRequest.supportedNetworks = supportedNetworks
-        guard let _ = paymentAuthorizationService.getAuthorizationViewController(paymentRequest: paymentRequest) else {
+        let authVC = paymentAuthorizationService.getAuthorizationViewController(paymentRequest: paymentRequest)
+        guard authVC != nil else {
             return resolver(false)
         }
 
@@ -130,7 +132,7 @@ struct PKPaymentAuthorizationServiceAdapter: PKPaymentAuthorizationService {
     func canMakePayments(usingNetworks: [PKPaymentNetwork]) -> Bool {
         PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: usingNetworks)
     }
-    
+
     func getAuthorizationViewController(paymentRequest: PKPaymentRequest) -> PKPaymentAuthorizationViewController? {
         PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
     }

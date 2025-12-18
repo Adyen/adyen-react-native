@@ -7,16 +7,22 @@
 
 #import "RCTFabricComponentsPlugins.h"
 
-#import <PassKit/PassKit.h>
+#if __has_include(<adyen_react_native/adyen_react_native-Swift.h>)
+#import <adyen_react_native/adyen_react_native-Swift.h>
+#else
+#import "adyen_react_native-Swift.h"
+#endif
 
 using namespace facebook::react;
 
-@interface ADYCardView () <RCTCardViewViewProtocol>
+@interface ADYCardView () <RCTCardViewViewProtocol, CardComponentViewProxyDelegate>
 
 @end
 
 @implementation ADYCardView {
-  PKPaymentButton *_button;
+  CardComponentViewProxy *_cardProxy;
+  NSString *_paymentMethod;
+  NSString *_configuration;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -28,12 +34,18 @@ using namespace facebook::react;
     static const auto defaultProps = std::make_shared<const CardViewProps>();
     _props = defaultProps;
 
-    const auto &viewProps =
-        *std::static_pointer_cast<CardViewProps const>(_props);
-    [self createButton:viewProps];
+    _cardProxy = [[CardComponentViewProxy alloc] initWithFrame:self.bounds];
+    _cardProxy.delegate = self;
+    _cardProxy.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self addSubview:_cardProxy];
   }
 
   return self;
+}
+
+- (void)layoutSubviews {
+  [super layoutSubviews];
+  _cardProxy.frame = self.bounds;
 }
 
 - (void)updateProps:(Props::Shared const &)props
@@ -43,28 +55,47 @@ using namespace facebook::react;
   const auto &newViewProps =
       *std::static_pointer_cast<CardViewProps const>(props);
 
-  if (oldViewProps.showButton != newViewProps.showButton) {
-    [self createButton:newViewProps];
+  NSString *newPaymentMethod = [NSString stringWithUTF8String:newViewProps.paymentMethod.c_str()];
+  NSString *newConfiguration = [NSString stringWithUTF8String:newViewProps.configuration.c_str()];
+
+  if (![_paymentMethod isEqualToString:newPaymentMethod]) {
+    _paymentMethod = newPaymentMethod;
+    [_cardProxy setPaymentMethod:_paymentMethod];
+  }
+
+  if (![_configuration isEqualToString:newConfiguration]) {
+    _configuration = newConfiguration;
+    [_cardProxy setConfiguration:_configuration];
   }
 
   [super updateProps:props oldProps:oldProps];
 }
 
-- (void)createButton:(const CardViewProps &)props {
-  if (_button) {
-    [_button removeFromSuperview];
-  }
+- (void)prepareForRecycle {
+  [super prepareForRecycle];
+  [_cardProxy dispose];
+  _paymentMethod = nil;
+  _configuration = nil;
+}
 
-  [_button addTarget:self
-                action:@selector(onPress)
-      forControlEvents:UIControlEventTouchUpInside];
-  self.contentView = _button;
+#pragma mark - CardComponentViewProxyDelegate
+
+- (void)onLayoutChangeWithWidth:(CGFloat)width height:(CGFloat)height {
+  if (_eventEmitter) {
+    CardViewEventEmitter::OnLayoutChange result = {
+      .width = static_cast<int>(width),
+      .height = static_cast<int>(height)
+    };
+    self.eventEmitter.onLayoutChange(result);
+  }
 }
 
 - (void)onPress {
-  CardViewEventEmitter::OnButtonPress result =
-      CardViewEventEmitter::OnButtonPress{};
-  self.eventEmitter.onButtonPress(result);
+  if (_eventEmitter) {
+    CardViewEventEmitter::OnButtonPress result =
+        CardViewEventEmitter::OnButtonPress{};
+    self.eventEmitter.onButtonPress(result);
+  }
 }
 
 // Event emitter convenience method

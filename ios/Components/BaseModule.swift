@@ -41,7 +41,9 @@ internal class BaseModule: RCTEventEmitter {
     internal var actionHandler: AdyenActionComponent?
 
     internal func present(_ component: PresentableComponent) {
-        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else { return sendEvent(error: NativeModuleError.notKeyWindow) }
+        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
+            return sendEvent(error: NativeModuleError.notKeyWindow)
+        }
 
         defer {
             BaseModule.currentPresenter = presenter

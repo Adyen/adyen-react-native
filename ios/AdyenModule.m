@@ -118,4 +118,13 @@ RCT_EXTERN_METHOD(handle:(NSDictionary *)action
 
 @end
 
+@interface RCT_EXTERN_MODULE(AdyenMessageBus, NSObject)
+
+RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
+                  message:(nullable NSDictionary *)message)
+
+RCT_EXTERN_METHOD(handle:(nullable NSDictionary *)actionMap)
+
+@end
+
 

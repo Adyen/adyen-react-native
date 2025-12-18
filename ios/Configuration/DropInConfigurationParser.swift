@@ -44,8 +44,10 @@ public struct DropInConfigurationParser {
     }
 
     public var configuration: DropInComponent.Configuration {
-        let configuration = DropInComponent.Configuration(allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
-                                                          allowPreselectedPaymentView: showPreselectedStoredPaymentMethod)
+        let configuration = DropInComponent.Configuration(
+            allowsSkippingPaymentList: skipListWhenSinglePaymentMethod,
+            allowPreselectedPaymentView: showPreselectedStoredPaymentMethod
+        )
         configuration.paymentMethodsList.allowDisablingStoredPaymentMethods = showRemovePaymentMethodButton
         return configuration
     }
