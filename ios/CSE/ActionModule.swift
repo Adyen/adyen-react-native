@@ -31,7 +31,7 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
 
     func didFail(with error: Error, from component: Adyen.ActionComponent) {
         let errorToSend = checkErrorType(error)
-        if let error = error as? NativeModuleError {
+        if let error = errorToSend as? NativeModuleError {
             return reject(with: error)
         }
         rejecter?(Constant.componentError, error.localizedDescription, error)

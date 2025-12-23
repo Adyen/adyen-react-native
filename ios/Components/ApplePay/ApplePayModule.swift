@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenApplePay)
-internal class ApplePayModule: BaseModule {
+internal class ApplePayModule: BaseModuleSender {
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
@@ -92,20 +92,6 @@ internal class ApplePayModule: BaseModule {
 
 }
 
-extension ApplePayModule: PaymentComponentDelegate {
-
-    internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        let applePayDetails = data.paymentMethod as? ApplePayDetails
-        let response = SubmitData(paymentData: data.jsonObject, extra: applePayDetails?.extraData)
-        sendEvent(event: .didSubmit, body: response.jsonObject)
-    }
-
-    internal func didFail(with error: Error, from component: PaymentComponent) {
-        sendEvent(error: error)
-    }
-
-}
-
 extension ApplePayDetails {
 
     private enum Key {
@@ -114,7 +100,7 @@ extension ApplePayDetails {
         static let shippingContact = "shippingContact"
     }
 
-    internal var extraData: [String: Any] {
+    internal var extraData: [String: Any?] {
         [
             Key.billingContact: self.billingContact?.jsonObject,
             Key.network: self.network,

@@ -7,7 +7,7 @@
 import Adyen
 import Foundation
 
-extension AdyenSessionResult: Encodable {
+extension AdyenSessionResult: @retroactive Encodable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.resultCode.rawValue, forKey: .resultCode)

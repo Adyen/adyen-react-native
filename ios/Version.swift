@@ -6,4 +6,5 @@
 
 import Foundation
 
+// swiftlint:disable:next identifier_name
 internal var AdyenSDKVersion = "{SDK_VERSION}"

@@ -59,7 +59,7 @@ extension RootConfigurationParser {
 
     internal func fetchContext(session: AdyenSession?) throws -> AdyenContext {
         guard let clientKey = self.clientKey else {
-            throw BaseModule.NativeModuleError.noClientKey
+            throw NativeModuleError.noClientKey
         }
         let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
 

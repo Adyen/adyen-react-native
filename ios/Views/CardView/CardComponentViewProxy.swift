@@ -14,8 +14,9 @@ import UIKit
 @objc(CardComponentViewProxy)
 public final class CardComponentViewProxy: UIStackView {
 
+    private var lookupHandler: (([LookupAddressModel]) -> Void)?
+    private var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
     private var cardComponent: CardComponent?
-    private var actionHandler: AdyenActionComponent?
     private var paymentMethodJSON: NSDictionary?
     private var configurationJSON: NSDictionary?
     private var hasComponent: Bool = false
@@ -27,7 +28,6 @@ public final class CardComponentViewProxy: UIStackView {
     @objc override public init(frame: CGRect) {
         super.init(frame: frame)
         clipsToBounds = false
-        isUserInteractionEnabled = true
     }
 
     @available(*, unavailable)
@@ -55,9 +55,26 @@ public final class CardComponentViewProxy: UIStackView {
         tryInitializeComponent()
     }
 
-    var actualSize: CGSize {
-        guard let vc = cardComponent?.viewController else { return .zero }
-        return vc.preferredContentSize
+    override public func layoutSubviews() {
+        super.layoutSubviews()
+        reportContentHeight()
+    }
+
+    @objc public func dispose() {
+        // Remove child view controller properly
+        if let childVC = cardComponent?.viewController {
+            childVC.willMove(toParent: nil)
+            childVC.view.removeFromSuperview()
+            childVC.removeFromParent()
+        }
+        componentView = nil
+        cardComponent?.cancelIfNeeded()
+        cardComponent = nil
+        hasComponent = false
+        paymentMethodJSON = nil
+        configurationJSON = nil
+        lastReportedHeight = 0
+        MessageBusModule.staticActionHandler?.cancelIfNeeded()
     }
 
     private func tryInitializeComponent() {
@@ -72,39 +89,28 @@ public final class CardComponentViewProxy: UIStackView {
             let context = try parser.fetchContext(session: BaseModule.session)
             let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
 
-            let cardConfig = CardConfigurationParser(configuration: configurationJSON, delegate: self).configuration
+            let cardConfig = CardConfigurationParser(configuration: configurationJSON,
+                                                     delegate: MessageBusModule.shared).configuration
             let component = CardComponent(paymentMethod: paymentMethod, context: context, configuration: cardConfig)
-            component.delegate = self
-            component.cardComponentDelegate = self
+            component.delegate = BaseModule.session ?? MessageBusModule.shared
+            component.cardComponentDelegate = MessageBusModule.shared
 
             self.cardComponent = component
             self.hasComponent = true
 
-            setupActionHandler(context: context, parser: parser)
+            SessionHelperModule.sessionListener = MessageBusModule.shared
+            MessageBusModule.shared?.createActionHandler(context: context, locale: parser.shopperLocale)
             embedComponentView(component)
         } catch {
-            AdyenEventEmitter.shared.sendErrorEvent(error: error)
+            MessageBusModule.shared?.sendEvent(error: error)
         }
-    }
-
-    private func setupActionHandler(context: AdyenContext, parser: RootConfigurationParser) {
-        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        var config = AdyenActionComponent.Configuration(style: style)
-        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
-            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
-        }
-        actionHandler = AdyenActionComponent(context: context, configuration: config)
-        actionHandler?.delegate = self
-        actionHandler?.presentationDelegate = self
     }
 
     private func embedComponentView(_ component: CardComponent) {
         componentView = component.viewController.view
+        let childVC = component.viewController
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-
-            let childVC = component.viewController
-            let view = childVC.view!
+            guard let self, let view = childVC.viewIfLoaded else { return }
 
             // Add as child view controller for proper UIKit containment
             if let parentVC = self.parentViewController {
@@ -121,7 +127,7 @@ public final class CardComponentViewProxy: UIStackView {
     }
 
     private func disableNativeScrollingAndBouncing(cardView: UIView) {
-        let formView = cardView.subviews[0].subviews[0] as? UIScrollView
+        let formView: UIScrollView? = cardView.findSubview()
         formView?.bounces = false
         formView?.isScrollEnabled = false
         formView?.alwaysBounceVertical = false
@@ -139,14 +145,14 @@ public final class CardComponentViewProxy: UIStackView {
         return nil
     }
 
-    override public func layoutSubviews() {
-        super.layoutSubviews()
-        reportContentHeight()
+    private var actualSize: CGSize {
+        guard let vc = cardComponent?.viewController else { return .zero }
+        return vc.preferredContentSize
     }
 
     private func reportContentHeight() {
         let size = actualSize
-        // Only report if height changed significantly
+        // Only report if height changed
         guard abs(size.height - lastReportedHeight) > 1 else { return }
         lastReportedHeight = size.height
 
@@ -157,104 +163,22 @@ public final class CardComponentViewProxy: UIStackView {
     private func parseCardPaymentMethod(from dictionary: NSDictionary) throws -> CardPaymentMethod {
         guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
               let paymentMethod = try? JSONDecoder().decode(CardPaymentMethod.self, from: data) else {
-            throw BaseModule.NativeModuleError.paymentMethodNotFound(CardPaymentMethod.self)
+            let name = String(describing: CardPaymentMethod.self)
+            throw NativeModuleError.paymentMethodNotFound(name)
         }
         return paymentMethod
-    }
-
-    @objc public func handleAction(_ actionJSON: NSDictionary) {
-        guard let data = try? JSONSerialization.data(withJSONObject: actionJSON, options: []),
-              let action = try? JSONDecoder().decode(Action.self, from: data) else {
-            AdyenEventEmitter.shared.sendErrorEvent(error: BaseModule.NativeModuleError.invalidAction as NSError)
-            return
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            self?.actionHandler?.handle(action)
-        }
-    }
-
-    @objc public func dispose() {
-        // Remove child view controller properly
-        if let childVC = cardComponent?.viewController {
-            childVC.willMove(toParent: nil)
-            childVC.view.removeFromSuperview()
-            childVC.removeFromParent()
-        }
-        componentView = nil
-        cardComponent?.cancelIfNeeded()
-        actionHandler?.cancelIfNeeded()
-        cardComponent = nil
-        actionHandler = nil
-        hasComponent = false
-        paymentMethodJSON = nil
-        configurationJSON = nil
-        lastReportedHeight = 0
-    }
-}
-
-extension CardComponentViewProxy: PaymentComponentDelegate {
-    public func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        AdyenEventEmitter.shared.sendSubmitEvent(paymentData: data.jsonObject, extra: nil)
-    }
-
-    public func didFail(with error: Error, from component: PaymentComponent) {
-        AdyenEventEmitter.shared.sendErrorEvent(error: error)
-    }
-}
-
-extension CardComponentViewProxy: ActionComponentDelegate {
-    public func didProvide(_ data: ActionComponentData, from component: ActionComponent) {
-        AdyenEventEmitter.shared.sendProvideEvent(actionData: data.jsonObject)
-    }
-
-    public func didComplete(from component: ActionComponent) {
-        AdyenEventEmitter.shared.sendCompleteEvent()
-    }
-
-    public func didFail(with error: Error, from component: ActionComponent) {
-        AdyenEventEmitter.shared.sendErrorEvent(error: error)
     }
 }
 
 extension CardComponentViewProxy: PresentationDelegate {
     public func present(component: PresentableComponent) {
         guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            AdyenEventEmitter.shared.sendErrorEvent(error: BaseModule.NativeModuleError.notKeyWindow)
+            MessageBusModule.shared?.sendEvent(error: NativeModuleError.notKeyWindow)
             return
         }
 
         DispatchQueue.main.async {
             presenter.present(component.viewController, animated: true)
         }
-    }
-}
-
-extension CardComponentViewProxy: CardComponentDelegate {
-    public func didSubmit(lastFour: String, finalBIN: String, component: CardComponent) {
-        /* No callback implemented */
-    }
-
-    public func didChangeBIN(_ value: String, component: CardComponent) {
-        AdyenEventEmitter.shared.sendBinValueEvent(binValue: value)
-    }
-
-    public func didChangeCardBrand(_ value: [CardBrand]?, component: CardComponent) {
-        guard let value, !value.isEmpty else { return }
-        let brands = value.map(\.type.rawValue)
-        AdyenEventEmitter.shared.sendBinLookupEvent(brands: brands)
-    }
-}
-
-extension CardComponentViewProxy: AddressLookupProvider {
-    public func lookUp(searchTerm: String, resultHandler: @escaping ([LookupAddressModel]) -> Void) {
-        resultHandler([])
-    }
-
-    public func complete(
-        incompleteAddress: LookupAddressModel,
-        resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void
-    ) {
-        resultHandler(.success(incompleteAddress.postalAddress))
     }
 }

@@ -7,7 +7,7 @@
 import Adyen
 import Foundation
 
-extension EncryptedCard: Encodable {
+extension EncryptedCard: @retroactive Encodable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try? container.encodeIfPresent(number, forKey: .number)
@@ -22,7 +22,7 @@ extension EncryptedCard: Encodable {
     }
 }
 
-extension Card: Decodable {
+extension Card: @retroactive Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(number: container.decodeIfPresent(String.self, forKey: .number),

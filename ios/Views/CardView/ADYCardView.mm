@@ -43,11 +43,6 @@ using namespace facebook::react;
   return self;
 }
 
-- (void)layoutSubviews {
-  [super layoutSubviews];
-  _cardProxy.frame = self.bounds;
-}
-
 - (void)updateProps:(Props::Shared const &)props
            oldProps:(Props::Shared const &)oldProps {
   const auto &oldViewProps =

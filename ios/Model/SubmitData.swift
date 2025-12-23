@@ -8,9 +8,9 @@ import Foundation
 
 internal struct SubmitData {
     let paymentData: [String: Any]
-    let extra: [String: Any]?
+    let extra: [String: Any?]?
 
-    var jsonObject: [String: Any] {
+    var jsonObject: [String: Any?] {
         [
             Key.paymentData: paymentData,
             Key.extra: extra

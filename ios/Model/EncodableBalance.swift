@@ -7,7 +7,7 @@
 import Adyen
 import Foundation
 
-extension Balance: Decodable {
+extension Balance: @retroactive Decodable {
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

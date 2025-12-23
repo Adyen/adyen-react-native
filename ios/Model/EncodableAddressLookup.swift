@@ -7,7 +7,7 @@
 import Adyen
 import Foundation
 
-extension LookupAddressModel: Codable {
+extension LookupAddressModel: @retroactive Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let identifier = try container.decode(String.self, forKey: .id)
@@ -29,7 +29,7 @@ extension LookupAddressModel: Codable {
     }
 }
 
-extension PostalAddress: Decodable {
+extension PostalAddress: @retroactive Decodable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let city = try container.decodeIfPresent(String.self, forKey: .city)

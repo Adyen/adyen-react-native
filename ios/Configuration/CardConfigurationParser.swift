@@ -9,9 +9,9 @@ import Adyen
 public struct CardConfigurationParser {
 
     private var dict: NSDictionary
-    private unowned var delegate: AddressLookupProvider
+    private weak var delegate: AddressLookupProvider?
 
-    public init(configuration: NSDictionary, delegate: AddressLookupProvider) {
+    public init(configuration: NSDictionary, delegate: AddressLookupProvider?) {
         self.delegate = delegate
         if let configurationNode = configuration[CardKeys.rootKey] as? NSDictionary {
             self.dict = configurationNode
@@ -130,13 +130,13 @@ public struct CardConfigurationParser {
 
 extension CardComponent.AddressFormType {
 
-    internal init(rawValue: String, delegate: AddressLookupProvider) {
-        switch rawValue.lowercased() {
-        case "postalcode", "postal_code", "postal":
+    internal init(rawValue: String, delegate: AddressLookupProvider?) {
+        switch (rawValue.lowercased(), delegate) {
+        case ("postalcode", _), ("postal_code", _), ("postal", _):
             self = .postalCode
-        case "full":
+        case ("full", _):
             self = .full
-        case "lookup":
+        case let ("lookup", .some(delegate)):
             self = .lookup(provider: delegate)
         default:
             self = .none

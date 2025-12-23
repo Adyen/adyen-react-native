@@ -8,7 +8,7 @@ import Adyen
 import React
 import UIKit
 
-protocol SessionResultListener {
+protocol SessionResultListener: AnyObject {
     func didComplete(with result: Adyen.AdyenSessionResult)
     func didFail(with error: Error)
 }
@@ -16,7 +16,7 @@ protocol SessionResultListener {
 @objc(SessionHelper)
 internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
 
-    internal static var sessionListener: SessionResultListener?
+    internal weak static var sessionListener: SessionResultListener?
 
     func didComplete(with result: Adyen.AdyenSessionResult, component: Adyen.Component, session: Adyen.AdyenSession) {
         SessionHelperModule.sessionListener?.didComplete(with: result)

@@ -11,9 +11,9 @@ import UIKit
 
 internal class BaseModule: RCTEventEmitter {
 
+    internal var lookupHandler: (([LookupAddressModel]) -> Void)?
+    internal var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
     internal static var session: AdyenSession?
-    internal var requestOrderHandler: ((Result<PartialPaymentOrder, any Error>) -> Void)?
-    internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
 
     #if DEBUG
         override func invalidate() {
@@ -66,13 +66,7 @@ internal class BaseModule: RCTEventEmitter {
         sendEvent(error: NativeModuleError.canceled)
     }
 
-    internal func sendEvent(event: Events, body: Any!) {
-        sendEvent(withName: event.rawValue, body: body)
-    }
-
-    internal func sendEvent(event: Events) {
-        sendEvent(withName: event.rawValue, body: [:])
-    }
+    // MARK: - Event Emission Helpers
 
     internal func checkErrorType(_ error: Error) -> Error {
         if error.isComponentCanceled || error.is3DSCanceled {
@@ -85,6 +79,8 @@ internal class BaseModule: RCTEventEmitter {
         let errorToSend = checkErrorType(error)
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
     }
+
+    // MARK: - Parsers
 
     internal func parsePaymentMethods(from dicionary: NSDictionary) throws -> PaymentMethods {
         guard let data = try? JSONSerialization.data(withJSONObject: dicionary, options: []),
@@ -123,7 +119,7 @@ internal class BaseModule: RCTEventEmitter {
         let paymentMethods = try parsePaymentMethods(from: dicionary)
 
         guard let paymentMethod = paymentMethods.paymentMethod(ofType: type) else {
-            throw NativeModuleError.paymentMethodNotFound(type)
+            throw NativeModuleError.paymentMethodNotFound(String(describing: type))
         }
 
         return paymentMethod
@@ -145,8 +141,8 @@ internal class BaseModule: RCTEventEmitter {
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
-        requestOrderHandler = nil
-        checkBalanceHandler = nil
+        lookupHandler = nil
+        lookupCompliationHandler = nil
 
         guard BaseModule.currentPresenter?.presentedViewController != nil else {
             BaseModule.currentPresenter = nil
@@ -168,90 +164,6 @@ internal class BaseModule: RCTEventEmitter {
     }
 }
 
-extension Error {
-
-    var isComponentCanceled: Bool { (self as? ComponentError) == ComponentError.cancelled }
-
-    var is3DSCanceled: Bool {
-        (self as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError" &&
-            (self as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue
-    }
-}
-
-extension BaseModule {
-
-    enum NativeModuleError: LocalizedError, KnownError {
-        case canceled
-        case noClientKey
-        case noPayment
-        case notSupported
-        case invalidPaymentMethods
-        case invalidAction
-        case notKeyWindow
-        case paymentMethodNotFound(PaymentMethod.Type)
-        case balanceCheck(message: String)
-        case orderRequest(message: String)
-
-        var errorCode: String {
-            switch self {
-            case .canceled:
-                return "canceledByShopper"
-            case .notSupported:
-                return "notSupported"
-            case .noClientKey:
-                return "noClientKey"
-            case .noPayment:
-                return "noPayment"
-            case .invalidPaymentMethods:
-                return "invalidPaymentMethods"
-            case .invalidAction:
-                return "invalidAction"
-            case .paymentMethodNotFound:
-                return "noPaymentMethod"
-            case .notKeyWindow:
-                return "notKeyWindow"
-            case .balanceCheck:
-                return "balanceCheck"
-            case .orderRequest:
-                return "orderRequest"
-            }
-        }
-
-        var errorDescription: String? {
-            switch self {
-            case .canceled:
-                return "Payment canceled by shopper"
-            case .notSupported:
-                return "Not supported on iOS"
-            case .noClientKey:
-                return "No clientKey in configuration"
-            case .noPayment:
-                return "No payment in configuration"
-            case .invalidPaymentMethods:
-                return "Can not parse paymentMethods or the list is empty"
-            case .invalidAction:
-                return "Can not parse action"
-            case let .paymentMethodNotFound(type):
-                return "Can not find payment method of type \(type) in provided list"
-            case .notKeyWindow:
-                return "Can not find root ViewController"
-            case let .balanceCheck(message):
-                return "Balance check error: \(message)"
-            case let .orderRequest(message):
-                return "Order request error: \(message)"
-            }
-        }
-    }
-
-    enum Keys {
-        static let sessionId = "sessionId"
-        static let sessionData = "sessionData"
-        static let order = "order"
-        static let message = "message"
-        static let brand = "brand"
-    }
-}
-
 extension BaseModule: PresentationDelegate {
 
     internal func present(component: PresentableComponent) {
@@ -259,20 +171,15 @@ extension BaseModule: PresentationDelegate {
             self?.present(component)
         }
     }
-
 }
 
-extension BaseModule: SessionResultListener {
-    func didComplete(with result: Adyen.AdyenSessionResult) {
-        var result = result.jsonObject
-        result[Keys.sessionId] = Self.session?.sessionContext.identifier
-        result[Keys.sessionData] = Self.session?.sessionContext.data
-        result[Keys.order] = self.currentPaymentComponent?.order?.jsonObject
+extension BaseModule {
 
-        sendEvent(event: Events.didComplete, body: result)
-    }
-
-    func didFail(with error: Error) {
-        sendEvent(error: error)
+    enum Keys {
+        static let sessionId = "sessionId"
+        static let sessionData = "sessionData"
+        static let order = "order"
+        static let message = "message"
+        static let brand = "brand"
     }
 }

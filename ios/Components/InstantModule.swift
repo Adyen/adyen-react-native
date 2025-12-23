@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenInstant)
-internal final class InstantModule: BaseModule {
+internal final class InstantModule: BaseModuleSender {
 
     override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
 
@@ -31,19 +31,15 @@ internal final class InstantModule: BaseModule {
             return sendEvent(error: error)
         }
 
-        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        var config = AdyenActionComponent.Configuration(style: style)
-        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
-            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
+        let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
+        if let session = BaseModule.session {
+            SessionHelperModule.sessionListener = self
+            component.delegate = session
+        } else {
+            createActionHandler(context: context, locale: parser.shopperLocale)
+            component.delegate = self
         }
 
-        actionHandler = AdyenActionComponent(context: context, configuration: config)
-        actionHandler?.delegate = self
-        actionHandler?.presentationDelegate = self
-
-        SessionHelperModule.sessionListener = self
-        let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
-        component.delegate = BaseModule.session ?? self
         currentComponent = component
 
         DispatchQueue.main.async {
@@ -65,32 +61,4 @@ internal final class InstantModule: BaseModule {
         }
     }
 
-}
-
-extension InstantModule: PaymentComponentDelegate {
-
-    internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        let response = SubmitData(paymentData: data.jsonObject, extra: nil)
-        sendEvent(event: .didSubmit, body: response.jsonObject)
-    }
-
-    internal func didFail(with error: Error, from component: PaymentComponent) {
-        sendEvent(event: .didFail, body: error.jsonObject)
-    }
-
-}
-
-extension InstantModule: ActionComponentDelegate {
-
-    internal func didFail(with error: Error, from component: ActionComponent) {
-        sendEvent(error: error)
-    }
-
-    internal func didComplete(from component: ActionComponent) {
-        sendEvent(event: .didComplete, body: nil)
-    }
-
-    internal func didProvide(_ data: ActionComponentData, from component: ActionComponent) {
-        sendEvent(event: .didProvide, body: data.jsonObject)
-    }
 }

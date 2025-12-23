@@ -8,21 +8,16 @@ import Adyen
 import React
 
 @objc(AdyenMessageBus)
-internal final class MessageBusModule: BaseModule {
+internal final class MessageBusModule: BaseModuleSender {
 
-    internal static var consumers: [String: Any] = [:]
-    internal static var currentComponent: String?
+    @objc static var shared: MessageBusModule?
+    internal static var staticActionHandler: AdyenActionComponent?
 
     override func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
 
-    override func startObserving() {
-        super.startObserving()
-        AdyenEventEmitter.shared.setEventEmitter(self)
-    }
-
-    override func stopObserving() {
-        super.stopObserving()
-        AdyenEventEmitter.shared.setEventEmitter(nil)
+    override init() {
+        super.init()
+        Self.shared = self
     }
 
     @objc
@@ -32,14 +27,6 @@ internal final class MessageBusModule: BaseModule {
 
     @objc
     func handle(_ actionMap: NSDictionary?) {
-        guard let name = MessageBusModule.currentComponent else {
-            return sendEvent(error: NativeModuleError.noPayment)
-        }
-
-        guard MessageBusModule.consumers[name] != nil else {
-            return sendEvent(error: NativeModuleError.notSupported)
-        }
-
         guard let actionMap else {
             return sendEvent(error: NativeModuleError.invalidAction)
         }
