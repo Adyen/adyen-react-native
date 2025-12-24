@@ -252,14 +252,24 @@ class DropInModule(
   }
 
   override fun onCancel() {
-    messageBus.sendErrorEvent(ModuleException.Canceled())
+    if (session != null) {
+      messageBus.sendSessionErrorEvent(ModuleException.Canceled())
+    } else {
+      messageBus.sendErrorEvent(ModuleException.Canceled())
+    }
   }
 
   override fun onError(reason: String?) {
-    if (reason == THREEDS_CANCELED_MESSAGE) { // for canceled 3DS
-      messageBus.sendErrorEvent(ModuleException.Canceled())
+    val error =
+      if (reason == THREEDS_CANCELED_MESSAGE) { // for canceled 3DS
+        ModuleException.Canceled()
+      } else {
+        ModuleException.Unknown(reason)
+      }
+    if (session != null) {
+      messageBus.sendSessionErrorEvent(error)
     } else {
-      messageBus.sendErrorEvent(ModuleException.Unknown(reason))
+      messageBus.sendErrorEvent(error)
     }
   }
 

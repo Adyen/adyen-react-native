@@ -49,7 +49,6 @@ internal class ApplePayModule: BaseModuleSender {
         }
 
         currentComponent = applePayComponent
-        SessionHelperModule.sessionListener = self
         applePayComponent.delegate = BaseModule.session ?? self
         present(component: applePayComponent)
     }

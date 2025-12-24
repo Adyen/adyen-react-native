@@ -57,7 +57,7 @@ abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData :
     }
   }
 
-  fun onError(componentError: ComponentError) {
+  open fun onError(componentError: ComponentError) {
     AdyenPaymentPackage.messageBus.onException(componentError.exception)
   }
 

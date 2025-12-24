@@ -19,10 +19,6 @@ internal class BaseModuleSender: BaseModule {
         actionHandler?.presentationDelegate = self
     }
 
-    internal func sendEvent(event: Events, body: Any!) {
-        sendEvent(withName: event.rawValue, body: body)
-    }
-
     internal func sendEvent(event: Events) {
         sendEvent(withName: event.rawValue, body: [:])
     }
@@ -35,14 +31,6 @@ internal class BaseModuleSender: BaseModule {
 
     internal func sendProvideEvent(actionData: [String: Any]) {
         sendEvent(event: .didProvide, body: actionData)
-    }
-
-    internal func sendSessionCompleteEvent(result: Adyen.AdyenSessionResult) {
-        var result = result.jsonObject
-        result[Keys.sessionId] = Self.session?.sessionContext.identifier
-        result[Keys.sessionData] = Self.session?.sessionContext.data
-        result[Keys.order] = self.currentPaymentComponent?.order?.jsonObject
-        sendEvent(event: .didComplete, body: result)
     }
 
     internal func sendBinValueEvent(binValue: String) {
@@ -64,16 +52,6 @@ internal class BaseModuleSender: BaseModule {
 
     internal func sendAddressConfirm(json: [String: Any]) {
         sendEvent(event: .didConfirmAddress, body: json)
-    }
-}
-
-extension BaseModuleSender: SessionResultListener {
-    func didComplete(with result: Adyen.AdyenSessionResult) {
-        sendSessionCompleteEvent(result: result)
-    }
-
-    func didFail(with error: Error) {
-        sendEvent(error: error)
     }
 }
 

@@ -8,27 +8,31 @@ import Adyen
 import React
 import UIKit
 
-protocol SessionResultListener: AnyObject {
-    func didComplete(with result: Adyen.AdyenSessionResult)
-    func didFail(with error: Error)
-}
-
 @objc(SessionHelper)
 internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
 
-    internal weak static var sessionListener: SessionResultListener?
+    override func supportedEvents() -> [String]! { [Events.didCompleteSession.rawValue, Events.didFailSession.rawValue] }
+
+    // MARK: - AdyenSessionDelegate
 
     func didComplete(with result: Adyen.AdyenSessionResult, component: Adyen.Component, session: Adyen.AdyenSession) {
-        SessionHelperModule.sessionListener?.didComplete(with: result)
+        sendSessionCompleteEvent(result: result, session: session)
     }
 
     func didFail(with error: Error, from component: Adyen.Component, session: Adyen.AdyenSession) {
-        SessionHelperModule.sessionListener?.didFail(with: error)
+        sendSessionEvent(error: error)
     }
 
     func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {}
 
-    override func supportedEvents() -> [String]! { [Events.didComplete.rawValue, Events.didFail.rawValue] }
+    // MARK: - Event Emission
+
+    private func sendSessionCompleteEvent(result: Adyen.AdyenSessionResult, session: Adyen.AdyenSession) {
+        var dict = result.jsonObject
+        dict[Keys.sessionId] = session.sessionContext.identifier
+        dict[Keys.sessionData] = session.sessionContext.data
+        sendEvent(event: .didCompleteSession, body: dict)
+    }
 
     @objc
     func createSession(_ sessionModelJSON: NSDictionary,

@@ -22,6 +22,6 @@ class ComponentSessionCallback<T : PaymentComponentState<*>>(
   }
 
   override fun onError(componentError: ComponentError) {
-    messageBus.onException(componentError.exception)
+    messageBus.onSessionException(componentError.exception)
   }
 }

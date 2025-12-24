@@ -21,6 +21,16 @@ class SessionHelperModule(
   context: ReactApplicationContext?,
 ) : BaseModule(context) {
   @ReactMethod
+  fun addListener(eventName: String?) {
+    // Required for NativeEventEmitter
+  }
+
+  @ReactMethod
+  fun removeListeners(count: Int?) {
+    // Required for NativeEventEmitter
+  }
+
+  @ReactMethod
   fun hide(
     success: Boolean,
     message: ReadableMap?,

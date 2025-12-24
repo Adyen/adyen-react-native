@@ -33,7 +33,6 @@ internal final class InstantModule: BaseModuleSender {
 
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
         if let session = BaseModule.session {
-            SessionHelperModule.sessionListener = self
             component.delegate = session
         } else {
             createActionHandler(context: context, locale: parser.shopperLocale)

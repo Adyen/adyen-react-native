@@ -92,14 +92,16 @@ public final class CardComponentViewProxy: UIStackView {
             let cardConfig = CardConfigurationParser(configuration: configurationJSON,
                                                      delegate: MessageBusModule.shared).configuration
             let component = CardComponent(paymentMethod: paymentMethod, context: context, configuration: cardConfig)
-            component.delegate = BaseModule.session ?? MessageBusModule.shared
             component.cardComponentDelegate = MessageBusModule.shared
 
             self.cardComponent = component
             self.hasComponent = true
-
-            SessionHelperModule.sessionListener = MessageBusModule.shared
-            MessageBusModule.shared?.createActionHandler(context: context, locale: parser.shopperLocale)
+            if let session = BaseModule.session {
+                component.delegate = session
+            } else {
+                component.delegate = MessageBusModule.shared
+                MessageBusModule.shared?.createActionHandler(context: context, locale: parser.shopperLocale)
+            }
             embedComponentView(component)
         } catch {
             MessageBusModule.shared?.sendEvent(error: error)

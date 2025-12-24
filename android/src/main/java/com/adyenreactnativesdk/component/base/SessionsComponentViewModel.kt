@@ -2,6 +2,7 @@ package com.adyenreactnativesdk.component.base
 
 import android.util.Log
 import androidx.lifecycle.viewModelScope
+import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.sessions.core.CheckoutSession
@@ -27,5 +28,9 @@ class SessionsComponentViewModel<TState : PaymentComponentState<*>, TComponentDa
 
   override fun onFinished(result: SessionPaymentResult) {
     AdyenPaymentPackage.messageBus.onFinished(result)
+  }
+
+  override fun onError(componentError: ComponentError) {
+    AdyenPaymentPackage.messageBus.onSessionException(componentError.exception)
   }
 }

@@ -40,6 +40,12 @@ class MessageBus(
       .emit(DID_FAILED, ReactNativeError.mapError(error))
   }
 
+  fun sendSessionErrorEvent(error: Exception) {
+    context
+      .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      .emit(DID_FAILED_SESSION, ReactNativeError.mapError(error))
+  }
+
   override fun onSubmit(
     state: PaymentComponentState<*>,
     returnUrl: String?,
@@ -79,6 +85,17 @@ class MessageBus(
     }
   }
 
+  fun onSessionException(exception: CheckoutException) {
+    if (exception is CancellationException ||
+      exception is Cancelled3DS2Exception ||
+      exception.message == "Payment canceled."
+    ) {
+      sendSessionErrorEvent(ModuleException.Canceled())
+    } else {
+      sendSessionErrorEvent(exception)
+    }
+  }
+
   override fun onFinished(result: SessionPaymentResult) {
     val updatedResult =
       when (result.resultCode) {
@@ -89,7 +106,7 @@ class MessageBus(
   }
 
   private fun sendFinishEvent(result: SessionPaymentResult) {
-    sendEvent(DID_COMPLETE, result.toJSONObject())
+    sendEvent(DID_COMPLETE_SESSION, result.toJSONObject())
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
@@ -187,8 +204,10 @@ class MessageBus(
     private const val VOUCHER_RESULT_CODE = "finish_with_action"
 
     const val DID_COMPLETE = "didCompleteCallback"
+    const val DID_COMPLETE_SESSION = "didCompleteSessionCallback"
     const val DID_PROVIDE = "didProvideCallback"
     const val DID_FAILED = "didFailCallback"
+    const val DID_FAILED_SESSION = "didFailSessionCallback"
     const val DID_SUBMIT = "didSubmitCallback"
     const val DID_UPDATE_ADDRESS = "didUpdateAddressCallback"
     const val DID_CONFIRM_ADDRESS = "didConfirmAddressCallback"

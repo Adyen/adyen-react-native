@@ -14,6 +14,7 @@ internal class BaseModule: RCTEventEmitter {
     internal var lookupHandler: (([LookupAddressModel]) -> Void)?
     internal var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
     internal static var session: AdyenSession?
+    internal weak static var activeModule: BaseModule?
 
     #if DEBUG
         override func invalidate() {
@@ -47,6 +48,7 @@ internal class BaseModule: RCTEventEmitter {
 
         defer {
             BaseModule.currentPresenter = presenter
+            BaseModule.activeModule = self
         }
 
         guard component.requiresModalPresentation else {
@@ -78,6 +80,15 @@ internal class BaseModule: RCTEventEmitter {
     internal func sendEvent(error: Error) {
         let errorToSend = checkErrorType(error)
         sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
+    }
+
+    internal func sendSessionEvent(error: Error) {
+        let errorToSend = checkErrorType(error)
+        sendEvent(withName: Events.didFailSession.rawValue, body: errorToSend.jsonObject)
+    }
+
+    internal func sendEvent(event: Events, body: Any!) {
+        sendEvent(withName: event.rawValue, body: body)
     }
 
     // MARK: - Parsers
@@ -137,7 +148,7 @@ internal class BaseModule: RCTEventEmitter {
 
     internal func cleanUp() {
         BaseModule.session = nil
-        SessionHelperModule.sessionListener = nil
+        BaseModule.activeModule = nil
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
@@ -157,7 +168,14 @@ internal class BaseModule: RCTEventEmitter {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            self.currentComponent?.finalizeIfNeeded(with: result) {
+            // If this module has a component, use it; otherwise delegate to the active module
+            if let component = self.currentComponent {
+                component.finalizeIfNeeded(with: result) {
+                    self.cleanUp()
+                }
+            } else if let activeModule = BaseModule.activeModule, activeModule !== self {
+                activeModule.dismiss(result)
+            } else {
                 self.cleanUp()
             }
         }

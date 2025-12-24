@@ -95,7 +95,6 @@ internal final class DropInModule: BaseModuleSender {
         let partialPaymentParser = PartialPaymentParser(configuration: configuration)
         config.giftCard.showsSecurityCodeField = partialPaymentParser.pinRequired
 
-        SessionHelperModule.sessionListener = self
         let component = DropInComponent(paymentMethods: paymentMethods,
                                         context: context,
                                         configuration: config,

@@ -12,8 +12,12 @@ export enum Event {
   onAdditionalDetails = 'didProvideCallback',
   /** Event handler, called when a shopper finishes the flow (Voucher payments only). */
   onComplete = 'didCompleteCallback',
+  /** Event handler, called when session payment completes. */
+  onSessionComplete = 'didCompleteSessionCallback',
   /** Event handler, called when payment about to be terminate. */
   onError = 'didFailCallback',
+  /** Event handler, called when session payment fails. */
+  onSessionError = 'didFailSessionCallback',
   /** Event handler, called when address update called. */
   onAddressUpdate = 'didUpdateAddressCallback',
   /** Event handler, called when address confirmed called. */
