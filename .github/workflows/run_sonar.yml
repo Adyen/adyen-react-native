@@ -31,19 +31,19 @@ jobs:
         run: yarn
 
       - name: Download Swift coverage report
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: swift-coverage-report
           path: reports
 
       - name: Download Kotln coverage report
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: kotlin-coverage-report
           path: reports
 
       - name: Download JS coverage report
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: js-coverage-report
           path: reports          
