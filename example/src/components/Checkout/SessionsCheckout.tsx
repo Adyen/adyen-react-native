@@ -26,32 +26,34 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
     undefined
   );
 
-  useEffect(() => {
-    const refreshSession = async () => {
-      const returnUrl = Platform.select({
-        android: await AdyenDropIn.getReturnURL(),
-        default: ENVIRONMENT.returnUrl,
-      });
-      try {
-        const newSession = await ApiClient.requestSession(
-          configuration,
-          returnUrl
-        );
-        setSession(newSession);
-      } catch (e) {
-        setError(String(e));
-      } finally {
-        setLoading(false);
-      }
-    };
-    refreshSession();
+  const refreshSession = useCallback(async () => {
+    const returnUrl = Platform.select({
+      android: await AdyenDropIn.getReturnURL(),
+      default: ENVIRONMENT.returnUrl,
+    });
+    try {
+      const newSession = await ApiClient.requestSession(
+        configuration,
+        returnUrl
+      );
+      setSession(newSession);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
   }, [configuration, setSession, setLoading, setError]);
+
+  useEffect(() => {
+    refreshSession();
+  }, [configuration, refreshSession]);
 
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
       processAdyenError(error, nativeComponent);
+      refreshSession();
     },
-    []
+    [refreshSession]
   );
 
   const didComplete = useCallback(
