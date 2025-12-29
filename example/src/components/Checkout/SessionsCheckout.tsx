@@ -31,6 +31,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
       android: await AdyenDropIn.getReturnURL(),
       default: ENVIRONMENT.returnUrl,
     });
+    setLoading(true);
     try {
       const newSession = await ApiClient.requestSession(
         configuration,
@@ -42,11 +43,11 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
     } finally {
       setLoading(false);
     }
-  }, [configuration, setSession, setLoading, setError]);
+  }, [configuration]);
 
   useEffect(() => {
     refreshSession();
-  }, [configuration, refreshSession]);
+  }, [refreshSession]);
 
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
