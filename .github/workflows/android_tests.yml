@@ -46,12 +46,12 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         with:
           path: lib
           key: temp-lib-${{ github.sha }}
 
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         id: yarn-cache
         with:
           path: | 
@@ -69,7 +69,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: AVD cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: avd-cache
         with:
           path: |
