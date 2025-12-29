@@ -41,7 +41,7 @@ jobs:
           npx jest --coverage --coverageDirectory=reports
 
       - name: Archive JS Coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: js-coverage-report
           path: reports
