@@ -118,7 +118,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, []);
 
   useEffect(() => {
-    if (session) {
+    if (session && !sessionContext) {
       SessionHelper.createSession(session, config)
         .then((sessionResponse) => {
           setSessionContext(sessionResponse);
@@ -133,7 +133,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           );
         });
     }
-  }, [session, config, onError, setSessionContext]);
+  }, [session, sessionContext, config, onError, setSessionContext]);
 
   const startEventListeners = useCallback(
     (nativeComponent: AdyenActionComponent & NativeModule) => {
