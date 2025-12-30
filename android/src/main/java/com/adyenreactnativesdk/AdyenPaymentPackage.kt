@@ -7,8 +7,8 @@
 package com.adyenreactnativesdk
 
 import android.annotation.SuppressLint
-import com.adyen.checkout.components.core.internal.analytics.AnalyticsPlatform
-import com.adyen.checkout.components.core.internal.analytics.AnalyticsPlatformParams
+import com.adyen.checkout.components.core.internal.util.CheckoutPlatform
+import com.adyen.checkout.components.core.internal.util.CheckoutPlatformParams
 import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
@@ -41,6 +41,6 @@ class AdyenPaymentPackage : ReactPackage {
   @SuppressLint("RestrictedApi")
   private fun configureAnalytics() {
     val version = BuildConfig.CHECKOUT_VERSION
-    AnalyticsPlatformParams.overrideForCrossPlatform(AnalyticsPlatform.REACT_NATIVE, version)
+    CheckoutPlatformParams.overrideForCrossPlatform(CheckoutPlatform.REACT_NATIVE, version)
   }
 }
