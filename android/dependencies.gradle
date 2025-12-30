@@ -3,7 +3,7 @@ ext {
     jacoco_version = '0.8.12'
 
     // Adyen Dependencies
-    adyen_version = "5.14.0"
+    adyen_version = "5.16.0"
 
     // Android Dependencies
     gson_version = "2.9.1"
