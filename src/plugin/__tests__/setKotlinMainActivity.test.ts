@@ -161,7 +161,10 @@ describe('setKotlinMainActivity', () => {
     });
 
     test('should modify existing onActivityResult with ComponentCaller', () => {
-      const result = setKotlinMainActivity(mainActivityWithAllMethodsV52, sdkVersion);
+      const result = setKotlinMainActivity(
+        mainActivityWithAllMethodsV52,
+        sdkVersion
+      );
 
       // Should add handleActivityResult after super.onActivityResult with ComponentCaller
       expect(result).toContain(
@@ -214,10 +217,10 @@ describe('setKotlinMainActivity', () => {
       const result = setKotlinMainActivity(basicMainActivity, 50);
 
       // Check that new methods have proper indentation (2 spaces for method, 4 for body)
-      expect(result).toMatch(/\n  override fun onNewIntent/);
-      expect(result).toMatch(/\n    super\.onNewIntent/);
-      expect(result).toMatch(/\n  override fun onActivityResult/);
-      expect(result).toMatch(/\n    super\.onActivityResult/);
+      expect(result).toMatch(/\n {2}override fun onNewIntent/);
+      expect(result).toMatch(/\n {4}super\.onNewIntent/);
+      expect(result).toMatch(/\n {2}override fun onActivityResult/);
+      expect(result).toMatch(/\n {4}super\.onActivityResult/);
     });
 
     test('should handle MainActivity with extension', () => {
@@ -235,10 +238,7 @@ describe('setKotlinMainActivity', () => {
     });
 
     test('should not duplicate method bodies when MainActivity has all methods for version 52', () => {
-      const result = setKotlinMainActivity(
-        mainActivityWithAllMethodsV52 ,
-        52
-      );
+      const result = setKotlinMainActivity(mainActivityWithAllMethodsV52, 52);
 
       // Should not add duplicate method calls
       const handleIntentCount = (
