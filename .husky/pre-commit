@@ -1,4 +1,18 @@
-yarn test
-yarn lint
-yarn typecheck
-swiftformat --lint .
+#!/bin/sh
+
+run_check() {
+  tmpfile=$(mktemp)
+  if ! "$@" > "$tmpfile" 2>&1; then
+    echo "❌ $* failed:"
+    cat "$tmpfile"
+    rm -f "$tmpfile"
+    exit 1
+  fi
+  rm -f "$tmpfile"
+}
+
+run_check yarn test
+run_check yarn lint
+run_check yarn typecheck
+run_check swiftformat --lint ios
+run_check ktlint android

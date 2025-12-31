@@ -127,7 +127,10 @@ abstract class BaseModule(
 
     session =
       when (val result = CheckoutSessionProvider.createSession(sessionModel, configuration)) {
-        is CheckoutSessionResult.Success -> result.checkoutSession
+        is CheckoutSessionResult.Success -> {
+          result.checkoutSession
+        }
+
         is CheckoutSessionResult.Error -> {
           promise.reject(ModuleException.SessionError(null))
           return

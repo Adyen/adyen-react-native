@@ -8,9 +8,7 @@ import type { Order, PaymentMethodsResponse } from '../core/types';
 /** Describes Drop-in module. */
 
 export interface DropInModule
-  extends AdyenActionComponent,
-    NativeModule,
-    AddressLookup {
+  extends AdyenActionComponent, NativeModule, AddressLookup {
   /**
    * Provides return URL for current application.
    */

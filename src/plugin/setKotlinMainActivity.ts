@@ -52,7 +52,8 @@ export function setKotlinMainActivity(
   } else {
     contents = contents.replace(
       /}\n?$/,
-      (match) => `\n  ${onNewIntentSignature}\n    super.onNewIntent(intent)\n    ${onNewIntentMethod}\n  }\n${match}`
+      (match) =>
+        `\n  ${onNewIntentSignature}\n    super.onNewIntent(intent)\n    ${onNewIntentMethod}\n  }\n${match}`
     );
   }
 
@@ -66,8 +67,9 @@ export function setKotlinMainActivity(
       ? 'super.onActivityResult(requestCode, resultCode, data)'
       : 'super.onActivityResult(requestCode, resultCode, data, caller)';
 
-  const handleActivityResult = "AdyenCheckout.handleActivityResult(requestCode, resultCode, data)"
-    
+  const handleActivityResult =
+    'AdyenCheckout.handleActivityResult(requestCode, resultCode, data)';
+
   if (contents.includes(onActivityResultSignature)) {
     contents = contents.replace(
       onActivityResultSuper,
@@ -76,7 +78,8 @@ export function setKotlinMainActivity(
   } else {
     contents = contents.replace(
       /}\n?$/,
-      (match) => `\n  ${onActivityResultSignature}\n    ${onActivityResultSuper}\n    ${handleActivityResult}\n  }\n${match}`
+      (match) =>
+        `\n  ${onActivityResultSignature}\n    ${onActivityResultSuper}\n    ${handleActivityResult}\n  }\n${match}`
     );
   }
 

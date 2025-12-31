@@ -383,6 +383,7 @@ class DropInModule(
       data.isEmpty() -> {
         return
       }
+
       else -> {
         val brandOnlyMap = data.map { BinLookupDataDTO(it.brand) }
         val jsonString = gson.toJson(brandOnlyMap)

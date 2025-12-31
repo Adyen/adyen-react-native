@@ -66,18 +66,34 @@ object ReactNativeJson {
     while (iterator.hasNextKey()) {
       val key = iterator.nextKey()
       when (readableMap.getType(key)) {
-        ReadableType.Null -> obj.put(key, JSONObject.NULL)
-        ReadableType.Boolean -> obj.put(key, readableMap.getBoolean(key))
-        ReadableType.Number -> obj.put(key, readableMap.getDouble(key))
-        ReadableType.String -> obj.put(key, readableMap.getString(key))
-        ReadableType.Map -> obj.put(key, convertMapToJson(readableMap.getMap(key)))
-        ReadableType.Array ->
+        ReadableType.Null -> {
+          obj.put(key, JSONObject.NULL)
+        }
+
+        ReadableType.Boolean -> {
+          obj.put(key, readableMap.getBoolean(key))
+        }
+
+        ReadableType.Number -> {
+          obj.put(key, readableMap.getDouble(key))
+        }
+
+        ReadableType.String -> {
+          obj.put(key, readableMap.getString(key))
+        }
+
+        ReadableType.Map -> {
+          obj.put(key, convertMapToJson(readableMap.getMap(key)))
+        }
+
+        ReadableType.Array -> {
           obj.put(
             key,
             convertArrayToJson(
               readableMap.getArray(key),
             ),
           )
+        }
       }
     }
     return obj
@@ -89,11 +105,26 @@ object ReactNativeJson {
     for (i in 0 until readableArray!!.size()) {
       when (readableArray.getType(i)) {
         ReadableType.Null -> {}
-        ReadableType.Boolean -> array.put(readableArray.getBoolean(i))
-        ReadableType.Number -> array.put(readableArray.getDouble(i))
-        ReadableType.String -> array.put(readableArray.getString(i))
-        ReadableType.Map -> array.put(convertMapToJson(readableArray.getMap(i)))
-        ReadableType.Array -> array.put(convertArrayToJson(readableArray.getArray(i)))
+
+        ReadableType.Boolean -> {
+          array.put(readableArray.getBoolean(i))
+        }
+
+        ReadableType.Number -> {
+          array.put(readableArray.getDouble(i))
+        }
+
+        ReadableType.String -> {
+          array.put(readableArray.getString(i))
+        }
+
+        ReadableType.Map -> {
+          array.put(convertMapToJson(readableArray.getMap(i)))
+        }
+
+        ReadableType.Array -> {
+          array.put(convertArrayToJson(readableArray.getArray(i)))
+        }
       }
     }
     return array
