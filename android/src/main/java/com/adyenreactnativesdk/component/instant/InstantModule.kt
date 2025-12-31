@@ -53,6 +53,7 @@ class InstantModule(
     fragment =
       when (paymentMethod.type) {
         PaymentMethodTypes.IDEAL -> IdealFragment
+        PaymentMethodTypes.TWINT -> TwintFragment
         else -> InstantFragment
       }
 
