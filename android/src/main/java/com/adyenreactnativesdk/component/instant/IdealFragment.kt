@@ -61,7 +61,7 @@ class IdealFragment(
     view
       ?.findViewById<AdyenComponentView>(R.id.component_view)
       ?.attach(component, this)
-      ?: { Log.e(TAG, FRAGMENT_ERROR) }
+      ?: run { Log.e(TAG, FRAGMENT_ERROR) }
   }
 
   companion object : IInstantFragment {
