@@ -15,7 +15,7 @@ export const DEFAULT_CONFIGURATION = {
   currency: 'EUR',
   amount: 1000, // The amount value in minor units.
   merchantAccount: secrets.MERCHANT_ACCOUNT, // Or '{YOUR_MERCHANT_ACCOUNT}'
-  merchantName: secrets.merchantName, // Or '{YOUR_MERCHANT_NAME}'
+  merchantName: secrets.MERCHANT_NAME, // Or '{YOUR_MERCHANT_NAME}'
   shopperLocale: DEVICE_LOCALE,
   shopperReference: 'Checkout Shopper',
 };
