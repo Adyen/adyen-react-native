@@ -10,7 +10,7 @@ if [ -z "$EXAMPLE_DIR" ]; then
   exit 1
 fi
 
-SECRETS_FILE="$EXAMPLE_DIR/src/secrets.json"
+SECRETS_FILE="$EXAMPLE_DIR/secrets.json"
 
 # Source user profile if present so env vars can be loaded
 if [ -f ~/.bash_profile ]; then
