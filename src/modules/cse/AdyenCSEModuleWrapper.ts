@@ -1,5 +1,5 @@
 import type { NativeModule } from 'react-native';
-import type { Card } from '../../core/types';
+import type { Card } from './Card';
 import type { AdyenCSEModule } from './AdyenCSEModule';
 
 /** Native module interface specific to CSE */

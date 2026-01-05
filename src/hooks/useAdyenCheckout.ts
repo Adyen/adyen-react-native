@@ -4,9 +4,9 @@ import type { Configuration } from '../core/configurations';
 import { MISSING_CONTEXT_ERROR } from '../core/constants';
 
 /**
- * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
+ * Shape of the AdyenCheckout context value.
  */
-export interface AdyenCheckoutContextType {
+export interface AdyenCheckoutContextValue {
   /** Start payment with Drop-in or any payment method available in `paymentMethods` collection. */
   start: (typeName: string) => void;
 
@@ -21,14 +21,14 @@ export interface AdyenCheckoutContextType {
 }
 
 export const AdyenCheckoutContext =
-  createContext<AdyenCheckoutContextType | null>(null);
+  createContext<AdyenCheckoutContextValue | null>(null);
 
 /**
  * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
  */
-export const useAdyenCheckout = (): AdyenCheckoutContextType => {
+export const useAdyenCheckout = (): AdyenCheckoutContextValue => {
   const context = useContext(AdyenCheckoutContext);
-  if (context != null) {
+  if (context !== null) {
     return context;
   }
   throw new Error(MISSING_CONTEXT_ERROR);

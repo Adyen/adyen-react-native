@@ -2,23 +2,6 @@ import type { Configuration } from './configurations/Configuration';
 import type { ResultCode } from './constants';
 
 /**
- * General type for card.
- */
-export class Card {
-  /** PAN of card. */
-  number?: string;
-
-  /** Month in format MM. */
-  expiryMonth?: string;
-
-  /** Year in format YYYY. */
-  expiryYear?: string;
-
-  /** 3 or 4 digits. */
-  cvv?: string;
-}
-
-/**
  * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#responses-200-action API Explorer /payments action}
  */
 export interface PaymentAction {
