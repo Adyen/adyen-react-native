@@ -18,7 +18,7 @@ This will fetch dependencies and generate compressed binaries in *lib/* folder.
 
 This project uses `example/src/secrets.json` to store local, non-committed keys and configuration for the example app.
 
-Create a `secrets.json` file in the `example/src` directory with the following structure (DO NOT commit this file to the repository):
+Create a `secrets.json` file in the `example/` directory with the following structure (DO NOT commit this file to the repository):
 
 ```json
 {
