@@ -1,4 +1,4 @@
-import { LINKING_ERROR } from '../core/constants';
+import { LINKING_ERROR } from './constants';
 
 export const ModuleMock = new Proxy(
   {},

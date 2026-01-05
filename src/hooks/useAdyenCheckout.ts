@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { PaymentMethodsResponse } from '../core/types';
-import type { Configuration } from '../core/configurations/Configuration';
+import type { Configuration } from '../core/configurations';
 import { MISSING_CONTEXT_ERROR } from '../core/constants';
 
 /**
