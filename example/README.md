@@ -22,11 +22,11 @@ Create a `secrets.json` file in the `example/src` directory with the following s
 
 ```json
 {
-  "CLIENT_KEY": "your_client_key",
-  "DEMO_SERVER_API_KEY": "your_demo_server_api_key",
-  "MERCHANT_ACCOUNT": "your_merchant_account",
-  "PUBLIC_KEY": "your_public_key",
-  "APPLE_MERCHANT_ID": "merchant.com.your_apple_merchant_id"
+  "clientKey": "your_client_key",
+  "demoServerApiKey": "your_demo_server_api_key",
+  "merchantAccount": "your_merchant_account",
+  "publicKey": "your_public_key",
+  "appleMerchantId": "merchant.com.your_apple_merchant_id"
 }
 ```
 
