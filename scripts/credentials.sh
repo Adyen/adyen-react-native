@@ -13,9 +13,12 @@ fi
 SECRETS_FILE="$EXAMPLE_DIR/secrets.json"
 
 # Source user profile if present so env vars can be loaded
-if [ -f ~/.bash_profile ]; then
-  source ~/.bash_profile
-fi
+for profile in ~/.bash_profile ~/.bashrc ~/.zshrc ~/.profile; do
+  if [ -f "$profile" ]; then
+    source "$profile"
+    break
+  fi
+done
 
 # Environment variables expected to be set:
 # CLIENT_KEY, DEMO_SERVER_API_KEY, MERCHANT_ACCOUNT, PUBLIC_KEY
