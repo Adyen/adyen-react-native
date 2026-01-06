@@ -22,10 +22,6 @@ export abstract class ModuleWrapper<
   static readonly events = [Event.onError, Event.onComplete];
 
   hide(success: boolean, option?: HideOption): void {
-    if (option?.message) {
-      this.nativeModule.hide(success, option);
-    } else {
-      this.nativeModule.hide(success, { message: '' });
-    }
+    this.nativeModule.hide(success, { message: option?.message ?? '' });
   }
 }

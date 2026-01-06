@@ -2,6 +2,7 @@ import type { NativeModule } from 'react-native';
 import type {
   AdyenComponent,
   EnvironmentConfiguration,
+  HideOption,
   SessionConfiguration,
 } from '../../core';
 import type { SessionHelperModule } from './SessionHelperModule';
@@ -22,12 +23,8 @@ export class SessionWrapper implements SessionHelperModule {
     this.nativeModule = nativeModule;
   }
 
-  hide(success: boolean, option?: { message?: string }): void {
-    if (option?.message) {
-      this.nativeModule.hide(success, option);
-    } else {
-      this.nativeModule.hide(success, { message: '' });
-    }
+  hide(success: boolean, option?: HideOption): void {
+    this.nativeModule.hide(success, { message: option?.message ?? '' });
   }
 
   createSession(

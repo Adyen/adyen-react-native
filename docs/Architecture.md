@@ -108,7 +108,7 @@ ActionHandlingComponentWrapper<T>                            # Abstract - adds h
                            onDisableStoredPaymentMethod,
                            onAddressConfirm, onAddressUpdate,
                            onCheckBalance, onRequestOrder, onCancelOrder]
-            + getReturnURL(), 
+            + getReturnURL()
             + removeStored()                       (RemovesStoredPayment)
             + update(), confirm(), reject()        (AddressLookup)
             + provideBalance/Order/PaymentMethods  (PartialPayment)
@@ -250,12 +250,12 @@ BaseConfiguration
             │   + amount
             │
             └──► Configuration
-                    + analytics?, 
-                    + dropin?, 
-                    + card?, 
-                    + applepay?, 
-                    + googlepay?, 
-                    + threeDS2?, 
+                    + analytics?
+                    + dropin?
+                    + card?
+                    + applepay?
+                    + googlepay?
+                    + threeDS2?
                     + partialPayment?
 ```
 
@@ -283,37 +283,37 @@ static readonly events = [
 
 ### Event Reference
 
-| Event | Native Callback | Description |
-|-------|-----------------|-------------|
-| `onSubmit` | `didSubmitCallback` | Payment details submitted |
-| `onAdditionalDetails` | `didProvideCallback` | Additional action details needed |
-| `onComplete` | `didCompleteCallback` | Payment completed (vouchers) |
-| `onError` | `didFailCallback` | Error occurred |
+| Event                          | Native Callback                         | Description                      |
+| ------------------------------ | --------------------------------------- | -------------------------------- |
+| `onSubmit`                     | `didSubmitCallback`                     | Payment details submitted        |
+| `onAdditionalDetails`          | `didProvideCallback`                    | Additional action details needed |
+| `onComplete`                   | `didCompleteCallback`                   | Payment completed (vouchers)     |
+| `onError`                      | `didFailCallback`                       | Error occurred                   |
 | `onDisableStoredPaymentMethod` | `didDisableStoredPaymentMethodCallback` | Stored payment removal requested |
-| `onAddressUpdate` | `didUpdateAddressCallback` | Address lookup update |
-| `onAddressConfirm` | `didConfirmAddressCallback` | Address confirmed |
-| `onCheckBalance` | `didCheckBalanceCallback` | Balance check requested |
-| `onRequestOrder` | `didRequestOrderCallback` | New order requested |
-| `onCancelOrder` | `didCancelOrderCallback` | Order cancelled |
-| `onBinValue` | `didChangeBinValueCallback` | BIN value changed |
-| `onBinLookup` | `didBinLookupCallback` | BIN lookup completed |
+| `onAddressUpdate`              | `didUpdateAddressCallback`              | Address lookup update            |
+| `onAddressConfirm`             | `didConfirmAddressCallback`             | Address confirmed                |
+| `onCheckBalance`               | `didCheckBalanceCallback`               | Balance check requested          |
+| `onRequestOrder`               | `didRequestOrderCallback`               | New order requested              |
+| `onCancelOrder`                | `didCancelOrderCallback`                | Order cancelled                  |
+| `onBinValue`                   | `didChangeBinValueCallback`             | BIN value changed                |
+| `onBinLookup`                  | `didBinLookupCallback`                  | BIN lookup completed             |
 
 ## Data Flow
 
 ```
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                               AdyenCheckout                                                    │
 │                                            (React Component)                                                   │
 │                                                                                                                │
-│    ┌─────────────────────────────┐                  ┌────────────────────────────────────────────────────────┐ │
-│    │ AdyenCheckout               │                  │ Event Handlers (props)                                 │ │
-│    │ Context                     │                  │ - onSubmit(data, component, extra)                     │ │
-│    │ - start(name)               │                  │ - onComplete(result, component)                        │ │
-│    │ - config                    │                  │ - onError(error, component)                            │ │
-│    │ - paymentMethods            │                  │ - onAdditionalDetails(data, component)                 │ │
-│    │ - session?                  │                  │ - Address/Partial Payment callbacks                    │ │
-│    └─────────────────────────────┘                  └────────────────────────────────────────────────────────┘ │
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+│    ┌──────────────────────────────────┐             ┌────────────────────────────────────────────────────────┐ │
+│    │ AdyenCheckout                    │             │ Event Handlers (props)                                 │ │
+│    │ Context                          │             │ - onSubmit(data, component, extra)                     │ │
+│    │ - start(name)                    │             │ - onComplete(result, component)                        │ │
+│    │ - config                         │             │ - onError(error, component)                            │ │
+│    │ - paymentMethods                 │             │ - onAdditionalDetails(data, component)                 │ │
+│    │ - session?                       │             │                                                        │ │
+│    └──────────────────────────────────┘             └────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
                                                         │
                                                         ▼
                                           ┌───────────────────────────┐
@@ -323,8 +323,9 @@ static readonly events = [
                                           │     wrapper instance      │
                                           └───────────────────────────┘
                                                         │
-          ┌─────────────────────────────┬───────────────┼───────────────┬─────────────────────────────┐
-          ▼                             ▼               ▼               ▼                             ▼
+                                                        ▼
+          ┌─────────────────────────────┬───────────────────────────────┬─────────────────────────────┐
+          ▼                             ▼                               ▼                             ▼
 ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
 │     DropInWrapper     │   │    ApplePayWrapper    │   │   GooglePayWrapper    │   │    InstantWrapper     │
 │                       │   │                       │   │                       │   │                       │
@@ -333,25 +334,12 @@ static readonly events = [
 │   - hide()            │   │   - hide()            │   │   - isAvailable()     │   │   - hide()            │
 │   - ...               │   │                       │   │   - hide()            │   │                       │
 └───────────────────────┘   └───────────────────────┘   └───────────────────────┘   └───────────────────────┘
-          │                             │               │               │                             │
-          └─────────────────────────────┴───────────────┼───────────────┴─────────────────────────────┘
+          │                             │                               │                             │
+          └─────────────────────────────┴───────────────────────────────┴─────────────────────────────┘
+                                                        │                 
                                                         ▼
                                           ┌───────────────────────────┐
                                           │    Native iOS/Android     │
                                           │        Adyen SDK          │
                                           └───────────────────────────┘
 ```
-
-## Session Flow vs Advanced Flow
-
-### Session Flow
-1. Pass `session` prop to `AdyenCheckout`
-2. `SessionHelper.createSession()` initializes session with Adyen
-3. Returns `SessionContext` with `paymentMethods`
-4. Events return `SessionsResult` on completion
-
-### Advanced Flow
-1. Pass `paymentMethods` prop directly to `AdyenCheckout`
-2. Handle `onSubmit` → call your server → `/payments`
-3. Handle `onAdditionalDetails` → call your server → `/payments/details`
-4. Call `component.handle(action)` for any actions
