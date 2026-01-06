@@ -1,7 +1,9 @@
-import type { PaymentAction } from '../../core/types';
+import {
+  Event,
+  type AdyenActionComponent,
+  type PaymentAction,
+} from '../../core';
 import { ModuleWrapper, type BaseNativeModule } from './ModuleWrapper';
-import type { AdyenActionComponent } from '../../core/types';
-import { Event } from '../../core/constants';
 
 /** Native module interface for action-handling components */
 export interface ActionHandlingNativeModule extends BaseNativeModule {

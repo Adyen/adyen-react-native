@@ -12,7 +12,7 @@ export interface AdyenCSEModule {
   encryptBin(payload: string, publicKey: string): Promise<string>;
 }
 
-/**Encryption helper. */
+/** Encryption helper. */
 export const AdyenCSE: AdyenCSEModule = new AdyenCSEWrapper(
   NativeModules.AdyenCSE ?? ModuleMock
 );

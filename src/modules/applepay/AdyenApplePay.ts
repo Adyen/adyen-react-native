@@ -1,5 +1,5 @@
 import { NativeModules } from 'react-native';
-import type { ConditionalPaymentComponent } from '../../core/types';
+import type { ConditionalPaymentComponent } from '../../core';
 import { ModuleMock } from '../base/ModuleMock';
 import { ApplePayWrapper } from './ApplePayWrapper';
 

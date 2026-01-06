@@ -1,5 +1,5 @@
 import type { NativeModule } from 'react-native';
-import { Event } from '../../core/constants';
+import { Event } from '../../core';
 
 /**
  *  Generic wrapper for all Native Modules. Controls subscriptions and supported events.

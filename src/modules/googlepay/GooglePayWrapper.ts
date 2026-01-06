@@ -1,10 +1,9 @@
-import type { Configuration } from '../../core/configurations';
-import type { PaymentMethod } from '../../core/types';
-import type { GooglePayModule } from './AdyenGooglePay';
+import type { Configuration, PaymentMethod } from '../../core';
 import {
   ActionHandlingComponentWrapper,
   type ActionHandlingNativeModule,
 } from '../base/ActionHandlingComponentWrapper';
+import type { GooglePayModule } from './AdyenGooglePay';
 
 /** Native module interface specific to GooglePay */
 export interface GooglePayNativeModule extends ActionHandlingNativeModule {

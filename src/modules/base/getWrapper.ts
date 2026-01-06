@@ -1,20 +1,21 @@
 import {
-  NATIVE_COMPONENTS,
   ADDRESS_COMPONENTS,
+  NATIVE_COMPONENTS,
   UNSUPPORTED_PAYMENT_METHODS,
-} from '../../core/components';
+  type PaymentMethod,
+  type PaymentMethodsResponse,
+} from '../../core';
+import { AdyenApplePay, AdyenDropIn, AdyenGooglePay, AdyenInstant } from '..';
+import type { ApplePayWrapper } from '../applepay/ApplePayWrapper';
+import type { DropInWrapper } from '../dropin/DropInWrapper';
+import type { GooglePayWrapper } from '../googlepay/GooglePayWrapper';
+import type { InstantWrapper } from '../instant/InstantWrapper';
 import {
   UNKNOWN_PAYMENT_METHOD_ERROR,
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from './constants';
-import type { PaymentMethod, PaymentMethodsResponse } from '../../core/types';
-import { AdyenDropIn, AdyenInstant, AdyenApplePay, AdyenGooglePay } from '..';
-import type { DropInWrapper } from '../dropin/DropInWrapper';
-import type { ApplePayWrapper } from '../applepay/ApplePayWrapper';
-import type { GooglePayWrapper } from '../googlepay/GooglePayWrapper';
-import type { InstantWrapper } from '../instant/InstantWrapper';
-import { find } from './utils';
 import type { ModuleWrapper } from './ModuleWrapper';
+import { find } from './utils';
 
 /**
  * Get native component capable of handling provided payment method type.

@@ -1,6 +1,3 @@
-export const MISSING_CONTEXT_ERROR =
-  'useAdyenCheckout must be used within an AdyenCheckout';
-
 /** Collection of events that components can trigger. */
 export enum Event {
   /** Event handler, called when the shopper selects the Pay button and payment details are valid. */

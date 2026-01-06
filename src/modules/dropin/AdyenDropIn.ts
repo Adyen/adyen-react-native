@@ -1,11 +1,11 @@
 import { NativeModules } from 'react-native';
-import type { AddressLookup } from '../../core/configurations';
-import { ModuleMock } from '../base/ModuleMock';
 import type {
+  AddressLookup,
+  AdyenActionComponent,
   Order,
   PaymentMethodsResponse,
-  AdyenActionComponent,
-} from '../../core/types';
+} from '../../core';
+import { ModuleMock } from '../base/ModuleMock';
 import { DropInWrapper } from './DropInWrapper';
 
 /** Describes Drop-in module. */

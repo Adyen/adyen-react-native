@@ -7,35 +7,33 @@ import React, {
   useMemo,
 } from 'react';
 import { type EmitterSubscription, NativeEventEmitter } from 'react-native';
-import { Event } from '../core/constants';
-import type { AdyenComponent } from '../core/AdyenNativeModules';
+import type {
+  AddressLookup,
+  AddressLookupItem,
+  AdyenActionComponent,
+  AdyenComponent,
+  AdyenError,
+  Configuration,
+  Order,
+  PartialPaymentComponent,
+  PaymentDetailsData,
+  PaymentMethodData,
+  PaymentMethodsResponse,
+  RemovesStoredPayment,
+  SessionConfiguration,
+  SessionsResult,
+  StoredPaymentMethod,
+  SubmitModel,
+} from '../core';
+import { Event } from '../core';
+import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
+import { getWrapper } from '../modules/base/getWrapper';
+import type { EventListenerWrapper } from '../modules/base/EventListenerWrapper';
 import {
   SessionHelper,
   type SessionContext,
 } from '../modules/session/SessionHelperModule';
-import type {
-  AdyenError,
-  PaymentMethodsResponse,
-  SessionConfiguration,
-  PaymentMethodData,
-  PaymentDetailsData,
-  StoredPaymentMethod,
-  SubmitModel,
-  Order,
-  SessionsResult,
-  RemovesStoredPayment,
-} from '../core/types';
-import type { Configuration } from '../core/configurations/Configuration';
-import { checkPaymentMethodsResponse, checkConfiguration } from '../core/utils';
-import type { AdyenActionComponent } from '../core/AdyenNativeModules';
-import type {
-  AddressLookup,
-  AddressLookupItem,
-} from '../core/configurations/AddressLookup';
-import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
-import type { PartialPaymentComponent } from '../core/configurations/PartialPaymentConfiguration';
-import { getWrapper } from '../modules/base/getWrapper';
-import type { EventListenerWrapper } from '../modules/base/EventListenerWrapper';
+import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
 
 /**
  * Props for AdyenCheckout
@@ -135,7 +133,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, [session, sessionContext, config, onError, setSessionContext]);
 
   const startEventListeners = useCallback(
-    (nativeComponent: EventListenerWrapper) => {
+    (nativeComponent: EventListenerWrapper & AdyenComponent) => {
       removeEventListeners();
       const eventEmitter = new NativeEventEmitter(nativeComponent);
 
@@ -156,14 +154,14 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           submitPayment(response.paymentData, response.extra)
         ),
         eventEmitter.addListener(Event.onError, (error: AdyenError) =>
-          onError?.(error, nativeComponent as unknown as AdyenComponent)
+          onError?.(error, nativeComponent)
         ),
       ];
 
       if (nativeComponent.isSupported(Event.onComplete)) {
         subscriptions.current.push(
           eventEmitter.addListener(Event.onComplete, (data: any) =>
-            onComplete?.(data, nativeComponent as unknown as AdyenComponent)
+            onComplete?.(data, nativeComponent)
           )
         );
       }

@@ -1,11 +1,11 @@
 import { NativeModules } from 'react-native';
 import type {
+  AdyenComponent,
+  EnvironmentConfiguration,
   PaymentMethodsResponse,
   SessionConfiguration,
-} from '../../core/types';
-import type { AdyenComponent } from '../../core/types';
+} from '../../core';
 import { ModuleMock } from '../base/ModuleMock';
-import type { EnvironmentConfiguration } from '../../core/configurations';
 import { SessionWrapper } from './SessionWrapper';
 
 /** Describes a native module capable of creating new sessions. */

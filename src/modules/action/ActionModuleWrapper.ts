@@ -1,6 +1,9 @@
 import type { NativeModule } from 'react-native';
-import type { BaseConfiguration } from '../../core/configurations';
-import type { PaymentAction, PaymentDetailsData } from '../../core/types';
+import type {
+  BaseConfiguration,
+  PaymentAction,
+  PaymentDetailsData,
+} from '../../core';
 import type { ActionModule } from './AdyenAction';
 
 /** Native module interface specific to Action */

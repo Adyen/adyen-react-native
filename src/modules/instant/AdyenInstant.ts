@@ -1,5 +1,5 @@
 import { NativeModules } from 'react-native';
-import type { AdyenActionComponent } from '../../core/types';
+import type { AdyenActionComponent } from '../../core';
 import { ModuleMock } from '../base/ModuleMock';
 import { InstantWrapper } from './InstantWrapper';
 

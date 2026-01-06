@@ -1,20 +1,18 @@
 import type {
   AddressLookup,
   AddressLookupItem,
-} from '../../core/configurations';
-import type {
   Balance,
   Order,
+  PartialPaymentComponent,
   PaymentMethodsResponse,
   RemovesStoredPayment,
-} from '../../core/types';
+} from '../../core';
+import { Event } from '../../core';
 import {
   ActionHandlingComponentWrapper,
   type ActionHandlingNativeModule,
 } from '../base/ActionHandlingComponentWrapper';
 import type { DropInModule } from './AdyenDropIn';
-import { Event } from '../../core/constants';
-import type { PartialPaymentComponent } from '../../core/configurations';
 
 /** Native module interface specific to DropIn */
 export interface DropInNativeModule extends ActionHandlingNativeModule {

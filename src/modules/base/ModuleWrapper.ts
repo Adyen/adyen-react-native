@@ -1,8 +1,11 @@
 import type { NativeModule } from 'react-native';
+import type {
+  AdyenComponent,
+  Configuration,
+  PaymentMethodsResponse,
+} from '../../core';
+import { Event } from '../../core';
 import { EventListenerWrapper } from './EventListenerWrapper';
-import type { AdyenComponent, PaymentMethodsResponse } from '../../core/types';
-import type { Configuration } from '../../core/configurations';
-import { Event } from '../../core/constants';
 
 /** Base native module interface for ModuleWrapper */
 export interface BaseNativeModule extends NativeModule {

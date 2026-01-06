@@ -1,8 +1,6 @@
+import { Event, type Configuration, type PaymentMethod } from '../../core';
 import { ModuleWrapper, type BaseNativeModule } from '../base/ModuleWrapper';
-import type { Configuration } from '../../core/configurations';
-import type { PaymentMethod } from '../../core/types';
 import type { ApplePayModule } from './AdyenApplePay';
-import { Event } from '../../core/constants';
 
 /** Native module interface specific to ApplePay */
 export interface ApplePayNativeModule extends BaseNativeModule {

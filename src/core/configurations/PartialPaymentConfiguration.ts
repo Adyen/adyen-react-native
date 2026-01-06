@@ -1,5 +1,9 @@
-import type { AdyenComponent } from '../AdyenNativeModules';
-import type { Balance, Order, PaymentMethodData } from '../types';
+import type {
+  AdyenComponent,
+  Balance,
+  Order,
+  PaymentMethodData,
+} from '../types';
 
 export interface PartialPaymentConfiguration {
   /**

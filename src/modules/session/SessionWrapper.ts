@@ -1,6 +1,8 @@
-import { type NativeModule } from 'react-native';
-import type { EnvironmentConfiguration } from '../../core/configurations';
-import type { SessionConfiguration } from '../../core/types';
+import type { NativeModule } from 'react-native';
+import type {
+  EnvironmentConfiguration,
+  SessionConfiguration,
+} from '../../core';
 import type {
   SessionContext,
   SessionHelperModule,

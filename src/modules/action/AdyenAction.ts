@@ -1,8 +1,11 @@
 import { NativeModules } from 'react-native';
-import type { PaymentAction, PaymentDetailsData } from '../../core/types';
-import type { BaseConfiguration } from '../../core/configurations';
-import { ActionModuleWrapper } from './ActionModuleWrapper';
+import type {
+  BaseConfiguration,
+  PaymentAction,
+  PaymentDetailsData,
+} from '../../core';
 import { ModuleMock } from '../base/ModuleMock';
+import { ActionModuleWrapper } from './ActionModuleWrapper';
 
 /** Describes a native module capable of handling actions standalone. */
 export interface ActionModule {

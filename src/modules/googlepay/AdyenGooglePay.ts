@@ -2,7 +2,7 @@ import { NativeModules } from 'react-native';
 import type {
   AdyenActionComponent,
   ConditionalPaymentComponent,
-} from '../../core/types';
+} from '../../core';
 import { ModuleMock } from '../base/ModuleMock';
 import { GooglePayWrapper } from './GooglePayWrapper';
 
