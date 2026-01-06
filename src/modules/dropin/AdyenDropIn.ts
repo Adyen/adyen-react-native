@@ -1,6 +1,5 @@
 import { NativeModules } from 'react-native';
 import type {
-  AddressLookup,
   AdyenActionComponent,
   Order,
   PaymentMethodsResponse,
@@ -9,7 +8,7 @@ import { ModuleMock } from '../base/ModuleMock';
 import { DropInWrapper } from './DropInWrapper';
 
 /** Describes Drop-in module. */
-export interface DropInModule extends AdyenActionComponent, AddressLookup {
+export interface DropInModule extends AdyenActionComponent {
   /**
    * Provides return URL for current application.
    */

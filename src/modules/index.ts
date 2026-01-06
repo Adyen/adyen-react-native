@@ -12,7 +12,7 @@ export type { DropInModule } from './dropin/AdyenDropIn';
 
 export { AdyenCSE } from './cse/AdyenCSEModule';
 export type { AdyenCSEModule } from './cse/AdyenCSEModule';
-export { Card } from './cse/Card';
+export * from './cse/types';
 
 export { AdyenAction } from './action/AdyenAction';
 export type { ActionModule } from './action/AdyenAction';

@@ -1,7 +1,7 @@
 import { NativeModules } from 'react-native';
 import { ModuleMock } from '../base/ModuleMock';
 import { AdyenCSEWrapper } from './AdyenCSEModuleWrapper';
-import type { Card } from './Card';
+import type { Card } from './types';
 
 /** Describes a native module capable of encrypting card data. */
 export interface AdyenCSEModule {

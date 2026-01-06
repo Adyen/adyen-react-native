@@ -1,21 +1,11 @@
-import type {
-  ConditionalPaymentComponent,
-  Configuration,
-  PaymentMethod,
-} from '../../core';
-import {
-  PaymentComponentWrapper,
-  type PaymentModule,
-} from '../base/PaymentComponentWrapper';
+import type { Configuration, PaymentMethod } from '../../core';
+import { PaymentComponentWrapper } from '../base/PaymentComponentWrapper';
 import type { ApplePayModule } from './AdyenApplePay';
+import type { PaymentModule } from '../base/PaymentComponentWrapper';
 
 /** Native module interface specific to ApplePay */
-export interface ApplePayNativeModule
-  extends PaymentModule, ConditionalPaymentComponent {
-  isAvailable(
-    paymentMethod: PaymentMethod,
-    configuration: Configuration
-  ): Promise<boolean>;
+interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
+  // TODO: add express payment events
 }
 
 /**

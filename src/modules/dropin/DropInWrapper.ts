@@ -1,4 +1,5 @@
 import type {
+  AddressLookup,
   AddressLookupItem,
   Balance,
   Order,
@@ -25,19 +26,12 @@ interface DropInNativeModule
   extends
     ActionHandlingNativeModule,
     PartialPaymentComponent,
+    DropInModule,
     RemovesStoredPayment {
-  getReturnURL(): Promise<string>;
-  removeStored(success: boolean): void;
   update(results: AddressLookupItem[]): void;
   confirm(
     success: boolean,
     addressOrError?: AddressLookupItem | { message?: string }
-  ): void;
-  provideBalance(success: boolean, balance?: Balance, error?: Error): void;
-  provideOrder(success: boolean, order?: Order, error?: Error): void;
-  providePaymentMethods(
-    paymentMethods: PaymentMethodsResponse,
-    order?: Order
   ): void;
 }
 
@@ -47,7 +41,11 @@ interface DropInNativeModule
  */
 export class DropInWrapper
   extends ActionHandlingComponentWrapper<DropInNativeModule>
-  implements DropInModule, RemovesStoredPayment, PartialPaymentComponent
+  implements
+    DropInModule,
+    AddressLookup,
+    RemovesStoredPayment,
+    PartialPaymentComponent
 {
   static readonly events = [
     Event.onBinValue,
