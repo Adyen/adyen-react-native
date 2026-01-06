@@ -7,7 +7,7 @@ import type { Event } from '../../core';
  */
 function getRegisteredEvents(
   target: abstract new (...args: any[]) => any
-): Event[] {
+): readonly Event[] {
   const events: Event[] = [];
   let current: any = target;
 
@@ -19,7 +19,7 @@ function getRegisteredEvents(
     current = Object.getPrototypeOf(current);
   }
 
-  return [...new Set(events)];
+  return [...new Set(events)] as readonly Event[];
 }
 
 /**
@@ -31,8 +31,8 @@ export abstract class EventListenerWrapper<
   T extends NativeModule = NativeModule,
 > {
   protected nativeModule: T;
-  protected supportedEvents: string[];
-  abstract name: string;
+  protected supportedEvents: readonly string[];
+  abstract get name(): string;
 
   constructor(nativeModule: T) {
     this.nativeModule = nativeModule;

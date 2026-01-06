@@ -31,6 +31,13 @@ src/
 ├── hooks/                      # React hooks
 │   ├── index.ts
 │   └── useAdyenCheckout.ts     # Context hook for checkout state
+├── plugin/                     # Expo config plugins
+│   ├── withAdyen.ts            # Main plugin entry
+│   ├── withAdyenIos.ts         # iOS-specific configuration
+│   ├── withAdyenAndroid.ts     # Android-specific configuration
+│   └── ...                     # Platform setup utilities
+├── specs/                      # TurboModule specs
+│   └── NativePlatformPayView.ts
 └── modules/                    # Native module wrappers
     ├── index.ts
     ├── base/                   # Base wrapper classes
