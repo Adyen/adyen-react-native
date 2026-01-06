@@ -1,18 +1,10 @@
 import type { NativeModule } from 'react-native';
-import type {
-  AdyenComponent,
-  Configuration,
-  PaymentMethodsResponse,
-} from '../../core';
+import type { AdyenComponent } from '../../core';
 import { Event } from '../../core';
 import { EventListenerWrapper } from './EventListenerWrapper';
 
 /** Base native module interface for ModuleWrapper */
-export interface BaseNativeModule extends NativeModule {
-  open(
-    paymentMethods: PaymentMethodsResponse,
-    configuration: Configuration
-  ): void;
+export interface BaseNativeModule extends NativeModule, AdyenComponent {
   hide(success: boolean, option?: { message?: string }): void;
 }
 
@@ -30,9 +22,6 @@ export abstract class ModuleWrapper<
     const allEvents = [Event.onError, Event.onComplete];
     events.forEach((element: Event) => allEvents.push(element));
     super(nativeModule, allEvents);
-  }
-  open(paymentMethods: PaymentMethodsResponse, configuration: Configuration) {
-    this.nativeModule.open(paymentMethods, configuration);
   }
   hide(success: boolean, option?: { message?: string }) {
     if (option?.message) {

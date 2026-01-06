@@ -1,11 +1,9 @@
 import type {
-  AddressLookup,
   AddressLookupItem,
   Balance,
   Order,
   PartialPaymentComponent,
   PaymentMethodsResponse,
-  RemovesStoredPayment,
 } from '../../core';
 import { Event } from '../../core';
 import {
@@ -14,8 +12,19 @@ import {
 } from '../base/ActionHandlingComponentWrapper';
 import type { DropInModule } from './AdyenDropIn';
 
+/**
+ * Interface for removing stored payment method.
+ */
+export interface RemovesStoredPayment {
+  removeStored(success: boolean): void;
+}
+
 /** Native module interface specific to DropIn */
-export interface DropInNativeModule extends ActionHandlingNativeModule {
+interface DropInNativeModule
+  extends
+    ActionHandlingNativeModule,
+    PartialPaymentComponent,
+    RemovesStoredPayment {
   getReturnURL(): Promise<string>;
   removeStored(success: boolean): void;
   update(results: AddressLookupItem[]): void;
@@ -33,11 +42,7 @@ export interface DropInNativeModule extends ActionHandlingNativeModule {
 
 export class DropInWrapper
   extends ActionHandlingComponentWrapper<DropInNativeModule>
-  implements
-    DropInModule,
-    AddressLookup,
-    RemovesStoredPayment,
-    PartialPaymentComponent
+  implements DropInModule, RemovesStoredPayment, PartialPaymentComponent
 {
   name: string = 'DropIn';
 

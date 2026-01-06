@@ -9,7 +9,6 @@ import { ModuleMock } from '../base/ModuleMock';
 import { DropInWrapper } from './DropInWrapper';
 
 /** Describes Drop-in module. */
-
 export interface DropInModule extends AdyenActionComponent, AddressLookup {
   /**
    * Provides return URL for current application.

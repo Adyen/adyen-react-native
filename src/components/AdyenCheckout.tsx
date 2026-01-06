@@ -19,7 +19,6 @@ import type {
   PaymentDetailsData,
   PaymentMethodData,
   PaymentMethodsResponse,
-  RemovesStoredPayment,
   SessionConfiguration,
   SessionsResult,
   StoredPaymentMethod,
@@ -28,12 +27,13 @@ import type {
 import { Event } from '../core';
 import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
 import { getWrapper } from '../modules/base/getWrapper';
-import type { EventListenerWrapper } from '../modules/base/EventListenerWrapper';
 import {
   SessionHelper,
   type SessionContext,
 } from '../modules/session/SessionHelperModule';
 import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
+import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
+import type { ModuleWrapper } from '../modules/base/ModuleWrapper';
 
 /**
  * Props for AdyenCheckout
@@ -133,7 +133,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, [session, sessionContext, config, onError, setSessionContext]);
 
   const startEventListeners = useCallback(
-    (nativeComponent: EventListenerWrapper & AdyenComponent) => {
+    (nativeComponent: ModuleWrapper) => {
       removeEventListeners();
       const eventEmitter = new NativeEventEmitter(nativeComponent);
 

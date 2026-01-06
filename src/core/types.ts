@@ -273,13 +273,6 @@ export type SessionsResult = {
 };
 
 /**
- * Interface for removing stored payment method.
- */
-export interface RemovesStoredPayment {
-  removeStored(success: boolean): void;
-}
-
-/**
  * Options for dismissing the payment component.
  */
 export interface HideOption {
@@ -300,21 +293,9 @@ export interface AdyenComponent {
 }
 
 /**
- * Universal interface for an Adyen Native payment component.
- */
-export interface AdyenPaymentComponent extends AdyenComponent {
-  /**
-   * Show the component above the current screen.
-   * @param paymentMethods - The available payment methods.
-   * @param configuration - The configuration for the component.
-   */
-  open(paymentMethods: PaymentMethodsResponse, configuration: any): void;
-}
-
-/**
  * Describes an Adyen Component capable of handling payment actions.
  */
-export interface AdyenActionComponent extends AdyenPaymentComponent {
+export interface AdyenActionComponent extends AdyenComponent {
   /**
    * Handle a payment action received by the component.
    * @param action - The payment action to be handled.
@@ -325,7 +306,7 @@ export interface AdyenActionComponent extends AdyenPaymentComponent {
 /**
  * Describes an Adyen Component capable of handling payment action if specific conditions are met.
  */
-export interface ConditionalPaymentComponent extends AdyenComponent {
+export interface ConditionalPaymentComponent {
   isAvailable(
     paymentMethods: PaymentMethod,
     configuration: Configuration

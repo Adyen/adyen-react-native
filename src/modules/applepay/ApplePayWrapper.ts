@@ -1,9 +1,17 @@
-import { Event, type Configuration, type PaymentMethod } from '../../core';
-import { ModuleWrapper, type BaseNativeModule } from '../base/ModuleWrapper';
+import type {
+  ConditionalPaymentComponent,
+  Configuration,
+  PaymentMethod,
+} from '../../core';
+import {
+  PaymentComponentWrapper,
+  type PaymentModule,
+} from '../base/PaymentComponentWrapper';
 import type { ApplePayModule } from './AdyenApplePay';
 
 /** Native module interface specific to ApplePay */
-export interface ApplePayNativeModule extends BaseNativeModule {
+export interface ApplePayNativeModule
+  extends PaymentModule, ConditionalPaymentComponent {
   isAvailable(
     paymentMethod: PaymentMethod,
     configuration: Configuration
@@ -11,13 +19,13 @@ export interface ApplePayNativeModule extends BaseNativeModule {
 }
 
 export class ApplePayWrapper
-  extends ModuleWrapper<ApplePayNativeModule>
+  extends PaymentComponentWrapper<ApplePayNativeModule>
   implements ApplePayModule
 {
   name: string = 'ApplePay';
 
   constructor(nativeModule: ApplePayNativeModule) {
-    super(nativeModule, [Event.onSubmit]);
+    super(nativeModule, []);
   }
 
   isAvailable(

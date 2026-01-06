@@ -14,8 +14,8 @@ import {
   UNKNOWN_PAYMENT_METHOD_ERROR,
   UNSUPPORTED_PAYMENT_METHOD_ERROR,
 } from './constants';
-import type { ModuleWrapper } from './ModuleWrapper';
 import { find } from './utils';
+import type { PaymentComponentWrapper } from './PaymentComponentWrapper';
 
 /**
  * Get native component capable of handling provided payment method type.
@@ -24,7 +24,7 @@ export function getWrapper(
   typeName: string,
   paymentMethods: PaymentMethodsResponse
 ): {
-  nativeComponent: ModuleWrapper;
+  nativeComponent: PaymentComponentWrapper;
   paymentMethod?: PaymentMethod;
 } {
   switch (typeName) {
@@ -57,7 +57,7 @@ export function getWrapper(
     throw new Error(UNSUPPORTED_PAYMENT_METHOD_ERROR + typeName);
   }
 
-  let nativeComponent: ModuleWrapper;
+  let nativeComponent: PaymentComponentWrapper;
   // Currently this resolves address lookup and bin lookup callbacks for Dropin-based Card payment.
   if (ADDRESS_COMPONENTS.includes(typeName)) {
     nativeComponent = AdyenDropIn as DropInWrapper;

@@ -3,10 +3,14 @@ import {
   type AdyenActionComponent,
   type PaymentAction,
 } from '../../core';
-import { ModuleWrapper, type BaseNativeModule } from './ModuleWrapper';
+import {
+  PaymentComponentWrapper,
+  type PaymentModule,
+} from './PaymentComponentWrapper';
 
 /** Native module interface for action-handling components */
-export interface ActionHandlingNativeModule extends BaseNativeModule {
+export interface ActionHandlingNativeModule
+  extends PaymentModule, AdyenActionComponent {
   handle(action: PaymentAction): void;
 }
 
@@ -17,11 +21,11 @@ export interface ActionHandlingNativeModule extends BaseNativeModule {
 export abstract class ActionHandlingComponentWrapper<
   T extends ActionHandlingNativeModule = ActionHandlingNativeModule,
 >
-  extends ModuleWrapper<T>
+  extends PaymentComponentWrapper<T>
   implements AdyenActionComponent
 {
   constructor(nativeModule: T, events?: Event[]) {
-    const allEvents = [Event.onSubmit, Event.onAdditionalDetails];
+    const allEvents = [Event.onAdditionalDetails];
     events?.forEach((element: Event) => allEvents.push(element));
     super(nativeModule, allEvents);
   }
