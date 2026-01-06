@@ -27,10 +27,8 @@ import type {
 import { Event } from '../core';
 import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
 import { getWrapper } from '../modules/base/getWrapper';
-import {
-  SessionHelper,
-  type SessionContext,
-} from '../modules/session/SessionHelperModule';
+import { SessionHelper } from '../modules/session/SessionHelperModule';
+import type { SessionContext } from '../modules/session/types';
 import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
 import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
 import type { ModuleWrapper } from '../modules/base/ModuleWrapper';

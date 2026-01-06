@@ -18,15 +18,15 @@ export interface ApplePayNativeModule
   ): Promise<boolean>;
 }
 
+/**
+ * Apple Pay wrapper - no additional events beyond inherited ones.
+ * TODO: add express payment events
+ */
 export class ApplePayWrapper
   extends PaymentComponentWrapper<ApplePayNativeModule>
   implements ApplePayModule
 {
   name: string = 'ApplePay';
-
-  constructor(nativeModule: ApplePayNativeModule) {
-    super(nativeModule, []);
-  }
 
   isAvailable(
     paymentMethods: PaymentMethod,

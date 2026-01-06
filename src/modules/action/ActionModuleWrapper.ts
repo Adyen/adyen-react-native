@@ -7,7 +7,7 @@ import type {
 import type { ActionModule } from './AdyenAction';
 
 /** Native module interface specific to Action */
-export interface ActionNativeModule extends NativeModule {
+interface ActionNativeModule extends NativeModule {
   handle(
     action: PaymentAction,
     configuration: BaseConfiguration

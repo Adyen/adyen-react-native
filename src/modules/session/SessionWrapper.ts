@@ -1,16 +1,14 @@
 import type { NativeModule } from 'react-native';
 import type {
+  AdyenComponent,
   EnvironmentConfiguration,
   SessionConfiguration,
 } from '../../core';
-import type {
-  SessionContext,
-  SessionHelperModule,
-} from './SessionHelperModule';
+import type { SessionHelperModule } from './SessionHelperModule';
+import type { SessionContext } from './types';
 
 /** Native module interface specific to Session */
-export interface SessionNativeModule extends NativeModule {
-  hide(success: boolean, option?: { message?: string }): void;
+interface SessionNativeModule extends NativeModule, AdyenComponent {
   createSession(
     session: SessionConfiguration,
     configuration: EnvironmentConfiguration

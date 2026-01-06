@@ -10,25 +10,20 @@ import {
 
 /** Native module interface for action-handling components */
 export interface ActionHandlingNativeModule
-  extends PaymentModule, AdyenActionComponent {
-  handle(action: PaymentAction): void;
-}
+  extends PaymentModule, AdyenActionComponent {}
 
 /**
- *  Wrapper for all Native Modules that support Action handling.
- *  @typeParam T - The specific native module interface for the concrete wrapper
- * */
+ * Wrapper for Native Modules that support Action handling.
+ * Supports: onAdditionalDetails event (in addition to inherited events).
+ * @typeParam T - The specific native module interface for the concrete wrapper
+ */
 export abstract class ActionHandlingComponentWrapper<
   T extends ActionHandlingNativeModule = ActionHandlingNativeModule,
 >
   extends PaymentComponentWrapper<T>
   implements AdyenActionComponent
 {
-  constructor(nativeModule: T, events?: Event[]) {
-    const allEvents = [Event.onAdditionalDetails];
-    events?.forEach((element: Event) => allEvents.push(element));
-    super(nativeModule, allEvents);
-  }
+  static readonly events = [Event.onAdditionalDetails];
 
   handle(action: PaymentAction) {
     this.nativeModule.handle(action);

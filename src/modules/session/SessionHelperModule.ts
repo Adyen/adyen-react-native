@@ -2,11 +2,11 @@ import { NativeModules } from 'react-native';
 import type {
   AdyenComponent,
   EnvironmentConfiguration,
-  PaymentMethodsResponse,
   SessionConfiguration,
 } from '../../core';
 import { ModuleMock } from '../base/ModuleMock';
 import { SessionWrapper } from './SessionWrapper';
+import type { SessionContext } from './types';
 
 /** Describes a native module capable of creating new sessions. */
 export interface SessionHelperModule extends AdyenComponent {
@@ -25,9 +25,3 @@ export interface SessionHelperModule extends AdyenComponent {
 export const SessionHelper: SessionHelperModule = new SessionWrapper(
   NativeModules.SessionHelper ?? ModuleMock
 );
-
-/** @internal Session context */
-export interface SessionContext {
-  paymentMethods: PaymentMethodsResponse;
-  [key: string]: any;
-}

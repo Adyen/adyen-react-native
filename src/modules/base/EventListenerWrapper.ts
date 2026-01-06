@@ -1,10 +1,32 @@
 import type { NativeModule } from 'react-native';
-import { Event } from '../../core';
+import type { Event } from '../../core';
 
 /**
- *  Generic wrapper for all Native Modules. Controls subscriptions and supported events.
- *  @typeParam T - The specific native module interface for the concrete wrapper
- * */
+ * Collects events from class hierarchy via static `events` property.
+ * Traverses prototype chain to include inherited events.
+ */
+function getRegisteredEvents(
+  target: abstract new (...args: any[]) => any
+): Event[] {
+  const events: Event[] = [];
+  let current: any = target;
+
+  while (current && current !== Function.prototype) {
+    const classEvents = current.events;
+    if (Array.isArray(classEvents)) {
+      events.push(...classEvents);
+    }
+    current = Object.getPrototypeOf(current);
+  }
+
+  return [...new Set(events)];
+}
+
+/**
+ * Generic wrapper for all Native Modules. Controls subscriptions and supported events.
+ * Subclasses declare events via static `events` property.
+ * @typeParam T - The specific native module interface for the concrete wrapper
+ */
 export abstract class EventListenerWrapper<
   T extends NativeModule = NativeModule,
 > {
@@ -12,14 +34,11 @@ export abstract class EventListenerWrapper<
   protected supportedEvents: string[];
   abstract name: string;
 
-  constructor(nativeModule: T, events: Event[]) {
+  constructor(nativeModule: T) {
     this.nativeModule = nativeModule;
-    this.supportedEvents = events;
-  }
-
-  /** Returns the underlying native module for use with NativeEventEmitter */
-  get module(): T {
-    return this.nativeModule;
+    this.supportedEvents = getRegisteredEvents(
+      this.constructor as abstract new (...args: any[]) => any
+    );
   }
 
   /** Pass through to native module addListener */

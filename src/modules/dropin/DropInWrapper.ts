@@ -13,6 +13,7 @@ import {
 import type { DropInModule } from './AdyenDropIn';
 
 /**
+ * @internal
  * Interface for removing stored payment method.
  */
 export interface RemovesStoredPayment {
@@ -40,24 +41,26 @@ interface DropInNativeModule
   ): void;
 }
 
+/**
+ * Drop-in wrapper with full feature support.
+ * Supports: BIN events, address lookup, partial payments, stored payment management.
+ */
 export class DropInWrapper
   extends ActionHandlingComponentWrapper<DropInNativeModule>
   implements DropInModule, RemovesStoredPayment, PartialPaymentComponent
 {
-  name: string = 'DropIn';
+  static readonly events = [
+    Event.onBinValue,
+    Event.onBinLookup,
+    Event.onDisableStoredPaymentMethod,
+    Event.onAddressConfirm,
+    Event.onAddressUpdate,
+    Event.onCheckBalance,
+    Event.onRequestOrder,
+    Event.onCancelOrder,
+  ];
 
-  constructor(nativeModule: DropInNativeModule) {
-    super(nativeModule, [
-      Event.onBinValue,
-      Event.onBinLookup,
-      Event.onCancelOrder,
-      Event.onRequestOrder,
-      Event.onCheckBalance,
-      Event.onDisableStoredPaymentMethod,
-      Event.onAddressConfirm,
-      Event.onAddressUpdate,
-    ]);
-  }
+  name: string = 'DropIn';
 
   getReturnURL(): Promise<string> {
     return this.nativeModule.getReturnURL();
