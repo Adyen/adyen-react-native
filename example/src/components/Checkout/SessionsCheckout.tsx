@@ -1,6 +1,11 @@
 import { useEffect, useCallback, useState } from 'react';
 import { Text, ActivityIndicator, View, Platform } from 'react-native';
-import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
+import {
+  AdyenCheckout,
+  AdyenDropIn,
+  ErrorCode,
+  ResultCode,
+} from '@adyen/react-native';
 import type {
   AdyenError,
   AdyenComponent,
@@ -51,6 +56,10 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
 
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
+      if (error.errorCode === ErrorCode.sessionError) {
+        setError(error.message);
+        return;
+      }
       processAdyenError(error, nativeComponent);
       refreshSession();
     },
@@ -59,7 +68,7 @@ const SessionsCheckout = ({ navigation }: PageProps) => {
 
   const didComplete = useCallback(
     async (result: SessionsResult, nativeComponent: AdyenComponent) => {
-      if (result.resultCode === 'PresentToShopper') {
+      if (result.resultCode === ResultCode.presentToShopper) {
         processResult(result, nativeComponent, navigation);
         return;
       }

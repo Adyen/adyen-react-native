@@ -61,6 +61,8 @@ export enum ErrorCode {
   notSupportedAction = 'notSupportedAction',
   /** Can not find selected payment method type in provided list. */
   noPaymentMethod = 'noPaymentMethod',
+  /** Session failed to be created. */
+  sessionError = 'sessionError',
 }
 
 /** Collection of available result codes that represent payments current state, as well as any actions you should take. */

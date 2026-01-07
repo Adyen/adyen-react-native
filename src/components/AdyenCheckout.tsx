@@ -11,7 +11,7 @@ import {
   NativeEventEmitter,
   type NativeModule,
 } from 'react-native';
-import { Event } from '../core/constants';
+import { Event, ErrorCode } from '../core/constants';
 import type { AdyenComponent } from '../core/AdyenNativeModules';
 import {
   SessionHelper,
@@ -127,7 +127,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           onError(
             {
               message: String(error),
-              errorCode: 'sessionError',
+              errorCode: ErrorCode.sessionError,
             },
             SessionHelper
           );
