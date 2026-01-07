@@ -52,46 +52,31 @@ describe('EventListenerWrapper', () => {
 
     test('should collect events from static property', () => {
       const wrapper = new TestWrapper(mockNativeModule);
-      expect(wrapper.supportedEvents).toContain(Event.onError);
-      expect(wrapper.supportedEvents).toContain(Event.onComplete);
+      expect(wrapper.isSupported(Event.onError)).toBe(true);
+      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
     });
 
     test('should collect events from class hierarchy', () => {
       const wrapper = new ChildTestWrapper(mockNativeModule);
       // Should have both parent and child events
-      expect(wrapper.supportedEvents).toContain(Event.onError);
-      expect(wrapper.supportedEvents).toContain(Event.onComplete);
-      expect(wrapper.supportedEvents).toContain(Event.onSubmit);
+      expect(wrapper.isSupported(Event.onError)).toBe(true);
+      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
+      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
     });
 
     test('should collect events from deep inheritance chain', () => {
       const wrapper = new GrandchildTestWrapper(mockNativeModule);
       // Should have events from all levels
-      expect(wrapper.supportedEvents).toContain(Event.onError);
-      expect(wrapper.supportedEvents).toContain(Event.onComplete);
-      expect(wrapper.supportedEvents).toContain(Event.onSubmit);
-      expect(wrapper.supportedEvents).toContain(Event.onAdditionalDetails);
+      expect(wrapper.isSupported(Event.onError)).toBe(true);
+      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
+      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
+      expect(wrapper.isSupported(Event.onAdditionalDetails)).toBe(true);
     });
 
     test('should handle wrapper with no events', () => {
       const wrapper = new EmptyEventsWrapper(mockNativeModule);
-      expect(wrapper.supportedEvents).toEqual([]);
-    });
-
-    test('should deduplicate events', () => {
-      const wrapper = new TestWrapper(mockNativeModule);
-      const eventCounts = wrapper.supportedEvents.reduce(
-        (acc, event) => {
-          acc[event] = (acc[event] || 0) + 1;
-          return acc;
-        },
-        {} as Record<string, number>
-      );
-
-      // Each event should appear only once
-      Object.values(eventCounts).forEach((count) => {
-        expect(count).toBe(1);
-      });
+      expect(wrapper.isSupported(Event.onError)).toBe(false);
+      expect(wrapper.isSupported(Event.onComplete)).toBe(false);
     });
   });
 
