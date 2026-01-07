@@ -92,3 +92,6 @@ nitrogen/
 # NPM
 example/package-lock.json
 .yarn
+
+#Example credentials
+example/secrets.json
