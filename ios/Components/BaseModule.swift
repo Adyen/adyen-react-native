@@ -241,7 +241,7 @@ extension BaseModule {
             case let .orderRequest(message):
                 return "Order request error: \(message)"
             case .sessionError:
-                return "Somethhing went wrong while starting session"
+                return "Something went wrong while starting session"
             }
         }
     }
