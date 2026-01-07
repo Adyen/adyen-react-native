@@ -31,7 +31,7 @@ import { SessionHelper } from '../modules/session/SessionHelperModule';
 import type { SessionContext } from '../modules/session/types';
 import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
 import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
-import type { ModuleWrapper } from '../modules/base/ModuleWrapper';
+import type { PaymentComponentWrapper } from '../modules/base/PaymentComponentWrapper';
 
 /**
  * Props for AdyenCheckout
@@ -131,7 +131,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, [session, sessionContext, config, onError, setSessionContext]);
 
   const startEventListeners = useCallback(
-    (nativeComponent: ModuleWrapper) => {
+    (nativeComponent: PaymentComponentWrapper & AdyenActionComponent) => {
       removeEventListeners();
       const eventEmitter = new NativeEventEmitter(nativeComponent);
 
@@ -140,11 +140,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           ...data,
           returnUrl: data.returnUrl ?? config.returnUrl,
         };
-        onSubmit?.(
-          payload,
-          nativeComponent as unknown as AdyenActionComponent,
-          extra
-        );
+        onSubmit?.(payload, nativeComponent, extra);
       }
 
       subscriptions.current = [
@@ -169,10 +165,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           eventEmitter.addListener(
             Event.onAdditionalDetails,
             (data: PaymentDetailsData) =>
-              onAdditionalDetails?.(
-                data,
-                nativeComponent as unknown as AdyenActionComponent
-              )
+              onAdditionalDetails?.(data, nativeComponent)
           )
         );
       }

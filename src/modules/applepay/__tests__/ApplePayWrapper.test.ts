@@ -41,6 +41,17 @@ describe('ApplePayWrapper', () => {
     });
   });
 
+  describe('handle', () => {
+    test('should throw error - Apple Pay does not support action handling', () => {
+      const wrapper = new ApplePayWrapper(mockNativeModule);
+      const action = { type: 'redirect', paymentMethodType: 'applepay' };
+
+      expect(() => wrapper.handle(action)).toThrow(
+        'Apple Pay does not support action handling'
+      );
+    });
+  });
+
   describe('isAvailable', () => {
     test('should call native module and return availability', async () => {
       const wrapper = new ApplePayWrapper(mockNativeModule);

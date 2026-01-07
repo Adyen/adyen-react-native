@@ -97,8 +97,9 @@ ModuleWrapper<T>                                             # Abstract - adds h
 PaymentComponentWrapper<T>                                   # Abstract - adds open()
     │   static events = [onSubmit]
     │
-    ├──► ApplePayWrapper                                     # implements ApplePayModule
+    ├──► ApplePayWrapper                                     # implements ApplePayModule, AdyenActionComponent
     │       + isAvailable()
+    │       + handle() → throws (Apple Pay doesn't support actions)
     │
     ▼
 ActionHandlingComponentWrapper<T>                            # Abstract - adds handle()
@@ -337,9 +338,9 @@ static readonly events = [
 │     DropInWrapper     │   │    ApplePayWrapper    │   │   GooglePayWrapper    │   │    InstantWrapper     │
 │                       │   │                       │   │                       │   │                       │
 │   - open()            │   │   - open()            │   │   - open()            │   │   - open()            │
-│   - handle()          │   │   - isAvailable()     │   │   - handle()          │   │   - handle()          │
-│   - hide()            │   │   - hide()            │   │   - isAvailable()     │   │   - hide()            │
-│   - ...               │   │                       │   │   - hide()            │   │                       │
+│   - handle()          │   │   - handle() ✗        │   │   - handle()          │   │   - handle()          │
+│   - hide()            │   │   - isAvailable()     │   │   - isAvailable()     │   │   - hide()            │
+│   - ...               │   │   - hide()            │   │   - hide()            │   │                       │
 └───────────────────────┘   └───────────────────────┘   └───────────────────────┘   └───────────────────────┘
           │                             │                               │                             │
           └─────────────────────────────┴───────────────────────────────┴─────────────────────────────┘
