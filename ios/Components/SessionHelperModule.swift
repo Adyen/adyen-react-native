@@ -5,6 +5,7 @@
 //
 
 import Adyen
+import AdyenNetworking
 import React
 import UIKit
 
@@ -36,15 +37,16 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
                        resolver: @escaping RCTPromiseResolveBlock,
                        rejecter: @escaping RCTPromiseRejectBlock) {
         let parser = RootConfigurationParser(configuration: configuration)
+        let errorCode = NativeModuleError.sessionError.errorCode
         let context: AdyenContext
         do {
             context = try parser.fetchContext(session: BaseModule.session)
         } catch {
-            return rejecter("session", nil, error)
+            return rejecter(errorCode, nil, error)
         }
 
         guard let id = sessionModelJSON["id"] as? String, let data = sessionModelJSON["sessionData"] as? String else {
-            return rejecter("session", "Invalid session data", nil)
+            return rejecter(errorCode, "Invalid session data", nil)
         }
 
         let config = AdyenSession.Configuration(sessionIdentifier: id, initialSessionData: data, context: context)
@@ -56,7 +58,11 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
                     resolver(dto.jsonObject)
                     BaseModule.session = session
                 case let .failure(error):
-                    rejecter("session", nil, error)
+                    if error is HTTPResponse<EmptyErrorResponse> {
+                        rejecter(errorCode, NativeModuleError.sessionError.errorDescription, nil)
+                    } else {
+                        rejecter(errorCode, nil, error)
+                    }
                 }
             }
         }
