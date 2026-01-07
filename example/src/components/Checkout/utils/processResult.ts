@@ -10,6 +10,8 @@ export function processResult(
 ) {
   const success = isSuccess(result.resultCode);
   nativeComponent.hide(success);
-  navigation?.popToTop();
-  navigation?.push('Result', { resultCode: result.resultCode });
+  setTimeout(() => {
+    navigation?.popToTop();
+    navigation?.push('Result', { resultCode: result.resultCode });
+  }, 100);
 }
