@@ -1,9 +1,20 @@
-import { describe, expect, test, jest, beforeEach } from '@jest/globals';
+import {
+  describe,
+  expect,
+  test,
+  jest,
+  beforeEach,
+  afterEach,
+} from '@jest/globals';
 import { checkPaymentMethodsResponse, checkConfiguration } from '../utils';
 
 describe('checkPaymentMethodsResponse', () => {
   beforeEach(() => {
     jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   test('should throw Error when paymentMethodsResponse is undefined', () => {
@@ -51,6 +62,10 @@ describe('checkPaymentMethodsResponse', () => {
 describe('checkConfiguration', () => {
   beforeEach(() => {
     jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   const validConfig = {
