@@ -7,64 +7,59 @@
 
 package com.adyenreactnativesdk.component.instant
 
-import android.util.Log
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.CheckoutConfiguration
+import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.sessions.core.CheckoutSession
-import com.adyen.checkout.ui.core.AdyenComponentView
-import com.adyenreactnativesdk.AdyenCheckout
-import com.adyenreactnativesdk.R
-import com.adyenreactnativesdk.component.base.BaseComponentFragment
-import com.adyenreactnativesdk.component.base.ComponentData
-import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyen.checkout.sessions.core.SessionComponentCallback
 
 class InstantFragment(
-  private val configuration: CheckoutConfiguration,
+  configuration: CheckoutConfiguration,
   paymentMethod: PaymentMethod,
   session: CheckoutSession?,
-) : BaseComponentFragment<InstantPaymentComponent, InstantComponentState>(paymentMethod, session) {
-  override fun setupComponent(componentData: ComponentData<InstantComponentState>) {
-    val session = session
-    val component =
-      (
-        if (session == null) {
-          componentData.callback?.let {
-            InstantPaymentComponent.PROVIDER.get(
-              this,
-              componentData.paymentMethod,
-              configuration,
-              it,
-            )
-          }
-        } else {
-          componentData.sessionCallback?.let {
-            InstantPaymentComponent.PROVIDER.get(
-              this,
-              session,
-              componentData.paymentMethod,
-              configuration,
-              it,
-            )
-          }
-        }
-      ) ?: throw ModuleException.WrongFlow()
+) : BaseInstantComponentFragment<InstantPaymentComponent, InstantComponentState>(configuration, paymentMethod, session) {
+  override val logTag: String = TAG
 
-    this.component = component
-    AdyenCheckout.setComponent(component)
-    view
-      ?.findViewById<AdyenComponentView>(R.id.component_view)
-      ?.attach(component, this)
-      ?: run { Log.e(TAG, FRAGMENT_ERROR) }
-  }
+  override fun createComponent(
+    paymentMethod: PaymentMethod,
+    configuration: CheckoutConfiguration,
+    callback: ComponentCallback<InstantComponentState>,
+  ): InstantPaymentComponent =
+    InstantPaymentComponent.PROVIDER.get(
+      this,
+      paymentMethod,
+      configuration,
+      callback,
+    )
+
+  override fun createComponent(
+    session: CheckoutSession,
+    paymentMethod: PaymentMethod,
+    configuration: CheckoutConfiguration,
+    callback: SessionComponentCallback<InstantComponentState>,
+  ): InstantPaymentComponent =
+    InstantPaymentComponent.PROVIDER.get(
+      this,
+      session,
+      paymentMethod,
+      configuration,
+      callback,
+    )
 
   companion object : IInstantFragment {
     private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
     internal const val TAG = "InstantFragment"
+
+    private val instantDelegate =
+      InstantFragmentDelegate(
+        "InstantFragment",
+        ::InstantFragment,
+      )
 
     override fun show(
       fragmentManager: FragmentManager,
@@ -85,11 +80,11 @@ class InstantFragment(
       fragmentManager: FragmentManager,
       action: Action,
     ) {
-      handle(fragmentManager, action, TAG)
+      instantDelegate.handle(fragmentManager, action)
     }
 
     override fun hide(fragmentManager: FragmentManager) {
-      hide(fragmentManager, TAG)
+      instantDelegate.hide(fragmentManager)
     }
   }
 

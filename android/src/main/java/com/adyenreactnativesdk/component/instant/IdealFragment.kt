@@ -7,85 +7,52 @@
 
 package com.adyenreactnativesdk.component.instant
 
-import android.util.Log
-import androidx.core.os.bundleOf
-import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.CheckoutConfiguration
+import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.ideal.IdealComponent
 import com.adyen.checkout.ideal.IdealComponentState
-import com.adyen.checkout.instant.InstantComponentState
-import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.sessions.core.CheckoutSession
-import com.adyen.checkout.ui.core.AdyenComponentView
-import com.adyenreactnativesdk.AdyenCheckout
-import com.adyenreactnativesdk.R
-import com.adyenreactnativesdk.component.base.BaseComponentFragment
-import com.adyenreactnativesdk.component.base.ComponentData
-import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyen.checkout.sessions.core.SessionComponentCallback
 
 class IdealFragment(
-  private val configuration: CheckoutConfiguration,
+  configuration: CheckoutConfiguration,
   paymentMethod: PaymentMethod,
   session: CheckoutSession?,
-) : BaseComponentFragment<IdealComponent, IdealComponentState>(paymentMethod, session) {
-  override fun setupComponent(componentData: ComponentData<IdealComponentState>) {
-    val session = session
-    val component =
-      (
-        if (session == null) {
-          componentData.callback?.let {
-            IdealComponent.PROVIDER.get(
-              this,
-              componentData.paymentMethod,
-              configuration,
-              it,
-            )
-          }
-        } else {
-          componentData.sessionCallback?.let {
-            IdealComponent.PROVIDER.get(
-              this,
-              session,
-              componentData.paymentMethod,
-              configuration,
-              it,
-            )
-          }
-        }
-      ) ?: throw ModuleException.WrongFlow()
+) : BaseInstantComponentFragment<IdealComponent, IdealComponentState>(configuration, paymentMethod, session) {
+  override val logTag: String = TAG
 
-    this.component = component
-    AdyenCheckout.setComponent(component)
-    view
-      ?.findViewById<AdyenComponentView>(R.id.component_view)
-      ?.attach(component, this)
-      ?: run { Log.e(TAG, FRAGMENT_ERROR) }
-  }
+  override fun createComponent(
+    paymentMethod: PaymentMethod,
+    configuration: CheckoutConfiguration,
+    callback: ComponentCallback<IdealComponentState>,
+  ): IdealComponent =
+    IdealComponent.PROVIDER.get(
+      this,
+      paymentMethod,
+      configuration,
+      callback,
+    )
 
-  companion object : IInstantFragment {
+  override fun createComponent(
+    session: CheckoutSession,
+    paymentMethod: PaymentMethod,
+    configuration: CheckoutConfiguration,
+    callback: SessionComponentCallback<IdealComponentState>,
+  ): IdealComponent =
+    IdealComponent.PROVIDER.get(
+      this,
+      session,
+      paymentMethod,
+      configuration,
+      callback,
+    )
+
+  companion object : IInstantFragment by InstantFragmentDelegate(
+    "IdealFragment",
+    ::IdealFragment,
+  ) {
     internal const val TAG = "IdealFragment"
-
-    override fun show(
-      fragmentManager: FragmentManager,
-      configuration: CheckoutConfiguration,
-      paymentMethod: PaymentMethod,
-      session: CheckoutSession?,
-    ) {
-      IdealFragment(configuration, paymentMethod, session).show(fragmentManager, TAG)
-    }
-
-    override fun handle(
-      fragmentManager: FragmentManager,
-      action: Action,
-    ) {
-      handle(fragmentManager, action, TAG)
-    }
-
-    override fun hide(fragmentManager: FragmentManager) {
-      hide(fragmentManager, TAG)
-    }
   }
 
   override fun runComponent() { // No action needed
