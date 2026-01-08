@@ -16,9 +16,9 @@ import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyenreactnativesdk.component.base.ComponentData
-import com.adyenreactnativesdk.component.instant.BaseInstantComponentFragment
-import com.adyenreactnativesdk.component.instant.IInstantFragment
-import com.adyenreactnativesdk.component.instant.InstantFragmentDelegate
+import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
+import com.adyenreactnativesdk.component.base.instant.IInstantFragment
+import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
 
 class GooglePayFragment(
   configuration: CheckoutConfiguration,

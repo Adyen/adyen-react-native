@@ -1,11 +1,10 @@
-package com.adyenreactnativesdk.component.instant
+package com.adyenreactnativesdk.component.base.instant
 
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
-import com.adyenreactnativesdk.component.base.BaseComponentFragment
 
 internal class InstantFragmentDelegate(
   private val tag: String,

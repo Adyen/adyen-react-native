@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.component.instant
+package com.adyenreactnativesdk.component.base.instant
 
 import android.util.Log
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
@@ -13,7 +13,6 @@ import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyen.checkout.ui.core.internal.ui.ViewableComponent
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
-import com.adyenreactnativesdk.component.base.BaseComponentFragment
 import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
