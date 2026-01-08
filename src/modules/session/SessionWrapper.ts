@@ -17,7 +17,7 @@ interface SessionNativeModule extends NativeModule, AdyenComponent {
 }
 
 export class SessionWrapper implements SessionHelperModule {
-  private nativeModule: SessionNativeModule;
+  private readonly nativeModule: SessionNativeModule;
 
   constructor(nativeModule: SessionNativeModule) {
     this.nativeModule = nativeModule;

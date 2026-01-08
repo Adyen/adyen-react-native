@@ -6,7 +6,7 @@ import type { AdyenCSEModule } from './AdyenCSEModule';
 interface CSENativeModule extends NativeModule, AdyenCSEModule {}
 
 export class AdyenCSEWrapper implements AdyenCSEModule {
-  private nativeModule: CSENativeModule;
+  private readonly nativeModule: CSENativeModule;
 
   constructor(nativeModule: CSENativeModule) {
     this.nativeModule = nativeModule;

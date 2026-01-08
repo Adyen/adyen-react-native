@@ -19,13 +19,13 @@ export function setApplicationContinueUserActivitySwift(
       return true
     }
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)`;
-      return contents.replace(defaultTemplatePattern, newPattern);
+      return contents.replaceAll(defaultTemplatePattern, newPattern);
     } else if (customTemplatePattern.test(contents)) {
       const newPattern = `if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
       return true
     }
     return super.application(application, continue: userActivity, restorationHandler: restorationHandler)`;
-      return contents.replace(customTemplatePattern, newPattern);
+      return contents.replaceAll(customTemplatePattern, newPattern);
     }
 
     return contents;

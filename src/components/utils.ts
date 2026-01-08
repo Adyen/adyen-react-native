@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import type { Configuration, PaymentMethodsResponse } from '../core';
 
 export const checkPaymentMethodsResponse = (
@@ -12,21 +11,20 @@ export const checkPaymentMethodsResponse = (
   }
 
   if (typeof paymentMethodsResponse === 'string') {
-    throw new Error(
+    throw new TypeError(
       'paymentMethodsResponse was provided but of an incorrect type (should be an object but a string was provided).' +
         'Try JSON.parse("{...}") your paymentMethodsResponse.'
     );
   }
 
-  if (paymentMethodsResponse instanceof Array) {
-    throw new Error(
+  if (Array.isArray(paymentMethodsResponse)) {
+    throw new TypeError(
       'paymentMethodsResponse was provided but of an incorrect type (should be an object but an array was provided).' +
         'Please check you are passing the whole response.'
     );
   }
 
   if (
-    paymentMethodsResponse &&
     !paymentMethodsResponse?.paymentMethods?.length &&
     !paymentMethodsResponse?.storedPaymentMethods?.length
   ) {
@@ -43,40 +41,33 @@ const currencyCodeRegex = /^[A-Z]{3}$/;
 const clientKeyRegex = /^[a-z]{4,8}_[a-zA-Z0-9]{8,128}$/;
 
 export const checkConfiguration = (configuration: Configuration) => {
-  if (configuration && Platform.OS === 'ios' && !configuration.returnUrl) {
+  if (!configuration?.returnUrl) {
     throw new Error(`Parameter returnUrl is required`);
   }
 
-  if (
-    configuration &&
-    configuration.returnUrl &&
-    configuration.returnUrl.startsWith('http')
-  ) {
+  if (configuration?.returnUrl?.startsWith('http')) {
     console.warn(
       'Your `returnUrl` is not a Custom URL scheme. Make sure `redirectFromIssuerMethod` in `payments` is set to "GET"'
     );
   }
 
-  if (
-    configuration &&
-    configuration.clientKey &&
-    !clientKeyRegex.test(configuration.clientKey)
-  ) {
+  if (!configuration?.clientKey) {
+    throw new Error(`Parameter clientKey is required`);
+  } else if (!clientKeyRegex.test(configuration.clientKey)) {
     throw new Error(
       `Invalid client key: ${configuration.clientKey}. ` +
         `Valid client key starts with environment name (e.x. 'live_XXXXXXXXXX').`
     );
   }
 
-  if (configuration && configuration.amount && !configuration.countryCode) {
+  if (configuration?.amount && !configuration?.countryCode) {
     console.warn(
       'To show the amount on the Pay button both amount and countryCode must be set.'
     );
   }
 
   if (
-    configuration &&
-    configuration.amount &&
+    configuration?.amount &&
     !currencyCodeRegex.test(configuration.amount.currency)
   ) {
     throw new Error(
@@ -86,8 +77,7 @@ export const checkConfiguration = (configuration: Configuration) => {
   }
 
   if (
-    configuration &&
-    configuration.countryCode &&
+    configuration?.countryCode &&
     !countryCodeRegex.test(configuration.countryCode)
   ) {
     throw new Error(
