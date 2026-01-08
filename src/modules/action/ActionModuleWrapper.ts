@@ -17,7 +17,7 @@ interface ActionNativeModule extends NativeModule {
 }
 
 export class ActionModuleWrapper implements ActionModule {
-  private nativeModule: ActionNativeModule;
+  private readonly nativeModule: ActionNativeModule;
 
   public threeDS2SdkVersion: string;
 
