@@ -189,6 +189,7 @@ extension BaseModule {
         case paymentMethodNotFound(PaymentMethod.Type)
         case balanceCheck(message: String)
         case orderRequest(message: String)
+        case sessionError
 
         var errorCode: String {
             switch self {
@@ -212,6 +213,8 @@ extension BaseModule {
                 return "balanceCheck"
             case .orderRequest:
                 return "orderRequest"
+            case .sessionError:
+                return "sessionError"
             }
         }
 
@@ -237,6 +240,8 @@ extension BaseModule {
                 return "Balance check error: \(message)"
             case let .orderRequest(message):
                 return "Order request error: \(message)"
+            case .sessionError:
+                return "Something went wrong while starting session"
             }
         }
     }

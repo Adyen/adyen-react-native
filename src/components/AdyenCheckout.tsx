@@ -24,7 +24,7 @@ import type {
   StoredPaymentMethod,
   SubmitModel,
 } from '../core';
-import { Event } from '../core';
+import { Event, ErrorCode } from '../core';
 import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
 import { getWrapper } from '../modules/base/getWrapper';
 import { SessionHelper } from '../modules/session/SessionHelperModule';
@@ -122,7 +122,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           onError(
             {
               message: String(error),
-              errorCode: 'sessionError',
+              errorCode: ErrorCode.sessionError,
             },
             SessionHelper
           );

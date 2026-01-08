@@ -1,14 +1,14 @@
 PODS:
-  - Adyen (5.20.1):
-    - Adyen/Actions (= 5.20.1)
-    - Adyen/Card (= 5.20.1)
-    - Adyen/Components (= 5.20.1)
-    - Adyen/Core (= 5.20.1)
-    - Adyen/DropIn (= 5.20.1)
-    - Adyen/Encryption (= 5.20.1)
-    - Adyen/Session (= 5.20.1)
+  - Adyen (5.22.1):
+    - Adyen/Actions (= 5.22.1)
+    - Adyen/Card (= 5.22.1)
+    - Adyen/Components (= 5.22.1)
+    - Adyen/Core (= 5.22.1)
+    - Adyen/DropIn (= 5.22.1)
+    - Adyen/Encryption (= 5.22.1)
+    - Adyen/Session (= 5.22.1)
   - adyen-react-native (2.0.0-local.1):
-    - Adyen (= 5.20.1)
+    - Adyen (= 5.22.1)
     - DoubleConversion
     - glog
     - hermes-engine
@@ -29,28 +29,28 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - Adyen/Actions (5.20.1):
+  - Adyen/Actions (5.22.1):
     - Adyen/Core
-    - Adyen3DS2 (= 2.4.3)
-  - Adyen/Card (5.20.1):
-    - Adyen/Core
-    - Adyen/Encryption
-  - Adyen/Components (5.20.1):
+    - Adyen3DS2 (= 2.4.4)
+  - Adyen/Card (5.22.1):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Core (5.20.1):
+  - Adyen/Components (5.22.1):
+    - Adyen/Core
+    - Adyen/Encryption
+  - Adyen/Core (5.22.1):
     - AdyenNetworking (= 3.0.1)
-  - Adyen/DropIn (5.20.1):
+  - Adyen/DropIn (5.22.1):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (5.20.1)
-  - Adyen/Session (5.20.1):
+  - Adyen/Encryption (5.22.1)
+  - Adyen/Session (5.22.1):
     - Adyen/Actions
     - Adyen/Core
-  - Adyen3DS2 (2.4.3)
+  - Adyen3DS2 (2.4.4)
   - AdyenNetworking (3.0.1)
   - boost (1.84.0)
   - DoubleConversion (1.1.6)
@@ -1938,9 +1938,9 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: 2be434e4fb7bfd98d5f5e2b0b0ab633c49281c10
-  adyen-react-native: 0a2795bf61b4389096d0161a8749f032270104ee
-  Adyen3DS2: 1973825d24193688a6c85246d8be333d9cb8bc72
+  Adyen: fdb961c61a9dadcefb1dfc262c248370204f25b8
+  adyen-react-native: 994fe3488c5149144bb3a07905f0ca62dc9c3b63
+  Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
   AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
