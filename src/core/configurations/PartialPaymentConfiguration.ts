@@ -1,5 +1,9 @@
-import type { PartialPaymentComponent } from '../../wrappers/PartialPaymentsComponentWrapper';
-import type { Balance, Order, PaymentMethodData } from '../types';
+import type {
+  AdyenComponent,
+  Balance,
+  Order,
+  PaymentMethodData,
+} from '../types';
 
 export interface PartialPaymentConfiguration {
   /**
@@ -42,5 +46,18 @@ export interface PartialPaymentConfiguration {
     order: Order,
     shouldUpdatePaymentMethods: Boolean,
     component: PartialPaymentComponent
+  ): void;
+}
+
+export interface PartialPaymentComponent extends AdyenComponent {
+  provideBalance(
+    success: boolean,
+    balance: Balance | undefined,
+    error: Error | undefined
+  ): void;
+  provideOrder(
+    success: boolean,
+    order: Order | undefined,
+    error: Error | undefined
   ): void;
 }

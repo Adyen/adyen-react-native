@@ -1,7 +1,0 @@
-import { type NativeModule, NativeModules } from 'react-native';
-import type { AdyenActionComponent } from '../core/AdyenNativeModules';
-import { ModuleMock } from '../modules/ModuleMock';
-
-/** Generic Redirect component */
-export const AdyenInstant: AdyenActionComponent & NativeModule =
-  NativeModules.AdyenInstant ?? ModuleMock;

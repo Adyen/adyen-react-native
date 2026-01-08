@@ -1,10 +1,8 @@
 import { createContext, useContext } from 'react';
-import type { PaymentMethodsResponse } from '../core/types';
-import type { Configuration } from '../core/configurations/Configuration';
-import { MISSING_CONTEXT_ERROR } from '../core/constants';
+import type { PaymentMethodsResponse, Configuration } from '../core';
 
 /**
- * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
+ * Shape of the AdyenCheckout context value.
  */
 export interface AdyenCheckoutContextType {
   /** Start payment with Drop-in or any payment method available in `paymentMethods` collection. */
@@ -28,8 +26,11 @@ export const AdyenCheckoutContext =
  */
 export const useAdyenCheckout = (): AdyenCheckoutContextType => {
   const context = useContext(AdyenCheckoutContext);
-  if (context != null) {
+  if (context !== null) {
     return context;
   }
   throw new Error(MISSING_CONTEXT_ERROR);
 };
+
+const MISSING_CONTEXT_ERROR =
+  'useAdyenCheckout must be used within an AdyenCheckout';

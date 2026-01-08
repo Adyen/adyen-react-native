@@ -6,37 +6,32 @@ import React, {
   useState,
   useMemo,
 } from 'react';
-import {
-  type EmitterSubscription,
-  NativeEventEmitter,
-  type NativeModule,
-} from 'react-native';
-import { Event, ErrorCode } from '../core/constants';
-import type { AdyenComponent } from '../core/AdyenNativeModules';
-import {
-  SessionHelper,
-  type SessionContext,
-} from '../modules/SessionHelperModule';
-import { getWrapper } from '../wrappers/getWrapper';
+import { type EmitterSubscription, NativeEventEmitter } from 'react-native';
 import type {
+  AddressLookup,
+  AddressLookupItem,
+  AdyenActionComponent,
+  AdyenComponent,
   AdyenError,
+  Configuration,
+  Order,
+  PartialPaymentComponent,
+  PaymentDetailsData,
+  PaymentMethodData,
   PaymentMethodsResponse,
   SessionConfiguration,
-  PaymentMethodData,
-  PaymentDetailsData,
+  SessionsResult,
   StoredPaymentMethod,
   SubmitModel,
-  Order,
-  SessionsResult,
-} from '../core/types';
-import type { Configuration } from '../core/configurations/Configuration';
-import { checkPaymentMethodsResponse, checkConfiguration } from '../core/utils';
-import type { AddressLookup } from '../wrappers/AddressLookupComponentWrapper';
-import type { AdyenActionComponent } from '../core/AdyenNativeModules';
-import type { RemovesStoredPayment } from '../wrappers/RemoveStoredPaymentComponentWrapper';
-import type { AddressLookupItem } from '../core/configurations/AddressLookup';
-import type { PartialPaymentComponent } from '../wrappers/PartialPaymentsComponentWrapper';
+} from '../core';
+import { Event, ErrorCode } from '../core';
 import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
+import { getWrapper } from '../modules/base/getWrapper';
+import { SessionHelper } from '../modules/session/SessionHelperModule';
+import type { SessionContext } from '../modules/session/types';
+import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
+import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
+import type { PaymentComponentWrapper } from '../modules/base/PaymentComponentWrapper';
 
 /**
  * Props for AdyenCheckout
@@ -136,7 +131,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, [session, sessionContext, config, onError, setSessionContext]);
 
   const startEventListeners = useCallback(
-    (nativeComponent: AdyenActionComponent & NativeModule) => {
+    (nativeComponent: PaymentComponentWrapper & AdyenActionComponent) => {
       removeEventListeners();
       const eventEmitter = new NativeEventEmitter(nativeComponent);
 
@@ -157,7 +152,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         ),
       ];
 
-      if (nativeComponent.events.includes(Event.onComplete)) {
+      if (nativeComponent.isSupported(Event.onComplete)) {
         subscriptions.current.push(
           eventEmitter.addListener(Event.onComplete, (data: any) =>
             onComplete?.(data, nativeComponent)
@@ -165,7 +160,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         );
       }
 
-      if (nativeComponent.events.includes(Event.onAdditionalDetails)) {
+      if (nativeComponent.isSupported(Event.onAdditionalDetails)) {
         subscriptions.current.push(
           eventEmitter.addListener(
             Event.onAdditionalDetails,
@@ -179,7 +174,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         config.dropin?.onDisableStoredPaymentMethod;
       if (
         onDisableStoredPaymentMethodCallback &&
-        nativeComponent.events.includes(Event.onDisableStoredPaymentMethod)
+        nativeComponent.isSupported(Event.onDisableStoredPaymentMethod)
       ) {
         const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
         subscriptions.current.push(
@@ -204,8 +199,8 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       if (
         onUpdateAddressCallback &&
         onConfirmAddressCallback &&
-        nativeComponent.events.includes(Event.onAddressUpdate) &&
-        nativeComponent.events.includes(Event.onAddressConfirm)
+        nativeComponent.isSupported(Event.onAddressUpdate) &&
+        nativeComponent.isSupported(Event.onAddressConfirm)
       ) {
         const nativeModule = nativeComponent as unknown as AddressLookup;
         subscriptions.current.push(
@@ -231,9 +226,9 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         onBalanceCheckCallback &&
         onOrderRequestCallback &&
         onOrderCancelCallback &&
-        nativeComponent.events.includes(Event.onCheckBalance) &&
-        nativeComponent.events.includes(Event.onRequestOrder) &&
-        nativeComponent.events.includes(Event.onCancelOrder)
+        nativeComponent.isSupported(Event.onCheckBalance) &&
+        nativeComponent.isSupported(Event.onRequestOrder) &&
+        nativeComponent.isSupported(Event.onCancelOrder)
       ) {
         const component = nativeComponent as unknown as PartialPaymentComponent;
         subscriptions.current.push(
@@ -277,18 +272,15 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       const onBinLookupCallback = config.card?.onBinLookup;
       if (
         onBinLookupCallback &&
-        nativeComponent.events.includes(Event.onBinLookuop)
+        nativeComponent.isSupported(Event.onBinLookup)
       ) {
         subscriptions.current.push(
-          eventEmitter.addListener(Event.onBinLookuop, onBinLookupCallback)
+          eventEmitter.addListener(Event.onBinLookup, onBinLookupCallback)
         );
       }
 
       const onBinValueCallback = config.card?.onBinValue;
-      if (
-        onBinValueCallback &&
-        nativeComponent.events.includes(Event.onBinValue)
-      ) {
+      if (onBinValueCallback && nativeComponent.isSupported(Event.onBinValue)) {
         subscriptions.current.push(
           eventEmitter.addListener(Event.onBinValue, onBinValueCallback)
         );
