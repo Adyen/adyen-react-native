@@ -1,21 +1,5 @@
+import type { Configuration } from './configurations/Configuration';
 import type { ResultCode } from './constants';
-
-/**
- * General type for card.
- */
-export class Card {
-  /** PAN of card. */
-  number?: string;
-
-  /** Month in format MM. */
-  expiryMonth?: string;
-
-  /** Year in format YYYY. */
-  expiryYear?: string;
-
-  /** 3 or 4 digits. */
-  cvv?: string;
-}
 
 /**
  * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#responses-200-action API Explorer /payments action}
@@ -287,3 +271,44 @@ export type SessionsResult = {
    */
   sessionData: string;
 };
+
+/**
+ * Options for dismissing the payment component.
+ */
+export interface HideOption {
+  /** Alert message after dismiss. Used for Android DropIn and Components only */
+  message?: string;
+}
+
+/**
+ * Universal interface for an Adyen Native module.
+ */
+export interface AdyenComponent {
+  /**
+   * Dismiss the component from the screen.
+   * @param success - Indicates whether the component was dismissed successfully.
+   * @param option - Additional options for dismissing the component (optional).
+   */
+  hide(success: boolean, option?: HideOption): void;
+}
+
+/**
+ * Describes an Adyen Component capable of handling payment actions.
+ */
+export interface AdyenActionComponent extends AdyenComponent {
+  /**
+   * Handle a payment action received by the component.
+   * @param action - The payment action to be handled.
+   */
+  handle(action: PaymentAction): void;
+}
+
+/**
+ * Describes an Adyen Component capable of handling payment action if specific conditions are met.
+ */
+export interface ConditionalPaymentComponent {
+  isAvailable(
+    paymentMethods: PaymentMethod,
+    configuration: Configuration
+  ): Promise<boolean>;
+}
