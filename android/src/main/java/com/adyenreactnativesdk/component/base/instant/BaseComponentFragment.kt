@@ -68,7 +68,7 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
 
   abstract fun setupComponent(componentData: ComponentData<TState>)
 
-  abstract fun runComponent()
+  open fun runComponent() { }
 
   private fun onEvent(event: ComponentEvent) {
     when (event) {

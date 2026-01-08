@@ -57,7 +57,4 @@ class IdealFragment(
   ) {
     internal const val TAG = "IdealFragment"
   }
-
-  override fun runComponent() { // No action needed
-  }
 }

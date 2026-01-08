@@ -90,7 +90,4 @@ class InstantFragment(
       instantDelegate.hide(fragmentManager)
     }
   }
-
-  override fun runComponent() { // No action needed
-  }
 }

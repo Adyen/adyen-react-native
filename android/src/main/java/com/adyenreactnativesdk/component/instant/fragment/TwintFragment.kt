@@ -57,7 +57,4 @@ class TwintFragment(
   ) {
     internal const val TAG = "TwintFragment"
   }
-
-  override fun runComponent() { // No action needed
-  }
 }
