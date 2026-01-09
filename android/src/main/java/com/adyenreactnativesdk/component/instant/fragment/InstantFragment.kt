@@ -54,15 +54,12 @@ class InstantFragment(
       callback,
     )
 
-  companion object : IInstantFragment {
+  companion object : IInstantFragment by InstantFragmentDelegate(
+    "InstantFragment",
+    ::InstantFragment,
+  ) {
     private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
     internal const val TAG = "InstantFragment"
-
-    private val instantDelegate =
-      InstantFragmentDelegate(
-        "InstantFragment",
-        ::InstantFragment,
-      )
 
     override fun show(
       fragmentManager: FragmentManager,
@@ -77,17 +74,6 @@ class InstantFragment(
               PAYMENT_METHOD_TYPE_EXTRA to paymentMethod.type,
             )
         }.show(fragmentManager, TAG)
-    }
-
-    override fun handle(
-      fragmentManager: FragmentManager,
-      action: Action,
-    ) {
-      instantDelegate.handle(fragmentManager, action)
-    }
-
-    override fun hide(fragmentManager: FragmentManager) {
-      instantDelegate.hide(fragmentManager)
     }
   }
 }
