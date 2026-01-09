@@ -27,6 +27,8 @@ class GooglePayFragment(
 ) : BaseInstantComponentFragment<GooglePayComponent, GooglePayComponentState>(configuration, paymentMethod, session) {
   override val logTag: String = TAG
 
+  private var googlePayScreenVisible = false
+
   override fun createComponent(
     paymentMethod: PaymentMethod,
     configuration: CheckoutConfiguration,
@@ -58,6 +60,13 @@ class GooglePayFragment(
     viewModel.componentStarted()
   }
 
+  override fun runComponent() {
+    if (!googlePayScreenVisible) {
+      component?.submit()
+      googlePayScreenVisible = true
+    }
+  }
+
   companion object : IInstantFragment {
     internal const val TAG = "GooglePayFragment"
 
@@ -67,15 +76,12 @@ class GooglePayFragment(
         ::GooglePayFragment,
       )
 
-    private var googlePayScreenVisible = false
-
     override fun show(
       fragmentManager: FragmentManager,
       configuration: CheckoutConfiguration,
       paymentMethod: PaymentMethod,
       session: CheckoutSession?,
     ) {
-      googlePayScreenVisible = false
       instantDelegate.show(fragmentManager, configuration, paymentMethod, session)
     }
 
@@ -88,13 +94,6 @@ class GooglePayFragment(
 
     override fun hide(fragmentManager: FragmentManager) {
       instantDelegate.hide(fragmentManager)
-    }
-  }
-
-  override fun runComponent() {
-    if (!googlePayScreenVisible) {
-      component?.submit()
-      googlePayScreenVisible = true
     }
   }
 }
