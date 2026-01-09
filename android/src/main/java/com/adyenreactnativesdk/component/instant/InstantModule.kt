@@ -13,6 +13,10 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.component.base.instant.IInstantFragment
+import com.adyenreactnativesdk.component.instant.fragment.IdealFragment
+import com.adyenreactnativesdk.component.instant.fragment.InstantFragment
+import com.adyenreactnativesdk.component.instant.fragment.TwintFragment
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod

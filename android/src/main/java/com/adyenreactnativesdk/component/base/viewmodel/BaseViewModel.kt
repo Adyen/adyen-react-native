@@ -4,7 +4,7 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk.component.base
+package com.adyenreactnativesdk.component.base.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -15,6 +15,8 @@ import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.component.base.ComponentData
+import com.adyenreactnativesdk.component.base.ComponentEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow

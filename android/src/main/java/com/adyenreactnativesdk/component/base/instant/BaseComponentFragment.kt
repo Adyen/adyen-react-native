@@ -4,7 +4,7 @@
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
-package com.adyenreactnativesdk.component.base
+package com.adyenreactnativesdk.component.base.instant
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -22,6 +22,11 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.components.core.internal.Component
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyenreactnativesdk.R
+import com.adyenreactnativesdk.component.base.ComponentData
+import com.adyenreactnativesdk.component.base.ComponentEvent
+import com.adyenreactnativesdk.component.base.viewmodel.AdvancedComponentViewModel
+import com.adyenreactnativesdk.component.base.viewmodel.SessionsComponentViewModel
+import com.adyenreactnativesdk.component.base.viewmodel.ViewModelInterface
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
@@ -63,7 +68,7 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
 
   abstract fun setupComponent(componentData: ComponentData<TState>)
 
-  abstract fun runComponent()
+  open fun runComponent() { }
 
   private fun onEvent(event: ComponentEvent) {
     when (event) {

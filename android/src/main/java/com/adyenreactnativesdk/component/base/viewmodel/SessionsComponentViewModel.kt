@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.component.base
+package com.adyenreactnativesdk.component.base.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.viewModelScope
@@ -8,6 +8,7 @@ import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.component.base.ComponentData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

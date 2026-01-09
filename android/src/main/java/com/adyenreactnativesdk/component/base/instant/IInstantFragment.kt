@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.component.instant
+package com.adyenreactnativesdk.component.base.instant
 
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.CheckoutConfiguration
