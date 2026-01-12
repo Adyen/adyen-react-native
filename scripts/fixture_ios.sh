@@ -25,7 +25,11 @@ else
 fi
 
 echo "== Build iOS"
-xcodebuild -workspace "ios/$SCHEME.xcworkspace" -scheme "$SCHEME" -configuration Debug -sdk iphonesimulator -destination "platform=iOS Simulator,name=$device_name,OS=$os_version" -quiet
+xcodebuild -workspace "ios/$SCHEME.xcworkspace" -scheme "$SCHEME" -configuration Debug -sdk iphonesimulator -destination "platform=iOS Simulator,name=$device_name,OS=$os_version" -derivedDataPath build -quiet
+
+echo "== Install App on Simulator"
+xcrun simctl install booted "build/Build/Products/Debug-iphonesimulator/$SCHEME.app"
 
 echo "== Run Appium Tests"
-node ../scripts/check-app.js --platform ios
+export PLATFORM_NAME=ios
+node ../scripts/check-app.js

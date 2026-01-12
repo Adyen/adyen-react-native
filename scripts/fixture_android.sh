@@ -43,8 +43,9 @@ fi
 
 echo "== Build Android"
 cd android || exit
-./gradlew assembleDebug
+./gradlew installDebug
 cd ..
 
 echo "== Run Appium Tests"
-node ../scripts/check-app.js --platform android
+export PLATFORM_NAME=android
+node ../scripts/check-app.js

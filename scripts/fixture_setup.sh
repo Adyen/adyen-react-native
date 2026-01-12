@@ -5,15 +5,11 @@ expo=''
 name="tested_app"
 
 # Parse flags
-while getopts r:g:t:e flag
+while getopts r:e: flag
 do
     case "${flag}" in
         r) rn=${OPTARG}
            name="${name}_RN${rn}";;
-        g) gradle=${OPTARG}
-           name="${name}_GR${rn}";;
-        t) target=${OPTARG}
-           name="${name}_TR${rn}";;
         e) expo=${OPTARG}
            name="expo_${name}";;
     esac
@@ -46,7 +42,7 @@ echo "== Using CLI $cli_version"
 
 if [ ! -z "$expo" ]; then
     echo "== Building Expo"
-    npx create-expo-app@latest -y --no-install --version "$expo" "$name"
+    npx create-expo-app "$name" --template blank@"$expo" --no-install
 else
     echo "== Building React-Native $rn"
     npx @react-native-community/cli@"$cli_version" init --directory "$name" --version "$rn" --install-pods false --skip-install TestProject
@@ -57,6 +53,7 @@ cd "$name" || exit
 echo -e "== Install Dependencies\n"
 cp ../adyen-react-native.tgz . || exit 1
 yarn add ./adyen-react-native.tgz
+yarn add -D webdriverio
 
 echo -e "== Add default App.tsx\n"
 # We write placeholders (__CLIENT_KEY__, __PUBLIC_KEY__) which we will replace via sed below.
