@@ -35,17 +35,15 @@ const { remote } = require('webdriverio');
     // 1. Define Selector
     // Android: Locates by visible text
     // iOS: Locates by Accessibility ID (which maps to 'title' prop in RN Buttons)
-    const btnSelector = isAndroid 
-      ? '//*[@text="Open DropIn"]' 
-      : '~Open DropIn';
+    const btnSelector = '~dropin-button';
 
     console.log(`==> [Test] Waiting for button: "${btnSelector}"`);
 
     // 2. Find Element
     const dropInBtn = await driver.$(btnSelector);
 
-    // 3. Wait for Display (Max 45s to allow for compilation/launch slowness)
-    await dropInBtn.waitForDisplayed({ timeout: 45000 });
+    // 3. Wait for Display (Max 30s to allow for compilation/launch slowness)
+    await dropInBtn.waitForDisplayed({ timeout: 30000 });
 
     console.log("==> [Test] SUCCESS: 'Open DropIn' button is visible.");
 

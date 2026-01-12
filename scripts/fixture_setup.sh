@@ -151,24 +151,28 @@ const MyCheckoutView = () => {
   return (
     <View>
       <Button
+        testID="dropin-button"
         title="Open DropIn"
         onPress={async () => {
           start('dropin');
         }}
       />
       <Button
+        testID="card-button"
         title="Open cards"
         onPress={async () => {
           start('card');
         }}
       />
       <Button
+        testID="klarna-button"
         title="Open Klarna"
         onPress={async () => {
           start('klarna');
         }}
       />
       <Button
+        testID="cse-button"
         title="CSE"
         onPress={async () => {
           let result = await AdyenCSE.encryptBin(
