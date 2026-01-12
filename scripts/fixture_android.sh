@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 name=$1
 platform=$2
 api_level=$3
@@ -46,6 +48,27 @@ cd android || exit
 ./gradlew installDebug
 cd ..
 
+APP_PACKAGE=$(grep -m 1 -E 'applicationId\s+"' android/app/build.gradle | awk -F '"' '{print $2}')
+APP_ACTIVITY=${APP_ACTIVITY:-.MainActivity}
+if [ -z "${APP_PACKAGE:-}" ]; then
+  APP_PACKAGE=com.testproject
+fi
+
+echo "== Start Metro"
+yarn start --port 8081 >/dev/null 2>&1 &
+for i in {1..30}; do
+  nc -z 127.0.0.1 8081 && break
+  sleep 1
+done
+
+echo "== Reverse Metro Port"
+adb reverse tcp:8081 tcp:8081 || true
+
+echo "== Launch App"
+adb shell am start -n "$APP_PACKAGE/$APP_ACTIVITY" >/dev/null 2>&1 || true
+
 echo "== Run Appium Tests"
 export PLATFORM_NAME=android
+export APP_PACKAGE
+export APP_ACTIVITY
 node ../scripts/check-app.js
