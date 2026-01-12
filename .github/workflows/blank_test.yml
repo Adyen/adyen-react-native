@@ -1,0 +1,185 @@
+name: Test React Native (Parallel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Project Type'
+        required: true
+        type: choice
+        options:
+          - 'React Native'
+          - 'Expo'
+        default: 'React Native'
+      version:
+        description: 'Version (RN e.g. 0.80.2 OR Expo SDK e.g. 52.0.0)'
+        required: true
+        default: '0.80.2'
+      run_ios:
+        description: 'Test iOS'
+        type: boolean
+        default: true
+      run_android:
+        description: 'Test Android'
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: 20
+  ANDROID_API_LEVEL: 35
+  IOS_DEVICE_NAME: "iPhone 17"
+  IOS_VERSION: "18.1"
+
+jobs:
+  # ====================================================
+  # JOB 1: Setup Fixture
+  # ====================================================
+  setup:
+    name: Setup Fixture
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Build Library
+        run: |
+          yarn install
+          yarn prebuild
+          rm -f adyen-react-native-*.tgz
+          npm pack
+          mv adyen-react-native-*.tgz adyen-react-native.tgz
+
+      - name: Generate Fixture
+        run: |
+          if [ "${{ inputs.platform }}" == "Expo" ]; then
+             FLAG="-e"
+          else
+             FLAG="-r"
+          fi
+          ./scripts/fixture_setup.sh $FLAG "${{ inputs.version }}"
+
+      - name: Upload Fixture
+        uses: actions/upload-artifact@v4
+        with:
+          name: fixture
+          path: |
+            tested_app*
+            expo_tested_app*
+          retention-days: 1
+
+  # ====================================================
+  # JOB 2: iOS Build & Test
+  # ====================================================
+  ios-test:
+    name: iOS Test
+    needs: setup
+    if: ${{ inputs.run_ios == true }}
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Setup Ruby & Cocoapods
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Download Fixture
+        uses: actions/download-artifact@v4
+        with:
+          name: fixture
+
+      - name: Install Dependencies
+        run: |
+          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
+          cd $APP_NAME
+          yarn install
+
+      - name: Inject Secrets
+        env:
+          ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+          ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+        run: |
+          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
+          ./scripts/inject_secrets.sh "$APP_NAME"
+
+      - name: Run iOS Test
+        run: |
+          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
+          ./scripts/fixture_ios.sh "$APP_NAME" "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+
+  # ====================================================
+  # JOB 3: Android Build & Test
+  # ====================================================
+  android-test:
+    name: Android Test
+    needs: setup
+    if: ${{ inputs.run_android == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Enable KVM (Linux Acceleration)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download Fixture
+        uses: actions/download-artifact@v4
+        with:
+          name: fixture
+
+      - name: Install Dependencies
+        run: |
+          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
+          cd $APP_NAME
+          yarn install
+
+      - name: Inject Secrets
+        env:
+          ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+          ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+        run: |
+          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
+          ./scripts/inject_secrets.sh "$APP_NAME"
+
+      - name: Run Android Test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          script: |
+            APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
+            ./scripts/fixture_android.sh "$APP_NAME" "${{ inputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
