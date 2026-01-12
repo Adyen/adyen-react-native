@@ -1,19 +1,18 @@
 name: Test Android
 permissions:
   contents: read
-  pull-requests: write
+  actions: write
 
 on:
   workflow_call:
     inputs:
+      node-version:
+        required: true
+        type: number
       android-version:
         required: false
         default: 35
         type: number
-      react-native-version:
-        required: false
-        default: '0.78.3'
-        type: string
 
 jobs:
   test-Android:
@@ -46,24 +45,20 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - uses: actions/cache/restore@v5
+      - uses: actions/setup-node@v6
         with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'yarn'
+
+      - name: Download library
+        uses: actions/download-artifact@v7
+        with:
+          name: built-lib
           path: lib
-          key: temp-lib-${{ github.sha }}
 
-      - uses: actions/cache/restore@v5
-        id: yarn-cache
-        with:
-          path: | 
-            node_modules
-            example/node_modules
-          key: temp-node-${{ github.sha }}
-
-      - name: Build dependency if needed
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: | 
-          yarn
-          yarn prepare
+      - name: Install dependencies
+        run: |
+          yarn install --frozen-lockfile
 
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v5
@@ -115,3 +110,4 @@ jobs:
         with:
           name: kotlin-coverage-report
           path: reports
+          retention-days: 1

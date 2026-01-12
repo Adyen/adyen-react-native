@@ -1,35 +1,25 @@
 name: Build library
 permissions:
   contents: read
-  pull-requests: write
+  actions: write
 
 on:
   workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: number
 
 jobs:
   build-lib:
     name: Build Nodes
-    runs-on: macos-15
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.node-version }}
+          node-version: ${{ inputs.node-version }}
           cache: 'yarn'
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v5
-        with:
-          path: |
-            ${{ steps.yarn-cache-dir-path.outputs.dir }}
-            node_modules
-            example/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
 
       - name: Build library
         run: | 
@@ -45,17 +35,11 @@ jobs:
         with:
           name: js-coverage-report
           path: reports
+          retention-days: 1
 
       - name: Archive library
-        uses: actions/cache/save@v5
+        uses: actions/upload-artifact@v6
         with:
+          name: built-lib
           path: lib
-          key: temp-lib-${{ github.sha }}
-
-      - name: Archive Node Modules
-        uses: actions/cache/save@v5
-        with:
-          path: | 
-            node_modules
-            example/node_modules
-          key: temp-node-${{ github.sha }}
+          retention-days: 1
