@@ -1,4 +1,4 @@
-name: Test React Native (Parallel)
+name: Test Blank React Native app
 
 on:
   workflow_dispatch:
