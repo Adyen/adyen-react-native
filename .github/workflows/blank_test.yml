@@ -86,9 +86,12 @@ jobs:
   ios-test:
     name: iOS Test
     needs: setup
-    if: ${{ env.RUN_IOS == 'true' }}
+    if: ${{ github.event.inputs.run_ios == 'true' }}
     runs-on: macos-15
     timeout-minutes: 45
+    env:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
 
     steps:
       - name: Checkout Code
@@ -132,10 +135,7 @@ jobs:
           exit 1
 
       - name: Inject Secrets
-        if: ${{ secrets.ADYEN_CLIENT_KEY != '' && secrets.ADYEN_PUBLIC_KEY != '' }}
-        env:
-          ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
-          ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+        if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
           bash ./scripts/inject_secrets.sh "$APP_NAME"
@@ -151,9 +151,12 @@ jobs:
   android-test:
     name: Android Test
     needs: setup
-    if: ${{ env.RUN_ANDROID == 'true' }}
+    if: ${{ github.event.inputs.run_android == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
 
     steps:
       - name: Checkout Code
@@ -203,10 +206,7 @@ jobs:
           exit 1
 
       - name: Inject Secrets
-        if: ${{ secrets.ADYEN_CLIENT_KEY != '' && secrets.ADYEN_PUBLIC_KEY != '' }}
-        env:
-          ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
-          ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+        if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
           bash ./scripts/inject_secrets.sh "$APP_NAME"
