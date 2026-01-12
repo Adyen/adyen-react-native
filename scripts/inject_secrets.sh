@@ -16,5 +16,5 @@ fi
 cd "$name" || exit
 
 echo "== Injecting Secrets"
-sed "s|__CLIENT_KEY__|$ADYEN_CLIENT_KEY|g" App.tsx > App.tsx.tmp && mv App.tsx.tmp App.tsx
-sed "s|__PUBLIC_KEY__|$ADYEN_PUBLIC_KEY|g" App.tsx > App.tsx.tmp && mv App.tsx.tmp App.tsx
+sed "s|__CLIENT_KEY__|$ADYEN_CLIENT_KEY|g" App.tsx
+sed "s|__PUBLIC_KEY__|$ADYEN_PUBLIC_KEY|g" App.tsx

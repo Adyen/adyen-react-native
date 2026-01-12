@@ -4,6 +4,10 @@ const { remote } = require('webdriverio');
   const isAndroid = process.env.PLATFORM_NAME === 'android';
   console.log(`\n==> [Test] Checking App on ${isAndroid ? 'Android' : 'iOS'}...`);
 
+  const androidAppPackage = process.env.APP_PACKAGE || 'com.testproject';
+  const androidAppActivity = process.env.APP_ACTIVITY || '.MainActivity';
+  const iosBundleId = process.env.BUNDLE_ID || 'org.reactjs.native.example.TestProject';
+
   const driver = await remote({
     path: '/',
     port: 4723,
@@ -11,8 +15,8 @@ const { remote } = require('webdriverio');
       ? {
           platformName: 'Android',
           'appium:automationName': 'UiAutomator2',
-          'appium:appPackage': 'com.testproject',
-          'appium:appActivity': '.MainActivity',
+          'appium:appPackage': androidAppPackage,
+          'appium:appActivity': androidAppActivity,
           'appium:newCommandTimeout': 120,
           // If you want to force a specific device (optional in CI)
           // 'appium:deviceName': 'Android Emulator', 
@@ -20,7 +24,7 @@ const { remote } = require('webdriverio');
       : {
           platformName: 'iOS',
           'appium:automationName': 'XCUITest',
-          'appium:bundleId': 'org.reactjs.native.example.TestProject',
+          'appium:bundleId': iosBundleId,
           'appium:newCommandTimeout': 120,
           // 'appium:deviceName': 'iPhone 15', // Matches simulator started in shell script
         },

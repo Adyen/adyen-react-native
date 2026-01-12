@@ -29,6 +29,10 @@ env:
   ANDROID_API_LEVEL: 35
   IOS_DEVICE_NAME: "iPhone 17"
   IOS_VERSION: "18.1"
+  PLATFORM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.platform || 'React Native' }}
+  VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '0.80.2' }}
+  RUN_IOS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ios || 'true' }}
+  RUN_ANDROID: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_android || 'true' }}
 
 jobs:
   # ====================================================
@@ -57,12 +61,12 @@ jobs:
 
       - name: Generate Fixture
         run: |
-          if [ "${{ inputs.platform }}" == "Expo" ]; then
+          if [ "${{ env.PLATFORM }}" == "Expo" ]; then
              FLAG="-e"
           else
              FLAG="-r"
           fi
-          ./scripts/fixture_setup.sh $FLAG "${{ inputs.version }}"
+          bash ./scripts/fixture_setup.sh $FLAG "${{ env.VERSION }}"
 
       - name: Upload Fixture
         uses: actions/upload-artifact@v4
@@ -79,7 +83,7 @@ jobs:
   ios-test:
     name: iOS Test
     needs: setup
-    if: ${{ inputs.run_ios == true }}
+    if: ${{ env.RUN_IOS == 'true' }}
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -107,21 +111,36 @@ jobs:
       - name: Install Dependencies
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          cd $APP_NAME
+          cd "$APP_NAME"
           yarn install
 
+      - name: Setup Appium
+        run: |
+          npm i -g appium@2
+          appium driver install xcuitest
+
+      - name: Start Appium
+        run: |
+          appium --port 4723 --log-level error &
+          for i in {1..30}; do
+            nc -z 127.0.0.1 4723 && exit 0
+            sleep 1
+          done
+          exit 1
+
       - name: Inject Secrets
+        if: ${{ secrets.ADYEN_CLIENT_KEY != '' && secrets.ADYEN_PUBLIC_KEY != '' }}
         env:
           ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
           ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          ./scripts/inject_secrets.sh "$APP_NAME"
+          bash ./scripts/inject_secrets.sh "$APP_NAME"
 
       - name: Run iOS Test
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          ./scripts/fixture_ios.sh "$APP_NAME" "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+          bash ./scripts/fixture_ios.sh "$APP_NAME" "${{ env.PLATFORM }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
 
   # ====================================================
   # JOB 3: Android Build & Test
@@ -129,7 +148,7 @@ jobs:
   android-test:
     name: Android Test
     needs: setup
-    if: ${{ inputs.run_android == true }}
+    if: ${{ env.RUN_ANDROID == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -163,16 +182,31 @@ jobs:
       - name: Install Dependencies
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          cd $APP_NAME
+          cd "$APP_NAME"
           yarn install
 
+      - name: Setup Appium
+        run: |
+          npm i -g appium@2
+          appium driver install uiautomator2
+
+      - name: Start Appium
+        run: |
+          appium --port 4723 --log-level error &
+          for i in {1..30}; do
+            nc -z 127.0.0.1 4723 && exit 0
+            sleep 1
+          done
+          exit 1
+
       - name: Inject Secrets
+        if: ${{ secrets.ADYEN_CLIENT_KEY != '' && secrets.ADYEN_PUBLIC_KEY != '' }}
         env:
           ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
           ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          ./scripts/inject_secrets.sh "$APP_NAME"
+          bash ./scripts/inject_secrets.sh "$APP_NAME"
 
       - name: Run Android Test
         uses: reactivecircus/android-emulator-runner@v2
@@ -182,4 +216,4 @@ jobs:
           arch: x86_64
           script: |
             APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-            ./scripts/fixture_android.sh "$APP_NAME" "${{ inputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
+            bash ./scripts/fixture_android.sh "$APP_NAME" "${{ env.PLATFORM }}" "${{ env.ANDROID_API_LEVEL }}"
