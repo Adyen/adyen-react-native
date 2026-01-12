@@ -1,7 +1,10 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Default values
 expo=''
+rn=''
 name="tested_app"
 
 # Parse flags
@@ -49,6 +52,9 @@ else
 fi
 
 cd "$name" || exit
+
+# Ensure Yarn treats this directory as an independent project (not a workspace of the repo root)
+touch yarn.lock
 
 echo -e "== Install Dependencies\n"
 cp ../adyen-react-native.tgz . || exit 1
