@@ -32,10 +32,6 @@ env:
   ANDROID_API_LEVEL: 35
   IOS_DEVICE_NAME: "iPhone 17"
   IOS_VERSION: "18.1"
-  PLATFORM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.platform || 'React Native' }}
-  VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '0.80.2' }}
-  RUN_IOS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ios || 'true' }}
-  RUN_ANDROID: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_android || 'true' }}
 
 jobs:
   # ====================================================
@@ -44,9 +40,35 @@ jobs:
   setup:
     name: Setup Fixture
     runs-on: ubuntu-latest
+    outputs:
+      platform: ${{ steps.vars.outputs.platform }}
+      version: ${{ steps.vars.outputs.version }}
+      run_ios: ${{ steps.vars.outputs.run_ios }}
+      run_android: ${{ steps.vars.outputs.run_android }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Resolve Inputs
+        id: vars
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PLATFORM="${{ github.event.inputs.platform }}"
+            VERSION="${{ github.event.inputs.version }}"
+            RUN_IOS="${{ github.event.inputs.run_ios }}"
+            RUN_ANDROID="${{ github.event.inputs.run_android }}"
+          else
+            PLATFORM="React Native"
+            VERSION="0.80.2"
+            RUN_IOS="true"
+            RUN_ANDROID="true"
+          fi
+
+          echo "platform=$PLATFORM" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "run_ios=$RUN_IOS" >> "$GITHUB_OUTPUT"
+          echo "run_android=$RUN_ANDROID" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -56,7 +78,7 @@ jobs:
 
       - name: Build Library
         run: |
-          yarn install
+          yarn
           yarn prepare
           rm -f adyen-react-native-*.tgz
           npm pack
@@ -64,12 +86,12 @@ jobs:
 
       - name: Generate Fixture
         run: |
-          if [ "${{ env.PLATFORM }}" == "Expo" ]; then
+          if [ "${{ steps.vars.outputs.platform }}" == "Expo" ]; then
              FLAG="-e"
           else
              FLAG="-r"
           fi
-          bash ./scripts/fixture_setup.sh $FLAG "${{ env.VERSION }}"
+          bash ./scripts/fixture_setup.sh $FLAG "${{ steps.vars.outputs.version }}"
 
       - name: Upload Fixture
         uses: actions/upload-artifact@v4
@@ -86,7 +108,7 @@ jobs:
   ios-test:
     name: iOS Test
     needs: setup
-    if: ${{ github.event.inputs.run_ios == 'true' }}
+    if: ${{ needs.setup.outputs.run_ios == 'true' }}
     runs-on: macos-15
     timeout-minutes: 45
     env:
@@ -143,7 +165,7 @@ jobs:
       - name: Run iOS Test
         run: |
           APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          bash ./scripts/fixture_ios.sh "$APP_NAME" "${{ env.PLATFORM }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+          bash ./scripts/fixture_ios.sh "$APP_NAME" "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
 
   # ====================================================
   # JOB 3: Android Build & Test
@@ -151,7 +173,7 @@ jobs:
   android-test:
     name: Android Test
     needs: setup
-    if: ${{ github.event.inputs.run_android == 'true' }}
+    if: ${{ needs.setup.outputs.run_android == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -219,4 +241,4 @@ jobs:
           arch: x86_64
           script: |
             APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-            bash ./scripts/fixture_android.sh "$APP_NAME" "${{ env.PLATFORM }}" "${{ env.ANDROID_API_LEVEL }}"
+            bash ./scripts/fixture_android.sh "$APP_NAME" "${{ needs.setup.outputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
