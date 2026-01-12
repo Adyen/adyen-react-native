@@ -11,6 +11,7 @@ on:
       version:
         description: 'Version'
         required: true
+        type: string
   release:
     types: [published]
 

@@ -15,36 +15,33 @@ concurrency:
   group: pr-check-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  NODE_VERSION: 20
-  ANDROID_VERSION: 35
-  DEVICE_VERSION: 17
-
 jobs:
   build-lib:
     name: Build Nodes
     uses: ./.github/workflows/build_lib.yml
     with:
-      node-version: ${{ env.NODE_VERSION }}
+      node-version: ${{ vars.NODE_VERSION }}
 
   test-iOS:
     name: Test iOS
     needs: [build-lib]
     uses: ./.github/workflows/ios_tests.yml
     with:
-      node-version: ${{ env.NODE_VERSION }}
-      device-version: ${{ env.DEVICE_VERSION }}
+      node-version: ${{ vars.NODE_VERSION }}
+      device-version: ${{ vars.IOS_DEVICE_VERSION }}
 
   test-Android:
     name: Test Android
     needs: [build-lib]
     uses: ./.github/workflows/android_tests.yml
     with:
-      node-version: ${{ env.NODE_VERSION }}
-      android-version: ${{ env.ANDROID_VERSION }}
+      node-version: ${{ vars.NODE_VERSION }}
+      android-version: ${{ vars.ANDROID_VERSION }}
 
   run-sonar:
     name: Collect Sonar reports
     needs: [test-iOS, test-Android]
     uses: ./.github/workflows/run_sonar.yml
     secrets: inherit
+    with:
+      node-version: ${{ vars.NODE_VERSION }}

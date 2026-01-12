@@ -8,11 +8,10 @@ on:
     inputs:
       node-version:
         required: true
-        type: number
+        type: string
       device-version:
-        required: false
-        default: 17
-        type: number
+        required: true
+        type: string
 
 jobs:
   ios_tests:

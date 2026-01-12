@@ -8,11 +8,10 @@ on:
     inputs:
       node-version:
         required: true
-        type: number
+        type: string
       android-version:
-        required: false
-        default: 35
-        type: number
+        required: true
+        type: string
 
 jobs:
   test-Android:
