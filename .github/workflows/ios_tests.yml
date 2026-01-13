@@ -1,15 +1,17 @@
 name: Test iOS
 permissions:
   contents: read
-  pull-requests: write
+  actions: write
 
 on:
   workflow_call:
     inputs:
+      node-version:
+        required: true
+        type: string
       device-version:
-        required: false
-        default: 17
-        type: number
+        required: true
+        type: string
 
 jobs:
   ios_tests:
@@ -25,37 +27,36 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.node-version }}
+          node-version: ${{ inputs.node-version }}
           cache: 'yarn'
 
-      - uses: actions/cache/restore@v5
+      - name: Download precompiled SDK
+        uses: actions/download-artifact@v7
         with:
+          name: built-lib
           path: lib
-          key: temp-lib-${{ github.sha }}
 
-      - uses: actions/cache/restore@v5
-        id: yarn-cache
-        with:
-          path: | 
-            node_modules
-            example/node_modules
-          key: temp-node-${{ github.sha }}
-
-      - name: Build dependency if needed
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: | 
-          yarn
-          yarn prepare
+      - name: Install dependencies
+        run: |
+          yarn install --frozen-lockfile
 
       - uses: actions/cache@v5
+        id: pods-cache
         with:
-          path: example/ios/Pods
+          path: |
+            example/ios/Pods
+            ~/Library/Caches/CocoaPods
           key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
           restore-keys: pods-
 
       - name: Pod install
         working-directory: example/ios
-        run: pod update
+        run: |
+          if [ "${{ steps.pods-cache.outputs.cache-hit }}" != "true" ]; then
+            pod install --repo-update
+          else
+            pod install
+          fi
 
       - name: Run tests
         working-directory: example/ios
@@ -86,3 +87,4 @@ jobs:
         with:
           name: swift-coverage-report
           path: reports
+          retention-days: 1

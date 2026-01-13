@@ -4,7 +4,6 @@
 name: Publish Package
 permissions:
   contents: read
-  pull-requests: write
 
 on:
   workflow_dispatch:
@@ -12,6 +11,7 @@ on:
       version:
         description: 'Version'
         required: true
+        type: string
   release:
     types: [published]
 
