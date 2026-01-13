@@ -1,7 +1,8 @@
 name: Scan PR
 permissions:
   contents: read
-  pull-requests: write
+  actions: write
+  pull-requests: read
 
 on:
   pull_request:
@@ -9,45 +10,38 @@ on:
   push:
     branches:
       - develop
-env:
-  node-version: 20
+
+concurrency:
+  group: pr-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-lib:
     name: Build Nodes
     uses: ./.github/workflows/build_lib.yml
+    with:
+      node-version: ${{ vars.NODE_VERSION }}
 
   test-iOS:
     name: Test iOS
     needs: [build-lib]
     uses: ./.github/workflows/ios_tests.yml
+    with:
+      node-version: ${{ vars.NODE_VERSION }}
+      device-version: ${{ vars.IOS_DEVICE_VERSION }}
 
   test-Android:
     name: Test Android
     needs: [build-lib]
     uses: ./.github/workflows/android_tests.yml
+    with:
+      node-version: ${{ vars.NODE_VERSION }}
+      android-version: ${{ vars.ANDROID_VERSION }}
 
   run-sonar:
     name: Collect Sonar reports
     needs: [test-iOS, test-Android]
     uses: ./.github/workflows/run_sonar.yml
     secrets: inherit
-
-  delete-chach:
-    name: Clean up
-    runs-on: ubuntu-latest
-    needs: [run-sonar]
-    if: always()
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Delete temporary Node cache
-        continue-on-error: true
-        run: |
-          gh cache delete temp-node-${{ github.sha }}
-
-      - name: Delete temporary Lib cache
-        continue-on-error: true
-        run: |
-          gh cache delete temp-lib-${{ github.sha }}
+    with:
+      node-version: ${{ vars.NODE_VERSION }}

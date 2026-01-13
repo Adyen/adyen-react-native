@@ -1,6 +1,6 @@
 name: Update SDK Versions
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 on:
