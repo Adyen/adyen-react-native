@@ -16,6 +16,8 @@ const { remote } = require('webdriverio');
   const iosPlatformVersion = process.env.IOS_PLATFORM_VERSION;
 
   const waitTimeoutMs = 120000;
+  const connectionRetryTimeout = isAndroid ? 240000 : 600000;
+  const connectionRetryCount = isAndroid ? 3 : 5;
 
   const rnErrorMarkers = [
     'Unhandled JS Exception',
@@ -29,10 +31,12 @@ const { remote } = require('webdriverio');
   ];
 
   const driver = await remote({
+    protocol: 'http',
+    hostname: '127.0.0.1',
     path: '/',
     port: 4723,
-    connectionRetryTimeout: 240000,
-    connectionRetryCount: 3,
+    connectionRetryTimeout,
+    connectionRetryCount,
     capabilities: isAndroid
       ? {
           'platformName': 'Android',
@@ -48,6 +52,10 @@ const { remote } = require('webdriverio');
           'appium:automationName': 'XCUITest',
           'appium:bundleId': iosBundleId,
           'appium:newCommandTimeout': 120,
+          'appium:wdaLaunchTimeout': 600000,
+          'appium:wdaConnectionTimeout': 600000,
+          'appium:wdaStartupRetries': 3,
+          'appium:wdaStartupRetryInterval': 20000,
           ...(iosUdid ? { 'appium:udid': iosUdid } : {}),
           ...(iosDeviceName ? { 'appium:deviceName': iosDeviceName } : {}),
           ...(iosPlatformVersion

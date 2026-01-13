@@ -149,8 +149,10 @@ jobs:
       - name: Start Appium
         run: |
           appium --port 4723 --log-level error &
-          for i in {1..30}; do
-            nc -z 127.0.0.1 4723 && exit 0
+          for i in {1..90}; do
+            if curl -sf http://127.0.0.1:4723/status >/dev/null; then
+              exit 0
+            fi
             sleep 1
           done
           exit 1
