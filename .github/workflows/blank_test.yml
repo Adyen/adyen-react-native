@@ -1,6 +1,9 @@
 name: Test Blank React Native app
 
 on:
+  pull_request:
+    types: [opened, synchronize]
+    
   workflow_dispatch:
     inputs:
       platform:
