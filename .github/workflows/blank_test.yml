@@ -164,6 +164,15 @@ jobs:
         run: |
           bash ./scripts/fixture_ios.sh "$APP_DIR" "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
 
+      - name: Upload Appium Failure Screenshot (iOS)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appium_failure_ios
+          path: ${{ env.APP_DIR }}/appium_failure.png
+          if-no-files-found: ignore
+          retention-days: 1
+
   # ====================================================
   # JOB 3: Android Build & Test
   # ====================================================
@@ -237,3 +246,12 @@ jobs:
           arch: x86_64
           script: |
             bash ./scripts/fixture_android.sh "$APP_DIR" "${{ needs.setup.outputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
+
+      - name: Upload Appium Failure Screenshot (Android)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appium_failure_android
+          path: ${{ env.APP_DIR }}/appium_failure.png
+          if-no-files-found: ignore
+          retention-days: 1

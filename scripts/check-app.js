@@ -14,6 +14,19 @@ const { remote } = require('webdriverio');
   const iosDeviceName = process.env.IOS_DEVICE_NAME;
   const iosPlatformVersion = process.env.IOS_PLATFORM_VERSION;
 
+  const waitTimeoutMs = 120000;
+
+  const rnErrorMarkers = [
+    'Unhandled JS Exception',
+    'LogBox',
+    'RedBox',
+    'Unable to resolve module',
+    'Invariant Violation',
+    'TypeError',
+    'ReferenceError',
+    'SyntaxError',
+  ];
+
   const driver = await remote({
     path: '/',
     port: 4723,
@@ -48,21 +61,82 @@ const { remote } = require('webdriverio');
     // 1. Define Selector
     // Android: Locates by visible text
     // iOS: Locates by Accessibility ID (which maps to 'title' prop in RN Buttons)
-    const btnSelector = '~dropin-button';
+    const selectors = isAndroid
+      ? ['android=new UiSelector().text("Open DropIn")', '~dropin-button']
+      : ['~dropin-button'];
 
-    console.log(`==> [Test] Waiting for button: "${btnSelector}"`);
+    let dropInBtn;
+    const startTime = Date.now();
+    let lastErrorCheckAt = 0;
 
-    // 2. Find Element
-    const dropInBtn = await driver.$(btnSelector);
+    while (Date.now() - startTime < waitTimeoutMs) {
+      const now = Date.now();
+      if (now - lastErrorCheckAt >= 5000) {
+        const pageSource = await driver.getPageSource();
+        const hits = rnErrorMarkers.filter((m) => pageSource.includes(m));
+        if (hits.length > 0) {
+          try {
+            const screenshotPath = './appium_failure.png';
+            await driver.saveScreenshot(screenshotPath);
+            console.error(`==> [Test] Saved screenshot to ${screenshotPath}`);
+          } catch (e) {
+            console.error('==> [Test] Failed to capture screenshot');
+            console.error(e);
+          }
 
-    // 3. Wait for Display (Max 30s to allow for compilation/launch slowness)
-    await dropInBtn.waitForDisplayed({ timeout: 30000 });
+          throw new Error(
+            `React Native error screen detected: ${hits.join(', ')}`
+          );
+        }
+        lastErrorCheckAt = now;
+      }
+
+      for (const btnSelector of selectors) {
+        const candidate = await driver.$(btnSelector);
+        const isDisplayed = await candidate.isDisplayed().catch(() => false);
+        if (isDisplayed) {
+          dropInBtn = candidate;
+          break;
+        }
+      }
+
+      if (dropInBtn) {
+        break;
+      }
+
+      await driver.pause(2000);
+    }
+
+    if (!dropInBtn) {
+      throw new Error(
+        `element (${JSON.stringify(selectors)}) still not displayed after ${waitTimeoutMs}ms`
+      );
+    }
 
     console.log("==> [Test] SUCCESS: 'Open DropIn' button is visible.");
   } catch (error) {
     console.error('==> [Test] FAILURE: App did not load or button not found.');
     console.error(error);
-    process.exit(1); // Exit with error code to fail the CI job
+
+    try {
+      const pageSource = await driver.getPageSource();
+      console.error(`==> [Test] Page source length: ${pageSource.length}`);
+      console.error(pageSource.slice(0, 5000));
+    } catch (e) {
+      console.error('==> [Test] Failed to capture page source');
+      console.error(e);
+    }
+
+    try {
+      const screenshotPath = './appium_failure.png';
+      await driver.saveScreenshot(screenshotPath);
+      console.error(`==> [Test] Saved screenshot to ${screenshotPath}`);
+    } catch (e) {
+      console.error('==> [Test] Failed to capture screenshot');
+      console.error(e);
+    }
+
+    process.exitCode = 1;
   } finally {
     // Cleanup session
     await driver.deleteSession();
