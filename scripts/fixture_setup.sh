@@ -66,7 +66,9 @@ touch yarn.lock
 echo -e "== Install Dependencies\n"
 cp ../adyen-react-native.tgz . || exit 1
 yarn add ./adyen-react-native.tgz
-yarn add -D webdriverio
+yarn add -D webdriverio @wdio/cli @wdio/local-runner @wdio/appium-service
+
+cp ../scripts/check-app.js ./check-app.js
 
 echo -e "== Add default App.tsx\n"
 # We write placeholders (__CLIENT_KEY__, __PUBLIC_KEY__) which we will replace via sed below.

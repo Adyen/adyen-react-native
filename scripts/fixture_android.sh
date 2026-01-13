@@ -72,4 +72,4 @@ echo "== Run Appium Tests"
 export PLATFORM_NAME=android
 export APP_PACKAGE
 export APP_ACTIVITY
-node ../scripts/check-app.js
+node ./check-app.js
