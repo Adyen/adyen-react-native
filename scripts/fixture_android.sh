@@ -45,7 +45,8 @@ fi
 
 echo "== Build Android"
 cd android || exit
-./gradlew installDebug
+chmod +x ./gradlew || true
+./gradlew installDebug || bash ./gradlew installDebug
 cd ..
 
 APP_PACKAGE=$(grep -m 1 -E 'applicationId\s+"' android/app/build.gradle | awk -F '"' '{print $2}')
