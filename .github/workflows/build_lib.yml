@@ -37,7 +37,7 @@ jobs:
           path: reports
           retention-days: 1
 
-      - name: Archive library
+      - name: Archive precompiled SDK
         uses: actions/upload-artifact@v6
         with:
           name: built-lib

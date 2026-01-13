@@ -30,7 +30,7 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: 'yarn'
 
-      - name: Download library
+      - name: Download precompiled SDK
         uses: actions/download-artifact@v7
         with:
           name: built-lib
