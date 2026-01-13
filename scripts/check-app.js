@@ -10,10 +10,15 @@ const { remote } = require('webdriverio');
   const androidAppActivity = process.env.APP_ACTIVITY || '.MainActivity';
   const iosBundleId =
     process.env.BUNDLE_ID || 'org.reactjs.native.example.TestProject';
+  const iosUdid = process.env.IOS_UDID;
+  const iosDeviceName = process.env.IOS_DEVICE_NAME;
+  const iosPlatformVersion = process.env.IOS_PLATFORM_VERSION;
 
   const driver = await remote({
     path: '/',
     port: 4723,
+    connectionRetryTimeout: 240000,
+    connectionRetryCount: 3,
     capabilities: isAndroid
       ? {
           'platformName': 'Android',
@@ -29,6 +34,11 @@ const { remote } = require('webdriverio');
           'appium:automationName': 'XCUITest',
           'appium:bundleId': iosBundleId,
           'appium:newCommandTimeout': 120,
+          ...(iosUdid ? { 'appium:udid': iosUdid } : {}),
+          ...(iosDeviceName ? { 'appium:deviceName': iosDeviceName } : {}),
+          ...(iosPlatformVersion
+            ? { 'appium:platformVersion': iosPlatformVersion }
+            : {}),
           // 'appium:deviceName': 'iPhone 15', // Matches simulator started in shell script
         },
     logLevel: 'error',

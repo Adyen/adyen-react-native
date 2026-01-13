@@ -79,4 +79,7 @@ xcrun simctl install "$UDID" "build/Build/Products/Debug-iphonesimulator/$SCHEME
 
 echo "== Run Appium Tests"
 export PLATFORM_NAME=ios
+export IOS_UDID="$UDID"
+export IOS_DEVICE_NAME="$device_name"
+export IOS_PLATFORM_VERSION="$os_version"
 node ./check-app.js
