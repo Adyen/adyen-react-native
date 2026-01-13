@@ -8,15 +8,22 @@ rn=''
 name="tested_app"
 
 # Parse flags
-while getopts r:e: flag
+while getopts r:e:n: flag
 do
     case "${flag}" in
         r) rn=${OPTARG}
-           name="${name}_RN${rn}";;
+           ;;
         e) expo=${OPTARG}
-           name="expo_${name}";;
+           ;;
+        n) name=${OPTARG}
+           ;;
     esac
 done
+
+if [ -z "$name" ]; then
+  echo "Error: App name argument missing."
+  exit 1
+fi
 
 # Sanitize name
 name=${name//./}
@@ -45,7 +52,7 @@ echo "== Using CLI $cli_version"
 
 if [ ! -z "$expo" ]; then
     echo "== Building Expo"
-    npx create-expo-app "$name" --template blank@"$expo" --no-install
+    npx create-expo-app "$name" --template default@"$expo" --no-install
 else
     echo "== Building React-Native $rn"
     npx @react-native-community/cli@"$cli_version" init --directory "$name" --version "$rn" --install-pods false --skip-install TestProject

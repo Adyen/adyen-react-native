@@ -31,7 +31,8 @@ env:
   NODE_VERSION: 20
   ANDROID_API_LEVEL: 35
   IOS_DEVICE_NAME: "iPhone 17"
-  IOS_VERSION: "18.1"
+  IOS_VERSION: "26.1"
+  APP_DIR: "tested_app"
 
 jobs:
   # ====================================================
@@ -97,9 +98,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fixture
-          path: |
-            tested_app*
-            expo_tested_app*
+          path: ${{ env.APP_DIR }}
           retention-days: 1
 
   # ====================================================
@@ -135,11 +134,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: fixture
+          path: ${{ env.APP_DIR }}
 
       - name: Install Dependencies
+        working-directory: ${{ env.APP_DIR }}
         run: |
-          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          cd "$APP_NAME"
           yarn install
 
       - name: Setup Appium
@@ -159,13 +158,11 @@ jobs:
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
         run: |
-          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          bash ./scripts/inject_secrets.sh "$APP_NAME"
+          bash ./scripts/inject_secrets.sh "$APP_DIR"
 
       - name: Run iOS Test
         run: |
-          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          bash ./scripts/fixture_ios.sh "$APP_NAME" "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+          bash ./scripts/fixture_ios.sh "$APP_DIR" "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
 
   # ====================================================
   # JOB 3: Android Build & Test
@@ -206,11 +203,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: fixture
+          path: ${{ env.APP_DIR }}
 
       - name: Install Dependencies
+        working-directory: ${{ env.APP_DIR }}
         run: |
-          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          cd "$APP_NAME"
           yarn install
 
       - name: Setup Appium
@@ -230,8 +227,7 @@ jobs:
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
         run: |
-          APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-          bash ./scripts/inject_secrets.sh "$APP_NAME"
+          bash ./scripts/inject_secrets.sh "$APP_DIR"
 
       - name: Run Android Test
         uses: reactivecircus/android-emulator-runner@v2
@@ -240,5 +236,4 @@ jobs:
           target: google_apis
           arch: x86_64
           script: |
-            APP_NAME=$(find . -maxdepth 1 -type d -name "*tested_app*" | head -n 1)
-            bash ./scripts/fixture_android.sh "$APP_NAME" "${{ needs.setup.outputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
+            bash ./scripts/fixture_android.sh "$APP_DIR" "${{ needs.setup.outputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
