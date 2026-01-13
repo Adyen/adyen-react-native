@@ -180,13 +180,25 @@ jobs:
     name: Android Test
     needs: setup
     if: ${{ needs.setup.outputs.run_android == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+      target: google_apis
+      arch: x86_64
 
     steps:
+      - name: Provide more disk space
+        run: |
+          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc /opt/cabal /opt/stack
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf "/usr/local/share/boost"
+          sudo apt-get remove -y 'php.*'
+          sudo docker image prune --all --force
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -202,11 +214,34 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v5
+
       - name: Enable KVM (Linux Acceleration)
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      - name: AVD cache
+        uses: actions/cache@v5
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ env.ANDROID_API_LEVEL }}
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          target: ${{ env.target }}
+          arch: ${{ env.arch }}
+          force-avd-creation: false
+          emulator-boot-timeout: 300
+          script: echo "Generated AVD snapshot for caching."
 
       - name: Download Fixture
         uses: actions/download-artifact@v4
@@ -242,8 +277,10 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.ANDROID_API_LEVEL }}
-          target: google_apis
-          arch: x86_64
+          target: ${{ env.target }}
+          arch: ${{ env.arch }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             bash ./scripts/fixture_android.sh "$APP_DIR" "${{ needs.setup.outputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
 
