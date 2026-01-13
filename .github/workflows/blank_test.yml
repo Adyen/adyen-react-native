@@ -1,8 +1,9 @@
 name: Test Blank React Native app
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches:
+      - develop
     
   workflow_dispatch:
     inputs:
