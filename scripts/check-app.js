@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { remote } = require('webdriverio');
 
 (async () => {
@@ -62,7 +63,11 @@ const { remote } = require('webdriverio');
     // Android: Locates by visible text
     // iOS: Locates by Accessibility ID (which maps to 'title' prop in RN Buttons)
     const selectors = isAndroid
-      ? ['android=new UiSelector().text("Open DropIn")', '~dropin-button']
+      ? [
+          'android=new UiSelector().textMatches("(?i).*drop\\s*in.*")',
+          'android=new UiSelector().textContains("DROPIN")',
+          '~dropin-button',
+        ]
       : ['~dropin-button'];
 
     let dropInBtn;
@@ -121,7 +126,9 @@ const { remote } = require('webdriverio');
     try {
       const pageSource = await driver.getPageSource();
       console.error(`==> [Test] Page source length: ${pageSource.length}`);
-      console.error(pageSource.slice(0, 5000));
+      const pageSourcePath = './appium_page_source.xml';
+      fs.writeFileSync(pageSourcePath, pageSource, 'utf8');
+      console.error(`==> [Test] Saved page source to ${pageSourcePath}`);
     } catch (e) {
       console.error('==> [Test] Failed to capture page source');
       console.error(e);
