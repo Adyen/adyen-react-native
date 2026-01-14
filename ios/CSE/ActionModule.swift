@@ -73,9 +73,7 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
     }
 
     private enum Constant {
-        static var moduleName = "ActionModule"
         static var threeDS2SdkVersionName = "threeDS2SdkVersion"
-        static var parsingErrorCode = "parsingError"
         static var componentError = "actionError"
     }
 
@@ -84,10 +82,9 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
     }
 
     func reject(with error: any Error) {
-        let errorToSend = NativeModuleError.checkErrorType(error)
-        if let error = errorToSend as? NativeModuleError {
-            return reject(with: error)
+        if let nativeError = NativeModuleError.checkErrorType(error) as? NativeModuleError {
+            return reject(with: nativeError)
         }
-        rejecter?(Constant.componentError, errorToSend.localizedDescription, errorToSend)
+        rejecter?(Constant.componentError, error.localizedDescription, error)
     }
 }
