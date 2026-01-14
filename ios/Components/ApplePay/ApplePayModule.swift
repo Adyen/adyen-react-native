@@ -130,7 +130,7 @@ struct PKPaymentAuthorizationServiceAdapter: PKPaymentAuthorizationService {
     func canMakePayments(usingNetworks: [PKPaymentNetwork]) -> Bool {
         PKPaymentAuthorizationViewController.canMakePayments(usingNetworks: usingNetworks)
     }
-    
+
     func getAuthorizationViewController(paymentRequest: PKPaymentRequest) -> PKPaymentAuthorizationViewController? {
         PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
     }

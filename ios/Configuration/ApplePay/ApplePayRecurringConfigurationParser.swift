@@ -7,7 +7,7 @@
 import PassKit
 
 class ApplePayRecurringConfigurationParser {
-    
+
     private var dict: [String: Any]
 
     init(configuration: NSDictionary) {

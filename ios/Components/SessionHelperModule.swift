@@ -58,10 +58,10 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
                     resolver(dto.jsonObject)
                     BaseModule.session = session
                 case let .failure(error):
-                    if error is HTTPResponse<EmptyErrorResponse> {
-                        rejecter(errorCode, NativeModuleError.sessionError.errorDescription, nil)
+                    if let nativeError = NativeModuleError.checkErrorType(error) as? NativeModuleError {
+                        rejecter(nativeError.errorCode, nativeError.errorDescription, nativeError)
                     } else {
-                        rejecter(errorCode, nil, error)
+                        rejecter(errorCode, error.localizedDescription, error)
                     }
                 }
             }
