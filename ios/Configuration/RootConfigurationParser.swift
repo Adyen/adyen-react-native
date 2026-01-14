@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Adyen
+@_spi(AdyenInternal) import Adyen
 
 public struct RootConfigurationParser {
 
@@ -59,8 +59,13 @@ extension RootConfigurationParser {
 
     internal func fetchContext(session: AdyenSession?) throws -> AdyenContext {
         guard let clientKey = self.clientKey else {
-            throw BaseModule.NativeModuleError.noClientKey
+            throw NativeModuleError.noClientKey
         }
+
+        guard ClientKeyValidator().isValid(clientKey) else {
+            throw NativeModuleError.invalidClientKey
+        }
+
         let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
 
         let analytics = AnalyticsParser(configuration: configuration).configuration

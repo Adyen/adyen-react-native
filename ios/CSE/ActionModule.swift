@@ -30,11 +30,7 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
     }
 
     func didFail(with error: Error, from component: Adyen.ActionComponent) {
-        let errorToSend = checkErrorType(error)
-        if let error = error as? NativeModuleError {
-            return reject(with: error)
-        }
-        rejecter?(Constant.componentError, error.localizedDescription, error)
+        reject(with: error)
     }
 
     @objc
@@ -50,12 +46,8 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
         do {
             action = try parseAction(from: actionJson)
             context = try parser.fetchContext(session: BaseModule.session)
-        } catch NativeModuleError.invalidAction {
-            return reject(with: NativeModuleError.invalidAction)
-        } catch NativeModuleError.noClientKey {
-            return reject(with: NativeModuleError.noClientKey)
         } catch {
-            return rejecter(Constant.parsingErrorCode, error.localizedDescription, error)
+            return reject(with: error)
         }
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
@@ -89,5 +81,13 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
 
     func reject(with error: NativeModuleError) {
         rejecter?(error.errorCode, error.errorDescription, error)
+    }
+
+    func reject(with error: any Error) {
+        let errorToSend = NativeModuleError.checkErrorType(error)
+        if let error = errorToSend as? NativeModuleError {
+            return reject(with: error)
+        }
+        rejecter?(Constant.componentError, errorToSend.localizedDescription, errorToSend)
     }
 }
