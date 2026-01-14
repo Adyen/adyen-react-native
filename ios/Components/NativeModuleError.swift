@@ -86,7 +86,7 @@ enum NativeModuleError: LocalizedError, KnownError {
         if error.isComponentCanceled || error.is3DSCanceled {
             return NativeModuleError.canceled
         }
-        if error is HTTPResponse<EmptyErrorResponse> {
+        if error.isEmpty401NetworkingResponseError {
             return NativeModuleError.invalidClientKey
         }
         return error
@@ -100,5 +100,9 @@ extension Error {
     var is3DSCanceled: Bool {
         (self as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError" &&
             (self as NSError).code == ADYRuntimeErrorCode.challengeCancelled.rawValue
+    }
+
+    var isEmpty401NetworkingResponseError: Bool {
+        self is HTTPResponse<EmptyErrorResponse>
     }
 }
