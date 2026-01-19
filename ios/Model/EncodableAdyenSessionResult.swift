@@ -13,7 +13,7 @@ extension AdyenSessionResult: Encodable {
         try container.encode(self.resultCode.rawValue, forKey: .resultCode)
         try container.encode(self.encodedResult, forKey: .encodedResult)
     }
-    
+
     private enum CodingKeys: String, CodingKey {
         case resultCode
         case encodedResult = "sessionResult"
