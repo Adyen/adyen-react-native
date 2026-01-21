@@ -21,26 +21,7 @@ else
   
   mkdir -p android/app/src/main/java/com/testproject
 
-  cat > android/app/src/main/java/com/testproject/MainActivity.kt <<- 'EOF'
-package com.testproject
-
-import android.os.Bundle
-import com.facebook.react.ReactActivity
-import com.facebook.react.ReactActivityDelegate
-import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
-import com.facebook.react.defaults.DefaultReactActivityDelegate
-import com.adyenreactnativesdk.AdyenCheckout
-
-class MainActivity : ReactActivity() {
-  override fun getMainComponentName(): String = "TestProject"
-  override fun createReactActivityDelegate(): ReactActivityDelegate =
-      DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    AdyenCheckout.setLauncherActivity(this)
-  }
-}
-EOF
+  cp ../fixture/MainActivity.kt.template android/app/src/main/java/com/testproject/MainActivity.kt
 fi
 
 echo "== Build Android"
@@ -55,12 +36,7 @@ if [ -z "${APP_PACKAGE:-}" ]; then
   APP_PACKAGE=com.testproject
 fi
 
-echo "== Start Metro"
-yarn start --port 8081 >/dev/null 2>&1 &
-for i in {1..30}; do
-  nc -z 127.0.0.1 8081 && break
-  sleep 1
-done
+bash ../scripts/start_metro.sh
 
 echo "== Reverse Metro Port"
 adb reverse tcp:8081 tcp:8081 || true

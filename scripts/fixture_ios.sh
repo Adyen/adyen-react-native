@@ -65,12 +65,7 @@ echo "== Using Simulator: $device_name (iOS $os_version)"
 echo "== Build iOS"
 xcodebuild -workspace "ios/$SCHEME.xcworkspace" -scheme "$SCHEME" -configuration Debug -sdk iphonesimulator -destination "platform=iOS Simulator,name=$device_name,OS=$os_version" -derivedDataPath build -quiet
 
-echo "== Start Metro"
-yarn start --port 8081 >/dev/null 2>&1 &
-for i in {1..30}; do
-  nc -z 127.0.0.1 8081 && break
-  sleep 1
-done
+bash ../scripts/start_metro.sh
 
 echo "== Install App on Simulator"
 xcrun simctl boot "$UDID" || true

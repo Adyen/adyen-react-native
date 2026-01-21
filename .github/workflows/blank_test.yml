@@ -151,15 +151,7 @@ jobs:
           appium driver install xcuitest
 
       - name: Start Appium
-        run: |
-          appium --port 4723 --log-level error &
-          for i in {1..90}; do
-            if curl -sf http://127.0.0.1:4723/status >/dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          exit 1
+        run: bash ./scripts/start_appium.sh 4723 90
 
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
@@ -275,13 +267,7 @@ jobs:
           appium driver install uiautomator2
 
       - name: Start Appium
-        run: |
-          appium --port 4723 --log-level error &
-          for i in {1..30}; do
-            nc -z 127.0.0.1 4723 && exit 0
-            sleep 1
-          done
-          exit 1
+        run: bash ./scripts/start_appium.sh 4723 30
 
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}

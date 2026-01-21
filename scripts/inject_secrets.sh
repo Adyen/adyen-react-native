@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 name=$1
 
 if [ -z "$name" ]; then

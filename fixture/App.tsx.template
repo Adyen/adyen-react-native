@@ -1,0 +1,129 @@
+import {
+  AdyenActionComponent,
+  AdyenCSE,
+  AdyenCheckout,
+  AdyenComponent,
+  AdyenError,
+  Configuration,
+  PaymentMethodData,
+  PaymentMethodsResponse,
+  useAdyenCheckout,
+} from '@adyen/react-native';
+import React, { useCallback } from 'react';
+import {
+  Button,
+  ScrollView,
+  StatusBar,
+  useColorScheme,
+  View,
+} from 'react-native';
+
+const configuration: Configuration = {
+  returnUrl: 'myapp://payment',
+  environment: 'test',
+  clientKey: '__CLIENT_KEY__',
+  card: {
+    holderNameRequired: true,
+  },
+};
+
+const paymentMethods: PaymentMethodsResponse = {
+  paymentMethods: [
+    {
+      brands: ['visa', 'mc', 'maestro'],
+      type: 'scheme',
+      name: 'Card',
+    },
+    {
+      type: 'klarna',
+      name: 'Klarna',
+    },
+  ],
+};
+
+function App(): React.JSX.Element {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  const onError = useCallback(
+    (error: AdyenError, component: AdyenComponent) => {
+      console.debug(error);
+      component.hide(false);
+    },
+    [],
+  );
+
+  const onSubmit = useCallback(
+    async (data: PaymentMethodData, dropIn: AdyenActionComponent) => {
+      try {
+        console.log('In');
+        console.log('Out');
+        dropIn.hide(true);
+      } catch (error) {
+        console.error(error);
+        dropIn.hide(false);
+      }
+    },
+    [],
+  );
+
+  return (
+    <View>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic">
+        <View style={{}}>
+          <AdyenCheckout
+            config={configuration}
+            paymentMethods={paymentMethods}
+            onSubmit={onSubmit}
+            onError={onError}
+          >
+            <MyCheckoutView />
+          </AdyenCheckout>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const MyCheckoutView = () => {
+  const { start } = useAdyenCheckout();
+
+  return (
+    <View>
+      <Button
+        testID="dropin-button"
+        title="Open DropIn"
+        onPress={async () => {
+          start('dropin');
+        }}
+      />
+      <Button
+        testID="card-button"
+        title="Open cards"
+        onPress={async () => {
+          start('card');
+        }}
+      />
+      <Button
+        testID="klarna-button"
+        title="Open Klarna"
+        onPress={async () => {
+          start('klarna');
+        }}
+      />
+      <Button
+        testID="cse-button"
+        title="CSE"
+        onPress={async () => {
+          let result = await AdyenCSE.encryptBin(
+            '545454545454',
+            '__PUBLIC_KEY__'
+          );
+          console.log(result);
+        }}
+      />
+    </View>
+  );
+};
+
+export default App;
