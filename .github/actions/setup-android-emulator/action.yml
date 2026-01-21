@@ -1,0 +1,73 @@
+name: 'Setup Android Emulator'
+description: 'Setup Android emulator environment with caching'
+
+inputs:
+  node-version:
+    description: 'Node.js version'
+    required: true
+  android-api-level:
+    description: 'Android API level'
+    required: true
+  java-version:
+    description: 'Java version'
+    default: '17'
+
+outputs:
+  avd-cache-hit:
+    description: 'Whether AVD cache was hit'
+    value: ${{ steps.avd-cache.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Provide more disk space
+      shell: bash
+      run: |
+        sudo rm -rf /opt/hostedtoolcache
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc /opt/cabal /opt/stack
+        sudo rm -rf /usr/local/.ghcup
+        sudo rm -rf "/usr/local/share/boost"
+        sudo apt-get remove -y 'php.*'
+        sudo docker image prune --all --force
+
+    - name: Enable KVM
+      shell: bash
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: ${{ inputs.java-version }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Gradle cache
+      uses: gradle/actions/setup-gradle@v5
+
+    - name: AVD cache
+      uses: actions/cache@v5
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: avd-${{ inputs.android-api-level }}
+
+    - name: Create AVD and generate snapshot for caching
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: ${{ inputs.android-api-level }}
+        target: google_apis
+        arch: x86_64
+        force-avd-creation: false
+        emulator-boot-timeout: 300
+        script: echo "Generated AVD snapshot for caching."
