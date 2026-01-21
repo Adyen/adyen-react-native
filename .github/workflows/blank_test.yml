@@ -33,9 +33,6 @@ permissions:
 
 env:
   NODE_VERSION: 20
-  ANDROID_API_LEVEL: 35
-  IOS_DEVICE_NAME: "iPhone 17"
-  IOS_VERSION: "26.1"
   APP_DIR: "tested_app"
 
 jobs:
@@ -47,7 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       platform: ${{ steps.vars.outputs.platform }}
-      version: ${{ steps.vars.outputs.version }}
       run_ios: ${{ steps.vars.outputs.run_ios }}
       run_android: ${{ steps.vars.outputs.run_android }}
     steps:
@@ -58,20 +54,11 @@ jobs:
         id: vars
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            PLATFORM="${{ github.event.inputs.platform }}"
-            VERSION="${{ github.event.inputs.version }}"
-            RUN_IOS="${{ github.event.inputs.run_ios }}"
-            RUN_ANDROID="${{ github.event.inputs.run_android }}"
-          else
-            PLATFORM="React Native"
-            VERSION="0.80.2"
-            RUN_IOS="true"
-            RUN_ANDROID="true"
-          fi
+          PLATFORM="${{ github.event.inputs.platform || "React Native" }}"
+          RUN_IOS="${{ github.event.inputs.run_ios || "true" }}"
+          RUN_ANDROID="${{ github.event.inputs.run_android || "true" }}"
 
           echo "platform=$PLATFORM" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "run_ios=$RUN_IOS" >> "$GITHUB_OUTPUT"
           echo "run_android=$RUN_ANDROID" >> "$GITHUB_OUTPUT"
 
@@ -91,12 +78,8 @@ jobs:
 
       - name: Generate Fixture
         run: |
-          if [ "${{ steps.vars.outputs.platform }}" == "Expo" ]; then
-             FLAG="-e"
-          else
-             FLAG="-r"
-          fi
-          bash ./scripts/fixture_setup.sh $FLAG "${{ steps.vars.outputs.version }}"
+          VERSION="${{ github.event.inputs.version || '0.80.2' }}"
+          bash ./scripts/fixture_setup.sh ${{ env.APP_DIR }} "${{ steps.vars.outputs.platform }}" "$VERSION"
 
       - name: Upload Fixture
         uses: actions/upload-artifact@v4
@@ -117,6 +100,9 @@ jobs:
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+      IOS_DEVICE_NAME: "iPhone 17"
+      IOS_VERSION: "26.1"
+      RUBY_VERSION: "3.2"
 
     steps:
       - name: Checkout Code
@@ -131,7 +117,7 @@ jobs:
       - name: Setup Ruby & Cocoapods
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2'
+          ruby-version: ${{ env.RUBY_VERSION }}
           bundler-cache: true
 
       - name: Download Fixture
@@ -143,7 +129,7 @@ jobs:
       - name: Install Dependencies
         working-directory: ${{ env.APP_DIR }}
         run: |
-          yarn install
+          yarn install --frozen-lockfile
 
       - name: Setup Appium
         run: |
@@ -155,12 +141,14 @@ jobs:
 
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
+        working-directory: ${{ env.APP_DIR }}
         run: |
-          bash ./scripts/inject_secrets.sh "$APP_DIR"
+          bash ../scripts/inject_secrets.sh
 
       - name: Run iOS Test
+        working-directory: ${{ env.APP_DIR }}
         run: |
-          bash ./scripts/fixture_ios.sh "$APP_DIR" "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+          bash ../scripts/fixture_ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
 
       - name: Upload Appium Failure Screenshot (iOS)
         if: always()
@@ -192,8 +180,9 @@ jobs:
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
-      target: google_apis
-      arch: x86_64
+      ANDROID_API_LEVEL: 35
+      ANDROID_TARGET: google_apis
+      ANDROID_ARCH: x86_64
 
     steps:
       - name: Provide more disk space
@@ -244,8 +233,8 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.ANDROID_API_LEVEL }}
-          target: ${{ env.target }}
-          arch: ${{ env.arch }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
           force-avd-creation: false
           emulator-boot-timeout: 300
           script: echo "Generated AVD snapshot for caching."
@@ -271,19 +260,21 @@ jobs:
 
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
+        working-directory: ${{ env.APP_DIR }}
         run: |
-          bash ./scripts/inject_secrets.sh "$APP_DIR"
+          bash ../scripts/inject_secrets.sh
 
       - name: Run Android Test
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          working-directory: ${{ env.APP_DIR }}
           api-level: ${{ env.ANDROID_API_LEVEL }}
-          target: ${{ env.target }}
-          arch: ${{ env.arch }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            bash ./scripts/fixture_android.sh "$APP_DIR" "${{ needs.setup.outputs.platform }}" "${{ env.ANDROID_API_LEVEL }}"
+            bash ../scripts/fixture_android.sh "${{ needs.setup.outputs.platform }}"
 
       - name: Upload Appium Failure Screenshot (Android)
         if: always()

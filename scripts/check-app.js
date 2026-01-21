@@ -8,12 +8,10 @@ const { remote } = require('webdriverio');
   );
 
   const androidAppPackage = process.env.APP_PACKAGE || 'com.testproject';
-  const androidAppActivity = process.env.APP_ACTIVITY || '.MainActivity';
-  const iosBundleId =
-    process.env.BUNDLE_ID || 'org.reactjs.native.example.TestProject';
+  const androidAppActivity = 'MainActivity';
+  const iosScheme = process.env.IOS_SCHEME || 'TestProject';
+  const iosBundleId = 'org.reactjs.native.example.' + iosScheme;
   const iosUdid = process.env.IOS_UDID;
-  const iosDeviceName = process.env.IOS_DEVICE_NAME;
-  const iosPlatformVersion = process.env.IOS_PLATFORM_VERSION;
 
   const waitTimeoutMs = 120000;
   const connectionRetryTimeout = isAndroid ? 240000 : 600000;
@@ -44,8 +42,6 @@ const { remote } = require('webdriverio');
           'appium:appPackage': androidAppPackage,
           'appium:appActivity': androidAppActivity,
           'appium:newCommandTimeout': 120,
-          // If you want to force a specific device (optional in CI)
-          // 'appium:deviceName': 'Android Emulator',
         }
       : {
           'platformName': 'iOS',
@@ -56,12 +52,7 @@ const { remote } = require('webdriverio');
           'appium:wdaConnectionTimeout': 600000,
           'appium:wdaStartupRetries': 3,
           'appium:wdaStartupRetryInterval': 20000,
-          ...(iosUdid ? { 'appium:udid': iosUdid } : {}),
-          ...(iosDeviceName ? { 'appium:deviceName': iosDeviceName } : {}),
-          ...(iosPlatformVersion
-            ? { 'appium:platformVersion': iosPlatformVersion }
-            : {}),
-          // 'appium:deviceName': 'iPhone 15', // Matches simulator started in shell script
+          'appium:udid': iosUdid
         },
     logLevel: 'error',
   });

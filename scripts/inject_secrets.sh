@@ -2,20 +2,11 @@
 
 set -euo pipefail
 
-name=$1
-
-if [ -z "$name" ]; then
-  echo "Error: App name argument missing."
-  exit 1
-fi
-
 # Validate Secrets exist in Environment
 if [ -z "$ADYEN_CLIENT_KEY" ] || [ -z "$ADYEN_PUBLIC_KEY" ]; then
   echo "Error: ADYEN_CLIENT_KEY and ADYEN_PUBLIC_KEY environment variables are missing."
   exit 1
 fi
-
-cd "$name" || exit
 
 echo "== Injecting Secrets"
 
