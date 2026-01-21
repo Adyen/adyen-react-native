@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - develop
-    
+
   workflow_dispatch:
     inputs:
       platform:
@@ -33,7 +33,7 @@ permissions:
 
 env:
   NODE_VERSION: 20
-  APP_DIR: "tested_app"
+  APP_DIR: 'tested_app'
 
 jobs:
   # ====================================================
@@ -100,36 +100,29 @@ jobs:
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
-      IOS_DEVICE_NAME: "iPhone 17"
-      IOS_VERSION: "26.1"
-      RUBY_VERSION: "3.2"
+      IOS_DEVICE_NAME: 'iPhone 17'
+      IOS_VERSION: '26.1'
+      RUBY_VERSION: '3.2'
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Download Fixture
+        uses: actions/download-artifact@v4
+        with:
+          name: fixture
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'yarn'
 
       - name: Setup Ruby & Cocoapods
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ env.RUBY_VERSION }}
-          bundler-cache: true
-
-      - name: Download Fixture
-        uses: actions/download-artifact@v4
-        with:
-          name: fixture
-          path: ${{ env.APP_DIR }}
 
       - name: Install Dependencies
-        working-directory: ${{ env.APP_DIR }}
         run: |
-          yarn install --frozen-lockfile
+          yarn install
 
       - name: Setup Appium
         run: |
@@ -137,25 +130,23 @@ jobs:
           appium driver install xcuitest
 
       - name: Start Appium
-        run: bash ./scripts/start_appium.sh 4723 90
+        run: bash ./start_appium.sh 4723 90
 
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
-        working-directory: ${{ env.APP_DIR }}
         run: |
-          bash ../scripts/inject_secrets.sh
+          bash ./inject_secrets.sh
 
       - name: Run iOS Test
-        working-directory: ${{ env.APP_DIR }}
         run: |
-          bash ../scripts/fixture_ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+          bash ./fixture_ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
 
       - name: Upload Appium Failure Screenshot (iOS)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: appium_failure_ios
-          path: ${{ env.APP_DIR }}/appium_failure.png
+          path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
 
@@ -164,7 +155,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: appium_page_source_ios
-          path: ${{ env.APP_DIR }}/appium_page_source.xml
+          path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
 
@@ -183,8 +174,14 @@ jobs:
       ANDROID_API_LEVEL: 35
       ANDROID_TARGET: google_apis
       ANDROID_ARCH: x86_64
+      JAVA_VERSION: 17
 
     steps:
+      - name: Download Fixture
+        uses: actions/download-artifact@v4
+        with:
+          name: fixture
+
       - name: Provide more disk space
         run: |
           sudo rm -rf /opt/hostedtoolcache
@@ -195,20 +192,16 @@ jobs:
           sudo apt-get remove -y 'php.*'
           sudo docker image prune --all --force
 
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'yarn'
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v5
@@ -239,14 +232,7 @@ jobs:
           emulator-boot-timeout: 300
           script: echo "Generated AVD snapshot for caching."
 
-      - name: Download Fixture
-        uses: actions/download-artifact@v4
-        with:
-          name: fixture
-          path: ${{ env.APP_DIR }}
-
       - name: Install Dependencies
-        working-directory: ${{ env.APP_DIR }}
         run: |
           yarn install
 
@@ -256,32 +242,30 @@ jobs:
           appium driver install uiautomator2
 
       - name: Start Appium
-        run: bash ./scripts/start_appium.sh 4723 30
+        run: bash ./start_appium.sh 4723 30
 
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
-        working-directory: ${{ env.APP_DIR }}
         run: |
-          bash ../scripts/inject_secrets.sh
+          bash ./inject_secrets.sh
 
       - name: Run Android Test
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          working-directory: ${{ env.APP_DIR }}
           api-level: ${{ env.ANDROID_API_LEVEL }}
           target: ${{ env.ANDROID_TARGET }}
           arch: ${{ env.ANDROID_ARCH }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            bash ../scripts/fixture_android.sh "${{ needs.setup.outputs.platform }}"
+            bash ./fixture_android.sh "${{ needs.setup.outputs.platform }}"
 
       - name: Upload Appium Failure Screenshot (Android)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: appium_failure_android
-          path: ${{ env.APP_DIR }}/appium_failure.png
+          path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
 
@@ -290,6 +274,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: appium_page_source_android
-          path: ${{ env.APP_DIR }}/appium_page_source.xml
+          path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1

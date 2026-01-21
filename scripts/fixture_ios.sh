@@ -19,12 +19,12 @@ else
 fi
 
 # Resolve simulator UDID
-UDID=$(bash ../scripts/resolve_ios_simulator.sh "$device_name" "$os_version")
+UDID=$(bash ./resolve_ios_simulator.sh "$device_name" "$os_version")
 
 echo "== Build iOS"
 xcodebuild -workspace "ios/$SCHEME.xcworkspace" -scheme "$SCHEME" -configuration Debug -sdk iphonesimulator -destination "platform=iOS Simulator,id=$UDID" -derivedDataPath build -quiet
 
-bash ../scripts/start_metro.sh
+bash ./start_metro.sh
 
 echo "== Install App on Simulator"
 xcrun simctl boot "$UDID" || true
