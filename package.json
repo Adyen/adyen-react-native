@@ -95,13 +95,6 @@
       "@commitlint/config-conventional"
     ]
   },
-  "prettier": {
-    "quoteProps": "consistent",
-    "singleQuote": true,
-    "tabWidth": 2,
-    "trailingComma": "es5",
-    "useTabs": false
-  },
   "react-native-builder-bob": {
     "source": "src",
     "output": "lib",
@@ -113,9 +106,12 @@
   },
   "jest": {
     "preset": "react-native",
+    "testPathIgnorePatterns": [
+      "e2e-tests",
+      "<rootDir>/example/node_modules"
+    ],
     "modulePathIgnorePatterns": [
       "_mock_",
-      "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
     ]
   },
