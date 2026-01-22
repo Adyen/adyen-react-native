@@ -5,6 +5,9 @@ on:
     branches:
       - develop
 
+  pull_request:
+    types: [opened, synchronize, reopened]
+
   workflow_dispatch:
     inputs:
       platform:
@@ -54,7 +57,7 @@ jobs:
         id: vars
         shell: bash
         run: |
-          PLATFORM="${{ github.event.inputs.platform || 'React Native' }}"
+          PLATFORM="${{ github.event.inputs.platform || 'Expo' }}"
           RUN_IOS="${{ github.event.inputs.run_ios || 'true' }}"
           RUN_ANDROID="${{ github.event.inputs.run_android || 'true' }}"
 
@@ -78,7 +81,7 @@ jobs:
 
       - name: Generate Fixture
         run: |
-          VERSION="${{ github.event.inputs.version || '0.80.2' }}"
+          VERSION="${{ github.event.inputs.version || '52' }}"
           bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ steps.vars.outputs.platform }}" "$VERSION"
 
       - name: Upload Fixture
