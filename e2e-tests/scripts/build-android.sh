@@ -14,17 +14,17 @@ fi
 
 echo "== Build Android"
 cd android || exit
-chmod +x ./gradlew || true
+chmod +x ./gradlew
 ./gradlew installDebug || bash ./gradlew installDebug
 cd ..
 
 bash ./start_metro.sh
 
 echo "== Reverse Metro Port"
-adb reverse tcp:8081 tcp:8081 || true
+adb reverse tcp:8081 tcp:8081
 
 echo "== Launch App"
-adb shell am start -n "$APP_PACKAGE/.MainActivity" >/dev/null 2>&1 || true
+adb shell am start -n "$APP_PACKAGE/.MainActivity"
 
 echo "== Run Appium Tests"
 export PLATFORM_NAME=android
