@@ -54,9 +54,9 @@ jobs:
         id: vars
         shell: bash
         run: |
-          PLATFORM="${{ github.event.inputs.platform || "React Native" }}"
-          RUN_IOS="${{ github.event.inputs.run_ios || "true" }}"
-          RUN_ANDROID="${{ github.event.inputs.run_android || "true" }}"
+          PLATFORM="${{ github.event.inputs.platform || 'React Native' }}"
+          RUN_IOS="${{ github.event.inputs.run_ios || 'true' }}"
+          RUN_ANDROID="${{ github.event.inputs.run_android || 'true' }}"
 
           echo "platform=$PLATFORM" >> "$GITHUB_OUTPUT"
           echo "run_ios=$RUN_IOS" >> "$GITHUB_OUTPUT"
@@ -79,7 +79,7 @@ jobs:
       - name: Generate Fixture
         run: |
           VERSION="${{ github.event.inputs.version || '0.80.2' }}"
-          bash ./scripts/fixture_setup.sh ${{ env.APP_DIR }} "${{ steps.vars.outputs.platform }}" "$VERSION"
+          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ steps.vars.outputs.platform }}" "$VERSION"
 
       - name: Upload Fixture
         uses: actions/upload-artifact@v4
@@ -139,7 +139,7 @@ jobs:
 
       - name: Run iOS Test
         run: |
-          bash ./fixture_ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+          bash ./build-ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
 
       - name: Upload Appium Failure Screenshot (iOS)
         if: always()
@@ -218,7 +218,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            bash ./fixture_android.sh "${{ needs.setup.outputs.platform }}"
+            bash ./build-android.sh "${{ needs.setup.outputs.platform }}"
 
       - name: Upload Appium Failure Screenshot (Android)
         if: always()

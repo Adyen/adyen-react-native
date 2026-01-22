@@ -29,4 +29,4 @@ adb shell am start -n "$APP_PACKAGE/.MainActivity" >/dev/null 2>&1 || true
 echo "== Run Appium Tests"
 export PLATFORM_NAME=android
 export APP_PACKAGE
-node ./check-app.js
+node ./run-appium.js

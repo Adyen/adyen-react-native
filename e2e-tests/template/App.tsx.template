@@ -70,7 +70,7 @@ function App(): React.JSX.Element {
     <View>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <ScrollView contentInsetAdjustmentBehavior="automatic">
-        <View style={{}}>
+        <View>
           <AdyenCheckout
             config={configuration}
             paymentMethods={paymentMethods}

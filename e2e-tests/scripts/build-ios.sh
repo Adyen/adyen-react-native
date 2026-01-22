@@ -35,4 +35,4 @@ echo "== Run Appium Tests"
 export PLATFORM_NAME=ios
 export IOS_UDID="$UDID"
 export IOS_SCHEME="$SCHEME"
-node ./check-app.js
+node ./run-appium.js
