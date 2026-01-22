@@ -190,7 +190,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           android-api-level: ${{ env.ANDROID_API_LEVEL }}
-          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Install Dependencies
         run: |
