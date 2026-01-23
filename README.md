@@ -405,9 +405,14 @@ result = await ApiClient.paymentDetails(data);
 - [Drop-in documentation][adyen-docs-dropin]
 - [Component documentation][adyen-docs-components]
 
-# Contributing
+## Contributing
 
-We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md).
+We strongly encourage you to join us in contributing to this repository so everyone can benefit from:
+* New features and functionality
+* Resolved bug fixes and issues
+* Any general improvements
+
+Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
 
 # Support
 
