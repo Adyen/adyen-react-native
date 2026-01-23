@@ -72,7 +72,7 @@ Add `@adyen/react-native` plugin to your `app.json`;
 
 ### merchantIdentifier
 
-Sets ApplePay Merchant ID to your iOS app's entitlment file. Empty by default.
+Sets ApplePay Merchant ID to your iOS app's entitlement file. Empty by default.
 
 ### useFrameworks
 
@@ -101,54 +101,43 @@ Adjust `import` on iOS in case your `Podfile` have `use_frameworks!` enabled.
 ## iOS integration
 
 1. run `pod install`
-2. add return URL handler to your `AppDelegate.m(m)`
-```objc
-#import <adyen-react-native/ADYRedirectComponent.h>
-
-...
-
-- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-  return [ADYRedirectComponent applicationDidOpenURL:url];
-}
-```
-
-For Swift:
+2. add return URL handler to your `AppDelegate.swift`
 
 ```swift
-import Adyen
+import adyen_react_native
 
-...
+// ...
 
-func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey: Any] = [:]) -> Bool {
-    return RedirectComponent.applicationDidOpen(from: url)
+func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    return ADYRedirectComponent.applicationDidOpen(url)
 }
 ```
 
-In case you are using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpenURL` before them.
+In case you are using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpen` before them.
 
-```objc
-- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-  return [ADYRedirectComponent applicationDidOpenURL:url] || [RCTLinkingManager application:application openURL:url options:options];
+```swift
+func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    return ADYRedirectComponent.applicationDidOpen(url) || RCTLinkingManager.application(app, open: url, options: options)
 }
 ```
 
 For Universal Link support, use:
-```objc
-- (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
-  if ([[userActivity activityType] isEqualToString:NSUserActivityTypeBrowsingWeb]) {
-   NSURL *url = [userActivity webpageURL];
-    if (![url isEqual:[NSNull null]] && [ADYRedirectComponent applicationDidOpenURL:url]) {
-      return YES;
+
+```swift
+func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+    if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+       let url = userActivity.webpageURL,
+       ADYRedirectComponent.applicationDidOpen(url) {
+        return true
     }
-  }
-  return [RCTLinkingManager application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
+    return RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
 }
 ```
 
-> ❕ If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`-`):
-> 
-> ```objc
-> #import <adyen_react_native/ADYRedirectComponent.h>
+> ❕ If your `Podfile` does **not** have `use_frameworks!`, then change import to use hyphens(`-`) instead of underscores(`_`):
+>
+> ```swift
+> import adyen_react_native
 > ```
 
 3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
@@ -159,23 +148,24 @@ Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/
 
 ## Android integration
 
-1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
-```java
-import com.adyenreactnativesdk.AdyenCheckout;
-import android.os.Bundle;
+1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.kt`.
 
-...
+```kotlin
+import com.adyenreactnativesdk.AdyenCheckout
+import android.os.Bundle
 
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-  super.onCreate(null);
-  AdyenCheckout.setLauncherActivity(this);
+// ...
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+    AdyenCheckout.setLauncherActivity(this)
 }
 ```
 
 ### For standalone components
 
 1. Add `intent-filter` to your Checkout activity:
+
 ```xml
 <intent-filter>
     <action android:name="android.intent.action.VIEW" />
@@ -185,29 +175,29 @@ protected void onCreate(Bundle savedInstanceState) {
 </intent-filter>
 ```
 
-2. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.java`:
-```java
-import android.content.Intent;
+2. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.kt`:
 
-...
+```kotlin
+import android.content.Intent
 
-@Override
-public void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    AdyenCheckout.handleIntent(intent);
+// ...
+
+override fun onNewIntent(intent: Intent) {
+  super.onNewIntent(intent)
+  intent.let { AdyenCheckout.handleIntent(it) }
 }
 ```
 
-3. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.java`:
-```java
-@Override
-public void onActivityResult(int requestCode, int resultCode, Intent data) {
-  super.onActivityResult(requestCode, resultCode, data);
-  AdyenCheckout.handleActivityResult(requestCode, resultCode, data);
+3. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.kt`:
+
+```kotlin
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)
 }
 ```
 
-4. Make sure your main app theme is decendent of `Theme.MaterialComponents`.
+4. Make sure your main app theme is descendant of `Theme.MaterialComponents`.
 
 ```xml
   <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
@@ -300,7 +290,7 @@ import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
 
   const onComplete = useCallback( (result, nativeComponent ) => {
-    /* When this callbeck executed, you must call `component.hide(true | false)` to dismiss the payment UI. */
+    /* When this callback executed, you must call `component.hide(true | false)` to dismiss the payment UI. */
   }, [some, dependency]);
   const onError = useCallback( (error, component) => {
     /* Handle errors or termination by shopper */
@@ -350,7 +340,7 @@ import { useCallback } from 'react';
 
 ## Handling Actions
 
-Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end chalanges, use `nativeComponent.handle(action)` from  `onSubmit` callback.
+Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end challenges, use `nativeComponent.handle(action)` from `onSubmit` callback.
 
 ```javascript
 const handleSubmit = (paymentData, nativeComponent) => {
