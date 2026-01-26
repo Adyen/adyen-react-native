@@ -129,7 +129,7 @@ import Adyen
 // ...
 
 func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-    retrurn RedirectComponent.applicationDidOpen(from: url)
+    return RedirectComponent.applicationDidOpen(from: url)
 }
 ```
 
@@ -201,16 +201,7 @@ override fun onNewIntent(intent: Intent) {
 }
 ```
 
-4. For GooglePay, add `onActivityResult` handler in `MainActivity.kt`:
-
-```kotlin
-override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    super.onActivityResult(requestCode, resultCode, data)
-    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)
-}
-```
-
-5. Ensure your app theme extends `Theme.MaterialComponents`:
+4. Ensure your app theme extends `Theme.MaterialComponents`:
 
 ```xml
 <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
