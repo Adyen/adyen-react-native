@@ -197,7 +197,7 @@ import android.content.Intent
 
 override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
-    intent.let { AdyenCheckout.handleIntent(it) }
+    AdyenCheckout.handleIntent(intent)
 }
 ```
 
@@ -408,9 +408,9 @@ result = await ApiClient.paymentDetails(data);
 ## Contributing
 
 We strongly encourage you to join us in contributing to this repository so everyone can benefit from:
-* New features and functionality
-* Resolved bug fixes and issues
-* Any general improvements
+- New features and functionality
+- Resolved bug fixes and issues
+- Any general improvements
 
 Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
 
