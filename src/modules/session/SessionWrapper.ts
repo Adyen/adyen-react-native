@@ -1,9 +1,16 @@
-import type { NativeModule } from 'react-native';
-import type {
-  AdyenComponent,
-  EnvironmentConfiguration,
-  HideOption,
-  SessionConfiguration,
+import {
+  type NativeModule,
+  type EmitterSubscription,
+  NativeEventEmitter,
+} from 'react-native';
+import {
+  Event,
+  type AdyenComponent,
+  type AdyenError,
+  type EnvironmentConfiguration,
+  type HideOption,
+  type SessionConfiguration,
+  type SessionsResult,
 } from '../../core';
 import type { SessionHelperModule } from './SessionHelperModule';
 import type { SessionContext } from './types';
@@ -17,10 +24,13 @@ interface SessionNativeModule extends NativeModule, AdyenComponent {
 }
 
 export class SessionWrapper implements SessionHelperModule {
-  private readonly nativeModule: SessionNativeModule;
+  private nativeModule: SessionNativeModule;
+  private eventEmitter: NativeEventEmitter;
+  private subscriptions: EmitterSubscription[] = [];
 
   constructor(nativeModule: SessionNativeModule) {
     this.nativeModule = nativeModule;
+    this.eventEmitter = new NativeEventEmitter(nativeModule);
   }
 
   hide(success: boolean, option?: HideOption): void {
@@ -32,5 +42,41 @@ export class SessionWrapper implements SessionHelperModule {
     configuration: EnvironmentConfiguration
   ): Promise<SessionContext> {
     return this.nativeModule.createSession(session, configuration);
+  }
+
+  /**
+   * Subscribe to session completion events.
+   * @param callback - Called when the session completes successfully.
+   * @returns EmitterSubscription that can be used to remove the listener.
+   */
+  onComplete(callback: (result: SessionsResult) => void): EmitterSubscription {
+    const subscription = this.eventEmitter.addListener(
+      Event.onSessionComplete,
+      callback
+    );
+    this.subscriptions.push(subscription);
+    return subscription;
+  }
+
+  /**
+   * Subscribe to session error events.
+   * @param callback - Called when the session fails with an error.
+   * @returns EmitterSubscription that can be used to remove the listener.
+   */
+  onError(callback: (error: AdyenError) => void): EmitterSubscription {
+    const subscription = this.eventEmitter.addListener(
+      Event.onSessionError,
+      callback
+    );
+    this.subscriptions.push(subscription);
+    return subscription;
+  }
+
+  /**
+   * Remove all session event listeners.
+   */
+  removeAllListeners(): void {
+    this.subscriptions.forEach((sub) => sub.remove());
+    this.subscriptions = [];
   }
 }

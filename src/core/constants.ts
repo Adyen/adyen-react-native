@@ -24,6 +24,10 @@ export enum Event {
   onBinLookup = `didBinLookupCallback`,
   /** Event handler, called when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field changes. */
   onBinValue = `didChangeBinValueCallback`,
+  /** Event handler, called when a shopper finishes the flow (Voucher payments only). */
+  onSessionComplete = 'didSessionCompleteCallback',
+  /** Event handler, called when payment about to be terminate. */
+  onSessionError = 'didSessionErrorCallback',
 }
 
 /** Collection of errors components can throw. */

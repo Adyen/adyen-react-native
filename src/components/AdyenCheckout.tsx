@@ -109,11 +109,13 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   useEffect(() => {
     return () => {
       removeEventListeners();
+      SessionHelper.removeAllListeners();
     };
   }, []);
 
   useEffect(() => {
     if (session && !sessionContext) {
+      SessionHelper.removeAllListeners();
       SessionHelper.createSession(session, config)
         .then((sessionResponse) => {
           setSessionContext(sessionResponse);
@@ -127,8 +129,14 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
             SessionHelper
           );
         });
+      SessionHelper.onComplete((result) => {
+        onComplete?.(result, SessionHelper);
+      });
+      SessionHelper.onError((error) => {
+        onError?.(error, SessionHelper);
+      });
     }
-  }, [session, sessionContext, config, onError, setSessionContext]);
+  }, [session, sessionContext, config, onComplete, onError, setSessionContext]);
 
   const startEventListeners = useCallback(
     (nativeComponent: PaymentComponentWrapper & AdyenActionComponent) => {

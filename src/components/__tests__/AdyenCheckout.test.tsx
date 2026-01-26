@@ -29,6 +29,9 @@ jest.mock('../../modules/session/SessionHelperModule', () => ({
     createSession: (session: any, config: any) =>
       mockCreateSession(session, config),
     hide: jest.fn(),
+    removeAllListeners: jest.fn(),
+    onComplete: jest.fn(),
+    onError: jest.fn(),
   },
 }));
 

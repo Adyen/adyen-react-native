@@ -120,5 +120,71 @@ describe('SessionWrapper', () => {
       const wrapper = new SessionWrapper(mockNativeModule);
       expect(typeof wrapper.hide).toBe('function');
     });
+
+    test('should implement onComplete method', () => {
+      const wrapper = new SessionWrapper(mockNativeModule);
+      expect(typeof wrapper.onComplete).toBe('function');
+    });
+
+    test('should implement onError method', () => {
+      const wrapper = new SessionWrapper(mockNativeModule);
+      expect(typeof wrapper.onError).toBe('function');
+    });
+
+    test('should implement removeAllListeners method', () => {
+      const wrapper = new SessionWrapper(mockNativeModule);
+      expect(typeof wrapper.removeAllListeners).toBe('function');
+    });
+  });
+
+  describe('event subscriptions', () => {
+    test('onComplete should return subscription and track it', () => {
+      const wrapper = new SessionWrapper(mockNativeModule);
+      const callback = jest.fn();
+
+      const subscription = wrapper.onComplete(callback);
+
+      expect(subscription).toBeDefined();
+      expect(typeof subscription.remove).toBe('function');
+    });
+
+    test('onError should return subscription and track it', () => {
+      const wrapper = new SessionWrapper(mockNativeModule);
+      const callback = jest.fn();
+
+      const subscription = wrapper.onError(callback);
+
+      expect(subscription).toBeDefined();
+      expect(typeof subscription.remove).toBe('function');
+    });
+
+    test('removeAllListeners should remove all tracked subscriptions', () => {
+      const wrapper = new SessionWrapper(mockNativeModule);
+      const mockRemove1 = jest.fn();
+      const mockRemove2 = jest.fn();
+
+      const sub1 = wrapper.onComplete(jest.fn());
+      const sub2 = wrapper.onError(jest.fn());
+
+      // Replace remove functions to track calls
+      sub1.remove = mockRemove1;
+      sub2.remove = mockRemove2;
+
+      wrapper.removeAllListeners();
+
+      expect(mockRemove1).toHaveBeenCalled();
+      expect(mockRemove2).toHaveBeenCalled();
+    });
+
+    test('removeAllListeners should clear subscriptions array', () => {
+      const wrapper = new SessionWrapper(mockNativeModule);
+
+      wrapper.onComplete(jest.fn());
+      wrapper.onError(jest.fn());
+      wrapper.removeAllListeners();
+
+      // Calling again should not throw (array is empty)
+      expect(() => wrapper.removeAllListeners()).not.toThrow();
+    });
   });
 });
