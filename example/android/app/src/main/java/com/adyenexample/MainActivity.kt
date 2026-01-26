@@ -24,21 +24,12 @@ class MainActivity : ReactActivity() {
   override fun createReactActivityDelegate(): ReactActivityDelegate = DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+    super.onCreate(null)
     AdyenCheckout.setLauncherActivity(this)
   }
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
-    intent.let { AdyenCheckout.handleIntent(it) }
-  }
-
-  override fun onActivityResult(
-    requestCode: Int,
-    resultCode: Int,
-    data: Intent?,
-  ) {
-    super.onActivityResult(requestCode, resultCode, data)
-    AdyenCheckout.handleActivityResult(requestCode, resultCode, data)
+    AdyenCheckout.handleIntent(intent)
   }
 }

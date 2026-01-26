@@ -10,8 +10,8 @@
 >
 > For projects using versions lower than 0.76.0, please:
 >
-> * Continue utilizing the **Old Architecture**.
-> * Alternatively, disable bridgeless mode by setting `load(bridgelessEnabled=false)`.
+> - Continue utilizing the **Old Architecture**.
+> - Alternatively, disable bridgeless mode by setting `load(bridgelessEnabled=false)`.
 
 > [!Note]
 >
@@ -25,62 +25,66 @@ Adyen React Native provides you with the building blocks to create a checkout ex
 
 You can integrate with Adyen React Native in two ways:
 
-- [Drop-in](adyen-docs-dropin): React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
-- [Components](adyen-docs-components): React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combined with your own payments flow.
+- [Drop-in][adyen-docs-dropin]: React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
+- [Components][adyen-docs-components]: React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combined with your own payments flow.
 
-## Contributing
+## Table of Contents
 
-We strongly encourage you to contribute to our repository. Find out more in our [contribution guidelines](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+  - [Expo](#expo-integration)
+  - [Manual Integration](#manual-integration)
+- [Usage](#usage)
+  - [Configuration](#configuration)
+  - [Sessions Flow](#sessions-flow)
+  - [Advanced Flow](#advanced-flow)
+  - [Handling Actions](#handling-actions)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Support](#support)
+- [License](#license)
 
 ## Prerequisites
 
-* [Adyen test account](https://www.adyen.com/signup)
-* [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key)
-* [Client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key)
+- [Adyen test account](https://www.adyen.com/signup)
+- [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key)
+- [Client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key)
 
-# Integration
+# Installation
 
-Add `@adyen/react-native` to your react-native project.
+Add `@adyen/react-native` to your React Native project:
+
 ```bash
 yarn add @adyen/react-native
 ```
 
-## Expo integration
+## Expo Integration
 
 > [!IMPORTANT]
 >
 > This library is not compatible with Expo Go. It is designed exclusively for use with the [Continuous Native Generation](https://docs.expo.dev/workflow/overview/#continuous-native-generation-cng).
 
-Add `@adyen/react-native` plugin to your `app.json`;
+Add `@adyen/react-native` plugin to your `app.json`:
 
-```js
+```json
 {
   "expo": {
     "plugins": ["@adyen/react-native"]
   }
 }
-
 ```
 
-> In case you are facing issues with the plugin, please pre-build your app and investigate the files generated:
->
-> ```bash
-> npx expo prebuild --clean
-> ```
+<details>
+<summary><strong>Plugin Configuration Options</strong></summary>
 
-## Expo plugin configuration
+| Option               | Description                                                                     |
+| -------------------- | ------------------------------------------------------------------------------- |
+| `merchantIdentifier` | Sets ApplePay Merchant ID to your iOS app's entitlement file. Empty by default. |
+| `useFrameworks`      | Adjust `import` on iOS in case your `Podfile` has `use_frameworks!` enabled.    |
 
-### merchantIdentifier
+**Example with all options:**
 
-Sets ApplePay Merchant ID to your iOS app's entitlment file. Empty by default.
-
-### useFrameworks
-
-Adjust `import` on iOS in case your `Podfile` have `use_frameworks!` enabled.
-
-## Example
-
-```js
+```json
 {
   "expo": {
     "plugins": [
@@ -96,86 +100,85 @@ Adjust `import` on iOS in case your `Podfile` have `use_frameworks!` enabled.
 }
 ```
 
-# Manual Integration
+</details>
 
-## iOS integration
+> [!TIP]
+>
+> If you are facing issues with the plugin, pre-build your app and investigate the generated files:
+>
+> ```bash
+> npx expo prebuild --clean
+> ```
 
-1. run `pod install`
-2. add return URL handler to your `AppDelegate.m(m)`
-```objc
-#import <adyen-react-native/ADYRedirectComponent.h>
+## Manual Integration
 
-...
+> [!NOTE]
+>
+> For Objective-C and Java integration, see the [legacy documentation](https://github.com/Adyen/adyen-react-native/tree/2.9.0?tab=readme-ov-file#ios-integration).
 
-- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-  return [ADYRedirectComponent applicationDidOpenURL:url];
-}
-```
+<details>
+<summary><strong>iOS Setup</strong></summary>
 
-For Swift:
+1. Run `pod install`
+
+2. Add `returnURL` handler to your `AppDelegate.swift`:
 
 ```swift
 import Adyen
 
-...
+// ...
 
-func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey: Any] = [:]) -> Bool {
+func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
     return RedirectComponent.applicationDidOpen(from: url)
 }
 ```
 
-In case you are using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpenURL` before them.
+If using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpen` before them:
 
-```objc
-- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-  return [ADYRedirectComponent applicationDidOpenURL:url] || [RCTLinkingManager application:application openURL:url options:options];
+```swift
+func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    return RedirectComponent.applicationDidOpen(from: url) || RCTLinkingManager.application(app, open: url, options: options)
 }
 ```
 
-For Universal Link support, use:
-```objc
-- (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
-  if ([[userActivity activityType] isEqualToString:NSUserActivityTypeBrowsingWeb]) {
-   NSURL *url = [userActivity webpageURL];
-    if (![url isEqual:[NSNull null]] && [ADYRedirectComponent applicationDidOpenURL:url]) {
-      return YES;
+For Universal Link support:
+
+```swift
+func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+    if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+       let url = userActivity.webpageURL,
+       RedirectComponent.applicationDidOpen(from: url) {
+        return true
     }
-  }
-  return [RCTLinkingManager application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
+    return RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
 }
 ```
-
-> ❕ If your `Podfile` has `use_frameworks!`, then change import path in `AppDelegate.m(m)` to use underscore(`_`) instead of hyphens(`-`):
-> 
-> ```objc
-> #import <adyen_react_native/ADYRedirectComponent.h>
-> ```
 
 3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
 
-### For ApplePay
+4. **For ApplePay:** Follow the [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
 
-Follow general [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
+</details>
 
-## Android integration
+<details>
+<summary><strong>Android Setup</strong></summary>
 
-1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.java`.
-```java
-import com.adyenreactnativesdk.AdyenCheckout;
-import android.os.Bundle;
+1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.kt`:
 
-...
+```kotlin
+import com.adyenreactnativesdk.AdyenCheckout
+import android.os.Bundle
 
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-  super.onCreate(null);
-  AdyenCheckout.setLauncherActivity(this);
+// ...
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+    AdyenCheckout.setLauncherActivity(this)
 }
 ```
 
-### For standalone components
+2. Add `intent-filter` to your Checkout activity (for standalone components):
 
-1. Add `intent-filter` to your Checkout activity:
 ```xml
 <intent-filter>
     <action android:name="android.intent.action.VIEW" />
@@ -185,35 +188,28 @@ protected void onCreate(Bundle savedInstanceState) {
 </intent-filter>
 ```
 
-2. To enable standalone redirect components, return URL handler to your Checkout activity `onNewIntent` in `MainActivity.java`:
-```java
-import android.content.Intent;
+3. Add `returnURL` handler for standalone redirect components in `MainActivity.kt`:
 
-...
+```kotlin
+import android.content.Intent
 
-@Override
-public void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    AdyenCheckout.handleIntent(intent);
+// ...
+
+override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    AdyenCheckout.handleIntent(intent)
 }
 ```
 
-3. To enable GooglePay, pass state to your Checkout activity `onActivityResult` in `MainActivity.java`:
-```java
-@Override
-public void onActivityResult(int requestCode, int resultCode, Intent data) {
-  super.onActivityResult(requestCode, resultCode, data);
-  AdyenCheckout.handleActivityResult(requestCode, resultCode, data);
-}
-```
-
-4. Make sure your main app theme is decendent of `Theme.MaterialComponents`.
+4. Ensure your app theme extends `Theme.MaterialComponents`:
 
 ```xml
-  <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+<style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     <!-- Your configuration here -->
-  </style>
+</style>
 ```
+
+</details>
 
 # Usage
 
@@ -257,16 +253,16 @@ const configuration: Configuration = {
 </tr>
 <tr>
   <td> Sessions flow </td> 
-  <td> 
+  <td>
 
-  To make `\sessions` API call use `AdyenDropIn.getReturnURL()` to fetch `returnUrl`.
+To make `\sessions` API call use `AdyenDropIn.getReturnURL()` to fetch `returnUrl`.
 
-  ```js
-  const returnUrl = Platform.select({
-     ios: 'myapp://payment',
-     android: await AdyenDropIn.getReturnURL(),
-  });
-  ```
+```js
+const returnUrl = Platform.select({
+  ios: 'myapp://payment',
+  android: await AdyenDropIn.getReturnURL(),
+});
+```
 
   </td>
 </tr> 
@@ -293,19 +289,21 @@ const MyCheckoutView = () => {
 };
 ```
 
-### Sessions flow
+### Sessions Flow
 
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
 
-  const onComplete = useCallback( (result, nativeComponent ) => {
-    /* When this callbeck executed, you must call `component.hide(true | false)` to dismiss the payment UI. */
-  }, [some, dependency]);
-  const onError = useCallback( (error, component) => {
-    /* Handle errors or termination by shopper */
-    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
-  }, []);
+const onComplete = useCallback((result, component) => {
+  // Payment was completed - call `component.hide(true)` to dismiss the payment UI.
+  // Call /sessions/(sessionId)?sessionResult={result} API to get more information about the payment outcome.
+}, []);
+
+const onError = useCallback((error, component) => {
+  // Payment was terminated by shopper or encountered an error
+  // Call `component.hide(false)` to dismiss the payment UI.
+}, []);
 
 <AdyenCheckout
   config={configuration}
@@ -317,25 +315,28 @@ import { useCallback } from 'react';
 </AdyenCheckout>;
 ```
 
-### Advanced flow
+### Advanced Flow
 
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
 
-  const onSubmit = useCallback( (data, nativeComponent ) => {
-    /* Call your server to make the `/payments` request, make sure you pass `returnUrl:data.returnUrl` to make redirect flow work cross platform */
-    /* When the API request contains `action`, you should call `component.handle(response.action)` to dismiss the payment UI. */
-    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }, [some, dependency]);
-  const onAdditionalDetails = useCallback( (paymentData, component) => {
-    /* Call your server to make the `/payments/details` request */
-    /* When the API request is completed, you must now call `component.hide(true | false)` to dismiss the payment UI. */
-  }, []);
-  const onError = useCallback( (error, component) => {
-    /* Handle errors or termination by shopper */
-    /* When the API request is completed, you must now call `component.hide(false)` to dismiss the payment UI. */
-  }, []);
+const onSubmit = useCallback((data, component) => {
+  // Call your server to make the `/payments` request
+  // Pass `returnUrl: data.returnUrl` for cross-platform redirect flow
+  // If response contains `action`, call `component.handle(response.action)`
+  // Otherwise, call `component.hide(true | false)` to dismiss the payment UI
+}, []);
+
+const onAdditionalDetails = useCallback((paymentData, component) => {
+  // Call your server to make the `/payments/details` request
+  // Call `component.hide(true | false)` to dismiss the payment UI
+}, []);
+
+const onError = useCallback((error, component) => {
+  // Payment was terminated by shopper or encountered an error
+  // Call `component.hide(false)` to dismiss the payment UI
+}, []);
 
 <AdyenCheckout
   config={configuration}
@@ -350,7 +351,7 @@ import { useCallback } from 'react';
 
 ## Handling Actions
 
-Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end chalanges, use `nativeComponent.handle(action)` from  `onSubmit` callback.
+Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end challenges, use `nativeComponent.handle(action)` from `onSubmit` callback.
 
 ```javascript
 const handleSubmit = (paymentData, nativeComponent) => {
@@ -378,6 +379,7 @@ In case of API-only integration `AdyenAction.handle` could be used.
 Before you begin, make sure you follow all [iOS integration](#ios-integration) and [Android integration](#android-integration) steps.
 
 Example:
+
 ```js
 import { AdyenAction } from '@adyen/react-native';
 
@@ -394,13 +396,22 @@ result = await ApiClient.paymentDetails(data);
 - [Drop-in documentation][adyen-docs-dropin]
 - [Component documentation][adyen-docs-components]
 
+## Contributing
+
+We strongly encourage you to join us in contributing to this repository so everyone can benefit from:
+- New features and functionality
+- Resolved bug fixes and issues
+- Any general improvements
+
+Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
+
 # Support
 
-If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our Support Team via [Customer Area](https://ca-live.adyen.com/ca/ca/contactUs/support.shtml) or via email: support@adyen.com
+If you have a feature request, or spotted a bug or a technical problem, [create a GitHub issue](https://github.com/Adyen/adyen-react-native/issues/new/choose). For other questions, contact our Support Team via [Customer Area](https://ca-live.adyen.com/ca/ca/contactUs/support.shtml) or via email: support@adyen.com
 
 # License
 
-MIT license. For more information, see the LICENSE file.
+MIT license. For more information, see the [LICENSE](LICENSE) file.
 
 [client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
 [configuration]: /docs/Configuration.md
