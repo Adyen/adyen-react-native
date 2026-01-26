@@ -112,16 +112,16 @@ Add `@adyen/react-native` plugin to your `app.json`:
 
 ## Manual Integration
 
+> [!NOTE]
+>
+> For Objective-C and Java integration, see the [legacy documentation](https://github.com/Adyen/adyen-react-native/tree/2.9.0?tab=readme-ov-file#ios-integration).
+
 <details>
 <summary><strong>iOS Setup</strong></summary>
 
-> [!NOTE]
->
-> For Objective-C integration, see the [legacy documentation](https://github.com/Adyen/adyen-react-native/tree/2.9.0?tab=readme-ov-file#ios-integration).
-
 1. Run `pod install`
 
-2. Add return URL handler to your `AppDelegate.swift`:
+2. Add `returnURL` handler to your `AppDelegate.swift`:
 
 ```swift
 import Adyen
@@ -129,7 +129,7 @@ import Adyen
 // ...
 
 func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-    RedirectComponent.applicationDidOpen(from: url)
+    retrurn RedirectComponent.applicationDidOpen(from: url)
 }
 ```
 
@@ -188,7 +188,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
 </intent-filter>
 ```
 
-3. Add return URL handler for standalone redirect components in `MainActivity.kt`:
+3. Add `returnURL` handler for standalone redirect components in `MainActivity.kt`:
 
 ```kotlin
 import android.content.Intent
