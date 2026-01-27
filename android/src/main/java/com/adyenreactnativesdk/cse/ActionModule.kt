@@ -1,6 +1,5 @@
 package com.adyenreactnativesdk.cse
 
-import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
 import com.adyen.checkout.components.core.ActionComponentCallback
 import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.CheckoutConfiguration
@@ -8,19 +7,20 @@ import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.threeds2.ThreeDS2Service
-import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 
 class ActionModule(
-  context: ReactApplicationContext?,
-) : BaseModule(context),
-  CheckoutProxy.ComponentEventListener,
+  reactContext: ReactApplicationContext?,
+  messageBus: MessageBus,
+) : BaseModule(reactContext, messageBus),
   ActionComponentCallback {
   private var promise: Promise? = null
 
@@ -48,7 +48,7 @@ class ActionModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       action = Action.SERIALIZER.deserialize(jsonObject)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: ModuleException) {
       promise.reject(e.code, e.message, e)
       return
@@ -86,9 +86,7 @@ class ActionModule(
   }
 
   override fun onError(componentError: ComponentError) {
-    if (componentError.exception is CancellationException ||
-      componentError.exception is Cancelled3DS2Exception
-    ) {
+    if (componentError.exception is CancellationException) {
       promise?.reject(
         ModuleException.Canceled().code,
         ModuleException.Canceled().message,

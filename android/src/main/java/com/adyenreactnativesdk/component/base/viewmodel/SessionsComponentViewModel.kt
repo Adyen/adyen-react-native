@@ -1,14 +1,16 @@
 package com.adyenreactnativesdk.component.base.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.viewModelScope
+import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.PaymentMethod
+import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyen.checkout.sessions.core.SessionPaymentResult
-import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.ComponentData
+import com.adyenreactnativesdk.component.base.ModuleException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -27,9 +29,17 @@ class SessionsComponentViewModel<TState : PaymentComponentState<*>, TComponentDa
   }
 
   override fun onFinished(result: SessionPaymentResult) {
-    CheckoutProxy.shared.componentListener?.let { it.onFinished(result) } ?: {
-      Log.e(TAG, COMPONENT_LISTENER_IS_NULL)
-    }
+    AdyenPaymentPackage.messageBus.onFinished(result)
+  }
+
+  override fun onError(componentError: ComponentError) {
+    val exception =
+      if (componentError.exception is CancellationException) {
+        ModuleException.Canceled()
+      } else {
+        componentError.exception
+      }
+    AdyenPaymentPackage.messageBus.onSessionException(exception)
   }
 
   companion object {

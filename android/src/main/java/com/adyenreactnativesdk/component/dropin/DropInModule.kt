@@ -7,34 +7,38 @@
 package com.adyenreactnativesdk.component.dropin
 
 import android.util.Log
+import androidx.activity.result.ActivityResultCaller
+import androidx.activity.result.ActivityResultLauncher
 import com.adyen.checkout.card.BinLookupData
-import com.adyen.checkout.components.core.AddressData
 import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.BalanceResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
-import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.dropin.AddressLookupDropInServiceResult
 import com.adyen.checkout.dropin.BalanceDropInServiceResult
 import com.adyen.checkout.dropin.BaseDropInServiceContract
+import com.adyen.checkout.dropin.DropIn
 import com.adyen.checkout.dropin.DropIn.startPayment
+import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInServiceResult
 import com.adyen.checkout.dropin.ErrorDialog
 import com.adyen.checkout.dropin.OrderDropInServiceResult
 import com.adyen.checkout.dropin.RecurringDropInServiceResult
+import com.adyen.checkout.dropin.SessionDropInCallback
+import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
+import com.adyen.checkout.dropin.internal.ui.model.SessionDropInResultContractParams
 import com.adyen.checkout.redirect.RedirectComponent
-import com.adyen.checkout.sessions.core.SessionPaymentResult
-import com.adyenreactnativesdk.AdyenCheckout
-import com.adyenreactnativesdk.component.CheckoutProxy
+import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.component.model.AddressDataAdapter
-import com.adyenreactnativesdk.component.model.BinLookupDataDTO
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.CardComponentEventListener
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -43,23 +47,18 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import com.facebook.react.jstasks.HeadlessJsTaskContext
-import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
-import com.google.gson.GsonBuilder
-import org.json.JSONArray
-import org.json.JSONObject
+import com.google.gson.Gson
 
 class DropInModule(
   context: ReactApplicationContext?,
-) : BaseModule(context),
-  ReactDropInCallback,
+  messageBus: MessageBus,
+  private val gson: Gson,
+) : BaseModule(context, messageBus),
   AddressLookupCallback,
-  CheckoutProxy.CardComponentEventListener {
+  CardComponentEventListener {
   private var taskId: Int? = null
 
-  private fun getService(): BaseDropInServiceContract? =
-    if (session != null) CheckoutProxy.shared.sessionService else CheckoutProxy.shared.advancedService
-
-  private var storedPaymentMethodID: String? = null
+  private fun getService(): BaseDropInServiceContract? = if (session != null) sessionService else advancedService
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -71,7 +70,7 @@ class DropInModule(
 
   @ReactMethod
   fun getReturnURL(promise: Promise) {
-    promise.resolve(getRedirectUrl())
+    promise.resolve(RedirectComponent.getReturnUrl(reactApplicationContext))
   }
 
   override fun getName(): String = COMPONENT_NAME
@@ -85,52 +84,41 @@ class DropInModule(
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
       paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: java.lang.Exception) {
-      return sendErrorEvent(e)
+      return sendError(e)
     }
 
-    CheckoutProxy.shared.componentListener = this
-    AdyenCheckout.addDropInListener(this)
     val session = session
     if (session != null) {
-      AdyenCheckout.dropInSessionLauncher?.let {
-        startBackgroundService()
-        startPayment(
-          reactApplicationContext,
-          it,
-          session,
-          checkoutConfiguration,
-          SessionCheckoutService::class.java,
-        )
-      } ?: throw ModuleException.NoActivity()
+      startBackgroundService()
+      startPayment(
+        reactApplicationContext,
+        dropInSessionLauncher,
+        session,
+        checkoutConfiguration,
+        SessionCheckoutService::class.java,
+      )
     } else {
-      AdyenCheckout.dropInLauncher?.let {
-        startBackgroundService()
-        startPayment(
-          reactApplicationContext,
-          it,
-          paymentMethodsResponse,
-          checkoutConfiguration,
-          AdvancedCheckoutService::class.java,
-        )
-      } ?: throw ModuleException.NoActivity()
+      startBackgroundService()
+      startPayment(
+        reactApplicationContext,
+        dropInLauncher,
+        paymentMethodsResponse,
+        checkoutConfiguration,
+        AdvancedCheckoutService::class.java,
+      )
     }
   }
 
   @ReactMethod
   fun handle(actionMap: ReadableMap?) {
-    val listener = getService()
-    if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       val action = Action.SERIALIZER.deserialize(jsonObject)
-      listener.sendResult(DropInServiceResult.Action(action))
+      getService()?.sendResult(DropInServiceResult.Action(action))
     } catch (e: Exception) {
-      sendErrorEvent(ModuleException.InvalidAction(e))
+      sendError(ModuleException.InvalidAction(e))
     }
   }
 
@@ -148,27 +136,17 @@ class DropInModule(
   }
 
   @ReactMethod
-  fun update(results: ReadableArray?) {
-    if (results == null) return
-    val listener = getService()
-    if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-
-    try {
-      val jsonString = ReactNativeJson.convertArrayToJson(results).toString()
-      val addresses = gson.fromJson(jsonString, Array<LookupAddress>::class.java)
-      val result = AddressLookupDropInServiceResult.LookupResult(addresses.toList())
-      listener.sendAddressLookupResult(result)
-    } catch (error: Throwable) {
-      Log.w(TAG, error)
-      val result =
-        AddressLookupDropInServiceResult.LookupResult(
-          arrayListOf(),
-        )
-      listener.sendAddressLookupResult(result)
-    }
+  fun update(array: ReadableArray?) {
+    val result =
+      try {
+        val jsonString = ReactNativeJson.convertArrayToJson(array).toString()
+        val addresses = gson.fromJson(jsonString, Array<LookupAddress>::class.java)
+        AddressLookupDropInServiceResult.LookupResult(addresses.toList())
+      } catch (error: Throwable) {
+        Log.w(TAG, error)
+        AddressLookupDropInServiceResult.LookupResult(arrayListOf())
+      }
+    getService()?.sendAddressLookupResult(result)
   }
 
   @ReactMethod
@@ -176,57 +154,52 @@ class DropInModule(
     success: Boolean,
     address: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-
-    if (success) {
-      try {
-        val jsonString = ReactNativeJson.convertMapToJson(address).toString()
-        val lookupAddress = gson.fromJson(jsonString, LookupAddress::class.java)
-        listener.sendAddressLookupResult(
-          AddressLookupDropInServiceResult.LookupComplete(
-            lookupAddress,
-          ),
-        )
-      } catch (error: Throwable) {
-        listener.sendAddressLookupResult(
+    val result =
+      if (success) {
+        try {
+          val jsonString = ReactNativeJson.convertMapToJson(address).toString()
+          val lookupAddress = gson.fromJson(jsonString, LookupAddress::class.java)
+          AddressLookupDropInServiceResult.LookupComplete(lookupAddress)
+        } catch (error: Throwable) {
           AddressLookupDropInServiceResult.Error(
             ErrorDialog(
               message = error.localizedMessage,
             ),
             null,
             false,
-          ),
-        )
-      }
-    } else {
-      val error = address?.getString("message")?.let { ErrorDialog(message = it) }
-      listener.sendAddressLookupResult(
+          )
+        }
+      } else {
+        val error = address?.getString("message")?.let { ErrorDialog(message = it) }
         AddressLookupDropInServiceResult.Error(
           error,
           null,
           false,
-        ),
-      )
-    }
+        )
+      }
+    getService()?.sendAddressLookupResult(result)
   }
 
   @ReactMethod
   fun removeStored(success: Boolean) {
-    val successfulResult =
-      if (success) {
-        storedPaymentMethodID?.let {
-          RecurringDropInServiceResult.PaymentMethodRemoved(it)
-        }
-      } else {
-        null
-      }
+    val id = storedPaymentMethodID
+    if (id == null) {
+      Log.w(TAG, "No stored payment method was marked for removal")
+      return
+    }
 
-    val result = successfulResult ?: RecurringDropInServiceResult.Error(null, null, false)
-    CheckoutProxy.shared.advancedService?.sendRecurringResult(result)
+    val result =
+      when {
+        success -> {
+          RecurringDropInServiceResult.PaymentMethodRemoved(id)
+        }
+
+        else -> {
+          RecurringDropInServiceResult.Error(null, null, false)
+        }
+      }
+    advancedService?.sendRecurringResult(result)
+    storedPaymentMethodID = null
   }
 
   @ReactMethod
@@ -235,19 +208,16 @@ class DropInModule(
     balance: ReadableMap?,
     error: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-    if (success) {
-      val jsonObject = ReactNativeJson.convertMapToJson(balance)
-      val balanceResult = BalanceResult.SERIALIZER.deserialize(jsonObject)
-      listener.sendBalanceResult(BalanceDropInServiceResult.Balance(balanceResult))
-    } else {
-      val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
-      listener.sendBalanceResult(BalanceDropInServiceResult.Error(null, message, true))
-    }
+    val result =
+      if (success) {
+        val jsonObject = ReactNativeJson.convertMapToJson(balance)
+        val balanceResult = BalanceResult.SERIALIZER.deserialize(jsonObject)
+        BalanceDropInServiceResult.Balance(balanceResult)
+      } else {
+        val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
+        BalanceDropInServiceResult.Error(null, message, true)
+      }
+    getService()?.sendBalanceResult(result)
   }
 
   @ReactMethod
@@ -256,76 +226,46 @@ class DropInModule(
     order: ReadableMap?,
     error: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
-    if (success) {
-      val jsonObject = ReactNativeJson.convertMapToJson(order)
-      val orderResponse = OrderResponse.SERIALIZER.deserialize(jsonObject)
-      listener.sendOrderResult(OrderDropInServiceResult.OrderCreated(orderResponse))
-    } else {
-      val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
-      listener.sendOrderResult(OrderDropInServiceResult.Error(null, message, true))
-    }
+    val result =
+      if (success) {
+        val jsonObject = ReactNativeJson.convertMapToJson(order)
+        val orderResponse = OrderResponse.SERIALIZER.deserialize(jsonObject)
+        OrderDropInServiceResult.OrderCreated(orderResponse)
+      } else {
+        val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
+        OrderDropInServiceResult.Error(null, message, true)
+      }
+    getService()?.sendOrderResult(result)
   }
 
   @ReactMethod
   fun providePaymentMethods(
     paymentMethods: ReadableMap,
-    order: ReadableMap?,
+    map: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
     val pmJsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
     val paymentMethods = PaymentMethodsApiResponse.SERIALIZER.deserialize(pmJsonObject)
     val order =
-      order?.let {
+      map?.let {
         val jsonObject = ReactNativeJson.convertMapToJson(it)
-        return@let OrderResponse.SERIALIZER.deserialize(jsonObject)
+        OrderResponse.SERIALIZER.deserialize(jsonObject)
       }
 
-    listener.sendResult(DropInServiceResult.Update(paymentMethods, order))
-  }
-
-  override fun getRedirectUrl(): String? = RedirectComponent.getReturnUrl(reactApplicationContext)
-
-  override fun onCancel() {
-    sendErrorEvent(ModuleException.Canceled())
-  }
-
-  override fun onError(reason: String?) {
-    if (reason == THREEDS_CANCELED_MESSAGE) { // for canceled 3DS
-      sendErrorEvent(ModuleException.Canceled())
-    } else {
-      sendErrorEvent(ModuleException.Unknown(reason))
-    }
-  }
-
-  override fun onCompleted(result: String) {
-    val jsonObject = JSONObject("{\"resultCode\": ${RESULT_CODE_PRESENTED}}")
-    sendEvent(DID_COMPLETE, jsonObject)
+    getService()?.sendResult(DropInServiceResult.Update(paymentMethods, order))
   }
 
   private fun proxyHideDropInCommand(
     success: Boolean,
     message: ReadableMap?,
   ) {
-    val listener = getService()
-    if (listener == null) {
-      sendErrorEvent(ModuleException.NoModuleListener(integration))
-      return
-    }
     val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
-    if (success && messageString != null) {
-      listener.sendResult(DropInServiceResult.Finished(messageString))
-    } else {
-      listener.sendResult(DropInServiceResult.Error(null, messageString, true))
-    }
+    val result =
+      if (success && messageString != null) {
+        DropInServiceResult.Finished(messageString)
+      } else {
+        DropInServiceResult.Error(null, messageString, true)
+      }
+    getService()?.sendResult(result)
   }
 
   private fun startBackgroundService() {
@@ -346,70 +286,35 @@ class DropInModule(
   }
 
   companion object {
+    private lateinit var dropInSessionLauncher: ActivityResultLauncher<SessionDropInResultContractParams>
+    private lateinit var dropInLauncher: ActivityResultLauncher<DropInResultContractParams>
     private const val TAG = "DropInComponent"
     private const val COMPONENT_NAME = "AdyenDropIn"
-    private const val THREEDS_CANCELED_MESSAGE = "Challenge canceled."
     private const val TASK_NAME = "ADYEN_DROPIN_TASK"
+    var sessionService: BaseDropInServiceContract? = null
+    var advancedService: BaseDropInServiceContract? = null
+    var storedPaymentMethodID: String? = null
 
-    private val gson =
-      GsonBuilder()
-        .registerTypeAdapter(AddressData::class.java, AddressDataAdapter())
-        .create()
-  }
-
-  override fun onQueryChanged(query: String) {
-    reactApplicationContext
-      .getJSModule(RCTDeviceEventEmitter::class.java)
-      .emit(DID_UPDATE_ADDRESS, query)
-  }
-
-  override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean {
-    val jsonString = gson.toJson(lookupAddress)
-    val jsonObject = JSONObject(jsonString)
-    reactApplicationContext
-      .getJSModule(RCTDeviceEventEmitter::class.java)
-      .emit(DID_CONFIRM_ADDRESS, ReactNativeJson.convertJsonToMap(jsonObject))
-    return true
-  }
-
-  override fun onBinValue(binValue: String) {
-    reactApplicationContext
-      .getJSModule(RCTDeviceEventEmitter::class.java)
-      .emit(DID_CHANGE_BIN_VALUE, binValue)
-  }
-
-  override fun onBinLookup(data: List<BinLookupData>) {
-    when {
-      data.isEmpty() -> {
-        return
-      }
-
-      else -> {
-        val brandOnlyMap = data.map { BinLookupDataDTO(it.brand) }
-        val jsonString = gson.toJson(brandOnlyMap)
-        val jsonObject = JSONArray(jsonString)
-        reactApplicationContext
-          .getJSModule(RCTDeviceEventEmitter::class.java)
-          .emit(DID_BIN_LOOKUP, ReactNativeJson.convertJsonToArray(jsonObject))
-      }
+    fun register(activity: ActivityResultCaller) {
+      val callbackHandler = DropInCallbackHandler { AdyenPaymentPackage.messageBusOrNull() }
+      dropInSessionLauncher =
+        DropIn.registerForDropInResult(
+          activity,
+          callbackHandler as SessionDropInCallback,
+        )
+      dropInLauncher =
+        DropIn.registerForDropInResult(
+          activity,
+          callbackHandler as DropInCallback,
+        )
     }
   }
 
-  override fun onRemove(storedPaymentMethod: StoredPaymentMethod) {
-    storedPaymentMethodID = storedPaymentMethod.id
-    val jsonObject = StoredPaymentMethod.SERIALIZER.serialize(storedPaymentMethod)
-    reactApplicationContext
-      .getJSModule(RCTDeviceEventEmitter::class.java)
-      .emit(DID_DISABLE_STORED_PAYMENT_METHOD, ReactNativeJson.convertJsonToMap(jsonObject))
-  }
-}
+  override fun onQueryChanged(query: String) = messageBus.onQueryChanged(query)
 
-internal interface ReactDropInCallback {
-  fun onCancel()
+  override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean = messageBus.onLookupCompletion(lookupAddress)
 
-  fun onError(reason: String?)
+  override fun onBinValue(binValue: String) = messageBus.onBinValue(binValue)
 
-  fun onCompleted(result: String)
-
-  fun onFinished(result: SessionPaymentResult)
+  override fun onBinLookup(data: List<BinLookupData>) = messageBus.onBinLookup(data)
 }

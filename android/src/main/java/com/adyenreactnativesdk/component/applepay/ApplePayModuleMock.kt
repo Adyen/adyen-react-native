@@ -8,6 +8,7 @@ package com.adyenreactnativesdk.component.applepay
 
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -15,7 +16,8 @@ import com.facebook.react.bridge.ReadableMap
 
 class ApplePayModuleMock(
   context: ReactApplicationContext?,
-) : BaseModule(context) {
+  messageBus: MessageBus,
+) : BaseModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
 
   companion object {
@@ -27,7 +29,7 @@ class ApplePayModuleMock(
     paymentMethodsData: ReadableMap,
     configuration: ReadableMap,
   ) {
-    sendErrorEvent(ModuleException.NotSupported())
+    sendError(ModuleException.NotSupported())
   }
 
   @ReactMethod
