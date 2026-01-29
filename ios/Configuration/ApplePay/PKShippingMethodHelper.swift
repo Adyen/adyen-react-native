@@ -9,8 +9,8 @@ import PassKit
 
 extension PKShippingMethod {
     static func initiate(_ dictionary: [String: Any]) -> PKShippingMethod? {
-        guard let label = dictionary[ApplePayKeys.SummeryItem.label] as? String,
-              let amounRaw = dictionary[ApplePayKeys.SummeryItem.amount] else {
+        guard let label = dictionary[ApplePayKeys.SummaryItem.label] as? String,
+              let amounRaw = dictionary[ApplePayKeys.SummaryItem.amount] else {
             return nil
         }
 
@@ -24,7 +24,7 @@ extension PKShippingMethod {
         }
 
         let this: PKShippingMethod
-        if let typeRaw = dictionary[ApplePayKeys.SummeryItem.type] as? String,
+        if let typeRaw = dictionary[ApplePayKeys.SummaryItem.type] as? String,
            let type = ApplePayPaymentSummaryItemType(rawValue: typeRaw)?.toAppleType {
             this = PKShippingMethod(label: label, amount: amount, type: type)
         } else {

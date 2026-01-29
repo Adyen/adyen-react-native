@@ -1,6 +1,23 @@
 import Adyen
 import PassKit
 
+extension ApplePayDetails {
+
+    private enum Key {
+        static let billingContact = "billingContact"
+        static let network = "network"
+        static let shippingContact = "shippingContact"
+    }
+
+    internal var extraData: [String: Any] {
+        [
+            Key.billingContact: self.billingContact?.jsonObject,
+            Key.network: self.network,
+            Key.shippingContact: self.shippingContact?.jsonObject
+        ]
+    }
+}
+
 extension ApplePayPaymentMethod {
 
     internal var supportedNetworks: [PKPaymentNetwork] {

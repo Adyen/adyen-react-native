@@ -26,7 +26,7 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
     }
 
     func didComplete(from component: Adyen.ActionComponent) {
-        resolver?(nil)
+        resolver?(ResultDTO(result: .presentToShopper).jsonObject)
     }
 
     func didFail(with error: Error, from component: Adyen.ActionComponent) {

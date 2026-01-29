@@ -15,20 +15,20 @@ public struct RootConfigurationParser {
     }
 
     public var environment: Environment {
-        guard let environmentString = configuration[Keys.environment] as? String else {
+        guard let environmentString = configuration[RootKeys.environment] as? String else {
             return .test
         }
         return Environment.parse(environmentString)
     }
 
     public var clientKey: String? {
-        configuration[Keys.clientKey] as? String
+        configuration[RootKeys.clientKey] as? String
     }
 
     public var amount: Amount? {
-        guard let paymentObject = configuration[Keys.amount] as? [String: Any],
-              let paymentAmount = Int.tryCast(paymentObject[Keys.value]),
-              let currencyCode = paymentObject[Keys.currency] as? String
+        guard let paymentObject = configuration[RootKeys.amount] as? [String: Any],
+              let paymentAmount = Int.tryCast(paymentObject[RootKeys.value]),
+              let currencyCode = paymentObject[RootKeys.currency] as? String
         else {
             return nil
         }
@@ -37,7 +37,7 @@ public struct RootConfigurationParser {
     }
 
     public var countryCode: String? {
-        configuration[Keys.countryCode] as? String
+        configuration[RootKeys.countryCode] as? String
     }
 
     public var payment: Payment? {
@@ -51,7 +51,7 @@ public struct RootConfigurationParser {
     }
 
     public var shopperLocale: String? {
-        configuration[Keys.locale] as? String
+        configuration[RootKeys.locale] as? String
     }
 }
 

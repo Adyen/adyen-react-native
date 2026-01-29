@@ -6,22 +6,26 @@
 
 import Adyen
 import Adyen3DS2
-import AdyenNetworking
 import React
 import UIKit
 
 internal class BaseModule: RCTEventEmitter {
 
     internal static var session: AdyenSession?
-    internal var requestOrderHandler: ((Result<PartialPaymentOrder, any Error>) -> Void)?
-    internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
+    internal static weak var sessionDelegate: SessionErrorDelegate?
+    internal var currentComponent: Component?
+    internal var actionHandler: AdyenActionComponent?
 
-    #if DEBUG
-        override func invalidate() {
-            super.invalidate()
-            dismiss(false)
-        }
-    #endif
+    internal static var currentPresenter: UIViewController?
+
+#if DEBUG
+    override func invalidate() {
+        super.invalidate()
+        dismiss(false)
+    }
+#endif
+
+    // MARK: - Public methods
 
     @objc
     override static func requiresMainQueueSetup() -> Bool { true }
@@ -29,21 +33,16 @@ internal class BaseModule: RCTEventEmitter {
     override func startObserving() { /* No JS events expected */ }
     override open func supportedEvents() -> [String]! { [] }
 
-    internal var currentComponent: Component?
-    internal var currentPaymentComponent: PaymentComponent? {
-        currentComponent as? PaymentComponent
+    @objc
+    func hide(_ success: NSNumber, event: NSDictionary) {
+        dismiss(success.boolValue)
     }
 
-    internal var currentPresentableComponent: PresentableComponent? {
-        currentComponent as? PresentableComponent
-    }
-
-    internal static var currentPresenter: UIViewController?
-    internal var actionHandler: AdyenActionComponent?
+    // MARK: - Internal methods
 
     internal func present(_ component: PresentableComponent) {
         guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            return sendEvent(error: NativeModuleError.notKeyWindow)
+            return sendError(error: NativeModuleError.notKeyWindow)
         }
 
         defer {
@@ -64,24 +63,11 @@ internal class BaseModule: RCTEventEmitter {
 
     @objc private func cancelDidPress() {
         currentComponent?.cancelIfNeeded()
-        sendEvent(error: NativeModuleError.canceled)
+        sendError(error: NativeModuleError.canceled)
     }
 
-    internal func sendEvent(event: Events, body: Any!) {
-        sendEvent(withName: event.rawValue, body: body)
-    }
-
-    internal func sendEvent(event: Events) {
-        sendEvent(withName: event.rawValue, body: [:])
-    }
-
-    internal func sendEvent(error: Error) {
-        let errorToSend = NativeModuleError.checkErrorType(error)
-        sendEvent(withName: Events.didFail.rawValue, body: errorToSend.jsonObject)
-    }
-
-    internal func parsePaymentMethods(from dicionary: NSDictionary) throws -> PaymentMethods {
-        guard let data = try? JSONSerialization.data(withJSONObject: dicionary, options: []),
+    internal func parsePaymentMethods(from dictionary: NSDictionary) throws -> PaymentMethods {
+        guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
         else {
             throw NativeModuleError.invalidPaymentMethods
@@ -90,8 +76,8 @@ internal class BaseModule: RCTEventEmitter {
         return paymentMethods
     }
 
-    internal func parseAction(from dicionary: NSDictionary) throws -> Action {
-        guard let data = try? JSONSerialization.data(withJSONObject: dicionary, options: []),
+    internal func parseAction(from dictionary: NSDictionary) throws -> Action {
+        guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
               let action = try? JSONDecoder().decode(Action.self, from: data)
         else {
             throw NativeModuleError.invalidAction
@@ -113,8 +99,8 @@ internal class BaseModule: RCTEventEmitter {
         return payment
     }
 
-    internal func parsePaymentMethod<T: PaymentMethod>(from dicionary: NSDictionary, for type: T.Type) throws -> T {
-        let paymentMethods = try parsePaymentMethods(from: dicionary)
+    internal func parsePaymentMethod<T: PaymentMethod>(from dictionary: NSDictionary, for type: T.Type) throws -> T {
+        let paymentMethods = try parsePaymentMethods(from: dictionary)
 
         guard let paymentMethod = paymentMethods.paymentMethod(ofType: type) else {
             throw NativeModuleError.paymentMethodNotFound(type)
@@ -123,8 +109,8 @@ internal class BaseModule: RCTEventEmitter {
         return paymentMethod
     }
 
-    internal func parseAnyPaymentMethod(from dicionary: NSDictionary) throws -> PaymentMethod {
-        let paymentMethods = try parsePaymentMethods(from: dicionary)
+    internal func parseAnyPaymentMethod(from dictionary: NSDictionary) throws -> PaymentMethod {
+        let paymentMethods = try parsePaymentMethods(from: dictionary)
 
         guard let paymentMethod = paymentMethods.regular.first else {
             throw NativeModuleError.invalidPaymentMethods
@@ -135,12 +121,9 @@ internal class BaseModule: RCTEventEmitter {
 
     internal func cleanUp() {
         BaseModule.session = nil
-        SessionHelperModule.sessionListener = nil
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil
-        requestOrderHandler = nil
-        checkBalanceHandler = nil
 
         guard BaseModule.currentPresenter?.presentedViewController != nil else {
             BaseModule.currentPresenter = nil
@@ -161,12 +144,26 @@ internal class BaseModule: RCTEventEmitter {
         }
     }
 
-    enum Keys {
-        static let sessionId = "sessionId"
-        static let sessionData = "sessionData"
-        static let order = "order"
-        static let message = "message"
-        static let brand = "brand"
+    // MARK: - Event Emission Helpers
+
+    internal func checkErrorType(_ error: Error) -> Error {
+        if error.isComponentCanceled || error.is3DSCanceled {
+            return NativeModuleError.canceled
+        }
+        return error
+    }
+
+    internal func sendError(error: Error) {
+        let errorToSend = checkErrorType(error)
+        if let _ = BaseModule.session {
+            BaseModule.sessionDelegate?.sendSessionError(error: error)
+            return
+        }
+        sendEvent(withName: Events.fail.rawValue, body: errorToSend.jsonObject)
+    }
+
+    internal func sendEvent(event: Events, body: Any!) {
+        sendEvent(withName: event.rawValue, body: body)
     }
 }
 
@@ -178,19 +175,4 @@ extension BaseModule: PresentationDelegate {
         }
     }
 
-}
-
-extension BaseModule: SessionResultListener {
-    func didComplete(with result: Adyen.AdyenSessionResult) {
-        var result = result.jsonObject
-        result[Keys.sessionId] = Self.session?.sessionContext.identifier
-        result[Keys.sessionData] = Self.session?.sessionContext.data
-        result[Keys.order] = self.currentPaymentComponent?.order?.jsonObject
-
-        sendEvent(event: Events.didComplete, body: result)
-    }
-
-    func didFail(with error: Error) {
-        sendEvent(error: error)
-    }
 }
