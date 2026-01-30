@@ -38,6 +38,7 @@ import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.CardComponentEventListener
+import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
@@ -68,12 +69,16 @@ class DropInModule(
   fun removeListeners(count: Int?) { // No JS events expected
   }
 
+  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+
   @ReactMethod
   fun getReturnURL(promise: Promise) {
     promise.resolve(RedirectComponent.getReturnUrl(reactApplicationContext))
   }
 
   override fun getName(): String = COMPONENT_NAME
+
+  override fun supportedEvents(): List<String> = EventName.entries.map { it.value }
 
   @ReactMethod
   fun open(

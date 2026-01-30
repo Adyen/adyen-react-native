@@ -38,7 +38,7 @@ class AdyenPaymentPackage : ReactPackage {
       GooglePayModule(reactContext, messageBus),
       ApplePayModuleMock(reactContext, messageBus),
       AdyenCSEModule(reactContext),
-      SessionHelperModule(reactContext),
+      SessionHelperModule(reactContext, messageBus),
       ActionModule(reactContext),
     )
   }

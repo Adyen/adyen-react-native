@@ -15,10 +15,11 @@ import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.component.base.appCompatActivity
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.mainEvents
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -31,6 +32,8 @@ class GooglePayModule(
 ) : BaseModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
 
+  override fun supportedEvents(): List<String> = EventName.mainEvents()
+
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
   }
@@ -38,6 +41,8 @@ class GooglePayModule(
   @ReactMethod
   fun removeListeners(count: Int?) { // No JS events expected
   }
+
+  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
 
   @ReactMethod
   fun open(

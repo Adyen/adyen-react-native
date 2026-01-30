@@ -8,6 +8,7 @@ package com.adyenreactnativesdk.component.applepay
 
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -19,6 +20,18 @@ class ApplePayModuleMock(
   messageBus: MessageBus,
 ) : BaseModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
+
+  override fun supportedEvents(): List<String> = listOf(EventName.ERROR.value)
+
+  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+
+  @ReactMethod
+  fun addListener(eventName: String?) { // No JS events expected
+  }
+
+  @ReactMethod
+  fun removeListeners(count: Int?) { // No JS events expected
+  }
 
   companion object {
     private const val COMPONENT_NAME = "AdyenApplePay"

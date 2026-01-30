@@ -16,5 +16,21 @@ enum class EventName(
   REQUEST_ORDER("didRequestOrderCallback"),
   CANCEL_ORDER("didCancelOrderCallback"),
   BIN_LOOKUP("didBinLookupCallback"),
-  CHANGE_BIN_VALUE("didChangeBinValueCallback"),
+  CHANGE_BIN_VALUE("didChangeBinValueCallback"), ;
+
+  companion object
 }
+
+fun EventName.Companion.mainEvents() =
+  listOf(
+    EventName.SUBMIT.value,
+    EventName.ERROR.value,
+    EventName.COMPLETE_VOUCHER.value,
+    EventName.ADDITIONAL_DETAILS.value,
+  )
+
+fun EventName.Companion.sessionEvents() =
+  listOf(
+    EventName.SESSION_ERROR.value,
+    EventName.COMPLETE_SESSION.value,
+  )

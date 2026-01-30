@@ -11,7 +11,9 @@ import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.sessionEvents
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -23,6 +25,8 @@ class SessionHelperModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseModule(reactContext, messageBus) {
+  override fun supportedEvents(): List<String> = EventName.sessionEvents()
+
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
   }
