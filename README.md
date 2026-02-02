@@ -291,6 +291,10 @@ const MyCheckoutView = () => {
 
 ### Sessions Flow
 
+> [!IMPORTANT]
+>
+> **Memoize your callbacks** with `useCallback` to prevent unnecessary re-renders and event listener re-registration. Inline functions will cause performance issues.
+
 ```javascript
 import { AdyenCheckout } from '@adyen/react-native';
 import { useCallback } from 'react';
