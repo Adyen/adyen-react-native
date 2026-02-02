@@ -1,5 +1,4 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
-import { Event } from '../../../core';
 import { ApplePayWrapper } from '../ApplePayWrapper';
 
 /** Mock ApplePayNativeModule */
@@ -7,6 +6,7 @@ function createMockApplePayModule() {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents: [] })),
     hide: jest.fn(),
     open: jest.fn(),
     isAvailable: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
@@ -24,20 +24,6 @@ describe('ApplePayWrapper', () => {
     test('should return "ApplePay"', () => {
       const wrapper = new ApplePayWrapper(mockNativeModule);
       expect(wrapper.name).toBe('ApplePay');
-    });
-  });
-
-  describe('events', () => {
-    test('should support PaymentComponentWrapper events', () => {
-      const wrapper = new ApplePayWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onError)).toBe(true);
-      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
-      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-    });
-
-    test('should not support onAdditionalDetails (not action-handling)', () => {
-      const wrapper = new ApplePayWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onAdditionalDetails)).toBe(false);
     });
   });
 

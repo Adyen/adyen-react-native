@@ -10,6 +10,11 @@ const mockHide = jest.fn();
 const mockIsSupported = jest.fn().mockReturnValue(true);
 const mockCreateSession = jest.fn();
 
+const mockNativeModule = {
+  addListener: jest.fn(),
+  removeListeners: jest.fn(),
+};
+
 jest.mock('../../modules/base/getWrapper', () => ({
   getWrapper: jest.fn(() => ({
     nativeComponent: {
@@ -19,6 +24,7 @@ jest.mock('../../modules/base/getWrapper', () => ({
       isSupported: mockIsSupported,
       addListener: jest.fn(),
       removeListeners: jest.fn(),
+      eventEmitterTarget: mockNativeModule,
     },
     paymentMethod: undefined,
   })),

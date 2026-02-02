@@ -11,46 +11,58 @@ import type { ActionHandlingNativeModule } from '../ActionHandlingComponentWrapp
 /**
  * Creates a mock NativeModule for testing
  */
-export function createMockNativeModule(): jest.Mocked<NativeModule> {
+export function createMockNativeModule(
+  supportedEvents: string[] = []
+): jest.Mocked<NativeModule & { getConstants: () => { supportedEvents: string[] } }> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents })),
   };
 }
 
 /**
  * Creates a mock BaseNativeModule for testing ModuleWrapper
  */
-export function createMockBaseNativeModule(): jest.Mocked<BaseNativeModule> {
+export function createMockBaseNativeModule(
+  supportedEvents: string[] = []
+): jest.Mocked<BaseNativeModule & { getConstants: () => { supportedEvents: string[] } }> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
     hide: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents })),
   };
 }
 
 /**
  * Creates a mock PaymentModule for testing PaymentComponentWrapper
  */
-export function createMockPaymentModule(): jest.Mocked<PaymentModule> {
+export function createMockPaymentModule(
+  supportedEvents: string[] = []
+): jest.Mocked<PaymentModule & { getConstants: () => { supportedEvents: string[] } }> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
     hide: jest.fn(),
     open: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents })),
   };
 }
 
 /**
  * Creates a mock ActionHandlingNativeModule for testing ActionHandlingComponentWrapper
  */
-export function createMockActionHandlingModule(): jest.Mocked<ActionHandlingNativeModule> {
+export function createMockActionHandlingModule(
+  supportedEvents: string[] = []
+): jest.Mocked<ActionHandlingNativeModule & { getConstants: () => { supportedEvents: string[] } }> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
     hide: jest.fn(),
     open: jest.fn(),
     handle: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents })),
   };
 }
 

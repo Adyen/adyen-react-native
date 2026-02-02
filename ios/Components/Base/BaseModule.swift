@@ -34,6 +34,11 @@ internal class BaseModule: RCTEventEmitter {
     override open func supportedEvents() -> [String]! { [] }
 
     @objc
+    override func constantsToExport() -> [AnyHashable: Any]! {
+        ["supportedEvents": supportedEvents() ?? []]
+    }
+
+    @objc
     func hide(_ success: NSNumber, event: NSDictionary) {
         dismiss(success.boolValue)
     }

@@ -6,7 +6,6 @@ import type {
   PartialPaymentComponent,
   PaymentMethodsResponse,
 } from '../../core';
-import { Event } from '../../core';
 import {
   ActionHandlingComponentWrapper,
   type ActionHandlingNativeModule,
@@ -37,7 +36,6 @@ interface DropInNativeModule
 
 /**
  * Drop-in wrapper with full feature support.
- * Supports: BIN events, address lookup, partial payments, stored payment management.
  */
 export class DropInWrapper
   extends ActionHandlingComponentWrapper<DropInNativeModule>
@@ -47,17 +45,6 @@ export class DropInWrapper
     RemovesStoredPayment,
     PartialPaymentComponent
 {
-  static readonly events = [
-    Event.onBinValue,
-    Event.onBinLookup,
-    Event.onDisableStoredPaymentMethod,
-    Event.onAddressConfirm,
-    Event.onAddressUpdate,
-    Event.onCheckBalance,
-    Event.onRequestOrder,
-    Event.onCancelOrder,
-  ];
-
   name: string = 'DropIn';
 
   getReturnURL(): Promise<string> {

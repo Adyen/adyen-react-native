@@ -51,10 +51,10 @@ import com.facebook.react.jstasks.HeadlessJsTaskContext
 import com.google.gson.Gson
 
 class DropInModule(
-  context: ReactApplicationContext?,
+  reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
   private val gson: Gson,
-) : BaseModule(context, messageBus),
+) : BaseModule(reactContext, messageBus),
   AddressLookupCallback,
   CardComponentEventListener {
   private var taskId: Int? = null
@@ -296,8 +296,8 @@ class DropInModule(
     private const val TAG = "DropInComponent"
     private const val COMPONENT_NAME = "AdyenDropIn"
     private const val TASK_NAME = "ADYEN_DROPIN_TASK"
-    var sessionService: BaseDropInServiceContract? = null
-    var advancedService: BaseDropInServiceContract? = null
+    internal var sessionService: BaseDropInServiceContract? = null
+    internal var advancedService: BaseDropInServiceContract? = null
     var storedPaymentMethodID: String? = null
 
     fun register(activity: ActivityResultCaller) {

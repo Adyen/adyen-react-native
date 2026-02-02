@@ -1,5 +1,4 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
-import { Event } from '../../../core';
 import { GooglePayWrapper } from '../GooglePayWrapper';
 
 /** Mock GooglePayNativeModule */
@@ -7,6 +6,7 @@ function createMockGooglePayModule() {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents: [] })),
     hide: jest.fn(),
     open: jest.fn(),
     handle: jest.fn(),
@@ -25,16 +25,6 @@ describe('GooglePayWrapper', () => {
     test('should return "GooglePay"', () => {
       const wrapper = new GooglePayWrapper(mockNativeModule);
       expect(wrapper.name).toBe('GooglePay');
-    });
-  });
-
-  describe('events', () => {
-    test('should support ActionHandlingComponentWrapper events', () => {
-      const wrapper = new GooglePayWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onError)).toBe(true);
-      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
-      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-      expect(wrapper.isSupported(Event.onAdditionalDetails)).toBe(true);
     });
   });
 

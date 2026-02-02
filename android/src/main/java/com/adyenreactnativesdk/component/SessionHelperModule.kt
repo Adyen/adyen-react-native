@@ -47,6 +47,7 @@ class SessionHelperModule(
     success: Boolean,
     message: ReadableMap?,
   ) { // No UI
+    cleanup()
   }
 
   override fun getName(): String = COMPONENT_NAME
