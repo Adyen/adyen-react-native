@@ -129,6 +129,9 @@ ActionModuleWrapper                                          # implements Action
 SessionWrapper                                               # implements SessionHelperModule
     - createSession(session, config) → Promise<SessionContext>
     - hide(success, option?)
+    - onComplete(callback) → EmitterSubscription
+    - onError(callback) → EmitterSubscription
+    - removeAllListeners()
 
 AdyenCSEModuleWrapper                                        # implements AdyenCSEModule
     - encryptCard(card, publicKey)
