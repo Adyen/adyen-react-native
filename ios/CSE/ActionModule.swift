@@ -10,7 +10,7 @@ import Foundation
 import React
 
 @objc(AdyenAction)
-internal final class ActionModule: BaseModule, ActionComponentDelegate {
+internal final class ActionModule: BaseModule {
 
     @objc override func supportedEvents() -> [String]! { [] }
 
@@ -20,18 +20,6 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
 
     private var resolver: RCTPromiseResolveBlock?
     private var rejecter: RCTPromiseRejectBlock?
-
-    func didProvide(_ data: Adyen.ActionComponentData, from component: Adyen.ActionComponent) {
-        resolver?(data.jsonObject)
-    }
-
-    func didComplete(from component: Adyen.ActionComponent) {
-        resolver?(ResultDTO(result: .presentToShopper).jsonObject)
-    }
-
-    func didFail(with error: Error, from component: Adyen.ActionComponent) {
-        reject(with: error)
-    }
 
     @objc
     func handle(_ actionJson: NSDictionary,
@@ -86,5 +74,19 @@ internal final class ActionModule: BaseModule, ActionComponentDelegate {
             return reject(with: nativeError)
         }
         rejecter?(Constant.componentError, error.localizedDescription, error)
+    }
+}
+
+extension ActionModule: ActionComponentDelegate {
+    func didProvide(_ data: Adyen.ActionComponentData, from component: Adyen.ActionComponent) {
+        resolver?(data.jsonObject)
+    }
+
+    func didComplete(from component: Adyen.ActionComponent) {
+        resolver?(ResultDTO(result: .presentToShopper).jsonObject)
+    }
+
+    func didFail(with error: Error, from component: Adyen.ActionComponent) {
+        reject(with: error)
     }
 }

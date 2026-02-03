@@ -261,6 +261,246 @@ BaseConfiguration
                     + partialPayment?
 ```
 
+## Native Class Hierarchies
+
+### iOS Class Structure
+
+```
+RCTEventEmitter (React Native)
+    │
+    ▼
+BaseModule                                           # Base class for all iOS modules
+    │   - session: AdyenSession? (static)
+    │   - currentModule: BaseModule? (static)
+    │   - currentPresenter: UIViewController? (static)
+    │   - currentComponent: Component?
+    │   - actionHandler: AdyenActionComponent?
+    │   - supportedEvents() → [String]
+    │   - constantsToExport() → ["supportedEvents": ...]
+    │   - hide(success, event)
+    │   - present(component)
+    │   - cleanUp()
+    │   - sendError(error)
+    │
+    ├──► SessionHelperModule                         # Session management
+    │       - createSession(sessionModel, config)
+    │       - SessionErrorDelegate
+    │       - AdyenSessionDelegate
+    │
+    ├──► ActionModule                                # Standalone action handler (Promise-based)
+    │       - handle(action, config) → Promise
+    │       - hide(success)
+    │       - ActionComponentDelegate
+    │
+    └──► BaseModuleSender                            # Adds event sending helpers
+            │   - createActionHandler(context, locale)
+            │   - sendSubmitEvent(data)
+            │   - sendCompleteEvent()
+            │   - sendProvideEvent(actionData)
+            │
+            ├──► ApplePayModule                      # Apple Pay component
+            │       - open(paymentMethods, config)
+            │       - isAvailable(paymentMethod, config)
+            │
+            └──► BaseActionHandler                   # Adds handle() for actions
+                    │   - handle(action)
+                    │
+                    ├──► InstantModule               # Instant/redirect payments
+                    │       - open(paymentMethods, config)
+                    │
+                    └──► BaseAddressLookup           # Adds address lookup support
+                            │   - update(results)
+                            │   - confirm(success, address)
+                            │   - AddressLookupProvider protocol
+                            │
+                            └──► DropInModule        # Drop-in component
+                                    - open(paymentMethods, config)
+                                    - handle(action)
+                                    - removeStored(success)
+                                    - getReturnURL()
+                                    - provideBalance/Order/PaymentMethods
+                                    - CardComponentDelegate
+                                    - StoredPaymentMethodsDelegate
+                                    - PartialPaymentDelegate
+```
+
+### Android Class Structure
+
+```
+ReactContextBaseJavaModule (React Native)
+    │
+    ▼
+AppCompatModule                                      # Provides AppCompatActivity access
+    │   - appCompatActivity: AppCompatActivity
+    │
+    ├──► ActionModule                                # Standalone action handler (Promise-based)
+    │       - handle(action, config) → Promise
+    │       - hide(success)
+    │       - ActionComponentCallback
+    │
+    ▼
+BaseModule                                           # Base class for payment modules
+    │   - session: CheckoutSession? (companion)
+    │   - currentModule: BaseModule? (companion)
+    │   - messageBus: MessageBus
+    │   - supportedEvents(): List<String> (abstract)
+    │   - hide(success, message) (abstract)
+    │   - getConstants() → ["supportedEvents": ...]
+    │   - cleanup()
+    │   - sendError(exception)
+    │
+    ├──► SessionHelperModule                         # Session management
+    │       - createSession(sessionModel, config)
+    │       - hide() delegates to currentModule
+    │
+    ├──► GooglePayModule                             # Google Pay component
+    │       - open(paymentMethods, config)
+    │       - handle(action)
+    │       - isAvailable(paymentMethods, config)
+    │
+    ├──► InstantModule                               # Instant/redirect payments
+    │       - open(paymentMethods, config)
+    │       - handle(action)
+    │
+    └──► DropInModule                                # Drop-in component
+            - open(paymentMethods, config)
+            - handle(action)
+            - removeStored(success)
+            - getReturnURL()
+            - update/confirm (address lookup)
+            - provideBalance/Order/PaymentMethods
+```
+
+### Android Messaging Architecture
+
+```
+Emitter (interface)                                  # Event emission contract
+    │   - sendError(eventName, error)
+    │   - send(eventName, payload)
+    │   - sendEvent(eventName, json/string)
+    │
+    └──► MessageBusEmitter                           # Implementation using ReactContext
+            - context: ReactContext
+            - emits via RCTDeviceEventEmitter
+
+MessageBus                                           # Aggregates all messengers via delegation
+    │   implements:
+    │   - SessionMessenger (onSessionException, onFinished)
+    │   - AdvancedMessenger (onSubmit, onAdditionalDetails, onException, onFinished)
+    │   - PartialPaymentMessenger (onBalanceCheck, onOrderRequest, onOrderCancel)
+    │   - RemoveStoredPaymentMessenger (onRemove)
+    │   - CardMessenger (onBinValue, onBinLookup)
+    │   - AddressLookupCallback (onQueryChanged, onLookupCompletion)
+```
+
+## Common Native Module Patterns
+
+### Lifecycle Pattern
+
+Both platforms follow a consistent lifecycle for payment components:
+
+1. **Session Setup** (optional) - `SessionHelperModule.createSession()` stores session in static/companion property
+2. **Open** - Module sets `currentModule = self/this`, initializes component, presents UI
+3. **Events** - Native SDK callbacks are translated to JS events via emitter
+4. **Hide** - Cleanup resources, dismiss UI, clear static references
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Session   │────►│    Open     │────►│   Events    │────►│    Hide     │
+│   (opt.)    │     │             │     │             │     │             │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+      │                   │                   │                   │
+      ▼                   ▼                   ▼                   ▼
+ Store session      Set currentModule    Emit to JS         Clear refs
+ in static prop     Present UI           via emitter        Dismiss UI
+```
+
+### Static State Management
+
+Both platforms use static/companion properties for cross-module coordination:
+
+| Property           | iOS               | Android            | Purpose                       |
+| ------------------ | ----------------- | ------------------ | ----------------------------- |
+| `session`          | `static var`      | `companion object` | Shared checkout session       |
+| `currentModule`    | `static weak var` | `companion object` | Active module for delegation  |
+| `currentPresenter` | `static var`      | N/A                | iOS presenter view controller |
+
+### Error Routing Pattern
+
+Errors are routed differently based on integration type:
+
+```
+                    ┌─────────────────┐
+                    │  Error occurs   │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ session != nil? │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │ YES                         │ NO
+              ▼                             ▼
+    ┌─────────────────┐           ┌─────────────────┐
+    │ Session Error   │           │ Advanced Error  │
+    │ (failSession)   │           │ (fail)          │
+    └─────────────────┘           └─────────────────┘
+```
+
+### Hide Delegation Pattern
+
+`SessionHelperModule.hide()` delegates to the active component module:
+
+**Android:**
+
+```kotlin
+override fun hide(success: Boolean, message: ReadableMap?) {
+  currentModule?.hide(success, message)
+  cleanup()
+}
+```
+
+**iOS:**
+
+```swift
+override func hide(_ success: NSNumber, event: NSDictionary) {
+  super.hide(success, event: event)
+  if let activeModule = BaseModule.currentModule {
+    activeModule.hide(success, event: event)
+  }
+}
+```
+
+### Event Emission Differences
+
+| Aspect            | iOS                             | Android                           |
+| ----------------- | ------------------------------- | --------------------------------- |
+| Base class        | `RCTEventEmitter`               | `ReactContextBaseJavaModule`      |
+| Emit method       | `sendEvent(withName:body:)`     | `RCTDeviceEventEmitter.emit()`    |
+| Event declaration | `supportedEvents() -> [String]` | `supportedEvents(): List<String>` |
+| Constants export  | `constantsToExport()`           | `getConstants()`                  |
+
+### Delegate/Callback Pattern
+
+Both platforms translate native SDK delegates to JS events:
+
+**iOS** - Protocol conformance:
+
+```swift
+extension DropInModule: PaymentComponentDelegate {
+  func didSubmit(_ data: PaymentComponentData, ...) {
+    sendSubmitEvent(data: data)
+  }
+}
+```
+
+**Android** - MessageBus delegation:
+
+```kotlin
+// SDK callback → MessageBus → Emitter → JS
+messageBus.onSubmit(state, returnUrl)  // internally calls emitter.sendEvent()
+```
+
 ## Event System
 
 Supported events are exposed by native modules via `getConstants()` and read by the JS wrapper at construction:
@@ -284,6 +524,7 @@ if (nativeComponent.isSupported(Event.onSubmit)) {
 ### Native Module Event Declaration
 
 **iOS** - Override `constantsToExport()` in `BaseModule.swift`:
+
 ```swift
 @objc override func constantsToExport() -> [AnyHashable: Any]! {
   ["supportedEvents": supportedEvents() ?? []]
@@ -291,6 +532,7 @@ if (nativeComponent.isSupported(Event.onSubmit)) {
 ```
 
 **Android** - Override `getConstants()` in `BaseModule.kt`:
+
 ```kotlin
 override fun getConstants(): MutableMap<String, Any> =
   mutableMapOf("supportedEvents" to supportedEvents())
@@ -351,7 +593,7 @@ override fun getConstants(): MutableMap<String, Any> =
 └───────────────────────┘   └───────────────────────┘   └───────────────────────┘   └───────────────────────┘
           │                             │                               │                             │
           └─────────────────────────────┴───────────────────────────────┴─────────────────────────────┘
-                                                        │                 
+                                                        │
                                                         ▼
                                           ┌───────────────────────────┐
                                           │    Native iOS/Android     │
