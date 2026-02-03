@@ -53,7 +53,7 @@ class AdyenPaymentPackage : ReactPackage {
   companion object {
     val messageBus: MessageBus
       get() {
-        return _messageBus ?: throw Exception("AdyenCheckout MessageBus is not initialized")
+        return _messageBus ?: throw IllegalStateException("AdyenCheckout MessageBus is not initialized")
       }
 
     internal fun messageBusOrNull(): MessageBus? = _messageBus
