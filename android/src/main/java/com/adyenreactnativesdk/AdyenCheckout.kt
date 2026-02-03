@@ -65,6 +65,10 @@ object AdyenCheckout {
    * @param resultCode  received redirect intent
    * @param data  received redirect intent
    */
+  @Deprecated(
+    message = "Deprecated. This method is kept for backwards compatibility and no longer has any effect.",
+    level = DeprecationLevel.WARNING,
+  )
   @JvmStatic
   fun handleActivityResult(
     requestCode: Int,
