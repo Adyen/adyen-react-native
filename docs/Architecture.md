@@ -78,24 +78,23 @@ src/
 
 ### Wrapper Classes
 
-Events are declared via static `events` property and automatically inherited through the prototype chain.
+Supported events are read from the native module's `getConstants().supportedEvents` at construction time.
 
 ```
 NativeModule (react-native)
     │
     ▼
 EventListenerWrapper<T>                                      # Abstract - manages event subscriptions
-    │                                                          - getRegisteredEvents() traverses prototype chain
+    │                                                          - reads supportedEvents from getConstants()
     │                                                          - isSupported(event)
+    │                                                          - eventEmitterTarget (for NativeEventEmitter)
     │                                                          - addListener/removeListeners
     ▼
 ModuleWrapper<T>                                             # Abstract - adds hide()
-    │   static events = [onError, onComplete]
     │   implements AdyenComponent
     │
     ▼
 PaymentComponentWrapper<T>                                   # Abstract - adds open()
-    │   static events = [onSubmit]
     │
     ├──► ApplePayWrapper                                     # implements ApplePayModule, AdyenActionComponent
     │       + isAvailable()
@@ -103,7 +102,6 @@ PaymentComponentWrapper<T>                                   # Abstract - adds o
     │
     ▼
 ActionHandlingComponentWrapper<T>                            # Abstract - adds handle()
-    │   static events = [onAdditionalDetails]
     │   implements AdyenActionComponent
     │
     ├──► GooglePayWrapper                                    # implements GooglePayModule
@@ -112,10 +110,6 @@ ActionHandlingComponentWrapper<T>                            # Abstract - adds h
     ├──► InstantWrapper                                      # implements InstantModule
     │
     └──► DropInWrapper                                       # implements DropInModule
-            static events = [onBinValue, onBinLookup,
-                           onDisableStoredPaymentMethod,
-                           onAddressConfirm, onAddressUpdate,
-                           onCheckBalance, onRequestOrder, onCancelOrder]
             + getReturnURL()
             + removeStored()                       (RemovesStoredPayment)
             + update(), confirm(), reject()        (AddressLookup)
@@ -269,25 +263,38 @@ BaseConfiguration
 
 ## Event System
 
-Events are declared as static properties on wrapper classes and automatically inherited:
+Supported events are exposed by native modules via `getConstants()` and read by the JS wrapper at construction:
 
 ```typescript
-// Base events from ModuleWrapper
-static readonly events = [Event.onError, Event.onComplete];
+// EventListenerWrapper constructor reads from native module
+constructor(nativeModule: T) {
+  this.nativeModule = nativeModule;
+  const constants = nativeModule.getConstants?.();
+  this.supportedEvents = constants?.supportedEvents ?? [];
+}
 
-// Additional events from PaymentComponentWrapper
-static readonly events = [Event.onSubmit];
-
-// DropInWrapper adds many more
-static readonly events = [
-  Event.onBinValue, Event.onBinLookup,
-  Event.onDisableStoredPaymentMethod,
-  Event.onAddressConfirm, Event.onAddressUpdate,
-  Event.onCheckBalance, Event.onRequestOrder, Event.onCancelOrder,
-];
+// AdyenCheckout conditionally subscribes based on native support
+if (nativeComponent.isSupported(Event.onSubmit)) {
+  subscriptions.push(
+    eventEmitter.addListener(Event.onSubmit, handler)
+  );
+}
 ```
 
-`getRegisteredEvents()` in `EventListenerWrapper` traverses the prototype chain to collect all events.
+### Native Module Event Declaration
+
+**iOS** - Override `constantsToExport()` in `BaseModule.swift`:
+```swift
+@objc override func constantsToExport() -> [AnyHashable: Any]! {
+  ["supportedEvents": supportedEvents() ?? []]
+}
+```
+
+**Android** - Override `getConstants()` in `BaseModule.kt`:
+```kotlin
+override fun getConstants(): MutableMap<String, Any> =
+  mutableMapOf("supportedEvents" to supportedEvents())
+```
 
 ### Event Reference
 
