@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Adyen N.V.
+ * Copyright (c) 2026 Adyen N.V.
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
@@ -8,7 +8,7 @@ package com.adyenreactnativesdk.util.messaging.dropin
 
 import com.adyen.checkout.components.core.Order
 import com.adyenreactnativesdk.util.messaging.EventName
-import com.adyenreactnativesdk.util.messaging.FakeEmitter
+import com.adyenreactnativesdk.util.messaging.MockEmitter
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -16,13 +16,13 @@ import org.junit.Before
 import org.junit.Test
 
 class PartialPaymentMessengerImplTest {
-  private lateinit var fakeEmitter: FakeEmitter
+  private lateinit var mockEmitter: MockEmitter
   private lateinit var sut: PartialPaymentMessengerImpl
 
   @Before
   fun setUp() {
-    fakeEmitter = FakeEmitter()
-    sut = PartialPaymentMessengerImpl(fakeEmitter)
+    mockEmitter = MockEmitter()
+    sut = PartialPaymentMessengerImpl(mockEmitter)
   }
 
   @Test
@@ -31,9 +31,9 @@ class PartialPaymentMessengerImplTest {
     sut.onOrderRequest()
 
     // THEN
-    assertEquals(1, fakeEmitter.events.size)
-    assertEquals(EventName.REQUEST_ORDER, fakeEmitter.events[0].eventName)
-    assertTrue(fakeEmitter.events[0].payload is JSONObject)
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.REQUEST_ORDER, mockEmitter.events[0].eventName)
+    assertTrue(mockEmitter.events[0].payload is JSONObject)
   }
 
   @Test
@@ -49,9 +49,9 @@ class PartialPaymentMessengerImplTest {
     sut.onOrderCancel(order, shouldUpdatePaymentMethods = true)
 
     // THEN
-    assertEquals(1, fakeEmitter.events.size)
-    assertEquals(EventName.CANCEL_ORDER, fakeEmitter.events[0].eventName)
-    val payload = fakeEmitter.events[0].payload as JSONObject
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.CANCEL_ORDER, mockEmitter.events[0].eventName)
+    val payload = mockEmitter.events[0].payload as JSONObject
     assertTrue(payload.has("order"))
     assertEquals(true, payload.getBoolean("shouldUpdatePaymentMethods"))
   }

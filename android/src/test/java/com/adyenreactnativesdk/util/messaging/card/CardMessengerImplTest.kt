@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Adyen N.V.
+ * Copyright (c) 2026 Adyen N.V.
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
@@ -8,7 +8,7 @@ package com.adyenreactnativesdk.util.messaging.card
 
 import com.adyen.checkout.card.BinLookupData
 import com.adyenreactnativesdk.util.messaging.EventName
-import com.adyenreactnativesdk.util.messaging.FakeEmitter
+import com.adyenreactnativesdk.util.messaging.MockEmitter
 import com.google.gson.Gson
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
@@ -16,15 +16,15 @@ import org.junit.Before
 import org.junit.Test
 
 class CardMessengerImplTest {
-  private lateinit var fakeEmitter: FakeEmitter
+  private lateinit var mockEmitter: MockEmitter
   private lateinit var gson: Gson
   private lateinit var sut: CardMessengerImpl
 
   @Before
   fun setUp() {
-    fakeEmitter = FakeEmitter()
+    mockEmitter = MockEmitter()
     gson = Gson()
-    sut = CardMessengerImpl(fakeEmitter, gson)
+    sut = CardMessengerImpl(mockEmitter, gson)
   }
 
   @Test
@@ -36,9 +36,9 @@ class CardMessengerImplTest {
     sut.onBinValue(binValue)
 
     // THEN
-    assertEquals(1, fakeEmitter.events.size)
-    assertEquals(EventName.CHANGE_BIN_VALUE, fakeEmitter.events[0].eventName)
-    assertEquals(binValue, fakeEmitter.events[0].payload)
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.CHANGE_BIN_VALUE, mockEmitter.events[0].eventName)
+    assertEquals(binValue, mockEmitter.events[0].payload)
   }
 
   @Test
@@ -54,9 +54,9 @@ class CardMessengerImplTest {
     sut.onBinLookup(binLookupData)
 
     // THEN
-    assertEquals(1, fakeEmitter.events.size)
-    assertEquals(EventName.BIN_LOOKUP, fakeEmitter.events[0].eventName)
-    val payload = fakeEmitter.events[0].payload as JSONArray
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.BIN_LOOKUP, mockEmitter.events[0].eventName)
+    val payload = mockEmitter.events[0].payload as JSONArray
     assertEquals(2, payload.length())
   }
 
@@ -69,6 +69,6 @@ class CardMessengerImplTest {
     sut.onBinLookup(binLookupData)
 
     // THEN
-    assertEquals(0, fakeEmitter.events.size)
+    assertEquals(0, mockEmitter.events.size)
   }
 }

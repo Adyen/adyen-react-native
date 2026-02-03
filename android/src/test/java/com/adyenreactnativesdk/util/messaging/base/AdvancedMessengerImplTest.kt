@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Adyen N.V.
+ * Copyright (c) 2026 Adyen N.V.
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
@@ -10,7 +10,7 @@ import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyenreactnativesdk.util.messaging.EventName
-import com.adyenreactnativesdk.util.messaging.FakeEmitter
+import com.adyenreactnativesdk.util.messaging.MockEmitter
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -20,13 +20,13 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class AdvancedMessengerImplTest {
-  private lateinit var fakeEmitter: FakeEmitter
+  private lateinit var mockEmitter: MockEmitter
   private lateinit var sut: AdvancedMessengerImpl
 
   @Before
   fun setUp() {
-    fakeEmitter = FakeEmitter()
-    sut = AdvancedMessengerImpl(fakeEmitter)
+    mockEmitter = MockEmitter()
+    sut = AdvancedMessengerImpl(mockEmitter)
   }
 
   @Test
@@ -38,9 +38,9 @@ class AdvancedMessengerImplTest {
     sut.onException(exception)
 
     // THEN
-    assertEquals(1, fakeEmitter.errors.size)
-    assertEquals(EventName.ERROR, fakeEmitter.errors[0].eventName)
-    assertEquals(exception, fakeEmitter.errors[0].error)
+    assertEquals(1, mockEmitter.errors.size)
+    assertEquals(EventName.ERROR, mockEmitter.errors[0].eventName)
+    assertEquals(exception, mockEmitter.errors[0].error)
   }
 
   @Test
@@ -49,9 +49,9 @@ class AdvancedMessengerImplTest {
     sut.onFinished()
 
     // THEN
-    assertEquals(1, fakeEmitter.events.size)
-    assertEquals(EventName.COMPLETE_VOUCHER, fakeEmitter.events[0].eventName)
-    val payload = fakeEmitter.events[0].payload as JSONObject
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.COMPLETE_VOUCHER, mockEmitter.events[0].eventName)
+    val payload = mockEmitter.events[0].payload as JSONObject
     assertEquals("PresentToShopper", payload.getString("resultCode"))
   }
 
@@ -66,9 +66,9 @@ class AdvancedMessengerImplTest {
     sut.onSubmit(state, returnUrl = "myapp://return")
 
     // THEN
-    assertEquals(1, fakeEmitter.events.size)
-    assertEquals(EventName.SUBMIT, fakeEmitter.events[0].eventName)
-    val payload = fakeEmitter.events[0].payload as JSONObject
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.SUBMIT, mockEmitter.events[0].eventName)
+    val payload = mockEmitter.events[0].payload as JSONObject
     assertTrue(payload.has("paymentData"))
   }
 
@@ -83,7 +83,7 @@ class AdvancedMessengerImplTest {
     sut.onSubmit(state, returnUrl = "myapp://return")
 
     // THEN
-    val payload = fakeEmitter.events[0].payload as JSONObject
+    val payload = mockEmitter.events[0].payload as JSONObject
     val paymentData = payload.getJSONObject("paymentData")
     assertEquals("myapp://return", paymentData.getString("returnUrl"))
   }
@@ -101,9 +101,9 @@ class AdvancedMessengerImplTest {
     sut.onAdditionalDetails(actionComponentData)
 
     // THEN
-    assertEquals(1, fakeEmitter.events.size)
-    assertEquals(EventName.ADDITIONAL_DETAILS, fakeEmitter.events[0].eventName)
-    val payload = fakeEmitter.events[0].payload as JSONObject
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.ADDITIONAL_DETAILS, mockEmitter.events[0].eventName)
+    val payload = mockEmitter.events[0].payload as JSONObject
     assertEquals("testPaymentData", payload.getString("paymentData"))
   }
 }
