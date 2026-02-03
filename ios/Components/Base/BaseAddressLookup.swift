@@ -8,7 +8,7 @@ import Adyen
 
 internal class BaseAddressLookup: BaseModuleSender {
     internal var lookupHandler: (([LookupAddressModel]) -> Void)?
-    internal var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
+    internal var lookupCompletionHandler: ((Result<PostalAddress, any Error>) -> Void)?
 
     @objc
     func update(_ results: NSArray) {
@@ -24,25 +24,25 @@ internal class BaseAddressLookup: BaseModuleSender {
 
     @objc
     func confirm(_ success: NSNumber, address: NSDictionary) {
-        guard let lookupCompliationHandler else { return }
+        guard let lookupCompletionHandler else { return }
 
         DispatchQueue.main.async {
             if !success.boolValue, let message = address[Keys.message] as? String {
-                return lookupCompliationHandler(.failure(AddressError(message: message)))
+                return lookupCompletionHandler(.failure(AddressError(message: message)))
             }
 
             do {
                 let addressModel: LookupAddressModel = try address.decode()
-                lookupCompliationHandler(.success(addressModel.postalAddress))
+                lookupCompletionHandler(.success(addressModel.postalAddress))
             } catch {
-                lookupCompliationHandler(.failure(error))
+                lookupCompletionHandler(.failure(error))
             }
         }
     }
 
     override func cleanUp() {
         lookupHandler = nil
-        lookupCompliationHandler = nil
+        lookupCompletionHandler = nil
         super.cleanUp()
     }
 
@@ -65,7 +65,7 @@ extension BaseAddressLookup: AddressLookupProvider {
         incompleteAddress: LookupAddressModel,
         resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void
     ) {
-        lookupCompliationHandler = resultHandler
+        lookupCompletionHandler = resultHandler
         sendAddressConfirm(json: incompleteAddress.jsonObject)
     }
 }

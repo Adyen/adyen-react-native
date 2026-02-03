@@ -62,6 +62,7 @@ open class AdvancedCheckoutService : DropInService() {
   }
 
   override fun onRemoveStoredPaymentMethod(storedPaymentMethod: StoredPaymentMethod) {
+    DropInModule.storedPaymentMethodID = storedPaymentMethod.id
     AdyenPaymentPackage.messageBus.onRemove(storedPaymentMethod)
   }
 }

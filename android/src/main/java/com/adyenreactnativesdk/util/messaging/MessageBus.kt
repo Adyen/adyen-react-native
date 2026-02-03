@@ -14,8 +14,10 @@ import com.adyenreactnativesdk.util.messaging.dropin.RemoveStoredPaymentMessenge
 import com.adyenreactnativesdk.util.messaging.dropin.RemoveStoredPaymentMessengerImpl
 import com.google.gson.Gson
 
-class MessageBus(gson: Gson, emitter: Emitter) :
-  SessionMessenger by SessionMessengerImpl(emitter),
+class MessageBus(
+  gson: Gson,
+  emitter: Emitter,
+) : SessionMessenger by SessionMessengerImpl(emitter),
   AdvancedMessenger by AdvancedMessengerImpl(emitter),
   PartialPaymentMessenger by PartialPaymentMessengerImpl(emitter),
   RemoveStoredPaymentMessenger by RemoveStoredPaymentMessengerImpl(emitter),

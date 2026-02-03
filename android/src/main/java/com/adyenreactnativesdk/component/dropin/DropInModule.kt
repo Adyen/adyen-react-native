@@ -39,7 +39,6 @@ import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.messaging.card.CardMessenger
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -57,7 +56,11 @@ class DropInModule(
 ) : BaseModule(reactContext, messageBus) {
   private var taskId: Int? = null
 
-  private fun getService(): BaseDropInServiceContract? = if (session != null) sessionService else advancedService
+  private val integration: String
+    get() = if (session != null) "session" else "advanced"
+
+  private val service: BaseDropInServiceContract
+    get() = (if (session != null) sessionService else advancedService) ?: throw ModuleException.NoModuleListener(integration)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -83,6 +86,9 @@ class DropInModule(
     paymentMethodsData: ReadableMap?,
     configuration: ReadableMap,
   ) {
+    if (!isInitialized) {
+      throw ModuleException.NoActivity()
+    }
     val checkoutConfiguration: CheckoutConfiguration
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
@@ -119,7 +125,7 @@ class DropInModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       val action = Action.SERIALIZER.deserialize(jsonObject)
-      getService()?.sendResult(DropInServiceResult.Action(action))
+      service.sendResult(DropInServiceResult.Action(action))
     } catch (e: Exception) {
       sendError(ModuleException.InvalidAction(e))
     }
@@ -149,7 +155,7 @@ class DropInModule(
         Log.w(TAG, error)
         AddressLookupDropInServiceResult.LookupResult(arrayListOf())
       }
-    getService()?.sendAddressLookupResult(result)
+    service.sendAddressLookupResult(result)
   }
 
   @ReactMethod
@@ -180,7 +186,7 @@ class DropInModule(
           false,
         )
       }
-    getService()?.sendAddressLookupResult(result)
+    service.sendAddressLookupResult(result)
   }
 
   @ReactMethod
@@ -201,7 +207,7 @@ class DropInModule(
           RecurringDropInServiceResult.Error(null, null, false)
         }
       }
-    advancedService?.sendRecurringResult(result)
+    service.sendRecurringResult(result)
     storedPaymentMethodID = null
   }
 
@@ -220,7 +226,7 @@ class DropInModule(
         val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
         BalanceDropInServiceResult.Error(null, message, true)
       }
-    getService()?.sendBalanceResult(result)
+    service.sendBalanceResult(result)
   }
 
   @ReactMethod
@@ -238,7 +244,7 @@ class DropInModule(
         val message = error?.getString(AdyenConstants.PARAMETER_MESSAGE)
         OrderDropInServiceResult.Error(null, message, true)
       }
-    getService()?.sendOrderResult(result)
+    service.sendOrderResult(result)
   }
 
   @ReactMethod
@@ -254,7 +260,7 @@ class DropInModule(
         OrderResponse.SERIALIZER.deserialize(jsonObject)
       }
 
-    getService()?.sendResult(DropInServiceResult.Update(paymentMethods, order))
+    service.sendResult(DropInServiceResult.Update(paymentMethods, order))
   }
 
   private fun proxyHideDropInCommand(
@@ -268,7 +274,7 @@ class DropInModule(
       } else {
         DropInServiceResult.Error(null, messageString, true)
       }
-    getService()?.sendResult(result)
+    service.sendResult(result)
   }
 
   private fun startBackgroundService() {
@@ -297,6 +303,7 @@ class DropInModule(
     internal var sessionService: BaseDropInServiceContract? = null
     internal var advancedService: BaseDropInServiceContract? = null
     var storedPaymentMethodID: String? = null
+    var isInitialized = false
 
     fun register(activity: ActivityResultCaller) {
       val callbackHandler = DropInCallbackHandler { AdyenPaymentPackage.messageBusOrNull() }
@@ -310,6 +317,7 @@ class DropInModule(
           activity,
           callbackHandler as DropInCallback,
         )
+      isInitialized = true
     }
   }
 }

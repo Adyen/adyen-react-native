@@ -60,12 +60,24 @@ class AdyenPaymentPackage : ReactPackage {
 
     @Volatile
     private var _messageBus: MessageBus? = null
+
+    @Volatile
+    private var currentContextHashCode: Int = 0
     private val lock = Any()
 
-    private fun getOrCreateMessageBus(context: ReactApplicationContext): MessageBus =
-      _messageBus ?: synchronized(lock) {
-        _messageBus ?: MessageBus(gson, MessageBusEmitter(context)).also {
+    /**
+     * Gets or creates a MessageBus for the provided context.
+     * Creates a fresh instance if the context has changed (e.g., after hot reload).
+     */
+    internal fun getOrCreateMessageBus(context: ReactApplicationContext): MessageBus =
+      synchronized(lock) {
+        val contextHash = context.hashCode()
+        if (_messageBus != null && currentContextHashCode == contextHash) {
+          return@synchronized _messageBus!!
+        }
+        MessageBus(gson, MessageBusEmitter(context)).also {
           _messageBus = it
+          currentContextHashCode = contextHash
         }
       }
 
