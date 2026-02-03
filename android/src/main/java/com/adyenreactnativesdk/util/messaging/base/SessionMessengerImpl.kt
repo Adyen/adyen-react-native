@@ -1,12 +1,14 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.base
 
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.component.model.toJSONObject
 import com.adyenreactnativesdk.util.ResultCodes
+import com.adyenreactnativesdk.util.messaging.Emitter
+import com.adyenreactnativesdk.util.messaging.EventName
 
-class SessionEventListenerImpl(
-  private val emitter: MessageBusEmitter,
-) : SessionEventListener {
+class SessionMessengerImpl(
+  private val emitter: Emitter,
+) : SessionMessenger {
   override fun onSessionException(exception: Exception) {
     emitter.sendError(EventName.SESSION_ERROR, exception)
   }

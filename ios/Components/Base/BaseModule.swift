@@ -13,6 +13,7 @@ internal class BaseModule: RCTEventEmitter {
 
     internal static var session: AdyenSession?
     internal static weak var sessionDelegate: SessionErrorDelegate?
+    internal static weak var currentModule: BaseModule?
     internal var currentComponent: Component?
     internal var actionHandler: AdyenActionComponent?
 
@@ -52,6 +53,7 @@ internal class BaseModule: RCTEventEmitter {
 
         defer {
             BaseModule.currentPresenter = presenter
+            BaseModule.currentModule = self
         }
 
         guard component.requiresModalPresentation else {
@@ -126,6 +128,7 @@ internal class BaseModule: RCTEventEmitter {
 
     internal func cleanUp() {
         BaseModule.session = nil
+        BaseModule.currentModule = nil
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         currentComponent = nil

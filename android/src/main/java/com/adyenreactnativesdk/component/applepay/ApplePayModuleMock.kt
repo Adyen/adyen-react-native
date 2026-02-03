@@ -23,6 +23,11 @@ class ApplePayModuleMock(
 
   override fun supportedEvents(): List<String> = listOf(EventName.ERROR.value)
 
+  override fun hide(
+    success: Boolean,
+    message: ReadableMap?,
+  ): Unit = throw NotImplementedError()
+
   override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
 
   @ReactMethod

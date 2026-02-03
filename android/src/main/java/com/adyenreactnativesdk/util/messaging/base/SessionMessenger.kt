@@ -1,8 +1,8 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.base
 
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 
-interface SessionEventListener {
+interface SessionMessenger {
   fun onSessionException(exception: Exception)
 
   fun onFinished(result: SessionPaymentResult)

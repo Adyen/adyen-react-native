@@ -10,9 +10,9 @@ import org.json.JSONObject
 
 class MessageBusEmitter(
   private val context: ReactContext,
-) {
-  fun sendError(
-    eventName: EventName = EventName.ERROR,
+) : Emitter {
+  override fun sendError(
+    eventName: EventName,
     error: Exception,
   ) {
     context
@@ -20,7 +20,7 @@ class MessageBusEmitter(
       .emit(eventName.value, ReactNativeError.mapError(error))
   }
 
-  fun send(
+  override fun send(
     eventName: EventName,
     payload: Any?,
   ) {
@@ -29,11 +29,11 @@ class MessageBusEmitter(
         .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
         .emit(eventName.value, payload)
     } catch (e: JSONException) {
-      sendError(error = e)
+      sendError(EventName.ERROR, e)
     }
   }
 
-  fun sendEvent(
+  override fun sendEvent(
     eventName: EventName,
     jsonObject: JSONObject,
   ) {
@@ -41,7 +41,7 @@ class MessageBusEmitter(
     send(eventName, payload)
   }
 
-  fun sendEvent(
+  override fun sendEvent(
     eventName: EventName,
     jsonObject: JSONArray,
   ) {
@@ -49,7 +49,7 @@ class MessageBusEmitter(
     send(eventName, payload)
   }
 
-  fun sendEvent(
+  override fun sendEvent(
     eventName: EventName,
     string: String,
   ) {

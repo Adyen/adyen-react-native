@@ -11,9 +11,7 @@ export interface BaseNativeModule extends NativeModuleWithConstants {
  * Base wrapper for non-embedded Native Modules.
  * @typeParam T - The specific native module interface for the concrete wrapper
  */
-export abstract class ModuleWrapper<
-  T extends BaseNativeModule
->
+export abstract class ModuleWrapper<T extends BaseNativeModule>
   extends EventListenerWrapper<T>
   implements AdyenComponent
 {

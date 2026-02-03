@@ -13,7 +13,9 @@ import type { ActionHandlingNativeModule } from '../ActionHandlingComponentWrapp
  */
 export function createMockNativeModule(
   supportedEvents: string[] = []
-): jest.Mocked<NativeModule & { getConstants: () => { supportedEvents: string[] } }> {
+): jest.Mocked<
+  NativeModule & { getConstants: () => { supportedEvents: string[] } }
+> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
@@ -26,7 +28,9 @@ export function createMockNativeModule(
  */
 export function createMockBaseNativeModule(
   supportedEvents: string[] = []
-): jest.Mocked<BaseNativeModule & { getConstants: () => { supportedEvents: string[] } }> {
+): jest.Mocked<
+  BaseNativeModule & { getConstants: () => { supportedEvents: string[] } }
+> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
@@ -40,7 +44,9 @@ export function createMockBaseNativeModule(
  */
 export function createMockPaymentModule(
   supportedEvents: string[] = []
-): jest.Mocked<PaymentModule & { getConstants: () => { supportedEvents: string[] } }> {
+): jest.Mocked<
+  PaymentModule & { getConstants: () => { supportedEvents: string[] } }
+> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
@@ -55,7 +61,11 @@ export function createMockPaymentModule(
  */
 export function createMockActionHandlingModule(
   supportedEvents: string[] = []
-): jest.Mocked<ActionHandlingNativeModule & { getConstants: () => { supportedEvents: string[] } }> {
+): jest.Mocked<
+  ActionHandlingNativeModule & {
+    getConstants: () => { supportedEvents: string[] };
+  }
+> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),

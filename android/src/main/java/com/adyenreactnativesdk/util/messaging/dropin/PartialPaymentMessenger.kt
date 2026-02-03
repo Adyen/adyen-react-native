@@ -1,12 +1,9 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.dropin
 
 import com.adyen.checkout.components.core.Order
 import com.adyen.checkout.components.core.PaymentComponentState
-import com.adyen.checkout.components.core.StoredPaymentMethod
 
-interface DropInStoredPaymentEventListener {
-  fun onRemove(storedPaymentMethod: StoredPaymentMethod)
-
+interface PartialPaymentMessenger {
   fun onBalanceCheck(paymentComponentState: PaymentComponentState<*>)
 
   fun onOrderRequest()

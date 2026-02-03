@@ -1,12 +1,14 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.address
 
 import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.LookupAddress
+import com.adyenreactnativesdk.util.messaging.Emitter
+import com.adyenreactnativesdk.util.messaging.EventName
 import com.google.gson.Gson
 import org.json.JSONObject
 
-class AddressLookupCallbackImpl(
-  private val emitter: MessageBusEmitter,
+class AddressLookupMessengerImpl(
+  private val emitter: Emitter,
   private val gson: Gson,
 ) : AddressLookupCallback {
   override fun onQueryChanged(query: String) {

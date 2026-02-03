@@ -1,10 +1,9 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.base
 
 import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
-import com.adyen.checkout.core.exception.CheckoutException
 
-interface AdvancedEventListener {
+interface AdvancedMessenger {
   fun onSubmit(
     state: PaymentComponentState<*>,
     returnUrl: String?,

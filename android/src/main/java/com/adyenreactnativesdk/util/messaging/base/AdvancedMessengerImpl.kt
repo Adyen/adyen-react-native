@@ -1,4 +1,4 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.base
 
 import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.PaymentComponentData
@@ -8,11 +8,13 @@ import com.adyenreactnativesdk.component.model.ResponseDTO
 import com.adyenreactnativesdk.component.model.SubmitMap
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ResultCodes
+import com.adyenreactnativesdk.util.messaging.Emitter
+import com.adyenreactnativesdk.util.messaging.EventName
 import org.json.JSONObject
 
-class AdvancedEventListenerImpl(
-  private val emitter: MessageBusEmitter,
-) : AdvancedEventListener {
+class AdvancedMessengerImpl(
+  private val emitter: Emitter,
+) : AdvancedMessenger {
   override fun onSubmit(
     state: PaymentComponentState<*>,
     returnUrl: String?,

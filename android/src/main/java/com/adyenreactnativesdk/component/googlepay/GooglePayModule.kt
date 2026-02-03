@@ -65,6 +65,7 @@ class GooglePayModule(
     }
 
     val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
+    currentModule = this
     GooglePayComponent.run {
       PROVIDER.isAvailable(
         appCompatActivity.application,
@@ -103,8 +104,8 @@ class GooglePayModule(
   }
 
   @ReactMethod
-  fun hide(
-    success: Boolean?,
+  override fun hide(
+    success: Boolean,
     message: ReadableMap?,
   ) {
     cleanup()

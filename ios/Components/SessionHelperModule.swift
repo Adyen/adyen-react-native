@@ -19,6 +19,15 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
     override func supportedEvents() -> [String]! { Events.sessionEvents.map(\.rawValue) }
 
     @objc
+    override func hide(_ success: NSNumber, event: NSDictionary) {
+        super.hide(success, event: event)
+        // Delegate hide to the current active module (DropIn, GooglePay, etc.)
+        if let activeModule = BaseModule.currentModule {
+            activeModule.hide(success, event: event)
+        }
+    }
+
+    @objc
     func createSession(_ sessionModelJSON: NSDictionary,
                        configuration: NSDictionary,
                        resolver: @escaping RCTPromiseResolveBlock,

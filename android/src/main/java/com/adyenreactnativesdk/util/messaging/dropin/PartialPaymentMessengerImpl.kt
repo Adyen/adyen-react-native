@@ -1,20 +1,16 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.dropin
 
 import com.adyen.checkout.components.core.Order
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
-import com.adyen.checkout.components.core.StoredPaymentMethod
 import com.adyenreactnativesdk.component.model.toJSONObject
+import com.adyenreactnativesdk.util.messaging.Emitter
+import com.adyenreactnativesdk.util.messaging.EventName
 import org.json.JSONObject
 
-class DropInStoredPaymentEventListenerImpl(
-  private val emitter: MessageBusEmitter,
-) : DropInStoredPaymentEventListener {
-  override fun onRemove(storedPaymentMethod: StoredPaymentMethod) {
-    val jsonObject = StoredPaymentMethod.Companion.SERIALIZER.serialize(storedPaymentMethod)
-    emitter.sendEvent(EventName.DISABLE_STORED_PAYMENT_METHOD, jsonObject)
-  }
-
+class PartialPaymentMessengerImpl(
+  private val emitter: Emitter,
+) : PartialPaymentMessenger {
   override fun onBalanceCheck(paymentComponentState: PaymentComponentState<*>) {
     val jsonObject = PaymentComponentData.Companion.SERIALIZER.serialize(paymentComponentState.data)
     emitter.sendEvent(EventName.CHECK_BALANCE, jsonObject)

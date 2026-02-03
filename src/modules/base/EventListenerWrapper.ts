@@ -21,7 +21,6 @@ export abstract class EventListenerWrapper<
   constructor(nativeModule: T) {
     this.nativeModule = nativeModule;
     const constants = nativeModule.getConstants?.();
-    console.log('EventListenerWrapper constructor: ', constants);
     this.supportedEvents = constants?.supportedEvents ?? [];
   }
 

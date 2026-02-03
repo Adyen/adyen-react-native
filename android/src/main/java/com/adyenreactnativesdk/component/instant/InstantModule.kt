@@ -67,6 +67,7 @@ class InstantModule(
         else -> InstantFragment
       }
 
+    currentModule = this
     fragment?.show(
       appCompatActivity.supportFragmentManager,
       checkoutConfiguration,
@@ -87,8 +88,8 @@ class InstantModule(
   }
 
   @ReactMethod
-  fun hide(
-    success: Boolean?,
+  override fun hide(
+    success: Boolean,
     message: ReadableMap?,
   ) {
     cleanup()

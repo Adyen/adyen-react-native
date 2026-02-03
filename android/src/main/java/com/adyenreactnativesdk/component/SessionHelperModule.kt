@@ -43,10 +43,11 @@ class SessionHelperModule(
   }
 
   @ReactMethod
-  fun hide(
+  override fun hide(
     success: Boolean,
     message: ReadableMap?,
-  ) { // No UI
+  ) {
+    currentModule?.hide(success, message)
     cleanup()
   }
 

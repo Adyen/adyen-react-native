@@ -1,14 +1,16 @@
-package com.adyenreactnativesdk.util.messaging
+package com.adyenreactnativesdk.util.messaging.card
 
 import com.adyen.checkout.card.BinLookupData
 import com.adyenreactnativesdk.component.model.BinLookupDataDTO
+import com.adyenreactnativesdk.util.messaging.Emitter
+import com.adyenreactnativesdk.util.messaging.EventName
 import com.google.gson.Gson
 import org.json.JSONArray
 
-class CardComponentEventListenerImpl(
-  private val emitter: MessageBusEmitter,
+class CardMessengerImpl(
+  private val emitter: Emitter,
   private val gson: Gson,
-) : CardComponentEventListener {
+) : CardMessenger {
   override fun onBinValue(binValue: String) {
     emitter.sendEvent(EventName.CHANGE_BIN_VALUE, binValue)
   }

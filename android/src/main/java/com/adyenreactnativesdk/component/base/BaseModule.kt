@@ -20,10 +20,13 @@ abstract class BaseModule(
   reactContext: ReactApplicationContext?,
   val messageBus: MessageBus,
 ) : AppCompatModule(reactContext) {
-  internal var integration = if (session == null) "advanced" else "session"
-
   /** Override to provide supported events for this module */
   abstract fun supportedEvents(): List<String>
+
+  abstract fun hide(
+    success: Boolean,
+    message: ReadableMap?,
+  )
 
   protected fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse =
     try {
@@ -40,6 +43,7 @@ abstract class BaseModule(
 
   protected fun cleanup() {
     session = null
+    currentModule = null
     AdyenCheckout.removeComponent()
   }
 
@@ -52,8 +56,10 @@ abstract class BaseModule(
   }
 
   companion object {
-    @JvmStatic
     var session: CheckoutSession? = null
+      internal set
+
+    var currentModule: BaseModule? = null
       internal set
   }
 }

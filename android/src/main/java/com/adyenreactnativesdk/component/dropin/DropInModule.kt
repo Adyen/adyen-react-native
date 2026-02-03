@@ -37,9 +37,9 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.adyenreactnativesdk.util.messaging.CardComponentEventListener
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.card.CardMessenger
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -54,9 +54,7 @@ class DropInModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
   private val gson: Gson,
-) : BaseModule(reactContext, messageBus),
-  AddressLookupCallback,
-  CardComponentEventListener {
+) : BaseModule(reactContext, messageBus) {
   private var taskId: Int? = null
 
   private fun getService(): BaseDropInServiceContract? = if (session != null) sessionService else advancedService
@@ -95,8 +93,9 @@ class DropInModule(
     }
 
     val session = session
+    currentModule = this
+    startBackgroundService()
     if (session != null) {
-      startBackgroundService()
       startPayment(
         reactApplicationContext,
         dropInSessionLauncher,
@@ -105,7 +104,6 @@ class DropInModule(
         SessionCheckoutService::class.java,
       )
     } else {
-      startBackgroundService()
       startPayment(
         reactApplicationContext,
         dropInLauncher,
@@ -128,7 +126,7 @@ class DropInModule(
   }
 
   @ReactMethod
-  fun hide(
+  override fun hide(
     success: Boolean,
     message: ReadableMap?,
   ) {
@@ -314,12 +312,4 @@ class DropInModule(
         )
     }
   }
-
-  override fun onQueryChanged(query: String) = messageBus.onQueryChanged(query)
-
-  override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean = messageBus.onLookupCompletion(lookupAddress)
-
-  override fun onBinValue(binValue: String) = messageBus.onBinValue(binValue)
-
-  override fun onBinLookup(data: List<BinLookupData>) = messageBus.onBinLookup(data)
 }

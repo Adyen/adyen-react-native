@@ -4,11 +4,7 @@ import com.adyen.checkout.dropin.DropInCallback
 import com.adyen.checkout.dropin.DropInResult
 import com.adyen.checkout.dropin.SessionDropInCallback
 import com.adyen.checkout.dropin.SessionDropInResult
-import com.adyen.checkout.sessions.core.SessionPaymentResult
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.component.model.toJSONObject
-import com.adyenreactnativesdk.util.ResultCodes
-import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
 
 class DropInCallbackHandler(
@@ -36,13 +32,4 @@ class DropInCallbackHandler(
       null -> return
     }
   }
-
-  private fun onShopperPresent() =
-    SessionPaymentResult(
-      null,
-      null,
-      null,
-      ResultCodes.PRESENT_TO_SHOPPER.value,
-      null,
-    ).toJSONObject()
 }

@@ -1,15 +1,23 @@
 package com.adyenreactnativesdk.util.messaging
 
 import com.adyen.checkout.components.core.AddressLookupCallback
-import com.facebook.react.bridge.ReactContext
+import com.adyenreactnativesdk.util.messaging.address.AddressLookupMessengerImpl
+import com.adyenreactnativesdk.util.messaging.base.AdvancedMessenger
+import com.adyenreactnativesdk.util.messaging.base.AdvancedMessengerImpl
+import com.adyenreactnativesdk.util.messaging.base.SessionMessenger
+import com.adyenreactnativesdk.util.messaging.base.SessionMessengerImpl
+import com.adyenreactnativesdk.util.messaging.card.CardMessenger
+import com.adyenreactnativesdk.util.messaging.card.CardMessengerImpl
+import com.adyenreactnativesdk.util.messaging.dropin.PartialPaymentMessenger
+import com.adyenreactnativesdk.util.messaging.dropin.PartialPaymentMessengerImpl
+import com.adyenreactnativesdk.util.messaging.dropin.RemoveStoredPaymentMessenger
+import com.adyenreactnativesdk.util.messaging.dropin.RemoveStoredPaymentMessengerImpl
 import com.google.gson.Gson
-import org.json.JSONObject
 
-class MessageBus(
-  private val gson: Gson,
-  private val emitter: MessageBusEmitter,
-) : SessionEventListener by SessionEventListenerImpl(emitter),
-  AdvancedEventListener by AdvancedEventListenerImpl(emitter),
-  DropInStoredPaymentEventListener by DropInStoredPaymentEventListenerImpl(emitter),
-  CardComponentEventListener by CardComponentEventListenerImpl(emitter, gson),
-  AddressLookupCallback by AddressLookupCallbackImpl(emitter, gson)
+class MessageBus(gson: Gson, emitter: Emitter) :
+  SessionMessenger by SessionMessengerImpl(emitter),
+  AdvancedMessenger by AdvancedMessengerImpl(emitter),
+  PartialPaymentMessenger by PartialPaymentMessengerImpl(emitter),
+  RemoveStoredPaymentMessenger by RemoveStoredPaymentMessengerImpl(emitter),
+  CardMessenger by CardMessengerImpl(emitter, gson),
+  AddressLookupCallback by AddressLookupMessengerImpl(emitter, gson)
