@@ -6,8 +6,6 @@
 
 import Adyen
 
-    // MARK: - EventEmitter conformance for RCTEventEmitter
-
 extension BaseModuleSender: EventEmitter {
     func send(event: Events, body: Any?) {
         sendEvent(withName: event.rawValue, body: body)
@@ -20,6 +18,18 @@ internal class BaseModuleSender: BaseModule {
     internal var emitterOverride: EventEmitter?
     private var emitter: EventEmitter {
         emitterOverride ?? self
+    }
+
+    override func stopObserving() { /* No JS events expected */ }
+    override func startObserving() { /* No JS events expected */ }
+    
+    override open func supportedEvents() -> [String]! {
+        []
+    }
+
+    @objc
+    override func constantsToExport() -> [AnyHashable: Any]! {
+        ["supportedEvents": supportedEvents() ?? []]
     }
 
     // MARK: - Event emmiter helpers

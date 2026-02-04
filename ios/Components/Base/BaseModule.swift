@@ -17,7 +17,6 @@ internal class BaseModule: RCTEventEmitter {
     internal static var currentPresenter: UIViewController?
 
     internal var currentComponent: Component?
-    internal var actionHandler: AdyenActionComponent?
 
     #if DEBUG
         override func invalidate() {
@@ -31,17 +30,6 @@ internal class BaseModule: RCTEventEmitter {
     @objc
     override static func requiresMainQueueSetup() -> Bool {
         true
-    }
-
-    override func stopObserving() { /* No JS events expected */ }
-    override func startObserving() { /* No JS events expected */ }
-    override open func supportedEvents() -> [String]! {
-        []
-    }
-
-    @objc
-    override func constantsToExport() -> [AnyHashable: Any]! {
-        ["supportedEvents": supportedEvents() ?? []]
     }
 
     @objc
@@ -110,8 +98,6 @@ internal class BaseModule: RCTEventEmitter {
     internal func cleanUp() {
         BaseModule.session = nil
         BaseModule.currentModule = nil
-        actionHandler?.cancelIfNeeded()
-        actionHandler = nil
         currentComponent = nil
 
         guard BaseModule.currentPresenter?.presentedViewController != nil else {
@@ -149,27 +135,29 @@ internal class BaseModule: RCTEventEmitter {
 extension BaseModule: PresentationDelegate {
 
     internal func present(component: PresentableComponent) {
-        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            return sendError(error: NativeModuleError.notKeyWindow)
-        }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            
+            guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
+                return self.sendError(error: NativeModuleError.notKeyWindow)
+            }
 
-        defer {
-            BaseModule.currentPresenter = presenter
-            BaseModule.currentModule = self
-        }
+            defer {
+                BaseModule.currentPresenter = presenter
+                BaseModule.currentModule = self
+            }
 
-        let viewContoller: UIViewController
-        if component.requiresModalPresentation {
-            viewContoller = UINavigationController(rootViewController: component.viewController)
-            component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
-                                                                           target: self,
-                                                                           action: #selector(cancelDidPress))
-        } else {
-            viewContoller = component.viewController
-        }
+            let viewController: UIViewController
+            if component.requiresModalPresentation {
+                viewController = UINavigationController(rootViewController: component.viewController)
+                component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
+                                                                                   target: self,
+                                                                                   action: #selector(self.cancelDidPress))
+            } else {
+                viewController = component.viewController
+            }
 
-        return DispatchQueue.main.async {
-            presenter.present(viewContoller, animated: true)
+            presenter.present(viewController, animated: true)
         }
     }
 

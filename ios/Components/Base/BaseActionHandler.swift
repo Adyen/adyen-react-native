@@ -7,6 +7,9 @@
 import Adyen
 
 internal class BaseActionHandler: BaseModuleSender {
+
+    internal var actionHandler: AdyenActionComponent?
+
     @objc
     func handle(_ dictionary: NSDictionary) {
         let action: Action
@@ -19,5 +22,12 @@ internal class BaseActionHandler: BaseModuleSender {
         DispatchQueue.main.async { [weak self] in
             self?.actionHandler?.handle(action)
         }
+    }
+
+    @objc
+    override func hide(_ success: NSNumber, event: NSDictionary) {
+        actionHandler?.cancelIfNeeded()
+        actionHandler = nil
+        super.hide(success, event: event)
     }
 }

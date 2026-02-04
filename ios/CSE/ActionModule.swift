@@ -12,6 +12,8 @@ import React
 @objc(AdyenAction)
 internal final class ActionModule: BaseModule {
 
+    private var actionHandler: AdyenActionComponent?
+
     @objc override func constantsToExport() -> [AnyHashable: Any]! {
         [Constant.threeDS2SdkVersionName: threeDS2SdkVersion]
     }
