@@ -26,7 +26,7 @@ interface SessionNativeModule extends NativeModule, AdyenComponent {
 export class SessionWrapper implements SessionHelperModule {
   private nativeModule: SessionNativeModule;
   private eventEmitter: NativeEventEmitter;
-  private subscriptions: EmitterSubscription[] = [];
+  private subscriptions: Map<string, EmitterSubscription> = new Map();
 
   constructor(nativeModule: SessionNativeModule) {
     this.nativeModule = nativeModule;
@@ -50,11 +50,12 @@ export class SessionWrapper implements SessionHelperModule {
    * @returns EmitterSubscription that can be used to remove the listener.
    */
   onComplete(callback: (result: SessionsResult) => void): EmitterSubscription {
+    this.subscriptions.get(Event.onSessionComplete)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionComplete,
       callback
     );
-    this.subscriptions.push(subscription);
+    this.subscriptions.set(Event.onSessionComplete, subscription);
     return subscription;
   }
 
@@ -64,11 +65,12 @@ export class SessionWrapper implements SessionHelperModule {
    * @returns EmitterSubscription that can be used to remove the listener.
    */
   onError(callback: (error: AdyenError) => void): EmitterSubscription {
+    this.subscriptions.get(Event.onSessionError)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionError,
       callback
     );
-    this.subscriptions.push(subscription);
+    this.subscriptions.set(Event.onSessionError, subscription);
     return subscription;
   }
 
@@ -77,6 +79,6 @@ export class SessionWrapper implements SessionHelperModule {
    */
   removeAllListeners(): void {
     this.subscriptions.forEach((sub) => sub.remove());
-    this.subscriptions = [];
+    this.subscriptions.clear();
   }
 }

@@ -9,6 +9,9 @@ import Adyen3DS2
 import React
 import UIKit
 
+/// Base class for all Adyen React Native modules.
+/// - Important: Only one payment flow is supported at a time. Starting a new payment flow
+///   while another is in progress will replace the current session and presenter.
 internal class BaseModule: RCTEventEmitter {
 
     internal static var session: AdyenSession?
