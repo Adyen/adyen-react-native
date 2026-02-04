@@ -10,7 +10,7 @@ import XCTest
 
 final class ThreeDSConfigurationParserTests: XCTestCase {
 
-    func test_requestorAppUrl_returnsNil_withEmptyConfiguration() throws {
+    func test_requestorAppUrl_returnsNil_withEmptyConfiguration() {
         // GIVEN
         let configDict = NSDictionary()
         
@@ -21,7 +21,7 @@ final class ThreeDSConfigurationParserTests: XCTestCase {
         XCTAssertNil(sut.requestorAppUrl)
     }
 
-    func test_requestorAppUrl_returnsConfiguredValue_whenProvidedInRootDictionary() throws {
+    func test_requestorAppUrl_returnsConfiguredValue_whenProvidedInRootDictionary() {
         // GIVEN
         let configDict: NSDictionary = ["requestorAppUrl": "https://testing.com"]
 
@@ -32,7 +32,7 @@ final class ThreeDSConfigurationParserTests: XCTestCase {
         XCTAssertEqual(sut.requestorAppUrl, "https://testing.com")
     }
 
-    func test_requestorAppUrl_returnsNil_withEmptyThreeDS2Dictionary() throws {
+    func test_requestorAppUrl_returnsNil_withEmptyThreeDS2Dictionary() {
         // GIVEN
         let configDict: NSDictionary = ["threeDS2": [:]]
 
@@ -43,7 +43,7 @@ final class ThreeDSConfigurationParserTests: XCTestCase {
         XCTAssertNil(sut.requestorAppUrl)
     }
 
-    func test_requestorAppUrl_returnsConfiguredValue_whenProvidedInThreeDS2Dictionary() throws {
+    func test_requestorAppUrl_returnsConfiguredValue_whenProvidedInThreeDS2Dictionary() {
         // GIVEN
         let configDict: NSDictionary = ["threeDS2": ["requestorAppUrl": "https://testing.com"]]
         

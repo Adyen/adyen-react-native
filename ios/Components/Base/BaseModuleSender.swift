@@ -6,35 +6,54 @@
 
 import Adyen
 
+    // MARK: - EventEmitter conformance for RCTEventEmitter
+
+extension BaseModuleSender: EventEmitter {
+    func send(event: Events, body: Any?) {
+        sendEvent(withName: event.rawValue, body: body)
+    }
+}
+
 internal class BaseModuleSender: BaseModule {
 
-    internal func createActionHandler(context: AdyenContext, locale: String?) {
-        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        var config = AdyenActionComponent.Configuration(style: style)
-        if let locale {
-            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
-        }
-        actionHandler = AdyenActionComponent(context: context, configuration: config)
-        actionHandler?.delegate = self
-        actionHandler?.presentationDelegate = self
+    /// Override for testing. When nil, uses self (RCTEventEmitter).
+    internal var emitterOverride: EventEmitter?
+    private var emitter: EventEmitter {
+        emitterOverride ?? self
     }
 
+    // MARK: - Event emmiter helpers
+
     internal func sendEvent(event: Events) {
-        emitter.sendEvent(event: event, body: [:])
+        emitter.send(event: event, body: [:])
+    }
+
+    internal func sendEvent(event: Events, body: Any?) {
+        emitter.send(event: event, body: body)
     }
 
     internal func sendSubmitEvent(data: PaymentComponentData) {
         let extra = (data.paymentMethod as? ApplePayDetails)?.extraData
         let response = SubmitData(paymentData: data.jsonObject, extra: extra)
-        emitter.sendEvent(event: Events.submit, body: response.jsonObject)
+        emitter.send(event: Events.submit, body: response.jsonObject)
     }
 
     internal func sendCompleteEvent() {
         let result = ResultDTO(result: .presentToShopper)
-        emitter.sendEvent(event: Events.complete, body: result.jsonObject)
+        emitter.send(event: Events.complete, body: result.jsonObject)
     }
 
     internal func sendProvideEvent(actionData: ActionComponentData) {
-        emitter.sendEvent(event: Events.provide, body: actionData.jsonObject)
+        emitter.send(event: Events.provide, body: actionData.jsonObject)
     }
+
+    override internal func sendError(error: Error) {
+        let errorToSend = checkErrorType(error)
+        if let _ = BaseModule.session {
+            BaseModule.sessionDelegate?.sendError(error: error)
+            return
+        }
+        emitter.send(event: Events.fail, body: errorToSend.jsonObject)
+    }
+
 }

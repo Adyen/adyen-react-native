@@ -37,7 +37,7 @@ internal extension Swift.Error {
     }
 }
 
-extension Optional where Wrapped == NSDictionary {
+extension NSDictionary? {
     var getErrorMessage: String {
         self?.value(forKey: Keys.message) as? String ?? "Unknown"
     }

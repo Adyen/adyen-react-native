@@ -22,6 +22,11 @@ internal enum Events: String, CaseIterable {
     case completeSession = "didSessionCompleteCallback"
     case failSession = "didSessionErrorCallback"
 
-    static var coreEvents: [Events] { [.fail, .submit, .provide, .complete] }
-    static var sessionEvents: [Events] { [.failSession, .completeSession] }
+    static var coreEvents: [Events] {
+        [.fail, .submit, .provide, .complete]
+    }
+
+    static var sessionEvents: [Events] {
+        [.failSession, .completeSession]
+    }
 }

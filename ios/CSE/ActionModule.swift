@@ -12,8 +12,6 @@ import React
 @objc(AdyenAction)
 internal final class ActionModule: BaseModule {
 
-    @objc override func supportedEvents() -> [String]! { [] }
-
     @objc override func constantsToExport() -> [AnyHashable: Any]! {
         [Constant.threeDS2SdkVersionName: threeDS2SdkVersion]
     }
@@ -74,6 +72,10 @@ internal final class ActionModule: BaseModule {
             return reject(with: nativeError)
         }
         rejecter?(Constant.componentError, error.localizedDescription, error)
+    }
+
+    override func sendError(error: any Error) {
+        rejecter?("ActionModule", error.localizedDescription, error)
     }
 }
 

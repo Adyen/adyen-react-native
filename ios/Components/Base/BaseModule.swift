@@ -11,19 +11,13 @@ import UIKit
 
 internal class BaseModule: RCTEventEmitter {
 
-    /// Override for testing. When nil, uses self (RCTEventEmitter).
-    internal var emitterOverride: EventEmitter?
-    internal var emitter: EventEmitter {
-        emitterOverride ?? self
-    }
-
     internal static var session: AdyenSession?
     internal weak static var sessionDelegate: SessionErrorDelegate?
     internal weak static var currentModule: BaseModule?
+    internal static var currentPresenter: UIViewController?
+
     internal var currentComponent: Component?
     internal var actionHandler: AdyenActionComponent?
-
-    internal static var currentPresenter: UIViewController?
 
     #if DEBUG
         override func invalidate() {
@@ -57,36 +51,12 @@ internal class BaseModule: RCTEventEmitter {
 
     // MARK: - Internal methods
 
-    internal func present(_ component: PresentableComponent) {
-        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            return sendError(error: NativeModuleError.notKeyWindow)
-        }
-
-        defer {
-            BaseModule.currentPresenter = presenter
-            BaseModule.currentModule = self
-        }
-
-        guard component.requiresModalPresentation else {
-            presenter.present(component.viewController, animated: true)
-            return
-        }
-
-        let navigation = UINavigationController(rootViewController: component.viewController)
-        component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
-                                                                           target: self,
-                                                                           action: #selector(cancelDidPress))
-        presenter.present(navigation, animated: true)
-    }
-
-    @objc private func cancelDidPress() {
-        currentComponent?.cancelIfNeeded()
-        sendError(error: NativeModuleError.canceled)
+    open func sendError(error: Error) {
+        assertionFailure("Not implemented")
     }
 
     internal func parsePaymentMethods(from dictionary: NSDictionary) throws -> PaymentMethods {
-        guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
-              let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: data)
+        guard let paymentMethods: PaymentMethods = try? dictionary.decode()
         else {
             throw NativeModuleError.invalidPaymentMethods
         }
@@ -156,8 +126,11 @@ internal class BaseModule: RCTEventEmitter {
     internal func dismiss(_ result: Bool) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-
-            self.currentComponent?.finalizeIfNeeded(with: result) {
+            if let component = self.currentComponent {
+                component.finalizeIfNeeded(with: result) {
+                    self.cleanUp()
+                }
+            } else {
                 self.cleanUp()
             }
         }
@@ -171,31 +144,38 @@ internal class BaseModule: RCTEventEmitter {
         }
         return error
     }
-
-    internal func sendError(error: Error) {
-        let errorToSend = checkErrorType(error)
-        if let _ = BaseModule.session {
-            BaseModule.sessionDelegate?.sendSessionError(error: error)
-            return
-        }
-        emitter.sendEvent(event: Events.fail, body: errorToSend.jsonObject)
-    }
-}
-
-// MARK: - EventEmitter conformance for RCTEventEmitter
-
-extension BaseModule: EventEmitter {
-    func sendEvent(event: Events, body: Any?) {
-        sendEvent(withName: event.rawValue, body: body)
-    }
 }
 
 extension BaseModule: PresentationDelegate {
 
     internal func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
-            self?.present(component)
+        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
+            return sendError(error: NativeModuleError.notKeyWindow)
         }
+
+        defer {
+            BaseModule.currentPresenter = presenter
+            BaseModule.currentModule = self
+        }
+
+        let viewContoller: UIViewController
+        if component.requiresModalPresentation {
+            viewContoller = UINavigationController(rootViewController: component.viewController)
+            component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
+                                                                           target: self,
+                                                                           action: #selector(cancelDidPress))
+        } else {
+            viewContoller = component.viewController
+        }
+
+        return DispatchQueue.main.async {
+            presenter.present(viewContoller, animated: true)
+        }
+    }
+
+    @objc private func cancelDidPress() {
+        currentComponent?.cancelIfNeeded()
+        sendError(error: NativeModuleError.canceled)
     }
 
 }

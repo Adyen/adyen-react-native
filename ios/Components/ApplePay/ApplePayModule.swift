@@ -12,7 +12,9 @@ import React
 @objc(AdyenApplePay)
 internal class ApplePayModule: BaseModuleSender {
 
-    override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
+    override func supportedEvents() -> [String]! {
+        Events.coreEvents.map(\.rawValue)
+    }
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
@@ -55,17 +57,19 @@ internal class ApplePayModule: BaseModuleSender {
                      rejecter: @escaping RCTPromiseRejectBlock) {
         let parser = RootConfigurationParser(configuration: configuration)
         let applePayParser = ApplepayConfigurationParser(configuration: configuration)
-        let paymentMethod: ApplePayPaymentMethod
+
         let paymentRequest: PKPaymentRequest
         guard let payment = parser.payment else {
             return resolver(false)
         }
 
         do {
-            let data = try JSONSerialization.data(withJSONObject: paymentMethodDict, options: [])
-            paymentMethod = try JSONDecoder().decode(ApplePayPaymentMethod.self, from: data)
             paymentRequest = try applePayParser.buildPaymentRequest(payment: payment)
         } catch {
+            return resolver(false)
+        }
+
+        guard let paymentMethod: ApplePayPaymentMethod = try? paymentMethodDict.decode() else {
             return resolver(false)
         }
 

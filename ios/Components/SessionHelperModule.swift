@@ -10,7 +10,7 @@ import React
 import UIKit
 
 protocol SessionErrorDelegate: AnyObject {
-    func sendSessionError(error: Error)
+    func sendError(error: Error)
 }
 
 @objc(SessionHelper)
@@ -40,7 +40,8 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
             return rejecter("session", nil, error)
         }
 
-        guard let id = sessionModelJSON["id"] as? String, let data = sessionModelJSON["sessionData"] as? String else {
+        guard let id = sessionModelJSON["id"] as? String,
+              let data = sessionModelJSON["sessionData"] as? String else {
             return rejecter("session", "Invalid session data", nil)
         }
 
@@ -52,6 +53,7 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
                     let dto = SessionDTO(session: session)
                     resolver(dto.jsonObject)
                     BaseModule.session = session
+                    BaseModule.sessionDelegate = self
                 case let .failure(error):
                     rejecter("session", nil, error)
                 }
@@ -64,26 +66,23 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
         static let sessionData = "sessionData"
     }
 
-    func sendSessionError(error: Error) {
+    override func sendError(error: any Error) {
         let errorToSend = checkErrorType(error)
-        sendEvent(event: .failSession, body: errorToSend.jsonObject)
+        sendEvent(withName: Events.failSession.rawValue, body: errorToSend.jsonObject)
     }
-
 }
 
 extension SessionHelperModule: AdyenSessionDelegate {
-        // MARK: - AdyenSessionDelegate
 
     func didComplete(with result: Adyen.AdyenSessionResult, component: Adyen.Component, session: Adyen.AdyenSession) {
         var dict = result.jsonObject
         dict[Key.sessionId] = session.sessionContext.identifier
         dict[Key.sessionData] = session.sessionContext.data
-        sendEvent(event: .completeSession, body: dict)
+        sendEvent(withName: Events.completeSession.rawValue, body: dict)
     }
 
     func didFail(with error: Error, from component: Adyen.Component, session: Adyen.AdyenSession) {
-        let errorToSend = checkErrorType(error)
-        sendEvent(event: .failSession, body: errorToSend.jsonObject)
+        sendError(error: error)
     }
 
     func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {}
