@@ -11,28 +11,39 @@ import UIKit
 
 internal class BaseModule: RCTEventEmitter {
 
+    /// Override for testing. When nil, uses self (RCTEventEmitter).
+    internal var emitterOverride: EventEmitter?
+    internal var emitter: EventEmitter {
+        emitterOverride ?? self
+    }
+
     internal static var session: AdyenSession?
-    internal static weak var sessionDelegate: SessionErrorDelegate?
-    internal static weak var currentModule: BaseModule?
+    internal weak static var sessionDelegate: SessionErrorDelegate?
+    internal weak static var currentModule: BaseModule?
     internal var currentComponent: Component?
     internal var actionHandler: AdyenActionComponent?
 
     internal static var currentPresenter: UIViewController?
 
-#if DEBUG
-    override func invalidate() {
-        super.invalidate()
-        dismiss(false)
-    }
-#endif
+    #if DEBUG
+        override func invalidate() {
+            super.invalidate()
+            dismiss(false)
+        }
+    #endif
 
     // MARK: - Public methods
 
     @objc
-    override static func requiresMainQueueSetup() -> Bool { true }
+    override static func requiresMainQueueSetup() -> Bool {
+        true
+    }
+
     override func stopObserving() { /* No JS events expected */ }
     override func startObserving() { /* No JS events expected */ }
-    override open func supportedEvents() -> [String]! { [] }
+    override open func supportedEvents() -> [String]! {
+        []
+    }
 
     @objc
     override func constantsToExport() -> [AnyHashable: Any]! {
@@ -167,10 +178,14 @@ internal class BaseModule: RCTEventEmitter {
             BaseModule.sessionDelegate?.sendSessionError(error: error)
             return
         }
-        sendEvent(withName: Events.fail.rawValue, body: errorToSend.jsonObject)
+        emitter.sendEvent(event: Events.fail, body: errorToSend.jsonObject)
     }
+}
 
-    internal func sendEvent(event: Events, body: Any!) {
+// MARK: - EventEmitter conformance for RCTEventEmitter
+
+extension BaseModule: EventEmitter {
+    func sendEvent(event: Events, body: Any?) {
         sendEvent(withName: event.rawValue, body: body)
     }
 }

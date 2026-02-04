@@ -20,21 +20,21 @@ internal class BaseModuleSender: BaseModule {
     }
 
     internal func sendEvent(event: Events) {
-        sendEvent(withName: event.rawValue, body: [:])
+        emitter.sendEvent(event: event, body: [:])
     }
 
     internal func sendSubmitEvent(data: PaymentComponentData) {
         let extra = (data.paymentMethod as? ApplePayDetails)?.extraData
         let response = SubmitData(paymentData: data.jsonObject, extra: extra)
-        sendEvent(event: .submit, body: response.jsonObject)
+        emitter.sendEvent(event: Events.submit, body: response.jsonObject)
     }
 
     internal func sendCompleteEvent() {
         let result = ResultDTO(result: .presentToShopper)
-        sendEvent(event: .complete, body: result.jsonObject)
+        emitter.sendEvent(event: Events.complete, body: result.jsonObject)
     }
 
     internal func sendProvideEvent(actionData: ActionComponentData) {
-        sendEvent(event: .provide, body: actionData.jsonObject)
+        emitter.sendEvent(event: Events.provide, body: actionData.jsonObject)
     }
 }
