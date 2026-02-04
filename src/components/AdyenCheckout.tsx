@@ -92,6 +92,8 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   children,
 }) => {
   const subscriptions = useRef<EmitterSubscription[]>([]);
+  const onCompleteRef = useRef(onComplete);
+  const onErrorRef = useRef(onError);
   const [sessionContext, setSessionContext] = useState<
     SessionContext | undefined
   >(undefined);
@@ -107,6 +109,24 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }
 
   useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  useEffect(() => {
+    SessionHelper.removeAllListeners();
+
+    const completeHandler = (result: any) =>
+      onCompleteRef.current?.(result, SessionHelper);
+    const errorHandler = (error: any) =>
+      onErrorRef.current?.(error, SessionHelper);
+
+    SessionHelper.onComplete(completeHandler);
+    SessionHelper.onError(errorHandler);
+
     return () => {
       removeEventListeners();
       SessionHelper.removeAllListeners();
@@ -115,9 +135,6 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, []);
 
   useEffect(() => {
-    SessionHelper.removeAllListeners();
-    SessionHelper.onComplete((result) => onComplete?.(result, SessionHelper));
-    SessionHelper.onError((error) => onError?.(error, SessionHelper));
     if (session && !sessionContext) {
       SessionHelper.createSession(session, config)
         .then((sessionResponse) => setSessionContext(sessionResponse))
@@ -126,10 +143,10 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
             message: String(error),
             errorCode: ErrorCode.sessionError,
           };
-          onError(errorDTO, SessionHelper);
+          onErrorRef.current?.(errorDTO, SessionHelper);
         });
     }
-  }, [session, sessionContext, config, onComplete, onError, setSessionContext]);
+  }, [session, sessionContext, config, setSessionContext]);
 
   const startEventListeners = useCallback(
     (nativeComponent: PaymentComponentWrapper & AdyenActionComponent) => {
