@@ -12,7 +12,9 @@ import React
 @objc(AdyenInstant)
 internal final class InstantModule: BaseActionHandler {
 
-    override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
+    override func supportedEvents() -> [String]! {
+        Events.coreEvents.map(\.rawValue)
+    }
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {

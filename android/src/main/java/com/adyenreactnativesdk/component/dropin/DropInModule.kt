@@ -9,8 +9,6 @@ package com.adyenreactnativesdk.component.dropin
 import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
-import com.adyen.checkout.card.BinLookupData
-import com.adyen.checkout.components.core.AddressLookupCallback
 import com.adyen.checkout.components.core.BalanceResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
@@ -34,9 +32,11 @@ import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.component.model.fromJsonObject
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.map
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Arguments
@@ -47,12 +47,10 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import com.facebook.react.jstasks.HeadlessJsTaskContext
-import com.google.gson.Gson
 
 class DropInModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
-  private val gson: Gson,
 ) : BaseModule(reactContext, messageBus) {
   private var taskId: Int? = null
 
@@ -87,7 +85,7 @@ class DropInModule(
     configuration: ReadableMap,
   ) {
     if (!isInitialized) {
-      throw ModuleException.NoActivity()
+      return sendError(ModuleException.NoActivity())
     }
     val checkoutConfiguration: CheckoutConfiguration
     val paymentMethodsResponse: PaymentMethodsApiResponse
@@ -148,8 +146,8 @@ class DropInModule(
   fun update(array: ReadableArray?) {
     val result =
       try {
-        val jsonString = ReactNativeJson.convertArrayToJson(array).toString()
-        val addresses = gson.fromJson(jsonString, Array<LookupAddress>::class.java)
+        val jsonArray = ReactNativeJson.convertArrayToJson(array)
+        val addresses = jsonArray.map { LookupAddress::class.fromJsonObject(it) }
         AddressLookupDropInServiceResult.LookupResult(addresses.toList())
       } catch (error: Throwable) {
         Log.w(TAG, error)
@@ -166,8 +164,8 @@ class DropInModule(
     val result =
       if (success) {
         try {
-          val jsonString = ReactNativeJson.convertMapToJson(address).toString()
-          val lookupAddress = gson.fromJson(jsonString, LookupAddress::class.java)
+          val jsonObject = ReactNativeJson.convertMapToJson(address)
+          val lookupAddress = LookupAddress::class.fromJsonObject(jsonObject)
           AddressLookupDropInServiceResult.LookupComplete(lookupAddress)
         } catch (error: Throwable) {
           AddressLookupDropInServiceResult.Error(

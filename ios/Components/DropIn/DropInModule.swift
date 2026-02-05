@@ -16,7 +16,9 @@ internal final class DropInModule: BaseAddressLookup {
     internal var requestOrderHandler: ((Result<PartialPaymentOrder, any Error>) -> Void)?
     internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
 
-    override func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+    override func supportedEvents() -> [String]! {
+        Events.allCases.map(\.rawValue)
+    }
 
     private var dropInComponent: DropInComponent? {
         currentComponent as? DropInComponent

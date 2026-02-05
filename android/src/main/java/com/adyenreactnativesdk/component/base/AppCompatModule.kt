@@ -11,6 +11,6 @@ abstract class AppCompatModule(
     get() {
       val currentActivity = getCurrentActivity()
       return currentActivity as AppCompatActivity?
-        ?: throw IllegalStateException("Not an AppCompact Activity")
+        ?: throw IllegalStateException("Not an AppCompat Activity")
     }
 }

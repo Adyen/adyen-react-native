@@ -130,3 +130,12 @@ object ReactNativeJson {
     return array
   }
 }
+
+fun <R> JSONArray.map(transform: (JSONObject) -> R): List<R> {
+  val size = length()
+  val array = arrayListOf<R>()
+  for (i in 0 until size) {
+    array.add(transform(getJSONObject(i)))
+  }
+  return array
+}

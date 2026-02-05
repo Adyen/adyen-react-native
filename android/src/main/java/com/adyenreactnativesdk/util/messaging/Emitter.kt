@@ -9,11 +9,6 @@ interface Emitter {
     error: Exception,
   )
 
-  fun send(
-    eventName: EventName,
-    payload: Any?,
-  )
-
   fun sendEvent(
     eventName: EventName,
     jsonObject: JSONObject,

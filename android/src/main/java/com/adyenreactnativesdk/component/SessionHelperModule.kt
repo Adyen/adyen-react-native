@@ -95,10 +95,10 @@ class SessionHelperModule(
         }
       }
 
-    val json = SessionSetupResponse.SERIALIZER.serialize(session.sessionSetupResponse)
-    val map = ReactNativeJson.convertJsonToMap(json)
+    val jsonObject = SessionSetupResponse.SERIALIZER.serialize(session.sessionSetupResponse)
+    val sessionSetupResponseMap = ReactNativeJson.convertJsonToMap(jsonObject)
     setSession(session)
-    promise.resolve(map)
+    promise.resolve(sessionSetupResponseMap)
   }
 
   private fun parseSessionModel(json: ReadableMap): SessionModel {

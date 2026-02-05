@@ -9,7 +9,6 @@ package com.adyenreactnativesdk.util.messaging.card
 import com.adyen.checkout.card.BinLookupData
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MockEmitter
-import com.google.gson.Gson
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -17,14 +16,12 @@ import org.junit.Test
 
 class CardMessengerImplTest {
   private lateinit var mockEmitter: MockEmitter
-  private lateinit var gson: Gson
   private lateinit var sut: CardMessengerImpl
 
   @Before
   fun setUp() {
     mockEmitter = MockEmitter()
-    gson = Gson()
-    sut = CardMessengerImpl(mockEmitter, gson)
+    sut = CardMessengerImpl(mockEmitter)
   }
 
   @Test

@@ -30,13 +30,6 @@ class MockEmitter : Emitter {
     errors.add(ErrorEvent(eventName, error))
   }
 
-  override fun send(
-    eventName: EventName,
-    payload: Any?,
-  ) {
-    events.add(Event(eventName, payload))
-  }
-
   override fun sendEvent(
     eventName: EventName,
     jsonObject: JSONObject,

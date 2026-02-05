@@ -19,7 +19,7 @@ class DropInCallbackHandler(
       is DropInResult.CancelledByUser -> messageBus.onException(ModuleException.Canceled())
       is DropInResult.Error -> messageBus.onException(ModuleException.Unknown(dropInResult.reason))
       is DropInResult.Finished -> messageBus.onFinished()
-      null -> return
+      null -> messageBus.onException(ModuleException.Unknown("DropIn result is null"))
     }
   }
 
@@ -29,7 +29,7 @@ class DropInCallbackHandler(
       is SessionDropInResult.CancelledByUser -> messageBus.onSessionException(ModuleException.Canceled())
       is SessionDropInResult.Error -> messageBus.onSessionException(ModuleException.Unknown(sessionDropInResult.reason))
       is SessionDropInResult.Finished -> messageBus.onFinished(sessionDropInResult.result)
-      null -> return
+      null -> messageBus.onSessionException(ModuleException.Unknown("DropIn result is null"))
     }
   }
 }

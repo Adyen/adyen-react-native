@@ -20,7 +20,7 @@ class MessageBusEmitter(
       .emit(eventName.value, ReactNativeError.mapError(error))
   }
 
-  override fun send(
+  fun send(
     eventName: EventName,
     payload: Any?,
   ) {

@@ -124,8 +124,8 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     const errorHandler = (error: any) =>
       onErrorRef.current?.(error, SessionHelper);
 
-    SessionHelper.onComplete(completeHandler);
-    SessionHelper.onError(errorHandler);
+    SessionHelper.assignCompletionHandler(completeHandler);
+    SessionHelper.assignErrorHandler(errorHandler);
 
     return () => {
       removeEventListeners();

@@ -9,7 +9,6 @@ package com.adyenreactnativesdk.util.messaging.address
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MockEmitter
-import com.google.gson.Gson
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -18,14 +17,12 @@ import org.junit.Test
 
 class AddressLookupMessengerImplTest {
   private lateinit var mockEmitter: MockEmitter
-  private lateinit var gson: Gson
   private lateinit var sut: AddressLookupMessengerImpl
 
   @Before
   fun setUp() {
     mockEmitter = MockEmitter()
-    gson = Gson()
-    sut = AddressLookupMessengerImpl(mockEmitter, gson)
+    sut = AddressLookupMessengerImpl(mockEmitter)
   }
 
   @Test

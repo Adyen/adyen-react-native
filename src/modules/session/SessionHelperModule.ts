@@ -27,14 +27,18 @@ export interface SessionHelperModule extends AdyenComponent {
    * @param callback - Called when the session completes successfully.
    * @returns EmitterSubscription that can be used to remove the listener.
    */
-  onComplete(callback: (result: SessionsResult) => void): EmitterSubscription;
+  assignCompletionHandler(
+    callback: (result: SessionsResult) => void
+  ): EmitterSubscription;
 
   /**
    * Subscribe to session error events.
    * @param callback - Called when the session fails with an error.
    * @returns EmitterSubscription that can be used to remove the listener.
    */
-  onError(callback: (error: AdyenError) => void): EmitterSubscription;
+  assignErrorHandler(
+    callback: (error: AdyenError) => void
+  ): EmitterSubscription;
 
   /**
    * Remove all session event listeners.

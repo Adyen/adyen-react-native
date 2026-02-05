@@ -123,12 +123,12 @@ describe('SessionWrapper', () => {
 
     test('should implement onComplete method', () => {
       const wrapper = new SessionWrapper(mockNativeModule);
-      expect(typeof wrapper.onComplete).toBe('function');
+      expect(typeof wrapper.assignCompletionHandler).toBe('function');
     });
 
     test('should implement onError method', () => {
       const wrapper = new SessionWrapper(mockNativeModule);
-      expect(typeof wrapper.onError).toBe('function');
+      expect(typeof wrapper.assignErrorHandler).toBe('function');
     });
 
     test('should implement removeAllListeners method', () => {
@@ -142,7 +142,7 @@ describe('SessionWrapper', () => {
       const wrapper = new SessionWrapper(mockNativeModule);
       const callback = jest.fn();
 
-      const subscription = wrapper.onComplete(callback);
+      const subscription = wrapper.assignCompletionHandler(callback);
 
       expect(subscription).toBeDefined();
       expect(typeof subscription.remove).toBe('function');
@@ -152,7 +152,7 @@ describe('SessionWrapper', () => {
       const wrapper = new SessionWrapper(mockNativeModule);
       const callback = jest.fn();
 
-      const subscription = wrapper.onError(callback);
+      const subscription = wrapper.assignErrorHandler(callback);
 
       expect(subscription).toBeDefined();
       expect(typeof subscription.remove).toBe('function');
@@ -163,8 +163,8 @@ describe('SessionWrapper', () => {
       const mockRemove1 = jest.fn();
       const mockRemove2 = jest.fn();
 
-      const sub1 = wrapper.onComplete(jest.fn());
-      const sub2 = wrapper.onError(jest.fn());
+      const sub1 = wrapper.assignCompletionHandler(jest.fn());
+      const sub2 = wrapper.assignErrorHandler(jest.fn());
 
       // Replace remove functions to track calls
       sub1.remove = mockRemove1;
@@ -179,8 +179,8 @@ describe('SessionWrapper', () => {
     test('removeAllListeners should clear subscriptions array', () => {
       const wrapper = new SessionWrapper(mockNativeModule);
 
-      wrapper.onComplete(jest.fn());
-      wrapper.onError(jest.fn());
+      wrapper.assignCompletionHandler(jest.fn());
+      wrapper.assignErrorHandler(jest.fn());
       wrapper.removeAllListeners();
 
       // Calling again should not throw (array is empty)

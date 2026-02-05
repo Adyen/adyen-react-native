@@ -49,7 +49,9 @@ export class SessionWrapper implements SessionHelperModule {
    * @param callback - Called when the session completes successfully.
    * @returns EmitterSubscription that can be used to remove the listener.
    */
-  onComplete(callback: (result: SessionsResult) => void): EmitterSubscription {
+  assignCompletionHandler(
+    callback: (result: SessionsResult) => void
+  ): EmitterSubscription {
     this.subscriptions.get(Event.onSessionComplete)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionComplete,
@@ -64,7 +66,9 @@ export class SessionWrapper implements SessionHelperModule {
    * @param callback - Called when the session fails with an error.
    * @returns EmitterSubscription that can be used to remove the listener.
    */
-  onError(callback: (error: AdyenError) => void): EmitterSubscription {
+  assignErrorHandler(
+    callback: (error: AdyenError) => void
+  ): EmitterSubscription {
     this.subscriptions.get(Event.onSessionError)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionError,

@@ -16,7 +16,9 @@ protocol SessionErrorDelegate: AnyObject {
 @objc(SessionHelper)
 internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
-    override func supportedEvents() -> [String]! { Events.sessionEvents.map(\.rawValue) }
+    override func supportedEvents() -> [String]! {
+        Events.sessionEvents.map(\.rawValue)
+    }
 
     @objc
     override func hide(_ success: NSNumber, event: NSDictionary) {

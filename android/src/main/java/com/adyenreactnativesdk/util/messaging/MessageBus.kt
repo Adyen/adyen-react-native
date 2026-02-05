@@ -12,14 +12,12 @@ import com.adyenreactnativesdk.util.messaging.dropin.PartialPaymentMessenger
 import com.adyenreactnativesdk.util.messaging.dropin.PartialPaymentMessengerImpl
 import com.adyenreactnativesdk.util.messaging.dropin.RemoveStoredPaymentMessenger
 import com.adyenreactnativesdk.util.messaging.dropin.RemoveStoredPaymentMessengerImpl
-import com.google.gson.Gson
 
 class MessageBus(
-  gson: Gson,
   emitter: Emitter,
 ) : SessionMessenger by SessionMessengerImpl(emitter),
   AdvancedMessenger by AdvancedMessengerImpl(emitter),
   PartialPaymentMessenger by PartialPaymentMessengerImpl(emitter),
   RemoveStoredPaymentMessenger by RemoveStoredPaymentMessengerImpl(emitter),
-  CardMessenger by CardMessengerImpl(emitter, gson),
-  AddressLookupCallback by AddressLookupMessengerImpl(emitter, gson)
+  CardMessenger by CardMessengerImpl(emitter),
+  AddressLookupCallback by AddressLookupMessengerImpl(emitter)
