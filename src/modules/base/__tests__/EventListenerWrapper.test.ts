@@ -1,10 +1,13 @@
 import { describe, expect, test } from '@jest/globals';
 import { Event } from '../../../core';
-import { EventListenerWrapper } from '../EventListenerWrapper';
+import {
+  EventListenerWrapper,
+  type NativeModuleWithConstants,
+} from '../EventListenerWrapper';
 import { createMockNativeModule } from './_mock_NativeModule';
 
 /** Concrete implementation for testing */
-class TestWrapper extends EventListenerWrapper {
+class TestWrapper extends EventListenerWrapper<NativeModuleWithConstants> {
   get name(): string {
     return 'TestWrapper';
   }
@@ -59,38 +62,6 @@ describe('EventListenerWrapper', () => {
       const mockNativeModule = createMockNativeModule();
       const wrapper = new TestWrapper(mockNativeModule);
       expect(wrapper.eventEmitterTarget).toBe(mockNativeModule);
-    });
-  });
-
-  describe('addListener', () => {
-    test('should pass through to native module addListener', () => {
-      const mockNativeModule = createMockNativeModule();
-      const wrapper = new TestWrapper(mockNativeModule);
-      wrapper.addListener('testEvent');
-      expect(mockNativeModule.addListener).toHaveBeenCalledWith('testEvent');
-    });
-
-    test('should call native module with correct event type', () => {
-      const mockNativeModule = createMockNativeModule();
-      const wrapper = new TestWrapper(mockNativeModule);
-      wrapper.addListener(Event.onError);
-      expect(mockNativeModule.addListener).toHaveBeenCalledWith(Event.onError);
-    });
-  });
-
-  describe('removeListeners', () => {
-    test('should pass through to native module removeListeners', () => {
-      const mockNativeModule = createMockNativeModule();
-      const wrapper = new TestWrapper(mockNativeModule);
-      wrapper.removeListeners(5);
-      expect(mockNativeModule.removeListeners).toHaveBeenCalledWith(5);
-    });
-
-    test('should handle count of 0', () => {
-      const mockNativeModule = createMockNativeModule();
-      const wrapper = new TestWrapper(mockNativeModule);
-      wrapper.removeListeners(0);
-      expect(mockNativeModule.removeListeners).toHaveBeenCalledWith(0);
     });
   });
 

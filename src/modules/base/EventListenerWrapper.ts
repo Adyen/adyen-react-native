@@ -29,16 +29,6 @@ export abstract class EventListenerWrapper<
     return this.nativeModule;
   }
 
-  /** Pass through to native module addListener */
-  addListener(eventType: string) {
-    this.nativeModule.addListener(eventType);
-  }
-
-  /** Pass through to native module removeListeners */
-  removeListeners(count: number) {
-    this.nativeModule.removeListeners(count);
-  }
-
   /** Checks if the event is supported by the native module */
   isSupported(event: Event): boolean {
     return this.supportedEvents.includes(event);
