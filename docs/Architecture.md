@@ -4,21 +4,21 @@
 
 ```
 src/
-├── index.ts                    # Main entry point (barrel exports)
-├── components/                 # React components
+├── index.ts                           # Main entry point (barrel exports)
+├── components/                        # React components
 │   ├── index.ts
-│   ├── AdyenCheckout.tsx       # Main checkout component with context provider
-│   ├── ApplePayButton.tsx      # Apple Pay button component
-│   ├── GooglePayButton.tsx     # Google Pay button component
-│   ├── utils.ts                # Configuration validation utilities
+│   ├── AdyenCheckout.tsx              # Main checkout component with context provider
+│   ├── ApplePayButton.tsx             # Apple Pay button component
+│   ├── GooglePayButton.tsx            # Google Pay button component
+│   ├── utils.ts                       # Configuration validation utilities
 │   └── common/
-│       └── Styles.ts           # Shared styles
-├── core/                       # Core types, constants, and configurations
+│       └── Styles.ts                  # Shared styles
+├── core/                              # Core types, constants, and configurations
 │   ├── index.ts
-│   ├── types.ts                # Payment types and component interfaces
-│   ├── constants.ts            # Event enums, error codes, result codes
-│   ├── components.ts           # Payment method component mappings
-│   └── configurations/         # Configuration interfaces
+│   ├── types.ts                       # Payment types and component interfaces
+│   ├── constants.ts                   # Event enums, error codes, result codes
+│   ├── components.ts                  # Payment method component mappings
+│   └── configurations/                # Configuration interfaces
 │       ├── index.ts
 │       ├── Configuration.ts
 │       ├── AddressLookup.ts
@@ -28,47 +28,47 @@ src/
 │       ├── GooglePayConfiguration.ts
 │       ├── PartialPaymentConfiguration.ts
 │       └── ThreeDSConfiguration.ts
-├── hooks/                      # React hooks
+├── hooks/                             # React hooks
 │   ├── index.ts
-│   └── useAdyenCheckout.ts     # Context hook for checkout state
-├── plugin/                     # Expo config plugins
-│   ├── withAdyen.ts            # Main plugin entry
-│   ├── withAdyenIos.ts         # iOS-specific configuration
-│   ├── withAdyenAndroid.ts     # Android-specific configuration
-│   └── ...                     # Platform setup utilities
-├── specs/                      # TurboModule specs
+│   └── useAdyenCheckout.ts            # Context hook for checkout state
+├── plugin/                            # Expo config plugins
+│   ├── withAdyen.ts                           # Main plugin entry
+│   ├── withAdyenIos.ts                        # iOS-specific configuration
+│   ├── withAdyenAndroid.ts                    # Android-specific configuration
+│   └── ...                                    # Platform setup utilities
+├── specs/                             # TurboModule specs
 │   └── NativePlatformPayView.ts
-└── modules/                    # Native module wrappers
+└── modules/                           # Native module wrappers
     ├── index.ts
-    ├── base/                   # Base wrapper classes
-    │   ├── EventListenerWrapper.ts     # Abstract base for event handling
-    │   ├── ModuleWrapper.ts            # Abstract base with hide()
-    │   ├── PaymentComponentWrapper.ts  # Abstract base with open()
+    ├── base/                          # Base wrapper classes
+    │   ├── EventListenerWrapper.ts            # Abstract base for event handling
+    │   ├── ModuleWrapper.ts                   # Abstract base with hide()
+    │   ├── PaymentComponentWrapper.ts         # Abstract base with open()
     │   ├── ActionHandlingComponentWrapper.ts  # Abstract base with handle()
-    │   ├── ModuleMock.ts               # Mock for unavailable modules
-    │   ├── constants.ts                # Module-specific constants
-    │   ├── getWrapper.ts               # Factory to resolve payment method wrappers
-    │   └── utils.ts                    # Utility functions
-    ├── action/                 # Standalone action handler
+    │   ├── ModuleMock.ts                      # Mock for unavailable modules
+    │   ├── constants.ts                       # Module-specific constants
+    │   ├── getWrapper.ts                      # Factory to resolve payment method wrappers
+    │   └── utils.ts                           # Utility functions
+    ├── action/                        # Standalone action handler
     │   ├── AdyenAction.ts
     │   └── ActionModuleWrapper.ts
-    ├── applepay/               # Apple Pay module
+    ├── applepay/                      # Apple Pay module
     │   ├── AdyenApplePay.ts
     │   └── ApplePayWrapper.ts
-    ├── cse/                    # Client-side encryption
+    ├── cse/                           # Client-side encryption
+    │   ├── types.ts
     │   ├── AdyenCSEModule.ts
-    │   ├── AdyenCSEModuleWrapper.ts
-    │   └── types.ts                  # Card type definition
-    ├── dropin/                 # Drop-in module
+    │   └── AdyenCSEModuleWrapper.ts
+    ├── dropin/                        # Drop-in module
     │   ├── AdyenDropIn.ts
     │   └── DropInWrapper.ts
-    ├── googlepay/              # Google Pay module
+    ├── googlepay/                     # Google Pay module
     │   ├── AdyenGooglePay.ts
     │   └── GooglePayWrapper.ts
-    ├── instant/                # Instant/redirect payments
+    ├── instant/                       # Instant/redirect payments
     │   ├── AdyenInstant.ts
     │   └── InstantWrapper.ts
-    └── session/                # Session management
+    └── session/                       # Session management
         ├── SessionHelperModule.ts
         ├── SessionWrapper.ts
         └── types.ts
@@ -277,9 +277,6 @@ BaseModule                                           # Base class for all iOS mo
     │   - currentModule: BaseModule? (static)
     │   - currentPresenter: UIViewController? (static)
     │   - currentComponent: Component?
-    │   - actionHandler: AdyenActionComponent?
-    │   - supportedEvents() → [String]
-    │   - constantsToExport() → ["supportedEvents": ...]
     │   - hide(success, event)
     │   - present(component)
     │   - cleanUp()
@@ -296,35 +293,40 @@ BaseModule                                           # Base class for all iOS mo
     │       - ActionComponentDelegate
     │
     └──► BaseModuleSender                            # Adds event sending helpers
-            │   - createActionHandler(context, locale)
+            │   - supportedEvents() → [String]
+            │   - constantsToExport() → ["supportedEvents": ...]
             │   - sendSubmitEvent(data)
             │   - sendCompleteEvent()
             │   - sendProvideEvent(actionData)
+            │   - PaymentComponentDelegate
+            │   - ActionComponentDelegate
+            │   - CardComponentDelegate
             │
             ├──► ApplePayModule                      # Apple Pay component
             │       - open(paymentMethods, config)
             │       - isAvailable(paymentMethod, config)
             │
-            └──► BaseActionHandler                   # Adds handle() for actions
-                    │   - handle(action)
+            ├──► BaseActionHandler                   # Adds handle() for actions
+            │       │   - actionHandler: AdyenActionComponent?
+            │       │   - handle(action)
+            │       │
+            │       └──► InstantModule               # Instant/redirect payments
+            │               - open(paymentMethods, config)
+            │
+            └──► BaseAddressLookup                   # Adds address lookup support
+                    │   - update(results)
+                    │   - confirm(success, address)
+                    │   - AddressLookupProvider protocol
                     │
-                    ├──► InstantModule               # Instant/redirect payments
-                    │       - open(paymentMethods, config)
-                    │
-                    └──► BaseAddressLookup           # Adds address lookup support
-                            │   - update(results)
-                            │   - confirm(success, address)
-                            │   - AddressLookupProvider protocol
-                            │
-                            └──► DropInModule        # Drop-in component
-                                    - open(paymentMethods, config)
-                                    - handle(action)
-                                    - removeStored(success)
-                                    - getReturnURL()
-                                    - provideBalance/Order/PaymentMethods
-                                    - CardComponentDelegate
-                                    - StoredPaymentMethodsDelegate
-                                    - PartialPaymentDelegate
+                    └──► DropInModule                # Drop-in component
+                            - open(paymentMethods, config)
+                            - handle(action)
+                            - removeStored(success)
+                            - getReturnURL()
+                            - provideBalance/Order/PaymentMethods
+                            - DropInComponentDelegate
+                            - StoredPaymentMethodsDelegate
+                            - PartialPaymentDelegate
 ```
 
 ### Android Class Structure
