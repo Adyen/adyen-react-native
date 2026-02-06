@@ -98,7 +98,6 @@ PaymentComponentWrapper<T>                                   # Abstract - adds o
     │
     ├──► ApplePayWrapper                                     # implements ApplePayModule, AdyenActionComponent
     │       + isAvailable()
-    │       + handle() → throws (Apple Pay doesn't support actions)
     │
     ▼
 ActionHandlingComponentWrapper<T>                            # Abstract - adds handle()
@@ -140,110 +139,26 @@ AdyenCSEModuleWrapper                                        # implements AdyenC
 
 ## Interface Dependencies
 
-### Core Component Interfaces (`core/types.ts`)
+### Core Interfaces (`core/types.ts`)
 
 ```
 AdyenComponent                    # Base interface
     │   hide(success, option?)
     │
     └──► AdyenActionComponent     # Extends AdyenComponent
-            handle(action)
+            + handle(action)
 
 ConditionalPaymentComponent       # Standalone interface
     isAvailable(paymentMethod, configuration) → Promise<boolean>
 ```
 
-### Native Module Interface Hierarchy
+**Public module interfaces** mirror this structure, extending core interfaces:
 
-Native module interfaces extend their public module interfaces for type alignment:
-
-```
-NativeModule (react-native)
-    │
-    ├──► BaseNativeModule                                                  # modules/base/ModuleWrapper.ts
-    │       - hide(success, option?)
-    │       │
-    │       └──► PaymentModule                                             # modules/base/PaymentComponentWrapper.ts
-    │               - hide(success, option?)                                 [inherited]
-    │               - open(paymentMethods, configuration)
-    │               │
-    │               ├──► ActionHandlingNativeModule                        # modules/base/ActionHandlingComponentWrapper.ts
-    │               │       - hide(success, option?)                         [inherited]
-    │               │       - open(paymentMethods, config)                   [inherited]
-    │               │       - handle(action)
-    │               │       │
-    │               │       ├──► GooglePayNativeModule                     # modules/googlepay/GooglePayWrapper.ts
-    │               │       │       - hide(success, option?)                 [inherited]
-    │               │       │       - open(paymentMethods, config)           [inherited]
-    │               │       │       - handle(action)                         [inherited]
-    │               │       │       - isAvailable(paymentMethod, config) → Promise<boolean>
-    │               │       │
-    │               │       └──► DropInNativeModule                        # modules/dropin/DropInWrapper.ts
-    │               │               - hide(success, option?)                 [inherited]
-    │               │               - open(paymentMethods, config)           [inherited]
-    │               │               - handle(action)                         [inherited]
-    │               │               - getReturnURL() → Promise<string>
-    │               │               - providePaymentMethods(paymentMethods, order)
-    │               │               - provideBalance(success, balance?, error?)
-    │               │               - provideOrder(success, order?, error?)
-    │               │               - removeStored(success)
-    │               │               - update(results)
-    │               │               - confirm(success, addressOrError?)
-    │               │
-    │               └──► ApplePayNativeModule                              # modules/applepay/ApplePayWrapper.ts
-    │                       - hide(success, option?)                         [inherited]
-    │                       - open(paymentMethods, config)                   [inherited]
-    │                       - isAvailable(paymentMethod, config) → Promise<boolean>
-    │
-    ├──► ActionNativeModule                                                # modules/action/ActionModuleWrapper.ts
-    │       - handle(action, config) → Promise<PaymentDetailsData>
-    │       - hide(success)
-    │       - getConstants() → { threeDS2SdkVersion }
-    │
-    ├──► SessionNativeModule                                               # modules/session/SessionWrapper.ts
-    │       - hide(success, option?)
-    │       - createSession(session, config) → Promise<SessionContext>
-    │
-    └──► CSENativeModule                                                   # modules/cse/AdyenCSEModuleWrapper.ts
-            - encryptCard(payload, publicKey) → Promise<Card>
-            - encryptBin(payload, publicKey) → Promise<string>
-```
-
-### Public Module Interfaces
-
-```
-ApplePayModule                                               # extends AdyenComponent, ConditionalPaymentComponent
-    - hide(success, option?)                                   [from AdyenComponent]
-    - isAvailable(paymentMethod, config) → Promise<boolean>    [from ConditionalPaymentComponent]
-
-GooglePayModule                                              # extends ConditionalPaymentComponent, AdyenActionComponent
-    - hide(success, option?)                                   [from AdyenComponent]
-    - handle(action)                                           [from AdyenActionComponent]
-    - isAvailable(paymentMethod, config) → Promise<boolean>    [from ConditionalPaymentComponent]
-
-InstantModule                                                # extends AdyenActionComponent
-    - hide(success, option?)                                   [from AdyenComponent]
-    - handle(action)                                           [from AdyenActionComponent]
-
-DropInModule                                                 # extends AdyenActionComponent
-    - hide(success, option?)                                   [from AdyenComponent]
-    - handle(action)                                           [from AdyenActionComponent]
-    - getReturnURL() → Promise<string>
-    - providePaymentMethods(paymentMethods, order)
-
-ActionModule                                                 # standalone
-    - threeDS2SdkVersion: string
-    - handle(action, config) → Promise<PaymentDetailsData>
-    - hide(success)
-
-AdyenCSEModule                                               # standalone
-    - encryptCard(payload, publicKey) → Promise<Card>
-    - encryptBin(payload, publicKey) → Promise<string>
-
-SessionHelperModule                                          # extends AdyenComponent
-    - hide(success, option?)                                   [from AdyenComponent]
-    - createSession(session, config) → Promise<SessionContext>
-```
+- `ApplePayModule` — extends `AdyenActionComponent`, `ConditionalPaymentComponent`
+- `GooglePayModule` — extends `AdyenActionComponent`, `ConditionalPaymentComponent`
+- `InstantModule` — extends `AdyenActionComponent`
+- `DropInModule` — extends `AdyenActionComponent` + partial payment & address lookup methods
+- `ActionModule`, `AdyenCSEModule`, `SessionHelperModule` — standalone
 
 ### Configuration Hierarchy
 
@@ -376,26 +291,43 @@ BaseModule                                           # Base class for payment mo
             - provideBalance/Order/PaymentMethods
 ```
 
-### Android Messaging Architecture
+### Event Emission: iOS BaseModuleSender vs Android MessageBus
+
+Both platforms use a centralized event emission layer that translates native SDK callbacks to JS events:
+
+| Aspect               | iOS (`BaseModuleSender`)                                                       | Android (`MessageBus`)                                         |
+| -------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| **Role**             | Base class with event helper methods                                           | Aggregator implementing messenger protocols                    |
+| **Inheritance**      | Modules extend `BaseModuleSender`                                              | Modules hold `MessageBus` instance                             |
+| **Event helpers**    | `sendSubmitEvent()`, `sendCompleteEvent()`, `sendProvideEvent()`               | `onSubmit()`, `onFinished()`, `onAdditionalDetails()`          |
+| **Delegate support** | `PaymentComponentDelegate`, `ActionComponentDelegate`, `CardComponentDelegate` | `SessionMessenger`, `AdvancedMessenger`, `CardMessenger`, etc. |
+| **Emission target**  | `sendEvent(withName:body:)` via `RCTEventEmitter`                              | `RCTDeviceEventEmitter.emit()` via `Emitter` interface         |
 
 ```
-Emitter (interface)                                  # Event emission contract
-    │   - sendError(eventName, error)
-    │   - send(eventName, payload)
-    │   - sendEvent(eventName, json/string)
-    │
-    └──► MessageBusEmitter                           # Implementation using ReactContext
-            - context: ReactContext
-            - emits via RCTDeviceEventEmitter
-
-MessageBus                                           # Aggregates all messengers via delegation
-    │   implements:
-    │   - SessionMessenger (onSessionException, onFinished)
-    │   - AdvancedMessenger (onSubmit, onAdditionalDetails, onException, onFinished)
-    │   - PartialPaymentMessenger (onBalanceCheck, onOrderRequest, onOrderCancel)
-    │   - RemoveStoredPaymentMessenger (onRemove)
-    │   - CardMessenger (onBinValue, onBinLookup)
-    │   - AddressLookupCallback (onQueryChanged, onLookupCompletion)
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                           Native SDK Callback                                       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+              ┌─────────────────────────┴─────────────────────────┐
+              ▼                                                   ▼
+┌───────────────────────────────┐               ┌───────────────────────────────┐
+│  iOS: BaseModuleSender        │               │  Android: MessageBus          │
+│  - sendSubmitEvent(data)      │               │  - onSubmit(state, returnUrl) │
+│  - sendCompleteEvent()        │               │  - onFinished()               │
+│  - sendProvideEvent(action)   │               │  - onAdditionalDetails(data)  │
+└───────────────────────────────┘               └───────────────────────────────┘
+              │                                                   │
+              ▼                                                   ▼
+┌───────────────────────────────┐               ┌───────────────────────────────┐
+│  RCTEventEmitter              │               │  Emitter → MessageBusEmitter  │
+│  sendEvent(withName:body:)    │               │  → RCTDeviceEventEmitter      │
+└───────────────────────────────┘               └───────────────────────────────┘
+              │                                                   │
+              └─────────────────────────┬─────────────────────────┘
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                           JavaScript Event Handler                                  │
+└─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Common Native Module Patterns
@@ -545,20 +477,20 @@ override fun getConstants(): MutableMap<String, Any> =
 
 ### Event Reference
 
-| Event                          | Native Callback                         | Description                      |
-| ------------------------------ | --------------------------------------- | -------------------------------- |
-| `onSubmit`                     | `didSubmitCallback`                     | Payment details submitted        |
-| `onAdditionalDetails`          | `didProvideCallback`                    | Additional action details needed |
-| `onComplete`                   | `didCompleteCallback`                   | Payment completed (vouchers)     |
-| `onError`                      | `didFailCallback`                       | Error occurred                   |
-| `onDisableStoredPaymentMethod` | `didDisableStoredPaymentMethodCallback` | Stored payment removal requested |
-| `onAddressUpdate`              | `didUpdateAddressCallback`              | Address lookup update            |
-| `onAddressConfirm`             | `didConfirmAddressCallback`             | Address confirmed                |
-| `onCheckBalance`               | `didCheckBalanceCallback`               | Balance check requested          |
-| `onRequestOrder`               | `didRequestOrderCallback`               | New order requested              |
-| `onCancelOrder`                | `didCancelOrderCallback`                | Order cancelled                  |
-| `onBinValue`                   | `didChangeBinValueCallback`             | BIN value changed                |
-| `onBinLookup`                  | `didBinLookupCallback`                  | BIN lookup completed             |
+| Event                          | Description                      |
+| ------------------------------ | -------------------------------- |
+| `onSubmit`                     | Payment details submitted        |
+| `onAdditionalDetails`          | Additional action details needed |
+| `onComplete`                   | Payment completed (vouchers)     |
+| `onError`                      | Error occurred                   |
+| `onDisableStoredPaymentMethod` | Stored payment removal requested |
+| `onAddressUpdate`              | Address lookup update            |
+| `onAddressConfirm`             | Address confirmed                |
+| `onCheckBalance`               | Balance check requested          |
+| `onRequestOrder`               | New order requested              |
+| `onCancelOrder`                | Order cancelled                  |
+| `onBinValue`                   | BIN value changed                |
+| `onBinLookup`                  | BIN lookup completed             |
 
 ## Data Flow
 
@@ -592,9 +524,9 @@ override fun getConstants(): MutableMap<String, Any> =
 │     DropInWrapper     │   │    ApplePayWrapper    │   │   GooglePayWrapper    │   │    InstantWrapper     │
 │                       │   │                       │   │                       │   │                       │
 │   - open()            │   │   - open()            │   │   - open()            │   │   - open()            │
-│   - handle()          │   │   - handle() ✗        │   │   - handle()          │   │   - handle()          │
-│   - hide()            │   │   - isAvailable()     │   │   - isAvailable()     │   │   - hide()            │
-│   - ...               │   │   - hide()            │   │   - hide()            │   │                       │
+│   - handle()          │   │   - isAvailable()     │   │   - handle()          │   │   - handle()          │
+│   - hide()            │   │   - hide()            │   │   - isAvailable()     │   │   - hide()            │
+│   - ...               │   │                       │   │   - hide()            │   │                       │
 └───────────────────────┘   └───────────────────────┘   └───────────────────────┘   └───────────────────────┘
           │                             │                               │                             │
           └─────────────────────────────┴───────────────────────────────┴─────────────────────────────┘

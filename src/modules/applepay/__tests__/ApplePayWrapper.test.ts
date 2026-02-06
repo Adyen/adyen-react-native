@@ -28,13 +28,17 @@ describe('ApplePayWrapper', () => {
   });
 
   describe('handle', () => {
-    test('should throw error - Apple Pay does not support action handling', () => {
+    test('should warn in dev mode - Apple Pay does not support action handling', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const wrapper = new ApplePayWrapper(mockNativeModule);
       const action = { type: 'redirect', paymentMethodType: 'applepay' };
 
-      expect(() => wrapper.handle(action)).toThrow(
-        'Apple Pay does not support action handling'
+      expect(() => wrapper.handle(action)).not.toThrow();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Apple Pay does not support action handling')
       );
+
+      warnSpy.mockRestore();
     });
   });
 
