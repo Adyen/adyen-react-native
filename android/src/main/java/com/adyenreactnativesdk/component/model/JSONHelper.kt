@@ -11,11 +11,11 @@ import kotlin.reflect.KClass
 
 fun SessionPaymentResult.toJSONObject(): JSONObject =
   JSONObject().apply {
-    put("resultCode", resultCode)
+    putOpt("resultCode", resultCode)
     putOpt("order", order?.let { OrderResponse.Companion.SERIALIZER.serialize(it) })
-    put("sessionResult", sessionResult)
-    put("sessionData", sessionData)
-    put("sessionId", sessionId)
+    putOpt("sessionResult", sessionResult)
+    putOpt("sessionData", sessionData)
+    putOpt("sessionId", sessionId)
   }
 
 fun List<BinLookupData>.toJSONObject(): JSONArray {
