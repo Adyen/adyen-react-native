@@ -3,7 +3,6 @@ package com.adyenreactnativesdk.component.model
 import com.adyen.checkout.card.BinLookupData
 import com.adyen.checkout.components.core.AddressData
 import com.adyen.checkout.components.core.LookupAddress
-import com.adyen.checkout.components.core.Order
 import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.sessions.core.SessionPaymentResult
 import org.json.JSONArray
@@ -13,16 +12,10 @@ import kotlin.reflect.KClass
 fun SessionPaymentResult.toJSONObject(): JSONObject =
   JSONObject().apply {
     put("resultCode", resultCode)
-    put("order", order?.let { OrderResponse.Companion.SERIALIZER.serialize(it) })
+    putOpt("order", order?.let { OrderResponse.Companion.SERIALIZER.serialize(it) })
     put("sessionResult", sessionResult)
     put("sessionData", sessionData)
     put("sessionId", sessionId)
-  }
-
-fun Order.toJSONObject(shouldUpdatePaymentMethods: Boolean): JSONObject =
-  JSONObject().apply {
-    put("order", Order.SERIALIZER.serialize(this@toJSONObject))
-    put("shouldUpdatePaymentMethods", shouldUpdatePaymentMethods)
   }
 
 fun List<BinLookupData>.toJSONObject(): JSONArray {

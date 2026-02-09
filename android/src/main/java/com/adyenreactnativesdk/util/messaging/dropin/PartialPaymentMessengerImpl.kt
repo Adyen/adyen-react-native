@@ -3,6 +3,7 @@ package com.adyenreactnativesdk.util.messaging.dropin
 import com.adyen.checkout.components.core.Order
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyenreactnativesdk.component.model.OrderDTO
 import com.adyenreactnativesdk.component.model.toJSONObject
 import com.adyenreactnativesdk.util.messaging.Emitter
 import com.adyenreactnativesdk.util.messaging.EventName
@@ -24,6 +25,7 @@ class PartialPaymentMessengerImpl(
     order: Order,
     shouldUpdatePaymentMethods: Boolean,
   ) {
-    emitter.sendEvent(EventName.CANCEL_ORDER, order.toJSONObject(shouldUpdatePaymentMethods))
+    val payload = OrderDTO(order, shouldUpdatePaymentMethods)
+    emitter.sendEvent(EventName.CANCEL_ORDER, payload.toJSONObject())
   }
 }
