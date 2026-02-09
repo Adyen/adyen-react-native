@@ -2,7 +2,7 @@
 
 ## Data Flow
 
-![Data Flow](assets/Architecture.png)
+![Data Flow](./assets/Architecture.png)
 
 ## Directory Structure
 
