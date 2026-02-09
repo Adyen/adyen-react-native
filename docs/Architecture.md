@@ -1,5 +1,9 @@
 # Architecture
 
+## Data Flow
+
+![Data Flow](assets/Architecture.png)
+
 ## Directory Structure
 
 ```
@@ -492,48 +496,3 @@ override fun getConstants(): MutableMap<String, Any> =
 | `onBinValue`                   | BIN value changed                |
 | `onBinLookup`                  | BIN lookup completed             |
 
-## Data Flow
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                               AdyenCheckout                                                    │
-│                                            (React Component)                                                   │
-│                                                                                                                │
-│    ┌──────────────────────────────────┐             ┌────────────────────────────────────────────────────────┐ │
-│    │ AdyenCheckout                    │             │ Event Handlers (props)                                 │ │
-│    │ Context                          │             │ - onSubmit(data, component, extra)                     │ │
-│    │ - start(name)                    │             │ - onComplete(result, component)                        │ │
-│    │ - config                         │             │ - onError(error, component)                            │ │
-│    │ - paymentMethods                 │             │ - onAdditionalDetails(data, component)                 │ │
-│    │ - session?                       │             │                                                        │ │
-│    └──────────────────────────────────┘             └────────────────────────────────────────────────────────┘ │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                        │
-                                                        ▼
-                                          ┌───────────────────────────┐
-                                          │       getWrapper()        │
-                                          │     (module resolver)     │
-                                          │     maps type name →      │
-                                          │     wrapper instance      │
-                                          └───────────────────────────┘
-                                                        │
-                                                        ▼
-          ┌─────────────────────────────┬───────────────────────────────┬─────────────────────────────┐
-          ▼                             ▼                               ▼                             ▼
-┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
-│     DropInWrapper     │   │    ApplePayWrapper    │   │   GooglePayWrapper    │   │    InstantWrapper     │
-│                       │   │                       │   │                       │   │                       │
-│   - open()            │   │   - open()            │   │   - open()            │   │   - open()            │
-│   - handle()          │   │   - isAvailable()     │   │   - handle()          │   │   - handle()          │
-│   - hide()            │   │   - hide()            │   │   - isAvailable()     │   │   - hide()            │
-│   - ...               │   │                       │   │   - hide()            │   │                       │
-└───────────────────────┘   └───────────────────────┘   └───────────────────────┘   └───────────────────────┘
-          │                             │                               │                             │
-          └─────────────────────────────┴───────────────────────────────┴─────────────────────────────┘
-                                                        │
-                                                        ▼
-                                          ┌───────────────────────────┐
-                                          │    Native iOS/Android     │
-                                          │        Adyen SDK          │
-                                          └───────────────────────────┘
-```
