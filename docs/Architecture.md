@@ -2,7 +2,68 @@
 
 ## Data Flow
 
-![Data Flow](./assets/Architecture.png)
+```mermaid
+flowchart TB
+
+    subgraph Checkout["AdyenCheckout<br/>(React Component)"]
+        Context["<b>useAdyenCheckout</b><br/>- start(name)<br/>- config<br/>- paymentMethods<br/>- isReady"]
+        Handlers["<b>Event Handlers (props)</b><br/><br/>- onSubmit(data, component, extra)<br/>- onComplete(result, component)<br/>- onError(error, component)<br/>- onAdditionalDetails(data, component)"]
+    end
+
+    Resolver["<b>getWrapper()</b><br/>(module resolver)<br/>maps type name → wrapper instance"]
+    EventEmitter["<b>NativeEventEmitter</b><br/><br/>subscribes to events supported by<br/>a selected module"]
+
+    DropInWrapper["<b>DropInWrapper</b><br/><br/>- open()<br/>- handle()<br/>- hide()<br/>- ..."]
+    ApplePayWrapper["<b>ApplePayWrapper</b><br/><br/>- open()<br/>- isAvailable()<br/>- hide()"]
+    GooglePayWrapper["<b>GooglePayWrapper</b><br/><br/>- open()<br/>- handle()<br/>- isAvailable()<br/>- hide()"]
+    InstantWrapper["<b>InstantWrapper</b><br/><br/>- open()<br/>- handle()<br/>- hide()"]
+ 
+    subgraph Native["Native iOS/Android"]
+        direction BT
+        DropInModule["<b>DropInModule</b><br/><br/>- supportedEvents<br/>- open()<br/>- handle()<br/>- hide()<br/>- ..."]
+        ApplePayModule["<b>ApplePayModule</b><br/><br/>- supportedEvents<br/>- open()<br/>- isAvailable()<br/>- hide()"]
+        GooglePayModule["<b>GooglePayModule</b><br/><br/>- supportedEvents<br/>- open()<br/>- handle()<br/>- isAvailable()<br/>- hide()"]
+        InstantModule["<b>InstantModule</b><br/><br/>- supportedEvents<br/>- open()<br/>- handle()<br/>- hide()"]
+ 
+        MessageBus["<b>EventEmitter/MessageBus</b>"]
+    end
+ 
+    Context -->|"start('name')"| Resolver
+    Resolver -.->|subscribes| EventEmitter
+    Resolver --> DropInWrapper
+    Resolver --> ApplePayWrapper
+    Resolver --> GooglePayWrapper
+    Resolver --> InstantWrapper
+ 
+    DropInWrapper --> DropInModule
+    ApplePayWrapper --> ApplePayModule
+    GooglePayWrapper --> GooglePayModule
+    InstantWrapper --> InstantModule
+ 
+    DropInModule --> MessageBus
+    ApplePayModule --> MessageBus
+    GooglePayModule --> MessageBus
+    InstantModule --> MessageBus
+ 
+    MessageBus -->|"Events flow back up<br/>through bridge"| EventEmitter
+    EventEmitter --> Handlers
+ 
+    style Checkout fill:#dae8fc,stroke:#,color:#000
+    style Context fill:#fff2cc,stroke:#d6b656,color:#000
+    style Handlers fill:#fff2cc,stroke:#d6b656,color:#000
+    style Resolver fill:#e1d5e7,stroke:#9673a6,color:#000
+    style EventEmitter fill:#e1d5e7,stroke:#9673a6,color:#000
+    style DropInWrapper fill:#d5e8d4,stroke:#82b366,color:#000
+    style ApplePayWrapper fill:#d5e8d4,stroke:#82b366,color:#000
+    style GooglePayWrapper fill:#d5e8d4,stroke:#82b366,color:#000
+    style InstantWrapper fill:#d5e8d4,stroke:#82b366,color:#000
+    style DropInModule fill:#ffe6cc,stroke:#d79b00,color:#000
+    style ApplePayModule fill:#ffe6cc,stroke:#d79b00,color:#000
+    style GooglePayModule fill:#ffe6cc,stroke:#d79b00,color:#000
+    style InstantModule fill:#ffe6cc,stroke:#d79b00,color:#000
+    style MessageBus fill:#d0cee2,stroke:#56517e,color:#000
+    style Native fill:none,stroke:#6c8ebf,stroke-dasharray:8 8,color:#aaa
+```
 
 ## Directory Structure
 
@@ -84,39 +145,44 @@ src/
 
 Supported events are read from the native module's `getConstants().supportedEvents` at construction time.
 
-```
-NativeModule (react-native)
-    │
-    ▼
-EventListenerWrapper<T>                                      # Abstract - manages event subscriptions
-    │                                                          - reads supportedEvents from getConstants()
-    │                                                          - isSupported(event)
-    │                                                          - eventEmitterTarget (for NativeEventEmitter)
-    │                                                          - addListener/removeListeners
-    ▼
-ModuleWrapper<T>                                             # Abstract - adds hide()
-    │   implements AdyenComponent
-    │
-    ▼
-PaymentComponentWrapper<T>                                   # Abstract - adds open()
-    │
-    ├──► ApplePayWrapper                                     # implements ApplePayModule, AdyenActionComponent
-    │       + isAvailable()
-    │
-    ▼
-ActionHandlingComponentWrapper<T>                            # Abstract - adds handle()
-    │   implements AdyenActionComponent
-    │
-    ├──► GooglePayWrapper                                    # implements GooglePayModule
-    │       + isAvailable()
-    │
-    ├──► InstantWrapper                                      # implements InstantModule
-    │
-    └──► DropInWrapper                                       # implements DropInModule
-            + getReturnURL()
-            + removeStored()                       (RemovesStoredPayment)
-            + update(), confirm(), reject()        (AddressLookup)
-            + provideBalance/Order/PaymentMethods  (PartialPayment)
+```mermaid
+flowchart TB
+    NativeModule["NativeModule (react-native)"]
+    
+    EventListener["EventListenerWrapper&lt;T&gt;<br/><br/>Abstract - manages event subscriptions<br/>- reads supportedEvents from getConstants()<br/>- isSupported(event)<br/>- eventEmitterTarget (for NativeEventEmitter)<br/>- addListener/removeListeners"]
+    
+    ModuleWrapper["ModuleWrapper&lt;T&gt;<br/><br/>Abstract - adds hide()<br/>implements AdyenComponent"]
+    
+    PaymentComponent["PaymentComponentWrapper&lt;T&gt;<br/><br/>Abstract - adds open()"]
+    
+    ApplePay["ApplePayWrapper<br/><br/>implements ApplePayModule, AdyenActionComponent<br/>+ isAvailable()"]
+    
+    ActionHandling["ActionHandlingComponentWrapper&lt;T&gt;<br/><br/>Abstract - adds handle()<br/>implements AdyenActionComponent"]
+    
+    GooglePay["GooglePayWrapper<br/><br/>implements GooglePayModule<br/>+ isAvailable()"]
+    
+    Instant["InstantWrapper<br/><br/>implements InstantModule"]
+    
+    DropIn["DropInWrapper<br/><br/>implements DropInModule<br/>+ getReturnURL()<br/>+ removeStored() (RemovesStoredPayment)<br/>+ update(), confirm(), reject() (AddressLookup)<br/>+ provideBalance/Order/PaymentMethods (PartialPayment)"]
+    
+    NativeModule --> EventListener
+    EventListener --> ModuleWrapper
+    ModuleWrapper --> PaymentComponent
+    PaymentComponent --> ApplePay
+    PaymentComponent --> ActionHandling
+    ActionHandling --> GooglePay
+    ActionHandling --> Instant
+    ActionHandling --> DropIn
+    
+    style NativeModule fill:#e1e1e1,stroke:#666,color:#000
+    style EventListener fill:#fff2cc,stroke:#d6b656,color:#000
+    style ModuleWrapper fill:#fff2cc,stroke:#d6b656,color:#000
+    style PaymentComponent fill:#fff2cc,stroke:#d6b656,color:#000
+    style ActionHandling fill:#fff2cc,stroke:#d6b656,color:#000
+    style ApplePay fill:#d5e8d4,stroke:#82b366,color:#000
+    style GooglePay fill:#d5e8d4,stroke:#82b366,color:#000
+    style Instant fill:#d5e8d4,stroke:#82b366,color:#000
+    style DropIn fill:#d5e8d4,stroke:#82b366,color:#000
 ```
 
 ### Standalone Wrappers (outside hierarchy)
@@ -145,15 +211,19 @@ AdyenCSEModuleWrapper                                        # implements AdyenC
 
 ### Core Interfaces (`core/types.ts`)
 
-```
-AdyenComponent                    # Base interface
-    │   hide(success, option?)
-    │
-    └──► AdyenActionComponent     # Extends AdyenComponent
-            + handle(action)
-
-ConditionalPaymentComponent       # Standalone interface
-    isAvailable(paymentMethod, configuration) → Promise<boolean>
+```mermaid
+flowchart TB
+    AdyenComp["AdyenComponent<br/><br/>Base interface<br/>hide(success, option?)"]
+    
+    AdyenAction["AdyenActionComponent<br/><br/>Extends AdyenComponent<br/>+ handle(action)"]
+    
+    Conditional["ConditionalPaymentComponent<br/><br/>Standalone interface<br/>isAvailable(paymentMethod, configuration) → Promise&lt;boolean&gt;"]
+    
+    AdyenComp --> AdyenAction
+    
+    style AdyenComp fill:#e1d5e7,stroke:#9673a6,color:#000
+    style AdyenAction fill:#e1d5e7,stroke:#9673a6,color:#000
+    style Conditional fill:#ffe6cc,stroke:#d79b00,color:#000
 ```
 
 **Public module interfaces** mirror this structure, extending core interfaces:
@@ -166,21 +236,20 @@ ConditionalPaymentComponent       # Standalone interface
 
 ### Configuration Hierarchy
 
-```
-BaseConfiguration
-    │   environment, clientKey, countryCode, locale?
-    │
-    └──► EnvironmentConfiguration
-            │   + amount
-            │
-            └──► Configuration
-                    + analytics?
-                    + dropin?
-                    + card?
-                    + applepay?
-                    + googlepay?
-                    + threeDS2?
-                    + partialPayment?
+```mermaid
+flowchart TB
+    Base["BaseConfiguration<br/><br/>environment, clientKey, countryCode, locale?"]
+    
+    Env["EnvironmentConfiguration<br/><br/>+ amount"]
+    
+    Config["Configuration<br/><br/>+ analytics?<br/>+ dropin?<br/>+ card?<br/>+ applepay?<br/>+ googlepay?<br/>+ threeDS2?<br/>+ partialPayment?"]
+    
+    Base --> Env
+    Env --> Config
+    
+    style Base fill:#dae8fc,stroke:#6c8ebf,color:#000
+    style Env fill:#dae8fc,stroke:#6c8ebf,color:#000
+    style Config fill:#dae8fc,stroke:#6c8ebf,color:#000
 ```
 
 ## Native Class Hierarchies
@@ -307,31 +376,33 @@ Both platforms use a centralized event emission layer that translates native SDK
 | **Delegate support** | `PaymentComponentDelegate`, `ActionComponentDelegate`, `CardComponentDelegate` | `SessionMessenger`, `AdvancedMessenger`, `CardMessenger`, etc. |
 | **Emission target**  | `sendEvent(withName:body:)` via `RCTEventEmitter`                              | `RCTDeviceEventEmitter.emit()` via `Emitter` interface         |
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                           Native SDK Callback                                       │
-└─────────────────────────────────────────────────────────────────────────────────────┘
-                                        │
-              ┌─────────────────────────┴─────────────────────────┐
-              ▼                                                   ▼
-┌───────────────────────────────┐               ┌───────────────────────────────┐
-│  iOS: BaseModuleSender        │               │  Android: MessageBus          │
-│  - sendSubmitEvent(data)      │               │  - onSubmit(state, returnUrl) │
-│  - sendCompleteEvent()        │               │  - onFinished()               │
-│  - sendProvideEvent(action)   │               │  - onAdditionalDetails(data)  │
-└───────────────────────────────┘               └───────────────────────────────┘
-              │                                                   │
-              ▼                                                   ▼
-┌───────────────────────────────┐               ┌───────────────────────────────┐
-│  RCTEventEmitter              │               │  Emitter → MessageBusEmitter  │
-│  sendEvent(withName:body:)    │               │  → RCTDeviceEventEmitter      │
-└───────────────────────────────┘               └───────────────────────────────┘
-              │                                                   │
-              └─────────────────────────┬─────────────────────────┘
-                                        ▼
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                           JavaScript Event Handler                                  │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    Callback["Native SDK Callback"]
+    
+    iOS["iOS: BaseModuleSender<br/><br/>- sendSubmitEvent(data)<br/>- sendCompleteEvent()<br/>- sendProvideEvent(action)"]
+    
+    Android["Android: MessageBus<br/><br/>- onSubmit(state, returnUrl)<br/>- onFinished()<br/>- onAdditionalDetails(data)"]
+    
+    RCT["RCTEventEmitter<br/><br/>sendEvent(withName:body:)"]
+    
+    Emitter["Emitter → MessageBusEmitter<br/>→ RCTDeviceEventEmitter"]
+    
+    JSHandler["JavaScript Event Handler"]
+    
+    Callback --> iOS
+    Callback --> Android
+    iOS --> RCT
+    Android --> Emitter
+    RCT --> JSHandler
+    Emitter --> JSHandler
+    
+    style Callback fill:#e1e1e1,stroke:#666,color:#000
+    style iOS fill:#ffe6cc,stroke:#d79b00,color:#000
+    style Android fill:#ffe6cc,stroke:#d79b00,color:#000
+    style RCT fill:#d0cee2,stroke:#56517e,color:#000
+    style Emitter fill:#d0cee2,stroke:#56517e,color:#000
+    style JSHandler fill:#dae8fc,stroke:#6c8ebf,color:#000
 ```
 
 ## Common Native Module Patterns
@@ -345,15 +416,19 @@ Both platforms follow a consistent lifecycle for payment components:
 3. **Events** - Native SDK callbacks are translated to JS events via emitter
 4. **Hide** - Cleanup resources, dismiss UI, clear static references
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Session   │────►│    Open     │────►│   Events    │────►│    Hide     │
-│   (opt.)    │     │             │     │             │     │             │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-      │                   │                   │                   │
-      ▼                   ▼                   ▼                   ▼
- Store session      Set currentModule    Emit to JS         Clear refs
- in static prop     Present UI           via emitter        Dismiss UI
+```mermaid
+flowchart LR
+    Session["Session<br/>(opt.)<br/><br/>Store session<br/>in static prop"]
+    Open["Open<br/><br/>Set currentModule<br/>Present UI"]
+    Events["Events<br/><br/>Emit to JS<br/>via emitter"]
+    Hide["Hide<br/><br/>Clear refs<br/>Dismiss UI"]
+    
+    Session --> Open --> Events --> Hide
+    
+    style Session fill:#fff2cc,stroke:#d6b656,color:#000
+    style Open fill:#d5e8d4,stroke:#82b366,color:#000
+    style Events fill:#dae8fc,stroke:#6c8ebf,color:#000
+    style Hide fill:#ffe6cc,stroke:#d79b00,color:#000
 ```
 
 ### Static State Management
@@ -370,22 +445,21 @@ Both platforms use static/companion properties for cross-module coordination:
 
 Errors are routed differently based on integration type:
 
-```
-                    ┌─────────────────┐
-                    │  Error occurs   │
-                    └────────┬────────┘
-                             │
-                    ┌────────▼────────┐
-                    │ session != nil? │
-                    └────────┬────────┘
-                             │
-              ┌──────────────┴──────────────┐
-              │ YES                         │ NO
-              ▼                             ▼
-    ┌─────────────────┐           ┌─────────────────┐
-    │ Session Error   │           │ Advanced Error  │
-    │ (failSession)   │           │ (fail)          │
-    └─────────────────┘           └─────────────────┘
+```mermaid
+flowchart LR
+    Error["Error occurs"]
+    Check{"session != nil?"}
+    SessionErr["Session Error<br/>(failSession)"]
+    AdvancedErr["Advanced Error<br/>(fail)"]
+    
+    Error --> Check
+    Check -->|YES| SessionErr
+    Check -->|NO| AdvancedErr
+    
+    style Error fill:#ffcccc,stroke:#cc0000,color:#000
+    style Check fill:#fff2cc,stroke:#d6b656,color:#000
+    style SessionErr fill:#ffe6cc,stroke:#d79b00,color:#000
+    style AdvancedErr fill:#ffe6cc,stroke:#d79b00,color:#000
 ```
 
 ### Hide Delegation Pattern
