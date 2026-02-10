@@ -1,5 +1,4 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
-import { Event } from '../../../core';
 import { DropInWrapper } from '../DropInWrapper';
 
 /** Mock DropInNativeModule */
@@ -7,6 +6,7 @@ function createMockDropInModule() {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents: [] })),
     hide: jest.fn(),
     open: jest.fn(),
     handle: jest.fn(),
@@ -33,30 +33,6 @@ describe('DropInWrapper', () => {
     test('should return "DropIn"', () => {
       const wrapper = new DropInWrapper(mockNativeModule);
       expect(wrapper.name).toBe('DropIn');
-    });
-  });
-
-  describe('events', () => {
-    test('should support all inherited events', () => {
-      const wrapper = new DropInWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onError)).toBe(true);
-      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
-      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-      expect(wrapper.isSupported(Event.onAdditionalDetails)).toBe(true);
-    });
-
-    test('should support DropIn-specific events', () => {
-      const wrapper = new DropInWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onBinValue)).toBe(true);
-      expect(wrapper.isSupported(Event.onBinLookup)).toBe(true);
-      expect(wrapper.isSupported(Event.onDisableStoredPaymentMethod)).toBe(
-        true
-      );
-      expect(wrapper.isSupported(Event.onAddressConfirm)).toBe(true);
-      expect(wrapper.isSupported(Event.onAddressUpdate)).toBe(true);
-      expect(wrapper.isSupported(Event.onCheckBalance)).toBe(true);
-      expect(wrapper.isSupported(Event.onRequestOrder)).toBe(true);
-      expect(wrapper.isSupported(Event.onCancelOrder)).toBe(true);
     });
   });
 

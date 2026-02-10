@@ -95,7 +95,9 @@ enum NativeModuleError: LocalizedError, KnownError {
 
 extension Error {
 
-    var isComponentCanceled: Bool { (self as? ComponentError) == ComponentError.cancelled }
+    var isComponentCanceled: Bool {
+        (self as? ComponentError) == ComponentError.cancelled
+    }
 
     var is3DSCanceled: Bool {
         (self as NSError).domain == "com.adyen.Adyen3DS2.ADYRuntimeError" &&

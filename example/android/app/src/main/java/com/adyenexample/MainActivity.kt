@@ -2,8 +2,6 @@ package com.adyenexample
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
-import android.util.Log
 import com.adyenreactnativesdk.AdyenCheckout
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

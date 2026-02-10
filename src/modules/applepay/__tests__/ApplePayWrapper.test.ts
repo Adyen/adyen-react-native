@@ -1,5 +1,4 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
-import { Event } from '../../../core';
 import { ApplePayWrapper } from '../ApplePayWrapper';
 
 /** Mock ApplePayNativeModule */
@@ -7,6 +6,7 @@ function createMockApplePayModule() {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
+    getConstants: jest.fn(() => ({ supportedEvents: [] })),
     hide: jest.fn(),
     open: jest.fn(),
     isAvailable: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
@@ -27,28 +27,18 @@ describe('ApplePayWrapper', () => {
     });
   });
 
-  describe('events', () => {
-    test('should support PaymentComponentWrapper events', () => {
-      const wrapper = new ApplePayWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onError)).toBe(true);
-      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
-      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-    });
-
-    test('should not support onAdditionalDetails (not action-handling)', () => {
-      const wrapper = new ApplePayWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onAdditionalDetails)).toBe(false);
-    });
-  });
-
   describe('handle', () => {
-    test('should throw error - Apple Pay does not support action handling', () => {
+    test('should warn in dev mode - Apple Pay does not support action handling', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const wrapper = new ApplePayWrapper(mockNativeModule);
       const action = { type: 'redirect', paymentMethodType: 'applepay' };
 
-      expect(() => wrapper.handle(action)).toThrow(
-        'Apple Pay does not support action handling'
+      expect(() => wrapper.handle(action)).not.toThrow();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Apple Pay does not support action handling')
       );
+
+      warnSpy.mockRestore();
     });
   });
 

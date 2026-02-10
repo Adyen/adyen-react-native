@@ -15,7 +15,6 @@ interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
 
 /**
  * Apple Pay wrapper - no additional events beyond inherited ones.
- * @warning handle() implementation throws an exception as Apple Pay doesn't support action handling.
  * @todo add express payment events
  */
 export class ApplePayWrapper
@@ -32,9 +31,11 @@ export class ApplePayWrapper
   }
 
   handle(_action: PaymentAction): void {
-    throw new Error(ACTIONS_NOT_SUPPORTED_ERROR);
+    if (__DEV__) {
+      console.warn(
+        'ApplePayWrapper.handle() was called, but Apple Pay does not support action handling. ' +
+          'This is likely a bug in your integration.'
+      );
+    }
   }
 }
-
-const ACTIONS_NOT_SUPPORTED_ERROR =
-  'Apple Pay does not support action handling.';

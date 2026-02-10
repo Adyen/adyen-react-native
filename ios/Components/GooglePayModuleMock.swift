@@ -9,13 +9,15 @@ import React
 import UIKit
 
 @objc(AdyenGooglePay)
-internal class GooglePayModuleMock: BaseModule {
+internal class GooglePayModuleMock: BaseModuleSender {
 
-    override func supportedEvents() -> [String]! { [Events.didFail.rawValue] }
+    override func supportedEvents() -> [String]! {
+        Events.coreEvents.map(\.rawValue)
+    }
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        sendEvent(error: NativeModuleError.notSupported)
+        sendError(error: NativeModuleError.notSupported)
     }
 
     @objc
