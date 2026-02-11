@@ -39,5 +39,10 @@ cp -r ../e2e-tests/helpers ./
 cp -r ../e2e-tests/tests ./
 cp ../e2e-tests/scripts/*.sh ./
 
-echo "== Add default App.tsx"
-cp ../e2e-tests/template/App.tsx.template App.tsx
+if ["$platform" == "Expo"]; then
+  echo "== Add default index.tsx"
+  cp ../e2e-tests/template/App.tsx.template app/(tabs)/index.tsx
+else
+  echo "== Add default App.tsx"
+  cp ../e2e-tests/template/App.tsx.template App.tsx
+fi
