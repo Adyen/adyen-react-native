@@ -10,27 +10,7 @@ import XCTest
 import Contacts
 import PassKit
 
-let paymentMethodDict: NSDictionary = [
-    "type": "applepay",
-    "name": "Apple Pay",
-    "brands": ["mc", "visa"]
-]
-
-let configuration: NSDictionary = [
-    "clientKey": "test_client_key",
-    "amount": [
-        "value": 1000,
-        "currency": "USD"
-    ],
-    "countryCode": "US",
-    "applepay": [
-        "merchantID": "merchant.com.adyen.test",
-        "merchantName": "Test Merchant"
-    ]
-]
-
-let mockApplePaymentMethod = try! JSONDecoder().decode(ApplePayPaymentMethod.self,
-                                                       from: try! JSONSerialization.data(withJSONObject: paymentMethodDict))
+let mockApplePaymentMethod: ApplePayPaymentMethod = try! applePayDictionary.decode()
 
 var mockPaymentRequest: PKPaymentRequest {
     let paymentRequest = PKPaymentRequest()
@@ -65,7 +45,7 @@ final class ApplePayModuleTests: XCTestCase {
         mockPaymentAuthorizationService.authorizationViewControllerResult = PKPaymentAuthorizationViewController(paymentRequest: mockPaymentRequest)
 
         // WHEN
-        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+        sut.isAvailable(applePayDictionary, configuration: configuration) { resolve in
             // THEN
             let isSuccess = try! XCTUnwrap(resolve as? Bool)
             XCTAssertTrue(isSuccess)
@@ -88,7 +68,7 @@ final class ApplePayModuleTests: XCTestCase {
         ]
 
         // WHEN
-        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+        sut.isAvailable(applePayDictionary, configuration: configuration) { resolve in
             // THEN
             let isSuccess = try! XCTUnwrap(resolve as? Bool)
             XCTAssertFalse(isSuccess)
@@ -103,7 +83,7 @@ final class ApplePayModuleTests: XCTestCase {
         let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
 
         // WHEN
-        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+        sut.isAvailable(applePayDictionary, configuration: configuration) { resolve in
             // THEN
             let isSuccess = try! XCTUnwrap(resolve as? Bool)
             XCTAssertFalse(isSuccess)
@@ -118,7 +98,7 @@ final class ApplePayModuleTests: XCTestCase {
         let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
 
         // WHEN
-        sut.isAvailable(paymentMethodDict, configuration: configuration) { resolve in
+        sut.isAvailable(applePayDictionary, configuration: configuration) { resolve in
             // THEN
             let isSuccess = try! XCTUnwrap(resolve as? Bool)
             XCTAssertFalse(isSuccess)

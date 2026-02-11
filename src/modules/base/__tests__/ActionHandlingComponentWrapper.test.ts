@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from '@jest/globals';
+import { describe, expect, test } from '@jest/globals';
 import { Event } from '../../../core';
 import { ActionHandlingComponentWrapper } from '../ActionHandlingComponentWrapper';
 import {
@@ -13,64 +13,33 @@ class TestActionWrapper extends ActionHandlingComponentWrapper {
   }
 }
 
-/** Child class with additional events */
-class ExtendedActionWrapper extends ActionHandlingComponentWrapper {
-  static readonly events = [Event.onBinValue, Event.onBinLookup];
-
-  get name(): string {
-    return 'ExtendedActionWrapper';
-  }
-}
-
 describe('ActionHandlingComponentWrapper', () => {
-  let mockNativeModule: ReturnType<typeof createMockActionHandlingModule>;
-
-  beforeEach(() => {
-    mockNativeModule = createMockActionHandlingModule();
-  });
-
-  describe('static events', () => {
-    test('should declare onAdditionalDetails event', () => {
-      expect(ActionHandlingComponentWrapper.events).toContain(
-        Event.onAdditionalDetails
-      );
-      expect(ActionHandlingComponentWrapper.events).toHaveLength(1);
-    });
-  });
-
   describe('constructor', () => {
-    test('should inherit events from entire hierarchy', () => {
+    test('should read supported events from native module getConstants', () => {
+      const mockNativeModule = createMockActionHandlingModule([
+        Event.onError,
+        Event.onComplete,
+        Event.onSubmit,
+        Event.onAdditionalDetails,
+      ]);
       const wrapper = new TestActionWrapper(mockNativeModule);
-      // From ModuleWrapper
-      expect(wrapper.isSupported(Event.onError)).toBe(true);
-      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
-      // From PaymentComponentWrapper
-      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-      // From ActionHandlingComponentWrapper
-      expect(wrapper.isSupported(Event.onAdditionalDetails)).toBe(true);
-    });
-
-    test('should combine events with child class events', () => {
-      const wrapper = new ExtendedActionWrapper(mockNativeModule);
-      // All inherited events
       expect(wrapper.isSupported(Event.onError)).toBe(true);
       expect(wrapper.isSupported(Event.onComplete)).toBe(true);
       expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
       expect(wrapper.isSupported(Event.onAdditionalDetails)).toBe(true);
-      // Child events
-      expect(wrapper.isSupported(Event.onBinValue)).toBe(true);
-      expect(wrapper.isSupported(Event.onBinLookup)).toBe(true);
     });
   });
 
   describe('handle', () => {
     test('should call native module handle with payment action', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       wrapper.handle(mockPaymentAction);
       expect(mockNativeModule.handle).toHaveBeenCalledWith(mockPaymentAction);
     });
 
     test('should handle redirect action', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       const redirectAction = {
         type: 'redirect',
@@ -82,6 +51,7 @@ describe('ActionHandlingComponentWrapper', () => {
     });
 
     test('should handle threeDS2 action', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       const threeDS2Action = {
         type: 'threeDS2',
@@ -93,6 +63,7 @@ describe('ActionHandlingComponentWrapper', () => {
     });
 
     test('should handle voucher action', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       const voucherAction = {
         type: 'voucher',
@@ -105,6 +76,7 @@ describe('ActionHandlingComponentWrapper', () => {
 
   describe('inherited methods', () => {
     test('should inherit open method from PaymentComponentWrapper', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       const paymentMethods = { paymentMethods: [] };
       const config = {
@@ -122,6 +94,7 @@ describe('ActionHandlingComponentWrapper', () => {
     });
 
     test('should inherit hide method from ModuleWrapper', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       wrapper.hide(true, { message: 'Success' });
       expect(mockNativeModule.hide).toHaveBeenCalledWith(true, {
@@ -132,11 +105,13 @@ describe('ActionHandlingComponentWrapper', () => {
 
   describe('AdyenActionComponent implementation', () => {
     test('should implement handle method from AdyenActionComponent interface', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       expect(typeof wrapper.handle).toBe('function');
     });
 
     test('should implement hide method from AdyenComponent interface', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       expect(typeof wrapper.hide).toBe('function');
     });
@@ -144,6 +119,7 @@ describe('ActionHandlingComponentWrapper', () => {
 
   describe('name property', () => {
     test('should return correct name', () => {
+      const mockNativeModule = createMockActionHandlingModule();
       const wrapper = new TestActionWrapper(mockNativeModule);
       expect(wrapper.name).toBe('TestActionWrapper');
     });

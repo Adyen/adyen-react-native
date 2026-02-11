@@ -1,6 +1,5 @@
 package com.adyenreactnativesdk.cse
 
-import com.adyen.checkout.adyen3ds2.Cancelled3DS2Exception
 import com.adyen.checkout.components.core.ActionComponentCallback
 import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.CheckoutConfiguration
@@ -8,9 +7,9 @@ import com.adyen.checkout.components.core.ComponentError
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.core.exception.CancellationException
 import com.adyen.threeds2.ThreeDS2Service
-import com.adyenreactnativesdk.component.CheckoutProxy
-import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.AppCompatModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -18,23 +17,14 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 
 class ActionModule(
-  context: ReactApplicationContext?,
-) : BaseModule(context),
-  CheckoutProxy.ComponentEventListener,
+  reactContext: ReactApplicationContext?,
+) : AppCompatModule(reactContext),
   ActionComponentCallback {
   private var promise: Promise? = null
 
   override fun getName(): String = COMPONENT_NAME
 
   override fun getConstants(): MutableMap<String, Any> = hashMapOf(THREEDS_VERSION_NAME to threeDS2Version)
-
-  @ReactMethod
-  fun addListener(eventName: String?) { // No JS events expected
-  }
-
-  @ReactMethod
-  fun removeListeners(count: Int?) { // No JS events expected
-  }
 
   @ReactMethod
   fun handle(
@@ -48,7 +38,7 @@ class ActionModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       action = Action.SERIALIZER.deserialize(jsonObject)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: ModuleException) {
       promise.reject(e.code, e.message, e)
       return
@@ -67,13 +57,11 @@ class ActionModule(
   @ReactMethod
   fun hide(success: Boolean?) {
     ActionFragment.hide(appCompatActivity.supportFragmentManager)
-    cleanup()
     promise = null
   }
 
   companion object {
     private const val COMPONENT_NAME = "AdyenAction"
-    private const val TAG = "ActionModule"
     private var threeDS2Version = ThreeDS2Service.INSTANCE.sdkVersion
     private const val THREEDS_VERSION_NAME = "threeDS2SdkVersion"
     private const val COMPONENT_ERROR = "actionError"
@@ -86,9 +74,7 @@ class ActionModule(
   }
 
   override fun onError(componentError: ComponentError) {
-    if (componentError.exception is CancellationException ||
-      componentError.exception is Cancelled3DS2Exception
-    ) {
+    if (componentError.exception is CancellationException) {
       promise?.reject(
         ModuleException.Canceled().code,
         ModuleException.Canceled().message,

@@ -10,14 +10,17 @@ import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodTypes
 import com.adyen.checkout.components.core.action.Action
-import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
 import com.adyenreactnativesdk.component.instant.fragment.IdealFragment
 import com.adyenreactnativesdk.component.instant.fragment.InstantFragment
 import com.adyenreactnativesdk.component.instant.fragment.TwintFragment
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.EventName
+import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.mainEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
@@ -25,9 +28,11 @@ import org.json.JSONException
 
 class InstantModule(
   context: ReactApplicationContext?,
-) : BaseModule(context),
-  CheckoutProxy.ComponentEventListener {
+  messageBus: MessageBus,
+) : BaseModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
+
+  override fun supportedEvents(): List<String> = EventName.mainEvents()
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -37,6 +42,8 @@ class InstantModule(
   fun removeListeners(count: Int?) { // No JS events expected
   }
 
+  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+
   @ReactMethod
   fun open(
     paymentMethodsData: ReadableMap,
@@ -45,15 +52,14 @@ class InstantModule(
     val checkoutConfiguration: CheckoutConfiguration
     val paymentMethod: PaymentMethod
     try {
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
       paymentMethod =
         getPaymentMethodsApiResponse(paymentMethodsData).paymentMethods?.firstOrNull()
           ?: throw ModuleException.InvalidPaymentMethods(null)
     } catch (e: Exception) {
-      return sendErrorEvent(e)
+      return sendError(e)
     }
 
-    CheckoutProxy.shared.componentListener = this
     fragment =
       when (paymentMethod.type) {
         PaymentMethodTypes.IDEAL -> IdealFragment
@@ -61,6 +67,7 @@ class InstantModule(
         else -> InstantFragment
       }
 
+    currentModule = this
     fragment?.show(
       appCompatActivity.supportFragmentManager,
       checkoutConfiguration,
@@ -76,13 +83,13 @@ class InstantModule(
       val action = Action.SERIALIZER.deserialize(jsonObject)
       fragment?.handle(appCompatActivity.supportFragmentManager, action)
     } catch (e: JSONException) {
-      sendErrorEvent(ModuleException.InvalidAction(e))
+      sendError(ModuleException.InvalidAction(e))
     }
   }
 
   @ReactMethod
-  fun hide(
-    success: Boolean?,
+  override fun hide(
+    success: Boolean,
     message: ReadableMap?,
   ) {
     cleanup()

@@ -7,8 +7,21 @@
 import UIKit
 
 extension UIViewController {
+    @MainActor
     internal static var topPresenter: UIViewController? {
-        var topController: UIViewController? = UIApplication.shared.keyWindow?.rootViewController
+        let keyWindow: UIWindow?
+        if #available(iOS 13, *) {
+            keyWindow = UIApplication.shared.connectedScenes
+                .filter { $0.activationState == .foregroundActive }
+                .compactMap { $0 as? UIWindowScene }
+                .first?
+                .windows
+                .first(where: \.isKeyWindow)
+        } else {
+            keyWindow = UIApplication.shared.keyWindow
+        }
+
+        var topController: UIViewController? = keyWindow?.rootViewController
 
         while let presenter = topController?.presentedViewController {
             topController = presenter

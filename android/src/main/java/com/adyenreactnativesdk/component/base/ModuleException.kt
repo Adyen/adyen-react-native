@@ -84,7 +84,7 @@ sealed class ModuleException(
     reason: String?,
   ) : ModuleException(
       code = "unknown",
-      message = if (reason.isNullOrEmpty()) "Reason unknown" else reason,
+      message = reason ?: "Reason unknown",
     )
 
   class SessionError(

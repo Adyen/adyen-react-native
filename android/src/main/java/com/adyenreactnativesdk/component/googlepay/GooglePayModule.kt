@@ -6,18 +6,20 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
-import android.app.Application
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentAvailableCallback
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
-import com.adyenreactnativesdk.component.CheckoutProxy
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.EventName
+import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.mainEvents
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -26,9 +28,11 @@ import org.json.JSONException
 
 class GooglePayModule(
   context: ReactApplicationContext?,
-) : BaseModule(context),
-  CheckoutProxy.ComponentEventListener {
+  messageBus: MessageBus,
+) : BaseModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
+
+  override fun supportedEvents(): List<String> = EventName.mainEvents()
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -37,6 +41,8 @@ class GooglePayModule(
   @ReactMethod
   fun removeListeners(count: Int?) { // No JS events expected
   }
+
+  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
 
   @ReactMethod
   fun open(
@@ -47,19 +53,19 @@ class GooglePayModule(
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
       paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: java.lang.Exception) {
-      return sendErrorEvent(e)
+      return sendError(e)
     }
 
     val googlePayPaymentMethod = getPaymentMethod(paymentMethodsResponse, PAYMENT_METHOD_KEYS)
     if (googlePayPaymentMethod == null) {
-      sendErrorEvent(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
+      sendError(ModuleException.NoPaymentMethods(PAYMENT_METHOD_KEYS))
       return
     }
 
     val payPaymentMethod: PaymentMethod = googlePayPaymentMethod
-    CheckoutProxy.shared.componentListener = this
+    currentModule = this
     GooglePayComponent.run {
       PROVIDER.isAvailable(
         appCompatActivity.application,
@@ -71,7 +77,7 @@ class GooglePayModule(
             paymentMethod: PaymentMethod,
           ) {
             if (!isAvailable) {
-              sendErrorEvent(GooglePayException.NotSupported())
+              sendError(GooglePayException.NotSupported())
               return
             }
             GooglePayFragment.show(
@@ -93,13 +99,13 @@ class GooglePayModule(
       val action = Action.SERIALIZER.deserialize(jsonObject)
       GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
     } catch (e: JSONException) {
-      sendErrorEvent(ModuleException.InvalidAction(e))
+      sendError(ModuleException.InvalidAction(e))
     }
   }
 
   @ReactMethod
-  fun hide(
-    success: Boolean?,
+  override fun hide(
+    success: Boolean,
     message: ReadableMap?,
   ) {
     cleanup()
@@ -117,7 +123,7 @@ class GooglePayModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
       paymentMethod = PaymentMethod.SERIALIZER.deserialize(jsonObject)
-      checkoutConfiguration = getCheckoutConfiguration(configuration)
+      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
     } catch (e: java.lang.Exception) {
       return promise.reject(e)
     }

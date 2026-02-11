@@ -9,27 +9,25 @@ import AdyenNetworking
 import React
 import UIKit
 
-protocol SessionResultListener {
-    func didComplete(with result: Adyen.AdyenSessionResult)
-    func didFail(with error: Error)
+protocol SessionErrorDelegate: AnyObject {
+    func sendError(error: Error)
 }
 
 @objc(SessionHelper)
-internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
+internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
-    internal static var sessionListener: SessionResultListener?
-
-    func didComplete(with result: Adyen.AdyenSessionResult, component: Adyen.Component, session: Adyen.AdyenSession) {
-        SessionHelperModule.sessionListener?.didComplete(with: result)
+    override func supportedEvents() -> [String]! {
+        Events.sessionEvents.map(\.rawValue)
     }
 
-    func didFail(with error: Error, from component: Adyen.Component, session: Adyen.AdyenSession) {
-        SessionHelperModule.sessionListener?.didFail(with: error)
+    @objc
+    override func hide(_ success: NSNumber, event: NSDictionary) {
+        super.hide(success, event: event)
+        // Delegate hide to the current active module (DropIn, GooglePay, etc.)
+        if let activeModule = BaseModule.currentModule {
+            activeModule.hide(success, event: event)
+        }
     }
-
-    func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {}
-
-    override func supportedEvents() -> [String]! { [Events.didComplete.rawValue, Events.didFail.rawValue] }
 
     @objc
     func createSession(_ sessionModelJSON: NSDictionary,
@@ -37,16 +35,16 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
                        resolver: @escaping RCTPromiseResolveBlock,
                        rejecter: @escaping RCTPromiseRejectBlock) {
         let parser = RootConfigurationParser(configuration: configuration)
-        let errorCode = NativeModuleError.sessionError.errorCode
         let context: AdyenContext
         do {
             context = try parser.fetchContext(session: BaseModule.session)
         } catch {
-            return rejecter(errorCode, nil, error)
+            return rejecter("session", nil, error)
         }
 
-        guard let id = sessionModelJSON["id"] as? String, let data = sessionModelJSON["sessionData"] as? String else {
-            return rejecter(errorCode, "Invalid session data", nil)
+        guard let id = sessionModelJSON["id"] as? String,
+              let data = sessionModelJSON["sessionData"] as? String else {
+            return rejecter("session", "Invalid session data", nil)
         }
 
         let config = AdyenSession.Configuration(sessionIdentifier: id, initialSessionData: data, context: context)
@@ -57,20 +55,37 @@ internal final class SessionHelperModule: BaseModule, AdyenSessionDelegate {
                     let dto = SessionDTO(session: session)
                     resolver(dto.jsonObject)
                     BaseModule.session = session
+                    BaseModule.sessionDelegate = self
                 case let .failure(error):
-                    if let nativeError = NativeModuleError.checkErrorType(error) as? NativeModuleError {
-                        rejecter(nativeError.errorCode, nativeError.errorDescription, nativeError)
-                    } else {
-                        rejecter(errorCode, error.localizedDescription, error)
-                    }
+                    rejecter("session", nil, error)
                 }
             }
         }
     }
 
-    @objc
-    func hide(_ success: NSNumber, event: NSDictionary) {
-        dismiss(success.boolValue)
+    private enum Key {
+        static let sessionId = "sessionId"
+        static let sessionData = "sessionData"
     }
 
+    override func sendError(error: any Error) {
+        let errorToSend = checkErrorType(error)
+        sendEvent(withName: Events.failSession.rawValue, body: errorToSend.jsonObject)
+    }
+}
+
+extension SessionHelperModule: AdyenSessionDelegate {
+
+    func didComplete(with result: Adyen.AdyenSessionResult, component: Adyen.Component, session: Adyen.AdyenSession) {
+        var dict = result.jsonObject
+        dict[Key.sessionId] = session.sessionContext.identifier
+        dict[Key.sessionData] = session.sessionContext.data
+        sendEvent(withName: Events.completeSession.rawValue, body: dict)
+    }
+
+    func didFail(with error: Error, from component: Adyen.Component, session: Adyen.AdyenSession) {
+        sendError(error: error)
+    }
+
+    func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {}
 }

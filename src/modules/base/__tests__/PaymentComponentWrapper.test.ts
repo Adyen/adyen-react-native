@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from '@jest/globals';
+import { describe, expect, test } from '@jest/globals';
 import { Event } from '../../../core';
 import { PaymentComponentWrapper } from '../PaymentComponentWrapper';
 import {
@@ -14,52 +14,24 @@ class TestPaymentWrapper extends PaymentComponentWrapper {
   }
 }
 
-/** Child class with additional events */
-class ExtendedPaymentWrapper extends PaymentComponentWrapper {
-  static readonly events = [Event.onBinValue];
-
-  get name(): string {
-    return 'ExtendedPaymentWrapper';
-  }
-}
-
 describe('PaymentComponentWrapper', () => {
-  let mockNativeModule: ReturnType<typeof createMockPaymentModule>;
-
-  beforeEach(() => {
-    mockNativeModule = createMockPaymentModule();
-  });
-
-  describe('static events', () => {
-    test('should declare onSubmit event', () => {
-      expect(PaymentComponentWrapper.events).toContain(Event.onSubmit);
-      expect(PaymentComponentWrapper.events).toHaveLength(1);
-    });
-  });
-
   describe('constructor', () => {
-    test('should inherit events from ModuleWrapper and PaymentComponentWrapper', () => {
+    test('should read supported events from native module getConstants', () => {
+      const mockNativeModule = createMockPaymentModule([
+        Event.onError,
+        Event.onComplete,
+        Event.onSubmit,
+      ]);
       const wrapper = new TestPaymentWrapper(mockNativeModule);
-      // From ModuleWrapper
-      expect(wrapper.isSupported(Event.onError)).toBe(true);
-      expect(wrapper.isSupported(Event.onComplete)).toBe(true);
-      // From PaymentComponentWrapper
-      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-    });
-
-    test('should combine events with child class events', () => {
-      const wrapper = new ExtendedPaymentWrapper(mockNativeModule);
-      // All inherited events
       expect(wrapper.isSupported(Event.onError)).toBe(true);
       expect(wrapper.isSupported(Event.onComplete)).toBe(true);
       expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-      // Child events
-      expect(wrapper.isSupported(Event.onBinValue)).toBe(true);
     });
   });
 
   describe('open', () => {
     test('should call native module open with payment methods and configuration', () => {
+      const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
       wrapper.open(mockPaymentMethodsResponse, mockConfiguration);
       expect(mockNativeModule.open).toHaveBeenCalledWith(
@@ -69,6 +41,7 @@ describe('PaymentComponentWrapper', () => {
     });
 
     test('should call native module open with empty payment methods', () => {
+      const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
       const emptyPaymentMethods = { paymentMethods: [] };
       wrapper.open(emptyPaymentMethods, mockConfiguration);
@@ -79,6 +52,7 @@ describe('PaymentComponentWrapper', () => {
     });
 
     test('should pass configuration with all optional fields', () => {
+      const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
       const fullConfig = {
         ...mockConfiguration,
@@ -95,12 +69,14 @@ describe('PaymentComponentWrapper', () => {
 
   describe('inherited hide', () => {
     test('should inherit hide method from ModuleWrapper', () => {
+      const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
       wrapper.hide(true);
       expect(mockNativeModule.hide).toHaveBeenCalledWith(true, { message: '' });
     });
 
     test('should pass message to hide', () => {
+      const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
       wrapper.hide(false, { message: 'Error occurred' });
       expect(mockNativeModule.hide).toHaveBeenCalledWith(false, {
@@ -111,6 +87,7 @@ describe('PaymentComponentWrapper', () => {
 
   describe('name property', () => {
     test('should return correct name', () => {
+      const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
       expect(wrapper.name).toBe('TestPaymentWrapper');
     });

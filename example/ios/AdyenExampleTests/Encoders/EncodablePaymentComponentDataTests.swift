@@ -65,8 +65,8 @@ class EncodablePaymentComponentDataTests: XCTestCase {
 
     func test_encode_includesCardSpecificFields_whenCardDetailsProvided() throws {
         // GIVEN
-        let delegatedDataRaw = "{\"sdkInput\": \"SOME_DATA\"}".data(using: .utf8)!
-        let delegatedData = try JSONDecoder().decode(DelegatedAuthenticationData.self, from: delegatedDataRaw)
+        let delegatedDataDict: NSDictionary = ["sdkInput": "SOME_DATA"]
+        let delegatedData: DelegatedAuthenticationData = try delegatedDataDict.decode()
         let paymentDetails = CardDetails(paymentMethod: CardPaymentMethod(type: .scheme, name: "Card", fundingSource: .credit, brands: []),
                                          encryptedCard: EncryptedCard(number: nil, securityCode: nil, expiryMonth: nil, expiryYear: nil),
                                          socialSecurityNumber: "123-45-6789",

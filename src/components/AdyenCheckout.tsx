@@ -92,6 +92,8 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   children,
 }) => {
   const subscriptions = useRef<EmitterSubscription[]>([]);
+  const onCompleteRef = useRef(onComplete);
+  const onErrorRef = useRef(onError);
   const [sessionContext, setSessionContext] = useState<
     SessionContext | undefined
   >(undefined);
@@ -107,33 +109,62 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }
 
   useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  useEffect(() => {
+    SessionHelper.removeAllListeners();
+
+    const completeHandler = (result: any) =>
+      onCompleteRef.current?.(result, SessionHelper);
+    const errorHandler = (error: any) =>
+      onErrorRef.current?.(error, SessionHelper);
+
+    SessionHelper.assignCompletionHandler(completeHandler);
+    SessionHelper.assignErrorHandler(errorHandler);
+
     return () => {
       removeEventListeners();
+      SessionHelper.removeAllListeners();
+      SessionHelper.hide(true);
     };
   }, []);
 
   useEffect(() => {
     if (session && !sessionContext) {
       SessionHelper.createSession(session, config)
-        .then((sessionResponse) => {
-          setSessionContext(sessionResponse);
-        })
+        .then((sessionResponse) => setSessionContext(sessionResponse))
         .catch((error) => {
-          onError(
-            {
-              message: String(error),
-              errorCode: ErrorCode.sessionError,
-            },
-            SessionHelper
-          );
+          const errorDTO: AdyenError = {
+            message: String(error),
+            errorCode: ErrorCode.sessionError,
+          };
+          onErrorRef.current?.(errorDTO, SessionHelper);
         });
     }
-  }, [session, sessionContext, config, onError, setSessionContext]);
+  }, [session, sessionContext, config, setSessionContext]);
 
   const startEventListeners = useCallback(
     (nativeComponent: PaymentComponentWrapper & AdyenActionComponent) => {
       removeEventListeners();
-      const eventEmitter = new NativeEventEmitter(nativeComponent);
+      const eventEmitter = new NativeEventEmitter(
+        nativeComponent.eventEmitterTarget
+      );
+      subscriptions.current = [];
+
+      /** Subscribe to an event if supported by native module */
+      function subscribeIfSupported<T>(
+        event: Event,
+        handler: (data: T) => void
+      ): void {
+        if (nativeComponent.isSupported(event)) {
+          subscriptions.current.push(eventEmitter.addListener(event, handler));
+        }
+      }
 
       function submitPayment(data: PaymentMethodData, extra: any) {
         const payload = {
@@ -143,147 +174,93 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         onSubmit?.(payload, nativeComponent, extra);
       }
 
-      subscriptions.current = [
-        eventEmitter.addListener(Event.onSubmit, (response: SubmitModel) =>
-          submitPayment(response.paymentData, response.extra)
-        ),
-        eventEmitter.addListener(Event.onError, (error: AdyenError) =>
-          onError?.(error, nativeComponent)
-        ),
-      ];
+      // Core events
+      subscribeIfSupported<SubmitModel>(Event.onSubmit, (response) =>
+        submitPayment(response.paymentData, response.extra)
+      );
+      subscribeIfSupported<AdyenError>(Event.onError, (error) =>
+        onError?.(error, nativeComponent)
+      );
+      subscribeIfSupported<SessionsResult>(Event.onComplete, (data) =>
+        onComplete?.(data, nativeComponent)
+      );
+      subscribeIfSupported<PaymentDetailsData>(
+        Event.onAdditionalDetails,
+        (data) => onAdditionalDetails?.(data, nativeComponent)
+      );
 
-      if (nativeComponent.isSupported(Event.onComplete)) {
-        subscriptions.current.push(
-          eventEmitter.addListener(Event.onComplete, (data: any) =>
-            onComplete?.(data, nativeComponent)
-          )
-        );
-      }
-
-      if (nativeComponent.isSupported(Event.onAdditionalDetails)) {
-        subscriptions.current.push(
-          eventEmitter.addListener(
-            Event.onAdditionalDetails,
-            (data: PaymentDetailsData) =>
-              onAdditionalDetails?.(data, nativeComponent)
-          )
-        );
-      }
-
+      // Stored payment method removal
       const onDisableStoredPaymentMethodCallback =
         config.dropin?.onDisableStoredPaymentMethod;
-      if (
-        onDisableStoredPaymentMethodCallback &&
-        nativeComponent.isSupported(Event.onDisableStoredPaymentMethod)
-      ) {
+      if (onDisableStoredPaymentMethodCallback) {
         const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
-        subscriptions.current.push(
-          eventEmitter.addListener(
-            Event.onDisableStoredPaymentMethod,
-            (data: StoredPaymentMethod) =>
-              onDisableStoredPaymentMethodCallback(
-                data,
-                () => {
-                  nativeModule.removeStored(true);
-                },
-                () => {
-                  nativeModule.removeStored(false);
-                }
-              )
-          )
+        subscribeIfSupported<StoredPaymentMethod>(
+          Event.onDisableStoredPaymentMethod,
+          (data) =>
+            onDisableStoredPaymentMethodCallback(
+              data,
+              () => nativeModule.removeStored(true),
+              () => nativeModule.removeStored(false)
+            )
         );
       }
 
+      // Address lookup
       const onUpdateAddressCallback = config.card?.onUpdateAddress;
       const onConfirmAddressCallback = config.card?.onConfirmAddress;
-      if (
-        onUpdateAddressCallback &&
-        onConfirmAddressCallback &&
-        nativeComponent.isSupported(Event.onAddressUpdate) &&
-        nativeComponent.isSupported(Event.onAddressConfirm)
-      ) {
+      if (onUpdateAddressCallback && onConfirmAddressCallback) {
         const nativeModule = nativeComponent as unknown as AddressLookup;
-        subscriptions.current.push(
-          eventEmitter.addListener(
-            Event.onAddressUpdate,
-            async (prompt: string) => {
-              onUpdateAddressCallback(prompt, nativeModule);
-            }
-          ),
-          eventEmitter.addListener(
-            Event.onAddressConfirm,
-            (address: AddressLookupItem) => {
-              onConfirmAddressCallback(address, nativeModule);
-            }
-          )
+        subscribeIfSupported(Event.onAddressUpdate, async (prompt: string) =>
+          onUpdateAddressCallback(prompt, nativeModule)
+        );
+        subscribeIfSupported(
+          Event.onAddressConfirm,
+          (address: AddressLookupItem) =>
+            onConfirmAddressCallback(address, nativeModule)
         );
       }
 
+      // Partial payments
       const onBalanceCheckCallback = config.partialPayment?.onBalanceCheck;
       const onOrderRequestCallback = config.partialPayment?.onOrderRequest;
       const onOrderCancelCallback = config.partialPayment?.onOrderCancel;
       if (
         onBalanceCheckCallback &&
         onOrderRequestCallback &&
-        onOrderCancelCallback &&
-        nativeComponent.isSupported(Event.onCheckBalance) &&
-        nativeComponent.isSupported(Event.onRequestOrder) &&
-        nativeComponent.isSupported(Event.onCancelOrder)
+        onOrderCancelCallback
       ) {
         const component = nativeComponent as unknown as PartialPaymentComponent;
-        subscriptions.current.push(
-          eventEmitter.addListener(
-            Event.onCheckBalance,
-            async (paymentData) => {
-              onBalanceCheckCallback(
-                paymentData,
-                (balance) => {
-                  component.provideBalance(true, balance, undefined);
-                },
-                (error: Error) => {
-                  component.provideBalance(false, undefined, error);
-                }
-              );
-            }
-          ),
-          eventEmitter.addListener(Event.onRequestOrder, () => {
-            onOrderRequestCallback(
-              (order: Order) => {
-                component.provideOrder(true, order, undefined);
-              },
-              (error: Error) => {
-                component.provideOrder(false, undefined, error);
-              }
-            );
-          }),
-          eventEmitter.addListener(
-            Event.onCancelOrder,
-            ({ order, shouldUpdatePaymentMethods }) => {
-              onOrderCancelCallback(
-                order,
-                shouldUpdatePaymentMethods,
-                component
-              );
-            }
-          )
+        subscribeIfSupported(
+          Event.onCheckBalance,
+          async (paymentData: PaymentMethodData) =>
+            onBalanceCheckCallback(
+              paymentData,
+              (balance) => component.provideBalance(true, balance, undefined),
+              (error) => component.provideBalance(false, undefined, error)
+            )
+        );
+        subscribeIfSupported(Event.onRequestOrder, () => {
+          onOrderRequestCallback(
+            (order: Order) => component.provideOrder(true, order, undefined),
+            (error: Error) => component.provideOrder(false, undefined, error)
+          );
+        });
+        subscribeIfSupported(
+          Event.onCancelOrder,
+          ({ order, shouldUpdatePaymentMethods }: any) =>
+            onOrderCancelCallback(order, shouldUpdatePaymentMethods, component)
         );
       }
 
+      // BIN lookup and value
       const onBinLookupCallback = config.card?.onBinLookup;
-      if (
-        onBinLookupCallback &&
-        nativeComponent.isSupported(Event.onBinLookup)
-      ) {
-        subscriptions.current.push(
-          eventEmitter.addListener(Event.onBinLookup, onBinLookupCallback)
-        );
+      if (onBinLookupCallback) {
+        subscribeIfSupported(Event.onBinLookup, onBinLookupCallback);
       }
 
       const onBinValueCallback = config.card?.onBinValue;
-      if (onBinValueCallback && nativeComponent.isSupported(Event.onBinValue)) {
-        subscriptions.current.push(
-          eventEmitter.addListener(Event.onBinValue, onBinValueCallback)
-        );
+      if (onBinValueCallback) {
+        subscribeIfSupported(Event.onBinValue, onBinValueCallback);
       }
     },
     [onSubmit, onAdditionalDetails, onComplete, onError, config]

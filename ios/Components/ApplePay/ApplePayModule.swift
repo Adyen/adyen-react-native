@@ -10,7 +10,11 @@ import PassKit
 import React
 
 @objc(AdyenApplePay)
-internal class ApplePayModule: BaseModule {
+internal class ApplePayModule: BaseModuleSender {
+
+    override func supportedEvents() -> [String]! {
+        Events.coreEvents.map(\.rawValue)
+    }
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
@@ -22,13 +26,6 @@ internal class ApplePayModule: BaseModule {
     init(pkPaymentAuthorizationService: PKPaymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()) {
         self.paymentAuthorizationService = pkPaymentAuthorizationService
         super.init()
-    }
-
-    override func supportedEvents() -> [String]! { Events.coreEvents.map(\.rawValue) }
-
-    @objc
-    func hide(_ success: NSNumber, event: NSDictionary) {
-        dismiss(success.boolValue)
     }
 
     @objc
@@ -45,11 +42,10 @@ internal class ApplePayModule: BaseModule {
                                                             context: context,
                                                             configuration: applepayConfig)
         } catch {
-            return sendEvent(error: error)
+            return sendError(error: error)
         }
 
         currentComponent = applePayComponent
-        SessionHelperModule.sessionListener = self
         applePayComponent.delegate = BaseModule.session ?? self
         present(component: applePayComponent)
     }
@@ -61,17 +57,19 @@ internal class ApplePayModule: BaseModule {
                      rejecter: @escaping RCTPromiseRejectBlock) {
         let parser = RootConfigurationParser(configuration: configuration)
         let applePayParser = ApplepayConfigurationParser(configuration: configuration)
-        let paymentMethod: ApplePayPaymentMethod
+
         let paymentRequest: PKPaymentRequest
         guard let payment = parser.payment else {
             return resolver(false)
         }
 
         do {
-            let data = try JSONSerialization.data(withJSONObject: paymentMethodDict, options: [])
-            paymentMethod = try JSONDecoder().decode(ApplePayPaymentMethod.self, from: data)
             paymentRequest = try applePayParser.buildPaymentRequest(payment: payment)
         } catch {
+            return resolver(false)
+        }
+
+        guard let paymentMethod: ApplePayPaymentMethod = try? paymentMethodDict.decode() else {
             return resolver(false)
         }
 
@@ -88,37 +86,6 @@ internal class ApplePayModule: BaseModule {
         return resolver(true)
     }
 
-}
-
-extension ApplePayModule: PaymentComponentDelegate {
-
-    internal func didSubmit(_ data: PaymentComponentData, from component: PaymentComponent) {
-        let applePayDetails = data.paymentMethod as? ApplePayDetails
-        let response = SubmitData(paymentData: data.jsonObject, extra: applePayDetails?.extraData)
-        sendEvent(event: .didSubmit, body: response.jsonObject)
-    }
-
-    internal func didFail(with error: Error, from component: PaymentComponent) {
-        sendEvent(error: error)
-    }
-
-}
-
-extension ApplePayDetails {
-
-    private enum Key {
-        static let billingContact = "billingContact"
-        static let network = "network"
-        static let shippingContact = "shippingContact"
-    }
-
-    internal var extraData: [String: Any] {
-        [
-            Key.billingContact: self.billingContact?.jsonObject,
-            Key.network: self.network,
-            Key.shippingContact: self.shippingContact?.jsonObject
-        ]
-    }
 }
 
 protocol PKPaymentAuthorizationService {

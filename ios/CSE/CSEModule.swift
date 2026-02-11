@@ -12,7 +12,9 @@ import React
 internal final class CSEModule: NSObject {
 
     @objc
-    static func requiresMainQueueSetup() -> Bool { true }
+    static func requiresMainQueueSetup() -> Bool {
+        true
+    }
 
     @objc
     func encryptCard(_ payload: NSDictionary,

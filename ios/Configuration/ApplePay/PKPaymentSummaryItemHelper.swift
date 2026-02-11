@@ -9,8 +9,8 @@ import PassKit
 
 extension PKPaymentSummaryItem {
     convenience init?(_ dictionary: [String: Any]) {
-        guard let label = dictionary[ApplePayKeys.SummeryItem.label] as? String,
-              let value = dictionary[ApplePayKeys.SummeryItem.amount] else {
+        guard let label = dictionary[ApplePayKeys.SummaryItem.label] as? String,
+              let value = dictionary[ApplePayKeys.SummaryItem.amount] else {
             return nil
         }
         let amount: NSDecimalNumber
@@ -21,7 +21,7 @@ extension PKPaymentSummaryItem {
         } else {
             return nil
         }
-        if let typeRaw = dictionary[ApplePayKeys.SummeryItem.type] as? String,
+        if let typeRaw = dictionary[ApplePayKeys.SummaryItem.type] as? String,
            let type = ApplePayPaymentSummaryItemType(rawValue: typeRaw)?.toAppleType {
             self.init(label: label, amount: amount, type: type)
         } else {
