@@ -22,12 +22,12 @@ class ApplePayRecurringConfigurationParser {
         }
     }
 
-    // A description of the recurring payment, for example "Apple News+".
+    /// A description of the recurring payment, for example "Apple News+".
     var paymentDescription: String? {
         dict[ApplePayKeys.Recurring.paymentDescription] as? String
     }
 
-    // The regular billing cycle, for example "$9.99 monthly".
+    /// The regular billing cycle, for example "$9.99 monthly".
     @available(iOS 15.0, *)
     var regularBilling: PKRecurringPaymentSummaryItem? {
         guard let dictionary = dict[ApplePayKeys.Recurring.regularBilling] as? [NSString: Any] else {
@@ -36,7 +36,7 @@ class ApplePayRecurringConfigurationParser {
         return .init(dictionary)
     }
 
-    // Optional, trial billing cycle, for example "$1.99 for the first six months".
+    /// Optional, trial billing cycle, for example "$1.99 for the first six months".
     @available(iOS 15.0, *)
     var trialBilling: PKRecurringPaymentSummaryItem? {
         guard let dictionary = dict[ApplePayKeys.Recurring.trialBilling] as? [NSString: Any] else {
@@ -45,21 +45,21 @@ class ApplePayRecurringConfigurationParser {
         return .init(dictionary)
     }
 
-    // Optional, localized billing agreement to be displayed to the user prior to payment authorization.
+    /// Optional, localized billing agreement to be displayed to the user prior to payment authorization.
     var billingAgreement: String? {
         dict[ApplePayKeys.Recurring.billingAgreement] as? String
     }
 
-    // A URL that links to a page on your web site where the user can manage the payment method for this
-    // recurring payment, including deleting it.
+    /// A URL that links to a page on your web site where the user can manage the payment method for this
+    /// recurring payment, including deleting it.
     var managementURL: URL? {
         guard let url = dict[ApplePayKeys.Recurring.managementURL] as? String else { return nil }
         return URL(string: url)
     }
 
-    // Optional URL to receive lifecycle notifications for the merchant-specific payment token issued
-    // for this request, if applicable. If this property is not set, notifications will not be sent when
-    // lifecycle changes occur for the token, for example when the token is deleted.
+    /// Optional URL to receive lifecycle notifications for the merchant-specific payment token issued
+    /// for this request, if applicable. If this property is not set, notifications will not be sent when
+    /// lifecycle changes occur for the token, for example when the token is deleted.
     var tokenNotificationURL: URL? {
         guard let url = dict[ApplePayKeys.Recurring.tokenNotificationURL] as? String else { return nil }
         return URL(string: url)

@@ -59,7 +59,9 @@ internal class ApplePayModule: BaseModuleSender {
         let applePayParser = ApplepayConfigurationParser(configuration: configuration)
 
         let paymentRequest: PKPaymentRequest
-        guard let payment = parser.payment else {
+        guard
+            let context = try? parser.fetchContext(session: BaseModule.session),
+            let payment = context.payment else {
             return resolver(false)
         }
 
