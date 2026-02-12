@@ -8,7 +8,7 @@ os_version=${3:-}
 
 SCHEME="TestProject"
 
-if [ "$platform" == "Expo" ]; then
+if [ "$platform" = "Expo" ]; then
   echo "== Prebuild Expo iOS"
   npx expo prebuild -p ios --clean
 else
@@ -22,7 +22,13 @@ fi
 UDID=$(bash ./resolve_ios_simulator.sh "$device_name" "$os_version")
 
 echo "== Build iOS"
-xcodebuild -workspace "ios/$SCHEME.xcworkspace" -scheme "$SCHEME" -configuration Debug -sdk iphonesimulator -destination "platform=iOS Simulator,id=$UDID" -derivedDataPath build -quiet
+xcodebuild -workspace "ios/$SCHEME.xcworkspace" \
+  -scheme "$SCHEME" \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination "platform=iOS Simulator,id=$UDID" \
+  -derivedDataPath build \
+  | xcpretty --utf --color
 
 bash ./start_metro.sh
 

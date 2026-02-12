@@ -20,7 +20,13 @@ function getConfig() {
 
 async function createDriver() {
   const config = getConfig();
-  const { isAndroid, androidAppPackage, androidAppActivity, iosBundleId, iosUdid } = config;
+  const {
+    isAndroid,
+    androidAppPackage,
+    androidAppActivity,
+    iosBundleId,
+    iosUdid,
+  } = config;
 
   const connectionRetryTimeout = isAndroid ? 240000 : 600000;
   const connectionRetryCount = isAndroid ? 3 : 5;

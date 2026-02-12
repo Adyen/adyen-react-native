@@ -17,11 +17,12 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import { ADYEN_CLIENT_KEY, ADYEN_PUBLIC_KEY } from './secrets';
 
 const configuration: Configuration = {
   returnUrl: 'myapp://payment',
   environment: 'test',
-  clientKey: '__CLIENT_KEY__',
+  clientKey: ADYEN_CLIENT_KEY,
   card: {
     holderNameRequired: true,
   },
@@ -117,7 +118,7 @@ const MyCheckoutView = () => {
         onPress={async () => {
           let result = await AdyenCSE.encryptBin(
             '545454545454',
-            '__PUBLIC_KEY__'
+            ADYEN_PUBLIC_KEY
           );
           console.log(result);
         }}

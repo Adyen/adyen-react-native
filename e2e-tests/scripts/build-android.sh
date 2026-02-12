@@ -7,7 +7,7 @@ APP_PACKAGE=com.$PROJECT_NAME
 
 platform=${1:-}
 
-if [ "$platform" == "Expo" ]; then
+if [ "$platform" = "Expo" ]; then
   echo "== Prebuild Expo Android"
   npx expo prebuild -p android --clean
 fi

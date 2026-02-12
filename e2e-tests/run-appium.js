@@ -6,7 +6,9 @@ const { testDropInButtonVisible } = require('./tests/dropin-visible.test');
   const { driver, config } = await createDriver();
   const { isAndroid } = config;
 
-  console.log(`\n==> [Test] Running tests on ${isAndroid ? 'Android' : 'iOS'}...`);
+  console.log(
+    `\n==> [Test] Running tests on ${isAndroid ? 'Android' : 'iOS'}...`
+  );
 
   try {
     await testDropInButtonVisible(driver, isAndroid);
