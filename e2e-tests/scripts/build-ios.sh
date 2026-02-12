@@ -6,8 +6,6 @@ platform=${1:-}
 device_name=${2:-}
 os_version=${3:-}
 
-SCHEME="TestProject"
-
 if [ "$platform" = "Expo" ]; then
   echo "== Prebuild Expo iOS"
   npx expo prebuild -p ios --clean
@@ -17,6 +15,17 @@ else
   pod install --repo-update
   cd ..
 fi
+
+# Find the workspace file dynamically (after ios directory is created)
+WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+if [ -z "$WORKSPACE" ]; then
+  echo "Error: No .xcworkspace found in ios directory"
+  exit 1
+fi
+
+# Extract scheme name from workspace (remove path and extension)
+SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+echo "Using workspace: $WORKSPACE with scheme: $SCHEME"
 
 # Resolve simulator UDID
 UDID=$(bash ./resolve_ios_simulator.sh "$device_name" "$os_version")
