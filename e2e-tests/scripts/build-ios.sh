@@ -22,6 +22,11 @@ fi
 UDID=$(bash ./resolve_ios_simulator.sh "$device_name" "$os_version")
 
 echo "== Build iOS"
+if ! command -v xcpretty &> /dev/null; then
+  echo "Installing xcpretty..."
+  gem install xcpretty
+fi
+
 xcodebuild -workspace "ios/$SCHEME.xcworkspace" \
   -scheme "$SCHEME" \
   -configuration Debug \
