@@ -26,7 +26,7 @@ let applePayDictionary: NSDictionary = [
 ]
 
 let configuration: NSDictionary = [
-    "clientKey": "test_client_key",
+    "clientKey": "test_clientkey",
     "amount": [
         "value": 1000,
         "currency": "USD"
