@@ -13,7 +13,6 @@ Pod::Spec.new do |s|
   s.platform     = :ios, "12.0"
   s.source       = { :git => "https://github.com/Adyen/adyen-react-native.git", :tag => "#{s.version}" }
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
-  s.private_header_files = "ios/**/*.h"
 
   s.dependency "Adyen", '5.22.1'
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
