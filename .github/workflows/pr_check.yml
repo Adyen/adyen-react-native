@@ -6,7 +6,7 @@ permissions:
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - develop
@@ -45,3 +45,29 @@ jobs:
     secrets: inherit
     with:
       node-version: ${{ vars.NODE_VERSION }}
+
+  e2e-react-native:
+    name: E2E Test React Native
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
+    uses: ./.github/workflows/blank_test.yml
+    with:
+      platform: 'React Native'
+      version: '0.80.2'
+      run_ios: true
+      run_android: true
+    secrets:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+
+  e2e-expo:
+    name: E2E Test Expo
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
+    uses: ./.github/workflows/blank_test.yml
+    with:
+      platform: 'Expo'
+      version: '52'
+      run_ios: true
+      run_android: true
+    secrets:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}

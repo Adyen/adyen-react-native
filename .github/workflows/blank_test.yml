@@ -5,9 +5,6 @@ on:
     branches:
       - develop
 
-  pull_request:
-    types: [opened, synchronize, reopened]
-
   workflow_dispatch:
     inputs:
       platform:
@@ -30,6 +27,30 @@ on:
         description: 'Test Android'
         type: boolean
         default: true
+
+  workflow_call:
+    inputs:
+      platform:
+        description: 'Project Type'
+        required: true
+        type: string
+      version:
+        description: 'Version (RN e.g. 0.80.2 OR Expo SDK e.g. 52.0.0)'
+        required: true
+        type: string
+      run_ios:
+        description: 'Test iOS'
+        type: boolean
+        default: true
+      run_android:
+        description: 'Test Android'
+        type: boolean
+        default: true
+    secrets:
+      ADYEN_CLIENT_KEY:
+        required: false
+      ADYEN_PUBLIC_KEY:
+        required: false
 
 permissions:
   contents: read
