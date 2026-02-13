@@ -6,7 +6,10 @@ import {
   type PaymentMethod,
   type PaymentMethodsResponse,
 } from '../../core';
-import { AdyenApplePay, AdyenDropIn, AdyenGooglePay, AdyenInstant } from '..';
+import { AdyenDropIn } from '../dropin/AdyenDropIn';
+import { AdyenApplePay } from '../applepay/AdyenApplePay';
+import { AdyenGooglePay } from '../googlepay/AdyenGooglePay';
+import { AdyenInstant } from '../instant/AdyenInstant';
 import type { ApplePayWrapper } from '../applepay/ApplePayWrapper';
 import type { DropInWrapper } from '../dropin/DropInWrapper';
 import type { GooglePayWrapper } from '../googlepay/GooglePayWrapper';
