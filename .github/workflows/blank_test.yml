@@ -1,9 +1,6 @@
 name: Test Blank React Native app
 
 on:
-  push:
-    branches:
-      - develop
 
   workflow_dispatch:
     inputs:
@@ -12,9 +9,9 @@ on:
         required: true
         type: choice
         options:
-          - 'React Native'
+          - 'ReactNative'
           - 'Expo'
-        default: 'React Native'
+        default: 'ReactNative'
       version:
         description: 'Version (RN e.g. 0.80.2 OR Expo SDK e.g. 52.0.0)'
         required: true
@@ -78,9 +75,9 @@ jobs:
         id: vars
         shell: bash
         run: |
-          PLATFORM="${{ github.event.inputs.platform || 'Expo' }}"
-          RUN_IOS="${{ github.event.inputs.run_ios || 'true' }}"
-          RUN_ANDROID="${{ github.event.inputs.run_android || 'true' }}"
+          PLATFORM="${{ inputs.platform || github.event.inputs.platform }}"
+          RUN_IOS="${{ inputs.run_ios || github.event.inputs.run_ios }}"
+          RUN_ANDROID="${{ inputs.run_android || github.event.inputs.run_android }}"
 
           echo "platform=$PLATFORM" >> "$GITHUB_OUTPUT"
           echo "run_ios=$RUN_IOS" >> "$GITHUB_OUTPUT"
@@ -102,13 +99,13 @@ jobs:
 
       - name: Generate Fixture
         run: |
-          VERSION="${{ github.event.inputs.version || '52' }}"
+          VERSION="${{ inputs.version || github.event.inputs.version }}"
           bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ steps.vars.outputs.platform }}" "$VERSION"
 
       - name: Upload Fixture
         uses: actions/upload-artifact@v4
         with:
-          name: fixture
+          name: fixture-${{ steps.vars.outputs.platform }}
           path: ${{ env.APP_DIR }}
           retention-days: 1
 
@@ -132,7 +129,7 @@ jobs:
       - name: Download Fixture
         uses: actions/download-artifact@v4
         with:
-          name: fixture
+          name: fixture-${{ needs.setup.outputs.platform }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -169,7 +166,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium_failure_ios
+          name: appium_failure_ios_${{ needs.setup.outputs.platform }}
           path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
@@ -178,7 +175,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium_page_source_ios
+          name: appium_page_source_ios_${{ needs.setup.outputs.platform }}
           path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
@@ -207,7 +204,7 @@ jobs:
       - name: Download Fixture
         uses: actions/download-artifact@v4
         with:
-          name: fixture
+          name: fixture-${{ needs.setup.outputs.platform }}
 
       - name: Setup Android Emulator
         uses: ./.github/actions/setup-android-emulator
@@ -247,7 +244,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium_failure_android
+          name: appium_failure_android_${{ needs.setup.outputs.platform }}
           path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
@@ -256,7 +253,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium_page_source_android
+          name: appium_page_source_android_${{ needs.setup.outputs.platform }}
           path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
