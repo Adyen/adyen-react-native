@@ -1939,7 +1939,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Adyen: fdb961c61a9dadcefb1dfc262c248370204f25b8
-  adyen-react-native: 994fe3488c5149144bb3a07905f0ca62dc9c3b63
+  adyen-react-native: 63e8dec01b1f3df607b8eafbe191898829ebd4e8
   Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
   AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90

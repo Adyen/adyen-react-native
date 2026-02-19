@@ -121,8 +121,8 @@ jobs:
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
-      IOS_DEVICE_NAME: 'iPhone 17'
-      IOS_VERSION: '26.1'
+      IOS_DEVICE_NAME: 'iPhone'
+      IOS_VERSION: '26'
       RUBY_VERSION: '3.2'
 
     steps:

@@ -1,7 +1,6 @@
 name: Test iOS
 permissions:
   contents: read
-  actions: write
 
 on:
   workflow_call:
@@ -20,7 +19,6 @@ jobs:
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
-      device: iPhone ${{ inputs.device-version }}
       buildFolder: ./DerivedData
     steps:
       - uses: actions/checkout@v6
@@ -50,13 +48,15 @@ jobs:
           restore-keys: pods-
 
       - name: Pod install
+        if: steps.pods-cache.outputs.cache-hit != 'true'
         working-directory: example/ios
+        run: pod install --repo-update
+
+      - name: Resolve iOS Simulator
+        id: simulator
         run: |
-          if [ "${{ steps.pods-cache.outputs.cache-hit }}" != "true" ]; then
-            pod install --repo-update
-          else
-            pod install
-          fi
+          UDID=$(bash ${{ github.workspace }}/e2e-tests/scripts/resolve_ios_simulator.sh "iPhone" "${{ inputs.device-version }}")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
       - name: Run tests
         working-directory: example/ios
@@ -64,7 +64,7 @@ jobs:
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
-            -destination "platform=iOS Simulator,name=${{env.device}}" \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES \
             -allowProvisioningUpdates | xcpretty --utf --color && exit ${PIPESTATUS[0]}
@@ -79,7 +79,6 @@ jobs:
       - name: SwiftLint
         working-directory: ios
         run: |
-          brew install swiftlint
           fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
 
       - name: Archive Coverage report
