@@ -58,6 +58,10 @@ echo "::endgroup::"
 echo "::group::Run Appium Tests"
 export PLATFORM_NAME=ios
 export IOS_UDID="$UDID"
-export IOS_SCHEME="$SCHEME"
+if [ "$platform" = "Expo" ]; then
+  export IOS_BUNDLE_ID="com.testproject"
+else
+  export IOS_BUNDLE_ID="org.reactjs.native.example.$SCHEME"
+fi
 node ./run-appium.js
 echo "::endgroup::"

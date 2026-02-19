@@ -4,15 +4,13 @@ function getConfig() {
   const isAndroid = process.env.PLATFORM_NAME === 'android';
   const androidAppPackage = process.env.APP_PACKAGE || 'com.testproject';
   const androidAppActivity = '.MainActivity';
-  const iosScheme = process.env.IOS_SCHEME || 'TestProject';
-  const iosBundleId = 'org.reactjs.native.example.' + iosScheme;
+  const iosBundleId = process.env.IOS_BUNDLE_ID;
   const iosUdid = process.env.IOS_UDID;
 
   return {
     isAndroid,
     androidAppPackage,
     androidAppActivity,
-    iosScheme,
     iosBundleId,
     iosUdid,
   };
