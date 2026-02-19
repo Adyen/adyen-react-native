@@ -103,7 +103,7 @@ jobs:
           bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ steps.vars.outputs.platform }}" "$VERSION"
 
       - name: Upload Fixture
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fixture-${{ steps.vars.outputs.platform }}
           path: ${{ env.APP_DIR }}
@@ -122,7 +122,6 @@ jobs:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
       IOS_DEVICE_NAME: 'iPhone'
-      IOS_VERSION: '26'
       RUBY_VERSION: '3.2'
 
     steps:
@@ -160,11 +159,20 @@ jobs:
 
       - name: Run iOS Test
         run: |
-          bash ./build-ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ env.IOS_VERSION }}"
+          bash ./build-ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}"
+
+      - name: Upload Xcodebuild Log (iOS)
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: xcodebuild_log_ios_${{ needs.setup.outputs.platform }}
+          path: xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Upload Appium Failure Screenshot (iOS)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: appium_failure_ios_${{ needs.setup.outputs.platform }}
           path: appium_failure.png
@@ -173,7 +181,7 @@ jobs:
 
       - name: Upload Appium Page Source (iOS)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: appium_page_source_ios_${{ needs.setup.outputs.platform }}
           path: appium_page_source.xml
@@ -242,7 +250,7 @@ jobs:
 
       - name: Upload Appium Failure Screenshot (Android)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: appium_failure_android_${{ needs.setup.outputs.platform }}
           path: appium_failure.png
@@ -251,7 +259,7 @@ jobs:
 
       - name: Upload Appium Page Source (Android)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: appium_page_source_android_${{ needs.setup.outputs.platform }}
           path: appium_page_source.xml

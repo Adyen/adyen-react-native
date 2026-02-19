@@ -8,25 +8,30 @@ APP_PACKAGE=com.$PROJECT_NAME
 platform=${1:-}
 
 if [ "$platform" = "Expo" ]; then
-  echo "== Prebuild Expo Android"
+  echo "::group::Prebuild Expo Android"
   npx expo prebuild -p android --clean
+  echo "::endgroup::"
 fi
 
-echo "== Build Android"
+echo "::group::Build Android"
 cd android || exit
 chmod +x ./gradlew
 ./gradlew installDebug || bash ./gradlew installDebug
 cd ..
+echo "::endgroup::"
 
 bash ./start_metro.sh
 
-echo "== Reverse Metro Port"
+echo "::group::Reverse Metro Port"
 adb reverse tcp:8081 tcp:8081
+echo "::endgroup::"
 
-echo "== Launch App"
+echo "::group::Launch App"
 adb shell am start -n "$APP_PACKAGE/.MainActivity"
+echo "::endgroup::"
 
-echo "== Run Appium Tests"
+echo "::group::Run Appium Tests"
 export PLATFORM_NAME=android
 export APP_PACKAGE
 node ./run-appium.js
+echo "::endgroup::"

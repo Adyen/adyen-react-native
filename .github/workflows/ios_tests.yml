@@ -67,7 +67,16 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES \
-            -allowProvisioningUpdates | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+            -allowProvisioningUpdates 2>&1 | tee ${{ github.workspace }}/xcodebuild.log | xcpretty --utf --color
+
+      - name: Upload Xcodebuild Log
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: xcodebuild_log_ios
+          path: ${{ github.workspace }}/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Generate code Coverage
         working-directory: example/ios

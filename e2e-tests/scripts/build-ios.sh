@@ -4,16 +4,17 @@ set -euo pipefail
 
 platform=${1:-}
 device_name=${2:-}
-os_version=${3:-}
 
 if [ "$platform" = "Expo" ]; then
-  echo "== Prebuild Expo iOS"
+  echo "::group::Prebuild Expo iOS"
   npx expo prebuild -p ios --clean
+  echo "::endgroup::"
 else
-  echo "== Update Pods"
+  echo "::group::Update Pods"
   cd ios || exit
   pod install --repo-update
   cd ..
+  echo "::endgroup::"
 fi
 
 # Find the workspace file dynamically (after ios directory is created)
@@ -28,31 +29,35 @@ SCHEME=$(basename "$WORKSPACE" .xcworkspace)
 echo "Using workspace: $WORKSPACE with scheme: $SCHEME"
 
 # Resolve simulator UDID
-UDID=$(bash ./resolve_ios_simulator.sh "$device_name" "$os_version")
+UDID=$(bash ./resolve_ios_simulator.sh "$device_name")
 
-echo "== Build iOS"
+echo "::group::Build iOS"
 if ! command -v xcpretty &> /dev/null; then
   echo "Installing xcpretty..."
   gem install xcpretty
 fi
 
+XCODEBUILD_LOG="xcodebuild.log"
 xcodebuild -workspace "ios/$SCHEME.xcworkspace" \
   -scheme "$SCHEME" \
   -configuration Debug \
   -sdk iphonesimulator \
   -destination "platform=iOS Simulator,id=$UDID" \
   -derivedDataPath build \
-  | xcpretty --utf --color
+  2>&1 | tee "$XCODEBUILD_LOG" | xcpretty --utf --color
+echo "::endgroup::"
 
 bash ./start_metro.sh
 
-echo "== Install App on Simulator"
+echo "::group::Install App on Simulator"
 xcrun simctl boot "$UDID" || true
 xcrun simctl bootstatus "$UDID" -b
 xcrun simctl install "$UDID" "build/Build/Products/Debug-iphonesimulator/$SCHEME.app"
+echo "::endgroup::"
 
-echo "== Run Appium Tests"
+echo "::group::Run Appium Tests"
 export PLATFORM_NAME=ios
 export IOS_UDID="$UDID"
 export IOS_SCHEME="$SCHEME"
 node ./run-appium.js
+echo "::endgroup::"
