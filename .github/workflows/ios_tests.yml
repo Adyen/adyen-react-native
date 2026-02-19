@@ -85,6 +85,9 @@ jobs:
           ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
           sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
       - name: SwiftLint
         working-directory: ios
         run: |
