@@ -8,6 +8,12 @@ on:
       node-version:
         required: true
         type: string
+      build-tgz:
+        type: boolean
+        default: true
+      build-precompiled-sdk:
+        type: boolean
+        default: true
 
 jobs:
   build-lib:
@@ -36,7 +42,22 @@ jobs:
           path: reports
           retention-days: 1
 
+      - name: Create tgz
+        if: inputs.build-tgz
+        run: |
+          npm pack
+          mv adyen-react-native-*.tgz adyen-react-native.tgz
+
+      - name: Archive tgz
+        if: inputs.build-tgz
+        uses: actions/upload-artifact@v6
+        with:
+          name: built-tgz
+          path: adyen-react-native.tgz
+          retention-days: 1
+
       - name: Archive precompiled SDK
+        if: inputs.build-precompiled-sdk
         uses: actions/upload-artifact@v6
         with:
           name: built-lib

@@ -19,6 +19,8 @@ jobs:
     uses: ./.github/workflows/build_lib.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
+      build-tgz: ${{ contains(github.event.pull_request.labels.*.name, 'run-e2e-tests') }}
+      build-precompiled-sdk: true
 
   test-iOS:
     name: Test iOS
@@ -47,12 +49,12 @@ jobs:
   e2e-react-native:
     name: E2E Test React Native
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
-    uses: ./.github/workflows/blank_test.yml
+    needs: [build-lib]
+    uses: ./.github/workflows/e2e_test.yml
     with:
-      platform: 'React Native'
+      platform: 'react-native'
       version: '0.80.2'
-      run_ios: true
-      run_android: true
+      node-version: ${{ vars.NODE_VERSION }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
@@ -60,12 +62,12 @@ jobs:
   e2e-expo:
     name: E2E Test Expo
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
-    uses: ./.github/workflows/blank_test.yml
+    needs: [build-lib]
+    uses: ./.github/workflows/e2e_test.yml
     with:
-      platform: 'Expo'
+      platform: 'expo'
       version: '52'
-      run_ios: true
-      run_android: true
+      node-version: ${{ vars.NODE_VERSION }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}

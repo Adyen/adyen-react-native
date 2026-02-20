@@ -13,7 +13,7 @@ fi
 
 PROJECT_NAME='TestProject'
 
-if [ "$platform" = "Expo" ]; then
+if [ "$platform" = "expo" ]; then
     echo "== Building Expo $version"
     npx create-expo-app $path --template default@"$version" --no-install
     
@@ -43,14 +43,6 @@ else
     cp ../e2e-tests/template/App.tsx.template App.tsx
     cp ../e2e-tests/template/secrets.js.template secrets.js
 fi
-
-# Ensure Yarn treats this directory as an independent project (not a workspace of the repo root)
-touch yarn.lock
-
-echo "== Install Dependencies"
-cp ../adyen-react-native.tgz . || exit 1
-yarn add ./adyen-react-native.tgz
-yarn add -D webdriverio @wdio/cli @wdio/local-runner @wdio/appium-service
 
 echo "== Copy e2e test files"
 cp ../e2e-tests/run-appium.js ./

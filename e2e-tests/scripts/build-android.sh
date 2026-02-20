@@ -7,7 +7,7 @@ APP_PACKAGE=com.$PROJECT_NAME
 
 platform=${1:-}
 
-if [ "$platform" = "Expo" ]; then
+if [ "$platform" = "expo" ]; then
   echo "::group::Prebuild Expo Android"
   npx expo prebuild -p android --clean
   echo "::endgroup::"
@@ -20,7 +20,9 @@ chmod +x ./gradlew
 cd ..
 echo "::endgroup::"
 
+echo "::group::Start Metro"
 bash ./start_metro.sh
+echo "::endgroup::"
 
 echo "::group::Reverse Metro Port"
 adb reverse tcp:8081 tcp:8081

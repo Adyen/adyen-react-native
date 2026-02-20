@@ -5,7 +5,7 @@ set -euo pipefail
 platform=${1:-}
 device_name=${2:-}
 
-if [ "$platform" = "Expo" ]; then
+if [ "$platform" = "expo" ]; then
   echo "::group::Prebuild Expo iOS"
   npx expo prebuild -p ios --clean
   echo "::endgroup::"
@@ -47,7 +47,9 @@ xcodebuild -workspace "ios/$SCHEME.xcworkspace" \
   2>&1 | tee "$XCODEBUILD_LOG" | xcpretty --utf --color
 echo "::endgroup::"
 
+echo "::group::Start Metro"
 bash ./start_metro.sh
+echo "::endgroup::"
 
 echo "::group::Install App on Simulator"
 xcrun simctl boot "$UDID" || true
@@ -58,7 +60,7 @@ echo "::endgroup::"
 echo "::group::Run Appium Tests"
 export PLATFORM_NAME=ios
 export IOS_UDID="$UDID"
-if [ "$platform" = "Expo" ]; then
+if [ "$platform" = "expo" ]; then
   export IOS_BUNDLE_ID="com.testproject"
 else
   export IOS_BUNDLE_ID="org.reactjs.native.example.$SCHEME"

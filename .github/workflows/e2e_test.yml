@@ -1,50 +1,21 @@
-name: Test Blank React Native app
+name: Run E2E Tests
 permissions:
   contents: read
 
 on:
-
-  workflow_dispatch:
-    inputs:
-      platform:
-        description: 'Project Type'
-        required: true
-        type: choice
-        options:
-          - 'ReactNative'
-          - 'Expo'
-        default: 'ReactNative'
-      version:
-        description: 'Version (RN e.g. 0.80.2 OR Expo SDK e.g. 52.0.0)'
-        required: true
-        default: '0.80.2'
-      run_ios:
-        description: 'Test iOS'
-        type: boolean
-        default: true
-      run_android:
-        description: 'Test Android'
-        type: boolean
-        default: true
-
   workflow_call:
     inputs:
+      node-version:
+        required: true
+        type: string
       platform:
-        description: 'Project Type'
+        description: 'Project Type (react-native or expo)'
         required: true
         type: string
       version:
         description: 'Version (RN e.g. 0.80.2 OR Expo SDK e.g. 52.0.0)'
         required: true
         type: string
-      run_ios:
-        description: 'Test iOS'
-        type: boolean
-        default: true
-      run_android:
-        description: 'Test Android'
-        type: boolean
-        default: true
     secrets:
       ADYEN_CLIENT_KEY:
         required: false
@@ -52,7 +23,6 @@ on:
         required: false
 
 env:
-  NODE_VERSION: 20
   APP_DIR: 'tested_app'
 
 jobs:
@@ -62,49 +32,38 @@ jobs:
   setup:
     name: Setup Fixture
     runs-on: ubuntu-latest
-    outputs:
-      platform: ${{ steps.vars.outputs.platform }}
-      run_ios: ${{ steps.vars.outputs.run_ios }}
-      run_android: ${{ steps.vars.outputs.run_android }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Resolve Inputs
-        id: vars
-        shell: bash
-        run: |
-          PLATFORM="${{ inputs.platform || github.event.inputs.platform }}"
-          RUN_IOS="${{ inputs.run_ios || github.event.inputs.run_ios }}"
-          RUN_ANDROID="${{ inputs.run_android || github.event.inputs.run_android }}"
-
-          echo "platform=$PLATFORM" >> "$GITHUB_OUTPUT"
-          echo "run_ios=$RUN_IOS" >> "$GITHUB_OUTPUT"
-          echo "run_android=$RUN_ANDROID" >> "$GITHUB_OUTPUT"
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ inputs.node-version }}
           cache: 'yarn'
-
-      - name: Build Library
-        run: |
-          yarn
-          yarn prepare
-          rm -f adyen-react-native-*.tgz
-          npm pack
-          mv adyen-react-native-*.tgz adyen-react-native.tgz
 
       - name: Generate Fixture
         run: |
-          VERSION="${{ inputs.version || github.event.inputs.version }}"
-          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ steps.vars.outputs.platform }}" "$VERSION"
+          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}"
+    
+      - name: Download Library
+        uses: actions/download-artifact@v7
+        with:
+          name: built-tgz
+          path: ${{ env.APP_DIR }}
+
+      - name: Add library as dependency
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          touch yarn.lock
+          yarn add ./adyen-react-native.tgz
+
+      - name: Add WebDriverIO dependencies
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          yarn add -D webdriverio @wdio/cli @wdio/local-runner @wdio/appium-service
 
       - name: Upload Fixture
         uses: actions/upload-artifact@v6
         with:
-          name: fixture-${{ steps.vars.outputs.platform }}
+          name: fixture-${{ inputs.platform }}
           path: ${{ env.APP_DIR }}
           retention-days: 1
 
@@ -114,7 +73,6 @@ jobs:
   ios-test:
     name: iOS Test
     needs: setup
-    if: ${{ needs.setup.outputs.run_ios == 'true' }}
     runs-on: macos-15
     timeout-minutes: 45
     env:
@@ -125,14 +83,14 @@ jobs:
 
     steps:
       - name: Download Fixture
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
-          name: fixture-${{ needs.setup.outputs.platform }}
+          name: fixture-${{ inputs.platform }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ inputs.node-version }}
+          cache: 'yarn'
 
       - name: Setup Ruby & Cocoapods
         uses: ruby/setup-ruby@v1
@@ -158,13 +116,13 @@ jobs:
 
       - name: Run iOS Test
         run: |
-          bash ./build-ios.sh "${{ needs.setup.outputs.platform }}" "${{ env.IOS_DEVICE_NAME }}"
+          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}"
 
       - name: Upload Xcodebuild Log (iOS)
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: xcodebuild_log_ios_${{ needs.setup.outputs.platform }}
+          name: xcodebuild_log_ios_${{ inputs.platform }}
           path: xcodebuild.log
           if-no-files-found: ignore
           retention-days: 1
@@ -173,7 +131,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: appium_failure_ios_${{ needs.setup.outputs.platform }}
+          name: appium_failure_ios_${{ inputs.platform }}
           path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
@@ -182,7 +140,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: appium_page_source_ios_${{ needs.setup.outputs.platform }}
+          name: appium_page_source_ios_${{ inputs.platform }}
           path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
@@ -193,7 +151,6 @@ jobs:
   android-test:
     name: Android Test
     needs: setup
-    if: ${{ needs.setup.outputs.run_android == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -202,21 +159,15 @@ jobs:
       ANDROID_API_LEVEL: 35
 
     steps:
-      - name: Checkout Actions
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .github/actions
-          sparse-checkout-cone-mode: false
-
       - name: Download Fixture
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
-          name: fixture-${{ needs.setup.outputs.platform }}
+          name: fixture-${{ inputs.platform }}
 
       - name: Setup Android Emulator
         uses: ./.github/actions/setup-android-emulator
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ inputs.node-version }}
           android-api-level: ${{ env.ANDROID_API_LEVEL }}
 
       - name: Install Dependencies
@@ -245,13 +196,13 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            bash ./build-android.sh "${{ needs.setup.outputs.platform }}"
+            bash ./build-android.sh "${{ inputs.platform }}"
 
       - name: Upload Appium Failure Screenshot (Android)
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: appium_failure_android_${{ needs.setup.outputs.platform }}
+          name: appium_failure_android_${{ inputs.platform }}
           path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
@@ -260,7 +211,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: appium_page_source_android_${{ needs.setup.outputs.platform }}
+          name: appium_page_source_android_${{ inputs.platform }}
           path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
