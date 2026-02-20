@@ -1,7 +1,6 @@
 name: Test Android
 permissions:
   contents: read
-  actions: write
 
 on:
   workflow_call:
@@ -23,12 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Android Emulator
-        uses: ./.github/actions/setup-android-emulator
-        with:
-          node-version: ${{ inputs.node-version }}
-          android-api-level: ${{ inputs.android-version }}
-
       - name: Download library
         uses: actions/download-artifact@v7
         with:
@@ -40,21 +33,9 @@ jobs:
           yarn install --frozen-lockfile
 
       - name: Run tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ inputs.android-version }}
-          target: ${{ env.target }}
-          arch: ${{ env.arch }}
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          working-directory: ./example/android
-          script: |
-            echo "::group::Running Android app"
-            yarn android
-            echo "::endgroup::"
-            echo "::group::Running Tests"
-            ./gradlew jacocoTestReport
-            echo "::endgroup::"
+        working-directory: ./example/android
+        run: |
+          ./gradlew jacocoTestReport
 
       - name: Prepare Jacoco report
         run: |

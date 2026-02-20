@@ -1,8 +1,6 @@
 name: Scan PR
 permissions:
   contents: read
-  actions: write
-  pull-requests: read
 
 on:
   pull_request:

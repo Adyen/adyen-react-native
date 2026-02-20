@@ -20,6 +20,7 @@ jobs:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
       buildFolder: ./DerivedData
+      buildLogPath: ${{ github.workspace }}/xcodebuild.log
     steps:
       - uses: actions/checkout@v6
 
@@ -48,9 +49,13 @@ jobs:
           restore-keys: pods-
 
       - name: Pod install
-        if: steps.pods-cache.outputs.cache-hit != 'true'
         working-directory: example/ios
-        run: pod install --repo-update
+        run: |
+          if [ "${{ steps.pods-cache.outputs.cache-hit }}" != "true" ]; then
+            pod install --repo-update
+          else
+            pod install
+          fi
 
       - name: Resolve iOS Simulator
         id: simulator
@@ -67,14 +72,17 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES \
-            -allowProvisioningUpdates 2>&1 | tee ${{ github.workspace }}/xcodebuild.log | xcpretty --utf --color
+            -allowProvisioningUpdates 2>&1 \
+            | tee ${{ env.buildLogPath }} \
+            | xcpretty --utf --color \
+            && exit ${PIPESTATUS[0]}
 
       - name: Upload Xcodebuild Log
         if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: xcodebuild_log_ios
-          path: ${{ github.workspace }}/xcodebuild.log
+          path: ${{ env.buildLogPath }}
           if-no-files-found: ignore
           retention-days: 1
 
@@ -85,12 +93,10 @@ jobs:
           ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
           sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
 
-      - name: Install SwiftLint
-        run: brew install swiftlint
-
       - name: SwiftLint
         working-directory: ios
         run: |
+          brew install swiftlint
           fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
 
       - name: Archive Coverage report

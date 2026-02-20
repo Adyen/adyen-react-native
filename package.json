@@ -107,12 +107,10 @@
   "jest": {
     "preset": "react-native",
     "testPathIgnorePatterns": [
-      "e2e-tests",
-      "<rootDir>/example/node_modules"
+      "e2e-tests"
     ],
     "modulePathIgnorePatterns": [
-      "_mock_",
-      "<rootDir>/lib/"
+      "_mock_"
     ]
   },
   "packageManager": "yarn@4.9.2",

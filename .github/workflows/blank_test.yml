@@ -1,4 +1,6 @@
 name: Test Blank React Native app
+permissions:
+  contents: read
 
 on:
 
@@ -48,9 +50,6 @@ on:
         required: false
       ADYEN_PUBLIC_KEY:
         required: false
-
-permissions:
-  contents: read
 
 env:
   NODE_VERSION: 20
