@@ -159,6 +159,8 @@ jobs:
       ANDROID_API_LEVEL: 35
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Download Fixture
         uses: actions/download-artifact@v7
         with:
