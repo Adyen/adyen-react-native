@@ -60,6 +60,5 @@ jobs:
           ## Changes:
           - Updated ${{ inputs.platform }} SDK version in configuration files
           - Updated README.md badge for ${{ inputs.platform }} SDK
-        branch: update-${{ inputs.platform }}-sdk-${{ inputs.version }}
         delete-branch: true
         draft: false
