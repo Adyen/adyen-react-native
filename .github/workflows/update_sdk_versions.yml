@@ -28,7 +28,6 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    # Fixed: Uses GitHub expression syntax instead of bash variables
     - name: Update SDK version and badges ${{ inputs.platform }} SDK to ${{ inputs.version }}
       run: |
         # Set platform-specific prefix and update SDK version
@@ -52,7 +51,6 @@ jobs:
       uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        # Fixed: Uses GitHub expression syntax for all plugin inputs
         commit-message: "chore: update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
         title: "Update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
         body: |
