@@ -53,6 +53,10 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: "chore: update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
         title: "Update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
+        add-paths: |
+          README.md
+          adyen-react-native.podspec
+          android/dependencies.gradle
         body: |
           # Open PR
           This PR updates the ${{ inputs.platform }} SDK version to ${{ inputs.version }}.
