@@ -15,7 +15,7 @@ PROJECT_NAME='TestProject'
 
 if [ "$platform" = "expo" ]; then
     echo "== Building Expo $version"
-    npx create-expo-app $path --template default@"$version" --no-install
+    npx create-expo-app $path --template blank@"$version" --no-install
     
     cd $path || exit 1
     
@@ -23,10 +23,9 @@ if [ "$platform" = "expo" ]; then
     node ../e2e-tests/scripts/configure-expo-app.js "$PROJECT_NAME" "com.testproject"
     
     # Add Expo-specific app files
-    echo "== Add default index.tsx"
-    mkdir -p "app/(tabs)"
-    cp ../e2e-tests/template/App.tsx.template "app/(tabs)/index.tsx"
-    cp ../e2e-tests/template/secrets.js.template "app/(tabs)/secrets.js"
+    echo "== Add default App.tsx"
+    cp ../e2e-tests/template/App.tsx.template App.tsx
+    cp ../e2e-tests/template/secrets.js.template secrets.js
 else
     cli_version=$(bash ./e2e-tests/scripts/resolve_rn_cli_version.sh "$version")
     echo "== Building React-Native $version (CLI $cli_version)"
