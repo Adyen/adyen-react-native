@@ -123,3 +123,9 @@ Class<RCTComponentViewProtocol> ADYPlatformPayViewCls(void) {
 }
 
 @end
+
+// Add support for Expo 52
+Class<RCTComponentViewProtocol> PlatformPayViewCls(void) {
+  return RCTViewComponentView.class;
+}
+
