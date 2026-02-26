@@ -60,17 +60,12 @@ jobs:
         run: |
           yarn add -D webdriverio @wdio/cli @wdio/local-runner @wdio/appium-service
 
-      - name: Bundle CI dependencies into fixture
-        run: |
-          cp -r .github ${{ env.APP_DIR }}/.github
-          cp -r .yarn ${{ env.APP_DIR }}/.yarn
-          cp .yarnrc.yml ${{ env.APP_DIR }}/.yarnrc.yml
-
       - name: Upload Fixture
         uses: actions/upload-artifact@v6
         with:
           name: fixture-${{ inputs.platform }}
           path: ${{ env.APP_DIR }}
+          include-hidden-files: true
           retention-days: 1
 
   # ====================================================

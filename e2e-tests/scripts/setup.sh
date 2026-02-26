@@ -48,3 +48,10 @@ cp ../e2e-tests/run-appium.js ./
 cp -r ../e2e-tests/helpers ./
 cp -r ../e2e-tests/tests ./
 cp ../e2e-tests/scripts/*.sh ./
+
+echo "== Bundle CI dependencies"
+mkdir -p .github/actions/setup-android-emulator
+cp ../.github/actions/setup-android-emulator/action.yml .github/actions/setup-android-emulator/
+mkdir -p .yarn/releases
+cp ../.yarn/releases/yarn-4.9.2.cjs .yarn/releases/
+cp ../.yarnrc.yml .yarnrc.yml
