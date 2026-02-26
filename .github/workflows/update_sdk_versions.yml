@@ -47,6 +47,10 @@ jobs:
         sed -i "s|${PLATFORM_PREFIX}-v[^-]*|${PLATFORM_PREFIX}-v$VERSION|g" README.md
         sed -i "s|${PLATFORM_PREFIX}/releases/tag/[^)]*|${PLATFORM_PREFIX}/releases/tag/$VERSION|g" README.md
 
+    - name: Clean up unwanted file changes
+      run: |
+        git checkout -- example/android/gradlew.bat
+
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v8
       with:
