@@ -16,7 +16,7 @@ fi
 echo "::group::Build Android [$(date '+%H:%M:%S')]"
 cd android || exit
 chmod +x ./gradlew
-./gradlew installDebug || bash ./gradlew installDebug
+./gradlew installDebug
 cd ..
 echo "::endgroup::"
 

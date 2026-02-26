@@ -110,7 +110,9 @@
       "e2e-tests"
     ],
     "modulePathIgnorePatterns": [
-      "_mock_"
+      "_mock_",
+      "<rootDir>/example/node_modules",
+      "<rootDir>/lib/"
     ]
   },
   "packageManager": "yarn@4.9.2",

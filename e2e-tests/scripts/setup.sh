@@ -15,7 +15,7 @@ PROJECT_NAME='TestProject'
 
 if [ "$platform" = "expo" ]; then
     echo "== Building Expo $version"
-    npx create-expo-app $path --template blank-typescript@"$version" --no-install
+    npx create-expo-app "$path" --template blank-typescript@"$version" --no-install
     
     cd $path || exit 1
     

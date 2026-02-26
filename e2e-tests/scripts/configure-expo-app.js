@@ -3,7 +3,7 @@
 const fs = require('fs');
 
 const PROJECT_NAME = process.argv[2] || 'TestProject';
-const ANDROID_PACKAGE = process.argv[3] || 'com.testproject';
+const PACKAGE_NAME = process.argv[3] || 'com.testproject';
 
 console.log('== Configuring Expo app.json');
 
@@ -22,13 +22,13 @@ try {
   if (!appJson.expo.android) {
     appJson.expo.android = {};
   }
-  appJson.expo.android.package = ANDROID_PACKAGE;
+  appJson.expo.android.package = PACKAGE_NAME;
 
   // Configure iOS bundle identifier
   if (!appJson.expo.ios) {
     appJson.expo.ios = {};
   }
-  appJson.expo.ios.bundleIdentifier = ANDROID_PACKAGE;
+  appJson.expo.ios.bundleIdentifier = PACKAGE_NAME;
 
   // Add @adyen/react-native plugin
   if (!appJson.expo.plugins) {
@@ -42,7 +42,7 @@ try {
   }
 
   fs.writeFileSync('app.json', JSON.stringify(appJson, null, 2));
-  console.log(`✓ Configured app.json with package: ${ANDROID_PACKAGE}`);
+  console.log(`✓ Configured app.json with package: ${PACKAGE_NAME}`);
 } catch (error) {
   console.error('Error configuring app.json:', error.message);
   process.exit(1);

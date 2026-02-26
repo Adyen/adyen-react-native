@@ -8,7 +8,7 @@ METRO_LOG="metro.log"
 echo "== Start Metro on port $PORT"
 yarn start --port "$PORT" > "$METRO_LOG" 2>&1 &
 
-for i in {1..45}; do
+for i in {1..60}; do
   if nc -z 127.0.0.1 "$PORT"; then
     echo "== Metro started successfully"
     exit 0
