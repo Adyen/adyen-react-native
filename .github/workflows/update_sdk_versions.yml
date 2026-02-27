@@ -22,13 +22,13 @@ jobs:
   update-sdk:
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ github.event.inputs.version }}
-      PLATFORM: ${{ github.event.inputs.platform }}
+      VERSION: ${{ inputs.version }}
+      PLATFORM: ${{ inputs.platform }}
 
     steps:
     - uses: actions/checkout@v6
 
-    - name: Update SDK version and badges $PLATFORM SDK to $VERSION
+    - name: Update SDK version and badges ${{ inputs.platform }} SDK to ${{ inputs.version }}
       run: |
         # Set platform-specific prefix and update SDK version
         if [ "$PLATFORM" = "iOS" ]; then
@@ -51,15 +51,19 @@ jobs:
       uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "chore: update $PLATFORM SDK to $VERSION"
-        title: "Update $PLATFORM SDK to $VERSION"
+        commit-message: "chore: update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
+        title: "Update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
+        add-paths: |
+          README.md
+          adyen-react-native.podspec
+          android/dependencies.gradle
+          !example/android/gradlew.bat
         body: |
           # Open PR
-          This PR updates the $PLATFORM SDK version to $VERSION.
+          This PR updates the ${{ inputs.platform }} SDK version to ${{ inputs.version }}.
 
           ## Changes:
-          - Updated $PLATFORM SDK version in configuration files
-          - Updated README.md badge for $PLATFORM SDK
-        branch: update-$PLATFORM-sdk-$VERSION
+          - Updated ${{ inputs.platform }} SDK version in configuration files
+          - Updated README.md badge for ${{ inputs.platform }} SDK
         delete-branch: true
         draft: false
