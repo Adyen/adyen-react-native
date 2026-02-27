@@ -6,7 +6,7 @@ import {
 import type { PaymentConfiguration } from '../../../api/types';
 import { ENVIRONMENT } from '../../../Configuration';
 import ApiClient from '../../../api/APIClient';
-import { checkoutConfiguration } from '../../../State/checkoutConfiguration';
+import { checkoutConfiguration } from '../../../checkoutConfiguration';
 
 export async function payByID(
   id: string,

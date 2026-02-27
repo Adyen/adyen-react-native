@@ -12,6 +12,7 @@ const Styles = StyleSheet.create({
   },
   content: {
     justifyContent: 'center',
+    paddingTop: 32,
   },
   horizontalContent: {
     flexDirection: 'row',
@@ -72,6 +73,43 @@ const Styles = StyleSheet.create({
   },
   horizontalSpace: {
     width: 8,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#007AFF',
+  },
+  tabText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  transparentButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginVertical: 4,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.2)',
+  },
+  transparentButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
 

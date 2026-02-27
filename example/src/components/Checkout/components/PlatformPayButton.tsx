@@ -42,7 +42,6 @@ const PlatformPayButton = () => {
           type="PLAIN"
           style={Styles.btnClickContain}
           onPress={() => {
-            console.log('Paying with apple');
             start('applepay');
           }}
         />
@@ -53,7 +52,6 @@ const PlatformPayButton = () => {
           type="PAY"
           style={Styles.btnClickContain}
           onPress={() => {
-            console.log('Paying with google');
             start('googlepay');
           }}
         />

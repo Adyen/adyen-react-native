@@ -3,10 +3,9 @@ import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import { Button, ScrollView, View } from 'react-native';
 import FormTextInput from '../common/FormTextInput';
-import type { PageProps } from '../../State/RootStackParamList';
 
-const SettingView = ({ navigation: { goBack } }: PageProps) => {
-  const { configuration, save } = useAppContext();
+const SettingView = () => {
+  const { configuration, save, navigateToRoot } = useAppContext();
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
   const [amount, setAmount] = useState(String(configuration.amount));
@@ -45,8 +44,8 @@ const SettingView = ({ navigation: { goBack } }: PageProps) => {
 
   const saveAndClose = useCallback(() => {
     save(settings);
-    goBack();
-  }, [settings, save, goBack]);
+    navigateToRoot();
+  }, [settings, save, navigateToRoot]);
 
   return (
     <ScrollView style={Styles.page}>
