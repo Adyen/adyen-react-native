@@ -2,18 +2,16 @@ import { useCallback, useMemo, useState } from 'react';
 import { Button, View, Alert, ScrollView } from 'react-native';
 import { AdyenAction } from '@adyen/react-native';
 import Styles from '../common/Styles';
-import { isSuccess } from '../utilities/isSuccess';
 import { payWithCard } from './utils/payWithCard';
 import { useAppContext } from '../../hooks/useAppContext';
-import type { PageProps } from '../../State/RootStackParamList';
 import type { PaymentResponse } from '../../api/types';
 import CardNumberInput from './components/CardNumberInput';
 import ExpiryDateInput from './components/ExpiryDateInput';
 import SecureCodeInput from './components/SecureCodeInput';
 import { formatMinorUnits } from '../utilities/formatMinorUnits';
 
-const CseView = ({ navigation }: PageProps) => {
-  const { configuration } = useAppContext();
+const CseView = () => {
+  const { configuration, processResult } = useAppContext();
   const [number, setNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
@@ -34,14 +32,12 @@ const CseView = ({ navigation }: PageProps) => {
     let result: PaymentResponse;
     try {
       result = await payWithCard(unencryptedCard, configuration);
+      processResult(result, AdyenAction);
     } catch (e) {
       Alert.alert('Error', String(e));
       return;
     }
-    AdyenAction.hide(isSuccess(result.resultCode));
-    navigation.popToTop();
-    navigation.push('Result', { resultCode: result.resultCode });
-  }, [configuration, navigation, unencryptedCard]);
+  }, [configuration, unencryptedCard, processResult]);
 
   const amountLabel = useMemo(() => {
     return formatMinorUnits(
