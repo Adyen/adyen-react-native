@@ -6,7 +6,6 @@ import {
 } from '@adyen/react-native';
 import { ENVIRONMENT } from '../../../Configuration';
 import ApiClient from '../../../api/APIClient';
-import { checkoutConfiguration } from '../../../checkoutConfiguration';
 import type { PaymentConfiguration } from '../../../api/types';
 
 export async function payWithCard(
@@ -31,11 +30,10 @@ export async function payWithCard(
 
   let result = await ApiClient.payments(paymentData, configuration);
   if (result.action) {
-    const actionConfiguration = checkoutConfiguration(configuration);
-    const actionData = await AdyenAction.handle(
-      result.action,
-      actionConfiguration
-    );
+    const actionData = await AdyenAction.handle(result.action, {
+      environment: ENVIRONMENT.environment,
+      clientKey: ENVIRONMENT.clientKey,
+    });
     result = await ApiClient.paymentDetails(actionData);
   }
   return result;
