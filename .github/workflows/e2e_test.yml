@@ -1,0 +1,218 @@
+name: Run E2E Tests
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: string
+      platform:
+        description: 'Project Type (react-native or expo)'
+        required: true
+        type: string
+      version:
+        description: 'Version (RN e.g. 0.80.2 OR Expo SDK e.g. 52.0.0)'
+        required: true
+        type: string
+    secrets:
+      ADYEN_CLIENT_KEY:
+        required: false
+      ADYEN_PUBLIC_KEY:
+        required: false
+
+env:
+  APP_DIR: 'tested_app'
+
+jobs:
+  # ====================================================
+  # JOB 1: Setup Fixture
+  # ====================================================
+  setup:
+    name: Setup Fixture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'yarn'
+
+      - name: Generate Fixture
+        run: |
+          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}"
+    
+      - name: Download Library
+        uses: actions/download-artifact@v7
+        with:
+          name: built-tgz
+          path: ${{ env.APP_DIR }}
+
+      - name: Add library as dependency
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          touch yarn.lock
+          yarn add ./adyen-react-native.tgz
+
+      - name: Add WebDriverIO dependencies
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          yarn add -D webdriverio @wdio/cli @wdio/local-runner @wdio/appium-service
+
+      - name: Upload Fixture
+        uses: actions/upload-artifact@v6
+        with:
+          name: fixture-${{ inputs.platform }}
+          path: ${{ env.APP_DIR }}
+          include-hidden-files: true
+          retention-days: 1
+
+  # ====================================================
+  # JOB 2: iOS Build & Test
+  # ====================================================
+  ios-test:
+    name: iOS Test
+    needs: setup
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+      IOS_DEVICE_NAME: 'iPhone'
+      RUBY_VERSION: '3.2'
+
+    steps:
+      - name: Download Fixture
+        uses: actions/download-artifact@v7
+        with:
+          name: fixture-${{ inputs.platform }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'yarn'
+
+      - name: Setup Ruby & Cocoapods
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          yarn install
+
+      - name: Setup Appium
+        run: |
+          npm i -g appium
+          appium driver install xcuitest
+
+      - name: Start Appium
+        run: bash ./start_appium.sh 4723 90
+
+      - name: Inject Secrets
+        if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
+        run: |
+          bash ./inject_secrets.sh
+
+      - name: Run iOS Test
+        run: |
+          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}"
+
+      - name: Upload Xcodebuild Log (iOS)
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: xcodebuild_log_ios_${{ inputs.platform }}
+          path: xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Appium Failure Screenshot (iOS)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: appium_failure_ios_${{ inputs.platform }}
+          path: appium_failure.png
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Appium Page Source (iOS)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: appium_page_source_ios_${{ inputs.platform }}
+          path: appium_page_source.xml
+          if-no-files-found: ignore
+          retention-days: 1
+
+  # ====================================================
+  # JOB 3: Android Build & Test
+  # ====================================================
+  android-test:
+    name: Android Test
+    needs: setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+      ANDROID_API_LEVEL: 35
+
+    steps:
+      - name: Download Fixture
+        uses: actions/download-artifact@v7
+        with:
+          name: fixture-${{ inputs.platform }}
+
+      - name: Setup Android Emulator
+        uses: ./.github/actions/setup-android-emulator
+        with:
+          node-version: ${{ inputs.node-version }}
+          android-api-level: ${{ env.ANDROID_API_LEVEL }}
+
+      - name: Install Dependencies
+        run: |
+          yarn install
+
+      - name: Setup Appium
+        run: |
+          npm i -g appium
+          appium driver install uiautomator2
+
+      - name: Start Appium
+        run: bash ./start_appium.sh 4723 30
+
+      - name: Inject Secrets
+        if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
+        run: |
+          bash ./inject_secrets.sh
+
+      - name: Run Android Test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            bash ./build-android.sh "${{ inputs.platform }}"
+
+      - name: Upload Appium Failure Screenshot (Android)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: appium_failure_android_${{ inputs.platform }}
+          path: appium_failure.png
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Appium Page Source (Android)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: appium_page_source_android_${{ inputs.platform }}
+          path: appium_page_source.xml
+          if-no-files-found: ignore
+          retention-days: 1

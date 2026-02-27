@@ -1,12 +1,10 @@
 name: Scan PR
 permissions:
   contents: read
-  actions: write
-  pull-requests: read
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - develop
@@ -21,6 +19,8 @@ jobs:
     uses: ./.github/workflows/build_lib.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
+      build-tgz: ${{ contains(github.event.pull_request.labels.*.name, 'run-e2e-tests') }}
+      build-precompiled-sdk: true
 
   test-iOS:
     name: Test iOS
@@ -45,3 +45,29 @@ jobs:
     secrets: inherit
     with:
       node-version: ${{ vars.NODE_VERSION }}
+
+  e2e-react-native:
+    name: E2E Test React Native
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
+    needs: [build-lib]
+    uses: ./.github/workflows/e2e_test.yml
+    with:
+      platform: 'react-native'
+      version: '0.80.2'
+      node-version: ${{ vars.NODE_VERSION }}
+    secrets:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
+
+  e2e-expo:
+    name: E2E Test Expo
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
+    needs: [build-lib]
+    uses: ./.github/workflows/e2e_test.yml
+    with:
+      platform: 'expo'
+      version: '52'
+      node-version: ${{ vars.NODE_VERSION }}
+    secrets:
+      ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+      ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
