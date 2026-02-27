@@ -44,7 +44,7 @@ jobs:
           bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}"
     
       - name: Download Library
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: built-tgz
           path: ${{ env.APP_DIR }}
@@ -61,7 +61,7 @@ jobs:
           yarn add -D webdriverio @wdio/cli @wdio/local-runner @wdio/appium-service
 
       - name: Upload Fixture
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: fixture-${{ inputs.platform }}
           path: ${{ env.APP_DIR }}
@@ -84,7 +84,7 @@ jobs:
 
     steps:
       - name: Download Fixture
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: fixture-${{ inputs.platform }}
 
@@ -121,7 +121,7 @@ jobs:
 
       - name: Upload Xcodebuild Log (iOS)
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: xcodebuild_log_ios_${{ inputs.platform }}
           path: xcodebuild.log
@@ -130,7 +130,7 @@ jobs:
 
       - name: Upload Appium Failure Screenshot (iOS)
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: appium_failure_ios_${{ inputs.platform }}
           path: appium_failure.png
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload Appium Page Source (iOS)
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: appium_page_source_ios_${{ inputs.platform }}
           path: appium_page_source.xml
@@ -161,7 +161,7 @@ jobs:
 
     steps:
       - name: Download Fixture
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: fixture-${{ inputs.platform }}
 
@@ -201,7 +201,7 @@ jobs:
 
       - name: Upload Appium Failure Screenshot (Android)
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: appium_failure_android_${{ inputs.platform }}
           path: appium_failure.png
@@ -210,7 +210,7 @@ jobs:
 
       - name: Upload Appium Page Source (Android)
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: appium_page_source_android_${{ inputs.platform }}
           path: appium_page_source.xml

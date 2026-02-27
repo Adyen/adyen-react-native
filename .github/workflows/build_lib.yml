@@ -36,7 +36,7 @@ jobs:
           npx jest --coverage --coverageDirectory=reports
 
       - name: Archive JS Coverage report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: js-coverage-report
           path: reports
@@ -50,7 +50,7 @@ jobs:
 
       - name: Archive tgz
         if: inputs.build-tgz
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: built-tgz
           path: adyen-react-native.tgz
@@ -58,7 +58,7 @@ jobs:
 
       - name: Archive precompiled SDK
         if: inputs.build-precompiled-sdk
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: built-lib
           path: lib

@@ -32,7 +32,7 @@ jobs:
           npm install -g sonarqube-scanner
 
       - name: Download library
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: built-lib
           path: lib
@@ -42,19 +42,19 @@ jobs:
           yarn install --frozen-lockfile
 
       - name: Download Swift coverage report
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: swift-coverage-report
           path: reports
 
       - name: Download Kotlin coverage report
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: kotlin-coverage-report
           path: reports
 
       - name: Download JS coverage report
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: js-coverage-report
           path: reports          
