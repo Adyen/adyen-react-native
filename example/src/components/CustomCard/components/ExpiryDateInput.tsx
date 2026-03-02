@@ -16,10 +16,7 @@ const ExpiryDateInput = (props: ExpiryDateInputProps) => {
       const digits = input.replace(/\D/g, '');
 
       // Auto-prefix '0' when first digit is 2-9
-      const prefixed =
-        digits.length === 1 && parseInt(digits[0]!, 10) > 1
-          ? `0${digits}`
-          : digits;
+      const prefixed = digits.replace(/^[2-9]$/, '0$&');
 
       // Limit to 4 digits
       const limitedDigits = prefixed.slice(0, 4);
