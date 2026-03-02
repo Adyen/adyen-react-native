@@ -15,8 +15,14 @@ const ExpiryDateInput = (props: ExpiryDateInputProps) => {
       // Remove all non-digit characters
       const digits = input.replace(/\D/g, '');
 
+      // Auto-prefix '0' when first digit is 2-9
+      const prefixed =
+        digits.length === 1 && parseInt(digits[0]!, 10) > 1
+          ? `0${digits}`
+          : digits;
+
       // Limit to 4 digits
-      const limitedDigits = digits.slice(0, 4);
+      const limitedDigits = prefixed.slice(0, 4);
 
       // Format as MM/YY
       let formatted = limitedDigits;
