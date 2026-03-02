@@ -30,17 +30,8 @@ const App = () => {
     return isDark === 'dark' ? DarkTheme : DefaultTheme;
   }, [isDark]);
 
-  const MyTheme = useMemo(() => {
-    return {
-      ...theme,
-      colors: {
-        ...theme.colors,
-      },
-    };
-  }, [theme]);
-
   return (
-    <NavigationContainer theme={MyTheme} ref={rootNavigationRef}>
+    <NavigationContainer theme={theme} ref={rootNavigationRef}>
       <AppContextProvider
         configuration={DEFAULT_CONFIGURATION}
         onError={(error: Error) => {
