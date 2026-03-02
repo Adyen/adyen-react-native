@@ -1,54 +1,53 @@
 import { useAdyenCheckout } from '@adyen/react-native';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import Styles from '../../common/Styles';
-import { useAppContext } from '../../../hooks/useAppContext';
-import type { StoredCardPaymentMethod } from '../../../api/types';
-import { handleStoredPayment } from '../utils/handleStoredPayment';
-import type { PageProps } from '../../../State/RootStackParamList';
-import { useCallback } from 'react';
-import StoredPaymentMethodsList from './StoredPaymentMethodsList';
 import PaymentMethodsList from './PaymentMethodsList';
 import DropInButton from './DropInButton';
 import PlatformPayButton from './PlatformPayButton';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { CheckoutStackParamList } from '../../../router/CheckoutNavigator';
 
-interface PaymentMethodsProps {
-  showComponents: boolean;
-  navigation?: PageProps['navigation'];
-}
+export type PaymentMethodsParams = {
+  showDropIn?: boolean;
+  showEmbeddedComponents?: boolean;
+  showDropBasedComponents?: boolean;
+};
 
-const PaymentMethods = ({
-  showComponents,
-  navigation,
-}: PaymentMethodsProps) => {
-  const { configuration } = useAppContext();
+export type PaymentMethodsProps = NativeStackScreenProps<
+  CheckoutStackParamList,
+  'PaymentMethods'
+>;
+
+const PaymentMethods = (prop: PaymentMethodsProps) => {
   const { isReady, paymentMethods } = useAdyenCheckout();
 
-  const makePayment = useCallback(
-    async (storedCard: StoredCardPaymentMethod) => {
-      await handleStoredPayment(storedCard, configuration, navigation);
-    },
-    [configuration, navigation]
-  );
+  const showDropIn = prop.route.params?.showDropIn ?? false;
+  const showEmbeddedComponents =
+    prop.route.params?.showEmbeddedComponents ?? false;
+  const showDropinBasedComponents =
+    prop.route.params?.showDropBasedComponents ?? false;
 
   if (!isReady) {
     return <ActivityIndicator />;
   }
 
+  if (!paymentMethods) {
+    return <Text>No payment methods available</Text>;
+  }
+
   return (
     <ScrollView>
-      <DropInButton />
+      {showDropIn && <DropInButton />}
 
-      <PlatformPayButton />
-
-      {showComponents && (
+      {showEmbeddedComponents && (
         <>
-          <StoredPaymentMethodsList
-            storedPaymentMethods={paymentMethods?.storedPaymentMethods}
-            makePayment={makePayment}
-          />
-
-          <PaymentMethodsList paymentMethods={paymentMethods?.paymentMethods} />
+          <PlatformPayButton />
+          {/* TODO: Add CardForm screen */}
         </>
+      )}
+
+      {showDropinBasedComponents && (
+        <PaymentMethodsList paymentMethods={paymentMethods.paymentMethods} />
       )}
 
       <View style={Styles.scrollBottomPadding} />

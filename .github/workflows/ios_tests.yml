@@ -1,7 +1,6 @@
 name: Test iOS
 permissions:
   contents: read
-  actions: write
 
 on:
   workflow_call:
@@ -20,8 +19,8 @@ jobs:
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample
-      device: iPhone ${{ inputs.device-version }}
       buildFolder: ./DerivedData
+      buildLogPath: ${{ github.workspace }}/xcodebuild.log
     steps:
       - uses: actions/checkout@v6
 
@@ -31,7 +30,7 @@ jobs:
           cache: 'yarn'
 
       - name: Download precompiled SDK
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: built-lib
           path: lib
@@ -58,16 +57,34 @@ jobs:
             pod install
           fi
 
+      - name: Resolve iOS Simulator
+        id: simulator
+        run: |
+          UDID=$(bash ${{ github.workspace }}/e2e-tests/scripts/resolve_ios_simulator.sh "iPhone" "${{ inputs.device-version }}")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
       - name: Run tests
         working-directory: example/ios
         run: |
           xcodebuild test \
             -workspace ${{ env.workspace }} \
             -scheme ${{ env.scheme }} \
-            -destination "platform=iOS Simulator,name=${{env.device}}" \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath ${{ env.buildFolder }} \
             -enableCodeCoverage YES \
-            -allowProvisioningUpdates | xcpretty --utf --color && exit ${PIPESTATUS[0]}
+            -allowProvisioningUpdates 2>&1 \
+            | tee ${{ env.buildLogPath }} \
+            | xcpretty --utf --color \
+            && exit ${PIPESTATUS[0]}
+
+      - name: Upload Xcodebuild Log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcodebuild_log_ios
+          path: ${{ env.buildLogPath }}
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Generate code Coverage
         working-directory: example/ios
@@ -83,7 +100,7 @@ jobs:
           fastlane run swiftlint output_file:"${{ github.workspace }}/reports/swiftlint.json" reporter:"json" ignore_exit_status:"true"
 
       - name: Archive Coverage report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: swift-coverage-report
           path: reports

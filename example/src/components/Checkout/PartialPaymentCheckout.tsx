@@ -13,19 +13,18 @@ import type {
   Balance,
   PartialPaymentComponent,
 } from '@adyen/react-native';
-import PaymentMethods from './components/PaymentMethodsView';
+import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
-import { checkoutConfiguration } from '../../State/checkoutConfiguration';
-import type { PageProps } from '../../State/RootStackParamList';
+import { checkoutConfiguration } from '../../checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
 import { processPartialPaymentResult } from './utils/processPartialPaymentResult';
 
-const PartialPaymentCheckout = ({ navigation }: PageProps) => {
-  const { configuration } = useAppContext();
+const PartialPaymentCheckout = () => {
+  const { configuration, processResult } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [paymentMethods, setPaymentMethods] = useState<
@@ -59,34 +58,38 @@ const PartialPaymentCheckout = ({ navigation }: PageProps) => {
           configuration,
           data.returnUrl
         );
-        processPartialPaymentResult(
+        const outcome = await processPartialPaymentResult(
           result,
           nativeComponent as DropInModule,
-          navigation,
           configuration
         );
+        if (outcome) {
+          processResult(outcome, nativeComponent);
+        }
       } catch (error) {
         processError(error, nativeComponent);
       }
     },
-    [configuration, navigation]
+    [configuration, processResult]
   );
 
   const didProvide = useCallback(
     async (data: PaymentDetailsData, nativeComponent: AdyenActionComponent) => {
       try {
         const result = await ApiClient.paymentDetails(data);
-        processPartialPaymentResult(
+        const outcome = await processPartialPaymentResult(
           result,
           nativeComponent as DropInModule,
-          navigation,
           configuration
         );
+        if (outcome) {
+          processResult(outcome, nativeComponent);
+        }
       } catch (error) {
         processError(error, nativeComponent);
       }
     },
-    [configuration, navigation]
+    [configuration, processResult]
   );
 
   const didFail = useCallback(
@@ -171,7 +174,7 @@ const PartialPaymentCheckout = ({ navigation }: PageProps) => {
   }
 
   return (
-    <View>
+    <View style={Styles.page}>
       <TopView />
       <AdyenCheckout
         config={{
@@ -187,7 +190,7 @@ const PartialPaymentCheckout = ({ navigation }: PageProps) => {
         onAdditionalDetails={didProvide}
         onError={didFail}
       >
-        <PaymentMethods showComponents={false} />
+        <CheckoutNavigator showDropIn={true} />
       </AdyenCheckout>
     </View>
   );

@@ -6,9 +6,9 @@ import type {
   Configuration,
   StoredPaymentMethod,
 } from '@adyen/react-native';
-import { ENVIRONMENT } from '../Configuration';
-import ApiClient from '../api/APIClient';
-import type { PaymentConfiguration } from '../api/types';
+import { ENVIRONMENT } from './Configuration';
+import ApiClient from './api/APIClient';
+import type { PaymentConfiguration } from './api/types';
 
 export const checkoutConfiguration = (config: PaymentConfiguration) => {
   const configuration: Configuration = {
@@ -55,10 +55,10 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
         lookup.confirm(address);
       },
       onBinValue: (binValue: string) => {
-        console.log('BIN: ', binValue);
+        console.debug('BIN: ', binValue);
       },
       onBinLookup: (binData: BinLookupData[]) => {
-        console.log('BIN data: ', JSON.stringify(binData));
+        console.debug('BIN data: ', JSON.stringify(binData));
       },
     },
     applepay: {

@@ -1,0 +1,18 @@
+package com.testproject
+
+import android.os.Bundle
+import com.facebook.react.ReactActivity
+import com.facebook.react.ReactActivityDelegate
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
+import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.adyenreactnativesdk.AdyenCheckout
+
+class MainActivity : ReactActivity() {
+  override fun getMainComponentName(): String = "TestProject"
+  override fun createReactActivityDelegate(): ReactActivityDelegate =
+      DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    AdyenCheckout.setLauncherActivity(this)
+  }
+}
