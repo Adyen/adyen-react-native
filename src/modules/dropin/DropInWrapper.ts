@@ -31,10 +31,7 @@ interface DropInNativeModule
  */
 export class DropInWrapper
   extends AddressLookupModule<DropInNativeModule>
-  implements
-    DropInModule,
-    RemovesStoredPayment,
-    PartialPaymentComponent
+  implements DropInModule, RemovesStoredPayment, PartialPaymentComponent
 {
   name: string = 'DropIn';
 

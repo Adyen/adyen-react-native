@@ -7,7 +7,7 @@ const styles = StyleSheet.create({
   },
   defaultComponent: {
     minHeight: 100,
-  }
+  },
 });
 
 export default styles;

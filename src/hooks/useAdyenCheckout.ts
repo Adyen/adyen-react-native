@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { PaymentMethodsResponse, Configuration } from '../core';
+import { MISSING_CONTEXT_ERROR } from './constants';
 
 /**
  * Shape of the AdyenCheckout context value.

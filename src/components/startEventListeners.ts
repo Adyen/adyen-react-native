@@ -19,28 +19,40 @@ import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
 import type { PaymentComponentWrapper } from '../modules/base/PaymentComponentWrapper';
 
 export type EventHandlerRefs = {
-  onSubmit: React.MutableRefObject<
-    | ((data: PaymentMethodData, component: AdyenActionComponent, extra?: any) => void)
+  onSubmit: React.RefObject<
+    | ((
+        data: PaymentMethodData,
+        component: AdyenActionComponent,
+        extra?: any
+      ) => void)
     | undefined
   >;
-  onError: React.MutableRefObject<(error: AdyenError, component: AdyenComponent) => void>;
-  onComplete: React.MutableRefObject<
+  onError: React.RefObject<
+    (error: AdyenError, component: AdyenComponent) => void
+  >;
+  onComplete: React.RefObject<
     ((result: SessionsResult, component: AdyenComponent) => void) | undefined
   >;
-  onAdditionalDetails: React.MutableRefObject<
-    ((data: PaymentDetailsData, component: AdyenActionComponent) => void) | undefined
+  onAdditionalDetails: React.RefObject<
+    | ((data: PaymentDetailsData, component: AdyenActionComponent) => void)
+    | undefined
   >;
-  config: React.MutableRefObject<Configuration>;
+  config: React.RefObject<Configuration>;
 };
 
 export function startEventListeners(
   nativeComponent: PaymentComponentWrapper & AdyenActionComponent,
   refs: EventHandlerRefs
 ): EmitterSubscription[] {
-  const eventEmitter = new NativeEventEmitter(nativeComponent.eventEmitterTarget);
+  const eventEmitter = new NativeEventEmitter(
+    nativeComponent.eventEmitterTarget
+  );
   const eventSubscriptions: EmitterSubscription[] = [];
 
-  function subscribeIfSupported<T>(event: Event, handler: (data: T) => void): void {
+  function subscribeIfSupported<T>(
+    event: Event,
+    handler: (data: T) => void
+  ): void {
     if (nativeComponent.isSupported(event)) {
       eventSubscriptions.push(eventEmitter.addListener(event, handler));
     }
@@ -103,7 +115,11 @@ export function startEventListeners(
   const onBalanceCheckCallback = configuration.partialPayment?.onBalanceCheck;
   const onOrderRequestCallback = configuration.partialPayment?.onOrderRequest;
   const onOrderCancelCallback = configuration.partialPayment?.onOrderCancel;
-  if (onBalanceCheckCallback && onOrderRequestCallback && onOrderCancelCallback) {
+  if (
+    onBalanceCheckCallback &&
+    onOrderRequestCallback &&
+    onOrderCancelCallback
+  ) {
     const component = nativeComponent as unknown as PartialPaymentComponent;
     subscribeIfSupported(
       Event.onCheckBalance,

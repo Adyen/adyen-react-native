@@ -96,14 +96,19 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const onSubmitRef = useRef(onSubmit);
   const onAdditionalDetailsRef = useRef(onAdditionalDetails);
   const configRef = useRef(config);
-  const eventHandlerRefs: EventHandlerRefs = {
-    onSubmit: onSubmitRef,
-    onError: onErrorRef,
-    onComplete: onCompleteRef,
-    onAdditionalDetails: onAdditionalDetailsRef,
-    config: configRef,
-  };
-  const { subscribe, unsubscribe, removeEventListeners, storeEventListeners, cleanup } =
+
+  const eventHandlerRefs = useMemo<EventHandlerRefs>(
+    () => ({
+      onSubmit: onSubmitRef,
+      onError: onErrorRef,
+      onComplete: onCompleteRef,
+      onAdditionalDetails: onAdditionalDetailsRef,
+      config: configRef,
+    }),
+    []
+  );
+
+  const { subscribe, unsubscribe, removeEventListeners, storeEventListeners } =
     useSubscriptionManager(eventHandlerRefs);
 
   const [sessionContext, setSessionContext] = useState<
@@ -147,7 +152,6 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     SessionHelper.assignErrorHandler(errorHandler);
 
     return () => {
-      cleanup();
       SessionHelper.removeAllListeners();
       SessionHelper.hide(true);
     };
@@ -193,7 +197,12 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         nativeComponent.open(validPaymentMethods, configRef.current);
       }
     },
-    [currentPaymentMethods]
+    [
+      eventHandlerRefs,
+      currentPaymentMethods,
+      removeEventListeners,
+      storeEventListeners,
+    ]
   );
 
   const checkoutContextValue = useMemo<AdyenCheckoutContextType>(

@@ -1,4 +1,7 @@
-import { AddressLookupModule, type AddressLookupNativeModule } from '../base/AddressLookupModule';
+import {
+  AddressLookupModule,
+  type AddressLookupNativeModule,
+} from '../base/AddressLookupModule';
 
 /** Native module interface specific to EmbeddedComponentBus */
 export type EmbeddedComponentBusNativeModule = AddressLookupNativeModule;

@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import { COMPONENT_MISSING_CONTEXT_ERROR } from './constants';
 
 /**
  * Context for embedded components to subscribe/unsubscribe to MessageBus events.

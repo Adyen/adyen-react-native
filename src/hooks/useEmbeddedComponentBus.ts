@@ -1,7 +1,10 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { type EmitterSubscription } from 'react-native';
 import { EmbeddedComponentBus } from '../modules/embeded/EmbeddedComponentBus';
-import { startEventListeners, type EventHandlerRefs } from '../components/startEventListeners';
+import {
+  startEventListeners,
+  type EventHandlerRefs,
+} from '../components/startEventListeners';
 import type { AdyenComponentContextType } from './useComponent';
 import type {
   EventListenerWrapper,
@@ -16,7 +19,6 @@ export type ComponentSubscriptionManager = AdyenComponentContextType & {
     nativeComponent: EventListenerWrapper<T>,
     listeners: EmitterSubscription[]
   ) => void;
-  cleanup: () => void;
 };
 
 export function useSubscriptionManager(
@@ -60,5 +62,12 @@ export function useSubscriptionManager(
     subscriptions.current.clear();
   }
 
-  return { subscribe, unsubscribe, removeEventListeners, storeEventListeners, cleanup };
+  useEffect(() => cleanup, []);
+
+  return {
+    subscribe,
+    unsubscribe,
+    removeEventListeners,
+    storeEventListeners,
+  };
 }
