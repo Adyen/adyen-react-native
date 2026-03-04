@@ -22,7 +22,6 @@ import com.facebook.react.uimanager.StateWrapper
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.ViewManagerDelegate
-import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.uimanager.events.Event
 import com.facebook.react.viewmanagers.CardViewManagerDelegate
 import com.facebook.react.viewmanagers.CardViewManagerInterface

@@ -6,6 +6,7 @@ import DropInButton from './DropInButton';
 import PlatformPayButton from './PlatformPayButton';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CheckoutStackParamList } from '../../../router/CheckoutNavigator';
+import PaymentMethodListItem from './PaymentMethodListItem';
 
 export type PaymentMethodsParams = {
   showDropIn?: boolean;
@@ -42,7 +43,11 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
       {showEmbeddedComponents && (
         <>
           <PlatformPayButton />
-          {/* TODO: Add CardForm screen */}
+          <PaymentMethodListItem
+            title="Card Component"
+            icon="card"
+            onPress={() => prop.navigation.navigate('CardForm')}
+          />
         </>
       )}
 

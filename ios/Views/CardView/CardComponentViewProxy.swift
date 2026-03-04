@@ -100,7 +100,7 @@ public final class CardComponentViewProxy: UIStackView {
                 component.delegate = session
             } else {
                 component.delegate = AdyenComponentBusModule.shared
-                MessageBusModule.shared?.createActionHandler(context: context, locale: parser.shopperLocale)
+                AdyenComponentBusModule.shared?.createActionHandler(context: context, locale: parser.shopperLocale)
             }
             embedComponentView(component)
         } catch {
@@ -175,7 +175,7 @@ public final class CardComponentViewProxy: UIStackView {
 extension CardComponentViewProxy: PresentationDelegate {
     public func present(component: PresentableComponent) {
         guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            MessageBusModule.shared?.sendEvent(error: NativeModuleError.notKeyWindow)
+            AdyenComponentBusModule.shared?.sendEvent(error: NativeModuleError.notKeyWindow)
             return
         }
 
