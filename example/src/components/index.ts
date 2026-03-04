@@ -7,3 +7,4 @@ export { default as AdvancedCheckout } from './Checkout/AdvancedCheckout';
 export { default as Home } from './Home/HomeView';
 export { default as PartialPaymentCheckout } from './Checkout/PartialPaymentCheckout';
 export { default as StoredCardsCheckout } from './Checkout/StoredCardsCheckout';
+export { default as CardsForm } from './CardForm'

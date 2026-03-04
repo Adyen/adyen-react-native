@@ -6,32 +6,32 @@ import React, {
   useState,
   useMemo,
 } from 'react';
-import { type EmitterSubscription, NativeEventEmitter } from 'react-native';
+import { ErrorCode } from '../core';
 import type {
-  AddressLookup,
-  AddressLookupItem,
   AdyenActionComponent,
   AdyenComponent,
   AdyenError,
   Configuration,
-  Order,
-  PartialPaymentComponent,
   PaymentDetailsData,
   PaymentMethodData,
   PaymentMethodsResponse,
   SessionConfiguration,
   SessionsResult,
-  StoredPaymentMethod,
-  SubmitModel,
 } from '../core';
-import { Event, ErrorCode } from '../core';
-import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
+import {
+  AdyenCheckoutContext,
+  type AdyenCheckoutContextType,
+} from '../hooks/useAdyenCheckout';
 import { getWrapper } from '../modules/base/getWrapper';
 import { SessionHelper } from '../modules/session/SessionHelperModule';
 import type { SessionContext } from '../modules/session/types';
 import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
-import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
-import type { PaymentComponentWrapper } from '../modules/base/PaymentComponentWrapper';
+import {
+  startEventListeners,
+  type EventHandlerRefs,
+} from './startEventListeners';
+import { AdyenComponentContext } from '../hooks/useComponent';
+import { useSubscriptionManager } from '../hooks/useEmbeddedComponentBus';
 
 /**
  * Props for AdyenCheckout
@@ -91,9 +91,21 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   onComplete,
   children,
 }) => {
-  const subscriptions = useRef<EmitterSubscription[]>([]);
   const onCompleteRef = useRef(onComplete);
   const onErrorRef = useRef(onError);
+  const onSubmitRef = useRef(onSubmit);
+  const onAdditionalDetailsRef = useRef(onAdditionalDetails);
+  const configRef = useRef(config);
+  const eventHandlerRefs: EventHandlerRefs = {
+    onSubmit: onSubmitRef,
+    onError: onErrorRef,
+    onComplete: onCompleteRef,
+    onAdditionalDetails: onAdditionalDetailsRef,
+    config: configRef,
+  };
+  const { subscribe, unsubscribe, removeEventListeners, storeEventListeners, cleanup } =
+    useSubscriptionManager(eventHandlerRefs);
+
   const [sessionContext, setSessionContext] = useState<
     SessionContext | undefined
   >(undefined);
@@ -104,9 +116,10 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     return paymentMethods ?? sessionContext?.paymentMethods;
   }, [paymentMethods, sessionContext]);
 
-  function removeEventListeners() {
-    subscriptions.current.forEach((s: EmitterSubscription) => s.remove());
-  }
+  useEffect(() => {
+    checkConfiguration(config);
+    configRef.current = config;
+  }, [config]);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -117,8 +130,14 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   }, [onError]);
 
   useEffect(() => {
-    SessionHelper.removeAllListeners();
+    onSubmitRef.current = onSubmit;
+  }, [onSubmit]);
 
+  useEffect(() => {
+    onAdditionalDetailsRef.current = onAdditionalDetails;
+  }, [onAdditionalDetails]);
+
+  useEffect(() => {
     const completeHandler = (result: any) =>
       onCompleteRef.current?.(result, SessionHelper);
     const errorHandler = (error: any) =>
@@ -128,7 +147,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     SessionHelper.assignErrorHandler(errorHandler);
 
     return () => {
-      removeEventListeners();
+      cleanup();
       SessionHelper.removeAllListeners();
       SessionHelper.hide(true);
     };
@@ -136,7 +155,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 
   useEffect(() => {
     if (session && !sessionContext) {
-      SessionHelper.createSession(session, config)
+      SessionHelper.createSession(session, configRef.current)
         .then((sessionResponse) => setSessionContext(sessionResponse))
         .catch((error) => {
           const errorDTO: AdyenError = {
@@ -146,125 +165,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
           onErrorRef.current?.(errorDTO, SessionHelper);
         });
     }
-  }, [session, sessionContext, config, setSessionContext]);
-
-  const startEventListeners = useCallback(
-    (nativeComponent: PaymentComponentWrapper & AdyenActionComponent) => {
-      removeEventListeners();
-      const eventEmitter = new NativeEventEmitter(
-        nativeComponent.eventEmitterTarget
-      );
-      subscriptions.current = [];
-
-      /** Subscribe to an event if supported by native module */
-      function subscribeIfSupported<T>(
-        event: Event,
-        handler: (data: T) => void
-      ): void {
-        if (nativeComponent.isSupported(event)) {
-          subscriptions.current.push(eventEmitter.addListener(event, handler));
-        }
-      }
-
-      function submitPayment(data: PaymentMethodData, extra: any) {
-        const payload = {
-          ...data,
-          returnUrl: data.returnUrl ?? config.returnUrl,
-        };
-        onSubmit?.(payload, nativeComponent, extra);
-      }
-
-      // Core events
-      subscribeIfSupported<SubmitModel>(Event.onSubmit, (response) =>
-        submitPayment(response.paymentData, response.extra)
-      );
-      subscribeIfSupported<AdyenError>(Event.onError, (error) =>
-        onError?.(error, nativeComponent)
-      );
-      subscribeIfSupported<SessionsResult>(Event.onComplete, (data) =>
-        onComplete?.(data, nativeComponent)
-      );
-      subscribeIfSupported<PaymentDetailsData>(
-        Event.onAdditionalDetails,
-        (data) => onAdditionalDetails?.(data, nativeComponent)
-      );
-
-      // Stored payment method removal
-      const onDisableStoredPaymentMethodCallback =
-        config.dropin?.onDisableStoredPaymentMethod;
-      if (onDisableStoredPaymentMethodCallback) {
-        const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
-        subscribeIfSupported<StoredPaymentMethod>(
-          Event.onDisableStoredPaymentMethod,
-          (data) =>
-            onDisableStoredPaymentMethodCallback(
-              data,
-              () => nativeModule.removeStored(true),
-              () => nativeModule.removeStored(false)
-            )
-        );
-      }
-
-      // Address lookup
-      const onUpdateAddressCallback = config.card?.onUpdateAddress;
-      const onConfirmAddressCallback = config.card?.onConfirmAddress;
-      if (onUpdateAddressCallback && onConfirmAddressCallback) {
-        const nativeModule = nativeComponent as unknown as AddressLookup;
-        subscribeIfSupported(Event.onAddressUpdate, async (prompt: string) =>
-          onUpdateAddressCallback(prompt, nativeModule)
-        );
-        subscribeIfSupported(
-          Event.onAddressConfirm,
-          (address: AddressLookupItem) =>
-            onConfirmAddressCallback(address, nativeModule)
-        );
-      }
-
-      // Partial payments
-      const onBalanceCheckCallback = config.partialPayment?.onBalanceCheck;
-      const onOrderRequestCallback = config.partialPayment?.onOrderRequest;
-      const onOrderCancelCallback = config.partialPayment?.onOrderCancel;
-      if (
-        onBalanceCheckCallback &&
-        onOrderRequestCallback &&
-        onOrderCancelCallback
-      ) {
-        const component = nativeComponent as unknown as PartialPaymentComponent;
-        subscribeIfSupported(
-          Event.onCheckBalance,
-          async (paymentData: PaymentMethodData) =>
-            onBalanceCheckCallback(
-              paymentData,
-              (balance) => component.provideBalance(true, balance, undefined),
-              (error) => component.provideBalance(false, undefined, error)
-            )
-        );
-        subscribeIfSupported(Event.onRequestOrder, () => {
-          onOrderRequestCallback(
-            (order: Order) => component.provideOrder(true, order, undefined),
-            (error: Error) => component.provideOrder(false, undefined, error)
-          );
-        });
-        subscribeIfSupported(
-          Event.onCancelOrder,
-          ({ order, shouldUpdatePaymentMethods }: any) =>
-            onOrderCancelCallback(order, shouldUpdatePaymentMethods, component)
-        );
-      }
-
-      // BIN lookup and value
-      const onBinLookupCallback = config.card?.onBinLookup;
-      if (onBinLookupCallback) {
-        subscribeIfSupported(Event.onBinLookup, onBinLookupCallback);
-      }
-
-      const onBinValueCallback = config.card?.onBinValue;
-      if (onBinValueCallback) {
-        subscribeIfSupported(Event.onBinValue, onBinValueCallback);
-      }
-    },
-    [onSubmit, onAdditionalDetails, onComplete, onError, config]
-  );
+  }, [session, sessionContext]);
 
   const start = useCallback(
     (typeName: string) => {
@@ -277,33 +178,39 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         validPaymentMethods
       );
 
-      checkConfiguration(config);
-      startEventListeners(nativeComponent);
+      removeEventListeners(nativeComponent);
+      const listeners = startEventListeners(nativeComponent, eventHandlerRefs);
+      storeEventListeners(nativeComponent, listeners);
 
       if (paymentMethod) {
         const singlePaymentMethods = { paymentMethods: [paymentMethod] };
         const singlePaymentConfig = {
-          ...config,
+          ...configRef.current,
           dropin: { skipListWhenSinglePaymentMethod: true },
         };
         nativeComponent.open(singlePaymentMethods, singlePaymentConfig);
       } else {
-        nativeComponent.open(validPaymentMethods, config);
+        nativeComponent.open(validPaymentMethods, configRef.current);
       }
     },
-    [config, currentPaymentMethods, startEventListeners]
+    [currentPaymentMethods]
+  );
+
+  const checkoutContextValue = useMemo<AdyenCheckoutContextType>(
+    () => ({
+      start,
+      config: configRef.current,
+      paymentMethods: currentPaymentMethods,
+      isReady: currentPaymentMethods !== undefined,
+    }),
+    [currentPaymentMethods, start]
   );
 
   return (
-    <AdyenCheckoutContext.Provider
-      value={{
-        start,
-        config,
-        paymentMethods: currentPaymentMethods,
-        isReady: currentPaymentMethods !== undefined,
-      }}
-    >
-      {children}
+    <AdyenCheckoutContext.Provider value={checkoutContextValue}>
+      <AdyenComponentContext.Provider value={{ subscribe, unsubscribe }}>
+        {children}
+      </AdyenComponentContext.Provider>
     </AdyenCheckoutContext.Provider>
   );
 };

@@ -31,6 +31,3 @@ export const useAdyenCheckout = (): AdyenCheckoutContextType => {
   }
   throw new Error(MISSING_CONTEXT_ERROR);
 };
-
-const MISSING_CONTEXT_ERROR =
-  'useAdyenCheckout must be used within an AdyenCheckout';

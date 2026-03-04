@@ -19,12 +19,24 @@ import com.adyenreactnativesdk.cse.AdyenCSEModule
 import com.adyenreactnativesdk.react.PlatformPayViewManager
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
+import com.adyenreactnativesdk.component.MessageBusModule
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
+import com.adyenreactnativesdk.react.CardViewManager
 
 class AdyenPaymentPackage : ReactPackage {
-  override fun createViewManagers(reactContext: ReactApplicationContext) = listOf(PlatformPayViewManager())
+  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
+    val messageBus = getOrCreateMessageBus(reactContext)
+    val cardView = CardViewManager(messageBus)
+    MessageBusModule.consumers[CardViewManager.NAME] = cardView
+
+    return listOf(
+      PlatformPayViewManager(),
+      cardView,
+    )
+  }
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     val messageBus = getOrCreateMessageBus(reactContext)
@@ -37,6 +49,7 @@ class AdyenPaymentPackage : ReactPackage {
       AdyenCSEModule(reactContext),
       SessionHelperModule(reactContext, messageBus),
       ActionModule(reactContext),
+      MessageBusModule(reactContext, messageBus)
     )
   }
 

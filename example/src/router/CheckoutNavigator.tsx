@@ -3,6 +3,8 @@ import {
   type NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
 import PaymentMethodsView from '../components/Checkout/components/PaymentMethodsView';
+import * as Screens from '../components';
+import { modalScreenOptions } from './modalScreenOptions';
 
 // Checkout stack screens (for CardForm modal)
 export type CheckoutStackParamList = {
@@ -42,7 +44,14 @@ export const CheckoutNavigator = (prop: CheckoutNavigatorProps) => {
         }}
         options={{ headerShown: false }}
       />
-      {/* TODO: Add CardForm screen */}
+      <CheckoutStack.Screen
+        name="CardForm"
+        component={Screens.CardsForm}
+        options={{
+          ...modalScreenOptions,
+          title: 'Card Form',
+        }}
+      />
     </CheckoutStack.Navigator>
   );
 };

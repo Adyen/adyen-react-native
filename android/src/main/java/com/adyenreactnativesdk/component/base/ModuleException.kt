@@ -106,4 +106,17 @@ sealed class ModuleException(
       code = "noActivity",
       message = "ViewModel callback is inconsistent",
     )
+
+  class NoConsumer(
+    val name: String,
+  ) : ModuleException(
+    code = "noConsumer",
+    message = "This View is not registered in MessageBus for $name",
+  )
+
+  class NoPaymentRegistered :
+    ModuleException(
+      code = "noPaymentRegistered",
+      message = "No `onSubmit` was detected to process this action.",
+    )
 }

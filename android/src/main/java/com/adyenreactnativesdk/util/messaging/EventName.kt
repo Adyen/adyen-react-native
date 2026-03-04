@@ -34,3 +34,17 @@ fun EventName.Companion.sessionEvents() =
     EventName.SESSION_ERROR.value,
     EventName.COMPLETE_SESSION.value,
   )
+
+fun EventName.Companion.addressLokupEvents() =
+  listOf(
+    EventName.UPDATE_ADDRESS.value,
+    EventName.CONFIRM_ADDRESS.value,
+  )
+
+fun EventName.Companion.cardComponentEvents() =
+  listOf(
+    EventName.BIN_LOOKUP.value,
+    EventName.CHANGE_BIN_VALUE.value,
+  )
+
+fun EventName.Companion.embeddedComponentsEvents() = mainEvents() + addressLokupEvents() + cardComponentEvents()
