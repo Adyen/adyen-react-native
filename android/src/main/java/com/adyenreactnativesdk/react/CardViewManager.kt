@@ -42,8 +42,11 @@ class CardViewManager(
   private var paymentMethod: JSONObject? = null
   private var fragmentActivity: FragmentActivity? = null
   private var stateWrapper: StateWrapper? = null
+
   override fun getDelegate(): ViewManagerDelegate<DynamicComponentView> = delegate
+
   override fun getName(): String = NAME
+
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
     fragmentActivity = context.currentActivity as? FragmentActivity
     cardComponentManager = CardComponentManager(context, messageBus)
@@ -178,6 +181,7 @@ class ResizableCustomViewEvent(
   private val height: Int,
 ) : Event<ResizableCustomViewEvent>(surfaceId, viewId) {
   override fun getEventName() = EVENT_NAME
+
   override fun getEventData(): WritableMap =
     Arguments.createMap().apply {
       putInt("width", width)

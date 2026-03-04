@@ -5,9 +5,9 @@ import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.react.ComponentContract
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.adyenreactnativesdk.util.messaging.embeddedComponentsEvents
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.embeddedComponentsEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap

@@ -13,7 +13,9 @@ internal final class AdyenComponentBusModule: BaseModuleSender {
     @objc static var shared: AdyenComponentBusModule?
     internal static var staticActionHandler: AdyenActionComponent?
 
-    override func supportedEvents() -> [String]! { Events.allCases.map(\.rawValue) }
+    override func supportedEvents() -> [String]! {
+        Events.allCases.map(\.rawValue)
+    }
 
     override init() {
         super.init()

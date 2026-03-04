@@ -110,9 +110,9 @@ sealed class ModuleException(
   class NoConsumer(
     val name: String,
   ) : ModuleException(
-    code = "noConsumer",
-    message = "This View is not registered in MessageBus for $name",
-  )
+      code = "noConsumer",
+      message = "This View is not registered in MessageBus for $name",
+    )
 
   class NoPaymentRegistered :
     ModuleException(
