@@ -9,7 +9,7 @@ package com.adyenreactnativesdk
 import android.annotation.SuppressLint
 import com.adyen.checkout.components.core.internal.util.CheckoutPlatform
 import com.adyen.checkout.components.core.internal.util.CheckoutPlatformParams
-import com.adyenreactnativesdk.component.MessageBusModule
+import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
 import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
 import com.adyenreactnativesdk.component.dropin.DropInModule
@@ -30,7 +30,7 @@ class AdyenPaymentPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
     val messageBus = getOrCreateMessageBus(reactContext)
     val cardView = CardViewManager(messageBus)
-    MessageBusModule.consumers[CardViewManager.NAME] = cardView
+    EmbeddedComponentBusModule.consumers[CardViewManager.NAME] = cardView
 
     return listOf(
       PlatformPayViewManager(),
@@ -49,7 +49,7 @@ class AdyenPaymentPackage : ReactPackage {
       AdyenCSEModule(reactContext),
       SessionHelperModule(reactContext, messageBus),
       ActionModule(reactContext),
-      MessageBusModule(reactContext, messageBus),
+      EmbeddedComponentBusModule(reactContext, messageBus),
     )
   }
 
