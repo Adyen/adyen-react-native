@@ -108,7 +108,7 @@ final class BaseModuleSenderDelegatesTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.provide.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, Events.additionalDetails.rawValue)
     }
 
     // MARK: - CardComponentDelegate Tests

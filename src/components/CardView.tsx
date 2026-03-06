@@ -10,8 +10,6 @@ import { useComponent } from '../hooks/useComponent';
 export interface CardViewProps {
   /** PaymentMethod object. If not provided, the first available payment method will be used. */
   paymentMethod?: PaymentMethod;
-  /** Show payment button */
-  showButton?: boolean;
   /** Button press event handler */
   onButtonPress?: () => void;
 }
@@ -68,9 +66,8 @@ export const CardView: React.FC<CardViewProps> = ({
         setSize(event.nativeEvent);
       }}
       style={{
-        minHeight: Styles.defaultComponent.minHeight,
-        height: size?.height,
-        width: size?.width,
+        height: size?.height ?? Styles.defaultComponent.minHeight,
+        width: size?.width ?? '100%',
       }}
     />
   );

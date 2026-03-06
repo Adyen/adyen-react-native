@@ -24,7 +24,7 @@ internal class BaseModuleSender: BaseModule {
     override func startObserving() { /* No JS events expected */ }
     
     override open func supportedEvents() -> [String]! {
-        []
+        [Events.fail, Events.submit].map(\.rawValue)
     }
 
     @objc
@@ -54,7 +54,7 @@ internal class BaseModuleSender: BaseModule {
     }
 
     internal func sendProvideEvent(actionData: ActionComponentData) {
-        emitter.send(event: Events.provide, body: actionData.jsonObject)
+        emitter.send(event: Events.additionalDetails, body: actionData.jsonObject)
     }
 
     override internal func sendError(error: Error) {

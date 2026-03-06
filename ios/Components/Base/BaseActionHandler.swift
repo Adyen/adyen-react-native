@@ -8,7 +8,11 @@ import Adyen
 
 internal class BaseActionHandler: BaseModuleSender {
 
-    internal var actionHandler: AdyenActionComponent?
+    private var actionHandler: AdyenActionComponent?
+
+    override func supportedEvents() -> [String]! {
+        super.supportedEvents() + [Events.additionalDetails, Events.complete].map(\.rawValue)
+    }
 
     @objc
     func handle(_ dictionary: NSDictionary) {
@@ -29,5 +33,18 @@ internal class BaseActionHandler: BaseModuleSender {
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         super.hide(success, event: event)
+    }
+
+    internal func createActionHandlerIfNeede(context: AdyenContext, locale: String?) {
+        guard BaseModule.session == nil else { return }
+        
+        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
+        var config = AdyenActionComponent.Configuration(style: style)
+        if let locale {
+            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
+        }
+        actionHandler = AdyenActionComponent(context: context, configuration: config)
+        actionHandler?.delegate = self
+        actionHandler?.presentationDelegate = self
     }
 }

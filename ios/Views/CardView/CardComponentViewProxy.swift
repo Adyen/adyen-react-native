@@ -83,6 +83,11 @@ public final class CardComponentViewProxy: UIStackView {
               let configurationJSON else {
             return
         }
+        self.hasComponent = true
+        guard let adyenComponentBus = AdyenComponentBusModule.shared else {
+            assertionFailure("AdyenComponentBusModule not initialized")
+            return
+        }
 
         do {
             let parser = RootConfigurationParser(configuration: configurationJSON)
@@ -90,21 +95,19 @@ public final class CardComponentViewProxy: UIStackView {
             let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
 
             let cardConfig = CardConfigurationParser(configuration: configurationJSON,
-                                                     delegate: AdyenComponentBusModule.shared).configuration
+                                                     delegate: adyenComponentBus).configuration
+
             let component = CardComponent(paymentMethod: paymentMethod, context: context, configuration: cardConfig)
-            component.cardComponentDelegate = AdyenComponentBusModule.shared
+            component.cardComponentDelegate = adyenComponentBus
+            component.delegate = BaseModule.session ?? adyenComponentBus
 
             self.cardComponent = component
-            self.hasComponent = true
-            if let session = BaseModule.session {
-                component.delegate = session
-            } else {
-                component.delegate = AdyenComponentBusModule.shared
-                AdyenComponentBusModule.shared?.createActionHandler(context: context, locale: parser.shopperLocale)
-            }
+            adyenComponentBus.createActionHandlerIfNeede(context: context, locale: parser.shopperLocale)
+
             embedComponentView(component)
         } catch {
-            AdyenComponentBusModule.shared?.sendEvent(error: error)
+            self.hasComponent = false
+            adyenComponentBus.sendError(error: error)
         }
     }
 
@@ -165,8 +168,7 @@ public final class CardComponentViewProxy: UIStackView {
     private func parseCardPaymentMethod(from dictionary: NSDictionary) throws -> CardPaymentMethod {
         guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
               let paymentMethod = try? JSONDecoder().decode(CardPaymentMethod.self, from: data) else {
-            let name = String(describing: CardPaymentMethod.self)
-            throw NativeModuleError.paymentMethodNotFound(name)
+            throw NativeModuleError.paymentMethodNotFound(CardPaymentMethod.self)
         }
         return paymentMethod
     }
@@ -175,7 +177,7 @@ public final class CardComponentViewProxy: UIStackView {
 extension CardComponentViewProxy: PresentationDelegate {
     public func present(component: PresentableComponent) {
         guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            AdyenComponentBusModule.shared?.sendEvent(error: NativeModuleError.notKeyWindow)
+            AdyenComponentBusModule.shared?.sendError(error: NativeModuleError.notKeyWindow)
             return
         }
 

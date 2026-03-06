@@ -10,5 +10,5 @@ export type EmbeddedComponentBusNativeModule = AddressLookupNativeModule;
  *  Communication bus for all embedded Native Modules.
  * */
 export class EmbeddedComponentBusWrapper extends AddressLookupModule<EmbeddedComponentBusNativeModule> {
-  name: string = 'EmbeddedComponentBus';
+  name: string = 'ComponentBus';
 }

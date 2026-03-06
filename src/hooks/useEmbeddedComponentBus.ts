@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { type EmitterSubscription } from 'react-native';
 import { EmbeddedComponentBus } from '../modules/embeded/EmbeddedComponentBus';
 import {
@@ -27,33 +27,45 @@ export function useSubscriptionManager(
   const subscriptions = useRef<Map<string, EmitterSubscription[]>>(new Map());
   const isSubscribed = useRef(false);
 
-  function removeEventListeners<T extends NativeModuleWithConstants>(
-    nativeComponent: EventListenerWrapper<T>
-  ) {
-    const listeners = subscriptions.current.get(nativeComponent.name) ?? [];
-    listeners.forEach((s: EmitterSubscription) => s.remove());
-    subscriptions.current.delete(nativeComponent.name);
-  }
+  const removeEventListeners = useCallback(
+    <T extends NativeModuleWithConstants>(
+      nativeComponent: EventListenerWrapper<T>
+    ) => {
+      const listeners = subscriptions.current.get(nativeComponent.name) ?? [];
+      listeners.forEach((s: EmitterSubscription) => s.remove());
+      subscriptions.current.delete(nativeComponent.name);
+    },
+    []
+  );
 
-  function storeEventListeners<T extends NativeModuleWithConstants>(
-    nativeComponent: EventListenerWrapper<T>,
-    listeners: EmitterSubscription[]
-  ) {
-    subscriptions.current.set(nativeComponent.name, listeners);
-  }
+  const storeEventListeners = useCallback(
+    <T extends NativeModuleWithConstants>(
+      nativeComponent: EventListenerWrapper<T>,
+      listeners: EmitterSubscription[]
+    ) => {
+      subscriptions.current.set(nativeComponent.name, listeners);
+    },
+    []
+  );
 
-  function subscribe(_componentType: string) {
-    if (!isSubscribed.current) {
-      isSubscribed.current = true;
-      const bag = startEventListeners(EmbeddedComponentBus, eventHandlerRefs);
-      storeEventListeners(EmbeddedComponentBus, bag);
-    }
-  }
+  const subscribe = useCallback(
+    (_componentType: string) => {
+      if (!isSubscribed.current) {
+        isSubscribed.current = true;
+        const bag = startEventListeners(EmbeddedComponentBus, eventHandlerRefs);
+        storeEventListeners(EmbeddedComponentBus, bag);
+      }
+    },
+    [eventHandlerRefs, storeEventListeners]
+  );
 
-  function unsubscribe(_componentType: string) {
-    isSubscribed.current = false;
-    removeEventListeners(EmbeddedComponentBus);
-  }
+  const unsubscribe = useCallback(
+    (_componentType: string) => {
+      isSubscribed.current = false;
+      removeEventListeners(EmbeddedComponentBus);
+    },
+    [removeEventListeners]
+  );
 
   function cleanup() {
     subscriptions.current.forEach((module) =>

@@ -8,7 +8,7 @@ import Foundation
 
 internal enum Events: String, CaseIterable {
     case submit = "didSubmitCallback"
-    case provide = "didProvideCallback"
+    case additionalDetails = "didProvideCallback"
     case complete = "didCompleteCallback"
     case fail = "didFailCallback"
     case updateAddress = "didUpdateAddressCallback"
@@ -23,10 +23,22 @@ internal enum Events: String, CaseIterable {
     case failSession = "didSessionErrorCallback"
 
     static var coreEvents: [Events] {
-        [.fail, .submit, .provide, .complete]
+        [.fail, .submit, .additionalDetails, .complete]
     }
 
     static var sessionEvents: [Events] {
         [.failSession, .completeSession]
+    }
+
+    static var addressLookupEvents: [Events] {
+        [.confirmAddress, .updateAddress]
+    }
+
+    static var cardEvents: [Events] {
+        [.binLookup, .changeBinValue]
+    }
+
+    static var dropInEvents: [Events] {
+        [.requestOrder, .cancelOrder, .checkBalance, .disableStoredPaymentMethod]
     }
 }

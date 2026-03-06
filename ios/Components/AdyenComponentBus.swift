@@ -8,40 +8,17 @@ import Adyen
 import React
 
 @objc(AdyenComponentBus)
-internal final class AdyenComponentBusModule: BaseModuleSender {
+internal final class AdyenComponentBusModule: BaseAddressLookup {
 
-    @objc static var shared: AdyenComponentBusModule?
+    static var shared: AdyenComponentBusModule?
     internal static var staticActionHandler: AdyenActionComponent?
 
     override func supportedEvents() -> [String]! {
-        Events.allCases.map(\.rawValue)
+        super.supportedEvents() + Events.cardEvents.map(\.rawValue)
     }
 
     override init() {
         super.init()
         Self.shared = self
-    }
-
-    @objc
-    func hide(_ success: NSNumber, message: NSDictionary?) {
-        dismiss(success.boolValue)
-    }
-
-    @objc
-    func handle(_ actionMap: NSDictionary?) {
-        guard let actionMap else {
-            return sendEvent(error: NativeModuleError.invalidAction)
-        }
-
-        let action: Action
-        do {
-            action = try parseAction(from: actionMap)
-        } catch {
-            return sendEvent(error: error)
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            self?.actionHandler?.handle(action)
-        }
     }
 }

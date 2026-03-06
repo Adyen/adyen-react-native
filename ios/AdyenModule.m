@@ -121,8 +121,13 @@ RCT_EXTERN_METHOD(handle:(NSDictionary *)action
 @interface RCT_EXTERN_MODULE(AdyenComponentBus, NSObject)
 
 RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
-                  message:(nullable NSDictionary *)message)
+                  event:(NSDictionary *)event)
 
 RCT_EXTERN_METHOD(handle:(nullable NSDictionary *)actionMap)
+
+RCT_EXTERN_METHOD(update:(nullable NSArray *)results)
+
+RCT_EXTERN_METHOD(confirm:(nonnull NSNumber *)success
+                  address:(nullable NSDictionary *)address)
 
 @end

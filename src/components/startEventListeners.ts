@@ -63,7 +63,7 @@ export function startEventListeners(
   function submitPayment(data: PaymentMethodData, extra: any) {
     const payload = {
       ...data,
-      returnUrl: data.returnUrl ?? configuration.returnUrl,
+      returnUrl: data.returnUrl ?? refs.config.current.returnUrl,
     };
     refs.onSubmit.current?.(payload, nativeComponent, extra);
   }
