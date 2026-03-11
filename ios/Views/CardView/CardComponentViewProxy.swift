@@ -14,14 +14,14 @@ import UIKit
 @objc(CardComponentViewProxy)
 public final class CardComponentViewProxy: UIStackView {
 
-    private var lookupHandler: (([LookupAddressModel]) -> Void)?
-    private var lookupCompliationHandler: ((Result<PostalAddress, any Error>) -> Void)?
     private var cardComponent: CardComponent?
     private var paymentMethodJSON: NSDictionary?
     private var configurationJSON: NSDictionary?
     private var hasComponent: Bool = false
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
+    private var componentType: String?
+    private var delegateProxy: EmbeddedComponentDelegateProxy?
 
     @objc public weak var delegate: CardComponentViewProxyDelegate?
 
@@ -42,6 +42,7 @@ public final class CardComponentViewProxy: UIStackView {
             return
         }
         self.paymentMethodJSON = json
+        self.componentType = json["type"] as? String
         tryInitializeComponent()
     }
 
@@ -74,18 +75,23 @@ public final class CardComponentViewProxy: UIStackView {
         paymentMethodJSON = nil
         configurationJSON = nil
         lastReportedHeight = 0
-        AdyenComponentBusModule.staticActionHandler?.cancelIfNeeded()
+        if let componentType {
+            EmbeddedComponentBusModule.shared?.unregister(componentType: componentType)
+        }
+        delegateProxy = nil
+        componentType = nil
     }
 
     private func tryInitializeComponent() {
         guard !hasComponent,
               let paymentMethodJSON,
-              let configurationJSON else {
+              let configurationJSON,
+              let componentType else {
             return
         }
         self.hasComponent = true
-        guard let adyenComponentBus = AdyenComponentBusModule.shared else {
-            assertionFailure("AdyenComponentBusModule not initialized")
+        guard let adyenComponentBus = EmbeddedComponentBusModule.shared else {
+            assertionFailure("EmbeddedComponentBusModule not initialized")
             return
         }
 
@@ -94,15 +100,18 @@ public final class CardComponentViewProxy: UIStackView {
             let context = try parser.fetchContext(session: BaseModule.session)
             let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
 
+            let proxy = adyenComponentBus.register(componentType: componentType)
+            self.delegateProxy = proxy
+
             let cardConfig = CardConfigurationParser(configuration: configurationJSON,
-                                                     delegate: adyenComponentBus).configuration
+                                                     delegate: proxy).configuration
 
             let component = CardComponent(paymentMethod: paymentMethod, context: context, configuration: cardConfig)
-            component.cardComponentDelegate = adyenComponentBus
-            component.delegate = BaseModule.session ?? adyenComponentBus
+            component.cardComponentDelegate = proxy
+            component.delegate = BaseModule.session ?? proxy
 
             self.cardComponent = component
-            adyenComponentBus.createActionHandlerIfNeede(context: context, locale: parser.shopperLocale)
+            adyenComponentBus.createActionHandlerIfNeeded(context: context, locale: parser.shopperLocale)
 
             embedComponentView(component)
         } catch {
@@ -168,7 +177,7 @@ public final class CardComponentViewProxy: UIStackView {
     private func parseCardPaymentMethod(from dictionary: NSDictionary) throws -> CardPaymentMethod {
         guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
               let paymentMethod = try? JSONDecoder().decode(CardPaymentMethod.self, from: data) else {
-            throw NativeModuleError.paymentMethodNotFound(CardPaymentMethod.self)
+            throw ModuleException.paymentMethodNotFound(CardPaymentMethod.self)
         }
         return paymentMethod
     }
@@ -177,11 +186,12 @@ public final class CardComponentViewProxy: UIStackView {
 extension CardComponentViewProxy: PresentationDelegate {
     public func present(component: PresentableComponent) {
         guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            AdyenComponentBusModule.shared?.sendError(error: NativeModuleError.notKeyWindow)
+            EmbeddedComponentBusModule.shared?.sendError(error: ModuleException.notKeyWindow)
             return
         }
 
         DispatchQueue.main.async {
+            BaseModule.currentPresenter = presenter
             presenter.present(component.viewController, animated: true)
         }
     }

@@ -6,12 +6,12 @@
 
 import Adyen
 
-internal class BaseAddressLookup: BaseActionHandler {
+internal class BaseAddressModule: BaseActionHandler {
     internal var lookupHandler: (([LookupAddressModel]) -> Void)?
     internal var lookupCompletionHandler: ((Result<PostalAddress, any Error>) -> Void)?
 
     override func supportedEvents() -> [String]! {
-        super.supportedEvents() + Events.addressLookupEvents.map(\.rawValue)
+        super.supportedEvents() + EventName.addressLookupEvents.map(\.rawValue)
     }
 
     @objc
@@ -59,7 +59,7 @@ internal class BaseAddressLookup: BaseActionHandler {
     }
 }
 
-extension BaseAddressLookup: AddressLookupProvider {
+extension BaseAddressModule: AddressLookupProvider {
     func lookUp(searchTerm: String, resultHandler: @escaping ([LookupAddressModel]) -> Void) {
         lookupHandler = resultHandler
         sendAddressUpdate(searchTerm: searchTerm)

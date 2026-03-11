@@ -6,6 +6,11 @@ export interface NativeModuleWithConstants extends NativeModule {
   getConstants?: () => { supportedEvents?: string[] };
 }
 
+export interface AdyenEventListener {
+  isSupported(event: Event): boolean
+  get eventEmitterTarget(): NativeModule
+}
+
 /**
  * Generic wrapper for all Native Modules. Controls subscriptions and supported events.
  * Supported events are read from native module's getConstants().
@@ -13,7 +18,7 @@ export interface NativeModuleWithConstants extends NativeModule {
  */
 export abstract class EventListenerWrapper<
   T extends NativeModuleWithConstants,
-> {
+> implements AdyenEventListener {
   protected nativeModule: T;
   protected supportedEvents: readonly string[];
   abstract get name(): string;

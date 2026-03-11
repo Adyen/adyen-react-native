@@ -30,7 +30,6 @@ class DynamicComponentView
     var layoutListener: LayoutListener? = null
     var hasComponent = false
 
-    // Usage of complete component height also when having error hints
     override fun onMeasure(
       widthMeasureSpec: Int,
       heightMeasureSpec: Int,
@@ -49,7 +48,7 @@ class DynamicComponentView
       super.onLayout(changed, l, t, r, b)
 
       if (changed && !ignoreLayoutChanges) {
-        resizeViewport(calculateViewportHeight(), calculateViewportWidth())
+        resizeViewport(measuredHeight, measuredWidth)
       }
     }
 
@@ -88,12 +87,17 @@ class DynamicComponentView
     ) where T : Component, T : ViewableComponent {
       adyenComponentView.getViewTreeObserver()?.addOnGlobalLayoutListener(
         object : ViewTreeObserver.OnGlobalLayoutListener {
-          override fun onGlobalLayout() {
-            if (component is CardComponent) {
-              overrideSubmit(component)
-            }
+          private var submitOverridden = false
 
-            adyenComponentView.getViewTreeObserver()?.removeOnGlobalLayoutListener(this)
+          override fun onGlobalLayout() {
+            if (!submitOverridden && component is CardComponent) {
+              overrideSubmit(component)
+              submitOverridden = true
+            }
+            resizeViewport(
+              adyenComponentView.measuredHeight + 5,
+              measuredWidth,
+            )
           }
         },
       )
@@ -101,10 +105,6 @@ class DynamicComponentView
 
     private fun overrideSubmit(component: CardComponent) {
       val payButton = findViewById<MaterialButton>(com.adyen.checkout.ui.core.R.id.payButton)
-      if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.O) {
-        disableRippleAnimationOnPayButton()
-        disableRippleAnimationOnStorePaymentMethodSwitch()
-      }
 
       payButton?.setOnClickListener {
         isHintAnimationEnabledOnTextInputFields(this, false)
@@ -113,9 +113,11 @@ class DynamicComponentView
           interactionBlocked = true
           component.submit()
         }
-        resetInteractionBlocked()
+        postDelayed(1000) {
+          interactionBlocked = false
+        }
         postDelayed(100) {
-          resizeViewport(calculateViewportHeight(), calculateViewportWidth())
+          resizeViewport(measuredHeight, measuredWidth)
         }
         postDelayed(500) {
           ignoreLayoutChanges = false
@@ -124,30 +126,17 @@ class DynamicComponentView
       }
     }
 
-    // This is necessary because the RippleAnimation leads to an crash on older Android devices: https://github.com/Adyen/adyen-flutter/issues/335
-    private fun disableRippleAnimationOnPayButton() {
-      // TODO: check if relevant
-    }
-
-    // This is necessary because the RippleAnimation leads to an crash on older Android devices: https://github.com/Adyen/adyen-flutter/issues/335
-    private fun disableRippleAnimationOnStorePaymentMethodSwitch() {
-      // TODO: check if relevant
-    }
-
-    private fun calculateViewportHeight(): Int {
-      val componentViewHeightScreenDensity = measuredHeight / screenDensity
-      return componentViewHeightScreenDensity.toInt()
-    }
-
-    private fun calculateViewportWidth(): Int {
-      val componentViewHeightScreenDensity = measuredWidth / screenDensity
-      return componentViewHeightScreenDensity.toInt()
+    private fun calculateMeasurement(value: Int): Int {
+      val valueWithDensity = value / screenDensity
+      return valueWithDensity.toInt()
     }
 
     private fun resizeViewport(
-      viewportHeight: Int,
-      viewportWidth: Int,
+      height: Int,
+      width: Int,
     ) {
+      val viewportWidth = calculateMeasurement(width)
+      val viewportHeight = calculateMeasurement(height)
       layoutListener?.onLayoutSizeUpdate(Size(viewportWidth, viewportHeight))
     }
 
@@ -165,11 +154,6 @@ class DynamicComponentView
     }
 
     // TODO - We can use cardComponent.setInteractionBlocked() when the fix for releasing the blocked interaction is available in then native SDK
-    private fun resetInteractionBlocked() {
-      postDelayed(1000) {
-        interactionBlocked = false
-      }
-    }
   }
 
 interface LayoutListener {

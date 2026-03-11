@@ -12,27 +12,22 @@ import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
-import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.BaseActionModule
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.messaging.mainEvents
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
-import org.json.JSONException
 
 class GooglePayModule(
   context: ReactApplicationContext?,
   messageBus: MessageBus,
-) : BaseModule(context, messageBus) {
+) : BaseActionModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
-
-  override fun supportedEvents(): List<String> = EventName.mainEvents()
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -42,7 +37,8 @@ class GooglePayModule(
   fun removeListeners(count: Int?) { // No JS events expected
   }
 
-  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+  override fun getConstants(): MutableMap<String, Any> =
+    mutableMapOf("supportedEvents" to supportedEvents())
 
   @ReactMethod
   fun open(
@@ -94,13 +90,11 @@ class GooglePayModule(
 
   @ReactMethod
   fun handle(actionMap: ReadableMap?) {
-    try {
-      val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
-      val action = Action.SERIALIZER.deserialize(jsonObject)
-      GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
-    } catch (e: JSONException) {
-      sendError(ModuleException.InvalidAction(e))
-    }
+    super.parseAndHandleAction(actionMap)
+  }
+
+  override fun handleAction(action: Action) {
+    GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
   }
 
   @ReactMethod
@@ -127,15 +121,8 @@ class GooglePayModule(
     } catch (e: java.lang.Exception) {
       return promise.reject(e)
     }
-    val callback: ComponentAvailableCallback =
-      object : ComponentAvailableCallback {
-        override fun onAvailabilityResult(
-          isAvailable: Boolean,
-          paymentMethod: PaymentMethod,
-        ) {
-          promise.resolve(isAvailable)
-        }
-      }
+    val callback =
+      ComponentAvailableCallback { isAvailable, paymentMethod -> promise.resolve(isAvailable) }
     GooglePayComponent.PROVIDER.isAvailable(
       appCompatActivity.application,
       paymentMethod,
@@ -146,7 +133,6 @@ class GooglePayModule(
 
   companion object {
     private const val COMPONENT_NAME = "AdyenGooglePay"
-    internal const val GOOGLEPAY_REQUEST_CODE = 1001
     private val PAYMENT_METHOD_KEYS = setOf("paywithgoogle", "googlepay")
   }
 }

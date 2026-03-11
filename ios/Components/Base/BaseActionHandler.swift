@@ -11,7 +11,7 @@ internal class BaseActionHandler: BaseModuleSender {
     private var actionHandler: AdyenActionComponent?
 
     override func supportedEvents() -> [String]! {
-        super.supportedEvents() + [Events.additionalDetails, Events.complete].map(\.rawValue)
+        super.supportedEvents() + [EventName.additionalDetails, EventName.complete].map(\.rawValue)
     }
 
     @objc

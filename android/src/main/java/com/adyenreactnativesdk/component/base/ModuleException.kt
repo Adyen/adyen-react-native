@@ -111,7 +111,7 @@ sealed class ModuleException(
     val name: String,
   ) : ModuleException(
       code = "noConsumer",
-      message = "This View is not registered in MessageBus for $name",
+      message = "No View is registered in EmbeddedComponentBus as $name",
     )
 
   class NoPaymentRegistered :

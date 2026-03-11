@@ -6,7 +6,7 @@
 
 import Foundation
 
-internal enum Events: String, CaseIterable {
+internal enum EventName: String, CaseIterable {
     case submit = "didSubmitCallback"
     case additionalDetails = "didProvideCallback"
     case complete = "didCompleteCallback"
@@ -22,23 +22,23 @@ internal enum Events: String, CaseIterable {
     case completeSession = "didSessionCompleteCallback"
     case failSession = "didSessionErrorCallback"
 
-    static var coreEvents: [Events] {
+    static var coreEvents: [EventName] {
         [.fail, .submit, .additionalDetails, .complete]
     }
 
-    static var sessionEvents: [Events] {
+    static var sessionEvents: [EventName] {
         [.failSession, .completeSession]
     }
 
-    static var addressLookupEvents: [Events] {
+    static var addressLookupEvents: [EventName] {
         [.confirmAddress, .updateAddress]
     }
 
-    static var cardEvents: [Events] {
+    static var cardEvents: [EventName] {
         [.binLookup, .changeBinValue]
     }
 
-    static var dropInEvents: [Events] {
+    static var dropInEvents: [EventName] {
         [.requestOrder, .cancelOrder, .checkBalance, .disableStoredPaymentMethod]
     }
 }

@@ -2,9 +2,12 @@ package com.adyenreactnativesdk.react
 
 import android.util.Size
 import androidx.fragment.app.FragmentActivity
+import com.adyen.checkout.components.core.AddressLookupResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
+import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.action.Action
 import com.adyenreactnativesdk.AdyenCheckout
+import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
 import com.adyenreactnativesdk.react.base.LayoutListener
@@ -12,6 +15,8 @@ import com.adyenreactnativesdk.react.card.CardComponentManager
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.ifNotNull
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
+import com.adyenreactnativesdk.util.messaging.TaggedEmitter
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
@@ -29,7 +34,7 @@ import org.json.JSONObject
 
 @ReactModule(name = CardViewManager.NAME)
 class CardViewManager(
-  val messageBus: MessageBus,
+  private val emitter: MessageBusEmitter,
 ) : SimpleViewManager<DynamicComponentView>(),
   CardViewManagerInterface<DynamicComponentView>,
   LayoutListener,
@@ -41,6 +46,8 @@ class CardViewManager(
   private var paymentMethod: JSONObject? = null
   private var fragmentActivity: FragmentActivity? = null
   private var stateWrapper: StateWrapper? = null
+  private var componentType: String? = null
+  private var taggedEmitter: TaggedEmitter? = null
 
   override fun getDelegate(): ViewManagerDelegate<DynamicComponentView> = delegate
 
@@ -48,7 +55,6 @@ class CardViewManager(
 
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
     fragmentActivity = context.currentActivity as? FragmentActivity
-    cardComponentManager = CardComponentManager(context, messageBus)
     if (dynamicComponentView != null) {
       dynamicComponentView?.onDispose()
     }
@@ -63,9 +69,12 @@ class CardViewManager(
     // Ensure proper cleanup when view is dropped
     view.onDispose()
     if (view == dynamicComponentView) {
+      componentType?.let { EmbeddedComponentBusModule.consumers.remove(it) }
       dynamicComponentView = null
       cardComponentManager = null
       fragmentActivity = null
+      componentType = null
+      taggedEmitter = null
     }
   }
 
@@ -103,7 +112,19 @@ class CardViewManager(
     value: String?,
   ) {
     value?.let {
-      paymentMethod = JSONObject(it)
+      val json = JSONObject(it)
+      paymentMethod = json
+      val type = json.optString("type", null)
+      if (type != null && type != componentType) {
+        componentType?.let { old -> EmbeddedComponentBusModule.consumers.remove(old) }
+        componentType = type
+        val tagged = TaggedEmitter(emitter, type)
+        taggedEmitter = tagged
+        cardComponentManager = view?.context?.let { ctx ->
+          CardComponentManager(ctx as ThemedReactContext, MessageBus(tagged))
+        }
+        EmbeddedComponentBusModule.consumers[type] = this
+      }
     }
   }
 
@@ -120,16 +141,6 @@ class CardViewManager(
 
   companion object {
     const val NAME = "CardView"
-  }
-
-  private fun emitOnPressEvent(
-    context: ReactContext,
-    viewId: Int,
-  ) {
-    val surfaceId = UIManagerHelper.getSurfaceId(context)
-    val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, viewId)
-    val event = OnPressEvent(surfaceId, viewId)
-    eventDispatcher?.dispatchEvent(event)
   }
 
   private fun emitResizableCustomViewEvent(
@@ -171,6 +182,14 @@ class CardViewManager(
       }
     }
   }
+
+  override fun onAddressLookupResult(result: AddressLookupResult) {
+    cardComponentManager?.component?.setAddressLookupResult(result)
+  }
+
+  override fun onAddressLookupOptions(options: List<LookupAddress>) {
+    cardComponentManager?.updateAddressLookupOptions(options)
+  }
 }
 
 class ResizableCustomViewEvent(
@@ -194,4 +213,6 @@ class ResizableCustomViewEvent(
 
 interface ComponentContract {
   fun onAction(action: Action)
+  fun onAddressLookupResult(result: AddressLookupResult)
+  fun onAddressLookupOptions(options: List<LookupAddress>)
 }

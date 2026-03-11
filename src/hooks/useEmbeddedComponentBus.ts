@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { type EmitterSubscription } from 'react-native';
 import { EmbeddedComponentBus } from '../modules/embeded/EmbeddedComponentBus';
+import { EmbeddedComponentProxy } from '../modules/embeded/EmbeddedComponentProxy';
 import {
   startEventListeners,
   type EventHandlerRefs,
@@ -25,7 +26,6 @@ export function useSubscriptionManager(
   eventHandlerRefs: EventHandlerRefs
 ): ComponentSubscriptionManager {
   const subscriptions = useRef<Map<string, EmitterSubscription[]>>(new Map());
-  const isSubscribed = useRef(false);
 
   const removeEventListeners = useCallback(
     <T extends NativeModuleWithConstants>(
@@ -49,28 +49,35 @@ export function useSubscriptionManager(
   );
 
   const subscribe = useCallback(
-    (_componentType: string) => {
-      if (!isSubscribed.current) {
-        isSubscribed.current = true;
-        const bag = startEventListeners(EmbeddedComponentBus, eventHandlerRefs);
-        storeEventListeners(EmbeddedComponentBus, bag);
-      }
+    (componentType: string) => {
+      if (subscriptions.current.has(componentType)) return;
+      EmbeddedComponentBus.subscribe(componentType);
+      const proxy = new EmbeddedComponentProxy(
+        EmbeddedComponentBus,
+        componentType
+      );
+      const bag = startEventListeners(
+        proxy,
+        eventHandlerRefs,
+        componentType
+      );
+      subscriptions.current.set(componentType, bag);
     },
-    [eventHandlerRefs, storeEventListeners]
+    [eventHandlerRefs]
   );
 
-  const unsubscribe = useCallback(
-    (_componentType: string) => {
-      isSubscribed.current = false;
-      removeEventListeners(EmbeddedComponentBus);
-    },
-    [removeEventListeners]
-  );
+  const unsubscribe = useCallback((componentType: string) => {
+    const bag = subscriptions.current.get(componentType);
+    bag?.forEach((s) => s.remove());
+    subscriptions.current.delete(componentType);
+    EmbeddedComponentBus.unsubscribe(componentType);
+  }, []);
 
   function cleanup() {
-    subscriptions.current.forEach((module) =>
-      module.forEach((s) => s.remove())
-    );
+    subscriptions.current.forEach((listeners, componentType) => {
+      listeners.forEach((s) => s.remove());
+      EmbeddedComponentBus.unsubscribe(componentType);
+    });
     subscriptions.current.clear();
   }
 

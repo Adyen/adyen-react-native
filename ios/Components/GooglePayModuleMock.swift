@@ -13,7 +13,7 @@ internal class GooglePayModuleMock: BaseModuleSender {
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        sendError(error: NativeModuleError.notSupported)
+        sendError(error: ModuleException.notSupported)
     }
 
     @objc

@@ -16,7 +16,7 @@ import type {
 } from '../core';
 import { Event } from '../core';
 import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
-import type { PaymentComponentWrapper } from '../modules/base/PaymentComponentWrapper';
+import type { AdyenEventListener } from '../modules/base/EventListenerWrapper';
 
 export type EventHandlerRefs = {
   onSubmit: React.RefObject<
@@ -40,9 +40,18 @@ export type EventHandlerRefs = {
   config: React.RefObject<Configuration>;
 };
 
+/**
+ * Start event listeners on a native component.
+ *
+ * @param nativeComponent - The native wrapper used for event subscription (isSupported, eventEmitterTarget).
+ * @param refs - Callback refs for event handlers.
+ * @param componentType - When set, events are filtered by `data.componentType` (embedded component mode).
+ * @param callbackComponent - Component instance passed to merchant callbacks. Defaults to nativeComponent.
+ */
 export function startEventListeners(
-  nativeComponent: PaymentComponentWrapper & AdyenActionComponent,
-  refs: EventHandlerRefs
+  nativeComponent: AdyenEventListener & AdyenActionComponent,
+  refs: EventHandlerRefs,
+  componentType?: string,
 ): EmitterSubscription[] {
   const eventEmitter = new NativeEventEmitter(
     nativeComponent.eventEmitterTarget
@@ -54,7 +63,14 @@ export function startEventListeners(
     handler: (data: T) => void
   ): void {
     if (nativeComponent.isSupported(event)) {
-      eventSubscriptions.push(eventEmitter.addListener(event, handler));
+      eventSubscriptions.push(
+        eventEmitter.addListener(event, (rawData: any) => {
+          if (componentType) {
+            if (rawData?.componentType !== componentType) return;
+          }
+          handler(rawData as T);
+        })
+      );
     }
   }
 
@@ -82,7 +98,22 @@ export function startEventListeners(
     refs.onAdditionalDetails.current?.(data, nativeComponent)
   );
 
-  // Stored payment method removal
+  // Address lookup
+  const onUpdateAddressCallback = configuration.card?.onUpdateAddress;
+  const onConfirmAddressCallback = configuration.card?.onConfirmAddress;
+  if (onUpdateAddressCallback && onConfirmAddressCallback) {
+    console.debug('Setting up address lookup listeners');
+    const lookupModule = nativeComponent as unknown as AddressLookup;
+    subscribeIfSupported(Event.onAddressUpdate, async (data: any) => {
+      const prompt = componentType ? data.value : data;
+      onUpdateAddressCallback(prompt, lookupModule);
+    });
+    subscribeIfSupported(Event.onAddressConfirm, (address: AddressLookupItem) =>
+      onConfirmAddressCallback(address, lookupModule)
+    );
+  }
+
+    // Stored payment method removal (Drop-in only)
   const onDisableStoredPaymentMethodCallback =
     configuration.dropin?.onDisableStoredPaymentMethod;
   if (onDisableStoredPaymentMethodCallback) {
@@ -98,20 +129,26 @@ export function startEventListeners(
     );
   }
 
-  // Address lookup
-  const onUpdateAddressCallback = configuration.card?.onUpdateAddress;
-  const onConfirmAddressCallback = configuration.card?.onConfirmAddress;
-  if (onUpdateAddressCallback && onConfirmAddressCallback) {
-    const nativeModule = nativeComponent as unknown as AddressLookup;
-    subscribeIfSupported(Event.onAddressUpdate, async (prompt: string) =>
-      onUpdateAddressCallback(prompt, nativeModule)
-    );
-    subscribeIfSupported(Event.onAddressConfirm, (address: AddressLookupItem) =>
-      onConfirmAddressCallback(address, nativeModule)
-    );
+    // BIN lookup and value
+  const onBinLookupCallback = configuration.card?.onBinLookup;
+  if (onBinLookupCallback) {
+    subscribeIfSupported(Event.onBinLookup, (data: any) => {
+      const lookupData =
+        componentType && !Array.isArray(data) ? data.data : data;
+      onBinLookupCallback(lookupData);
+    });
   }
 
-  // Partial payments
+  const onBinValueCallback = configuration.card?.onBinValue;
+  if (onBinValueCallback) {
+    subscribeIfSupported(Event.onBinValue, (data: any) => {
+      const value =
+        componentType && typeof data === 'object' ? data.value : data;
+      onBinValueCallback(value);
+    });
+  }
+
+  // Partial payments (Drop-in only)
   const onBalanceCheckCallback = configuration.partialPayment?.onBalanceCheck;
   const onOrderRequestCallback = configuration.partialPayment?.onOrderRequest;
   const onOrderCancelCallback = configuration.partialPayment?.onOrderCancel;
@@ -120,38 +157,33 @@ export function startEventListeners(
     onOrderRequestCallback &&
     onOrderCancelCallback
   ) {
-    const component = nativeComponent as unknown as PartialPaymentComponent;
+    const partialComponent =
+      nativeComponent as unknown as PartialPaymentComponent;
     subscribeIfSupported(
       Event.onCheckBalance,
       async (paymentData: PaymentMethodData) =>
         onBalanceCheckCallback(
           paymentData,
-          (balance) => component.provideBalance(true, balance, undefined),
-          (error) => component.provideBalance(false, undefined, error)
+          (balance) =>
+            partialComponent.provideBalance(true, balance, undefined),
+          (error) => partialComponent.provideBalance(false, undefined, error)
         )
     );
     subscribeIfSupported(Event.onRequestOrder, () => {
       onOrderRequestCallback(
-        (order: Order) => component.provideOrder(true, order, undefined),
-        (error: Error) => component.provideOrder(false, undefined, error)
+        (order: Order) => partialComponent.provideOrder(true, order, undefined),
+        (error: Error) => partialComponent.provideOrder(false, undefined, error)
       );
     });
     subscribeIfSupported(
       Event.onCancelOrder,
       ({ order, shouldUpdatePaymentMethods }: any) =>
-        onOrderCancelCallback(order, shouldUpdatePaymentMethods, component)
+        onOrderCancelCallback(
+          order,
+          shouldUpdatePaymentMethods,
+          partialComponent
+        )
     );
-  }
-
-  // BIN lookup and value
-  const onBinLookupCallback = configuration.card?.onBinLookup;
-  if (onBinLookupCallback) {
-    subscribeIfSupported(Event.onBinLookup, onBinLookupCallback);
-  }
-
-  const onBinValueCallback = configuration.card?.onBinValue;
-  if (onBinValueCallback) {
-    subscribeIfSupported(Event.onBinValue, onBinValueCallback);
   }
 
   return eventSubscriptions;

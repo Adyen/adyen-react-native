@@ -10,6 +10,7 @@ import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodTypes
 import com.adyen.checkout.components.core.action.Action
+import com.adyenreactnativesdk.component.base.BaseActionModule
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
@@ -29,10 +30,8 @@ import org.json.JSONException
 class InstantModule(
   context: ReactApplicationContext?,
   messageBus: MessageBus,
-) : BaseModule(context, messageBus) {
+) : BaseActionModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
-
-  override fun supportedEvents(): List<String> = EventName.mainEvents()
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -78,13 +77,11 @@ class InstantModule(
 
   @ReactMethod
   fun handle(actionMap: ReadableMap?) {
-    try {
-      val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
-      val action = Action.SERIALIZER.deserialize(jsonObject)
-      fragment?.handle(appCompatActivity.supportFragmentManager, action)
-    } catch (e: JSONException) {
-      sendError(ModuleException.InvalidAction(e))
-    }
+    super.parseAndHandleAction(actionMap)
+  }
+
+  override fun handleAction(action: Action) {
+    fragment?.handle(appCompatActivity.supportFragmentManager, action)
   }
 
   @ReactMethod

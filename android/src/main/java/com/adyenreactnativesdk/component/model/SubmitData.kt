@@ -2,7 +2,7 @@ package com.adyenreactnativesdk.component.model
 
 import org.json.JSONObject
 
-data class SubmitMap(
+data class SubmitData(
   val paymentData: JSONObject,
   val extra: JSONObject?,
 ) {

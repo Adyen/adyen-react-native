@@ -2,7 +2,10 @@ package com.adyenreactnativesdk.react.card
 
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.card.CardComponent
+import com.adyen.checkout.components.core.AddressLookupCallback
+import com.adyen.checkout.components.core.AddressLookupResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
+import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
@@ -39,6 +42,16 @@ class CardComponentManager(
       } else {
         createAdvancedCardComponent(configuration, paymentMethod)
       }
+
+    component?.setAddressLookupCallback(object : AddressLookupCallback {
+      override fun onQueryChanged(query: String) {
+        messageBus.onQueryChanged(query)
+      }
+
+      override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean {
+        return messageBus.onLookupCompletion(lookupAddress)
+      }
+    })
   }
 
   private fun createAdvancedCardComponent(
@@ -66,6 +79,18 @@ class CardComponentManager(
       componentCallback = ComponentSessionCallback(messageBus, ::actionHandle, NAME),
       key = UUID.randomUUID().toString(),
     )
+
+  fun updateAddressLookupOptions(options: List<LookupAddress>) {
+    component?.updateAddressLookupOptions(options)
+  }
+
+  fun setAddressLookupResult(lookupAddress: LookupAddress) {
+    component?.setAddressLookupResult(AddressLookupResult.Completed(lookupAddress))
+  }
+
+  fun failAddressLookupResult(message: String?) {
+    component?.setAddressLookupResult(AddressLookupResult.Error(message))
+  }
 
   private fun actionHandle(action: Action) {
     if (!activity.isDestroyed && !activity.isFinishing) {
