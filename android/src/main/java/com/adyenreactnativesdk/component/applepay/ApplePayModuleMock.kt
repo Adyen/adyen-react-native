@@ -21,6 +21,8 @@ class ApplePayModuleMock(
 ) : BaseModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
 
+  override fun getConstants(): MutableMap<String, Any> = super.getConstants()
+
   override fun supportedEvents(): List<String> = listOf(EventName.ERROR.value)
 
   override fun hide(

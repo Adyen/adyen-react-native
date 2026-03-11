@@ -56,11 +56,7 @@ export function useSubscriptionManager(
         EmbeddedComponentBus,
         componentType
       );
-      const bag = startEventListeners(
-        proxy,
-        eventHandlerRefs,
-        componentType
-      );
+      const bag = startEventListeners(proxy, eventHandlerRefs, componentType);
       subscriptions.current.set(componentType, bag);
     },
     [eventHandlerRefs]

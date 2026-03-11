@@ -19,7 +19,7 @@ export interface EmbeddedNativeModule extends NativeModuleWithConstants {
     success: boolean,
     body?: AddressLookupItem | { message?: string }
   ): void;
-};
+}
 
 /** Communication bus for all embedded Native Modules. */
 export const EmbeddedComponentBus = new EmbeddedComponentBusWrapper(

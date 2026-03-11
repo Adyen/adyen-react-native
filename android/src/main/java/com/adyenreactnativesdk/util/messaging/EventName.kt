@@ -47,4 +47,13 @@ fun EventName.Companion.cardComponentEvents() =
     EventName.CHANGE_BIN_VALUE.value,
   )
 
+fun EventName.Companion.dropinEvents() =
+  embeddedComponentsEvents() +
+    listOf(
+      EventName.DISABLE_STORED_PAYMENT_METHOD.value,
+      EventName.CHECK_BALANCE.value,
+      EventName.REQUEST_ORDER.value,
+      EventName.CANCEL_ORDER.value,
+    )
+
 fun EventName.Companion.embeddedComponentsEvents() = mainEvents() + addressLokupEvents() + cardComponentEvents()

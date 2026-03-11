@@ -41,7 +41,7 @@ class InstantModule(
   fun removeListeners(count: Int?) { // No JS events expected
   }
 
-  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+  override fun getConstants(): MutableMap<String, Any> = super.getConstants()
 
   @ReactMethod
   fun open(

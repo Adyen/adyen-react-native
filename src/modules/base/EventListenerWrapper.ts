@@ -7,8 +7,8 @@ export interface NativeModuleWithConstants extends NativeModule {
 }
 
 export interface AdyenEventListener {
-  isSupported(event: Event): boolean
-  get eventEmitterTarget(): NativeModule
+  isSupported(event: Event): boolean;
+  get eventEmitterTarget(): NativeModule;
 }
 
 /**

@@ -14,7 +14,6 @@ class TaggedEmitter(
   private val delegate: MessageBusEmitter,
   val componentType: String,
 ) : Emitter {
-
   override fun sendEvent(
     eventName: EventName,
     jsonObject: JSONObject,
@@ -51,14 +50,15 @@ class TaggedEmitter(
     eventName: EventName,
     error: Exception,
   ) {
-    val jsonObject = JSONObject().apply {
-      put("message", error.localizedMessage)
-      error.cause?.let { put("reason", it.localizedMessage) }
-      (error as? com.adyenreactnativesdk.component.base.KnownException)?.let {
-        put("errorCode", it.code)
+    val jsonObject =
+      JSONObject().apply {
+        put("message", error.localizedMessage)
+        error.cause?.let { put("reason", it.localizedMessage) }
+        (error as? com.adyenreactnativesdk.component.base.KnownException)?.let {
+          put("errorCode", it.code)
+        }
+        put(COMPONENT_TYPE_KEY, componentType)
       }
-      put(COMPONENT_TYPE_KEY, componentType)
-    }
     delegate.sendEvent(eventName, jsonObject)
   }
 

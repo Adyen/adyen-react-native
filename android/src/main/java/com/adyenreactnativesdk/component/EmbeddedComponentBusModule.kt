@@ -19,13 +19,14 @@ class EmbeddedComponentBusModule(
   val context: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseAddressModule(context, messageBus) {
-
   private var activeComponentType: String? = null
   private val subscribedTypes: MutableSet<String> = mutableSetOf()
 
   override fun getName(): String = COMPONENT_NAME
 
   override fun supportedEvents(): List<String> = EventName.embeddedComponentsEvents()
+
+  override fun getConstants(): MutableMap<String, Any> = super.getConstants()
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -116,8 +117,7 @@ class EmbeddedComponentBusModule(
       component.onAction(action)
     } catch (e: JSONException) {
       messageBus.onException(ModuleException.InvalidAction(e))
-    }
-    finally {
+    } finally {
       activeComponentType = null
     }
   }
@@ -131,12 +131,17 @@ class EmbeddedComponentBusModule(
         ?: return messageBus.onException(ModuleException.NoConsumer(componentType))
 
     when (result) {
-      is AddressLookupDropInServiceResult.LookupResult ->
+      is AddressLookupDropInServiceResult.LookupResult -> {
         component.onAddressLookupOptions(result.options)
-      is AddressLookupDropInServiceResult.LookupComplete ->
+      }
+
+      is AddressLookupDropInServiceResult.LookupComplete -> {
         component.onAddressLookupResult(AddressLookupResult.Completed(result.lookupAddress))
-      is AddressLookupDropInServiceResult.Error ->
+      }
+
+      is AddressLookupDropInServiceResult.Error -> {
         component.onAddressLookupResult(AddressLookupResult.Error(result.errorDialog?.message))
+      }
     }
   }
 

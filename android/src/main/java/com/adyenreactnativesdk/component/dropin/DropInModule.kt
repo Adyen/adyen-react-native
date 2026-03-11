@@ -32,9 +32,10 @@ import com.adyenreactnativesdk.component.base.BaseAddressModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
+import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.ReactNativeJson
+import com.adyenreactnativesdk.util.messaging.dropinEvents
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -54,7 +55,9 @@ class DropInModule(
     get() = if (session != null) "session" else "advanced"
 
   private val service: BaseDropInServiceContract
-    get() = (if (session != null) sessionService else advancedService) ?: throw ModuleException.NoModuleListener(integration)
+    get() =
+      (if (session != null) sessionService else advancedService)
+        ?: throw ModuleException.NoModuleListener(integration)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -71,7 +74,9 @@ class DropInModule(
 
   override fun getName(): String = COMPONENT_NAME
 
-  override fun supportedEvents(): List<String> = EventName.entries.map { it.value }
+  override fun getConstants(): MutableMap<String, Any> = super.getConstants()
+
+  override fun supportedEvents(): List<String> = EventName.dropinEvents()
 
   @ReactMethod
   fun open(
@@ -135,7 +140,10 @@ class DropInModule(
   }
 
   @ReactMethod
-  override fun confirm(success: Boolean, address: ReadableMap?) {
+  override fun confirm(
+    success: Boolean,
+    address: ReadableMap?,
+  ) {
     super.confirm(success, address)
   }
 

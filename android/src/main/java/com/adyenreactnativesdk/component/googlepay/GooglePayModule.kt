@@ -29,6 +29,8 @@ class GooglePayModule(
 ) : BaseActionModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
 
+  override fun getConstants(): MutableMap<String, Any> = super.getConstants()
+
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
   }
@@ -36,9 +38,6 @@ class GooglePayModule(
   @ReactMethod
   fun removeListeners(count: Int?) { // No JS events expected
   }
-
-  override fun getConstants(): MutableMap<String, Any> =
-    mutableMapOf("supportedEvents" to supportedEvents())
 
   @ReactMethod
   fun open(

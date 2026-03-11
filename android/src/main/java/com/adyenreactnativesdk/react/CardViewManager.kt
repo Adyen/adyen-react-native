@@ -120,9 +120,10 @@ class CardViewManager(
         componentType = type
         val tagged = TaggedEmitter(emitter, type)
         taggedEmitter = tagged
-        cardComponentManager = view?.context?.let { ctx ->
-          CardComponentManager(ctx as ThemedReactContext, MessageBus(tagged))
-        }
+        cardComponentManager =
+          view?.context?.let { ctx ->
+            CardComponentManager(ctx as ThemedReactContext, MessageBus(tagged))
+          }
         EmbeddedComponentBusModule.consumers[type] = this
       }
     }
@@ -213,6 +214,8 @@ class ResizableCustomViewEvent(
 
 interface ComponentContract {
   fun onAction(action: Action)
+
   fun onAddressLookupResult(result: AddressLookupResult)
+
   fun onAddressLookupOptions(options: List<LookupAddress>)
 }

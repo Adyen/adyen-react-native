@@ -51,7 +51,7 @@ export type EventHandlerRefs = {
 export function startEventListeners(
   nativeComponent: AdyenEventListener & AdyenActionComponent,
   refs: EventHandlerRefs,
-  componentType?: string,
+  componentType?: string
 ): EmitterSubscription[] {
   const eventEmitter = new NativeEventEmitter(
     nativeComponent.eventEmitterTarget
@@ -113,22 +113,6 @@ export function startEventListeners(
     );
   }
 
-    // Stored payment method removal (Drop-in only)
-  const onDisableStoredPaymentMethodCallback =
-    configuration.dropin?.onDisableStoredPaymentMethod;
-  if (onDisableStoredPaymentMethodCallback) {
-    const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
-    subscribeIfSupported<StoredPaymentMethod>(
-      Event.onDisableStoredPaymentMethod,
-      (data) =>
-        onDisableStoredPaymentMethodCallback(
-          data,
-          () => nativeModule.removeStored(true),
-          () => nativeModule.removeStored(false)
-        )
-    );
-  }
-
     // BIN lookup and value
   const onBinLookupCallback = configuration.card?.onBinLookup;
   if (onBinLookupCallback) {
@@ -146,6 +130,22 @@ export function startEventListeners(
         componentType && typeof data === 'object' ? data.value : data;
       onBinValueCallback(value);
     });
+  }
+
+  // Stored payment method removal (Drop-in only)
+  const onDisableStoredPaymentMethodCallback =
+    configuration.dropin?.onDisableStoredPaymentMethod;
+  if (onDisableStoredPaymentMethodCallback) {
+    const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
+    subscribeIfSupported<StoredPaymentMethod>(
+      Event.onDisableStoredPaymentMethod,
+      (data) =>
+        onDisableStoredPaymentMethodCallback(
+          data,
+          () => nativeModule.removeStored(true),
+          () => nativeModule.removeStored(false)
+        )
+    );
   }
 
   // Partial payments (Drop-in only)

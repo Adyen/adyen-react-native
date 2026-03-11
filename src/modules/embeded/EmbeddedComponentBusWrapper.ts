@@ -8,36 +8,35 @@ import type { EmbeddedNativeModule } from './EmbeddedComponentBus';
 export class EmbeddedComponentBusWrapper extends EventListenerWrapper<EmbeddedNativeModule> {
   name: string = 'AdyenComponentBus';
 
-    subscribe(componentType: string): void {
-      this.nativeModule.subscribe(componentType);
-    }
+  subscribe(componentType: string): void {
+    this.nativeModule.subscribe(componentType);
+  }
 
-    unsubscribe(componentType: string): void {
-      this.nativeModule.unsubscribe(componentType);
-    }
+  unsubscribe(componentType: string): void {
+    this.nativeModule.unsubscribe(componentType);
+  }
 
-    handle(componentType: string, action: PaymentAction): void {
-      this.nativeModule.handle(componentType, action);
-    }
+  handle(componentType: string, action: PaymentAction): void {
+    this.nativeModule.handle(componentType, action);
+  }
 
-    hide(
-      componentType: string,
-      success: boolean,
-      option?: { message?: string }
-    ): void {
-      this.nativeModule.hide(componentType, success, option);
-    }
+  hide(
+    componentType: string,
+    success: boolean,
+    option?: { message?: string }
+  ): void {
+    this.nativeModule.hide(componentType, success, option);
+  }
 
-    update(componentType: string, results: AddressLookupItem[]): void {
-      this.nativeModule.update(componentType, results);
-    }
+  update(componentType: string, results: AddressLookupItem[]): void {
+    this.nativeModule.update(componentType, results);
+  }
 
-    confirm(
-      componentType: string,
-      success: boolean,
-      body?: AddressLookupItem | { message?: string }
-    ): void {
-      this.nativeModule.confirm(componentType, success, body);
-    }
-
+  confirm(
+    componentType: string,
+    success: boolean,
+    body?: AddressLookupItem | { message?: string }
+  ): void {
+    this.nativeModule.confirm(componentType, success, body);
+  }
 }

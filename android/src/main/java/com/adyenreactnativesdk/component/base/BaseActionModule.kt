@@ -12,6 +12,7 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.mainEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
@@ -20,14 +21,7 @@ abstract class BaseActionModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseModule(reactContext, messageBus) {
-
-  override fun supportedEvents(): List<String> =
-    listOf(
-      EventName.SUBMIT.value,
-      EventName.ERROR.value,
-      EventName.ADDITIONAL_DETAILS.value,
-      EventName.COMPLETE_VOUCHER.value,
-    )
+  override fun supportedEvents(): List<String> = EventName.mainEvents()
 
   protected fun parseAndHandleAction(actionMap: ReadableMap?) {
     try {

@@ -43,15 +43,15 @@ class CardComponentManager(
         createAdvancedCardComponent(configuration, paymentMethod)
       }
 
-    component?.setAddressLookupCallback(object : AddressLookupCallback {
-      override fun onQueryChanged(query: String) {
-        messageBus.onQueryChanged(query)
-      }
+    component?.setAddressLookupCallback(
+      object : AddressLookupCallback {
+        override fun onQueryChanged(query: String) {
+          messageBus.onQueryChanged(query)
+        }
 
-      override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean {
-        return messageBus.onLookupCompletion(lookupAddress)
-      }
-    })
+        override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean = messageBus.onLookupCompletion(lookupAddress)
+      },
+    )
   }
 
   private fun createAdvancedCardComponent(
