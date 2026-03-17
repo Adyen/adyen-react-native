@@ -126,21 +126,21 @@ class EmbeddedComponentBusModule(
     val componentType =
       activeComponentType ?: return messageBus.onException(ModuleException.NoPaymentRegistered())
 
-    val component =
+    val componentManager =
       consumers[componentType]
         ?: return messageBus.onException(ModuleException.NoConsumer(componentType))
 
     when (result) {
       is AddressLookupDropInServiceResult.LookupResult -> {
-        component.onAddressLookupOptions(result.options)
+        componentManager.onAddressLookupOptions(result.options)
       }
 
       is AddressLookupDropInServiceResult.LookupComplete -> {
-        component.onAddressLookupResult(AddressLookupResult.Completed(result.lookupAddress))
+        componentManager.onAddressLookupResult(AddressLookupResult.Completed(result.lookupAddress))
       }
 
       is AddressLookupDropInServiceResult.Error -> {
-        component.onAddressLookupResult(AddressLookupResult.Error(result.errorDialog?.message))
+        componentManager.onAddressLookupResult(AddressLookupResult.Error(result.errorDialog?.message))
       }
     }
   }

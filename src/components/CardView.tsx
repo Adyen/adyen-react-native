@@ -4,7 +4,6 @@ import NativeCardView, {
 } from '../specs/NativeCardView';
 import { useAdyenCheckout } from '../hooks/useAdyenCheckout';
 import type { PaymentMethod } from '../core/types';
-import Styles from './common/Styles';
 import { useComponent } from '../hooks/useComponent';
 
 export interface CardViewProps {
@@ -65,9 +64,9 @@ export const CardView: React.FC<CardViewProps> = ({
       onLayoutChange={(event) => {
         setSize(event.nativeEvent);
       }}
-      style={{
-        height: size?.height ?? Styles.defaultComponent.minHeight,
-        width: size?.width ?? '100%',
+      style={{ 
+        height: size?.height ?? '100%',
+        width: '100%',
       }}
     />
   );

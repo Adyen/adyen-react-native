@@ -3,10 +3,13 @@ package com.adyenreactnativesdk.react.platformpay
 import android.annotation.SuppressLint
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
+import androidx.lifecycle.lifecycleScope
+import com.adyen.checkout.card.internal.ui.CardDelegate
 import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.wallet.button.ButtonConstants
 import com.google.android.gms.wallet.button.ButtonOptions
 import com.google.android.gms.wallet.button.PayButton
+import kotlinx.coroutines.launch
 
 enum class ButtonTheme(
   val value: Int,

@@ -1,12 +1,13 @@
 package com.adyenreactnativesdk.react
 
+import android.util.Log
 import android.util.Size
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.components.core.AddressLookupResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.action.Action
-import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
@@ -21,15 +22,14 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
-import com.facebook.react.uimanager.ReactStylesDiffMap
 import com.facebook.react.uimanager.SimpleViewManager
-import com.facebook.react.uimanager.StateWrapper
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.events.Event
 import com.facebook.react.viewmanagers.CardViewManagerDelegate
 import com.facebook.react.viewmanagers.CardViewManagerInterface
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 @ReactModule(name = CardViewManager.NAME)
@@ -40,12 +40,11 @@ class CardViewManager(
   LayoutListener,
   ComponentContract {
   private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
-  private var dynamicComponentView: DynamicComponentView? = null
+  private var persistedView: DynamicComponentView? = null
   private var cardComponentManager: CardComponentManager? = null
   private var configuration: CheckoutConfiguration? = null
   private var paymentMethod: JSONObject? = null
-  private var fragmentActivity: FragmentActivity? = null
-  private var stateWrapper: StateWrapper? = null
+  private var context: ThemedReactContext? = null
   private var componentType: String? = null
   private var taggedEmitter: TaggedEmitter? = null
 
@@ -54,13 +53,13 @@ class CardViewManager(
   override fun getName(): String = NAME
 
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
-    fragmentActivity = context.currentActivity as? FragmentActivity
-    if (dynamicComponentView != null) {
-      dynamicComponentView?.onDispose()
+    this.context = context
+    if (persistedView != null) {
+      persistedView?.onDispose()
     }
     val view = DynamicComponentView(context)
     view.layoutListener = this
-    dynamicComponentView = view
+    persistedView = view
     return view
   }
 
@@ -68,41 +67,42 @@ class CardViewManager(
     super.onDropViewInstance(view)
     // Ensure proper cleanup when view is dropped
     view.onDispose()
-    if (view == dynamicComponentView) {
+    if (view == persistedView) {
       componentType?.let { EmbeddedComponentBusModule.consumers.remove(it) }
-      dynamicComponentView = null
+      persistedView = null
       cardComponentManager = null
-      fragmentActivity = null
+      context = null
       componentType = null
       taggedEmitter = null
     }
   }
 
-  override fun updateState(
-    view: DynamicComponentView,
-    props: ReactStylesDiffMap?,
-    stateWrapper: StateWrapper?,
-  ): Any? {
-    this.stateWrapper = stateWrapper
-    return super.updateState(view, props, stateWrapper)
-  }
-
   override fun onAfterUpdateTransaction(view: DynamicComponentView) {
     super.onAfterUpdateTransaction(view)
-    if (dynamicComponentView?.hasComponent == true) {
+    if (view.hasComponent) {
+      view.viewTreeObserver?.dispatchOnGlobalLayout()
       return
     }
+
+    val type = componentType
+    if (type == null) {
+      Log.e("CardViewManager", "Component type is null")
+      return
+    }
+
+    val tagged = TaggedEmitter(emitter, type)
+    val messageBus = MessageBus(tagged)
+
     ifNotNull(
       paymentMethod,
       configuration,
-      fragmentActivity,
-    ) { paymentMethodJson, configuration, fragmentActivity ->
-      // Check if FragmentActivity is still valid and not destroyed
-      if (!fragmentActivity.isDestroyed && !fragmentActivity.isFinishing) {
-        cardComponentManager?.init(configuration, paymentMethodJson)
-        cardComponentManager?.component?.let { cardComponent ->
-          dynamicComponentView?.addComponent(cardComponent, fragmentActivity)
-        }
+      context?.currentActivity as? FragmentActivity,
+    ) { paymentMethodJson, configuration, activity ->
+      val manager = CardComponentManager(activity, messageBus)
+      cardComponentManager = manager
+      val component = manager.createComponent(configuration, paymentMethodJson)
+      activity.lifecycleScope.launch {
+        view.addComponent(component, activity)
       }
     }
   }
@@ -114,18 +114,16 @@ class CardViewManager(
     value?.let {
       val json = JSONObject(it)
       paymentMethod = json
-      val type = json.optString("type", null)
-      if (type != null && type != componentType) {
-        componentType?.let { old -> EmbeddedComponentBusModule.consumers.remove(old) }
-        componentType = type
-        val tagged = TaggedEmitter(emitter, type)
-        taggedEmitter = tagged
-        cardComponentManager =
-          view?.context?.let { ctx ->
-            CardComponentManager(ctx as ThemedReactContext, MessageBus(tagged))
-          }
-        EmbeddedComponentBusModule.consumers[type] = this
-      }
+      extractType(json)
+    }
+  }
+
+  private fun extractType(json: JSONObject) {
+    val type = json.optString("type", null)
+    if (type != null && type != componentType) {
+      componentType?.let { old -> EmbeddedComponentBusModule.consumers.remove(old) }
+      componentType = type
+      EmbeddedComponentBusModule.consumers[type] = this
     }
   }
 
@@ -163,29 +161,17 @@ class CardViewManager(
     )
 
   override fun onLayoutSizeUpdate(size: Size) {
-    dynamicComponentView?.let { view ->
-      val context = view.context as? ReactContext
-      context?.let {
-        emitResizableCustomViewEvent(it, view.id, size.width, size.height)
-      }
+    ifNotNull(context, persistedView) { context, view ->
+      emitResizableCustomViewEvent(context, view.id, size.width, size.height)
     }
   }
 
   override fun onAction(action: Action) {
-    ifNotNull(
-      fragmentActivity,
-      cardComponentManager?.component,
-    ) { activity, component ->
-      // Check if FragmentActivity is still valid before handling action
-      if (!activity.isDestroyed && !activity.isFinishing) {
-        AdyenCheckout.setComponent(component)
-        component.handleAction(action, activity)
-      }
-    }
+    cardComponentManager?.handleAction(action)
   }
 
   override fun onAddressLookupResult(result: AddressLookupResult) {
-    cardComponentManager?.component?.setAddressLookupResult(result)
+    cardComponentManager?.setAddressLookupResult(result)
   }
 
   override fun onAddressLookupOptions(options: List<LookupAddress>) {

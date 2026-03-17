@@ -1,5 +1,6 @@
 package com.adyenreactnativesdk.react.card
 
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.card.CardComponent
 import com.adyen.checkout.components.core.AddressLookupCallback
@@ -9,30 +10,28 @@ import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
+import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.react.CardViewManager.Companion.NAME
 import com.adyenreactnativesdk.react.base.ComponentAdvancedCallback
 import com.adyenreactnativesdk.react.base.ComponentSessionCallback
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.facebook.react.uimanager.ThemedReactContext
 import org.json.JSONObject
 import java.util.UUID
 
 class CardComponentManager(
-  val context: ThemedReactContext,
+  val activity: FragmentActivity,
   val messageBus: MessageBus,
 ) {
-  val activity = context.currentActivity as FragmentActivity
-
   var component: CardComponent? = null
 
-  fun init(
+  fun createComponent(
     configuration: CheckoutConfiguration,
     paymentMethodJson: JSONObject,
-  ) {
+  ): CardComponent {
     val session = BaseModule.session
     val paymentMethod = PaymentMethod.SERIALIZER.deserialize(paymentMethodJson)
-    component =
+    val component =
       if (session != null) {
         createSessionCardComponent(
           session,
@@ -43,7 +42,7 @@ class CardComponentManager(
         createAdvancedCardComponent(configuration, paymentMethod)
       }
 
-    component?.setAddressLookupCallback(
+    component.setAddressLookupCallback(
       object : AddressLookupCallback {
         override fun onQueryChanged(query: String) {
           messageBus.onQueryChanged(query)
@@ -52,6 +51,8 @@ class CardComponentManager(
         override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean = messageBus.onLookupCompletion(lookupAddress)
       },
     )
+    this.component = component
+    return component
   }
 
   private fun createAdvancedCardComponent(
@@ -76,7 +77,7 @@ class CardComponentManager(
       checkoutSession = session,
       paymentMethod = paymentMethod,
       checkoutConfiguration = configuration,
-      componentCallback = ComponentSessionCallback(messageBus, ::actionHandle, NAME),
+      componentCallback = ComponentSessionCallback(messageBus, ::handleAction, NAME),
       key = UUID.randomUUID().toString(),
     )
 
@@ -84,17 +85,14 @@ class CardComponentManager(
     component?.updateAddressLookupOptions(options)
   }
 
-  fun setAddressLookupResult(lookupAddress: LookupAddress) {
-    component?.setAddressLookupResult(AddressLookupResult.Completed(lookupAddress))
+  fun setAddressLookupResult(addressLookupResult: AddressLookupResult) {
+    component?.setAddressLookupResult(addressLookupResult)
   }
 
-  fun failAddressLookupResult(message: String?) {
-    component?.setAddressLookupResult(AddressLookupResult.Error(message))
-  }
-
-  private fun actionHandle(action: Action) {
-    if (!activity.isDestroyed && !activity.isFinishing) {
-      component?.handleAction(action, activity)
-    }
+  fun handleAction(action: Action) {
+    component?.let {
+      AdyenCheckout.setComponent(it)
+      it.handleAction(action, activity)
+    } ?: Log.e("CardComponentManager", "Can not handle action, Component is null")
   }
 }

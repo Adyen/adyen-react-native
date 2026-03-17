@@ -1,10 +1,12 @@
-import { ScrollView } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import { CardView } from '@adyen/react-native';
 
 const CardForm = () => {
   return (
     <ScrollView>
-      <CardView />
+        <Text>Card Form Header</Text>
+        <CardView/>
+        <Text>Card Form Footer</Text>
     </ScrollView>
   );
 };
