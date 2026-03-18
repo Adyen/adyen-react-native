@@ -8,6 +8,7 @@ import com.adyen.checkout.components.core.AddressLookupResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
@@ -79,8 +80,7 @@ class CardViewManager(
 
   override fun onAfterUpdateTransaction(view: DynamicComponentView) {
     super.onAfterUpdateTransaction(view)
-    if (view.hasComponent) {
-      view.viewTreeObserver?.dispatchOnGlobalLayout()
+    if (view.viewSet) {
       return
     }
 
@@ -102,7 +102,10 @@ class CardViewManager(
       cardComponentManager = manager
       val component = manager.createComponent(configuration, paymentMethodJson)
       activity.lifecycleScope.launch {
-        view.addComponent(component, activity)
+        AdyenComponentView(activity).apply {
+          attach(component, activity)
+          view.setView(this)
+        }
       }
     }
   }

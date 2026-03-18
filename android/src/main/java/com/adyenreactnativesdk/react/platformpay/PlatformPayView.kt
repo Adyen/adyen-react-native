@@ -1,15 +1,11 @@
 package com.adyenreactnativesdk.react.platformpay
 
 import android.annotation.SuppressLint
-import android.view.ViewTreeObserver
 import android.widget.FrameLayout
-import androidx.lifecycle.lifecycleScope
-import com.adyen.checkout.card.internal.ui.CardDelegate
 import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.wallet.button.ButtonConstants
 import com.google.android.gms.wallet.button.ButtonOptions
 import com.google.android.gms.wallet.button.PayButton
-import kotlinx.coroutines.launch
 
 enum class ButtonTheme(
   val value: Int,
@@ -51,13 +47,18 @@ class PlatformPayView(
   var radius: Int = 50
 
   private var googlePayButton: PayButton? = null
-  private val onGlobalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener { requestLayout() }
 
   fun showButton() {
     googlePayButton?.let { removeView(it) }
     scheduleUpdate()
     addView(googlePayButton)
-    viewTreeObserver.addOnGlobalLayoutListener(onGlobalLayoutListener)
+    // This ensures that Google Pay view is updated under Fabric
+    postDelayed(
+      Runnable {
+        rootView?.parent?.requestLayout()
+      },
+      2000,
+    )
   }
 
   private fun scheduleUpdate() {
@@ -87,11 +88,6 @@ class PlatformPayView(
       )
       layout(left, top, right, bottom)
     }
-  }
-
-  override fun onDetachedFromWindow() {
-    super.onDetachedFromWindow()
-    viewTreeObserver.removeOnGlobalLayoutListener(onGlobalLayoutListener)
   }
 
   companion object {

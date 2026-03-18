@@ -3,14 +3,11 @@ package com.adyenreactnativesdk.react.base
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Size
+import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
-import androidx.activity.ComponentActivity
-import com.adyen.checkout.components.core.internal.Component
-import com.adyen.checkout.ui.core.AdyenComponentView
-import com.adyen.checkout.ui.core.internal.ui.ViewableComponent
 
-private const val TIMEOUT = 1000L
+private const val TIMEOUT = 250L
 
 class DynamicComponentView(
   context: Context,
@@ -19,9 +16,9 @@ class DynamicComponentView(
   private var ignoreLayoutChanges = false
   private var interactionBlocked = false
   var layoutListener: LayoutListener? = null
-  var hasComponent = false
-  var globalListener: ViewTreeObserver.OnGlobalLayoutListener? = null
-
+  var viewSet = false
+  private var globalListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+  private var oldSize: Size? = null
   private val resizeRunnable =
     object : Runnable {
       override fun run() {
@@ -34,23 +31,29 @@ class DynamicComponentView(
             (measuredWidth / screenDensity).toInt(),
             (measuredHeight / screenDensity).toInt(),
           )
-        layoutListener?.onLayoutSizeUpdate(size)
+        if (oldSize != size) {
+          layoutListener?.onLayoutSizeUpdate(size)
+        }
+        oldSize = size
         postDelayed(this, TIMEOUT)
       }
     }
 
-  @SuppressLint("RestrictedApi")
-  fun <T> addComponent(
-    component: T,
-    activity: ComponentActivity,
-  ) where T : Component, T : ViewableComponent {
-    val adyenComponentView =
-      AdyenComponentView(context).apply {
-        attach(component, activity)
-      }
+  override fun requestLayout() {
+    super.requestLayout()
+    post {
+      measure(
+        MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY),
+      )
+      layout(left, top, right, bottom)
+    }
+  }
 
-    hasComponent = true
-    addView(adyenComponentView)
+  @SuppressLint("RestrictedApi")
+  fun setView(view: View) {
+    viewSet = true
+    addView(view)
     postDelayed(resizeRunnable, TIMEOUT)
   }
 
