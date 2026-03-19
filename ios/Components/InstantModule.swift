@@ -27,7 +27,7 @@ internal final class InstantModule: BaseActionHandler {
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
         let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale
 
-        createActionHandlerIfNeede(context: context, locale: locale)
+        createActionHandlerIfNeeded(context: context, locale: locale)
 
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
         component.delegate = BaseModule.session ?? self

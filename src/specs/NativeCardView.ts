@@ -5,7 +5,6 @@ import type {
   Int32,
 } from 'react-native/Libraries/Types/CodegenTypes';
 
-type PayButtonPressedEvent = Readonly<{}>;
 export type LayoutChangeEvent = {
   width: Int32;
   height: Int32;
@@ -14,7 +13,6 @@ export type LayoutChangeEvent = {
 export interface NativeProps extends ViewProps {
   paymentMethod: string;
   configuration: string;
-  onButtonPress?: DirectEventHandler<PayButtonPressedEvent>;
   onLayoutChange?: DirectEventHandler<LayoutChangeEvent>;
 }
 

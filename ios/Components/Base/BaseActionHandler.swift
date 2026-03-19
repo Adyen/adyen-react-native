@@ -35,7 +35,7 @@ internal class BaseActionHandler: BaseModuleSender {
         super.hide(success, event: event)
     }
 
-    internal func createActionHandlerIfNeede(context: AdyenContext, locale: String?) {
+    internal func createActionHandlerIfNeeded(context: AdyenContext, locale: String?) {
         guard BaseModule.session == nil else { return }
         
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
