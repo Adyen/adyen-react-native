@@ -19,8 +19,6 @@ RCT_EXPORT_VIEW_PROPERTY(paymentMethod, NSString)
 
 RCT_EXPORT_VIEW_PROPERTY(configuration, NSString)
 
-RCT_EXPORT_VIEW_PROPERTY(onButtonPress, RCTDirectEventBlock)
-
 RCT_EXPORT_VIEW_PROPERTY(onLayoutChange, RCTDirectEventBlock)
 
 @end

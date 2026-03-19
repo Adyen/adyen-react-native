@@ -9,7 +9,7 @@ import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.map
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.messaging.addressLokupEvents
+import com.adyenreactnativesdk.util.messaging.addressLookupEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
@@ -18,7 +18,7 @@ abstract class BaseAddressModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseActionModule(reactContext, messageBus) {
-  override fun supportedEvents(): List<String> = super.supportedEvents() + EventName.addressLokupEvents()
+  override fun supportedEvents(): List<String> = super.supportedEvents() + EventName.addressLookupEvents()
 
   open fun update(array: ReadableArray?) {
     val result =

@@ -85,14 +85,6 @@ using namespace facebook::react;
   }
 }
 
-- (void)onPress {
-  if (_eventEmitter) {
-    CardViewEventEmitter::OnButtonPress result =
-        CardViewEventEmitter::OnButtonPress{};
-    self.eventEmitter.onButtonPress(result);
-  }
-}
-
 // Event emitter convenience method
 - (const CardViewEventEmitter &)eventEmitter {
   return static_cast<const CardViewEventEmitter &>(*_eventEmitter);

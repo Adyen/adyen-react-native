@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { type EmitterSubscription } from 'react-native';
-import { EmbeddedComponentBus } from '../modules/embeded/EmbeddedComponentBus';
-import { EmbeddedComponentProxy } from '../modules/embeded/EmbeddedComponentProxy';
+import { EmbeddedComponentBus } from '../modules/embedded/EmbeddedComponentBus';
+import { EmbeddedComponentProxy } from '../modules/embedded/EmbeddedComponentProxy';
 import {
   startEventListeners,
   type EventHandlerRefs,

@@ -9,18 +9,13 @@ import { useComponent } from '../hooks/useComponent';
 export interface CardViewProps {
   /** PaymentMethod object. If not provided, the first available payment method will be used. */
   paymentMethod?: PaymentMethod;
-  /** Button press event handler */
-  onButtonPress?: () => void;
 }
 
 /**
  * Type-safe wrapper for the native CardView component.
  * Automatically serializes PaymentMethod and Configuration objects to JSON strings.
  */
-export const CardView: React.FC<CardViewProps> = ({
-  paymentMethod,
-  onButtonPress,
-}) => {
+export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
   const { config, paymentMethods } = useAdyenCheckout();
   const { subscribe, unsubscribe } = useComponent();
 
@@ -34,10 +29,6 @@ export const CardView: React.FC<CardViewProps> = ({
       paymentMethods?.paymentMethods?.find((x) => x.type === type),
     [paymentMethod, paymentMethods]
   );
-
-  const handleButtonPress = React.useCallback(() => {
-    onButtonPress?.();
-  }, [onButtonPress]);
 
   useEffect(() => {
     subscribe(type);
@@ -60,11 +51,10 @@ export const CardView: React.FC<CardViewProps> = ({
     <NativeCardView
       paymentMethod={JSON.stringify(_paymentMethod)}
       configuration={JSON.stringify(config)}
-      onButtonPress={onButtonPress ? handleButtonPress : undefined}
       onLayoutChange={(event) => {
         setSize(event.nativeEvent);
       }}
-      style={{ 
+      style={{
         height: size?.height ?? '100%',
         width: '100%',
       }}

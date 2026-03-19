@@ -113,7 +113,7 @@ export function startEventListeners(
     );
   }
 
-    // BIN lookup and value
+  // BIN lookup and value
   const onBinLookupCallback = configuration.card?.onBinLookup;
   if (onBinLookupCallback) {
     subscribeIfSupported(Event.onBinLookup, (data: any) => {

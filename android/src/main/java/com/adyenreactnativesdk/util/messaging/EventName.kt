@@ -35,7 +35,7 @@ fun EventName.Companion.sessionEvents() =
     EventName.COMPLETE_SESSION.value,
   )
 
-fun EventName.Companion.addressLokupEvents() =
+fun EventName.Companion.addressLookupEvents() =
   listOf(
     EventName.UPDATE_ADDRESS.value,
     EventName.CONFIRM_ADDRESS.value,
@@ -56,4 +56,4 @@ fun EventName.Companion.dropinEvents() =
       EventName.CANCEL_ORDER.value,
     )
 
-fun EventName.Companion.embeddedComponentsEvents() = mainEvents() + addressLokupEvents() + cardComponentEvents()
+fun EventName.Companion.embeddedComponentsEvents() = mainEvents() + addressLookupEvents() + cardComponentEvents()

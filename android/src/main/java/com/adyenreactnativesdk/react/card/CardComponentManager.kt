@@ -51,6 +51,12 @@ class CardComponentManager(
         override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean = messageBus.onLookupCompletion(lookupAddress)
       },
     )
+    component.setOnBinLookupListener { bin ->
+      messageBus.onBinLookup(bin)
+    }
+    component.setOnBinValueListener { shippingAddress ->
+      messageBus.onBinValue(shippingAddress)
+    }
     this.component = component
     return component
   }

@@ -23,6 +23,16 @@ internal final class EmbeddedComponentDelegateProxy: NSObject {
         dict["componentType"] = componentType
         return dict
     }
+
+    internal func sendError(error: Error) {
+        guard let bus else { return }
+        let errorToSend = bus.checkErrorType(error)
+        if let _ = BaseModule.session {
+            BaseModule.sessionDelegate?.sendError(error: error)
+            return
+        }
+        bus.sendEvent(event: .fail, body: taggedBody(errorToSend.jsonObject))
+    }
 }
 
 // MARK: - PaymentComponentDelegate
@@ -36,13 +46,7 @@ extension EmbeddedComponentDelegateProxy: PaymentComponentDelegate {
     }
 
     func didFail(with error: Error, from component: any PaymentComponent) {
-        guard let bus else { return }
-        let errorToSend = bus.checkErrorType(error)
-        if let _ = BaseModule.session {
-            BaseModule.sessionDelegate?.sendError(error: error)
-            return
-        }
-        bus.sendEvent(event: .fail, body: taggedBody(errorToSend.jsonObject))
+        sendError(error: error)
     }
 }
 
@@ -61,13 +65,7 @@ extension EmbeddedComponentDelegateProxy: ActionComponentDelegate {
     }
 
     func didFail(with error: Error, from component: ActionComponent) {
-        guard let bus else { return }
-        let errorToSend = bus.checkErrorType(error)
-        if let _ = BaseModule.session {
-            BaseModule.sessionDelegate?.sendError(error: error)
-            return
-        }
-        bus.sendEvent(event: .fail, body: taggedBody(errorToSend.jsonObject))
+        sendError(error: error)
     }
 
     func didOpenExternalApplication(component: ActionComponent) {}

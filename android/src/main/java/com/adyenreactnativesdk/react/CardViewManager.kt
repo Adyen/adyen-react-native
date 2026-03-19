@@ -83,7 +83,6 @@ class CardViewManager(
     if (view.viewSet) {
       return
     }
-
     val type = componentType
     if (type == null) {
       Log.e("CardViewManager", "Component type is null")
@@ -92,7 +91,6 @@ class CardViewManager(
 
     val tagged = TaggedEmitter(emitter, type)
     val messageBus = MessageBus(tagged)
-
     ifNotNull(
       paymentMethod,
       configuration,
@@ -159,7 +157,6 @@ class CardViewManager(
 
   override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> =
     mapOf(
-      OnPressEvent.EVENT_NAME to mapOf("registrationName" to "onButtonPress"),
       ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView"),
     )
 
