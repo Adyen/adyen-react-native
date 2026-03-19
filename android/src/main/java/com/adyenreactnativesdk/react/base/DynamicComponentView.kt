@@ -64,8 +64,10 @@ class DynamicComponentView(
   }
 
   fun onDispose() {
-    // Clean up any child views to prevent Fragment lifecycle issues
+    removeCallbacks(resizeRunnable)
     removeAllViews()
+    viewSet = false
+    oldSize = null
     ignoreLayoutChanges = false
     interactionBlocked = false
     globalListener?.let { getViewTreeObserver()?.removeOnGlobalLayoutListener(it) }

@@ -44,7 +44,7 @@ class EmbeddedComponentBusModule(
   @ReactMethod
   fun unsubscribe(componentType: String) {
     subscribedTypes.remove(componentType)
-    consumers.remove(componentType)
+    Companion.unregister(componentType)
     if (activeComponentType == componentType) {
       activeComponentType = null
     }
@@ -78,11 +78,11 @@ class EmbeddedComponentBusModule(
     success: Boolean,
     message: ReadableMap?,
   ) {
-    consumers.remove(componentType)
+    Companion.unregister(componentType)
     if (activeComponentType == componentType) {
       activeComponentType = null
     }
-    if (consumers.isEmpty()) {
+    if (subscribedTypes.isEmpty()) {
       activeComponentType = null
       cleanup()
     }
@@ -110,7 +110,7 @@ class EmbeddedComponentBusModule(
       activeComponentType ?: return messageBus.onException(ModuleException.NoPaymentRegistered())
 
     val component =
-      consumers[componentName]
+      getConsumer(componentName)
         ?: return messageBus.onException(ModuleException.NoConsumer(componentName))
 
     try {
@@ -127,7 +127,7 @@ class EmbeddedComponentBusModule(
       activeComponentType ?: return messageBus.onException(ModuleException.NoPaymentRegistered())
 
     val componentManager =
-      consumers[componentType]
+      getConsumer(componentType)
         ?: return messageBus.onException(ModuleException.NoConsumer(componentType))
 
     when (result) {
@@ -149,6 +149,22 @@ class EmbeddedComponentBusModule(
     private const val COMPONENT_NAME = "AdyenComponentBus"
 
     /** Registry of componentType → ViewManager implementing ComponentContract */
-    var consumers: MutableMap<String, ComponentContract> = mutableMapOf()
+    private val consumers: MutableMap<String, ComponentContract> = mutableMapOf()
+
+    @Synchronized
+    fun register(componentType: String, contract: ComponentContract) {
+      consumers[componentType] = contract
+    }
+
+    @Synchronized
+    fun unregister(componentType: String) {
+      consumers.remove(componentType)
+    }
+
+    @Synchronized
+    fun getConsumer(componentType: String): ComponentContract? = consumers[componentType]
+
+    @Synchronized
+    fun clearConsumers() = consumers.clear()
   }
 }

@@ -80,16 +80,14 @@ extension EmbeddedComponentDelegateProxy: CardComponentDelegate {
 
     func didChangeBIN(_ value: String, component: CardComponent) {
         guard let bus else { return }
-        let body: [String: Any] = ["componentType": componentType, "value": value]
-        bus.sendEvent(event: .changeBinValue, body: body)
+        bus.sendEvent(event: .changeBinValue, body: taggedBody(["value": value]))
     }
 
     func didChangeCardBrand(_ value: [CardBrand]?, component: CardComponent) {
         guard let bus else { return }
         guard let value, !value.isEmpty else { return }
         let jsonData = value.map { BinLookupDataDTO(brand: $0.type.rawValue).jsonObject }
-        let body: [String: Any] = ["componentType": componentType, "data": jsonData]
-        bus.sendEvent(event: .binLookup, body: body)
+        bus.sendEvent(event: .binLookup, body: taggedBody(["data": jsonData]))
     }
 }
 
@@ -99,8 +97,7 @@ extension EmbeddedComponentDelegateProxy: AddressLookupProvider {
     func lookUp(searchTerm: String, resultHandler: @escaping ([LookupAddressModel]) -> Void) {
         guard let bus else { return }
         bus.storeLookupHandler(for: componentType, handler: resultHandler)
-        let body: [String: Any] = ["componentType": componentType, "value": searchTerm]
-        bus.sendEvent(event: .updateAddress, body: body)
+        bus.sendEvent(event: .updateAddress, body: taggedBody(["value": searchTerm]))
     }
 
     func complete(
@@ -109,8 +106,6 @@ extension EmbeddedComponentDelegateProxy: AddressLookupProvider {
     ) {
         guard let bus else { return }
         bus.storeLookupCompletionHandler(for: componentType, handler: resultHandler)
-        var body = incompleteAddress.jsonObject
-        body["componentType"] = componentType
-        bus.sendEvent(event: .confirmAddress, body: body)
+        bus.sendEvent(event: .confirmAddress, body: taggedBody(incompleteAddress.jsonObject))
     }
 }

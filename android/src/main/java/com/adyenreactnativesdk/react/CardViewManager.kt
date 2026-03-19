@@ -69,7 +69,7 @@ class CardViewManager(
     // Ensure proper cleanup when view is dropped
     view.onDispose()
     if (view == persistedView) {
-      componentType?.let { EmbeddedComponentBusModule.consumers.remove(it) }
+      componentType?.let { EmbeddedComponentBusModule.unregister(it) }
       persistedView = null
       cardComponentManager = null
       context = null
@@ -122,9 +122,9 @@ class CardViewManager(
   private fun extractType(json: JSONObject) {
     val type = json.optString("type", null)
     if (type != null && type != componentType) {
-      componentType?.let { old -> EmbeddedComponentBusModule.consumers.remove(old) }
+      componentType?.let { old -> EmbeddedComponentBusModule.unregister(old) }
       componentType = type
-      EmbeddedComponentBusModule.consumers[type] = this
+      EmbeddedComponentBusModule.register(type, this)
     }
   }
 

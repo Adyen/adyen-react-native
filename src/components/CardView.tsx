@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import NativeCardView, {
   type LayoutChangeEvent,
 } from '../specs/NativeCardView';
@@ -20,6 +20,13 @@ export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
   const { subscribe, unsubscribe } = useComponent();
 
   const [size, setSize] = useState<LayoutChangeEvent>();
+
+  const handleLayoutChange = useCallback(
+    (event: { nativeEvent: LayoutChangeEvent }) => {
+      setSize(event.nativeEvent);
+    },
+    []
+  );
 
   const type = 'scheme';
 
@@ -51,9 +58,7 @@ export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
     <NativeCardView
       paymentMethod={JSON.stringify(_paymentMethod)}
       configuration={JSON.stringify(config)}
-      onLayoutChange={(event) => {
-        setSize(event.nativeEvent);
-      }}
+      onLayoutChange={handleLayoutChange}
       style={{
         height: size?.height ?? '100%',
         width: '100%',
