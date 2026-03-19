@@ -96,3 +96,4 @@ example/package-lock.json
 
 #Example credentials
 example/secrets.json
+example/android/gradlew.bat
