@@ -30,6 +30,15 @@ jest.mock('../../modules/base/getWrapper', () => ({
   })),
 }));
 
+jest.mock('../../hooks/useEmbeddedComponentBus', () => ({
+  useSubscriptionManager: jest.fn(() => ({
+    subscribe: jest.fn(),
+    unsubscribe: jest.fn(),
+    removeEventListeners: jest.fn(),
+    storeEventListeners: jest.fn(),
+  })),
+}));
+
 jest.mock('../../modules/session/SessionHelperModule', () => ({
   SessionHelper: {
     createSession: (session: any, config: any) =>
