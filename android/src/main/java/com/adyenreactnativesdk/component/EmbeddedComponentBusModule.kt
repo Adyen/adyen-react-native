@@ -152,7 +152,10 @@ class EmbeddedComponentBusModule(
     private val consumers: MutableMap<String, ComponentContract> = mutableMapOf()
 
     @Synchronized
-    fun register(componentType: String, contract: ComponentContract) {
+    fun register(
+      componentType: String,
+      contract: ComponentContract,
+    ) {
       consumers[componentType] = contract
     }
 

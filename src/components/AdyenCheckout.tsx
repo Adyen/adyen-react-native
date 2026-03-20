@@ -25,11 +25,12 @@ import {
 import { getWrapper } from '../modules/base/getWrapper';
 import { SessionHelper } from '../modules/session/SessionHelperModule';
 import type { SessionContext } from '../modules/session/types';
-import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
+import { checkConfiguration } from './utils/checkConfiguration';
+import { checkPaymentMethodsResponse } from './utils/checkPaymentMethodsResponse';
 import {
   startEventListeners,
   type EventHandlerRefs,
-} from './startEventListeners';
+} from './utils/startEventListeners';
 import { AdyenComponentContext } from '../hooks/useComponent';
 import { useSubscriptionManager } from '../hooks/useEmbeddedComponentBus';
 

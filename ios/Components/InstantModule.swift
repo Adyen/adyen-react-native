@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenInstant)
-internal final class InstantModule: BaseActionHandler {
+internal final class InstantModule: BaseActionModule {
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {

@@ -6,7 +6,7 @@
 
 import Adyen
 
-internal class BaseAddressModule: BaseActionHandler {
+internal class BaseAddressModule: BaseActionModule {
     internal var lookupHandler: (([LookupAddressModel]) -> Void)?
     internal var lookupCompletionHandler: ((Result<PostalAddress, any Error>) -> Void)?
 

@@ -6,7 +6,7 @@
 
 import Adyen
 
-internal class BaseActionHandler: BaseModuleSender {
+internal class BaseActionModule: BaseModuleSender {
 
     private var actionHandler: AdyenActionComponent?
 

@@ -90,7 +90,7 @@ sealed class ModuleException(
   class SessionError(
     error: Throwable?,
   ) : ModuleException(
-      code = "session",
+      code = "sessionError",
       message = "Something went wrong while starting session",
       cause = error,
     )

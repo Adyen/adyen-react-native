@@ -5,7 +5,7 @@ import { EmbeddedComponentProxy } from '../modules/embedded/EmbeddedComponentPro
 import {
   startEventListeners,
   type EventHandlerRefs,
-} from '../components/startEventListeners';
+} from '../components/utils/startEventListeners';
 import type { AdyenComponentContextType } from './useComponent';
 import type {
   EventListenerWrapper,

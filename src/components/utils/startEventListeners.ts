@@ -13,10 +13,10 @@ import type {
   SessionsResult,
   StoredPaymentMethod,
   SubmitModel,
-} from '../core';
-import { Event } from '../core';
-import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
-import type { AdyenEventListener } from '../modules/base/EventListenerWrapper';
+} from '../../core';
+import { Event } from '../../core';
+import type { RemovesStoredPayment } from '../../modules/dropin/DropInWrapper';
+import type { AdyenEventListener } from '../../modules/base/EventListenerWrapper';
 
 export type EventHandlerRefs = {
   onSubmit: React.RefObject<
