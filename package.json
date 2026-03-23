@@ -75,7 +75,7 @@
     "react": "19.0.0",
     "react-native": "0.78.3",
     "react-native-builder-bob": "^0.40.11",
-    "typescript": "^5.2.2"
+    "typescript": "^6.0.0"
   },
   "peerDependencies": {
     "expo": ">=52",
