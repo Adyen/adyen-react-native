@@ -4,7 +4,7 @@ import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormDropdown from '../common/FormDropdown';
-import type { CardSettings } from '../../api/types';
+import type { CardSettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
 
@@ -22,7 +22,7 @@ const CardSettingsView = ({ navigation }: Props) => {
   );
   const [addressVisibility, setAddressVisibility] = useState<
     CardSettings['addressVisibility']
-  >(existing.addressVisibility ?? 'none');
+  >(existing.addressVisibility ?? 'lookup');
   const [showStorePaymentField, setShowStorePaymentField] = useState(
     existing.showStorePaymentField ?? true
   );
@@ -73,7 +73,7 @@ const CardSettingsView = ({ navigation }: Props) => {
       />
       <FormDropdown
         title="Address Visibility"
-        value={addressVisibility ?? 'none'}
+        value={addressVisibility ?? 'lookup'}
         options={[...addressModes]}
         onChange={(v) =>
           setAddressVisibility(v as CardSettings['addressVisibility'])

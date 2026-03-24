@@ -5,7 +5,8 @@ import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormTextInput from '../common/FormTextInput';
 import FormDropdown from '../common/FormDropdown';
-import type { ApplePaySettings } from '../../api/types';
+import { ENVIRONMENT } from '../../Configuration';
+import type { ApplePaySettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
 
@@ -22,7 +23,9 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
   const { configuration, save } = useAppContext();
   const existing = configuration.applePaySettings ?? {};
 
-  const [merchantID, setMerchantID] = useState(existing.merchantID ?? '');
+  const [merchantID, setMerchantID] = useState(
+    existing.merchantID ?? ENVIRONMENT.applepayMerchantID
+  );
   const [merchantName, setMerchantName] = useState(existing.merchantName ?? '');
   const [allowOnboarding, setAllowOnboarding] = useState(
     existing.allowOnboarding ?? false

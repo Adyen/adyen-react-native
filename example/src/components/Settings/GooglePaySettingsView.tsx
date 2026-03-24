@@ -4,7 +4,7 @@ import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormDropdown from '../common/FormDropdown';
-import type { GooglePaySettings } from '../../api/types';
+import type { GooglePaySettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
 
@@ -30,13 +30,13 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
     existing.allowCreditCards ?? true
   );
   const [billingAddressRequired, setBillingAddressRequired] = useState(
-    existing.billingAddressRequired ?? false
+    existing.billingAddressRequired ?? true
   );
   const [emailRequired, setEmailRequired] = useState(
-    existing.emailRequired ?? false
+    existing.emailRequired ?? true
   );
   const [shippingAddressRequired, setShippingAddressRequired] = useState(
-    existing.shippingAddressRequired ?? false
+    existing.shippingAddressRequired ?? true
   );
   const [existingPaymentMethodRequired, setExistingPaymentMethodRequired] =
     useState(existing.existingPaymentMethodRequired ?? false);

@@ -6,11 +6,11 @@ import type {
   Configuration,
   StoredPaymentMethod,
 } from '@adyen/react-native';
-import { ENVIRONMENT } from './Configuration';
-import ApiClient from './api/APIClient';
-import type { PaymentConfiguration } from './api/types';
+import { ENVIRONMENT } from '../Configuration';
+import ApiClient from '../api/APIClient';
+import type { AppConfiguration } from './types';
 
-export const checkoutConfiguration = (config: PaymentConfiguration) => {
+export const checkoutConfiguration = (config: AppConfiguration) => {
   const configuration: Configuration = {
     clientKey: ENVIRONMENT.clientKey,
     environment: ENVIRONMENT.environment,
@@ -74,8 +74,7 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
     applepay: {
       merchantID:
         config.applePaySettings?.merchantID ?? ENVIRONMENT.applepayMerchantID,
-      merchantName:
-        config.applePaySettings?.merchantName ?? config.merchantName,
+      merchantName: config.applePaySettings?.merchantName,
       allowOnboarding: config.applePaySettings?.allowOnboarding,
       shippingType: config.applePaySettings?.shippingType,
       requiredBillingContactFields: ['phoneticName', 'postalAddress'],

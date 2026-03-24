@@ -15,7 +15,6 @@ const SettingView = ({ navigation }: Props) => {
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
   const [amount, setAmount] = useState(String(configuration.amount));
   const [currency, setCurrency] = useState(configuration.currency);
-  const [merchantName, setMerchantName] = useState(configuration.merchantName);
   const [merchantAccount, setMerchantAccount] = useState(
     configuration.merchantAccount
   );
@@ -33,7 +32,6 @@ const SettingView = ({ navigation }: Props) => {
       amount: Number(amount),
       currency: currency,
       merchantAccount: merchantAccount,
-      merchantName: merchantName,
       shopperLocale: shopperLocale,
       shopperReference: shopperReference,
     }),
@@ -43,7 +41,6 @@ const SettingView = ({ navigation }: Props) => {
       amount,
       currency,
       merchantAccount,
-      merchantName,
       shopperLocale,
       shopperReference,
     ]
@@ -78,11 +75,6 @@ const SettingView = ({ navigation }: Props) => {
         title="Merchant Account"
         value={merchantAccount}
         onChangeText={setMerchantAccount}
-      />
-      <FormTextInput
-        title="Merchant Name"
-        value={merchantName}
-        onChangeText={setMerchantName}
       />
       <FormTextInput
         title="Shopper locale"
