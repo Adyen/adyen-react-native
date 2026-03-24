@@ -1,55 +1,36 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":pinOnlyDevDependencies"
-  ],
-  "timezone": "UTC", 
+  "extends": ["config:recommended", ":pinOnlyDevDependencies"],
+  "timezone": "UTC",
   "packageRules": [
     {
-      "description": "Global Schedule: Run updates on weekends",
+      "description": "Global Weekend Schedule",
       "matchPackagePatterns": ["*"],
       "schedule": ["before 5am on monday", "every weekend"]
     },
     {
-      "description": "NPM: Disable updates by default",
-      "matchDatasources": ["npm"],
-      "enabled": false
-    },
-    {
-      "description": "NPM: Allow security updates (Ignore schedule for vulnerabilities)",
+      "description": "NPM Security (Immediate)",
       "matchDatasources": ["npm"],
       "matchUpdateTypes": ["vulnerability"],
       "enabled": true,
       "schedule": ["at any time"]
     },
     {
-      "description": "NPM: Major updates older than 14 days",
+      "description": "NPM Major (14-day cushion)",
       "matchDatasources": ["npm"],
-      "matchUpdateTypes": ["major"],
-      "minimumReleaseAge": "14 days",
+      "minimumReleaseAge": "20 days",
       "enabled": true
     },
     {
-      "description": "Gradle & CocoaPods: Disable all updates by default",
+      "description": "Whitelisted Adyen Native Updates",
       "matchDatasources": ["maven", "cocoapods"],
-      "enabled": false
-    },
-    {
-      "description": "Gradle: Only allow Adyen Android updates",
-      "matchDatasources": ["maven"],
-      "matchSourceUrls": ["https://github.com/Adyen/adyen-android"],
-      "enabled": true
-    },
-    {
-      "description": "CocoaPods: Only allow Adyen iOS updates",
-      "matchDatasources": ["cocoapods"],
-      "matchSourceUrls": ["https://github.com/Adyen/adyen-ios"],
+      "matchSourceUrls": [
+        "https://github.com/Adyen/adyen-android",
+        "https://github.com/Adyen/adyen-ios"
+      ],
       "enabled": true
     }
   ],
   "osvVulnerabilityAlerts": true,
-  "vulnerabilityAlerts": {
-    "enabled": true
-  }
+  "vulnerabilityAlerts": { "enabled": true }
 }
