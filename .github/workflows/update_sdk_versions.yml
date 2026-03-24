@@ -20,7 +20,7 @@ on:
 
 jobs:
   update-sdk:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.platform == 'iOS' && 'macos-latest' || 'ubuntu-latest' }}
     env:
       VERSION: ${{ inputs.version }}
       PLATFORM: ${{ inputs.platform }}
@@ -30,22 +30,41 @@ jobs:
 
     - name: Update SDK version and badges ${{ inputs.platform }} SDK to ${{ inputs.version }}
       run: |
+        # Set platform-specific sed flag (macOS requires empty backup extension)
+        if [ "$(uname)" = "Darwin" ]; then SED_FLAG=(-i ''); else SED_FLAG=(-i); fi
+        
         # Set platform-specific prefix and update SDK version
         if [ "$PLATFORM" = "iOS" ]; then
           PLATFORM_PREFIX="ios"
           SDK_FILE="adyen-react-native.podspec"
           SDK_PATTERN="s\.dependency \"Adyen\","
-          sed -i "s/$SDK_PATTERN '[^']*'/$SDK_PATTERN '$VERSION'/" "$SDK_FILE"
+          sed "${SED_FLAG[@]}" "s/$SDK_PATTERN '[^']*'/$SDK_PATTERN '$VERSION'/" "$SDK_FILE"
         else
           PLATFORM_PREFIX="android"
           SDK_FILE="android/dependencies.gradle"
           SDK_PATTERN="adyen_version ="
-          sed -i "s/$SDK_PATTERN \"[^\"]*\"/$SDK_PATTERN \"$VERSION\"/" "$SDK_FILE"
+          sed "${SED_FLAG[@]}" "s/$SDK_PATTERN \"[^\"]*\"/$SDK_PATTERN \"$VERSION\"/" "$SDK_FILE"
         fi
         
         # Update badge in README.md
-        sed -i "s|${PLATFORM_PREFIX}-v[^-]*|${PLATFORM_PREFIX}-v$VERSION|g" README.md
-        sed -i "s|${PLATFORM_PREFIX}/releases/tag/[^)]*|${PLATFORM_PREFIX}/releases/tag/$VERSION|g" README.md
+        sed "${SED_FLAG[@]}" "s|${PLATFORM_PREFIX}-v[^-]*|${PLATFORM_PREFIX}-v$VERSION|g" README.md
+        sed "${SED_FLAG[@]}" "s|${PLATFORM_PREFIX}/releases/tag/[^)]*|${PLATFORM_PREFIX}/releases/tag/$VERSION|g" README.md
+
+    - name: Update Podfile.lock
+      if: inputs.platform == 'iOS'
+      run: |
+        rm -f example/ios/Podfile.lock
+        yarn
+        yarn app pod
+
+    - uses: actions/cache@v5
+      if: inputs.platform == 'iOS'
+      id: pods-cache
+      with:
+        key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
+        path: |
+          example/ios/Pods
+          ~/Library/Caches/CocoaPods
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v8
@@ -58,6 +77,7 @@ jobs:
           README.md
           adyen-react-native.podspec
           android/dependencies.gradle
+          example/ios/Podfile.lock
         body: |
           # Open PR
           This PR updates the ${{ inputs.platform }} SDK version to ${{ inputs.version }}.
