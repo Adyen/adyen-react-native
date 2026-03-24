@@ -64,7 +64,7 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     // MARK: - Shared action handler
 
-    func createActionHandlerIfNeeded(context: AdyenContext, locale: String?) {
+    override func createActionHandlerIfNeeded(context: AdyenContext, locale: String?) {
         guard BaseModule.session == nil, actionHandler == nil else { return }
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
