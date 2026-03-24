@@ -20,7 +20,7 @@ const totalPriceStatuses = [
 ] as const;
 
 const GooglePaySettingsView = ({ navigation }: Props) => {
-  const { configuration, save } = useAppContext();
+  const { configuration, update } = useAppContext();
   const existing = configuration.googlePaySettings ?? {};
 
   const [allowPrepaidCards, setAllowPrepaidCards] = useState(
@@ -45,8 +45,7 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
   >(existing.totalPriceStatus ?? 'FINAL');
 
   const saveAndGoBack = useCallback(() => {
-    save({
-      ...configuration,
+    update({
       googlePaySettings: {
         allowPrepaidCards,
         allowCreditCards,
@@ -59,8 +58,7 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
     });
     navigation.goBack();
   }, [
-    configuration,
-    save,
+    update,
     navigation,
     allowPrepaidCards,
     allowCreditCards,
@@ -107,9 +105,7 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
         title="Total Price Status"
         value={totalPriceStatus ?? 'FINAL'}
         options={[...totalPriceStatuses]}
-        onChange={(v) =>
-          setTotalPriceStatus(v as GooglePaySettings['totalPriceStatus'])
-        }
+        onChange={setTotalPriceStatus}
       />
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />

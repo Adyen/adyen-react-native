@@ -20,7 +20,7 @@ const shippingTypes = [
 ] as const;
 
 const ApplePaySettingsView = ({ navigation }: Props) => {
-  const { configuration, save } = useAppContext();
+  const { configuration, update } = useAppContext();
   const existing = configuration.applePaySettings ?? {};
 
   const [merchantID, setMerchantID] = useState(
@@ -35,8 +35,7 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
   >(existing.shippingType ?? 'shipping');
 
   const saveAndGoBack = useCallback(() => {
-    save({
-      ...configuration,
+    update({
       applePaySettings: {
         merchantID: merchantID || undefined,
         merchantName: merchantName || undefined,
@@ -46,8 +45,7 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
     });
     navigation.goBack();
   }, [
-    configuration,
-    save,
+    update,
     navigation,
     merchantID,
     merchantName,
@@ -76,7 +74,7 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
         title="Shipping Type"
         value={shippingType ?? 'shipping'}
         options={[...shippingTypes]}
-        onChange={(v) => setShippingType(v as ApplePaySettings['shippingType'])}
+        onChange={setShippingType}
       />
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />

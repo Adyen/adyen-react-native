@@ -2,6 +2,7 @@ import {
   useContext,
   useState,
   useMemo,
+  useRef,
   createContext,
   useEffect,
   type PropsWithChildren,
@@ -18,6 +19,7 @@ import { RootStackParamList } from '../router/RootStackNavigator';
 type AppContextType = {
   configuration: AppConfiguration;
   save: (config: AppConfiguration) => void;
+  update: (partial: Partial<AppConfiguration>) => void;
   processResult: (
     result: PaymentResponse,
     nativeComponent: AdyenComponent
@@ -46,6 +48,8 @@ type AppContextProp = {
 
 const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
   const [config, setConfig] = useState(props.configuration);
+  const configRef = useRef(config);
+  configRef.current = config;
   const { navigationRef } = props;
 
   useEffect(() => {
@@ -65,6 +69,15 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
       setConfig(newConfig);
     },
     [config]
+  );
+
+  const updateConfiguration = useCallback(
+    async (partial: Partial<AppConfiguration>) => {
+      const merged = { ...configRef.current, ...partial };
+      await AsyncStorage.setItem(storeKey, JSON.stringify(merged));
+      setConfig(merged);
+    },
+    []
   );
 
   const processResult = useCallback(
@@ -97,6 +110,7 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
     () => ({
       configuration: config,
       save: saveConfiguration,
+      update: updateConfiguration,
       processResult,
       navigateToRoot,
       navigateToSettings,
@@ -104,6 +118,7 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
     [
       config,
       saveConfiguration,
+      updateConfiguration,
       processResult,
       navigateToRoot,
       navigateToSettings,

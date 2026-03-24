@@ -10,7 +10,7 @@ import type { SettingsStackParamList } from './SettingsNavigator';
 type Props = NativeStackScreenProps<SettingsStackParamList, 'DropInSettings'>;
 
 const DropInSettingsView = ({ navigation }: Props) => {
-  const { configuration, save } = useAppContext();
+  const { configuration, update } = useAppContext();
   const existing = configuration.dropInSettings ?? {};
 
   const [showPreselected, setShowPreselected] = useState(
@@ -25,8 +25,7 @@ const DropInSettingsView = ({ navigation }: Props) => {
   const [title, setTitle] = useState(existing.title ?? '');
 
   const saveAndGoBack = useCallback(() => {
-    save({
-      ...configuration,
+    update({
       dropInSettings: {
         showPreselectedStoredPaymentMethod: showPreselected,
         skipListWhenSinglePaymentMethod: skipListWhenSingle,
@@ -36,8 +35,7 @@ const DropInSettingsView = ({ navigation }: Props) => {
     });
     navigation.goBack();
   }, [
-    configuration,
-    save,
+    update,
     navigation,
     showPreselected,
     skipListWhenSingle,

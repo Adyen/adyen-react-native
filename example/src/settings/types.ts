@@ -1,3 +1,5 @@
+import type { PaymentConfiguration } from '../api/types';
+
 export type CardSettings = {
   holderNameRequired?: boolean;
   addressVisibility?: 'full' | 'postalCode' | 'none' | 'lookup';
@@ -31,8 +33,6 @@ export type GooglePaySettings = {
   existingPaymentMethodRequired?: boolean;
   totalPriceStatus?: 'NOT_CURRENTLY_KNOWN' | 'ESTIMATED' | 'FINAL';
 };
-
-import type { PaymentConfiguration } from '../api/types';
 
 export type AppConfiguration = PaymentConfiguration & {
   cardSettings?: CardSettings;

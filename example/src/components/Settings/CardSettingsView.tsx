@@ -14,7 +14,7 @@ const addressModes = ['none', 'postalCode', 'full', 'lookup'] as const;
 const fieldVisibilities = ['show', 'hide'] as const;
 
 const CardSettingsView = ({ navigation }: Props) => {
-  const { configuration, save } = useAppContext();
+  const { configuration, update } = useAppContext();
   const existing = configuration.cardSettings ?? {};
 
   const [holderNameRequired, setHolderNameRequired] = useState(
@@ -38,8 +38,7 @@ const CardSettingsView = ({ navigation }: Props) => {
   >(existing.socialSecurity ?? 'hide');
 
   const saveAndGoBack = useCallback(() => {
-    save({
-      ...configuration,
+    update({
       cardSettings: {
         holderNameRequired,
         addressVisibility,
@@ -52,8 +51,7 @@ const CardSettingsView = ({ navigation }: Props) => {
     });
     navigation.goBack();
   }, [
-    configuration,
-    save,
+    update,
     navigation,
     holderNameRequired,
     addressVisibility,
@@ -75,9 +73,7 @@ const CardSettingsView = ({ navigation }: Props) => {
         title="Address Visibility"
         value={addressVisibility ?? 'lookup'}
         options={[...addressModes]}
-        onChange={(v) =>
-          setAddressVisibility(v as CardSettings['addressVisibility'])
-        }
+        onChange={setAddressVisibility}
       />
       <FormToggle
         title="Show Store Payment Field"
@@ -94,13 +90,13 @@ const CardSettingsView = ({ navigation }: Props) => {
         title="KCP Visibility"
         value={kcpVisibility ?? 'hide'}
         options={[...fieldVisibilities]}
-        onChange={(v) => setKcpVisibility(v as CardSettings['kcpVisibility'])}
+        onChange={setKcpVisibility}
       />
       <FormDropdown
         title="Social Security"
         value={socialSecurity ?? 'hide'}
         options={[...fieldVisibilities]}
-        onChange={(v) => setSocialSecurity(v as CardSettings['socialSecurity'])}
+        onChange={setSocialSecurity}
       />
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />

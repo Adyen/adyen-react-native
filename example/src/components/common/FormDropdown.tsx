@@ -40,7 +40,12 @@ const FormDropdown = <T extends string>({
       >
         <AdaptiveText style={Styles.dropdownText}>{value}</AdaptiveText>
       </TouchableOpacity>
-      <Modal visible={visible} transparent animationType="fade">
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
         <TouchableOpacity
           style={Styles.dropdownOverlay}
           activeOpacity={1}

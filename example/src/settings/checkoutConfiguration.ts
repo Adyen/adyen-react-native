@@ -74,7 +74,7 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
     applepay: {
       merchantID:
         config.applePaySettings?.merchantID ?? ENVIRONMENT.applepayMerchantID,
-      merchantName: config.applePaySettings?.merchantName,
+      merchantName: config.applePaySettings?.merchantName ?? 'Test Merchant',
       allowOnboarding: config.applePaySettings?.allowOnboarding,
       shippingType: config.applePaySettings?.shippingType,
       requiredBillingContactFields: ['phoneticName', 'postalAddress'],
