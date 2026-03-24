@@ -16,13 +16,18 @@
       "schedule": ["at any time"]
     },
     {
-      "description": "NPM Major (14-day cushion)",
+      "description": "NPM Major (21-day cushion)",
       "matchDatasources": ["npm"],
-      "minimumReleaseAge": "20 days",
+      "minimumReleaseAge": "21 days",
       "enabled": true
     },
     {
-      "description": "Whitelisted Adyen Native Updates",
+      "description": "Hard Whitelist Step 1: Disable all native updates",
+      "matchDatasources": ["maven", "cocoapods"],
+      "enabled": false
+    },
+    {
+      "description": "Hard Whitelist Step 2: Enable ONLY Adyen Native Updates",
       "matchDatasources": ["maven", "cocoapods"],
       "matchSourceUrls": [
         "https://github.com/Adyen/adyen-android",
