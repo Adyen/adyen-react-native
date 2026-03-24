@@ -61,11 +61,10 @@ jobs:
       if: inputs.platform == 'iOS'
       id: pods-cache
       with:
+        key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
         path: |
           example/ios/Pods
           ~/Library/Caches/CocoaPods
-          key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: pods-
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v8
