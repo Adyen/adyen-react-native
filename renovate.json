@@ -1,6 +1,41 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ]
+  "extends": ["config:recommended", ":pinOnlyDevDependencies"],
+  "timezone": "UTC",
+  "packageRules": [
+    {
+      "description": "Global Weekend Schedule",
+      "matchPackagePatterns": ["*"],
+      "schedule": ["before 5am on monday", "every weekend"]
+    },
+    {
+      "description": "NPM Security (Immediate)",
+      "matchDatasources": ["npm"],
+      "matchUpdateTypes": ["vulnerability"],
+      "enabled": true,
+      "schedule": ["at any time"]
+    },
+    {
+      "description": "NPM Major (21-day cushion)",
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "21 days",
+      "enabled": true
+    },
+    {
+      "description": "Hard Whitelist Step 1: Disable all native updates",
+      "matchDatasources": ["maven", "cocoapods"],
+      "enabled": false
+    },
+    {
+      "description": "Hard Whitelist Step 2: Enable ONLY Adyen Native Updates",
+      "matchDatasources": ["maven", "cocoapods"],
+      "matchSourceUrls": [
+        "https://github.com/Adyen/adyen-android",
+        "https://github.com/Adyen/adyen-ios"
+      ],
+      "enabled": true
+    }
+  ],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": { "enabled": true }
 }
