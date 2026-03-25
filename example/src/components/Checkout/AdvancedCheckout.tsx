@@ -17,7 +17,7 @@ import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
 import { PaymentResponse } from '../../api/types';
 import { CheckoutNavigator } from '../../router/CheckoutNavigator';
-import { checkoutConfiguration } from '../../checkoutConfiguration';
+import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 
 const AdvancedCheckout = () => {
   const { configuration, processResult } = useAppContext();

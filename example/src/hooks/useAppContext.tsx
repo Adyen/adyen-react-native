@@ -2,21 +2,24 @@ import {
   useContext,
   useState,
   useMemo,
+  useRef,
   createContext,
   useEffect,
   type PropsWithChildren,
   useCallback,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { PaymentConfiguration, PaymentResponse } from '../api/types';
+import type { AppConfiguration } from '../settings/types';
+import type { PaymentResponse } from '../api/types';
 import type { NavigationContainerRef } from '@react-navigation/native';
 import type { AdyenComponent } from '@adyen/react-native';
 import { isSuccess } from '../components/utilities/isSuccess';
 import { RootStackParamList } from '../router/RootStackNavigator';
 
 type AppContextType = {
-  configuration: PaymentConfiguration;
-  save: (config: PaymentConfiguration) => void;
+  configuration: AppConfiguration;
+  save: (config: AppConfiguration) => void;
+  update: (partial: Partial<AppConfiguration>) => void;
   processResult: (
     result: PaymentResponse,
     nativeComponent: AdyenComponent
@@ -38,13 +41,15 @@ export const useAppContext = () => {
 const storeKey = '@config_storage';
 
 type AppContextProp = {
-  configuration: PaymentConfiguration;
+  configuration: AppConfiguration;
   onError: (error: Error) => void;
   navigationRef: NavigationContainerRef<RootStackParamList>;
 };
 
 const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
   const [config, setConfig] = useState(props.configuration);
+  const configRef = useRef(config);
+  configRef.current = config;
   const { navigationRef } = props;
 
   useEffect(() => {
@@ -64,6 +69,15 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
       setConfig(newConfig);
     },
     [config]
+  );
+
+  const updateConfiguration = useCallback(
+    async (partial: Partial<AppConfiguration>) => {
+      const merged = { ...configRef.current, ...partial };
+      await AsyncStorage.setItem(storeKey, JSON.stringify(merged));
+      setConfig(merged);
+    },
+    []
   );
 
   const processResult = useCallback(
@@ -96,6 +110,7 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
     () => ({
       configuration: config,
       save: saveConfiguration,
+      update: updateConfiguration,
       processResult,
       navigateToRoot,
       navigateToSettings,
@@ -103,6 +118,7 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
     [
       config,
       saveConfiguration,
+      updateConfiguration,
       processResult,
       navigateToRoot,
       navigateToSettings,

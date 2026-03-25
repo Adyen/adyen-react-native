@@ -12,7 +12,7 @@ import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
-import { checkoutConfiguration } from '../../checkoutConfiguration';
+import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 

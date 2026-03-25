@@ -9,7 +9,7 @@ export type FormTextInputProps = {
 
 const FormTextInput = (props: FormTextInputProps) => {
   return (
-    <View style={Styles.page}>
+    <View>
       <AdaptiveText style={Styles.paddedTitle}>{props.title}</AdaptiveText>
       <AdaptiveTextInput {...props} style={[props.style, Styles.textInput]} />
     </View>
