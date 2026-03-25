@@ -13,7 +13,8 @@ export type Environment =
   | 'live-us'
   | 'live-au'
   | 'live-apse'
-  | 'live-in';
+  | 'live-in'
+  | 'live-nea';
 
 /** Environment configuration */
 export interface EnvironmentConfiguration {

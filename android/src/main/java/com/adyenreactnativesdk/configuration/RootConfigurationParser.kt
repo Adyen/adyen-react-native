@@ -75,6 +75,7 @@ class RootConfigurationParser(
           "live-us" -> Environment.UNITED_STATES
           "live-apse" -> Environment.APSE
           "live-in" -> Environment.INDIA
+          "live-nea" -> Environment.NEA
           else -> Environment.TEST
         }
       } else {
