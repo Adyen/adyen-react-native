@@ -16,6 +16,7 @@ extension Environment {
         case "live-us": return .liveUnitedStates
         case "live-in": return .liveIndia
         case "live-apse": return .liveApse
+        case "live-nea": return .liveNea
         default:
             return .test
         }
