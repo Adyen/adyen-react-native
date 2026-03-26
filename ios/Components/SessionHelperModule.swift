@@ -17,7 +17,7 @@ protocol SessionErrorDelegate: AnyObject {
 internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
     override func supportedEvents() -> [String]! {
-        EventName.sessionEventName.map(\.rawValue)
+        EventName.sessionEvents.map(\.rawValue)
     }
 
     @objc

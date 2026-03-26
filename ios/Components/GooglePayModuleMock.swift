@@ -12,7 +12,7 @@ import UIKit
 internal class GooglePayModuleMock: BaseModuleSender {
 
     override func supportedEvents() -> [String]! {
-        EventName.coreEventName.map(\.rawValue)
+        EventName.coreEvents.map(\.rawValue)
     }
 
     @objc

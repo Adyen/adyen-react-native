@@ -13,7 +13,7 @@ import React
 internal class ApplePayModule: BaseModuleSender {
 
     override func supportedEvents() -> [String]! {
-        EventName.coreEventName.map(\.rawValue)
+        EventName.coreEvents.map(\.rawValue)
     }
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService

@@ -13,7 +13,7 @@ import React
 internal final class InstantModule: BaseActionHandler {
 
     override func supportedEvents() -> [String]! {
-        EventName.coreEventName.map(\.rawValue)
+        EventName.coreEvents.map(\.rawValue)
     }
 
     @objc

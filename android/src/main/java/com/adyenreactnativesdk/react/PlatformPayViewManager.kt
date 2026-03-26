@@ -1,5 +1,7 @@
 package com.adyenreactnativesdk.react
 
+import com.adyenreactnativesdk.react.platformpay.ButtonTheme
+import com.adyenreactnativesdk.react.platformpay.ButtonType
 import com.adyenreactnativesdk.react.platformpay.PlatformPayView
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.module.annotations.ReactModule
