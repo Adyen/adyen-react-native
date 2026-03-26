@@ -4,8 +4,8 @@ import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.googlepay.GooglePayComponentState
-import com.adyenreactnativesdk.component.model.ResponseDTO
-import com.adyenreactnativesdk.component.model.SubmitMap
+import com.adyenreactnativesdk.component.model.ResultDTO
+import com.adyenreactnativesdk.component.model.SubmitData
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ResultCodes
 import com.adyenreactnativesdk.util.messaging.Emitter
@@ -33,7 +33,7 @@ class AdvancedMessengerImpl(
       jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, it)
     }
 
-    val submitMap = SubmitMap(jsonObject, extra)
+    val submitMap = SubmitData(jsonObject, extra)
     emitter.sendEvent(EventName.SUBMIT, submitMap.toJSONObject())
   }
 
@@ -47,7 +47,7 @@ class AdvancedMessengerImpl(
   }
 
   override fun onFinished() {
-    val jsonObject = ResponseDTO(resultCode = ResultCodes.PRESENT_TO_SHOPPER.value).toJSONObject()
+    val jsonObject = ResultDTO(resultCode = ResultCodes.PRESENT_TO_SHOPPER.value).toJSONObject()
     emitter.sendEvent(EventName.COMPLETE_VOUCHER, jsonObject)
   }
 }

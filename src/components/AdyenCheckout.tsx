@@ -29,7 +29,8 @@ import { AdyenCheckoutContext } from '../hooks/useAdyenCheckout';
 import { getWrapper } from '../modules/base/getWrapper';
 import { SessionHelper } from '../modules/session/SessionHelperModule';
 import type { SessionContext } from '../modules/session/types';
-import { checkConfiguration, checkPaymentMethodsResponse } from './utils';
+import { checkPaymentMethodsResponse } from './utils/checkPaymentMethodsResponse';
+import { checkConfiguration } from './utils/checkConfiguration';
 import type { RemovesStoredPayment } from '../modules/dropin/DropInWrapper';
 import type { PaymentComponentWrapper } from '../modules/base/PaymentComponentWrapper';
 

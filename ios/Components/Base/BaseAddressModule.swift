@@ -6,7 +6,7 @@
 
 import Adyen
 
-internal class BaseAddressLookup: BaseModuleSender {
+internal class BaseAddressModule: BaseModuleSender {
     internal var lookupHandler: (([LookupAddressModel]) -> Void)?
     internal var lookupCompletionHandler: ((Result<PostalAddress, any Error>) -> Void)?
 
@@ -55,7 +55,7 @@ internal class BaseAddressLookup: BaseModuleSender {
     }
 }
 
-extension BaseAddressLookup: AddressLookupProvider {
+extension BaseAddressModule: AddressLookupProvider {
     func lookUp(searchTerm: String, resultHandler: @escaping ([LookupAddressModel]) -> Void) {
         lookupHandler = resultHandler
         sendAddressUpdate(searchTerm: searchTerm)
