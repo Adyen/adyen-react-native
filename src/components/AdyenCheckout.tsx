@@ -6,7 +6,6 @@ import React, {
   useState,
   useMemo,
 } from 'react';
-import { type EmitterSubscription } from 'react-native';
 import { ErrorCode } from '../core';
 import type {
   AdyenActionComponent,
@@ -32,11 +31,8 @@ import {
   startEventListeners,
   type EventHandlerRefs,
 } from './utils/startEventListeners';
-
-function removeAllSubscriptions(map: Map<string, EmitterSubscription[]>) {
-  map.forEach((listeners) => listeners.forEach((s) => s.remove()));
-  map.clear();
-}
+import { AdyenComponentContext } from '../hooks/useComponent';
+import { useSubscriptionManager } from '../hooks/useSubscriptionManager';
 
 /**
  * Props for AdyenCheckout
@@ -101,7 +97,6 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const onSubmitRef = useRef(onSubmit);
   const onAdditionalDetailsRef = useRef(onAdditionalDetails);
   const configRef = useRef(config);
-  const subscriptions = useRef<Map<string, EmitterSubscription[]>>(new Map());
 
   const eventHandlerRefs = useMemo<EventHandlerRefs>(
     () => ({
@@ -113,6 +108,9 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     }),
     []
   );
+
+  const { subscribe, unsubscribe, removeEventListeners, storeEventListeners } =
+    useSubscriptionManager(eventHandlerRefs);
 
   const [sessionContext, setSessionContext] = useState<
     SessionContext | undefined
@@ -155,7 +153,6 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     SessionHelper.assignErrorHandler(errorHandler);
 
     return () => {
-      removeAllSubscriptions(subscriptions.current);
       SessionHelper.removeAllListeners();
       SessionHelper.hide(true);
     };
@@ -186,12 +183,9 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         validPaymentMethods
       );
 
-      // Remove existing listeners for this component
-      const existing = subscriptions.current.get(nativeComponent.name) ?? [];
-      existing.forEach((s) => s.remove());
-
+      removeEventListeners(nativeComponent);
       const listeners = startEventListeners(nativeComponent, eventHandlerRefs);
-      subscriptions.current.set(nativeComponent.name, listeners);
+      storeEventListeners(nativeComponent, listeners);
 
       if (paymentMethod) {
         const singlePaymentMethods = { paymentMethods: [paymentMethod] };
@@ -204,7 +198,12 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         nativeComponent.open(validPaymentMethods, configRef.current);
       }
     },
-    [eventHandlerRefs, currentPaymentMethods]
+    [
+      eventHandlerRefs,
+      currentPaymentMethods,
+      removeEventListeners,
+      storeEventListeners,
+    ]
   );
 
   const checkoutContextValue = useMemo<AdyenCheckoutContextType>(
@@ -219,7 +218,9 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 
   return (
     <AdyenCheckoutContext.Provider value={checkoutContextValue}>
-      {children}
+      <AdyenComponentContext.Provider value={{ subscribe, unsubscribe }}>
+        {children}
+      </AdyenComponentContext.Provider>
     </AdyenCheckoutContext.Provider>
   );
 };

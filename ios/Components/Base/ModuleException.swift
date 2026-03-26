@@ -23,6 +23,7 @@ enum ModuleException: LocalizedError, KnownError {
     case orderRequest(message: String)
     case sessionError
     case invalidClientKey
+    case componentNotRegistered(String)
 
     var errorCode: String {
         switch self {
@@ -50,6 +51,8 @@ enum ModuleException: LocalizedError, KnownError {
             return "sessionError"
         case .invalidClientKey:
             return "invalidClientKey"
+        case .componentNotRegistered:
+            return "componentNotRegistered"
         }
     }
 
@@ -79,6 +82,8 @@ enum ModuleException: LocalizedError, KnownError {
             return "Order request error: \(message)"
         case .sessionError:
             return "Something went wrong while starting session"
+        case let .componentNotRegistered(type):
+            return "No embedded component registered for type \(type)"
         }
     }
 
