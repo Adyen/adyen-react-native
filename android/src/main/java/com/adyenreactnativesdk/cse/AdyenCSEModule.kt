@@ -9,6 +9,14 @@ package com.adyenreactnativesdk.cse
 import com.adyen.checkout.cse.CardEncrypter
 import com.adyen.checkout.cse.EncryptionException
 import com.adyen.checkout.cse.UnencryptedCard
+import com.adyen.checkout.core.CardBrand
+import com.adyen.checkout.core.ui.model.ExpiryDate
+import com.adyen.checkout.core.ui.validation.CardExpiryDateValidationResult
+import com.adyen.checkout.core.ui.validation.CardExpiryDateValidator
+import com.adyen.checkout.core.ui.validation.CardNumberValidationResult
+import com.adyen.checkout.core.ui.validation.CardNumberValidator
+import com.adyen.checkout.core.ui.validation.CardSecurityCodeValidationResult
+import com.adyen.checkout.core.ui.validation.CardSecurityCodeValidator
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -70,6 +78,45 @@ class AdyenCSEModule(
     } catch (e: EncryptionException) {
       promise.reject(ERROR_MESSAGE, e)
     }
+  }
+
+  @ReactMethod
+  fun validateCardNumber(
+    cardNumber: String,
+    enableLuhnCheck: Boolean,
+    promise: Promise,
+  ) {
+    val validationResult = CardNumberValidator.validateCardNumber(cardNumber, enableLuhnCheck)
+    promise.resolve(validationResult is CardNumberValidationResult.Valid)
+  }
+
+  @ReactMethod
+  fun validateCardExpiryDate(
+    expiryMonth: String,
+    expiryYear: String,
+    promise: Promise,
+  ) {
+    val expireMonth = expiryMonth.toIntOrNull()
+    val expireYear = expiryYear.toIntOrNull()
+    if (expireMonth == null || expireYear == null) {
+      promise.resolve(false)
+      return
+    }
+
+    val expiryDate = ExpiryDate(expireMonth, expireYear)
+    val validationResult = CardExpiryDateValidator.validateExpiryDate(expiryDate)
+    promise.resolve(validationResult is CardExpiryDateValidationResult.Valid)
+  }
+
+  @ReactMethod
+  fun validateCardSecurityCode(
+    securityCode: String,
+    cardBrand: String?,
+    promise: Promise,
+  ) {
+    val cardType = cardBrand?.let { CardBrand(it) }
+    val validationResult = CardSecurityCodeValidator.validateSecurityCode(securityCode, cardType)
+    promise.resolve(validationResult is CardSecurityCodeValidationResult.Valid)
   }
 
   companion object {

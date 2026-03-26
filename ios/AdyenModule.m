@@ -93,6 +93,21 @@ RCT_EXTERN_METHOD(encryptBin:(NSString *)bin
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(validateCardNumber:(NSString *)cardNumber
+                  enableLuhnCheck:(BOOL)enableLuhnCheck
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(validateCardExpiryDate:(NSString *)expiryMonth
+                  expiryYear:(NSString *)expiryYear
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
+                  cardBrand:(nullable NSString *)cardBrand
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end
 
 @interface RCT_EXTERN_MODULE(SessionHelper, NSObject)
