@@ -24,7 +24,7 @@ internal class BaseModuleSender: BaseModule {
     override func startObserving() { /* No JS events expected */ }
     
     override open func supportedEvents() -> [String]! {
-        []
+        [EventName.fail, EventName.submit].map(\.rawValue)
     }
 
     @objc
