@@ -11,10 +11,6 @@ import UIKit
 @objc(AdyenGooglePay)
 internal class GooglePayModuleMock: BaseModuleSender {
 
-    override func supportedEvents() -> [String]! {
-        EventName.coreEvents.map(\.rawValue)
-    }
-
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         sendError(error: ModuleException.notSupported)

@@ -17,7 +17,7 @@ internal final class DropInModule: BaseAddressModule {
     internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
 
     override func supportedEvents() -> [String]! {
-        EventName.allCases.map(\.rawValue)
+        super.supportedEvents() + (EventName.cardEvents + EventName.dropInEvents).map(\.rawValue)
     }
 
     private var dropInComponent: DropInComponent? {
@@ -75,7 +75,7 @@ internal final class DropInModule: BaseAddressModule {
     }
 
     @objc
-    func handle(_ dictionary: NSDictionary) {
+    override func handle(_ dictionary: NSDictionary) {
         let action: Action
         do {
             action = try parseAction(from: dictionary)

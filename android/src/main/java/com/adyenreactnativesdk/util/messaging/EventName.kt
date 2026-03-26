@@ -34,3 +34,26 @@ fun EventName.Companion.sessionEvents() =
     EventName.SESSION_ERROR.value,
     EventName.COMPLETE_SESSION.value,
   )
+
+fun EventName.Companion.addressLookupEvents() =
+  listOf(
+    EventName.UPDATE_ADDRESS.value,
+    EventName.CONFIRM_ADDRESS.value,
+  )
+
+fun EventName.Companion.cardComponentEvents() =
+  listOf(
+    EventName.BIN_LOOKUP.value,
+    EventName.CHANGE_BIN_VALUE.value,
+  )
+
+fun EventName.Companion.dropinEvents() =
+  embeddedComponentsEvents() +
+    listOf(
+      EventName.DISABLE_STORED_PAYMENT_METHOD.value,
+      EventName.CHECK_BALANCE.value,
+      EventName.REQUEST_ORDER.value,
+      EventName.CANCEL_ORDER.value,
+    )
+
+fun EventName.Companion.embeddedComponentsEvents() = mainEvents() + addressLookupEvents() + cardComponentEvents()

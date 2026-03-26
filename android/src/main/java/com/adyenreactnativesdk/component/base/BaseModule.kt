@@ -23,6 +23,8 @@ abstract class BaseModule(
   /** Override to provide supported events for this module */
   abstract fun supportedEvents(): List<String>
 
+  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+
   abstract fun hide(
     success: Boolean,
     message: ReadableMap?,

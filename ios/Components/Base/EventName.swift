@@ -29,4 +29,16 @@ internal enum EventName: String, CaseIterable {
     static var sessionEvents: [EventName] {
         [.failSession, .completeSession]
     }
+
+    static var addressLookupEvents: [EventName] {
+        [.confirmAddress, .updateAddress]
+    }
+
+    static var cardEvents: [EventName] {
+        [.binLookup, .changeBinValue]
+    }
+
+    static var dropInEvents: [EventName] {
+        [.requestOrder, .cancelOrder, .checkBalance, .disableStoredPaymentMethod]
+    }
 }

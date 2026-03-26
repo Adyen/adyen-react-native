@@ -10,11 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenInstant)
-internal final class InstantModule: BaseActionHandler {
-
-    override func supportedEvents() -> [String]! {
-        EventName.coreEvents.map(\.rawValue)
-    }
+internal final class InstantModule: BaseActionModule {
 
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
@@ -29,14 +25,9 @@ internal final class InstantModule: BaseActionHandler {
         }
 
         let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        var config = AdyenActionComponent.Configuration(style: style)
-        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
-            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
-        }
+        let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale
 
-        actionHandler = AdyenActionComponent(context: context, configuration: config)
-        actionHandler?.delegate = self
-        actionHandler?.presentationDelegate = self
+        createActionHandlerIfNeeded(context: context, locale: locale)
 
         let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
         component.delegate = BaseModule.session ?? self
