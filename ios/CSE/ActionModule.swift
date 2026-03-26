@@ -65,12 +65,12 @@ internal final class ActionModule: BaseModule {
         static var componentError = "actionError"
     }
 
-    func reject(with error: NativeModuleError) {
+    func reject(with error: ModuleException) {
         rejecter?(error.errorCode, error.errorDescription, error)
     }
 
     func reject(with error: any Error) {
-        if let nativeError = NativeModuleError.checkErrorType(error) as? NativeModuleError {
+        if let nativeError = ModuleException.checkErrorType(error) as? ModuleException {
             return reject(with: nativeError)
         }
         rejecter?(Constant.componentError, error.localizedDescription, error)

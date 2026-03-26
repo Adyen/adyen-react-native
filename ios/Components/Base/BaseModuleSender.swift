@@ -7,7 +7,7 @@
 import Adyen
 
 extension BaseModuleSender: EventEmitter {
-    func send(event: Events, body: Any?) {
+    func send(event: EventName, body: Any?) {
         sendEvent(withName: event.rawValue, body: body)
     }
 }
@@ -34,27 +34,27 @@ internal class BaseModuleSender: BaseModule {
 
     // MARK: - Event emmiter helpers
 
-    internal func sendEvent(event: Events) {
+    internal func sendEvent(event: EventName) {
         emitter.send(event: event, body: [:])
     }
 
-    internal func sendEvent(event: Events, body: Any?) {
+    internal func sendEvent(event: EventName, body: Any?) {
         emitter.send(event: event, body: body)
     }
 
     internal func sendSubmitEvent(data: PaymentComponentData) {
         let extra = (data.paymentMethod as? ApplePayDetails)?.extraData
         let response = SubmitData(paymentData: data.jsonObject, extra: extra)
-        emitter.send(event: Events.submit, body: response.jsonObject)
+        emitter.send(event: EventName.submit, body: response.jsonObject)
     }
 
     internal func sendCompleteEvent() {
         let result = ResultDTO(result: .presentToShopper)
-        emitter.send(event: Events.complete, body: result.jsonObject)
+        emitter.send(event: EventName.complete, body: result.jsonObject)
     }
 
     internal func sendProvideEvent(actionData: ActionComponentData) {
-        emitter.send(event: Events.provide, body: actionData.jsonObject)
+        emitter.send(event: EventName.additionalDetails, body: actionData.jsonObject)
     }
 
     override internal func sendError(error: Error) {
@@ -63,7 +63,7 @@ internal class BaseModuleSender: BaseModule {
             BaseModule.sessionDelegate?.sendError(error: error)
             return
         }
-        emitter.send(event: Events.fail, body: errorToSend.jsonObject)
+        emitter.send(event: EventName.fail, body: errorToSend.jsonObject)
     }
 
 }

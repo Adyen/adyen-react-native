@@ -16,7 +16,7 @@ final class MockEmitter: EventEmitter {
 
     private(set) var events: [EventRecord] = []
 
-    func send(event: Events, body: Any?) {
+    func send(event: EventName, body: Any?) {
         events.append(EventRecord(name: event.rawValue, body: body))
     }
 

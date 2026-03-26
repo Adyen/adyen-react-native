@@ -66,7 +66,7 @@ extension DropInModule: PartialPaymentDelegate {
         DispatchQueue.main.async {
             guard success.boolValue, let balance: Balance = try? balance?.decode() else {
                 let message = error.getErrorMessage
-                return checkBalanceHandler(.failure(NativeModuleError.balanceCheck(message: message)))
+                return checkBalanceHandler(.failure(ModuleException.balanceCheck(message: message)))
             }
             checkBalanceHandler(.success(balance))
         }
@@ -86,7 +86,7 @@ extension DropInModule: PartialPaymentDelegate {
         DispatchQueue.main.async {
             guard success.boolValue, let order: PartialPaymentOrder = try? order?.decode() else {
                 let message = error.getErrorMessage
-                return requestOrderHandler(.failure(NativeModuleError.orderRequest(message: message)))
+                return requestOrderHandler(.failure(ModuleException.orderRequest(message: message)))
             }
             requestOrderHandler(.success(order))
         }
@@ -106,7 +106,7 @@ extension DropInModule: PartialPaymentDelegate {
             order = try orderJson.decode()
 
             guard let dropIn = currentComponent as? DropInComponent else {
-                throw NativeModuleError.notSupported
+                throw ModuleException.notSupported
             }
 
             try dropIn.reload(with: order, paymentMethods)

@@ -10,7 +10,7 @@ import AdyenNetworking
 import React
 import UIKit
 
-enum NativeModuleError: LocalizedError, KnownError {
+enum ModuleException: LocalizedError, KnownError {
     case canceled
     case noClientKey
     case noPayment
@@ -84,10 +84,10 @@ enum NativeModuleError: LocalizedError, KnownError {
 
     static func checkErrorType(_ error: Error) -> Error {
         if error.isComponentCanceled || error.is3DSCanceled {
-            return NativeModuleError.canceled
+            return ModuleException.canceled
         }
         if error.isEmpty401NetworkingResponseError {
-            return NativeModuleError.invalidClientKey
+            return ModuleException.invalidClientKey
         }
         return error
     }

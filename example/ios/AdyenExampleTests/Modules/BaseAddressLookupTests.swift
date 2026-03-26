@@ -8,15 +8,15 @@ import XCTest
 @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
 
-final class BaseAddressLookupTests: XCTestCase {
+final class BaseAddressModuleTests: XCTestCase {
 
-    var sut: TestableBaseAddressLookup!
+    var sut: TestableBaseAddressModule!
     var mockEmitter: MockEmitter!
 
     override func setUp() {
         super.setUp()
         mockEmitter = MockEmitter()
-        sut = TestableBaseAddressLookup()
+        sut = TestableBaseAddressModule()
         sut.emitterOverride = mockEmitter
     }
 
@@ -37,7 +37,7 @@ final class BaseAddressLookupTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.updateAddress.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, EventName.updateAddress.rawValue)
         XCTAssertEqual(mockEmitter.events[0].body as? String, searchTerm)
     }
 
@@ -58,7 +58,7 @@ final class BaseAddressLookupTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.confirmAddress.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, EventName.confirmAddress.rawValue)
         let body = mockEmitter.events[0].body as? [String: Any]
         XCTAssertEqual(body?["street"] as? String, "Main St")
         XCTAssertEqual(body?["city"] as? String, "Amsterdam")
@@ -207,7 +207,7 @@ final class BaseAddressLookupTests: XCTestCase {
         // THEN
         XCTAssertNotNil(sut.lookupHandler)
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.updateAddress.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, EventName.updateAddress.rawValue)
 
         // Verify handler is stored correctly
         sut.lookupHandler?([])
@@ -236,7 +236,7 @@ final class BaseAddressLookupTests: XCTestCase {
         // THEN
         XCTAssertNotNil(sut.lookupCompletionHandler)
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.confirmAddress.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, EventName.confirmAddress.rawValue)
 
         // Verify handler is stored correctly
         sut.lookupCompletionHandler?(.success(PostalAddress()))
@@ -246,7 +246,7 @@ final class BaseAddressLookupTests: XCTestCase {
 
 // MARK: - Testable Subclass
 
-final class TestableBaseAddressLookup: BaseAddressLookup {
+final class TestableBaseAddressModule: BaseAddressModule {
     override init() {
         super.init()
     }
