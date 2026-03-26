@@ -33,8 +33,8 @@ class AdvancedMessengerImpl(
       jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, it)
     }
 
-    val submitMap = SubmitData(jsonObject, extra)
-    emitter.sendEvent(EventName.SUBMIT, submitMap.toJSONObject())
+    val submitData = SubmitData(jsonObject, extra)
+    emitter.sendEvent(EventName.SUBMIT, submitData.toJSONObject())
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
