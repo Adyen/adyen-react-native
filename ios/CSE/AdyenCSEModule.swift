@@ -5,9 +5,7 @@
 //
 
 import Adyen
-#if canImport(AdyenCard)
 import AdyenCard
-#endif
 import Foundation
 import React
 
@@ -52,15 +50,11 @@ internal final class AdyenCSEModule: NSObject {
                             enableLuhnCheck: Bool,
                             resolver: RCTPromiseResolveBlock,
                             rejecter: RCTPromiseRejectBlock) {
-#if canImport(AdyenCard)
         let isValid = CardNumberValidator(
             isLuhnCheckEnabled: enableLuhnCheck,
             isEnteredBrandSupported: true
         ).isValid(cardNumber as String)
         resolver(isValid)
-#else
-        resolver(false)
-#endif
     }
 
     @objc
@@ -68,13 +62,9 @@ internal final class AdyenCSEModule: NSObject {
                                 expiryYear: NSString,
                                 resolver: RCTPromiseResolveBlock,
                                 rejecter: RCTPromiseRejectBlock) {
-#if canImport(AdyenCard)
         let lastTwoYearChars = String((expiryYear as String).suffix(2))
         let isValid = CardExpiryDateValidator().isValid("\(expiryMonth)\(lastTwoYearChars)")
         resolver(isValid)
-#else
-        resolver(false)
-#endif
     }
 
     @objc
@@ -82,16 +72,12 @@ internal final class AdyenCSEModule: NSObject {
                                   cardBrand: NSString?,
                                   resolver: RCTPromiseResolveBlock,
                                   rejecter: RCTPromiseRejectBlock) {
-#if canImport(AdyenCard)
         if let cardBrand = cardBrand as String? {
             let cardType = CardType(rawValue: cardBrand)
             resolver(CardSecurityCodeValidator(cardType: cardType).isValid(securityCode as String))
         } else {
             resolver(CardSecurityCodeValidator().isValid(securityCode as String))
         }
-#else
-        resolver(false)
-#endif
     }
 
     private enum Constant {
