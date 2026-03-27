@@ -19,7 +19,7 @@ export class EmbeddedComponentProxy
   implements AdyenActionComponent, AddressLookup, AdyenEventListener
 {
   constructor(
-    private wrapper: EmbeddedComponentBusWrapper,
+    private readonly wrapper: EmbeddedComponentBusWrapper,
     readonly componentType: string
   ) {}
 

@@ -145,7 +145,7 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     }
 
     @objc
-    func hide(_ componentType: String, success: NSNumber, event: NSDictionary) {
+    func hide(_ componentType: String, success: NSNumber, event _: NSDictionary) {
         unregister(componentType: componentType)
         if delegates.isEmpty {
             dismiss(success.boolValue)
