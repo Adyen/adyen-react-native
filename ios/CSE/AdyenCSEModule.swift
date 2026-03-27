@@ -61,8 +61,14 @@ internal final class AdyenCSEModule: NSObject {
                                 expiryYear: NSString,
                                 resolver: RCTPromiseResolveBlock,
                                 rejecter: RCTPromiseRejectBlock) {
-        let lastTwoYearChars = String((expiryYear as String).suffix(2))
-        let isValid = CardExpiryDateValidator().isValid("\(expiryMonth)\(lastTwoYearChars)")
+        let yearString = expiryYear as String
+        let isValid: Bool
+        if yearString.count == 2 || yearString.count == 4 {
+            let lastTwoYearChars = String(yearString.suffix(2))
+            isValid = CardExpiryDateValidator().isValid("\(expiryMonth)\(lastTwoYearChars)")
+        } else {
+            isValid = false
+        }
         resolver(isValid)
     }
 
