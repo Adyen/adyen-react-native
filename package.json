@@ -56,7 +56,7 @@
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/compat": "^1.2.7",
-    "@eslint/eslintrc": "^3.3.0",
+    "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.22.0",
     "@expo/config-plugins": "^10.0.2",
     "@react-native-community/cli": "15.0.1",
