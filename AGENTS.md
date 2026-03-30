@@ -36,8 +36,8 @@ This environment is non-interactive — git operations that require prompts (cre
   ```
   [purpose]: [Imperative-mood description]
   ```
-  Purpose prefixes: `feature` (public API addition), `fix` (bug fix), `chore` (refactor/non-public change), `deprecate`, `remove`, `docs`.
-  Examples: `chore: Update tests`, `feature: Add xyz method`, `fix: Resolve race condition`
+  Purpose prefixes: `feat` (public API addition), `fix` (bug fix), `chore` (tooling changes), `refactor`, `test`, `docs`, `deprecate`, `remove`.
+  Examples: `chore: Update CI config`, `feat: Add xyz method`, `fix: Resolve race condition`
 - **Ticket number**: Always ask the user for the ticket number before making a commit. Use the same number for all commits in a task once provided.
 - **After commit**: Push immediately so the remote branch/PR stays in sync with local history.
 - **PR review responses**: When addressing review comments, reply to each individual comment with the specific commit hash that fixes it (e.g. "Fixed in commit abc1234 — description of change"). Mark invalid comments as such with an explanation.
