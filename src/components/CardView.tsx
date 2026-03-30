@@ -60,7 +60,7 @@ export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
       configuration={JSON.stringify(config)}
       onLayoutChange={handleLayoutChange}
       style={{
-        height: size?.height ?? '100%',
+        height: size?.height,
         width: '100%',
       }}
     />

@@ -33,123 +33,21 @@ import com.facebook.react.viewmanagers.CardViewManagerInterface
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-@ReactModule(name = CardViewManager.NAME)
-class CardViewManager(
-  private val emitter: MessageBusEmitter,
-) : SimpleViewManager<DynamicComponentView>(),
-  CardViewManagerInterface<DynamicComponentView>,
-  LayoutListener,
-  ComponentContract {
-  private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
-  private var persistedView: DynamicComponentView? = null
-  private var cardComponentManager: CardComponentManager? = null
-  private var configuration: CheckoutConfiguration? = null
-  private var paymentMethod: JSONObject? = null
-  private var context: ThemedReactContext? = null
-  private var componentType: String? = null
-  private var taggedEmitter: TaggedEmitter? = null
-
-  override fun getDelegate(): ViewManagerDelegate<DynamicComponentView> = delegate
-
-  override fun getName(): String = NAME
-
-  public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
-    this.context = context
-    if (persistedView != null) {
-      persistedView?.onDispose()
-    }
-    val view = DynamicComponentView(context)
-    view.layoutListener = this
-    persistedView = view
-    return view
-  }
-
-  override fun onDropViewInstance(view: DynamicComponentView) {
-    super.onDropViewInstance(view)
-    view.onDispose()
-    if (view == persistedView) {
-      componentType?.let { EmbeddedComponentBusModule.unregister(it) }
-      persistedView = null
-      cardComponentManager = null
-      context = null
-      componentType = null
-      taggedEmitter = null
-    }
-  }
-
-  override fun onAfterUpdateTransaction(view: DynamicComponentView) {
-    super.onAfterUpdateTransaction(view)
-    if (view.viewSet) {
-      return
-    }
-    val type = componentType
-    if (type == null) {
-      Log.e("CardViewManager", "Component type is null")
-      return
-    }
-
-    val tagged = TaggedEmitter(emitter, type)
-    val messageBus = MessageBus(tagged)
-    ifNotNull(
-      paymentMethod,
-      configuration,
-      context?.currentActivity as? FragmentActivity,
-    ) { paymentMethodJson, configuration, activity ->
-      val manager = CardComponentManager(activity, messageBus)
-      cardComponentManager = manager
-      val component = manager.createComponent(configuration, paymentMethodJson)
-      activity.lifecycleScope.launch {
-        AdyenComponentView(activity).apply {
-          attach(component, activity)
-          view.setView(this)
-        }
-      }
-    }
-  }
-
-  override fun setPaymentMethod(view: DynamicComponentView?, value: String?) {
-    value?.let {
-      val json = JSONObject(it)
-      paymentMethod = json
-      extractType(json)
-    }
-  }
-
-  private fun extractType(json: JSONObject) {
-    val type = json.optString("type", null)
-    if (type != null && type != componentType) {
-      componentType?.let { old -> EmbeddedComponentBusModule.unregister(old) }
-      componentType = type
-      EmbeddedComponentBusModule.register(type, this)
-    }
-  }
-
-  override fun setConfiguration(view: DynamicComponentView?, value: String?) {
-    value?.let {
-      val json = JSONObject(it)
-      val map = ReactNativeJson.convertJsonToMap(json)
-      configuration = CheckoutConfigurationFactory.get(map)
-    }
-  }
-
-  companion object {
-    const val NAME = "CardView"
-  }
-
-  private fun emitResizableCustomViewEvent(context: ReactContext, viewId: Int, width: Int, height: Int) {
-    val surfaceId = UIManagerHelper.getSurfaceId(context)
-    val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, viewId)
-    val event = ResizableCustomViewEvent(surfaceId, viewId, width, height)
-    eventDispatcher?.dispatchEvent(event)
-  }
-
-  override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> =
-    mapOf(ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView"))
+/** Per-view state holder so that CardViewManager remains stateless. */
+private class CardViewState(
+  val view: DynamicComponentView,
+  val context: ThemedReactContext,
+) : LayoutListener, ComponentContract {
+  var cardComponentManager: CardComponentManager? = null
+  var configuration: CheckoutConfiguration? = null
+  var paymentMethod: JSONObject? = null
+  var componentType: String? = null
 
   override fun onLayoutSizeUpdate(size: Size) {
-    ifNotNull(context, persistedView) { context, view ->
-      emitResizableCustomViewEvent(context, view.id, size.width, size.height)
-    }
+    val surfaceId = UIManagerHelper.getSurfaceId(context)
+    val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, view.id)
+    val event = ResizableCustomViewEvent(surfaceId, view.id, size.width, size.height)
+    eventDispatcher?.dispatchEvent(event)
   }
 
   override fun onAction(action: Action) {
@@ -162,6 +60,105 @@ class CardViewManager(
 
   override fun onAddressLookupOptions(options: List<LookupAddress>) {
     cardComponentManager?.updateAddressLookupOptions(options)
+  }
+
+  fun dispose() {
+    componentType?.let { EmbeddedComponentBusModule.unregister(it) }
+    view.onDispose()
+    cardComponentManager = null
+    configuration = null
+    paymentMethod = null
+    componentType = null
+  }
+}
+
+@ReactModule(name = CardViewManager.NAME)
+class CardViewManager(
+  private val emitter: MessageBusEmitter,
+) : SimpleViewManager<DynamicComponentView>(),
+  CardViewManagerInterface<DynamicComponentView> {
+  private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
+  private val viewStates = mutableMapOf<Int, CardViewState>()
+
+  override fun getDelegate(): ViewManagerDelegate<DynamicComponentView> = delegate
+
+  override fun getName(): String = NAME
+
+  public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
+    val view = DynamicComponentView(context)
+    val state = CardViewState(view, context)
+    view.layoutListener = state
+    viewStates[view.id] = state
+    return view
+  }
+
+  override fun onDropViewInstance(view: DynamicComponentView) {
+    super.onDropViewInstance(view)
+    viewStates.remove(view.id)?.dispose()
+  }
+
+  override fun onAfterUpdateTransaction(view: DynamicComponentView) {
+    super.onAfterUpdateTransaction(view)
+    if (view.viewSet) return
+
+    val state = viewStates[view.id] ?: return
+    val type = state.componentType
+    if (type == null) {
+      Log.e("CardViewManager", "Component type is null")
+      return
+    }
+
+    val tagged = TaggedEmitter(emitter, type)
+    val messageBus = MessageBus(tagged)
+    ifNotNull(
+      state.paymentMethod,
+      state.configuration,
+      state.context.currentActivity as? FragmentActivity,
+    ) { paymentMethodJson, configuration, activity ->
+      val manager = CardComponentManager(activity, messageBus)
+      state.cardComponentManager = manager
+      val component = manager.createComponent(configuration, paymentMethodJson)
+      activity.lifecycleScope.launch {
+        AdyenComponentView(activity).apply {
+          attach(component, activity)
+          view.setView(this)
+        }
+      }
+    }
+  }
+
+  override fun setPaymentMethod(view: DynamicComponentView?, value: String?) {
+    val state = view?.let { viewStates[it.id] } ?: return
+    value?.let {
+      val json = JSONObject(it)
+      state.paymentMethod = json
+      extractType(state, json)
+    }
+  }
+
+  private fun extractType(state: CardViewState, json: JSONObject) {
+    val type = json.optString("type", null)
+    if (type != null && type != state.componentType) {
+      state.componentType?.let { old -> EmbeddedComponentBusModule.unregister(old) }
+      state.componentType = type
+      EmbeddedComponentBusModule.register(type, state)
+    }
+  }
+
+  override fun setConfiguration(view: DynamicComponentView?, value: String?) {
+    val state = view?.let { viewStates[it.id] } ?: return
+    value?.let {
+      val json = JSONObject(it)
+      val map = ReactNativeJson.convertJsonToMap(json)
+      state.configuration = CheckoutConfigurationFactory.get(map)
+    }
+  }
+
+  override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> =
+    mapOf(ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView"))
+
+  companion object {
+    const val NAME = "CardView"
   }
 }
 

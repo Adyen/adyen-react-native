@@ -46,7 +46,7 @@ export const CheckoutNavigator = (prop: CheckoutNavigatorProps) => {
       />
       <CheckoutStack.Screen
         name="CardForm"
-        component={Screens.CardsForm}
+        component={Screens.CardForm}
         options={{
           ...modalScreenOptions,
           title: 'Card Form',
