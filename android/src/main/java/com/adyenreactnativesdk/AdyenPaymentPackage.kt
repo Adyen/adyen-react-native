@@ -17,6 +17,7 @@ import com.adyenreactnativesdk.component.googlepay.GooglePayModule
 import com.adyenreactnativesdk.component.instant.InstantModule
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
+import com.adyenreactnativesdk.react.CardViewManager
 import com.adyenreactnativesdk.react.PlatformPayViewManager
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
@@ -28,8 +29,11 @@ import com.facebook.react.uimanager.ViewManager
 class AdyenPaymentPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
     ensureInitialized(reactContext)
+    val cardView = CardViewManager(emitter)
+
     return listOf(
       PlatformPayViewManager(),
+      cardView,
     )
   }
 
