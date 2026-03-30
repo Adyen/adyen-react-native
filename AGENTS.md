@@ -10,9 +10,8 @@ This is a React Native SDK with three platform targets:
 
 ## Build & Test Commands
 
-> **Before anything else in a fresh clone, run `npm start`.** This bootstraps the project and installs Husky git hooks (linters + JS tests run on every commit). Skipping this will cause commit hooks to fail.
+> **Before anything else in a fresh clone, run `npm start`.** This bootstraps the project and installs Husky git hooks (linters + JS tests run on every commit). Skipping this will cause commit hooks to fail. If packages fail to resolve, do not attempt to override the registry (e.g. do not add `--registry https://registry.npmjs.org`). Inform the user instead — the environment may use a private registry.
 
-- **Install deps**: `yarn install` (if Yarn reports missing node_modules state file). If this environment hits checksum mismatches, use `YARN_CHECKSUM_BEHAVIOR=ignore yarn install`. If packages fail to resolve, do not attempt to override the registry (e.g. do not add `--registry https://registry.npmjs.org`). Inform the user instead — the environment may use a private registry.
 - **JS tests**: `yarn test`
 - **Typecheck**: `yarn typecheck`
 - **Lint**: `yarn lint`
