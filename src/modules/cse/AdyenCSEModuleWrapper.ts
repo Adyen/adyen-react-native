@@ -21,4 +21,28 @@ export class AdyenCSEWrapper implements AdyenCSEModule {
   encryptBin(payload: string, publicKey: string): Promise<string> {
     return this.nativeModule.encryptBin(payload, publicKey);
   }
+
+  /** Method to validate card number. */
+  validateCardNumber(
+    cardNumber: string,
+    enableLuhnCheck: boolean
+  ): Promise<boolean> {
+    return this.nativeModule.validateCardNumber(cardNumber, enableLuhnCheck);
+  }
+
+  /** Method to validate card expiry date. */
+  validateCardExpiryDate(
+    expiryMonth: string,
+    expiryYear: string
+  ): Promise<boolean> {
+    return this.nativeModule.validateCardExpiryDate(expiryMonth, expiryYear);
+  }
+
+  /** Method to validate card security code. */
+  validateCardSecurityCode(
+    securityCode: string,
+    cardBrand?: string
+  ): Promise<boolean> {
+    return this.nativeModule.validateCardSecurityCode(securityCode, cardBrand);
+  }
 }
