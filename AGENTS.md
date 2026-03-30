@@ -4,8 +4,8 @@
 
 This is a React Native SDK with three platform targets:
 - **JS/TS**: `src/` — TypeScript source, components, hooks, modules
-- **iOS**: `ios/` — Swift source, organized by feature (Components, CSE, Configuration)
-- **Android**: `android/src/main/java/com/adyenreactnativesdk/` — Kotlin source
+- **iOS**: `ios/` — iOS-specific source (Swift, Objective-C)
+- **Android**: `android/src/main/java/com/adyenreactnativesdk/` — Android-specific source (Kotlin)
 - **Example app**: `example/` — includes iOS/Android test targets
 
 ## Build & Test Commands
@@ -22,15 +22,10 @@ This is a React Native SDK with three platform targets:
 
 ## Git & GitHub
 
-This environment is non-interactive — git operations that require prompts (credentials, GPG signing) will fail silently or error out.
-
-- **Remote operations**: Always use `gh` CLI (`gh pr create`, `gh pr view`, `gh pr review`, etc.). For pushing, set the remote URL with a `gh` token:
-  ```bash
-  git remote set-url origin https://x-access-token:$(gh auth token)@github.com/Adyen/adyen-react-native.git
-  ```
-- **Working directory**: At the start of every new session, ask the user whether to work in the current directory or create a fresh clone in a separate folder (e.g. `~/source/react-native/adyen-react-native-###` where `###` is a new feature name). Do not assume either option.
-- **PR splitting**: When creating multiple PRs from a single feature branch, use the separate clone directory. Base split PRs on `develop`.
-- **Branch hygiene**: Start new work from latest `origin/develop` on a dedicated branch. If a commit lands on the wrong branch, move it with `cherry-pick` and only then reset/force-push the wrong branch after explicit confirmation.
+- **Remote operations**: Use `gh` CLI for all GitHub operations.
+- **Working directory**: At the start of every new session, ask the user whether to work in the current directory or a separate worktree. For parallel feature work, use `git worktree add`.
+- **Default branch**: `develop`, not `main`.
+- **Branch hygiene**: Start new work from latest `origin/develop` on a dedicated branch.
 - **Commits**: Do not add `Co-authored-by` trailers to commits. **NEVER use `git add -A` or `git add .`** — only stage the specific files relevant to the commit.
 - **Commit message format**:
   ```
@@ -38,10 +33,9 @@ This environment is non-interactive — git operations that require prompts (cre
   ```
   Purpose prefixes: `feat` (public API addition), `fix` (bug fix), `chore` (tooling changes), `refactor`, `test`, `docs`, `deprecate`, `remove`.
   Examples: `chore: Update CI config`, `feat: Add xyz method`, `fix: Resolve race condition`
-- **Ticket number**: Always ask the user for the ticket number before making a commit. Use the same number for all commits in a task once provided.
-- **After commit**: Push immediately so the remote branch/PR stays in sync with local history.
+- **Ticket number**: Always ask the user for the ticket number before making a commit. Use the same number for all commits in a task.
+- **After commit**: Push immediately.
 - **PR review responses**: When addressing review comments, reply to each individual comment with the specific commit hash that fixes it (e.g. "Fixed in commit abc1234 — description of change"). Mark invalid comments as such with an explanation.
-- **Default branch**: `develop`, not `main`.
 
 ## Refactoring Conventions
 
