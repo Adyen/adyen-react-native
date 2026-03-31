@@ -24,11 +24,15 @@ const Styles = StyleSheet.create({
     paddingTop: 16,
   },
   paddedTitle: {
-    paddingLeft: 8,
-    paddingTop: 8,
+    paddingLeft: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    fontSize: 14,
+    color: '#666',
   },
   textInput: {
-    padding: 8,
+    marginHorizontal: 16,
+    padding: 12,
     borderRadius: 8,
     fontSize: 16,
     fontWeight: 'medium',
@@ -110,6 +114,55 @@ const Styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  sectionTitle: {
+    paddingLeft: 16,
+    paddingTop: 20,
+    paddingBottom: 4,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  dropdown: {
+    marginHorizontal: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  dropdownText: {
+    fontSize: 16,
+  },
+  formAction: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  dropdownOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  dropdownMenu: {
+    borderRadius: 12,
+    minWidth: 200,
+    maxHeight: 300,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownItemSelected: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+  },
+  dropdownItemSelectedText: {
+    color: '#007AFF',
+    fontWeight: '600',
   },
 });
 

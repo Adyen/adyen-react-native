@@ -93,6 +93,21 @@ RCT_EXTERN_METHOD(encryptBin:(NSString *)bin
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(validateCardNumber:(NSString *)cardNumber
+                  enableLuhnCheck:(BOOL)enableLuhnCheck
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(validateCardExpiryDate:(NSString *)expiryMonth
+                  expiryYear:(NSString *)expiryYear
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
+                  cardBrand:(nullable NSString *)cardBrand
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end
 
 @interface RCT_EXTERN_MODULE(SessionHelper, NSObject)
@@ -115,6 +130,28 @@ RCT_EXTERN_METHOD(handle:(NSDictionary *)action
                   configuration:(NSDictionary *)configurationJSON
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
+
+@end
+
+@interface RCT_EXTERN_MODULE(AdyenComponentBus, NSObject)
+
+RCT_EXTERN_METHOD(subscribe:(nonnull NSString *)componentType)
+
+RCT_EXTERN_METHOD(unsubscribe:(nonnull NSString *)componentType)
+
+RCT_EXTERN_METHOD(hide:(nonnull NSString *)componentType
+                  success:(nonnull NSNumber *)success
+                  event:(NSDictionary *)event)
+
+RCT_EXTERN_METHOD(handle:(nonnull NSString *)componentType
+                  action:(nullable NSDictionary *)actionMap)
+
+RCT_EXTERN_METHOD(update:(nonnull NSString *)componentType
+                  results:(nullable NSArray *)results)
+
+RCT_EXTERN_METHOD(confirm:(nonnull NSString *)componentType
+                  success:(nonnull NSNumber *)success
+                  address:(nullable NSDictionary *)address)
 
 @end
 

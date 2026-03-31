@@ -6,11 +6,11 @@ import type {
   Configuration,
   StoredPaymentMethod,
 } from '@adyen/react-native';
-import { ENVIRONMENT } from './Configuration';
-import ApiClient from './api/APIClient';
-import type { PaymentConfiguration } from './api/types';
+import { ENVIRONMENT } from '../Configuration';
+import ApiClient from '../api/APIClient';
+import type { AppConfiguration } from './types';
 
-export const checkoutConfiguration = (config: PaymentConfiguration) => {
+export const checkoutConfiguration = (config: AppConfiguration) => {
   const configuration: Configuration = {
     clientKey: ENVIRONMENT.clientKey,
     environment: ENVIRONMENT.environment,
@@ -26,7 +26,13 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
       verboseLogs: true,
     },
     dropin: {
-      showRemovePaymentMethodButton: true,
+      showPreselectedStoredPaymentMethod:
+        config.dropInSettings?.showPreselectedStoredPaymentMethod,
+      skipListWhenSinglePaymentMethod:
+        config.dropInSettings?.skipListWhenSinglePaymentMethod,
+      showRemovePaymentMethodButton:
+        config.dropInSettings?.showRemovePaymentMethodButton ?? true,
+      title: config.dropInSettings?.title,
       onDisableStoredPaymentMethod: async (
         storedPaymentMethod: StoredPaymentMethod,
         resolve: () => void,
@@ -44,14 +50,18 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
       },
     },
     card: {
-      addressVisibility: 'lookup',
+      holderNameRequired: config.cardSettings?.holderNameRequired,
+      addressVisibility: config.cardSettings?.addressVisibility ?? 'lookup',
+      showStorePaymentField: config.cardSettings?.showStorePaymentField,
+      hideCvcStoredCard: config.cardSettings?.hideCvcStoredCard,
+      hideCvc: config.cardSettings?.hideCvc,
+      kcpVisibility: config.cardSettings?.kcpVisibility,
+      socialSecurity: config.cardSettings?.socialSecurity,
       allowedAddressCountryCodes: ['US', 'GB', 'CA', 'NL'],
       onUpdateAddress: (_prompt: string, lookup: AddressLookup) => {
-        // Make request to Google Maps API or other address provider.
         lookup.update(mockAddresses);
       },
       onConfirmAddress: (address: AddressLookupItem, lookup: AddressLookup) => {
-        // Make request to Google Maps API or other address provider.
         lookup.confirm(address);
       },
       onBinValue: (binValue: string) => {
@@ -62,8 +72,11 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
       },
     },
     applepay: {
-      merchantID: ENVIRONMENT.applepayMerchantID,
-      merchantName: config.merchantName,
+      merchantID:
+        config.applePaySettings?.merchantID ?? ENVIRONMENT.applepayMerchantID,
+      merchantName: config.applePaySettings?.merchantName ?? 'Test Merchant',
+      allowOnboarding: config.applePaySettings?.allowOnboarding,
+      shippingType: config.applePaySettings?.shippingType,
       requiredBillingContactFields: ['phoneticName', 'postalAddress'],
       requiredShippingContactFields: [
         'name',
@@ -74,17 +87,24 @@ export const checkoutConfiguration = (config: PaymentConfiguration) => {
       recurringPaymentRequest: mockApplePayRecurringPayment,
     },
     googlepay: {
-      billingAddressRequired: true,
+      allowPrepaidCards: config.googlePaySettings?.allowPrepaidCards,
+      allowCreditCards: config.googlePaySettings?.allowCreditCards,
+      billingAddressRequired:
+        config.googlePaySettings?.billingAddressRequired ?? true,
       billingAddressParameters: {
         format: 'FULL',
         phoneNumberRequired: true,
       },
-      shippingAddressRequired: true,
+      shippingAddressRequired:
+        config.googlePaySettings?.shippingAddressRequired ?? true,
       shippingAddressParameters: {
         allowedCountryCodes: ['US', 'MX'],
         phoneNumberRequired: true,
       },
-      emailRequired: true,
+      emailRequired: config.googlePaySettings?.emailRequired ?? true,
+      existingPaymentMethodRequired:
+        config.googlePaySettings?.existingPaymentMethodRequired,
+      totalPriceStatus: config.googlePaySettings?.totalPriceStatus,
     },
   };
   return configuration;

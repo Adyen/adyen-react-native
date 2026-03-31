@@ -49,7 +49,7 @@ internal class BaseModule: RCTEventEmitter {
     internal func parsePaymentMethods(from dictionary: NSDictionary) throws -> PaymentMethods {
         guard let paymentMethods: PaymentMethods = try? dictionary.decode()
         else {
-            throw NativeModuleError.invalidPaymentMethods
+            throw ModuleException.invalidPaymentMethods
         }
 
         return paymentMethods
@@ -59,21 +59,21 @@ internal class BaseModule: RCTEventEmitter {
         guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
               let action = try? JSONDecoder().decode(Action.self, from: data)
         else {
-            throw NativeModuleError.invalidAction
+            throw ModuleException.invalidAction
         }
         return action
     }
 
     internal func fetchClientKey(from parser: RootConfigurationParser) throws -> String {
         guard let clientKey = parser.clientKey else {
-            throw NativeModuleError.noClientKey
+            throw ModuleException.noClientKey
         }
         return clientKey
     }
 
     internal func fetchPayment(from parser: RootConfigurationParser) throws -> Payment {
         guard let payment = parser.payment else {
-            throw NativeModuleError.noPayment
+            throw ModuleException.noPayment
         }
         return payment
     }
@@ -82,7 +82,7 @@ internal class BaseModule: RCTEventEmitter {
         let paymentMethods = try parsePaymentMethods(from: dictionary)
 
         guard let paymentMethod = paymentMethods.paymentMethod(ofType: type) else {
-            throw NativeModuleError.paymentMethodNotFound(type)
+            throw ModuleException.paymentMethodNotFound(type)
         }
 
         return paymentMethod
@@ -92,7 +92,7 @@ internal class BaseModule: RCTEventEmitter {
         let paymentMethods = try parsePaymentMethods(from: dictionary)
 
         guard let paymentMethod = paymentMethods.regular.first else {
-            throw NativeModuleError.invalidPaymentMethods
+            throw ModuleException.invalidPaymentMethods
         }
 
         return paymentMethod
@@ -129,7 +129,7 @@ internal class BaseModule: RCTEventEmitter {
 
     internal func checkErrorType(_ error: Error) -> Error {
         if error.isComponentCanceled || error.is3DSCanceled {
-            return NativeModuleError.canceled
+            return ModuleException.canceled
         }
         return error
     }
@@ -142,7 +142,7 @@ extension BaseModule: PresentationDelegate {
             guard let self else { return }
             
             guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-                return self.sendError(error: NativeModuleError.notKeyWindow)
+                return self.sendError(error: ModuleException.notKeyWindow)
             }
 
             defer {
@@ -166,7 +166,7 @@ extension BaseModule: PresentationDelegate {
 
     @objc private func cancelDidPress() {
         currentComponent?.cancelIfNeeded()
-        sendError(error: NativeModuleError.canceled)
+        sendError(error: ModuleException.canceled)
     }
 
 }

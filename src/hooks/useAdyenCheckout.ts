@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { PaymentMethodsResponse, Configuration } from '../core';
+import { MISSING_CONTEXT_ERROR } from './constants';
 
 /**
  * Shape of the AdyenCheckout context value.
@@ -31,6 +32,3 @@ export const useAdyenCheckout = (): AdyenCheckoutContextType => {
   }
   throw new Error(MISSING_CONTEXT_ERROR);
 };
-
-const MISSING_CONTEXT_ERROR =
-  'useAdyenCheckout must be used within an AdyenCheckout';

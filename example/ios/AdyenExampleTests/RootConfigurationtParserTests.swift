@@ -80,6 +80,17 @@ class RootParserTests: XCTestCase {
         XCTAssertEqual(sut.environment, .liveApse)
     }
 
+    func test_environment_returnsLiveNea_whenConfiguredWithLiveNEA() {
+        // GIVEN
+        let configDict: NSDictionary = ["environment": "live-nea"]
+
+        // WHEN
+        let sut = RootConfigurationParser(configuration: configDict)
+        
+        // THEN
+        XCTAssertEqual(sut.environment, .liveNea)
+    }
+
     func test_clientKey_returnsConfiguredValue_whenProvided() {
         // GIVEN
         let configDict: NSDictionary = ["clientKey": "client-key"]

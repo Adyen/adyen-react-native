@@ -12,10 +12,6 @@ import React
 @objc(AdyenApplePay)
 internal class ApplePayModule: BaseModuleSender {
 
-    override func supportedEvents() -> [String]! {
-        Events.coreEvents.map(\.rawValue)
-    }
-
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
     override init() {
@@ -36,7 +32,7 @@ internal class ApplePayModule: BaseModuleSender {
         do {
             let paymentMethod = try parsePaymentMethod(from: paymentMethodsDict, for: ApplePayPaymentMethod.self)
             let context = try parser.fetchContext(session: BaseModule.session)
-            guard let payment = context.payment else { throw NativeModuleError.noPayment }
+            guard let payment = context.payment else { throw ModuleException.noPayment }
             let applepayConfig = try applePayParser.buildConfiguration(payment: payment)
             applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,
                                                             context: context,

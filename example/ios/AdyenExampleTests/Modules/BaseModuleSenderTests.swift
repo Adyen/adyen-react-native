@@ -34,7 +34,7 @@ final class BaseModuleSenderTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.complete.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, EventName.complete.rawValue)
         XCTAssertNotNil(mockEmitter.events[0].body)
     }
 
@@ -49,7 +49,7 @@ final class BaseModuleSenderTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.changeBinValue.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, EventName.changeBinValue.rawValue)
         let eventBody = mockEmitter.events[0].body as? [String: String]
         XCTAssertEqual(eventBody?["key"], "value")
     }
@@ -62,7 +62,7 @@ final class BaseModuleSenderTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, Events.complete.rawValue)
+        XCTAssertEqual(mockEmitter.events[0].name, EventName.complete.rawValue)
         let body = mockEmitter.events[0].body as? [String: Any]
         XCTAssertEqual(body?["resultCode"] as? String, "PresentToShopper")
     }

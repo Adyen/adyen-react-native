@@ -10,7 +10,7 @@ import AdyenNetworking
 import React
 import UIKit
 
-enum NativeModuleError: LocalizedError, KnownError {
+enum ModuleException: LocalizedError, KnownError {
     case canceled
     case noClientKey
     case noPayment
@@ -23,6 +23,7 @@ enum NativeModuleError: LocalizedError, KnownError {
     case orderRequest(message: String)
     case sessionError
     case invalidClientKey
+    case componentNotRegistered(String)
 
     var errorCode: String {
         switch self {
@@ -50,6 +51,8 @@ enum NativeModuleError: LocalizedError, KnownError {
             return "sessionError"
         case .invalidClientKey:
             return "invalidClientKey"
+        case .componentNotRegistered:
+            return "componentNotRegistered"
         }
     }
 
@@ -79,15 +82,17 @@ enum NativeModuleError: LocalizedError, KnownError {
             return "Order request error: \(message)"
         case .sessionError:
             return "Something went wrong while starting session"
+        case let .componentNotRegistered(type):
+            return "No embedded component registered for type \(type)"
         }
     }
 
     static func checkErrorType(_ error: Error) -> Error {
         if error.isComponentCanceled || error.is3DSCanceled {
-            return NativeModuleError.canceled
+            return ModuleException.canceled
         }
         if error.isEmpty401NetworkingResponseError {
-            return NativeModuleError.invalidClientKey
+            return ModuleException.invalidClientKey
         }
         return error
     }

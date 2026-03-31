@@ -6,7 +6,8 @@ import {
   beforeEach,
   afterEach,
 } from '@jest/globals';
-import { checkPaymentMethodsResponse, checkConfiguration } from '../utils';
+import { checkPaymentMethodsResponse } from '../utils/checkPaymentMethodsResponse';
+import { checkConfiguration } from '../utils/checkConfiguration';
 
 describe('checkPaymentMethodsResponse', () => {
   beforeEach(() => {

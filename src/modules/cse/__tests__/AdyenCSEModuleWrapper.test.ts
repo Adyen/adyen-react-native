@@ -15,6 +15,15 @@ function createMockCSEModule() {
     encryptBin: jest
       .fn<() => Promise<string>>()
       .mockResolvedValue('adyenjs_bin_...'),
+    validateCardNumber: jest
+      .fn<() => Promise<boolean>>()
+      .mockResolvedValue(true),
+    validateCardExpiryDate: jest
+      .fn<() => Promise<boolean>>()
+      .mockResolvedValue(true),
+    validateCardSecurityCode: jest
+      .fn<() => Promise<boolean>>()
+      .mockResolvedValue(true),
   } as any;
 }
 
@@ -145,6 +154,98 @@ describe('AdyenCSEModuleWrapper', () => {
     test('should implement encryptBin method', () => {
       const wrapper = new AdyenCSEWrapper(mockNativeModule);
       expect(typeof wrapper.encryptBin).toBe('function');
+    });
+
+    test('should implement validateCardNumber method', () => {
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+      expect(typeof wrapper.validateCardNumber).toBe('function');
+    });
+
+    test('should implement validateCardExpiryDate method', () => {
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+      expect(typeof wrapper.validateCardExpiryDate).toBe('function');
+    });
+
+    test('should implement validateCardSecurityCode method', () => {
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+      expect(typeof wrapper.validateCardSecurityCode).toBe('function');
+    });
+  });
+
+  describe('validateCardNumber', () => {
+    test('should call native module validateCardNumber with value and luhn check flag', async () => {
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+
+      await wrapper.validateCardNumber('4111111111111111', true);
+
+      expect(mockNativeModule.validateCardNumber).toHaveBeenCalledWith(
+        '4111111111111111',
+        true
+      );
+    });
+
+    test('should return validation result', async () => {
+      mockNativeModule.validateCardNumber.mockResolvedValue(false);
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+
+      const result = await wrapper.validateCardNumber('1234', true);
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('validateCardExpiryDate', () => {
+    test('should call native module validateCardExpiryDate with month and year', async () => {
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+
+      await wrapper.validateCardExpiryDate('03', '2030');
+
+      expect(mockNativeModule.validateCardExpiryDate).toHaveBeenCalledWith(
+        '03',
+        '2030'
+      );
+    });
+
+    test('should return validation result', async () => {
+      mockNativeModule.validateCardExpiryDate.mockResolvedValue(false);
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+
+      const result = await wrapper.validateCardExpiryDate('13', '2030');
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('validateCardSecurityCode', () => {
+    test('should call native module validateCardSecurityCode with code and optional brand', async () => {
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+
+      await wrapper.validateCardSecurityCode('737', 'visa');
+
+      expect(mockNativeModule.validateCardSecurityCode).toHaveBeenCalledWith(
+        '737',
+        'visa'
+      );
+    });
+
+    test('should call native module validateCardSecurityCode without brand', async () => {
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+
+      await wrapper.validateCardSecurityCode('737');
+
+      expect(mockNativeModule.validateCardSecurityCode).toHaveBeenCalledWith(
+        '737',
+        undefined
+      );
+    });
+
+    test('should return validation result', async () => {
+      mockNativeModule.validateCardSecurityCode.mockResolvedValue(false);
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+
+      const result = await wrapper.validateCardSecurityCode('12');
+
+      expect(result).toBe(false);
     });
   });
 });

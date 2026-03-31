@@ -8,6 +8,7 @@ import {
 import { ResultCode } from '@adyen/react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { modalScreenOptions } from './modalScreenOptions';
+import SettingsNavigator from '../components/Settings/SettingsNavigator';
 
 // Root stack screens (modals presented from Home)
 export type RootStackParamList = {
@@ -35,8 +36,8 @@ export const RootStackNavigator = () => {
       />
       <RootStack.Screen
         name="Settings"
-        component={Screens.SettingView}
-        options={modalScreenOptions}
+        component={SettingsNavigator}
+        options={{ ...modalScreenOptions, headerShown: false }}
       />
       <RootStack.Screen
         name="Result"

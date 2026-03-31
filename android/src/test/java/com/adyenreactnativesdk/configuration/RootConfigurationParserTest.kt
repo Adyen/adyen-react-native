@@ -131,6 +131,19 @@ class RootConfigurationParserTest {
   }
 
   @Test
+  fun test_environment_returnsLiveNea_whenConfiguredWithLiveNEA() {
+    // GIVEN
+    val map = WritableMapMock()
+    map.putString(RootConfigurationParser.ENVIRONMENT_KEY, "live-nea")
+
+    // WHEN
+    val sut = RootConfigurationParser(map)
+
+    // THEN
+    assertEquals(Environment.NEA, sut.environment)
+  }
+
+  @Test
   fun test_environment_returnsTest_whenConfiguredWithInvalidValue() {
     // GIVEN
     val map = WritableMapMock()

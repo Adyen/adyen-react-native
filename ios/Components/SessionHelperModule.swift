@@ -17,7 +17,7 @@ protocol SessionErrorDelegate: AnyObject {
 internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
     override func supportedEvents() -> [String]! {
-        Events.sessionEvents.map(\.rawValue)
+        EventName.sessionEvents.map(\.rawValue)
     }
 
     @objc
@@ -70,7 +70,7 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
     override func sendError(error: any Error) {
         let errorToSend = checkErrorType(error)
-        sendEvent(withName: Events.failSession.rawValue, body: errorToSend.jsonObject)
+        sendEvent(withName: EventName.failSession.rawValue, body: errorToSend.jsonObject)
     }
 }
 
@@ -80,7 +80,7 @@ extension SessionHelperModule: AdyenSessionDelegate {
         var dict = result.jsonObject
         dict[Key.sessionId] = session.sessionContext.identifier
         dict[Key.sessionData] = session.sessionContext.data
-        sendEvent(withName: Events.completeSession.rawValue, body: dict)
+        sendEvent(withName: EventName.completeSession.rawValue, body: dict)
     }
 
     func didFail(with error: Error, from component: Adyen.Component, session: Adyen.AdyenSession) {

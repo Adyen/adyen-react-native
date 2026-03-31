@@ -21,7 +21,6 @@ export const DEFAULT_CONFIGURATION = {
   currency: 'EUR',
   amount: 1000, // The amount value in minor units.
   merchantAccount: merchantAccount,
-  merchantName: 'Test Merchant',
   shopperLocale: DEVICE_LOCALE,
   shopperReference: 'Checkout Shopper',
 };
