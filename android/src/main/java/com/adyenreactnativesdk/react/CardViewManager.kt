@@ -78,7 +78,7 @@ class CardViewManager(
 ) : SimpleViewManager<DynamicComponentView>(),
   CardViewManagerInterface<DynamicComponentView> {
   private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
-  private val viewStates = mutableMapOf<Int, CardViewState>()
+  private val viewStates = mutableMapOf<DynamicComponentView, CardViewState>()
 
   override fun getDelegate(): ViewManagerDelegate<DynamicComponentView> = delegate
 
@@ -88,20 +88,20 @@ class CardViewManager(
     val view = DynamicComponentView(context)
     val state = CardViewState(view, context)
     view.layoutListener = state
-    viewStates[view.id] = state
+    viewStates[view] = state
     return view
   }
 
   override fun onDropViewInstance(view: DynamicComponentView) {
     super.onDropViewInstance(view)
-    viewStates.remove(view.id)?.dispose()
+    viewStates.remove(view)?.dispose()
   }
 
   override fun onAfterUpdateTransaction(view: DynamicComponentView) {
     super.onAfterUpdateTransaction(view)
     if (view.viewSet) return
 
-    val state = viewStates[view.id] ?: return
+    val state = viewStates[view] ?: return
     val type = state.componentType
     if (type == null) {
       Log.e("CardViewManager", "Component type is null")
@@ -128,7 +128,7 @@ class CardViewManager(
   }
 
   override fun setPaymentMethod(view: DynamicComponentView?, value: String?) {
-    val state = view?.let { viewStates[it.id] } ?: return
+    val state = view?.let { viewStates[it] } ?: return
     value?.let {
       val json = JSONObject(it)
       state.paymentMethod = json
@@ -146,7 +146,7 @@ class CardViewManager(
   }
 
   override fun setConfiguration(view: DynamicComponentView?, value: String?) {
-    val state = view?.let { viewStates[it.id] } ?: return
+    val state = view?.let { viewStates[it] } ?: return
     value?.let {
       val json = JSONObject(it)
       val map = ReactNativeJson.convertJsonToMap(json)
