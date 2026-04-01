@@ -11,11 +11,13 @@ class ResizableCustomViewEvent(
   private val height: Int,
 ) : Event<ResizableCustomViewEvent>(surfaceId, viewId) {
   override fun getEventName() = EVENT_NAME
+
   override fun getEventData(): WritableMap =
     Arguments.createMap().apply {
       putInt("width", width)
       putInt("height", height)
     }
+
   companion object {
     const val EVENT_NAME: String = "onLayoutChange"
   }

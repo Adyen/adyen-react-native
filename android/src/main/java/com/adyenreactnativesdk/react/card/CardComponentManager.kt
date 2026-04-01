@@ -42,6 +42,7 @@ class CardComponentManager(
         override fun onQueryChanged(query: String) {
           messageBus.onQueryChanged(query)
         }
+
         override fun onLookupCompletion(lookupAddress: LookupAddress): Boolean = messageBus.onLookupCompletion(lookupAddress)
       },
     )

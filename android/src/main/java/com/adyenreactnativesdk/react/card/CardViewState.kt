@@ -25,7 +25,8 @@ import org.json.JSONObject
 class CardViewState(
   val context: ThemedReactContext,
   val emitter: MessageBusEmitter,
-) : LayoutListener, ComponentContract {
+) : LayoutListener,
+  ComponentContract {
   var configuration: CheckoutConfiguration? = null
   var paymentMethod: JSONObject? = null
   val activity: FragmentActivity = context.currentActivity as FragmentActivity
@@ -47,7 +48,10 @@ class CardViewState(
     }
   }
 
-  override fun onLayoutSizeUpdate(viewId: Int, size: Size) {
+  override fun onLayoutSizeUpdate(
+    viewId: Int,
+    size: Size,
+  ) {
     val surfaceId = UIManagerHelper.getSurfaceId(context)
     val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, viewId)
     val event = ResizableCustomViewEvent(surfaceId, viewId, size.width, size.height)

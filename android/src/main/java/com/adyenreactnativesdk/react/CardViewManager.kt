@@ -48,7 +48,10 @@ class CardViewManager(
     state.renderView(view)
   }
 
-  override fun setPaymentMethod(view: DynamicComponentView?, value: String?) {
+  override fun setPaymentMethod(
+    view: DynamicComponentView?,
+    value: String?,
+  ) {
     val state = view?.let { viewStates[it] } ?: return
     if (value == null) {
       Log.e("CardViewManager", "paymentMethod value is null")
@@ -58,7 +61,10 @@ class CardViewManager(
     state.paymentMethod = json
   }
 
-  override fun setConfiguration(view: DynamicComponentView?, value: String?) {
+  override fun setConfiguration(
+    view: DynamicComponentView?,
+    value: String?,
+  ) {
     val state = view?.let { viewStates[it] } ?: return
     if (value == null) {
       Log.e("CardViewManager", "configuration value is null")
