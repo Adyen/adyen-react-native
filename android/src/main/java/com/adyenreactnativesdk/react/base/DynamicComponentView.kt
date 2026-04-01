@@ -12,18 +12,20 @@ class DynamicComponentView(
   context: Context,
 ) : FrameLayout(context) {
   private val screenDensity = resources.displayMetrics.density
-  var layoutListener: LayoutListener? = null
-  var viewSet = false
   private var oldSize: Size? = null
+
+  var layoutListener: LayoutListener? = null
+  var isViewSet = false
+
   private val resizeRunnable =
     object : Runnable {
       override fun run() {
         measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.UNSPECIFIED)
         val size = Size((measuredWidth / screenDensity).toInt(), (measuredHeight / screenDensity).toInt())
         if (oldSize != size) {
-          layoutListener?.onLayoutSizeUpdate(size)
+          oldSize = size
+          layoutListener?.onLayoutSizeUpdate(id, size)
         }
-        oldSize = size
         postDelayed(this, TIMEOUT)
       }
     }
@@ -38,7 +40,7 @@ class DynamicComponentView(
 
   @SuppressLint("RestrictedApi")
   fun setView(view: View) {
-    viewSet = true
+    isViewSet = true
     addView(view)
     postDelayed(resizeRunnable, TIMEOUT)
   }
@@ -51,11 +53,11 @@ class DynamicComponentView(
   fun onDispose() {
     removeCallbacks(resizeRunnable)
     removeAllViews()
-    viewSet = false
+    isViewSet = false
     oldSize = null
   }
 }
 
 interface LayoutListener {
-  fun onLayoutSizeUpdate(size: Size)
+  fun onLayoutSizeUpdate(viewId: Int, size: Size)
 }
