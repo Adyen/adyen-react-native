@@ -5,9 +5,6 @@ const styles = StyleSheet.create({
     minWidth: 150,
     minHeight: 60,
   },
-  defaultComponent: {
-    minHeight: 100,
-  },
 });
 
 export default styles;
