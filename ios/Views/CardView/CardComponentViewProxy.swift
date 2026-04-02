@@ -43,7 +43,7 @@ public final class CardComponentViewProxy: UIStackView {
         }
         self.paymentMethodJSON = json
         self.componentType = json["type"] as? String
-        tryInitializeComponent()
+        initializeComponentIfNeeded()
     }
 
     @objc public func setConfiguration(_ configurationJSON: String?) {
@@ -53,7 +53,7 @@ public final class CardComponentViewProxy: UIStackView {
             return
         }
         self.configurationJSON = json
-        tryInitializeComponent()
+        initializeComponentIfNeeded()
     }
 
     override public func layoutSubviews() {
@@ -81,7 +81,9 @@ public final class CardComponentViewProxy: UIStackView {
         componentType = nil
     }
 
-    private func tryInitializeComponent() {
+    // MARK: - Component initialization
+
+    private func initializeComponentIfNeeded() {
         guard !hasComponent,
               let paymentMethodJSON,
               let configurationJSON,
@@ -95,23 +97,13 @@ public final class CardComponentViewProxy: UIStackView {
         }
 
         do {
-            let parser = RootConfigurationParser(configuration: configurationJSON)
-            let context = try parser.fetchContext(session: BaseModule.session)
-            let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
-
-            let proxy = adyenComponentBus.register(componentType: componentType)
-            self.delegateProxy = proxy
-
-            let cardConfig = CardConfigurationParser(configuration: configurationJSON,
-                                                     delegate: proxy).configuration
-
-            let component = CardComponent(paymentMethod: paymentMethod, context: context, configuration: cardConfig)
-            component.cardComponentDelegate = proxy
-            component.delegate = BaseModule.session ?? proxy
-
+            let component = try createCardComponent(
+                paymentMethodJSON: paymentMethodJSON,
+                configurationJSON: configurationJSON,
+                componentType: componentType,
+                bus: adyenComponentBus
+            )
             self.cardComponent = component
-            adyenComponentBus.createActionHandlerIfNeeded(context: context, locale: parser.shopperLocale)
-
             embedComponentView(component)
         } catch {
             self.hasComponent = false
@@ -119,41 +111,66 @@ public final class CardComponentViewProxy: UIStackView {
         }
     }
 
+    private func createCardComponent(
+        paymentMethodJSON: NSDictionary,
+        configurationJSON: NSDictionary,
+        componentType: String,
+        bus: EmbeddedComponentBusModule
+    ) throws -> CardComponent {
+        let parser = RootConfigurationParser(configuration: configurationJSON)
+        let context = try parser.fetchContext(session: BaseModule.session)
+        let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
+
+        let proxy = bus.register(componentType: componentType)
+        self.delegateProxy = proxy
+
+        let cardConfig = CardConfigurationParser(
+            configuration: configurationJSON,
+            delegate: proxy
+        ).configuration
+
+        let component = CardComponent(
+            paymentMethod: paymentMethod,
+            context: context,
+            configuration: cardConfig
+        )
+        component.cardComponentDelegate = proxy
+        component.delegate = BaseModule.session ?? proxy
+
+        bus.createActionHandlerIfNeeded(context: context, locale: parser.shopperLocale)
+        return component
+    }
+
+    // MARK: - View embedding
+
     private func embedComponentView(_ component: CardComponent) {
-        componentView = component.viewController.view
         let childVC = component.viewController
+        _ = childVC.view // force load view
+
         DispatchQueue.main.async { [weak self] in
-            guard let self, let view = childVC.viewIfLoaded else { return }
+            guard let self else { return }
 
             if let parentVC = self.parentViewController {
                 parentVC.addChild(childVC)
                 childVC.didMove(toParent: parentVC)
             }
 
-            self.addArrangedSubview(view)
-            disableNativeScrollingAndBouncing(cardView: view)
+            self.componentView = childVC.view
+            self.addArrangedSubview(childVC.view)
+            self.disableNativeScrollingAndBouncing(in: childVC.view)
             self.layoutIfNeeded()
         }
     }
 
-    private func disableNativeScrollingAndBouncing(cardView: UIView) {
-        let formView: UIScrollView? = cardView.findSubview()
-        formView?.bounces = false
-        formView?.isScrollEnabled = false
-        formView?.alwaysBounceVertical = false
-        formView?.contentInsetAdjustmentBehavior = .never
+    private func disableNativeScrollingAndBouncing(in cardView: UIView) {
+        guard let formView: UIScrollView = cardView.findSubview() else { return }
+        formView.bounces = false
+        formView.isScrollEnabled = false
+        formView.alwaysBounceVertical = false
+        formView.contentInsetAdjustmentBehavior = .never
     }
 
-    private var parentViewController: UIViewController? {
-        var responder: UIResponder? = self
-        while let nextResponder = responder?.next {
-            if let viewController = nextResponder as? UIViewController {
-                return viewController
-            }
-            responder = nextResponder
-        }
-        return nil
-    }
+    // MARK: - Layout reporting
 
     private var preferredContentSize: CGSize {
         guard let vc = cardComponent?.viewController else { return .zero }
@@ -166,6 +183,8 @@ public final class CardComponentViewProxy: UIStackView {
         lastReportedHeight = size.height
         delegate?.onLayoutChange(width: size.width, height: size.height)
     }
+
+    // MARK: - Helpers
 
     private func parseCardPaymentMethod(from dictionary: NSDictionary) throws -> CardPaymentMethod {
         guard let data = try? JSONSerialization.data(withJSONObject: dictionary, options: []),

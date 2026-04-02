@@ -17,7 +17,7 @@ import org.json.JSONObject
 
 @ReactModule(name = CardViewManager.NAME)
 class CardViewManager(
-  private val emitter: MessageBusEmitter,
+  private val messageBusEmitter: MessageBusEmitter,
 ) : SimpleViewManager<DynamicComponentView>(),
   CardViewManagerInterface<DynamicComponentView> {
   private val delegate: ViewManagerDelegate<DynamicComponentView> = CardViewManagerDelegate(this)
@@ -29,7 +29,7 @@ class CardViewManager(
 
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
     val view = DynamicComponentView(context)
-    val state = CardViewState(context, emitter)
+    val state = CardViewState(context, messageBusEmitter)
     view.layoutListener = state
     viewStates[view] = state
     return view
@@ -37,7 +37,7 @@ class CardViewManager(
 
   override fun onDropViewInstance(view: DynamicComponentView) {
     super.onDropViewInstance(view)
-    viewStates.remove(view)?.dispose()
+    viewStates.remove(view)?.dispose(view)
   }
 
   override fun onAfterUpdateTransaction(view: DynamicComponentView) {

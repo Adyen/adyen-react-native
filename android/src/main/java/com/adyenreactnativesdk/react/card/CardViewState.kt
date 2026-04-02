@@ -13,7 +13,6 @@ import com.adyenreactnativesdk.react.ComponentContract
 import com.adyenreactnativesdk.react.base.DynamicComponentView
 import com.adyenreactnativesdk.react.base.LayoutListener
 import com.adyenreactnativesdk.react.base.ResizableCustomViewEvent
-import com.adyenreactnativesdk.util.ifNotNull
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
 import com.adyenreactnativesdk.util.messaging.TaggedEmitter
@@ -32,18 +31,16 @@ class CardViewState(
   val activity: FragmentActivity = context.currentActivity as FragmentActivity
   val componentManager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, TYPE)))
 
-  fun renderView(view: DynamicComponentView) {
-    ifNotNull(
-      paymentMethod,
-      configuration,
-    ) { paymentMethodJson, configuration ->
-      val component = componentManager.createComponent(configuration, paymentMethodJson)
-      activity.lifecycleScope.launch {
-        AdyenComponentView(activity).apply {
-          attach(component, activity)
-          view.setView(this)
-          EmbeddedComponentBusModule.register(TYPE, this@CardViewState)
-        }
+  fun renderView(dynamicComponentView: DynamicComponentView) {
+    val paymentMethodJson = paymentMethod ?: return
+    val checkedConfig = configuration ?: return
+
+    val component = componentManager.createComponent(checkedConfig, paymentMethodJson)
+    EmbeddedComponentBusModule.register(TYPE, this)
+    activity.lifecycleScope.launch {
+      AdyenComponentView(activity).apply {
+        attach(component, activity)
+        dynamicComponentView.setView(this)
       }
     }
   }
@@ -70,7 +67,8 @@ class CardViewState(
     componentManager.updateAddressLookupOptions(options)
   }
 
-  fun dispose() {
+  fun dispose(dynamicComponentView: DynamicComponentView) {
+    dynamicComponentView.onDispose()
     configuration = null
     paymentMethod = null
     EmbeddedComponentBusModule.unregister(TYPE)
