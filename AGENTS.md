@@ -34,7 +34,7 @@ This is a React Native SDK with three platform targets:
 - **After commit**: Push immediately.
 - **PR description**: Include a short summary of what changed and why, the ticket number, and any testing notes.
 - **PR review responses**: When addressing review comments, reply to each individual comment with the specific commit hash that fixes it (e.g. "Fixed in commit abc1234 — description of change"). Mark invalid comments as such with an explanation.
-- **Comment threads**: Before posting a reply to a PR comment thread, check how many distinct users have commented. If more than one user is in the thread (an ongoing conversation), **ask the user before replying** — do not interrupt. Only reply directly if it's a single comment or multiple follow-up comments from the same reviewer.
+- **Comment threads**: Before posting a reply to a PR comment thread, check how many distinct users have commented. If more than one user is in the thread (an ongoing conversation), **ask the user before replying**. Only reply directly if it's a single comment or multiple follow-up comments from the same reviewer.
 
 ## Refactoring Conventions
 
