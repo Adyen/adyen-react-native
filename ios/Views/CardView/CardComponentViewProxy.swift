@@ -155,13 +155,13 @@ public final class CardComponentViewProxy: UIStackView {
         return nil
     }
 
-    private var actualSize: CGSize {
+    private var preferredContentSize: CGSize {
         guard let vc = cardComponent?.viewController else { return .zero }
         return vc.preferredContentSize
     }
 
     private func reportContentHeight() {
-        let size = actualSize
+        let size = preferredContentSize
         guard abs(size.height - lastReportedHeight) > 1 else { return }
         lastReportedHeight = size.height
         delegate?.onLayoutChange(width: size.width, height: size.height)
