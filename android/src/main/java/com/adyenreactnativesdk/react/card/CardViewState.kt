@@ -37,11 +37,9 @@ class CardViewState(
 
     val component = componentManager.createComponent(checkedConfig, paymentMethodJson)
     EmbeddedComponentBusModule.register(TYPE, this)
-    activity.lifecycleScope.launch {
-      AdyenComponentView(activity).apply {
-        attach(component, activity)
-        dynamicComponentView.setView(this)
-      }
+    AdyenComponentView(activity).apply {
+      attach(component, activity)
+      dynamicComponentView.setView(this)
     }
   }
 
