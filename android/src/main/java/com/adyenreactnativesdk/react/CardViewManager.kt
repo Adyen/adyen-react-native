@@ -3,7 +3,6 @@ package com.adyenreactnativesdk.react
 import android.util.Log
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.react.base.DynamicComponentView
-import com.adyenreactnativesdk.react.base.ResizableCustomViewEvent
 import com.adyenreactnativesdk.react.card.CardViewState
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
@@ -57,8 +56,11 @@ class CardViewManager(
       Log.e("CardViewManager", "paymentMethod value is null")
       return
     }
-    val json = JSONObject(value)
-    state.paymentMethod = json
+    try {
+      state.paymentMethod = JSONObject(value)
+    } catch (e: org.json.JSONException) {
+      Log.e("CardViewManager", "Invalid paymentMethod JSON", e)
+    }
   }
 
   override fun setConfiguration(
@@ -70,13 +72,14 @@ class CardViewManager(
       Log.e("CardViewManager", "configuration value is null")
       return
     }
-    val json = JSONObject(value)
-    val map = ReactNativeJson.convertJsonToMap(json)
-    state.configuration = CheckoutConfigurationFactory.get(map)
+    try {
+      val json = JSONObject(value)
+      val map = ReactNativeJson.convertJsonToMap(json)
+      state.configuration = CheckoutConfigurationFactory.get(map)
+    } catch (e: org.json.JSONException) {
+      Log.e("CardViewManager", "Invalid configuration JSON", e)
+    }
   }
-
-  override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> =
-    mapOf(ResizableCustomViewEvent.EVENT_NAME to mapOf("registrationName" to "onResizableCustomView"))
 
   companion object {
     const val NAME = "CardView"

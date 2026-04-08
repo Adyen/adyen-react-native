@@ -2,7 +2,6 @@ package com.adyenreactnativesdk.react.card
 
 import android.util.Size
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.components.core.AddressLookupResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.LookupAddress
@@ -11,14 +10,13 @@ import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
 import com.adyenreactnativesdk.react.ComponentContract
 import com.adyenreactnativesdk.react.base.DynamicComponentView
+import com.adyenreactnativesdk.react.base.LayoutChangeEvent
 import com.adyenreactnativesdk.react.base.LayoutListener
-import com.adyenreactnativesdk.react.base.ResizableCustomViewEvent
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
 import com.adyenreactnativesdk.util.messaging.TaggedEmitter
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
-import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class CardViewState(
@@ -28,7 +26,9 @@ class CardViewState(
   ComponentContract {
   var configuration: CheckoutConfiguration? = null
   var paymentMethod: JSONObject? = null
-  val activity: FragmentActivity = context.currentActivity as FragmentActivity
+  val activity: FragmentActivity =
+    context.currentActivity as? FragmentActivity
+      ?: throw IllegalStateException("CardView requires a FragmentActivity")
   val componentManager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, TYPE)))
 
   fun renderView(dynamicComponentView: DynamicComponentView) {
@@ -49,7 +49,7 @@ class CardViewState(
   ) {
     val surfaceId = UIManagerHelper.getSurfaceId(context)
     val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, viewId)
-    val event = ResizableCustomViewEvent(surfaceId, viewId, size.width, size.height)
+    val event = LayoutChangeEvent(surfaceId, viewId, size.width, size.height)
     eventDispatcher?.dispatchEvent(event)
   }
 
