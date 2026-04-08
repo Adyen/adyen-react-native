@@ -45,6 +45,8 @@ using namespace facebook::react;
   const auto &oldViewProps = *std::static_pointer_cast<CardViewProps const>(_props);
   const auto &newViewProps = *std::static_pointer_cast<CardViewProps const>(props);
 
+  _cardProxy.registrationKey = [NSString stringWithFormat:@"%ld", (long)self.tag];
+
   NSString *newPaymentMethod = [NSString stringWithUTF8String:newViewProps.paymentMethod.c_str()];
   NSString *newConfiguration = [NSString stringWithUTF8String:newViewProps.configuration.c_str()];
 

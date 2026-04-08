@@ -20,8 +20,8 @@ public final class CardComponentViewProxy: UIStackView {
     private var hasComponent: Bool = false
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
-    private var componentType: String?
     private var delegateProxy: EmbeddedComponentDelegateProxy?
+    @objc public var registrationKey: String?
 
     @objc public weak var delegate: CardComponentViewProxyDelegate?
 
@@ -42,7 +42,6 @@ public final class CardComponentViewProxy: UIStackView {
             return
         }
         self.paymentMethodJSON = json
-        self.componentType = json["type"] as? String
         initializeComponentIfNeeded()
     }
 
@@ -74,11 +73,11 @@ public final class CardComponentViewProxy: UIStackView {
         paymentMethodJSON = nil
         configurationJSON = nil
         lastReportedHeight = 0
-        if let componentType {
-            EmbeddedComponentBusModule.shared?.unregister(componentType: componentType)
+        if let registrationKey {
+            EmbeddedComponentBusModule.shared?.unregister(componentType: registrationKey)
         }
         delegateProxy = nil
-        componentType = nil
+        registrationKey = nil
     }
 
     // MARK: - Component initialization
@@ -87,7 +86,7 @@ public final class CardComponentViewProxy: UIStackView {
         guard !hasComponent,
               let paymentMethodJSON,
               let configurationJSON,
-              let componentType else {
+              let registrationKey else {
             return
         }
         self.hasComponent = true
@@ -100,7 +99,7 @@ public final class CardComponentViewProxy: UIStackView {
             let component = try createCardComponent(
                 paymentMethodJSON: paymentMethodJSON,
                 configurationJSON: configurationJSON,
-                componentType: componentType,
+                registrationKey: registrationKey,
                 bus: adyenComponentBus
             )
             self.cardComponent = component
@@ -114,14 +113,14 @@ public final class CardComponentViewProxy: UIStackView {
     private func createCardComponent(
         paymentMethodJSON: NSDictionary,
         configurationJSON: NSDictionary,
-        componentType: String,
+        registrationKey: String,
         bus: EmbeddedComponentBusModule
     ) throws -> CardComponent {
         let parser = RootConfigurationParser(configuration: configurationJSON)
         let context = try parser.fetchContext(session: BaseModule.session)
         let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
 
-        let proxy = bus.register(componentType: componentType)
+        let proxy = bus.register(componentType: registrationKey)
         self.delegateProxy = proxy
 
         let cardConfig = CardConfigurationParser(

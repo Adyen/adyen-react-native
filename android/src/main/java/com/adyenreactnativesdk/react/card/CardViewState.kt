@@ -29,14 +29,20 @@ class CardViewState(
   val activity: FragmentActivity =
     context.currentActivity as? FragmentActivity
       ?: throw IllegalStateException("CardView requires a FragmentActivity")
-  val componentManager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, TYPE)))
+  private var componentManager: CardComponentManager? = null
+  private var registrationKey: String? = null
 
   fun renderView(dynamicComponentView: DynamicComponentView) {
     val paymentMethodJson = paymentMethod ?: return
     val checkedConfig = configuration ?: return
 
-    val component = componentManager.createComponent(checkedConfig, paymentMethodJson)
-    EmbeddedComponentBusModule.register(TYPE, this)
+    val key = dynamicComponentView.id.toString()
+    registrationKey = key
+    val manager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, key)))
+    componentManager = manager
+
+    val component = manager.createComponent(checkedConfig, paymentMethodJson)
+    EmbeddedComponentBusModule.register(key, this)
     AdyenComponentView(activity).apply {
       attach(component, activity)
       dynamicComponentView.setView(this)
@@ -54,25 +60,23 @@ class CardViewState(
   }
 
   override fun onAction(action: Action) {
-    componentManager.handleAction(action)
+    componentManager?.handleAction(action)
   }
 
   override fun onAddressLookupResult(result: AddressLookupResult) {
-    componentManager.setAddressLookupResult(result)
+    componentManager?.setAddressLookupResult(result)
   }
 
   override fun onAddressLookupOptions(options: List<LookupAddress>) {
-    componentManager.updateAddressLookupOptions(options)
+    componentManager?.updateAddressLookupOptions(options)
   }
 
   fun dispose(dynamicComponentView: DynamicComponentView) {
     dynamicComponentView.onDispose()
     configuration = null
     paymentMethod = null
-    EmbeddedComponentBusModule.unregister(TYPE)
-  }
-
-  companion object {
-    const val TYPE = "scheme"
+    registrationKey?.let { EmbeddedComponentBusModule.unregister(it) }
+    componentManager = null
+    registrationKey = null
   }
 }

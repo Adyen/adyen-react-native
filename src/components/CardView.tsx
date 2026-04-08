@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { findNodeHandle } from 'react-native';
 import NativeCardView, {
   type LayoutChangeEvent,
 } from '../specs/NativeCardView';
@@ -11,6 +18,8 @@ export interface CardViewProps {
   paymentMethod?: PaymentMethod;
 }
 
+const PAYMENT_METHOD_TYPE = 'scheme';
+
 /**
  * Type-safe wrapper for the native CardView component.
  * Automatically serializes PaymentMethod and Configuration objects to JSON strings.
@@ -18,6 +27,8 @@ export interface CardViewProps {
 export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
   const { config, paymentMethods } = useAdyenCheckout();
   const { subscribe, unsubscribe } = useComponent();
+  const nativeRef = useRef(null);
+  const subscribedKey = useRef<string | null>(null);
 
   const [size, setSize] = useState<LayoutChangeEvent>();
 
@@ -28,25 +39,33 @@ export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
     []
   );
 
-  const type = 'scheme';
-
   const _paymentMethod = useMemo(
     () =>
       paymentMethod ??
-      paymentMethods?.paymentMethods?.find((x) => x.type === type),
+      paymentMethods?.paymentMethods?.find(
+        (x) => x.type === PAYMENT_METHOD_TYPE
+      ),
     [paymentMethod, paymentMethods]
   );
 
   useEffect(() => {
-    subscribe(type);
+    const tag = findNodeHandle(nativeRef.current);
+    if (tag == null) return;
+
+    const key = String(tag);
+    subscribedKey.current = key;
+    subscribe(key);
     return () => {
-      unsubscribe(type);
+      unsubscribe(key);
+      subscribedKey.current = null;
     };
-  }, [subscribe, unsubscribe]);
+  }, [_paymentMethod, subscribe, unsubscribe]);
 
   useEffect(() => {
     if (!_paymentMethod) {
-      console.error(`No payment method found for type ${type}`);
+      console.error(
+        `No payment method found for type ${PAYMENT_METHOD_TYPE}`
+      );
     }
   }, [_paymentMethod]);
 
@@ -56,6 +75,7 @@ export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
 
   return (
     <NativeCardView
+      ref={nativeRef}
       paymentMethod={JSON.stringify(_paymentMethod)}
       configuration={JSON.stringify(config)}
       onLayoutChange={handleLayoutChange}
