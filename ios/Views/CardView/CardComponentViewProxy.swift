@@ -202,9 +202,7 @@ extension CardComponentViewProxy: PresentationDelegate {
             return
         }
 
-        DispatchQueue.main.async {
-            BaseModule.currentPresenter = presenter
-            presenter.present(component.viewController, animated: true)
-        }
+        BaseModule.currentPresenter = presenter
+        presenter.present(component.viewController, animated: true)
     }
 }
