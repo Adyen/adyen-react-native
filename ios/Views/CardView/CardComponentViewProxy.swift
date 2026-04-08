@@ -20,7 +20,6 @@ public final class CardComponentViewProxy: UIStackView {
     private var hasComponent: Bool = false
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
-    private var delegateProxy: EmbeddedComponentDelegateProxy?
     @objc public var registrationKey: String?
 
     @objc public weak var delegate: CardComponentViewProxyDelegate?
@@ -76,7 +75,6 @@ public final class CardComponentViewProxy: UIStackView {
         if let registrationKey {
             EmbeddedComponentBusModule.shared?.unregister(componentType: registrationKey)
         }
-        delegateProxy = nil
         registrationKey = nil
     }
 
@@ -90,38 +88,35 @@ public final class CardComponentViewProxy: UIStackView {
             return
         }
         self.hasComponent = true
-        guard let adyenComponentBus = EmbeddedComponentBusModule.shared else {
+        guard let componentBus = EmbeddedComponentBusModule.shared else {
             assertionFailure("EmbeddedComponentBusModule not initialized")
             return
         }
 
+        let proxy = componentBus.register(componentType: registrationKey)
         do {
             let component = try createCardComponent(
                 paymentMethodJSON: paymentMethodJSON,
                 configurationJSON: configurationJSON,
-                registrationKey: registrationKey,
-                bus: adyenComponentBus
+                proxy: proxy
             )
             self.cardComponent = component
             embedComponentView(component)
         } catch {
             self.hasComponent = false
-            adyenComponentBus.sendError(error: error)
+            componentBus.sendError(error: error)
+            return
         }
     }
 
     private func createCardComponent(
         paymentMethodJSON: NSDictionary,
         configurationJSON: NSDictionary,
-        registrationKey: String,
-        bus: EmbeddedComponentBusModule
+        proxy: EmbeddedComponentDelegateProxy
     ) throws -> CardComponent {
         let parser = RootConfigurationParser(configuration: configurationJSON)
         let context = try parser.fetchContext(session: BaseModule.session)
         let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
-
-        let proxy = bus.register(componentType: registrationKey)
-        self.delegateProxy = proxy
 
         let cardConfig = CardConfigurationParser(
             configuration: configurationJSON,
@@ -135,8 +130,7 @@ public final class CardComponentViewProxy: UIStackView {
         )
         component.cardComponentDelegate = proxy
         component.delegate = BaseModule.session ?? proxy
-
-        bus.createActionHandlerIfNeeded(context: context, locale: parser.shopperLocale)
+        EmbeddedComponentBusModule.shared?.createActionHandlerIfNeeded(context: context, locale: parser.shopperLocale)
         return component
     }
 
@@ -191,17 +185,5 @@ public final class CardComponentViewProxy: UIStackView {
             throw ModuleException.paymentMethodNotFound(CardPaymentMethod.self)
         }
         return paymentMethod
-    }
-}
-
-extension CardComponentViewProxy: PresentationDelegate {
-    public func present(component: PresentableComponent) {
-        guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
-            EmbeddedComponentBusModule.shared?.sendError(error: ModuleException.notKeyWindow)
-            return
-        }
-
-        BaseModule.currentPresenter = presenter
-        presenter.present(component.viewController, animated: true)
     }
 }
