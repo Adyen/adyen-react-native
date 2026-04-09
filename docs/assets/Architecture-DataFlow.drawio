@@ -390,22 +390,22 @@
           <mxGeometry height="450" width="1200" x="100" y="510" as="geometry" />
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
-          <mxGeometry height="160" width="270" x="793" y="570" as="geometry" />
+          <mxGeometry height="160" width="270" x="611" y="771" as="geometry" />
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
-          <mxGeometry height="160" width="270" x="783" y="560" as="geometry" />
+          <mxGeometry height="160" width="270" x="606" y="766" as="geometry" />
         </mxCell>
         <mxCell id="ev-js-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=middle;align=left;fillColor=none;strokeColor=#9673a6;fontSize=14;fontStyle=1;dashed=1;dashPattern=8 8;arcSize=9;fontColor=#999999;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;JS (React Native)&lt;/font&gt;&lt;/h2&gt;" vertex="1">
           <mxGeometry height="460" width="1200" x="100" y="10" as="geometry" />
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
-          <mxGeometry height="130" width="280" x="143" y="100" as="geometry" />
+          <mxGeometry height="130" width="280" x="135" y="92" as="geometry" />
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
-          <mxGeometry height="130" width="280" x="133" y="90" as="geometry" />
+          <mxGeometry height="130" width="280" x="129" y="86" as="geometry" />
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;fillStyle=auto;dashed=1;" value="" vertex="1">
-          <mxGeometry height="120" width="260" x="580" y="290" as="geometry" />
+          <mxGeometry height="120" width="260" x="600" y="282" as="geometry" />
         </mxCell>
         <mxCell id="ev-checkout" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1" value="AdyenCheckout (React Component)" vertex="1">
           <mxGeometry height="200" width="740" x="538" y="40" as="geometry" />
@@ -426,16 +426,16 @@
           <mxGeometry height="100" width="240" x="1038" y="280" as="geometry" />
         </mxCell>
         <mxCell id="ev-view-manager" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardViewManager&lt;/b&gt;&lt;br&gt;(Fabric ViewManager)&lt;br&gt;&lt;br&gt;- viewStates: Map&amp;lt;View, State&amp;gt;&lt;br&gt;- createViewInstance()&lt;br&gt;- setPaymentMethod / setConfiguration&lt;br&gt;- onAfterUpdateTransaction&lt;br&gt;- onDropViewInstance → dispose" vertex="1">
-          <mxGeometry height="160" width="280" x="350" y="550" as="geometry" />
+          <mxGeometry height="160" width="280" x="596" y="540" as="geometry" />
         </mxCell>
         <mxCell id="ev-view-state" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardViewState / CardComponentViewProxy&lt;/b&gt;&lt;br&gt;(per-view)&lt;br&gt;&lt;br&gt;- viewId (reactTag)&lt;br&gt;- renderComponentIfNeeded()&lt;br&gt;- creates CardComponent&lt;br&gt;- registers with bus using viewId&lt;br&gt;- dispose() → unregister" vertex="1">
-          <mxGeometry height="160" width="270" x="778" y="550" as="geometry" />
+          <mxGeometry height="160" width="270" x="601" y="760" as="geometry" />
         </mxCell>
         <mxCell id="ev-bus-native" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;EmbeddedComponentBusModule&lt;/b&gt;&lt;br&gt;(singleton)&lt;br&gt;&lt;br&gt;- delegates/consumers: [viewId → contract]&lt;br&gt;- register(viewId) / unregister(viewId)&lt;br&gt;- handle/update/confirm → routes by viewId&lt;br&gt;- shared actionHandler" vertex="1">
-          <mxGeometry height="150" width="340" x="150" y="770" as="geometry" />
+          <mxGeometry height="160" width="340" x="150" y="760" as="geometry" />
         </mxCell>
-        <mxCell id="ev-tagged-emitter" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=center;verticalAlign=top;" value="&lt;b&gt;TaggedEmitter / DelegateProxy&lt;/b&gt;&lt;br&gt;&lt;br&gt;injects viewId into every&lt;br&gt;event payload for JS demux" vertex="1">
-          <mxGeometry height="110" width="280" x="840" y="790" as="geometry" />
+        <mxCell id="ev-tagged-emitter" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=center;verticalAlign=top;" value="&lt;b&gt;TaggedEmitter&lt;/b&gt;&lt;br&gt;&lt;br&gt;injects viewId into every&lt;br&gt;event payload for JS demux" vertex="1">
+          <mxGeometry height="110" width="180" x="1068" y="785" as="geometry" />
         </mxCell>
         <mxCell id="ev-arrow-cv-usm" edge="1" parent="1" source="ev-cardview" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=none;strokeColor=#314354;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=none;resizable=0;gradientColor=none;" target="ev-use-component" value="&lt;span style=&quot;color: rgb(127, 127, 127);&quot;&gt;subscribe(viewID&lt;/span&gt;&lt;span style=&quot;color: rgb(127, 127, 127); background-color: transparent;&quot;&gt;)&lt;/span&gt;">
           <mxGeometry relative="1" x="-0.2676" y="15" as="geometry">
@@ -456,31 +456,28 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="ev-arrow-vm-vs" edge="1" parent="1" source="ev-view-manager" style="endArrow=ERmany;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endFill=0;startArrow=none;startFill=0;labelBackgroundColor=none;" target="ev-view-state" value="&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;props -&amp;gt; render&lt;/span&gt;">
-          <mxGeometry relative="1" x="-0.0541" y="10" as="geometry">
+        <mxCell id="ev-arrow-vm-vs" edge="1" parent="1" source="ev-view-manager" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endFill=1;startArrow=none;startFill=0;labelBackgroundColor=none;" target="ev-view-state" value="&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;props -&amp;gt; render&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.3333" y="47" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="ev-arrow-vs-nbus" edge="1" parent="1" source="ev-view-state" style="endArrow=classic;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;labelBackgroundColor=none;" target="ev-bus-native" value="&lt;font color=&quot;#7f7f7f&quot;&gt;&lt;span&gt;register(viewID)&lt;/span&gt;&lt;/font&gt;">
-          <mxGeometry relative="1" x="-0.1434" y="25" as="geometry">
+        <mxCell id="ev-arrow-vs-nbus" edge="1" parent="1" source="ev-view-state" style="endArrow=none;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;labelBackgroundColor=none;startArrow=ERmany;startFill=0;endFill=0;" target="ev-bus-native" value="&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;register(viewID)&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.0837" y="-20" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="ev-arrow-vs-te" edge="1" parent="1" source="ev-view-state" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;labelBackgroundColor=none;fontColor=#808080;" target="ev-tagged-emitter" value="events tagged&lt;br&gt;with viewID">
-          <mxGeometry relative="1" x="0.25" y="40" as="geometry">
+        <mxCell id="ev-arrow-vs-te" edge="1" parent="1" source="ev-view-state" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;labelBackgroundColor=none;fontColor=#808080;" target="ev-tagged-emitter" value="events tagged&lt;br&gt;with viewID">
+          <mxGeometry relative="1" x="0.1919" y="20" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="ev-arrow-te-sel" edge="1" parent="1" source="ev-tagged-emitter" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#314354;fillColor=#647687;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontSize=11;fontColor=#808080;" target="ev-event-listeners" value="&lt;span&gt;events flow back&lt;br&gt;through bridge&lt;/span&gt;">
-          <mxGeometry relative="1" x="0.0569" y="-50" as="geometry">
+        <mxCell id="ev-arrow-te-sel" edge="1" parent="1" source="ev-tagged-emitter" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#314354;fillColor=#647687;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontSize=11;fontColor=#808080;" target="ev-event-listeners" value="&lt;span&gt;events flow back&lt;br&gt;through bridge&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.0864" y="-52" as="geometry">
             <mxPoint as="offset" />
-            <Array as="points">
-              <mxPoint x="1158" y="845" />
-            </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;fillStyle=auto;dashed=1;" value="" vertex="1">
-          <mxGeometry height="120" width="260" x="570" y="280" as="geometry" />
+          <mxGeometry height="120" width="260" x="594" y="276" as="geometry" />
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-2" edge="1" parent="1" source="ev-handlers" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ev-proxy" value="">
           <mxGeometry relative="1" as="geometry">
@@ -490,7 +487,7 @@
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-11" connectable="0" parent="KkeV9tegGiMfPa8BwOsl-2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=none;" value="&lt;font color=&quot;#808080&quot;&gt;filtered command&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font color=&quot;#808080&quot;&gt;by viewID&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry relative="1" x="0.2055" y="1" as="geometry">
-            <mxPoint y="47" as="offset" />
+            <mxPoint x="-8" y="53" as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="KkeV9tegGiMfPa8BwOsl-5" edge="1" parent="1" source="ev-proxy" style="endArrow=none;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endFill=0;startArrow=ERmany;startFill=0;" target="ev-bus-wrapper" value="">
@@ -500,7 +497,14 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ev-proxy" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;fillStyle=auto;dashed=1;" value="&lt;b&gt;EmbeddedComponentProxy&lt;/b&gt;&lt;br&gt;&lt;br&gt;- viewId (reactTag)&lt;br&gt;- handle(action) → bus&lt;br&gt;- hide() → bus" vertex="1">
-          <mxGeometry height="120" width="260" x="560" y="270" as="geometry" />
+          <mxGeometry height="120" width="260" x="588" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-17" edge="1" parent="1" source="ev-bus-native" style="endArrow=classic;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;labelBackgroundColor=none;startArrow=none;startFill=0;endFill=1;" target="ev-view-state" value="&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;filter commands&amp;nbsp;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;by viewID&lt;/span&gt;&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.0837" y="-20" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="616" y="938" as="sourcePoint" />
+            <mxPoint x="505" y="940" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
