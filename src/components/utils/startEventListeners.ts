@@ -44,12 +44,12 @@ export type EventHandlerRefs = {
  *
  * @param nativeComponent - The native wrapper used for event subscription.
  * @param refs - Callback refs for event handlers.
- * @param componentType - When set, events are filtered by `data.componentType` (embedded component mode).
+ * @param viewId - When set, events are filtered by `data.viewId` (embedded component mode).
  */
 export function startEventListeners(
   nativeComponent: AdyenEventListener & AdyenActionComponent,
   refs: EventHandlerRefs,
-  componentType?: string
+  viewId?: string
 ): EmitterSubscription[] {
   const eventEmitter = new NativeEventEmitter(
     nativeComponent.eventEmitterTarget
@@ -63,8 +63,8 @@ export function startEventListeners(
     if (nativeComponent.isSupported(event)) {
       eventSubscriptions.push(
         eventEmitter.addListener(event, (rawData: any) => {
-          if (componentType) {
-            if (rawData?.componentType !== componentType) return;
+          if (viewId) {
+            if (rawData?.viewId !== viewId) return;
           }
           handler(rawData as T);
         })
@@ -97,7 +97,7 @@ export function startEventListeners(
   // Address lookup
   const lookupModule = nativeComponent as unknown as AddressLookup;
   subscribeIfSupported(Event.onAddressUpdate, async (data: any) => {
-    const prompt = componentType && typeof data === 'object' ? data.value : data;
+    const prompt = viewId && typeof data === 'object' ? data.value : data;
     refs.config.current.card?.onUpdateAddress?.(prompt, lookupModule);
   });
   subscribeIfSupported(Event.onAddressConfirm, (address: AddressLookupItem) =>
@@ -107,13 +107,13 @@ export function startEventListeners(
   // BIN lookup and value
   subscribeIfSupported(Event.onBinLookup, (data: any) => {
     const lookupData =
-      componentType && !Array.isArray(data) && typeof data === 'object' ? data.data : data;
+      viewId && !Array.isArray(data) && typeof data === 'object' ? data.data : data;
     refs.config.current.card?.onBinLookup?.(lookupData);
   });
 
   subscribeIfSupported(Event.onBinValue, (data: any) => {
     const value =
-      componentType && typeof data === 'object' ? data.value : data;
+      viewId && typeof data === 'object' ? data.value : data;
     refs.config.current.card?.onBinValue?.(value);
   });
 

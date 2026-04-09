@@ -6,21 +6,28 @@
 
 import Adyen
 
-/// Per-component delegate that tags every emitted event with `componentType`,
+/// Per-view delegate that tags every emitted event with `viewId`,
 /// allowing the JS side to demux events from multiple simultaneous embedded views.
 internal final class EmbeddedComponentDelegateProxy: NSObject {
-    let componentType: String
+
+    private enum Keys {
+        static let viewId = "viewId"
+        static let value = "value"
+        static let data = "data"
+    }
+
+    let viewId: String
     weak var bus: EmbeddedComponentBusModule?
 
-    init(componentType: String, bus: EmbeddedComponentBusModule) {
-        self.componentType = componentType
+    init(viewId: String, bus: EmbeddedComponentBusModule) {
+        self.viewId = viewId
         self.bus = bus
         super.init()
     }
 
     private func taggedBody(_ body: [String: Any]) -> [String: Any] {
         var dict = body
-        dict["componentType"] = componentType
+        dict[Keys.viewId] = viewId
         return dict
     }
 
@@ -80,14 +87,14 @@ extension EmbeddedComponentDelegateProxy: CardComponentDelegate {
 
     func didChangeBIN(_ value: String, component _: CardComponent) {
         guard let bus else { return }
-        bus.sendEvent(event: .changeBinValue, body: taggedBody(["value": value]))
+        bus.sendEvent(event: .changeBinValue, body: taggedBody([Keys.value: value]))
     }
 
     func didChangeCardBrand(_ value: [CardBrand]?, component _: CardComponent) {
         guard let bus else { return }
         guard let value, !value.isEmpty else { return }
         let jsonData = value.map { BinLookupDataDTO(brand: $0.type.rawValue).jsonObject }
-        bus.sendEvent(event: .binLookup, body: taggedBody(["data": jsonData]))
+        bus.sendEvent(event: .binLookup, body: taggedBody([Keys.data: jsonData]))
     }
 }
 
@@ -96,8 +103,8 @@ extension EmbeddedComponentDelegateProxy: CardComponentDelegate {
 extension EmbeddedComponentDelegateProxy: AddressLookupProvider {
     func lookUp(searchTerm: String, resultHandler: @escaping ([LookupAddressModel]) -> Void) {
         guard let bus else { return }
-        bus.storeLookupHandler(for: componentType, handler: resultHandler)
-        bus.sendEvent(event: .updateAddress, body: taggedBody(["value": searchTerm]))
+        bus.storeLookupHandler(for: viewId, handler: resultHandler)
+        bus.sendEvent(event: .updateAddress, body: taggedBody([Keys.value: searchTerm]))
     }
 
     func complete(
@@ -105,7 +112,7 @@ extension EmbeddedComponentDelegateProxy: AddressLookupProvider {
         resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void
     ) {
         guard let bus else { return }
-        bus.storeLookupCompletionHandler(for: componentType, handler: resultHandler)
+        bus.storeLookupCompletionHandler(for: viewId, handler: resultHandler)
         bus.sendEvent(event: .confirmAddress, body: taggedBody(incompleteAddress.jsonObject))
     }
 }

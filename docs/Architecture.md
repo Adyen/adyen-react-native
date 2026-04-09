@@ -8,21 +8,25 @@
 
 ```
 src/
-├── index.ts                           # Main entry point (barrel exports)
-├── components/                        # React components
+├── index.ts                              # Main entry point (barrel exports)
+├── components/                           # React components
 │   ├── index.ts
-│   ├── AdyenCheckout.tsx              # Main checkout component with context provider
-│   ├── ApplePayButton.tsx             # Apple Pay button component
-│   ├── GooglePayButton.tsx            # Google Pay button component
-│   ├── utils.ts                       # Configuration validation utilities
+│   ├── AdyenCheckout.tsx                   # Main checkout component with context provider
+│   ├── ApplePayButton.tsx                  # Apple Pay button component
+│   ├── GooglePayButton.tsx                 # Google Pay button component
+│   ├── CardView.tsx                        # Embedded card view (Fabric native component)
+│   ├── utils/                              # Component utilities
+│   │   ├── checkConfiguration.ts             # Configuration validation
+│   │   ├── checkPaymentMethodsResponse.ts    # Payment methods validation
+│   │   └── startEventListeners.ts            # Event listener setup for native components
 │   └── common/
-│       └── Styles.ts                  # Shared styles
-├── core/                              # Core types, constants, and configurations
+│       └── Styles.ts                         # Shared styles
+├── core/                                 # Core types, constants, and configurations
 │   ├── index.ts
-│   ├── types.ts                       # Payment types and component interfaces
-│   ├── constants.ts                   # Event enums, error codes, result codes
-│   ├── components.ts                  # Payment method component mappings
-│   └── configurations/                # Configuration interfaces
+│   ├── types.ts                            # Payment types and component interfaces
+│   ├── constants.ts                        # Event enums, error codes, result codes
+│   ├── components.ts                       # Payment method component mappings
+│   └── configurations/                     # Configuration interfaces
 │       ├── index.ts
 │       ├── Configuration.ts
 │       ├── AddressLookup.ts
@@ -32,47 +36,55 @@ src/
 │       ├── GooglePayConfiguration.ts
 │       ├── PartialPaymentConfiguration.ts
 │       └── ThreeDSConfiguration.ts
-├── hooks/                             # React hooks
+├── hooks/                                # React hooks
 │   ├── index.ts
-│   └── useAdyenCheckout.ts            # Context hook for checkout state
-├── plugin/                            # Expo config plugins
-│   ├── withAdyen.ts                           # Main plugin entry
-│   ├── withAdyenIos.ts                        # iOS-specific configuration
-│   ├── withAdyenAndroid.ts                    # Android-specific configuration
-│   └── ...                                    # Platform setup utilities
-├── specs/                             # TurboModule specs
-│   └── NativePlatformPayView.ts
-└── modules/                           # Native module wrappers
+│   ├── constants.ts                        # Error message constants
+│   ├── useAdyenCheckout.ts                 # Context hook for checkout state
+│   ├── useComponent.ts                     # Context hook for embedded component subscribe/unsubscribe
+│   └── useSubscriptionManager.ts           # Manages event subscriptions for embedded components
+├── plugin/                               # Expo config plugins
+│   ├── withAdyen.ts                        # Main plugin entry
+│   ├── withAdyenIos.ts                     # iOS-specific configuration
+│   ├── withAdyenAndroid.ts                 # Android-specific configuration
+│   └── ...                                 # Platform setup utilities
+├── specs/                                # Fabric codegen specs
+│   ├── NativeCardView.ts                    # CardView codegen spec (paymentMethod, configuration, onLayoutChange)
+│   └── NativePlatformPayView.ts             # PlatformPayView codegen spec
+└── modules/                              # Native module wrappers
     ├── index.ts
-    ├── base/                          # Base wrapper classes
-    │   ├── EventListenerWrapper.ts            # Abstract base for event handling
-    │   ├── ModuleWrapper.ts                   # Abstract base with hide()
-    │   ├── PaymentComponentWrapper.ts         # Abstract base with open()
-    │   ├── ActionHandlingComponentWrapper.ts  # Abstract base with handle()
-    │   ├── ModuleMock.ts                      # Mock for unavailable modules
-    │   ├── constants.ts                       # Module-specific constants
-    │   ├── getWrapper.ts                      # Factory to resolve payment method wrappers
-    │   └── utils.ts                           # Utility functions
-    ├── action/                        # Standalone action handler
+    ├── base/                               # Base wrapper classes
+    │   ├── EventListenerWrapper.ts           # Abstract base for event handling
+    │   ├── ModuleWrapper.ts                  # Abstract base with hide()
+    │   ├── PaymentComponentWrapper.ts        # Abstract base with open()
+    │   ├── ActionHandlingComponentWrapper.ts # Abstract base with handle()
+    │   ├── ModuleMock.ts                     # Mock for unavailable modules
+    │   ├── constants.ts                      # Module-specific constants
+    │   ├── getWrapper.ts                     # Factory to resolve payment method wrappers
+    │   └── utils.ts                          # Utility functions
+    ├── action/                             # Standalone action handler
     │   ├── AdyenAction.ts
     │   └── ActionModuleWrapper.ts
-    ├── applepay/                      # Apple Pay module
+    ├── applepay/                           # Apple Pay module
     │   ├── AdyenApplePay.ts
     │   └── ApplePayWrapper.ts
-    ├── cse/                           # Client-side encryption
+    ├── cse/                                # Client-side encryption
     │   ├── types.ts
     │   ├── AdyenCSEModule.ts
     │   └── AdyenCSEModuleWrapper.ts
-    ├── dropin/                        # Drop-in module
+    ├── dropin/                             # Drop-in module
     │   ├── AdyenDropIn.ts
     │   └── DropInWrapper.ts
-    ├── googlepay/                     # Google Pay module
+    ├── embedded/                           # Embedded component bus (for CardView and future embedded views)
+    │   ├── EmbeddedComponentBus.ts           # Singleton bus instance
+    │   ├── EmbeddedComponentBusWrapper.ts    # Wrapper with subscribe/unsubscribe/handle/hide/update/confirm
+    │   └── EmbeddedComponentProxy.ts         # Per-component proxy that binds a key to bus calls
+    ├── googlepay/                          # Google Pay module
     │   ├── AdyenGooglePay.ts
     │   └── GooglePayWrapper.ts
-    ├── instant/                       # Instant/redirect payments
+    ├── instant/                            # Instant/redirect payments
     │   ├── AdyenInstant.ts
     │   └── InstantWrapper.ts
-    └── session/                       # Session management
+    └── session/                            # Session management
         ├── SessionHelperModule.ts
         ├── SessionWrapper.ts
         └── types.ts
@@ -117,6 +129,26 @@ ActionHandlingComponentWrapper<T>                            # Abstract - adds h
             + removeStored()                       (RemovesStoredPayment)
             + update(), confirm(), reject()        (AddressLookup)
             + provideBalance/Order/PaymentMethods  (PartialPayment)
+```
+
+### Embedded Component Wrappers
+
+These handle communication for inline embedded views (CardView, future embedded components):
+
+```
+EventListenerWrapper<EmbeddedNativeModule>
+    │
+    └──► EmbeddedComponentBusWrapper                         # Bus for all embedded views
+            - subscribe(key), unsubscribe(key)
+            - handle(key, action), hide(key, success)
+            - update(key, results), confirm(key, success, body)
+
+EmbeddedComponentProxy                                       # Per-view proxy (not a wrapper subclass)
+    implements AdyenActionComponent, AddressLookup, AdyenEventListener
+    - constructor(wrapper, viewId)
+    - handle(action) → wrapper.handle(key, action)
+    - hide(success) → wrapper.hide(key, success)
+    - update/confirm/reject → wrapper.update/confirm(key, ...)
 ```
 
 ### Standalone Wrappers (outside hierarchy)
@@ -225,27 +257,34 @@ BaseModule                                           # Base class for all iOS mo
             │       - open(paymentMethods, config)
             │       - isAvailable(paymentMethod, config)
             │
-            ├──► BaseActionHandler                   # Adds handle() for actions
+            ├──► BaseActionModule                    # Adds handle() for actions
             │       │   - actionHandler: AdyenActionComponent?
             │       │   - handle(action)
             │       │
             │       └──► InstantModule               # Instant/redirect payments
             │               - open(paymentMethods, config)
             │
-            └──► BaseAddressLookup                   # Adds address lookup support
+            └──► BaseAddressModule                   # Adds address lookup support
                     │   - update(results)
                     │   - confirm(success, address)
                     │   - AddressLookupProvider protocol
                     │
-                    └──► DropInModule                # Drop-in component
-                            - open(paymentMethods, config)
-                            - handle(action)
-                            - removeStored(success)
-                            - getReturnURL()
-                            - provideBalance/Order/PaymentMethods
-                            - DropInComponentDelegate
-                            - StoredPaymentMethodsDelegate
-                            - PartialPaymentDelegate
+                    ├──► DropInModule                # Drop-in component
+                    │       - open(paymentMethods, config)
+                    │       - handle(action)
+                    │       - removeStored(success)
+                    │       - getReturnURL()
+                    │       - provideBalance/Order/PaymentMethods
+                    │       - DropInComponentDelegate
+                    │       - StoredPaymentMethodsDelegate
+                    │       - PartialPaymentDelegate
+                    │
+                    └──► EmbeddedComponentBusModule   # Embedded component bus (singleton)
+                            - delegates: [String: EmbeddedComponentDelegateProxy]
+                            - subscribe/unsubscribe (JS lifecycle)
+                            - register/unregister (native view lifecycle)
+                            - handle/update/confirm/hide (JS → native routing)
+                            - Shared actionHandler for all embedded views
 ```
 
 ### Android Class Structure
@@ -293,7 +332,160 @@ BaseModule                                           # Base class for payment mo
             - getReturnURL()
             - update/confirm (address lookup)
             - provideBalance/Order/PaymentMethods
+
+BaseAddressModule(BaseActionModule(BaseModule))      # Extended base for address + action support
+    │
+    └──► EmbeddedComponentBusModule                  # Embedded component bus
+            - consumers: Map<String, ComponentContract> (companion, keyed by reactTag)
+            - subscribe/unsubscribe (JS lifecycle)
+            - register/unregister (native view lifecycle)
+            - handle/update/confirm/hide (JS → native routing)
 ```
+
+### Embedded Views (Fabric Native Components)
+
+Embedded views are rendered inline within the React tree using Fabric codegen. Unlike modal-based modules (Drop-in, Instant), they don't use `open()`/`hide()` — instead, props drive initialization and an event bus routes callbacks.
+
+#### Architecture Overview
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│  JS Layer                                                                │
+│                                                                          │
+│  CardView.tsx                                                            │
+│    ├── ref → findNodeHandle() → reactTag                                 │
+│    ├── subscribe(reactTag) → EmbeddedComponentBus                        │
+│    └── <NativeCardView paymentMethod={...} configuration={...} />        │
+│                                                                          │
+│  useSubscriptionManager                                                  │
+│    ├── EmbeddedComponentBus.subscribe(key)                               │
+│    ├── EmbeddedComponentProxy(bus, key) → startEventListeners()          │
+│    └── Filters incoming events by viewId === key                         │
+│                                                                          │
+│  EmbeddedComponentProxy                                                  │
+│    └── handle(action), hide(), update(), confirm() → routes to bus       │
+└──────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Native Layer (per-platform)                                             │
+│                                                                          │
+│  ViewManager creates view → props set → renderComponentIfNeeded()        │
+│    ├── Creates Adyen SDK component                                       │
+│    ├── Registers with EmbeddedComponentBusModule using reactTag key      │
+│    └── TaggedEmitter tags all outgoing events with reactTag              │
+│                                                                          │
+│  EmbeddedComponentBusModule                                              │
+│    ├── register(key, contract) — maps reactTag → native view state       │
+│    ├── handle(key, action) — routes actions from JS to correct view      │
+│    └── unregister(key) — cleanup on dispose                              │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Multi-Instance Support
+
+Each embedded view instance uses its **reactTag** (view ID) as the bus registration key, enabling multiple views of the same type to coexist:
+
+- **JS**: `findNodeHandle(ref)` → `subscribe(String(tag))`
+- **Android**: `view.id.toString()` → `register(key, this)` + `TaggedEmitter(emitter, key)`
+- **iOS**: `self.tag` → `viewId` → `register(viewId:)`
+
+Events are tagged with the reactTag and filtered on the JS side by `startEventListeners`, which checks `rawData.viewId === key`.
+
+#### Android Embedded View Classes
+
+```
+SimpleViewManager<DynamicComponentView> (React Native)
+    │
+    ├──► CardViewManager                             # Stateless Fabric ViewManager
+    │       - delegate: CardViewManagerDelegate       (codegen)
+    │       - viewStates: Map<View, CardViewState>    (per-view state)
+    │       - createViewInstance() → DynamicComponentView
+    │       - onAfterUpdateTransaction() → state.renderComponentIfNeeded()
+    │       - onDropViewInstance() → state.dispose()
+    │       - setPaymentMethod/setConfiguration (prop setters)
+    │
+    └──► PlatformPayViewManager                      # Google/Apple Pay button
+            - delegate: PlatformPayViewManagerDelegate (codegen)
+            - setTheme/setType/setRadius
+
+CardViewState                                        # Per-view state holder
+    implements LayoutListener, ComponentContract
+    - configuration, paymentMethod (props from JS)
+    - viewId (reactTag)
+    - cardComponentManager: CardComponentManager
+    - renderComponentIfNeeded(view) — creates component, registers with bus
+    - dispose(view) — unregisters, clears state
+    - onAction/onAddressLookup* — delegates to cardComponentManager
+
+CardComponentManager                                 # Creates and manages CardComponent
+    - createComponent(config, paymentMethod) → CardComponent
+    - handleAction(action)
+    - setAddressLookupResult/updateAddressLookupOptions
+
+DynamicComponentView : FrameLayout                   # Auto-resizing container
+    - isViewSet: Boolean
+    - layoutListener: LayoutListener
+    - setView(view) — adds child, starts polling resize
+    - onDispose() — stops polling, clears children
+
+ComponentContract                                    # Interface for bus → view communication
+    - onAction(action)
+    - onAddressLookupResult(result)
+    - onAddressLookupOptions(options)
+
+ComponentAdvancedCallback                            # Bridges SDK callbacks → MessageBus (advanced flow)
+ComponentSessionCallback                             # Bridges SDK callbacks → MessageBus (session flow)
+```
+
+#### iOS Embedded View Classes
+
+```
+RCTViewComponentView (Fabric)
+    │
+    ├──► ADYCardView                                 # Fabric component view
+    │       - updateProps() → sets viewId, forwards to proxy
+    │       - prepareForRecycle() → proxy.dispose()
+    │       - CardComponentViewProxyDelegate (layout changes → eventEmitter)
+    │
+    └──► ADYPlatformPayView                          # Apple/Google Pay button
+            - updateProps() → recreates PKPaymentButton
+            - onPress → eventEmitter.onButtonPress
+
+CardComponentViewProxy : UIStackView                 # Component lifecycle manager
+    - paymentMethod, configuration (parsed NSDictionary)
+    - viewId (reactTag from parent ADYCardView)
+    - isViewSet: Bool
+    - renderComponentIfNeeded() — creates component, registers with bus
+    - createComponent() → CardComponent
+    - embedComponentView() — VC containment + scroll disable
+    - dispose() — unregisters, tears down VC hierarchy
+    - reportContentHeight() → delegate.onLayoutChange
+
+EmbeddedComponentBusModule : BaseAddressModule       # Singleton bus (shared instance)
+    - delegates: [String: EmbeddedComponentDelegateProxy]
+    - register(viewId:) → EmbeddedComponentDelegateProxy
+    - unregister(viewId:)
+    - subscribe/unsubscribe (JS lifecycle)
+    - handle/update/confirm/hide (JS → native routing)
+    - Shared actionHandler for all embedded views
+
+EmbeddedComponentDelegateProxy : NSObject            # Per-view delegate that tags events
+    - viewId: String (reactTag)
+    - weak bus: EmbeddedComponentBusModule
+    - taggedBody() — injects viewId into event payloads
+    - PaymentComponentDelegate, ActionComponentDelegate
+    - CardComponentDelegate, AddressLookupProvider
+```
+
+#### Event Tagging (Android TaggedEmitter / iOS EmbeddedComponentDelegateProxy)
+
+Both platforms inject a `viewId` field (the view's **reactTag**) into every event payload so the JS side can demux events from multiple simultaneous embedded views:
+
+| Platform | Mechanism | Tags with |
+|----------|-----------|-----------|
+| Android  | `TaggedEmitter` wraps `MessageBusEmitter` | `jsonObject.put("viewId", viewId)` |
+| iOS      | `EmbeddedComponentDelegateProxy.taggedBody()` | `dict["viewId"] = viewId` |
 
 ### Event Emission: iOS BaseModuleSender vs Android MessageBus
 
@@ -495,4 +687,11 @@ override fun getConstants(): MutableMap<String, Any> =
 | `onCancelOrder`                | Order cancelled                  |
 | `onBinValue`                   | BIN value changed                |
 | `onBinLookup`                  | BIN lookup completed             |
+
+#### Fabric View Events (Direct Events via codegen)
+
+| Event            | Component        | Description                          |
+| ---------------- | ---------------- | ------------------------------------ |
+| `onLayoutChange` | `CardView`       | Embedded view size changed (w × h)   |
+| `onButtonPress`  | `PlatformPayView`| Pay button tapped                    |
 

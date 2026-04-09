@@ -5,17 +5,17 @@ import { ModuleMock } from '../base/ModuleMock';
 import { NativeModules } from 'react-native';
 
 export interface EmbeddedNativeModule extends NativeModuleWithConstants {
-  subscribe(componentType: string): void;
-  unsubscribe(componentType: string): void;
-  handle(componentType: string, action: PaymentAction): void;
+  subscribe(viewId: string): void;
+  unsubscribe(viewId: string): void;
+  handle(viewId: string, action: PaymentAction): void;
   hide(
-    componentType: string,
+    viewId: string,
     success: boolean,
     option?: { message?: string }
   ): void;
-  update(componentType: string, results: AddressLookupItem[]): void;
+  update(viewId: string, results: AddressLookupItem[]): void;
   confirm(
-    componentType: string,
+    viewId: string,
     success: boolean,
     body?: AddressLookupItem | { message?: string }
   ): void;

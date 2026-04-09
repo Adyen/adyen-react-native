@@ -5,20 +5,20 @@ import org.json.JSONObject
 
 /**
  * Wraps an [Emitter] (typically [MessageBusEmitter]) and injects a
- * `componentType` field into every emitted event payload.
+ * `viewId` field into every emitted event payload.
  *
  * Used by embedded ViewManagers so the JS side can demux events
  * from multiple simultaneous embedded components.
  */
 class TaggedEmitter(
   private val delegate: MessageBusEmitter,
-  val componentType: String,
+  val viewId: String,
 ) : Emitter {
   override fun sendEvent(
     eventName: EventName,
     jsonObject: JSONObject,
   ) {
-    jsonObject.put(COMPONENT_TYPE_KEY, componentType)
+    jsonObject.put(VIEW_ID_KEY, viewId)
     delegate.sendEvent(eventName, jsonObject)
   }
 
@@ -28,8 +28,8 @@ class TaggedEmitter(
   ) {
     val json =
       JSONObject().apply {
-        put(COMPONENT_TYPE_KEY, componentType)
-        put("value", string)
+        put(VIEW_ID_KEY, viewId)
+        put(VALUE_KEY, string)
       }
     delegate.sendEvent(eventName, json)
   }
@@ -40,8 +40,8 @@ class TaggedEmitter(
   ) {
     val json =
       JSONObject().apply {
-        put(COMPONENT_TYPE_KEY, componentType)
-        put("data", jsonObject)
+        put(VIEW_ID_KEY, viewId)
+        put(DATA_KEY, jsonObject)
       }
     delegate.sendEvent(eventName, json)
   }
@@ -52,17 +52,22 @@ class TaggedEmitter(
   ) {
     val jsonObject =
       JSONObject().apply {
-        put("message", error.localizedMessage)
-        error.cause?.let { put("reason", it.localizedMessage) }
+        put(MESSAGE_KEY, error.localizedMessage)
+        error.cause?.let { put(REASON_KEY, it.localizedMessage) }
         (error as? com.adyenreactnativesdk.component.base.KnownException)?.let {
-          put("errorCode", it.code)
+          put(ERROR_CODE_KEY, it.code)
         }
-        put(COMPONENT_TYPE_KEY, componentType)
+        put(VIEW_ID_KEY, viewId)
       }
     delegate.sendEvent(eventName, jsonObject)
   }
 
   private companion object {
-    private const val COMPONENT_TYPE_KEY = "componentType"
+    private const val VIEW_ID_KEY = "viewId"
+    private const val VALUE_KEY = "value"
+    private const val DATA_KEY = "data"
+    private const val MESSAGE_KEY = "message"
+    private const val REASON_KEY = "reason"
+    private const val ERROR_CODE_KEY = "errorCode"
   }
 }

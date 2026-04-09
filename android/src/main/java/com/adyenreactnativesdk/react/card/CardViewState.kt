@@ -30,19 +30,19 @@ class CardViewState(
     context.currentActivity as? FragmentActivity
       ?: throw IllegalStateException("CardView requires a FragmentActivity")
   private var componentManager: CardComponentManager? = null
-  private var registrationKey: String? = null
+  private var viewId: String? = null
 
   fun renderView(dynamicComponentView: DynamicComponentView) {
     val paymentMethodJson = paymentMethod ?: return
     val checkedConfig = configuration ?: return
 
-    val key = dynamicComponentView.id.toString()
-    registrationKey = key
-    val manager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, key)))
+    val id = dynamicComponentView.id.toString()
+    viewId = id
+    val manager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, id)))
     componentManager = manager
 
     val component = manager.createComponent(checkedConfig, paymentMethodJson)
-    EmbeddedComponentBusModule.register(key, this)
+    EmbeddedComponentBusModule.register(id, this)
     AdyenComponentView(activity).apply {
       attach(component, activity)
       dynamicComponentView.setView(this)
@@ -75,8 +75,8 @@ class CardViewState(
     dynamicComponentView.onDispose()
     configuration = null
     paymentMethod = null
-    registrationKey?.let { EmbeddedComponentBusModule.unregister(it) }
+    viewId?.let { EmbeddedComponentBusModule.unregister(it) }
     componentManager = null
-    registrationKey = null
+    viewId = null
   }
 }

@@ -19,8 +19,8 @@ class EmbeddedComponentBusModule(
   val context: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseAddressModule(context, messageBus) {
-  private var activeComponentType: String? = null
-  private val subscribedTypes: MutableSet<String> = mutableSetOf()
+  private var activeViewId: String? = null
+  private val subscribedViews: MutableSet<String> = mutableSetOf()
 
   override fun getName(): String = COMPONENT_NAME
 
@@ -37,53 +37,46 @@ class EmbeddedComponentBusModule(
   }
 
   @ReactMethod
-  fun subscribe(componentType: String) {
-    subscribedTypes.add(componentType)
+  fun subscribe(viewId: String) {
+    subscribedViews.add(viewId)
   }
 
   @ReactMethod
-  fun unsubscribe(componentType: String) {
-    subscribedTypes.remove(componentType)
-    Companion.unregister(componentType)
-    if (activeComponentType == componentType) {
-      activeComponentType = null
-    }
-    if (subscribedTypes.isEmpty()) {
+  fun unsubscribe(viewId: String) {
+    subscribedViews.remove(viewId)
+    Companion.unregister(viewId)
+    if (subscribedViews.isEmpty()) {
       cleanup()
     }
   }
 
   @ReactMethod
   fun confirm(
-    componentType: String,
+    viewId: String,
     success: Boolean,
     address: ReadableMap?,
   ) {
-    activeComponentType = componentType
+    activeViewId = viewId
     super.confirm(success, address)
   }
 
   @ReactMethod
   fun update(
-    componentType: String,
+    viewId: String,
     array: ReadableArray?,
   ) {
-    activeComponentType = componentType
+    activeViewId = viewId
     super.update(array)
   }
 
   @ReactMethod
   fun hide(
-    componentType: String,
+    viewId: String,
     success: Boolean,
     message: ReadableMap?,
   ) {
-    Companion.unregister(componentType)
-    if (activeComponentType == componentType) {
-      activeComponentType = null
-    }
-    if (subscribedTypes.isEmpty()) {
-      activeComponentType = null
+    Companion.unregister(viewId)
+    if (subscribedViews.isEmpty()) {
       cleanup()
     }
   }
@@ -92,61 +85,61 @@ class EmbeddedComponentBusModule(
     success: Boolean,
     message: ReadableMap?,
   ) {
-    activeComponentType = null
+    activeViewId = null
     cleanup()
   }
 
   @ReactMethod
   fun handle(
-    componentType: String,
+    viewId: String,
     actionMap: ReadableMap?,
   ) {
-    activeComponentType = componentType
+    activeViewId = viewId
     super.parseAndHandleAction(actionMap)
   }
 
   override fun handleAction(action: Action) {
-    val componentName =
-      activeComponentType ?: return messageBus.onException(ModuleException.NoPaymentRegistered())
+    val viewId =
+      activeViewId ?: return messageBus.onException(ModuleException.NoPaymentRegistered())
 
     val component =
-      getConsumer(componentName)
-        ?: return messageBus.onException(ModuleException.NoConsumer(componentName))
+      getConsumer(viewId)
+        ?: return messageBus.onException(ModuleException.NoConsumer(viewId))
 
     try {
       component.onAction(action)
     } catch (e: JSONException) {
       messageBus.onException(ModuleException.InvalidAction(e))
     } finally {
-      activeComponentType = null
+      activeViewId = null
     }
   }
 
   override fun sendAddressLookupResult(result: AddressLookupDropInServiceResult) {
-    val componentType =
-      activeComponentType ?: return messageBus.onException(ModuleException.NoPaymentRegistered())
+    val viewId =
+      activeViewId ?: return messageBus.onException(ModuleException.NoPaymentRegistered())
 
-    val componentManager =
-      getConsumer(componentType)
-        ?: return messageBus.onException(ModuleException.NoConsumer(componentType))
+    val contract =
+      getConsumer(viewId)
+        ?: return messageBus.onException(ModuleException.NoConsumer(viewId))
 
     try {
       when (result) {
         is AddressLookupDropInServiceResult.LookupResult -> {
-          componentManager.onAddressLookupOptions(result.options)
+          contract.onAddressLookupOptions(result.options)
         }
 
         is AddressLookupDropInServiceResult.LookupComplete -> {
-          componentManager.onAddressLookupResult(AddressLookupResult.Completed(result.lookupAddress))
+          contract.onAddressLookupResult(AddressLookupResult.Completed(result.lookupAddress))
         }
 
         is AddressLookupDropInServiceResult.Error -> {
-          componentManager.onAddressLookupResult(AddressLookupResult.Error(result.errorDialog?.message))
+          contract.onAddressLookupResult(AddressLookupResult.Error(result.errorDialog?.message))
         }
       }
     } finally {
       if (result !is AddressLookupDropInServiceResult.LookupResult) {
-        activeComponentType = null
+        activeViewId = null
       }
     }
   }
@@ -154,24 +147,24 @@ class EmbeddedComponentBusModule(
   companion object {
     private const val COMPONENT_NAME = "AdyenComponentBus"
 
-    /** Registry of componentType → ViewManager implementing ComponentContract */
+    /** Registry of viewId (reactTag) → ViewState implementing ComponentContract */
     private val consumers: MutableMap<String, ComponentContract> = mutableMapOf()
 
     @Synchronized
     fun register(
-      componentType: String,
+      viewId: String,
       contract: ComponentContract,
     ) {
-      consumers[componentType] = contract
+      consumers[viewId] = contract
     }
 
     @Synchronized
-    fun unregister(componentType: String) {
-      consumers.remove(componentType)
+    fun unregister(viewId: String) {
+      consumers.remove(viewId)
     }
 
     @Synchronized
-    fun getConsumer(componentType: String): ComponentContract? = consumers[componentType]
+    fun getConsumer(viewId: String): ComponentContract? = consumers[viewId]
 
     @Synchronized
     fun clearConsumers() = consumers.clear()
