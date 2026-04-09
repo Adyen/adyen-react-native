@@ -36,13 +36,13 @@ class CardViewState(
     val paymentMethodJson = paymentMethod ?: return
     val checkedConfig = configuration ?: return
 
-    val id = dynamicComponentView.id.toString()
-    viewId = id
-    val manager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, id)))
+    val tag = dynamicComponentView.id.toString()
+    viewId = tag
+    val manager = CardComponentManager(activity, MessageBus(TaggedEmitter(emitter, tag)))
     componentManager = manager
 
     val component = manager.createComponent(checkedConfig, paymentMethodJson)
-    EmbeddedComponentBusModule.register(id, this)
+    EmbeddedComponentBusModule.register(tag, this)
     AdyenComponentView(activity).apply {
       attach(component, activity)
       dynamicComponentView.setView(this)

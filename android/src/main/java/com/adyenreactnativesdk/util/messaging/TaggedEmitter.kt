@@ -1,5 +1,6 @@
 package com.adyenreactnativesdk.util.messaging
 
+import com.adyenreactnativesdk.component.base.KnownException
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -54,7 +55,7 @@ class TaggedEmitter(
       JSONObject().apply {
         put(MESSAGE_KEY, error.localizedMessage)
         error.cause?.let { put(REASON_KEY, it.localizedMessage) }
-        (error as? com.adyenreactnativesdk.component.base.KnownException)?.let {
+        (error as? KnownException)?.let {
           put(ERROR_CODE_KEY, it.code)
         }
         put(VIEW_ID_KEY, viewId)
