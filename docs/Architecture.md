@@ -346,6 +346,8 @@ BaseAddressModule(BaseActionModule(BaseModule))      # Extended base for address
 
 Embedded views are rendered inline within the React tree using Fabric codegen. Unlike modal-based modules (Drop-in, Instant), they don't use `open()`/`hide()` — instead, props drive initialization and an event bus routes callbacks.
 
+![Embedded Views](./assets/Embedded%20Views.png)
+
 #### Architecture Overview
 
 ```
