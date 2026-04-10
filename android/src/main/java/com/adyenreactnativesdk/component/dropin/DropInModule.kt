@@ -120,7 +120,7 @@ class DropInModule(
       val action = parseActionFromMap(actionMap)
       service.sendResult(DropInServiceResult.Action(action))
     } catch (e: Exception) {
-      sendError(ModuleException.InvalidAction(e))
+      sendError(e)
     }
   }
 

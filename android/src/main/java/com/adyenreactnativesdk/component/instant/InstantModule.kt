@@ -73,7 +73,7 @@ class InstantModule(
       val action = parseActionFromMap(actionMap)
       fragment?.handle(appCompatActivity.supportFragmentManager, action)
     } catch (e: Exception) {
-      sendError(ModuleException.InvalidAction(e))
+      sendError(e)
     }
   }
 

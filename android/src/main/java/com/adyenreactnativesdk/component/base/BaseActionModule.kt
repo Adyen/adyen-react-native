@@ -13,7 +13,6 @@ import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.mainEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import org.json.JSONException
 
 open class BaseActionModule(
   reactContext: ReactApplicationContext?,
@@ -25,7 +24,7 @@ open class BaseActionModule(
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       Action.SERIALIZER.deserialize(jsonObject)
-    } catch (e: JSONException) {
+    } catch (e: Exception) {
       throw ModuleException.InvalidAction(e)
     }
 }

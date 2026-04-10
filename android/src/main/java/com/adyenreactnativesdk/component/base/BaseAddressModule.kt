@@ -28,15 +28,18 @@ open class BaseAddressModule(
     try {
       val jsonArray = ReactNativeJson.convertArrayToJson(array)
       jsonArray.map { LookupAddress::class.fromJsonObject(it) }
-    } catch (e: Throwable) {
+    } catch (e: Exception) {
       Log.w(TAG, "Failed to parse address options", e)
       emptyList()
     }
 
-  protected fun parseLookupAddress(address: ReadableMap?): LookupAddress {
-    val jsonObject = ReactNativeJson.convertMapToJson(address)
-    return LookupAddress::class.fromJsonObject(jsonObject)
-  }
+  protected fun parseLookupAddress(address: ReadableMap?): LookupAddress =
+    try {
+      val jsonObject = ReactNativeJson.convertMapToJson(address)
+      LookupAddress::class.fromJsonObject(jsonObject)
+    } catch (e: Exception) {
+      throw ModuleException.InvalidAction(e)
+    }
 
   private companion object {
     private const val TAG = "BaseAddressModule"

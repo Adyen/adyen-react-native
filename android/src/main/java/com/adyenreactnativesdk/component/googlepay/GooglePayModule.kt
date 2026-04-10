@@ -90,7 +90,7 @@ class GooglePayModule(
       val action = parseActionFromMap(actionMap)
       GooglePayFragment.handle(appCompatActivity.supportFragmentManager, action)
     } catch (e: Exception) {
-      sendError(ModuleException.InvalidAction(e))
+      sendError(e)
     }
   }
 

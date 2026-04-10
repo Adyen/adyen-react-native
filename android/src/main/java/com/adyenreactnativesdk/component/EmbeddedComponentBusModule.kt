@@ -57,7 +57,7 @@ class EmbeddedComponentBusModule(
         parseActionFromMap(actionMap)
       } catch (e: Exception) {
         Log.w(TAG, "Failed to parse action", e)
-        return sendError(ModuleException.InvalidAction(e))
+        return sendError(e)
       }
 
     val consumer =
@@ -92,7 +92,7 @@ class EmbeddedComponentBusModule(
     if (success) {
       try {
         consumer.onAddressLookupResult(AddressLookupResult.Completed(parseLookupAddress(address)))
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         Log.w(TAG, "Failed to parse address lookup confirmation", e)
         consumer.onAddressLookupResult(AddressLookupResult.Error(e.localizedMessage))
       }
