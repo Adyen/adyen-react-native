@@ -8,35 +8,35 @@ import type { EmbeddedNativeModule } from './EmbeddedComponentBus';
 export class EmbeddedComponentBusWrapper extends EventListenerWrapper<EmbeddedNativeModule> {
   name: string = 'AdyenComponentBus';
 
-  subscribe(componentType: string): void {
-    this.nativeModule.subscribe(componentType);
+  subscribe(viewId: string): void {
+    this.nativeModule.subscribe(viewId);
   }
 
-  unsubscribe(componentType: string): void {
-    this.nativeModule.unsubscribe(componentType);
+  unsubscribe(viewId: string): void {
+    this.nativeModule.unsubscribe(viewId);
   }
 
-  handle(componentType: string, action: PaymentAction): void {
-    this.nativeModule.handle(componentType, action);
+  handle(viewId: string, action: PaymentAction): void {
+    this.nativeModule.handle(viewId, action);
   }
 
   hide(
-    componentType: string,
+    viewId: string,
     success: boolean,
     option?: { message?: string }
   ): void {
-    this.nativeModule.hide(componentType, success, option);
+    this.nativeModule.hide(viewId, success, option);
   }
 
-  update(componentType: string, results: AddressLookupItem[]): void {
-    this.nativeModule.update(componentType, results);
+  update(viewId: string, results: AddressLookupItem[]): void {
+    this.nativeModule.update(viewId, results);
   }
 
   confirm(
-    componentType: string,
+    viewId: string,
     success: boolean,
     body?: AddressLookupItem | { message?: string }
   ): void {
-    this.nativeModule.confirm(componentType, success, body);
+    this.nativeModule.confirm(viewId, success, body);
   }
 }

@@ -1,106 +1,106 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="27.0.2">
-  <diagram name="Data Flow" id="data-flow">
-    <mxGraphModel dx="1653" dy="897" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" version="29.4.0" pages="4">
+  <diagram name="Data Flow" id="6d4YvBmHAg50JiNjq2xp">
+    <mxGraphModel dx="2013" dy="1121" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="checkout-container" value="AdyenCheckout&#xa;(React Component)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1" parent="1" vertex="1">
-          <mxGeometry x="280" y="40" width="720" height="200" as="geometry" />
+        <mxCell id="checkout-container" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1" value="AdyenCheckout&#xa;(React Component)" vertex="1">
+          <mxGeometry height="200" width="720" x="280" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="checkout-context" value="&lt;pre&gt;useAdyenCheckout&lt;/pre&gt;- start(name)&lt;br&gt;- config&lt;br&gt;- paymentMethods&lt;br&gt;- isReady" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=10;" parent="1" vertex="1">
-          <mxGeometry x="320" y="70" width="240" height="140" as="geometry" />
+        <mxCell id="checkout-context" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;pre&gt;useAdyenCheckout&lt;/pre&gt;- start(name)&lt;br&gt;- config&lt;br&gt;- paymentMethods&lt;br&gt;- isReady" vertex="1">
+          <mxGeometry height="140" width="240" x="320" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="event-handlers" value="Event Handlers (props)&#xa;&#xa;- onSubmit(data, component, extra)&#xa;- onComplete(result, component)&#xa;- onError(error, component)&#xa;- onAdditionalDetails(data, component)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=middle;spacingLeft=10;" parent="1" vertex="1">
-          <mxGeometry x="720" y="70" width="240" height="140" as="geometry" />
+        <mxCell id="event-handlers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=middle;spacingLeft=10;" value="Event Handlers (props)&#xa;&#xa;- onSubmit(data, component, extra)&#xa;- onComplete(result, component)&#xa;- onError(error, component)&#xa;- onAdditionalDetails(data, component)" vertex="1">
+          <mxGeometry height="140" width="240" x="720" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;dashed=1;fillColor=#647687;strokeColor=#314354;" edge="1" parent="1" source="get-wrapper" target="LSzEhEvk_7psHodqKGFc-10">
+        <mxCell id="LSzEhEvk_7psHodqKGFc-11" edge="1" parent="1" source="get-wrapper" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;dashed=1;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-10" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="get-wrapper" value="&lt;h4&gt;getWrapper()&lt;/h4&gt;(module resolver)&lt;br&gt;maps type name → wrapper instance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;verticalAlign=top;" parent="1" vertex="1">
-          <mxGeometry x="480" y="280" width="320" height="100" as="geometry" />
+        <mxCell id="get-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;verticalAlign=top;" value="&lt;h4&gt;getWrapper()&lt;/h4&gt;(module resolver)&lt;br&gt;maps type name → wrapper instance" vertex="1">
+          <mxGeometry height="100" width="320" x="480" y="280" as="geometry" />
         </mxCell>
-        <mxCell id="dropin-wrapper" value="&lt;b&gt;DropInWrapper&lt;/b&gt;&lt;br&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()&lt;br&gt;- ..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" parent="1" vertex="1">
-          <mxGeometry x="330" y="430" width="140" height="120" as="geometry" />
+        <mxCell id="dropin-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;DropInWrapper&lt;/b&gt;&lt;br&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()&lt;br&gt;- ..." vertex="1">
+          <mxGeometry height="120" width="140" x="330" y="430" as="geometry" />
         </mxCell>
-        <mxCell id="applepay-wrapper" value="&lt;b&gt;ApplePayWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" parent="1" vertex="1">
-          <mxGeometry x="490" y="430" width="140" height="120" as="geometry" />
+        <mxCell id="applepay-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;ApplePayWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()" vertex="1">
+          <mxGeometry height="120" width="140" x="490" y="430" as="geometry" />
         </mxCell>
-        <mxCell id="googlepay-wrapper" value="&lt;b&gt;GooglePayWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" parent="1" vertex="1">
-          <mxGeometry x="650" y="430" width="140" height="120" as="geometry" />
+        <mxCell id="googlepay-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;GooglePayWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()" vertex="1">
+          <mxGeometry height="120" width="140" x="650" y="430" as="geometry" />
         </mxCell>
-        <mxCell id="instant-wrapper" value="&lt;b&gt;InstantWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" parent="1" vertex="1">
-          <mxGeometry x="810" y="430" width="140" height="120" as="geometry" />
+        <mxCell id="instant-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;InstantWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()" vertex="1">
+          <mxGeometry height="120" width="140" x="810" y="430" as="geometry" />
         </mxCell>
-        <mxCell id="native-sdk" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Native iOS/Android&lt;/font&gt;&lt;/h2&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;align=left;verticalAlign=middle;spacingLeft=10;fontSize=12;arcSize=19;strokeColor=#6c8ebf;dashed=1;dashPattern=8 8;fontColor=#808080;" parent="1" vertex="1">
-          <mxGeometry x="160" y="610" width="1000" height="300" as="geometry" />
+        <mxCell id="native-sdk" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;align=left;verticalAlign=middle;spacingLeft=10;fontSize=12;arcSize=19;strokeColor=#6c8ebf;dashed=1;dashPattern=8 8;fontColor=#808080;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Native iOS/Android&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="300" width="1000" x="160" y="610" as="geometry" />
         </mxCell>
-        <mxCell id="arrow-checkout-wrapper" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;" parent="1" source="checkout-context" target="get-wrapper" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-checkout-wrapper" edge="1" parent="1" source="checkout-context" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;" target="get-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="400" as="sourcePoint" />
             <mxPoint x="650" y="350" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-13" value="start(&quot;name&quot;)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=none;fontColor=#000000;" vertex="1" connectable="0" parent="arrow-checkout-wrapper">
-          <mxGeometry x="-0.17" y="-1" relative="1" as="geometry">
+        <mxCell id="LSzEhEvk_7psHodqKGFc-13" connectable="0" parent="arrow-checkout-wrapper" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=none;fontColor=#000000;" value="start(&quot;name&quot;)" vertex="1">
+          <mxGeometry relative="1" x="-0.17" y="-1" as="geometry">
             <mxPoint x="1" y="-21" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-wrapper-dropin" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" parent="1" source="get-wrapper" target="dropin-wrapper" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-wrapper-dropin" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="dropin-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="400" as="sourcePoint" />
             <mxPoint x="650" y="350" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-wrapper-applepay" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.4;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;exitPerimeter=0;fillColor=#647687;strokeColor=#314354;" parent="1" source="get-wrapper" target="applepay-wrapper" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-wrapper-applepay" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.4;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;exitPerimeter=0;fillColor=#647687;strokeColor=#314354;" target="applepay-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="400" as="sourcePoint" />
             <mxPoint x="650" y="350" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-wrapper-googlepay" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.6;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;exitPerimeter=0;fillColor=#647687;strokeColor=#314354;" parent="1" source="get-wrapper" target="googlepay-wrapper" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-wrapper-googlepay" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.6;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;exitPerimeter=0;fillColor=#647687;strokeColor=#314354;" target="googlepay-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="400" as="sourcePoint" />
             <mxPoint x="650" y="350" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-wrapper-instant" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" parent="1" source="get-wrapper" target="instant-wrapper" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-wrapper-instant" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="instant-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="400" as="sourcePoint" />
             <mxPoint x="650" y="350" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-dropin-native" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" parent="1" source="dropin-wrapper" target="LSzEhEvk_7psHodqKGFc-1" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-dropin-native" edge="1" parent="1" source="dropin-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="600" as="sourcePoint" />
             <mxPoint x="650" y="550" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-applepay-native" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" parent="1" source="applepay-wrapper" target="LSzEhEvk_7psHodqKGFc-2" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-applepay-native" edge="1" parent="1" source="applepay-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-2" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="600" as="sourcePoint" />
             <mxPoint x="650" y="550" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-googlepay-native" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" parent="1" source="googlepay-wrapper" target="LSzEhEvk_7psHodqKGFc-3" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-googlepay-native" edge="1" parent="1" source="googlepay-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-3" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="600" as="sourcePoint" />
             <mxPoint x="650" y="550" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-instant-native" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" parent="1" source="instant-wrapper" target="LSzEhEvk_7psHodqKGFc-4" edge="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-instant-native" edge="1" parent="1" source="instant-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-4" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="600" y="600" as="sourcePoint" />
             <mxPoint x="650" y="550" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="arrow-events-back" value="Events flow back up&#xa;through bridge" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#314354;fillColor=#647687;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontSize=11;fontColor=light-dark(#808080,#FFFFFF);" parent="1" source="LSzEhEvk_7psHodqKGFc-5" target="LSzEhEvk_7psHodqKGFc-10" edge="1">
-          <mxGeometry x="-0.7203" width="50" height="50" relative="1" as="geometry">
+        <mxCell id="arrow-events-back" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-5" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#314354;fillColor=#647687;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontSize=11;fontColor=light-dark(#808080,#FFFFFF);" target="LSzEhEvk_7psHodqKGFc-10" value="Events flow back up&#xa;through bridge">
+          <mxGeometry height="50" relative="1" width="50" x="-0.7203" as="geometry">
+            <mxPoint as="offset" />
             <mxPoint x="900" y="600" as="sourcePoint" />
             <mxPoint x="950" y="550" as="targetPoint" />
-            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-1" target="LSzEhEvk_7psHodqKGFc-5">
+        <mxCell id="LSzEhEvk_7psHodqKGFc-6" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="400" y="790" />
@@ -108,22 +108,22 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-1" value="&lt;b&gt;DropInModule&lt;/b&gt;&lt;br&gt;&lt;br&gt;-&amp;nbsp;supportedEvents&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- open()&lt;/span&gt;&lt;div&gt;- handle()&lt;br&gt;- hide()&lt;br&gt;- ...&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" vertex="1" parent="1">
-          <mxGeometry x="330" y="650" width="140" height="120" as="geometry" />
+        <mxCell id="LSzEhEvk_7psHodqKGFc-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;DropInModule&lt;/b&gt;&lt;br&gt;&lt;br&gt;-&amp;nbsp;supportedEvents&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- open()&lt;/span&gt;&lt;div&gt;- handle()&lt;br&gt;- hide()&lt;br&gt;- ...&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="330" y="650" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-2" target="LSzEhEvk_7psHodqKGFc-5">
+        <mxCell id="LSzEhEvk_7psHodqKGFc-7" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-2" value="&lt;b&gt;ApplePayModule&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;div&gt;-&amp;nbsp;supportedEvents&lt;/div&gt;&lt;div&gt;- open()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" vertex="1" parent="1">
-          <mxGeometry x="490" y="650" width="140" height="120" as="geometry" />
+        <mxCell id="LSzEhEvk_7psHodqKGFc-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;ApplePayModule&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;div&gt;-&amp;nbsp;supportedEvents&lt;/div&gt;&lt;div&gt;- open()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="490" y="650" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-3" target="LSzEhEvk_7psHodqKGFc-5">
+        <mxCell id="LSzEhEvk_7psHodqKGFc-8" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-3" value="&lt;b&gt;GooglePayModule&lt;br&gt;&lt;/b&gt;&lt;br&gt;- supportedEvents&lt;div&gt;&lt;div&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" vertex="1" parent="1">
-          <mxGeometry x="650" y="650" width="140" height="120" as="geometry" />
+        <mxCell id="LSzEhEvk_7psHodqKGFc-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;GooglePayModule&lt;br&gt;&lt;/b&gt;&lt;br&gt;- supportedEvents&lt;div&gt;&lt;div&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="650" y="650" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-4" target="LSzEhEvk_7psHodqKGFc-5">
+        <mxCell id="LSzEhEvk_7psHodqKGFc-9" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="880" y="790" />
@@ -131,20 +131,380 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-4" value="&lt;b&gt;InstantModule&lt;br&gt;&lt;/b&gt;&lt;br&gt;-&amp;nbsp;supportedEvents&lt;div&gt;&lt;div&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" vertex="1" parent="1">
-          <mxGeometry x="810" y="650" width="140" height="120" as="geometry" />
+        <mxCell id="LSzEhEvk_7psHodqKGFc-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;InstantModule&lt;br&gt;&lt;/b&gt;&lt;br&gt;-&amp;nbsp;supportedEvents&lt;div&gt;&lt;div&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="810" y="650" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-5" value="&lt;h2 style=&quot;font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; line-height: 18px; white-space: pre;&quot;&gt;&lt;span&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;EventEmitter/MessageBus&lt;/font&gt;&lt;/span&gt;&lt;/h2&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=center;verticalAlign=top;spacingLeft=10;labelBackgroundColor=none;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="490" y="810" width="310" height="60" as="geometry" />
+        <mxCell id="LSzEhEvk_7psHodqKGFc-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=center;verticalAlign=top;spacingLeft=10;labelBackgroundColor=none;fontColor=#000000;" value="&lt;h2 style=&quot;font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; line-height: 18px; white-space: pre;&quot;&gt;&lt;span&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;EventEmitter/MessageBus&lt;/font&gt;&lt;/span&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="60" width="310" x="490" y="810" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-10" target="event-handlers">
+        <mxCell id="LSzEhEvk_7psHodqKGFc-12" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="event-handlers">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-10" value="&lt;h4&gt;&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 11px;&quot;&gt;NativeEventEmitter&lt;/span&gt;&lt;br style=&quot;font-size: 11px;&quot;&gt;&lt;/font&gt;&lt;/h4&gt;&lt;p&gt;&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 11px; font-weight: 400;&quot;&gt;subscribes to events supported by a selected module&lt;/span&gt;&lt;/font&gt;&lt;/p&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;fontColor=light-dark(#000000,#FFFFFF);" vertex="1" parent="1">
-          <mxGeometry x="950" y="290" width="190" height="80" as="geometry" />
+        <mxCell id="LSzEhEvk_7psHodqKGFc-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;fontColor=light-dark(#000000,#FFFFFF);" value="&lt;h4&gt;&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 11px;&quot;&gt;NativeEventEmitter&lt;/span&gt;&lt;br style=&quot;font-size: 11px;&quot;&gt;&lt;/font&gt;&lt;/h4&gt;&lt;p&gt;&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 11px; font-weight: 400;&quot;&gt;subscribes to events supported by a selected module&lt;/span&gt;&lt;/font&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="80" width="190" x="950" y="290" as="geometry" />
         </mxCell>
-        <mxCell id="LSzEhEvk_7psHodqKGFc-14" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;JS (React Native)&lt;/font&gt;&lt;/h2&gt;" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=middle;align=left;fillColor=none;strokeColor=#9673a6;fontSize=14;fontStyle=1;dashed=1;dashPattern=8 8;arcSize=9;fontColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="160" y="10" width="1000" height="570" as="geometry" />
+        <mxCell id="LSzEhEvk_7psHodqKGFc-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=middle;align=left;fillColor=none;strokeColor=#9673a6;fontSize=14;fontStyle=1;dashed=1;dashPattern=8 8;arcSize=9;fontColor=#999999;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;JS (React Native)&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="570" width="1000" x="160" y="10" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="Embedded Views" id="Es8wvque1PpPiyYgJK1N">
+    <mxGraphModel dx="2013" dy="1121" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ev-js-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=middle;align=left;fillColor=none;strokeColor=#9673a6;fontSize=14;fontStyle=1;dashed=1;dashPattern=8 8;arcSize=9;fontColor=#999999;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;JS (React Native)&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="470" width="1240" x="80" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-checkout" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1" value="AdyenCheckout&#xa;(React Component)" vertex="1">
+          <mxGeometry height="420" width="1160" x="120" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-cardview" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardView.tsx&lt;/b&gt;&lt;br&gt;&lt;br&gt;- ref → findNodeHandle() → reactTag&lt;br&gt;- subscribe(String(tag))&lt;br&gt;- &amp;lt;NativeCardView /&amp;gt;&lt;br&gt;- onLayoutChange → setSize" vertex="1">
+          <mxGeometry height="130" width="260" x="160" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-use-component" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;useSubscriptionManager&lt;/b&gt;&lt;br&gt;&lt;br&gt;- subscribe(viewId)&lt;br&gt;- unsubscribe(viewId)&lt;br&gt;- creates EmbeddedComponentProxy" vertex="1">
+          <mxGeometry height="130" width="260" x="480" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-handlers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=middle;spacingLeft=10;" value="Event Handlers (props)&#xa;&#xa;- onSubmit(data, component)&#xa;- onComplete(result, component)&#xa;- onError(error, component)&#xa;- onAdditionalDetails(data, component)" vertex="1">
+          <mxGeometry height="130" width="260" x="800" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-bus-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;EmbeddedComponentBusWrapper&lt;/b&gt;&lt;br&gt;&lt;br&gt;- subscribe(viewId)&lt;br&gt;- handle(viewId, action)&lt;br&gt;- hide(viewId, success)&lt;br&gt;- update / confirm" vertex="1">
+          <mxGeometry height="120" width="260" x="200" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-proxy" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;EmbeddedComponentProxy&lt;/b&gt;&lt;br&gt;&lt;br&gt;- viewId (reactTag)&lt;br&gt;- handle(action) → bus&lt;br&gt;- hide() → bus" vertex="1">
+          <mxGeometry height="120" width="220" x="520" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-event-listeners" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;verticalAlign=top;" value="&lt;b&gt;startEventListeners&lt;/b&gt;&lt;br&gt;&lt;br&gt;filters events by&lt;br&gt;rawData.viewId === key" vertex="1">
+          <mxGeometry height="100" width="200" x="800" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-native-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;align=left;verticalAlign=middle;spacingLeft=10;fontSize=12;arcSize=19;strokeColor=#6c8ebf;dashed=1;dashPattern=8 8;fontColor=#808080;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Native iOS/Android&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="420" width="1240" x="80" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-view-manager" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardViewManager&lt;/b&gt;&lt;br&gt;(Fabric ViewManager)&lt;br&gt;&lt;br&gt;- viewStates: Map&amp;lt;View, State&amp;gt;&lt;br&gt;- createViewInstance()&lt;br&gt;- setPaymentMethod / setConfiguration&lt;br&gt;- onAfterUpdateTransaction → renderComponentIfNeeded&lt;br&gt;- onDropViewInstance → dispose" vertex="1">
+          <mxGeometry height="160" width="340" x="120" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-view-state" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardViewState / CardComponentViewProxy&lt;/b&gt;&lt;br&gt;(per-view)&lt;br&gt;&lt;br&gt;- viewId (reactTag)&lt;br&gt;- renderComponentIfNeeded()&lt;br&gt;- creates CardComponent&lt;br&gt;- registers with bus using viewId&lt;br&gt;- dispose() → unregister" vertex="1">
+          <mxGeometry height="160" width="300" x="520" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-bus-native" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;EmbeddedComponentBusModule&lt;/b&gt;&lt;br&gt;(singleton)&lt;br&gt;&lt;br&gt;- delegates/consumers: [viewId → contract]&lt;br&gt;- register(viewId) / unregister(viewId)&lt;br&gt;- handle/update/confirm → routes by viewId&lt;br&gt;- shared actionHandler" vertex="1">
+          <mxGeometry height="140" width="340" x="200" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-tagged-emitter" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=center;verticalAlign=top;" value="&lt;b&gt;TaggedEmitter / DelegateProxy&lt;/b&gt;&lt;br&gt;&lt;br&gt;injects viewId into every&lt;br&gt;event payload for JS demux" vertex="1">
+          <mxGeometry height="100" width="260" x="620" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-cv-usm" edge="1" parent="1" source="ev-cardview" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="ev-use-component" value="subscribe(tag)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-usm-bus" edge="1" parent="1" source="ev-use-component" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ev-proxy" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-usm-sel" edge="1" parent="1" source="ev-use-component" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" target="ev-event-listeners" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-sel-handlers" edge="1" parent="1" source="ev-event-listeners" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="ev-handlers" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-cv-busw" edge="1" parent="1" source="ev-cardview" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ev-bus-wrapper" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-busw-nbus" edge="1" parent="1" source="ev-bus-wrapper" style="endArrow=classic;startArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;labelBackgroundColor=none;fontColor=#808080;" target="ev-bus-native" value="JS Bridge">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-vm-vs" edge="1" parent="1" source="ev-view-manager" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ev-view-state" value="props → render">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-vs-nbus" edge="1" parent="1" source="ev-view-state" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;" target="ev-bus-native" value="register(viewId)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-vs-te" edge="1" parent="1" source="ev-view-state" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontColor=#808080;" target="ev-tagged-emitter" value="events tagged&#xa;with viewId">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-te-sel" edge="1" parent="1" source="ev-tagged-emitter" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#314354;fillColor=#647687;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontSize=11;fontColor=#808080;" target="ev-event-listeners" value="events flow back&#xa;through bridge">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100" y="840" />
+              <mxPoint x="1100" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="Data Flow" id="nm43QYS-LFw2N-qs76L4">
+    <mxGraphModel dx="2013" dy="1121" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="checkout-container" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1" value="AdyenCheckout&#xa;(React Component)" vertex="1">
+          <mxGeometry height="200" width="720" x="280" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="checkout-context" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;pre&gt;useAdyenCheckout&lt;/pre&gt;- start(name)&lt;br&gt;- config&lt;br&gt;- paymentMethods&lt;br&gt;- isReady" vertex="1">
+          <mxGeometry height="140" width="240" x="320" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="event-handlers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=middle;spacingLeft=10;" value="Event Handlers (props)&#xa;&#xa;- onSubmit(data, component, extra)&#xa;- onComplete(result, component)&#xa;- onError(error, component)&#xa;- onAdditionalDetails(data, component)" vertex="1">
+          <mxGeometry height="140" width="240" x="720" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-11" edge="1" parent="1" source="get-wrapper" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;dashed=1;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="get-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;verticalAlign=top;" value="&lt;h4&gt;getWrapper()&lt;/h4&gt;(module resolver)&lt;br&gt;maps type name → wrapper instance" vertex="1">
+          <mxGeometry height="100" width="320" x="480" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="dropin-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;DropInWrapper&lt;/b&gt;&lt;br&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()&lt;br&gt;- ..." vertex="1">
+          <mxGeometry height="120" width="140" x="330" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="applepay-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;ApplePayWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()" vertex="1">
+          <mxGeometry height="120" width="140" x="490" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="googlepay-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;GooglePayWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()" vertex="1">
+          <mxGeometry height="120" width="140" x="650" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="instant-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;InstantWrapper&lt;br&gt;&lt;/b&gt;&lt;br&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()" vertex="1">
+          <mxGeometry height="120" width="140" x="810" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="native-sdk" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;align=left;verticalAlign=middle;spacingLeft=10;fontSize=12;arcSize=19;strokeColor=#6c8ebf;dashed=1;dashPattern=8 8;fontColor=#808080;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Native iOS/Android&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="300" width="1000" x="160" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-checkout-wrapper" edge="1" parent="1" source="checkout-context" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;" target="get-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-13" connectable="0" parent="arrow-checkout-wrapper" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=none;fontColor=#000000;" value="start(&quot;name&quot;)" vertex="1">
+          <mxGeometry relative="1" x="-0.17" y="-1" as="geometry">
+            <mxPoint x="1" y="-21" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-wrapper-dropin" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="dropin-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-wrapper-applepay" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.4;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;exitPerimeter=0;fillColor=#647687;strokeColor=#314354;" target="applepay-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-wrapper-googlepay" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.6;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;exitPerimeter=0;fillColor=#647687;strokeColor=#314354;" target="googlepay-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-wrapper-instant" edge="1" parent="1" source="get-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="instant-wrapper" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-dropin-native" edge="1" parent="1" source="dropin-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="600" as="sourcePoint" />
+            <mxPoint x="650" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-applepay-native" edge="1" parent="1" source="applepay-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-2" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="600" as="sourcePoint" />
+            <mxPoint x="650" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-googlepay-native" edge="1" parent="1" source="googlepay-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-3" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="600" as="sourcePoint" />
+            <mxPoint x="650" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-instant-native" edge="1" parent="1" source="instant-wrapper" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-4" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="600" as="sourcePoint" />
+            <mxPoint x="650" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-events-back" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-5" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#314354;fillColor=#647687;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontSize=11;fontColor=light-dark(#808080,#FFFFFF);" target="LSzEhEvk_7psHodqKGFc-10" value="Events flow back up&#xa;through bridge">
+          <mxGeometry height="50" relative="1" width="50" x="-0.7203" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="900" y="600" as="sourcePoint" />
+            <mxPoint x="950" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-6" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400" y="790" />
+              <mxPoint x="645" y="790" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;DropInModule&lt;/b&gt;&lt;br&gt;&lt;br&gt;-&amp;nbsp;supportedEvents&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- open()&lt;/span&gt;&lt;div&gt;- handle()&lt;br&gt;- hide()&lt;br&gt;- ...&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="330" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-7" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;ApplePayModule&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;div&gt;-&amp;nbsp;supportedEvents&lt;/div&gt;&lt;div&gt;- open()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="490" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-8" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;GooglePayModule&lt;br&gt;&lt;/b&gt;&lt;br&gt;- supportedEvents&lt;div&gt;&lt;div&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- isAvailable()&lt;br&gt;- hide()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="650" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-9" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="LSzEhEvk_7psHodqKGFc-5" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="790" />
+              <mxPoint x="645" y="790" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;InstantModule&lt;br&gt;&lt;/b&gt;&lt;br&gt;-&amp;nbsp;supportedEvents&lt;div&gt;&lt;div&gt;- open()&lt;br&gt;- handle()&lt;br&gt;- hide()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="810" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=center;verticalAlign=top;spacingLeft=10;labelBackgroundColor=none;fontColor=#000000;" value="&lt;h2 style=&quot;font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; line-height: 18px; white-space: pre;&quot;&gt;&lt;span&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;EventEmitter/MessageBus&lt;/font&gt;&lt;/span&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="60" width="310" x="490" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-12" edge="1" parent="1" source="LSzEhEvk_7psHodqKGFc-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;" target="event-handlers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;fontColor=light-dark(#000000,#FFFFFF);" value="&lt;h4&gt;&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 11px;&quot;&gt;NativeEventEmitter&lt;/span&gt;&lt;br style=&quot;font-size: 11px;&quot;&gt;&lt;/font&gt;&lt;/h4&gt;&lt;p&gt;&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 11px; font-weight: 400;&quot;&gt;subscribes to events supported by a selected module&lt;/span&gt;&lt;/font&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="80" width="190" x="950" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="LSzEhEvk_7psHodqKGFc-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=middle;align=left;fillColor=none;strokeColor=#9673a6;fontSize=14;fontStyle=1;dashed=1;dashPattern=8 8;arcSize=9;fontColor=#999999;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;JS (React Native)&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="570" width="1000" x="160" y="10" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="Embedded Views" id="dSH7eZnhPkcxFVbWwYCj">
+    <mxGraphModel dx="1150" dy="641" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ev-native-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;align=left;verticalAlign=middle;spacingLeft=10;fontSize=12;arcSize=19;strokeColor=#6c8ebf;dashed=1;dashPattern=8 8;fontColor=#808080;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Native iOS/Android&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="450" width="1200" x="100" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
+          <mxGeometry height="160" width="270" x="611" y="771" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
+          <mxGeometry height="160" width="270" x="606" y="766" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-js-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=middle;align=left;fillColor=none;strokeColor=#9673a6;fontSize=14;fontStyle=1;dashed=1;dashPattern=8 8;arcSize=9;fontColor=#999999;" value="&lt;h2&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;JS (React Native)&lt;/font&gt;&lt;/h2&gt;" vertex="1">
+          <mxGeometry height="460" width="1200" x="100" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
+          <mxGeometry height="130" width="280" x="135" y="92" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=10;" value="" vertex="1">
+          <mxGeometry height="130" width="280" x="129" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;fillStyle=auto;dashed=1;" value="" vertex="1">
+          <mxGeometry height="120" width="260" x="600" y="282" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-checkout" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1" value="AdyenCheckout (React Component)" vertex="1">
+          <mxGeometry height="200" width="740" x="538" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-cardview" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardView.tsx&lt;/b&gt;&lt;br&gt;&lt;br&gt;- ref → findNodeHandle() → reactTag&lt;br&gt;- subscribe(String(tag))&lt;br&gt;- &amp;lt;NativeCardView /&amp;gt;&lt;br&gt;- onLayoutChange → setSize" vertex="1">
+          <mxGeometry height="130" width="280" x="123" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-use-component" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;useSubscriptionManager&lt;/b&gt;&lt;br&gt;&lt;br&gt;- subscribe(viewID)&lt;br&gt;- unsubscribe(viewID)&lt;br&gt;- creates EmbeddedComponentProxy" vertex="1">
+          <mxGeometry height="130" width="260" x="588" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-handlers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=middle;spacingLeft=10;" value="Event Handlers (props)&#xa;&#xa;- onSubmit(data, component)&#xa;- onComplete(result, component)&#xa;- onError(error, component)&#xa;- onAdditionalDetails(data, component)" vertex="1">
+          <mxGeometry height="130" width="280" x="948" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-bus-wrapper" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;EmbeddedComponentBusWrapper&lt;/b&gt;&lt;br&gt;&lt;br&gt;- subscribe(viewID)&lt;br&gt;- handle(viewID, action)&lt;br&gt;- hide(viewId, success)&lt;br&gt;- update / confirm" vertex="1">
+          <mxGeometry height="120" width="280" x="180" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-event-listeners" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=center;verticalAlign=top;" value="&lt;b&gt;startEventListeners&lt;/b&gt;&lt;br&gt;&lt;br&gt;filters events by&lt;br&gt;viewID" vertex="1">
+          <mxGeometry height="100" width="240" x="1038" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-view-manager" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardViewManager&lt;/b&gt;&lt;br&gt;(Fabric ViewManager)&lt;br&gt;&lt;br&gt;- viewStates: Map&amp;lt;View, State&amp;gt;&lt;br&gt;- createViewInstance()&lt;br&gt;- setPaymentMethod / setConfiguration&lt;br&gt;- onAfterUpdateTransaction&lt;br&gt;- onDropViewInstance → dispose" vertex="1">
+          <mxGeometry height="160" width="280" x="596" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-view-state" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;CardViewState / CardComponentViewProxy&lt;/b&gt;&lt;br&gt;(per-view)&lt;br&gt;&lt;br&gt;- viewId (reactTag)&lt;br&gt;- renderComponentIfNeeded()&lt;br&gt;- creates CardComponent&lt;br&gt;- registers with bus using viewId&lt;br&gt;- dispose() → unregister" vertex="1">
+          <mxGeometry height="160" width="270" x="601" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-bus-native" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=left;verticalAlign=top;spacingLeft=10;" value="&lt;b&gt;EmbeddedComponentBusModule&lt;/b&gt;&lt;br&gt;(singleton)&lt;br&gt;&lt;br&gt;- delegates/consumers: [viewId → contract]&lt;br&gt;- register(viewId) / unregister(viewId)&lt;br&gt;- handle/update/confirm → routes by viewId&lt;br&gt;- shared actionHandler" vertex="1">
+          <mxGeometry height="160" width="340" x="150" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-tagged-emitter" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;align=center;verticalAlign=top;" value="&lt;b&gt;TaggedEmitter&lt;/b&gt;&lt;br&gt;&lt;br&gt;injects viewId into every&lt;br&gt;event payload for JS demux" vertex="1">
+          <mxGeometry height="110" width="180" x="1068" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-cv-usm" edge="1" parent="1" source="ev-cardview" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=none;strokeColor=#314354;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=none;resizable=0;gradientColor=none;" target="ev-use-component" value="&lt;span style=&quot;color: rgb(127, 127, 127);&quot;&gt;subscribe(viewID&lt;/span&gt;&lt;span style=&quot;color: rgb(127, 127, 127); background-color: transparent;&quot;&gt;)&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.2676" y="15" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ev-arrow-usm-proxy" edge="1" parent="1" source="ev-use-component" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ev-proxy" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-usm-sel" edge="1" parent="1" source="ev-use-component" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" target="ev-event-listeners" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-sel-handlers" edge="1" parent="1" source="ev-event-listeners" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" target="ev-handlers" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ev-arrow-busw-nbus" edge="1" parent="1" source="ev-bus-wrapper" style="endArrow=classic;startArrow=none;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;labelBackgroundColor=none;fontColor=#808080;endFill=1;startFill=0;" target="ev-bus-native" value="JS Bridge">
+          <mxGeometry relative="1" y="-30" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ev-arrow-vm-vs" edge="1" parent="1" source="ev-view-manager" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endFill=1;startArrow=none;startFill=0;labelBackgroundColor=none;" target="ev-view-state" value="&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;props -&amp;gt; render&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.3333" y="47" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ev-arrow-vs-nbus" edge="1" parent="1" source="ev-view-state" style="endArrow=none;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;labelBackgroundColor=none;startArrow=ERmany;startFill=0;endFill=0;" target="ev-bus-native" value="&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;register(viewID)&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.0837" y="-20" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ev-arrow-vs-te" edge="1" parent="1" source="ev-view-state" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;labelBackgroundColor=none;fontColor=#808080;" target="ev-tagged-emitter" value="events tagged&lt;br&gt;with viewID">
+          <mxGeometry relative="1" x="0.1919" y="20" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ev-arrow-te-sel" edge="1" parent="1" source="ev-tagged-emitter" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#314354;fillColor=#647687;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=none;fontSize=11;fontColor=#808080;" target="ev-event-listeners" value="&lt;span&gt;events flow back&lt;br&gt;through bridge&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.0864" y="-52" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;fillStyle=auto;dashed=1;" value="" vertex="1">
+          <mxGeometry height="120" width="260" x="594" y="276" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-2" edge="1" parent="1" source="ev-handlers" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ev-proxy" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="870" y="420" as="sourcePoint" />
+            <mxPoint x="870" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-11" connectable="0" parent="KkeV9tegGiMfPa8BwOsl-2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=none;" value="&lt;font color=&quot;#808080&quot;&gt;filtered command&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font color=&quot;#808080&quot;&gt;by viewID&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.2055" y="1" as="geometry">
+            <mxPoint x="-8" y="53" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-5" edge="1" parent="1" source="ev-proxy" style="endArrow=none;html=1;rounded=0;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endFill=0;startArrow=ERmany;startFill=0;" target="ev-bus-wrapper" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="520" y="430" as="sourcePoint" />
+            <mxPoint x="520" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ev-proxy" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=10;fillStyle=auto;dashed=1;" value="&lt;b&gt;EmbeddedComponentProxy&lt;/b&gt;&lt;br&gt;&lt;br&gt;- viewId (reactTag)&lt;br&gt;- handle(action) → bus&lt;br&gt;- hide() → bus" vertex="1">
+          <mxGeometry height="120" width="260" x="588" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="KkeV9tegGiMfPa8BwOsl-17" edge="1" parent="1" source="ev-bus-native" style="endArrow=classic;html=1;strokeWidth=2;fillColor=#647687;strokeColor=#314354;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;labelBackgroundColor=none;startArrow=none;startFill=0;endFill=1;" target="ev-view-state" value="&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;filter commands&amp;nbsp;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(128, 128, 128);&quot;&gt;by viewID&lt;/span&gt;&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.0837" y="-20" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="616" y="938" as="sourcePoint" />
+            <mxPoint x="505" y="940" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>

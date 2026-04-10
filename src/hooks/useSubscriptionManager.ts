@@ -49,30 +49,27 @@ export function useSubscriptionManager(
   );
 
   const subscribe = useCallback(
-    (componentType: string) => {
-      if (subscriptions.current.has(componentType)) return;
-      EmbeddedComponentBus.subscribe(componentType);
-      const proxy = new EmbeddedComponentProxy(
-        EmbeddedComponentBus,
-        componentType
-      );
-      const bag = startEventListeners(proxy, eventHandlerRefs, componentType);
-      subscriptions.current.set(componentType, bag);
+    (viewId: string) => {
+      if (subscriptions.current.has(viewId)) return;
+      EmbeddedComponentBus.subscribe(viewId);
+      const proxy = new EmbeddedComponentProxy(EmbeddedComponentBus, viewId);
+      const bag = startEventListeners(proxy, eventHandlerRefs, viewId);
+      subscriptions.current.set(viewId, bag);
     },
     [eventHandlerRefs]
   );
 
-  const unsubscribe = useCallback((componentType: string) => {
-    const bag = subscriptions.current.get(componentType);
+  const unsubscribe = useCallback((viewId: string) => {
+    const bag = subscriptions.current.get(viewId);
     bag?.forEach((s) => s.remove());
-    subscriptions.current.delete(componentType);
-    EmbeddedComponentBus.unsubscribe(componentType);
+    subscriptions.current.delete(viewId);
+    EmbeddedComponentBus.unsubscribe(viewId);
   }, []);
 
   function cleanup() {
-    subscriptions.current.forEach((listeners, componentType) => {
+    subscriptions.current.forEach((listeners, viewId) => {
       listeners.forEach((s) => s.remove());
-      EmbeddedComponentBus.unsubscribe(componentType);
+      EmbeddedComponentBus.unsubscribe(viewId);
     });
     subscriptions.current.clear();
   }

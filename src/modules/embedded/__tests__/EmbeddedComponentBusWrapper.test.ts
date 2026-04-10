@@ -58,7 +58,7 @@ describe('EmbeddedComponentBusWrapper', () => {
   });
 
   describe('subscribe', () => {
-    test('should call native module subscribe with componentType', () => {
+    test('should call native module subscribe with viewId', () => {
       const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
       wrapper.subscribe('CardComponent');
       expect(mockNativeModule.subscribe).toHaveBeenCalledWith('CardComponent');
@@ -66,7 +66,7 @@ describe('EmbeddedComponentBusWrapper', () => {
   });
 
   describe('unsubscribe', () => {
-    test('should call native module unsubscribe with componentType', () => {
+    test('should call native module unsubscribe with viewId', () => {
       const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
       wrapper.unsubscribe('CardComponent');
       expect(mockNativeModule.unsubscribe).toHaveBeenCalledWith(
@@ -76,7 +76,7 @@ describe('EmbeddedComponentBusWrapper', () => {
   });
 
   describe('handle', () => {
-    test('should call native module handle with componentType and action', () => {
+    test('should call native module handle with viewId and action', () => {
       const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
       const action = { type: 'redirect', paymentMethodType: 'ideal' } as any;
       wrapper.handle('CardComponent', action);
@@ -88,7 +88,7 @@ describe('EmbeddedComponentBusWrapper', () => {
   });
 
   describe('hide', () => {
-    test('should call native module hide with componentType, success true, and option', () => {
+    test('should call native module hide with viewId, success true, and option', () => {
       const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
       wrapper.hide('CardComponent', true, { message: 'done' });
       expect(mockNativeModule.hide).toHaveBeenCalledWith(
@@ -110,7 +110,7 @@ describe('EmbeddedComponentBusWrapper', () => {
   });
 
   describe('update', () => {
-    test('should call native module update with componentType and results', () => {
+    test('should call native module update with viewId and results', () => {
       const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
       const results = [{ id: '1', name: 'Street 1' }] as any[];
       wrapper.update('CardComponent', results);
@@ -122,7 +122,7 @@ describe('EmbeddedComponentBusWrapper', () => {
   });
 
   describe('confirm', () => {
-    test('should call native module confirm with componentType, success true, and body', () => {
+    test('should call native module confirm with viewId, success true, and body', () => {
       const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
       const address = { id: '1', name: 'Main St' } as any;
       wrapper.confirm('CardComponent', true, address);

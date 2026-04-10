@@ -12,16 +12,16 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     static var shared: EmbeddedComponentBusModule?
 
-    /// Per-componentType delegate proxies
+    /// Per-viewId delegate proxies
     private var delegates: [String: EmbeddedComponentDelegateProxy] = [:]
 
     /// Shared action handler for all embedded views
     private var actionHandler: AdyenActionComponent?
 
-    /// ComponentTypes with active JS subscriptions
-    private var subscribedTypes: Set<String> = []
+    /// ViewIds with active JS subscriptions
+    private var subscribedViews: Set<String> = []
 
-    /// Per-componentType address lookup handlers
+    /// Per-viewId address lookup handlers
     private var lookupHandlers: [String: ([LookupAddressModel]) -> Void] = [:]
     private var lookupCompletionHandlers: [String: (Result<PostalAddress, Error>) -> Void] = [:]
 
@@ -36,16 +36,16 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     // MARK: - Registration
 
-    func register(componentType: String) -> EmbeddedComponentDelegateProxy {
-        let proxy = EmbeddedComponentDelegateProxy(componentType: componentType, bus: self)
-        delegates[componentType] = proxy
+    func register(viewId: String) -> EmbeddedComponentDelegateProxy {
+        let proxy = EmbeddedComponentDelegateProxy(viewId: viewId, bus: self)
+        delegates[viewId] = proxy
         return proxy
     }
 
-    func unregister(componentType: String) {
-        delegates.removeValue(forKey: componentType)
-        lookupHandlers.removeValue(forKey: componentType)
-        lookupCompletionHandlers.removeValue(forKey: componentType)
+    func unregister(viewId: String) {
+        delegates.removeValue(forKey: viewId)
+        lookupHandlers.removeValue(forKey: viewId)
+        lookupCompletionHandlers.removeValue(forKey: viewId)
         if delegates.isEmpty {
             actionHandler?.cancelIfNeeded()
             actionHandler = nil
@@ -54,12 +54,12 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     // MARK: - Lookup handler storage (called by EmbeddedComponentDelegateProxy)
 
-    func storeLookupHandler(for componentType: String, handler: @escaping ([LookupAddressModel]) -> Void) {
-        lookupHandlers[componentType] = handler
+    func storeLookupHandler(for viewId: String, handler: @escaping ([LookupAddressModel]) -> Void) {
+        lookupHandlers[viewId] = handler
     }
 
-    func storeLookupCompletionHandler(for componentType: String, handler: @escaping (Result<PostalAddress, Error>) -> Void) {
-        lookupCompletionHandlers[componentType] = handler
+    func storeLookupCompletionHandler(for viewId: String, handler: @escaping (Result<PostalAddress, Error>) -> Void) {
+        lookupCompletionHandlers[viewId] = handler
     }
 
     // MARK: - Shared action handler
@@ -80,30 +80,30 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     // MARK: - JS subscription lifecycle
 
     @objc
-    func subscribe(_ componentType: String) {
-        subscribedTypes.insert(componentType)
+    func subscribe(_ viewId: String) {
+        subscribedViews.insert(viewId)
     }
 
     @objc
-    func unsubscribe(_ componentType: String) {
-        subscribedTypes.remove(componentType)
-        unregister(componentType: componentType)
-        if subscribedTypes.isEmpty {
+    func unsubscribe(_ viewId: String) {
+        subscribedViews.remove(viewId)
+        unregister(viewId: viewId)
+        if subscribedViews.isEmpty {
             cleanUp()
         }
     }
 
-    // MARK: - ComponentType-routed commands (called from JS)
+    // MARK: - ViewId-routed commands (called from JS)
 
     @objc
-    func handle(_ componentType: String, action actionDict: NSDictionary?) {
+    func handle(_ viewId: String, action actionDict: NSDictionary?) {
         guard let actionDict else { return }
         guard let handler = actionHandler else {
-            sendError(error: ModuleException.componentNotRegistered(componentType))
+            sendError(error: ModuleException.componentNotRegistered(viewId))
             return
         }
-        guard let proxy = delegates[componentType] else {
-            sendError(error: ModuleException.componentNotRegistered(componentType))
+        guard let proxy = delegates[viewId] else {
+            sendError(error: ModuleException.componentNotRegistered(viewId))
             return
         }
         do {
@@ -118,8 +118,8 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     }
 
     @objc
-    func update(_ componentType: String, results: NSArray?) {
-        guard let lookupHandler = lookupHandlers[componentType] else { return }
+    func update(_ viewId: String, results: NSArray?) {
+        guard let lookupHandler = lookupHandlers[viewId] else { return }
         let addressModels: [LookupAddressModel] = (results ?? [])
             .compactMap { $0 as? NSDictionary }
             .compactMap { try? $0.decode() }
@@ -129,8 +129,8 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     }
 
     @objc
-    func confirm(_ componentType: String, success: NSNumber, address: NSDictionary) {
-        guard let lookupCompletionHandler = lookupCompletionHandlers[componentType] else { return }
+    func confirm(_ viewId: String, success: NSNumber, address: NSDictionary) {
+        guard let lookupCompletionHandler = lookupCompletionHandlers[viewId] else { return }
         DispatchQueue.main.async {
             if !success.boolValue, let message = address[Keys.message] as? String {
                 return lookupCompletionHandler(.failure(AddressError(message: message)))
@@ -145,8 +145,8 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     }
 
     @objc
-    func hide(_ componentType: String, success: NSNumber, event _: NSDictionary) {
-        unregister(componentType: componentType)
+    func hide(_ viewId: String, success: NSNumber, event _: NSDictionary) {
+        unregister(viewId: viewId)
         if delegates.isEmpty {
             dismiss(success.boolValue)
         }
@@ -154,7 +154,7 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     override func cleanUp() {
         delegates.removeAll()
-        subscribedTypes.removeAll()
+        subscribedViews.removeAll()
         actionHandler?.cancelIfNeeded()
         actionHandler = nil
         lookupHandlers.removeAll()

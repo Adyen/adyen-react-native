@@ -24,9 +24,9 @@ describe('EmbeddedComponentProxy', () => {
   });
 
   describe('constructor', () => {
-    test('should expose componentType', () => {
+    test('should expose viewId', () => {
       const proxy = new EmbeddedComponentProxy(mockWrapper, 'CardComponent');
-      expect(proxy.componentType).toBe('CardComponent');
+      expect(proxy.viewId).toBe('CardComponent');
     });
   });
 
@@ -54,7 +54,7 @@ describe('EmbeddedComponentProxy', () => {
   });
 
   describe('handle', () => {
-    test('should call wrapper handle with bound componentType and action', () => {
+    test('should call wrapper handle with bound viewId and action', () => {
       const proxy = new EmbeddedComponentProxy(mockWrapper, 'CardComponent');
       const action = { type: 'redirect', paymentMethodType: 'ideal' } as any;
       proxy.handle(action);
@@ -89,7 +89,7 @@ describe('EmbeddedComponentProxy', () => {
   });
 
   describe('update', () => {
-    test('should call wrapper update with bound componentType and results', () => {
+    test('should call wrapper update with bound viewId and results', () => {
       const proxy = new EmbeddedComponentProxy(mockWrapper, 'CardComponent');
       const results = [{ id: '1', name: 'Street 1' }] as any[];
       proxy.update(results);
@@ -130,8 +130,8 @@ describe('EmbeddedComponentProxy', () => {
     });
   });
 
-  describe('componentType binding', () => {
-    test('different proxies on same wrapper route to their own componentType', () => {
+  describe('viewId binding', () => {
+    test('different proxies on same wrapper route to their own viewId', () => {
       const proxyA = new EmbeddedComponentProxy(mockWrapper, 'ComponentA');
       const proxyB = new EmbeddedComponentProxy(mockWrapper, 'ComponentB');
       const action = { type: 'threeDS2' } as any;

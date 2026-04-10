@@ -5,10 +5,10 @@ import { COMPONENT_MISSING_CONTEXT_ERROR } from './constants';
  * Context for embedded components to subscribe/unsubscribe to MessageBus events.
  */
 export interface AdyenComponentContextType {
-  /** Subscribe a component type to MessageBus events */
-  subscribe: (componentType: string) => void;
-  /** Unsubscribe a component type from MessageBus events */
-  unsubscribe: (componentType: string) => void;
+  /** Subscribe an embedded view to MessageBus events by its viewId (reactTag) */
+  subscribe: (viewId: string) => void;
+  /** Unsubscribe an embedded view from MessageBus events by its viewId (reactTag) */
+  unsubscribe: (viewId: string) => void;
 }
 
 export const AdyenComponentContext =

@@ -135,21 +135,21 @@ RCT_EXTERN_METHOD(handle:(NSDictionary *)action
 
 @interface RCT_EXTERN_MODULE(AdyenComponentBus, NSObject)
 
-RCT_EXTERN_METHOD(subscribe:(nonnull NSString *)componentType)
+RCT_EXTERN_METHOD(subscribe:(nonnull NSString *)viewId)
 
-RCT_EXTERN_METHOD(unsubscribe:(nonnull NSString *)componentType)
+RCT_EXTERN_METHOD(unsubscribe:(nonnull NSString *)viewId)
 
-RCT_EXTERN_METHOD(hide:(nonnull NSString *)componentType
+RCT_EXTERN_METHOD(hide:(nonnull NSString *)viewId
                   success:(nonnull NSNumber *)success
                   event:(NSDictionary *)event)
 
-RCT_EXTERN_METHOD(handle:(nonnull NSString *)componentType
+RCT_EXTERN_METHOD(handle:(nonnull NSString *)viewId
                   action:(nullable NSDictionary *)actionMap)
 
-RCT_EXTERN_METHOD(update:(nonnull NSString *)componentType
+RCT_EXTERN_METHOD(update:(nonnull NSString *)viewId
                   results:(nullable NSArray *)results)
 
-RCT_EXTERN_METHOD(confirm:(nonnull NSString *)componentType
+RCT_EXTERN_METHOD(confirm:(nonnull NSString *)viewId
                   success:(nonnull NSNumber *)success
                   address:(nullable NSDictionary *)address)
 

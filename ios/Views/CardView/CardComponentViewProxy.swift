@@ -20,7 +20,7 @@ public final class CardComponentViewProxy: UIStackView {
     private var hasComponent: Bool = false
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
-    @objc public var registrationKey: String?
+    @objc public var viewId: String?
 
     @objc public weak var delegate: CardComponentViewProxyDelegate?
 
@@ -72,10 +72,10 @@ public final class CardComponentViewProxy: UIStackView {
         paymentMethodJSON = nil
         configurationJSON = nil
         lastReportedHeight = 0
-        if let registrationKey {
-            EmbeddedComponentBusModule.shared?.unregister(componentType: registrationKey)
+        if let viewId {
+            EmbeddedComponentBusModule.shared?.unregister(viewId: viewId)
         }
-        registrationKey = nil
+        viewId = nil
     }
 
     // MARK: - Component initialization
@@ -84,7 +84,7 @@ public final class CardComponentViewProxy: UIStackView {
         guard !hasComponent,
               let paymentMethodJSON,
               let configurationJSON,
-              let registrationKey else {
+              let viewId else {
             return
         }
         self.hasComponent = true
@@ -93,7 +93,7 @@ public final class CardComponentViewProxy: UIStackView {
             return
         }
 
-        let proxy = componentBus.register(componentType: registrationKey)
+        let proxy = componentBus.register(viewId: viewId)
         do {
             let component = try createCardComponent(
                 paymentMethodJSON: paymentMethodJSON,
