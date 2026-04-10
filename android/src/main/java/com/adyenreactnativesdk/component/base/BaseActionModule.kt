@@ -6,8 +6,6 @@
 
 package com.adyenreactnativesdk.component.base
 
-import android.util.Log
-import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.action.Action
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
@@ -17,21 +15,11 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 
-abstract class BaseActionModule(
+open class BaseActionModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseModule(reactContext, messageBus) {
   override fun supportedEvents(): List<String> = EventName.mainEvents()
-
-  protected fun parseAndHandleAction(actionMap: ReadableMap?) {
-    try {
-      val action = parseActionFromMap(actionMap)
-      handleAction(action)
-    } catch (e: Exception) {
-      Log.w(TAG, "Failed to parse and handle action", e)
-      sendError(ModuleException.InvalidAction(e))
-    }
-  }
 
   protected fun parseActionFromMap(actionMap: ReadableMap?): Action =
     try {
@@ -40,28 +28,4 @@ abstract class BaseActionModule(
     } catch (e: JSONException) {
       throw ModuleException.InvalidAction(e)
     }
-
-  protected abstract fun handleAction(action: Action)
-
-  protected fun sendAdditionalDetailsEvent(actionComponentData: ActionComponentData) {
-    try {
-      messageBus.onAdditionalDetails(actionComponentData)
-    } catch (e: Exception) {
-      Log.w(TAG, "Failed to send additional details event", e)
-      sendError(e)
-    }
-  }
-
-  protected fun sendCompleteEvent() {
-    try {
-      messageBus.onFinished()
-    } catch (e: Exception) {
-      Log.w(TAG, "Failed to send complete event", e)
-      sendError(e)
-    }
-  }
-
-  private companion object {
-    private const val TAG = "BaseActionModule"
-  }
 }

@@ -11,10 +11,8 @@ import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import com.adyen.checkout.components.core.BalanceResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
-import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
-import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.dropin.AddressLookupDropInServiceResult
 import com.adyen.checkout.dropin.BalanceDropInServiceResult
 import com.adyen.checkout.dropin.BaseDropInServiceContract
@@ -30,13 +28,11 @@ import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
 import com.adyen.checkout.dropin.internal.ui.model.SessionDropInResultContractParams
 import com.adyen.checkout.redirect.RedirectComponent
 import com.adyenreactnativesdk.AdyenPaymentPackage
-import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.BaseAddressModule
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.component.model.fromJsonObject
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
-import com.adyenreactnativesdk.util.map
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.Arguments
@@ -51,7 +47,7 @@ import com.facebook.react.jstasks.HeadlessJsTaskContext
 class DropInModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
-) : BaseModule(reactContext, messageBus) {
+) : BaseAddressModule(reactContext, messageBus) {
   private var taskId: Int? = null
 
   private val integration: String
@@ -121,8 +117,7 @@ class DropInModule(
   @ReactMethod
   fun handle(actionMap: ReadableMap?) {
     try {
-      val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
-      val action = Action.SERIALIZER.deserialize(jsonObject)
+      val action = parseActionFromMap(actionMap)
       service.sendResult(DropInServiceResult.Action(action))
     } catch (e: Exception) {
       sendError(ModuleException.InvalidAction(e))
@@ -144,16 +139,7 @@ class DropInModule(
 
   @ReactMethod
   fun update(array: ReadableArray?) {
-    val result =
-      try {
-        val jsonArray = ReactNativeJson.convertArrayToJson(array)
-        val addresses = jsonArray.map { LookupAddress::class.fromJsonObject(it) }
-        AddressLookupDropInServiceResult.LookupResult(addresses.toList())
-      } catch (error: Throwable) {
-        Log.w(TAG, error)
-        AddressLookupDropInServiceResult.LookupResult(arrayListOf())
-      }
-    service.sendAddressLookupResult(result)
+    service.sendAddressLookupResult(AddressLookupDropInServiceResult.LookupResult(parseAddressOptions(array)))
   }
 
   @ReactMethod
@@ -164,25 +150,13 @@ class DropInModule(
     val result =
       if (success) {
         try {
-          val jsonObject = ReactNativeJson.convertMapToJson(address)
-          val lookupAddress = LookupAddress::class.fromJsonObject(jsonObject)
-          AddressLookupDropInServiceResult.LookupComplete(lookupAddress)
-        } catch (error: Throwable) {
-          AddressLookupDropInServiceResult.Error(
-            ErrorDialog(
-              message = error.localizedMessage,
-            ),
-            null,
-            false,
-          )
+          AddressLookupDropInServiceResult.LookupComplete(parseLookupAddress(address))
+        } catch (e: Throwable) {
+          AddressLookupDropInServiceResult.Error(ErrorDialog(message = e.localizedMessage), null, false)
         }
       } else {
         val error = address?.getString("message")?.let { ErrorDialog(message = it) }
-        AddressLookupDropInServiceResult.Error(
-          error,
-          null,
-          false,
-        )
+        AddressLookupDropInServiceResult.Error(error, null, false)
       }
     service.sendAddressLookupResult(result)
   }
