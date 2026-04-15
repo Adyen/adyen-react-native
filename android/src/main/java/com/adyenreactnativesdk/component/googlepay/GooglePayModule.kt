@@ -28,6 +28,8 @@ class GooglePayModule(
 ) : BaseActionModule(context, messageBus) {
   override fun getName(): String = COMPONENT_NAME
 
+  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
   }
