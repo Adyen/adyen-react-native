@@ -21,7 +21,7 @@ enum class EventName(
   companion object
 }
 
-fun EventName.Companion.mainEvents() =
+fun EventName.Companion.coreEvents() =
   listOf(
     EventName.SUBMIT.value,
     EventName.ERROR.value,
@@ -41,19 +41,16 @@ fun EventName.Companion.addressLookupEvents() =
     EventName.CONFIRM_ADDRESS.value,
   )
 
-fun EventName.Companion.cardComponentEvents() =
+fun EventName.Companion.cardEvents() =
   listOf(
     EventName.BIN_LOOKUP.value,
     EventName.CHANGE_BIN_VALUE.value,
   )
 
-fun EventName.Companion.dropinEvents() =
-  embeddedComponentsEvents() +
-    listOf(
-      EventName.DISABLE_STORED_PAYMENT_METHOD.value,
-      EventName.CHECK_BALANCE.value,
-      EventName.REQUEST_ORDER.value,
-      EventName.CANCEL_ORDER.value,
-    )
-
-fun EventName.Companion.embeddedComponentsEvents() = mainEvents() + addressLookupEvents() + cardComponentEvents()
+fun EventName.Companion.dropInEvents() =
+  listOf(
+    EventName.DISABLE_STORED_PAYMENT_METHOD.value,
+    EventName.CHECK_BALANCE.value,
+    EventName.REQUEST_ORDER.value,
+    EventName.CANCEL_ORDER.value,
+  )

@@ -12,16 +12,16 @@ import org.junit.Test
 
 class EventNameTest {
   @Test
-  fun `mainEvents returns correct event values`() {
+  fun `coreEvents returns correct event values`() {
     // WHEN
-    val mainEvents = EventName.mainEvents()
+    val coreEvents = EventName.coreEvents()
 
     // THEN
-    assertEquals(4, mainEvents.size)
-    assertTrue(mainEvents.contains(EventName.SUBMIT.value))
-    assertTrue(mainEvents.contains(EventName.ERROR.value))
-    assertTrue(mainEvents.contains(EventName.COMPLETE_VOUCHER.value))
-    assertTrue(mainEvents.contains(EventName.ADDITIONAL_DETAILS.value))
+    assertEquals(4, coreEvents.size)
+    assertTrue(coreEvents.contains(EventName.SUBMIT.value))
+    assertTrue(coreEvents.contains(EventName.ERROR.value))
+    assertTrue(coreEvents.contains(EventName.COMPLETE_VOUCHER.value))
+    assertTrue(coreEvents.contains(EventName.ADDITIONAL_DETAILS.value))
   }
 
   @Test

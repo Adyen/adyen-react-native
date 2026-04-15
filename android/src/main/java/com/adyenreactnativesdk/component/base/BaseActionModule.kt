@@ -10,7 +10,7 @@ import com.adyen.checkout.components.core.action.Action
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.messaging.mainEvents
+import com.adyenreactnativesdk.util.messaging.coreEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 
@@ -18,7 +18,7 @@ abstract class BaseActionModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseModule(reactContext, messageBus) {
-  override fun supportedEvents(): List<String> = EventName.mainEvents()
+  override fun supportedEvents(): List<String> = EventName.coreEvents()
 
   protected fun parseActionFromMap(actionMap: ReadableMap?): Action =
     try {

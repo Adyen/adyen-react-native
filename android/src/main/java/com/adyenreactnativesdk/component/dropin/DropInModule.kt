@@ -35,6 +35,8 @@ import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.cardEvents
+import com.adyenreactnativesdk.util.messaging.dropInEvents
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -64,8 +66,6 @@ class DropInModule(
   fun removeListeners(count: Int?) { // No JS events expected
   }
 
-  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
-
   @ReactMethod
   fun getReturnURL(promise: Promise) {
     promise.resolve(RedirectComponent.getReturnUrl(reactApplicationContext))
@@ -73,7 +73,7 @@ class DropInModule(
 
   override fun getName(): String = COMPONENT_NAME
 
-  override fun supportedEvents(): List<String> = EventName.entries.map { it.value }
+  override fun supportedEvents(): List<String> = super.supportedEvents() + EventName.cardEvents() + EventName.dropInEvents()
 
   @ReactMethod
   fun open(

@@ -7,7 +7,7 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.react.ComponentContract
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.messaging.embeddedComponentsEvents
+import com.adyenreactnativesdk.util.messaging.cardEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
@@ -21,7 +21,7 @@ class EmbeddedComponentBusModule(
 
   override fun getName(): String = COMPONENT_NAME
 
-  override fun supportedEvents(): List<String> = EventName.embeddedComponentsEvents()
+  override fun supportedEvents(): List<String> = super.supportedEvents() + EventName.cardEvents()
 
   override fun getConstants(): MutableMap<String, Any> = super.getConstants()
 
