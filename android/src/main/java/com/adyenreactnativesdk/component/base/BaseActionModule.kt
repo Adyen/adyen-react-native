@@ -14,7 +14,7 @@ import com.adyenreactnativesdk.util.messaging.mainEvents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 
-open class BaseActionModule(
+abstract class BaseActionModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseModule(reactContext, messageBus) {

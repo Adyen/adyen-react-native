@@ -18,7 +18,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 
-open class BaseAddressModule(
+abstract class BaseAddressModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseActionModule(reactContext, messageBus) {
