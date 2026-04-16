@@ -34,7 +34,7 @@ UDID=$(bash ./resolve_ios_simulator.sh "$device_name")
 echo "::group::Build iOS [$(date '+%H:%M:%S')]"
 if ! command -v xcbeautify &> /dev/null; then
   echo "Installing xcbeautify..."
-  brew install xcbeautify
+  HOMEBREW_NO_AUTO_UPDATE=1 brew install xcbeautify
 fi
 
 XCODEBUILD_LOG="xcodebuild.log"
