@@ -153,7 +153,7 @@ class DropInModule(
       if (success) {
         try {
           AddressLookupDropInServiceResult.LookupComplete(parseLookupAddress(address))
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
           AddressLookupDropInServiceResult.Error(ErrorDialog(message = e.localizedMessage), null, false)
         }
       } else {
