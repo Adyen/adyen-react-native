@@ -316,30 +316,32 @@ BaseModule                                           # Base class for payment mo
     │       - createSession(sessionModel, config)
     │       - hide() delegates to currentModule
     │
-    ├──► GooglePayModule                             # Google Pay component
-    │       - open(paymentMethods, config)
-    │       - handle(action)
-    │       - isAvailable(paymentMethods, config)
-    │
-    ├──► InstantModule                               # Instant/redirect payments
-    │       - open(paymentMethods, config)
-    │       - handle(action)
-    │
-    └──► DropInModule                                # Drop-in component
-            - open(paymentMethods, config)
-            - handle(action)
-            - removeStored(success)
-            - getReturnURL()
-            - update/confirm (address lookup)
-            - provideBalance/Order/PaymentMethods
-
-BaseAddressModule(BaseActionModule(BaseModule))      # Extended base for address + action support
-    │
-    └──► EmbeddedComponentBusModule                  # Embedded component bus
-            - consumers: Map<String, ComponentContract> (companion, keyed by reactTag)
-            - subscribe/unsubscribe (JS lifecycle)
-            - register/unregister (native view lifecycle)
-            - handle/update/confirm/hide (JS → native routing)
+    └──► BaseActionModule                            # Adds parseActionFromMap() + mainEvents()
+            │
+            ├──► GooglePayModule                     # Google Pay component
+            │       - open(paymentMethods, config)
+            │       - handle(action)
+            │       - isAvailable(paymentMethods, config)
+            │
+            ├──► InstantModule                       # Instant/redirect payments
+            │       - open(paymentMethods, config)
+            │       - handle(action)
+            │
+            └──► BaseAddressModule                   # Adds parseAddressOptions/parseLookupAddress() + addressLookupEvents()
+                    │
+                    ├──► DropInModule                # Drop-in component
+                    │       - open(paymentMethods, config)
+                    │       - handle(action)
+                    │       - removeStored(success)
+                    │       - getReturnURL()
+                    │       - update/confirm (address lookup)
+                    │       - provideBalance/Order/PaymentMethods
+                    │
+                    └──► EmbeddedComponentBusModule  # Embedded component bus
+                            - consumers: Map<String, ComponentContract> (companion, keyed by reactTag)
+                            - subscribe/unsubscribe (JS lifecycle)
+                            - register/unregister (native view lifecycle)
+                            - handle/update/confirm/hide (JS → native routing)
 ```
 
 ### Embedded Views (Fabric Native Components)
