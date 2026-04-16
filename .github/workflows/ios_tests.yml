@@ -74,7 +74,7 @@ jobs:
             -enableCodeCoverage YES \
             -allowProvisioningUpdates 2>&1 \
             | tee ${{ env.buildLogPath }} \
-            | xcpretty --utf --color \
+            | xcbeautify --renderer github-actions \
             && exit ${PIPESTATUS[0]}
 
       - name: Upload Xcodebuild Log

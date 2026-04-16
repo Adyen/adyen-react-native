@@ -32,9 +32,9 @@ echo "Using workspace: $WORKSPACE with scheme: $SCHEME"
 UDID=$(bash ./resolve_ios_simulator.sh "$device_name")
 
 echo "::group::Build iOS [$(date '+%H:%M:%S')]"
-if ! command -v xcpretty &> /dev/null; then
-  echo "Installing xcpretty..."
-  gem install xcpretty
+if ! command -v xcbeautify &> /dev/null; then
+  echo "Installing xcbeautify..."
+  HOMEBREW_NO_AUTO_UPDATE=1 brew install xcbeautify
 fi
 
 XCODEBUILD_LOG="xcodebuild.log"
@@ -44,7 +44,7 @@ xcodebuild -workspace "ios/$SCHEME.xcworkspace" \
   -sdk iphonesimulator \
   -destination "platform=iOS Simulator,id=$UDID" \
   -derivedDataPath build \
-  2>&1 | tee "$XCODEBUILD_LOG" | xcpretty --utf --color
+  2>&1 | tee "$XCODEBUILD_LOG" | xcbeautify --renderer github-actions
 echo "::endgroup::"
 
 echo "::group::Start Metro [$(date '+%H:%M:%S')]"
