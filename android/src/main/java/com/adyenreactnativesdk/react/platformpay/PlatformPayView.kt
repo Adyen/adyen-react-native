@@ -2,6 +2,7 @@ package com.adyenreactnativesdk.react.platformpay
 
 import android.annotation.SuppressLint
 import android.widget.FrameLayout
+import com.facebook.react.uimanager.RootViewUtil
 import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.wallet.button.ButtonConstants
 import com.google.android.gms.wallet.button.ButtonOptions
@@ -52,6 +53,9 @@ class PlatformPayView(
     removeView(googlePayButton)
     scheduleUpdate()
     addView(googlePayButton)
+    postDelayed(2000) {
+      (RootViewUtil.getRootView(this) as? FrameLayout)?.requestLayout()
+    }
   }
 
   private fun scheduleUpdate() {
