@@ -53,9 +53,9 @@ export function getWrapper(
       break;
   }
 
-  if (typeName === 'scheme') {
+  if (typeName === 'scheme' || typeName === 'card') {
     console.warn(
-      'AdyenCheckout.start("scheme") will be deprecated in v3. Use the embedded <CardView> component instead.'
+      'AdyenCheckout.start("' + typeName + '") will be deprecated in v3. Use the embedded <CardView> component instead.'
     );
   }
 
