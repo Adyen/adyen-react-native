@@ -20,7 +20,7 @@ export const checkConfiguration = (configuration: Configuration) => {
   } else if (!clientKeyRegex.test(configuration.clientKey)) {
     throw new Error(
       `Invalid client key: ${configuration.clientKey}. ` +
-      `Valid client key starts with environment name (e.x. 'live_XXXXXXXXXX').`
+        `Valid client key starts with environment name (e.x. 'live_XXXXXXXXXX').`
     );
   }
 
@@ -30,19 +30,23 @@ export const checkConfiguration = (configuration: Configuration) => {
     );
   }
 
-  if (configuration?.amount &&
-    !currencyCodeRegex.test(configuration.amount.currency)) {
+  if (
+    configuration?.amount &&
+    !currencyCodeRegex.test(configuration.amount.currency)
+  ) {
     throw new Error(
       `Invalid currency code: ${configuration.amount.currency}. ` +
-      `The currency code must be in ISO 4217 "alphabetic code" format. Example: "EUR" or "USD". `
+        `The currency code must be in ISO 4217 "alphabetic code" format. Example: "EUR" or "USD". `
     );
   }
 
-  if (configuration?.countryCode &&
-    !countryCodeRegex.test(configuration.countryCode)) {
+  if (
+    configuration?.countryCode &&
+    !countryCodeRegex.test(configuration.countryCode)
+  ) {
     throw new Error(
       `Invalid country code: ${configuration.countryCode}. ` +
-      `The shopper's country code must be in ISO 3166-1 alpha-2 format. Example: "NL" or "US".`
+        `The shopper's country code must be in ISO 3166-1 alpha-2 format. Example: "NL" or "US".`
     );
   }
 };
