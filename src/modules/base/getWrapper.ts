@@ -53,6 +53,12 @@ export function getWrapper(
       break;
   }
 
+  if (typeName === 'scheme' || typeName === 'card') {
+    console.warn(
+      'AdyenCheckout.start("' + typeName + '") will be deprecated in v3. Use the embedded <CardView> component instead.'
+    );
+  }
+
   const paymentMethod = find(paymentMethods, typeName);
   if (!paymentMethod) {
     throw new Error(UNKNOWN_PAYMENT_METHOD_ERROR + typeName);
