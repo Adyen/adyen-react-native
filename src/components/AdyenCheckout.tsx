@@ -219,7 +219,10 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   return (
     <AdyenCheckoutContext.Provider value={checkoutContextValue}>
       <AdyenComponentContext.Provider
-        value={useMemo(() => ({ subscribe, unsubscribe }), [subscribe, unsubscribe])}
+        value={useMemo(
+          () => ({ subscribe, unsubscribe }),
+          [subscribe, unsubscribe]
+        )}
       >
         {children}
       </AdyenComponentContext.Provider>

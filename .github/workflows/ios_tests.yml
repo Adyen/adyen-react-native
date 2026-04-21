@@ -16,6 +16,7 @@ jobs:
   ios_tests:
     name: Test iOS
     runs-on: macos-15
+    timeout-minutes: 45
     env:
       workspace: AdyenExample.xcworkspace
       scheme: AdyenExample

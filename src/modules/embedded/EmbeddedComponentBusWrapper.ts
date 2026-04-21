@@ -20,11 +20,7 @@ export class EmbeddedComponentBusWrapper extends EventListenerWrapper<EmbeddedNa
     this.nativeModule.handle(viewId, action);
   }
 
-  hide(
-    viewId: string,
-    success: boolean,
-    option?: { message?: string }
-  ): void {
+  hide(viewId: string, success: boolean, option?: { message?: string }): void {
     this.nativeModule.hide(viewId, success, option);
   }
 

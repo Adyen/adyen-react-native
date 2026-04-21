@@ -31,27 +31,27 @@ async function createDriver() {
 
   const capabilities = isAndroid
     ? {
-      'platformName': 'Android',
-      'appium:automationName': 'UiAutomator2',
-      'appium:appPackage': androidAppPackage,
-      'appium:appActivity': androidAppActivity,
-      'appium:newCommandTimeout': 120,
-    }
+        'platformName': 'Android',
+        'appium:automationName': 'UiAutomator2',
+        'appium:appPackage': androidAppPackage,
+        'appium:appActivity': androidAppActivity,
+        'appium:newCommandTimeout': 120,
+      }
     : {
-      'platformName': 'iOS',
-      'appium:automationName': 'XCUITest',
-      'appium:bundleId': iosBundleId,
-      'appium:newCommandTimeout': 120,
-      'appium:wdaLaunchTimeout': 180000,
-      'appium:wdaConnectionTimeout': 180000,
-      'appium:wdaStartupRetries': 2,
-      'appium:wdaStartupRetryInterval': 15000,
-      'appium:udid': iosUdid,
-      'appium:skipUnlock': true,
-      'appium:waitForQuiescence': false,
-      'appium:simpleIsVisibleCheck': true,
-    };
-    
+        'platformName': 'iOS',
+        'appium:automationName': 'XCUITest',
+        'appium:bundleId': iosBundleId,
+        'appium:newCommandTimeout': 120,
+        'appium:wdaLaunchTimeout': 180000,
+        'appium:wdaConnectionTimeout': 180000,
+        'appium:wdaStartupRetries': 2,
+        'appium:wdaStartupRetryInterval': 15000,
+        'appium:udid': iosUdid,
+        'appium:skipUnlock': true,
+        'appium:waitForQuiescence': false,
+        'appium:simpleIsVisibleCheck': true,
+      };
+
   const driver = await remote({
     protocol: 'http',
     hostname: '127.0.0.1',

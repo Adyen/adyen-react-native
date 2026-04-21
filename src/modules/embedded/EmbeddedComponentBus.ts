@@ -8,11 +8,7 @@ export interface EmbeddedNativeModule extends NativeModuleWithConstants {
   subscribe(viewId: string): void;
   unsubscribe(viewId: string): void;
   handle(viewId: string, action: PaymentAction): void;
-  hide(
-    viewId: string,
-    success: boolean,
-    option?: { message?: string }
-  ): void;
+  hide(viewId: string, success: boolean, option?: { message?: string }): void;
   update(viewId: string, results: AddressLookupItem[]): void;
   confirm(
     viewId: string,
