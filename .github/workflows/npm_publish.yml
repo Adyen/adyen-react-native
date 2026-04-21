@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ inputs.version == '' && github.ref_name || inputs.version }}
-      NODE-VERSION: 22
+      NODE-VERSION: 24
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
