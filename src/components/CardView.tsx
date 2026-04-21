@@ -63,9 +63,7 @@ export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
 
   useEffect(() => {
     if (!_paymentMethod) {
-      console.error(
-        `No payment method found for type ${PAYMENT_METHOD_TYPE}`
-      );
+      console.error(`No payment method found for type ${PAYMENT_METHOD_TYPE}`);
     }
   }, [_paymentMethod]);
 

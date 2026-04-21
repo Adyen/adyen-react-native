@@ -30,7 +30,8 @@ export type EventHandlerRefs = {
     (error: AdyenError, component: AdyenActionComponent) => void
   >;
   onComplete: React.RefObject<
-    ((result: SessionsResult, component: AdyenActionComponent) => void) | undefined
+    | ((result: SessionsResult, component: AdyenActionComponent) => void)
+    | undefined
   >;
   onAdditionalDetails: React.RefObject<
     | ((data: PaymentDetailsData, component: AdyenActionComponent) => void)
@@ -107,13 +108,14 @@ export function startEventListeners(
   // BIN lookup and value
   subscribeIfSupported(Event.onBinLookup, (data: any) => {
     const lookupData =
-      viewId && !Array.isArray(data) && typeof data === 'object' ? data.data : data;
+      viewId && !Array.isArray(data) && typeof data === 'object'
+        ? data.data
+        : data;
     refs.config.current.card?.onBinLookup?.(lookupData);
   });
 
   subscribeIfSupported(Event.onBinValue, (data: any) => {
-    const value =
-      viewId && typeof data === 'object' ? data.value : data;
+    const value = viewId && typeof data === 'object' ? data.value : data;
     refs.config.current.card?.onBinValue?.(value);
   });
 
@@ -137,8 +139,7 @@ export function startEventListeners(
     async (paymentData: PaymentMethodData) =>
       refs.config.current.partialPayment?.onBalanceCheck?.(
         paymentData,
-        (balance) =>
-          partialComponent.provideBalance(true, balance, undefined),
+        (balance) => partialComponent.provideBalance(true, balance, undefined),
         (error) => partialComponent.provideBalance(false, undefined, error)
       )
   );
