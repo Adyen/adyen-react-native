@@ -29,9 +29,10 @@ jobs:
         with:
           node-version: ${{ env.NODE-VERSION }}
           registry-url: https://registry.npmjs.org/
+      - name: Validate version is semver
+        run: bash scripts/validate-semver.sh
       - name: Update version in package.json
-        run: |
-          sed -i 's/"version":.*$/"version": "${{ env.VERSION }}",/g' package.json
+        run: npm version "$VERSION" --no-git-tag-version
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Publish to npm
