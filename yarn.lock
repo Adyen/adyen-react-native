@@ -21,8 +21,8 @@ __metadata:
     "@react-native/typescript-config": "npm:^0.78.2"
     "@react-navigation/native": "npm:^7.0.9"
     "@react-navigation/native-stack": "npm:^7.3.3"
-    "@types/react": "npm:^19.0.0"
-    react: "npm:19.0.0"
+    "@types/react": "npm:19.2.7"
+    react: "npm:19.2.4"
     react-native: "npm:^0.78.0"
     react-native-builder-bob: "npm:^0.40.17"
     react-native-safe-area-context: "npm:^5.4.1"
@@ -44,7 +44,7 @@ __metadata:
     "@react-native/babel-preset": "npm:^0.78.2"
     "@react-native/eslint-config": "npm:^0.78.0"
     "@types/jest": "npm:^29.5.5"
-    "@types/react": "npm:^19.0.0"
+    "@types/react": "npm:19.2.7"
     eslint: "npm:^9.39.2"
     eslint-config-prettier: "npm:^10.1.1"
     eslint-plugin-jest: "npm:^27.0.1"
@@ -53,7 +53,7 @@ __metadata:
     husky: "npm:^9.0.11"
     jest: "npm:^29.7.0"
     prettier: "npm:^3.8.1"
-    react: "npm:19.0.0"
+    react: "npm:19.2.4"
     react-native: "npm:0.78.3"
     react-native-builder-bob: "npm:^0.40.17"
     typescript: "npm:^5.2.2"
@@ -3420,7 +3420,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:^19.0.0":
+"@types/react@npm:19.2.7":
   version: 19.2.7
   resolution: "@types/react@npm:19.2.7"
   dependencies:
@@ -10520,10 +10520,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:19.0.0":
-  version: 19.0.0
-  resolution: "react@npm:19.0.0"
-  checksum: 10c0/9cad8f103e8e3a16d15cb18a0d8115d8bd9f9e1ce3420310aea381eb42aa0a4f812cf047bb5441349257a05fba8a291515691e3cb51267279b2d2c3253f38471
+"react@npm:19.2.4":
+  version: 19.2.4
+  resolution: "react@npm:19.2.4"
+  checksum: 10c0/cd2c9ff67a720799cc3b38a516009986f7fc4cb8d3e15716c6211cf098d1357ee3e348ab05ad0600042bbb0fd888530ba92e329198c92eafa0994f5213396596
   languageName: node
   linkType: hard
 
