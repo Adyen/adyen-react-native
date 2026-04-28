@@ -13,6 +13,8 @@ import com.adyen.checkout.card.AddressConfiguration.PostalCode
 import com.adyen.checkout.card.CardBrand
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.card.CardType
+import com.adyen.checkout.card.InstallmentConfiguration
+import com.adyen.checkout.card.InstallmentOptions
 import com.adyen.checkout.card.KCPAuthVisibility
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
 import com.facebook.react.bridge.ReadableMap
@@ -33,6 +35,7 @@ class CardConfigurationParser(
     const val SOCIAL_SECURITY_VISIBILITY_KEY = "socialSecurity"
     const val SUPPORTED_CARD_TYPES_KEY = "supported"
     const val SUPPORTED_COUNTRY_LIST_KEY = "allowedAddressCountryCodes"
+    const val INSTALLMENT_OPTIONS_KEY = "installmentOptions"
   }
 
   private var config: ReadableMap
@@ -46,14 +49,15 @@ class CardConfigurationParser(
   }
 
   fun applyConfiguration(builder: CardConfiguration.Builder) {
-    supportedCardTypes?.let { builder.setSupportedCardTypes(*it.toTypedArray()) }
-    showStorePaymentField?.let { builder.setShowStorePaymentField(it) }
-    hideCvcStoredCard?.let { builder.setHideCvcStoredCard(it) }
-    hideCvc?.let { builder.setHideCvc(it) }
-    holderNameRequired?.let { builder.setHolderNameRequired(it) }
-    addressVisibility?.let { builder.setAddressConfiguration(it) }
-    kcpVisibility?.let { builder.setKcpAuthVisibility(it) }
-    socialSecurityNumberVisibility?.let { builder.setSocialSecurityNumberVisibility(it) }
+    supportedCardTypes?.let { builder.supportedCardBrands = it.toList() }
+    showStorePaymentField?.let { builder.isStorePaymentFieldVisible = it }
+    hideCvcStoredCard?.let { builder.isHideCvcStoredCard = it }
+    hideCvc?.let { builder.isHideCvc = it }
+    holderNameRequired?.let { builder.isHolderNameRequired = it }
+    addressVisibility?.let { builder.addressConfiguration = it }
+    kcpVisibility?.let { builder.kcpAuthVisibility = it }
+    socialSecurityNumberVisibility?.let { builder.socialSecurityNumberVisibility = it }
+    installmentConfiguration?.let { builder.installmentConfiguration = it }
   }
 
   fun applyConfiguration(builder: BcmcConfiguration.Builder) {
@@ -167,5 +171,65 @@ class CardConfigurationParser(
       }
     }
 
-  // TODO: add InstallmentConfiguration getInstallmentConfiguration
+  internal val installmentConfiguration: InstallmentConfiguration?
+    get() {
+      return when {
+        config.hasKey(INSTALLMENT_OPTIONS_KEY) -> {
+          val installmentOptionsMap = config.getMap(INSTALLMENT_OPTIONS_KEY) ?: return null
+          parseInstallmentConfiguration(installmentOptionsMap)
+        }
+
+        else -> {
+          null
+        }
+      }
+    }
+
+  private fun parseInstallmentConfiguration(installmentOptionsMap: ReadableMap): InstallmentConfiguration? {
+    var defaultOptions: InstallmentOptions.DefaultInstallmentOptions? = null
+    val cardBasedOptions = mutableListOf<InstallmentOptions.CardBasedInstallmentOptions>()
+
+    val iterator = installmentOptionsMap.keySetIterator()
+    while (iterator.hasNextKey()) {
+      val key = iterator.nextKey()
+      val optionMap = installmentOptionsMap.getMap(key) ?: continue
+
+      val values =
+        optionMap.getArray("values")?.toArrayList()?.mapNotNull { it as? Int } ?: continue
+      val plans =
+        if (optionMap.hasKey("plans")) {
+          optionMap.getArray("plans")?.toArrayList()?.map { it.toString() } ?: emptyList()
+        } else {
+          emptyList()
+        }
+      val includeRevolving = plans.contains("revolving")
+
+      if (key.equals("card", ignoreCase = true)) {
+        // Default options for all cards
+        defaultOptions = InstallmentOptions.DefaultInstallmentOptions(values, includeRevolving)
+      } else {
+        // Card-specific options
+        val cardType = CardType.getByBrandName(key)
+        if (cardType != null) {
+          cardBasedOptions.add(
+            InstallmentOptions.CardBasedInstallmentOptions(
+              values,
+              includeRevolving,
+              CardBrand(cardType),
+            ),
+          )
+        }
+      }
+    }
+
+    // Return configuration only if we have at least one option
+    return if (defaultOptions != null || cardBasedOptions.isNotEmpty()) {
+      InstallmentConfiguration(
+        defaultOptions = defaultOptions,
+        cardBasedOptions = cardBasedOptions,
+      )
+    } else {
+      null
+    }
+  }
 }

@@ -174,6 +174,96 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.billingAddress.countryCodes?.count, 2)
     }
 
+    func test_configuration_setsInstallmentConfiguration_withDefaultOptions() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "card": [
+                "installmentOptions": [
+                    "card": [
+                        "values": [1, 2, 3]
+                    ]
+                ]
+            ]
+        ]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertNotNil(sut.configuration.installmentConfiguration)
+        XCTAssertEqual(sut.configuration.installmentConfiguration?.defaultOptions?.monthValues, [1, 2, 3])
+        XCTAssertFalse(sut.configuration.installmentConfiguration?.defaultOptions?.includesRevolving ?? true)
+    }
+
+    func test_configuration_setsInstallmentConfiguration_withRevolvingPlan() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "card": [
+                "installmentOptions": [
+                    "card": [
+                        "values": [1, 2, 3],
+                        "plans": ["revolving", "regular"]
+                    ]
+                ]
+            ]
+        ]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertNotNil(sut.configuration.installmentConfiguration)
+        XCTAssertTrue(sut.configuration.installmentConfiguration?.defaultOptions?.includesRevolving ?? false)
+    }
+
+    func test_configuration_setsInstallmentConfiguration_withCardBasedOptions() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "card": [
+                "installmentOptions": [
+                    "visa": [
+                        "values": [1, 2, 3, 4]
+                    ],
+                    "mc": [
+                        "values": [1, 2, 3]
+                    ]
+                ]
+            ]
+        ]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertNotNil(sut.configuration.installmentConfiguration)
+        XCTAssertEqual(sut.configuration.installmentConfiguration?.cardBasedConfigurations.count, 2)
+    }
+
+    func test_configuration_setsInstallmentConfiguration_withMixedOptions() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "card": [
+                "installmentOptions": [
+                    "card": [
+                        "values": [1, 2]
+                    ],
+                    "visa": [
+                        "values": [1, 2, 3, 4],
+                        "plans": ["revolving"]
+                    ]
+                ]
+            ]
+        ]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertNotNil(sut.configuration.installmentConfiguration)
+        XCTAssertEqual(sut.configuration.installmentConfiguration?.defaultOptions?.monthValues, [1, 2])
+        XCTAssertEqual(sut.configuration.installmentConfiguration?.cardBasedConfigurations.count, 1)
+    }
+
 }
 
 extension CardComponent.AddressFormType: Equatable {

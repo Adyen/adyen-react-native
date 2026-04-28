@@ -86,6 +86,56 @@ public struct CardConfigurationParser {
         return billingAddressConfiguration
     }
 
+    var installmentConfiguration: InstallmentConfiguration? {
+        guard let installmentOptionsDict = dict[CardKeys.installmentOptions] as? NSDictionary else {
+            return nil
+        }
+
+        var defaultOptions: InstallmentConfiguration.Options?
+        var cardBasedConfigurations: [InstallmentConfiguration.CardConfiguration] = []
+
+        for (key, value) in installmentOptionsDict {
+            guard let keyString = key as? String,
+                  let optionDict = value as? NSDictionary,
+                  let valuesArray = optionDict["values"] as? [Int] else {
+                continue
+            }
+
+            let plansArray = optionDict["plans"] as? [String] ?? []
+            let includeRevolving = plansArray.contains("revolving")
+
+            if keyString.lowercased() == "card" {
+                // Default options for all cards
+                defaultOptions = InstallmentConfiguration.Options(
+                    monthValues: valuesArray,
+                    includesRevolving: includeRevolving
+                )
+            } else {
+                // Card-specific options
+                let cardType = CardType(rawValue: keyString)
+                cardBasedConfigurations.append(
+                    InstallmentConfiguration.CardConfiguration(
+                        cardType: cardType,
+                        installmentOptions: InstallmentConfiguration.Options(
+                            monthValues: valuesArray,
+                            includesRevolving: includeRevolving
+                        )
+                    )
+                )
+            }
+        }
+
+        // Return configuration only if we have at least one option
+        guard defaultOptions != nil || !cardBasedConfigurations.isEmpty else {
+            return nil
+        }
+
+        return InstallmentConfiguration(
+            defaultOptions: defaultOptions,
+            cardBasedConfigurations: cardBasedConfigurations
+        )
+    }
+
     public var configuration: CardComponent.Configuration {
         .init(style: FormComponentStyle(),
               shopperInformation: nil,
@@ -97,7 +147,7 @@ public struct CardConfigurationParser {
               socialSecurityNumberMode: socialSecurityVisibility,
               storedCardConfiguration: storedCardConfiguration,
               allowedCardTypes: allowedCardTypes,
-              installmentConfiguration: nil,
+              installmentConfiguration: installmentConfiguration,
               billingAddress: billingAddressConfiguration)
     }
 
@@ -109,7 +159,7 @@ public struct CardConfigurationParser {
               socialSecurityNumberMode: socialSecurityVisibility,
               storedCardConfiguration: storedCardConfiguration,
               allowedCardTypes: allowedCardTypes,
-              installmentConfiguration: nil,
+              installmentConfiguration: installmentConfiguration,
               billingAddress: billingAddressConfiguration)
     }
 
