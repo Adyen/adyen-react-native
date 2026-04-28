@@ -31,6 +31,6 @@ class ThreeDSConfigurationParser(
       }
 
   fun applyConfiguration(builder: Adyen3DS2Configuration.Builder) {
-    requestorAppUrl?.let { builder.setThreeDSRequestorAppURL(it) }
+    requestorAppUrl?.let { builder.threeDSRequestorAppURL = it }
   }
 }

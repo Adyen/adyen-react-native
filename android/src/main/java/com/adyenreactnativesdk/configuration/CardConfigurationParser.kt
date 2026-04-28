@@ -46,19 +46,19 @@ class CardConfigurationParser(
   }
 
   fun applyConfiguration(builder: CardConfiguration.Builder) {
-    supportedCardTypes?.let { builder.setSupportedCardTypes(*it.toTypedArray()) }
-    showStorePaymentField?.let { builder.setShowStorePaymentField(it) }
-    hideCvcStoredCard?.let { builder.setHideCvcStoredCard(it) }
-    hideCvc?.let { builder.setHideCvc(it) }
-    holderNameRequired?.let { builder.setHolderNameRequired(it) }
-    addressVisibility?.let { builder.setAddressConfiguration(it) }
-    kcpVisibility?.let { builder.setKcpAuthVisibility(it) }
-    socialSecurityNumberVisibility?.let { builder.setSocialSecurityNumberVisibility(it) }
+    supportedCardTypes?.let { builder.supportedCardBrands = it.toList() }
+    showStorePaymentField?.let { builder.isStorePaymentFieldVisible = it }
+    hideCvcStoredCard?.let { builder.isHideCvcStoredCard = it }
+    hideCvc?.let { builder.isHideCvc = it }
+    holderNameRequired?.let { builder.isHolderNameRequired = it }
+    addressVisibility?.let { builder.addressConfiguration = it }
+    kcpVisibility?.let { builder.kcpAuthVisibility = it }
+    socialSecurityNumberVisibility?.let { builder.socialSecurityNumberVisibility = it }
   }
 
   fun applyConfiguration(builder: BcmcConfiguration.Builder) {
-    showStorePaymentField?.let { builder.setShowStorePaymentField(it) }
-    holderNameRequired?.let { builder.setHolderNameRequired(it) }
+    showStorePaymentField?.let { builder.isStorePaymentFieldVisible = it }
+    holderNameRequired?.let { builder.isHolderNameRequired = it }
   }
 
   private val showStorePaymentField: Boolean?
