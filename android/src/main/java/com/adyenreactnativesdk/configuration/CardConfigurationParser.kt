@@ -46,7 +46,7 @@ class CardConfigurationParser(
   }
 
   fun applyConfiguration(builder: CardConfiguration.Builder) {
-    supportedCardTypes?.let { builder.supportedCardBrands = it.toList() }
+    supportedCardTypes?.let { builder.supportedCardBrands = it }
     showStorePaymentField?.let { builder.isStorePaymentFieldVisible = it }
     hideCvcStoredCard?.let { builder.isHideCvcStoredCard = it }
     hideCvc?.let { builder.isHideCvc = it }
