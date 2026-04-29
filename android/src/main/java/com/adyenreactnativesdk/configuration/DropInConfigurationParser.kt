@@ -55,8 +55,8 @@ class DropInConfigurationParser(
       }
 
   fun applyConfiguration(builder: DropInConfiguration.Builder) {
-    showPreselectedStoredPaymentMethod?.let { builder.isShowPreselectedStoredPaymentMethod = it }
-    skipListWhenSinglePaymentMethod?.let { builder.isSkipListWhenSinglePaymentMethod = it }
-    setEnableRemovingStoredPaymentMethods?.let { builder.isEnableRemovingStoredPaymentMethods = it }
+    showPreselectedStoredPaymentMethod?.let { builder.showPreselectedStoredPaymentMethod = it }
+    skipListWhenSinglePaymentMethod?.let { builder.skipListWhenSinglePaymentMethod = it }
+    setEnableRemovingStoredPaymentMethods?.let { builder.isRemovingStoredPaymentMethodsEnabled = it }
   }
 }

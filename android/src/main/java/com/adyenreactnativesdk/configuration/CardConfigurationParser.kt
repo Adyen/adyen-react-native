@@ -57,7 +57,7 @@ class CardConfigurationParser(
   }
 
   fun applyConfiguration(builder: BcmcConfiguration.Builder) {
-    showStorePaymentField?.let { builder.isStorePaymentFieldVisible = it }
+    showStorePaymentField?.let { builder.showStorePaymentField = it }
     holderNameRequired?.let { builder.isHolderNameRequired = it }
   }
 
