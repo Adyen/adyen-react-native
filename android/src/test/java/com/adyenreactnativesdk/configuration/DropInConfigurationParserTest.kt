@@ -27,9 +27,9 @@ class DropInConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(0)).isSkipListWhenSinglePaymentMethod = any()
-    verify(mockBuilder, times(0)).isShowPreselectedStoredPaymentMethod = any()
-    verify(mockBuilder, times(0)).isEnableRemovingStoredPaymentMethods = any()
+    verify(mockBuilder, times(0)).skipListWhenSinglePaymentMethod = any()
+    verify(mockBuilder, times(0)).showPreselectedStoredPaymentMethod = any()
+    verify(mockBuilder, times(0)).isRemovingStoredPaymentMethodsEnabled = any()
   }
 
   @Test
@@ -44,7 +44,7 @@ class DropInConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isSkipListWhenSinglePaymentMethod = false
+    verify(mockBuilder, times(1)).skipListWhenSinglePaymentMethod = false
   }
 
   @Test
@@ -59,7 +59,7 @@ class DropInConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isShowPreselectedStoredPaymentMethod = false
+    verify(mockBuilder, times(1)).showPreselectedStoredPaymentMethod = false
   }
 
   @Test
@@ -74,6 +74,6 @@ class DropInConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isEnableRemovingStoredPaymentMethods = true
+    verify(mockBuilder, times(1)).isRemovingStoredPaymentMethodsEnabled = true
   }
 }
