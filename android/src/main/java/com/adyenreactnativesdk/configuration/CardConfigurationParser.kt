@@ -49,7 +49,7 @@ class CardConfigurationParser(
   }
 
   fun applyConfiguration(builder: CardConfiguration.Builder) {
-    supportedCardTypes?.let { builder.supportedCardBrands = it.toList() }
+    supportedCardTypes?.let { builder.supportedCardBrands = it }
     showStorePaymentField?.let { builder.isStorePaymentFieldVisible = it }
     hideCvcStoredCard?.let { builder.isHideCvcStoredCard = it }
     hideCvc?.let { builder.isHideCvc = it }
@@ -61,8 +61,8 @@ class CardConfigurationParser(
   }
 
   fun applyConfiguration(builder: BcmcConfiguration.Builder) {
-    showStorePaymentField?.let { builder.setShowStorePaymentField(it) }
-    holderNameRequired?.let { builder.setHolderNameRequired(it) }
+    showStorePaymentField?.let { builder.showStorePaymentField = it }
+    holderNameRequired?.let { builder.isHolderNameRequired = it }
   }
 
   private val showStorePaymentField: Boolean?
