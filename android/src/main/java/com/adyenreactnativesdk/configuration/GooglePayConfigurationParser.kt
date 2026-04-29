@@ -86,44 +86,43 @@ class GooglePayConfigurationParser(
 
   fun applyConfiguration(builder: GooglePayConfiguration.Builder) {
     if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
-      builder.setAllowedAuthMethods(allowedAuthMethods)
+      builder.allowedAuthMethods = allowedAuthMethods
     }
     if (config.hasKey(ALLOWED_CARD_NETWORKS_KEY)) {
-      builder.setAllowedCardNetworks(allowedCardNetworks)
+      builder.allowedCardNetworks = allowedCardNetworks
     }
     if (config.hasKey(ALLOW_PREPAID_CARDS_KEY)) {
-      builder.setAllowPrepaidCards(config.getBoolean(ALLOW_PREPAID_CARDS_KEY))
+      builder.isAllowPrepaidCards = config.getBoolean(ALLOW_PREPAID_CARDS_KEY)
     }
     if (config.hasKey(ALLOW_CREDIT_CARDS_KEY)) {
-      builder.setAllowCreditCards(config.getBoolean(ALLOW_CREDIT_CARDS_KEY))
+      builder.isAllowCreditCards = config.getBoolean(ALLOW_CREDIT_CARDS_KEY)
     }
     if (config.hasKey(BILLING_ADDRESS_REQUIRED_KEY)) {
-      builder.setBillingAddressRequired(config.getBoolean(BILLING_ADDRESS_REQUIRED_KEY))
+      builder.isBillingAddressRequired = config.getBoolean(BILLING_ADDRESS_REQUIRED_KEY)
     }
     if (config.hasKey(EMAIL_REQUIRED_KEY)) {
-      builder.setEmailRequired(config.getBoolean(EMAIL_REQUIRED_KEY))
+      builder.isEmailRequired = config.getBoolean(EMAIL_REQUIRED_KEY)
     }
     if (config.hasKey(SHIPPING_ADDRESS_REQUIRED_KEY)) {
-      builder.setShippingAddressRequired(config.getBoolean(SHIPPING_ADDRESS_REQUIRED_KEY))
+      builder.isShippingAddressRequired = config.getBoolean(SHIPPING_ADDRESS_REQUIRED_KEY)
     }
     if (config.hasKey(EXISTING_PAYMENT_METHOD_REQUIRED_KEY)) {
-      builder.setExistingPaymentMethodRequired(
+      builder.isExistingPaymentMethodRequired =
         config.getBoolean(
           EXISTING_PAYMENT_METHOD_REQUIRED_KEY,
-        ),
-      )
+        )
     }
     if (config.hasKey(MERCHANT_ACCOUNT_KEY)) {
-      config.getString(MERCHANT_ACCOUNT_KEY)?.let { builder.setMerchantAccount(it) }
+      config.getString(MERCHANT_ACCOUNT_KEY)?.let { builder.merchantAccount = it }
     }
     if (config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
-      config.getString(TOTAL_PRICE_STATUS_KEY)?.let { builder.setTotalPriceStatus(it) }
+      config.getString(TOTAL_PRICE_STATUS_KEY)?.let { builder.totalPriceStatus = it }
     }
     if (config.hasKey(BILLING_ADDRESS_PARAMETERS_KEY)) {
-      builder.setBillingAddressParameters(billingAddressParameters)
+      builder.billingAddressParameters = billingAddressParameters
     }
     if (config.hasKey(SHIPPING_ADDRESS_PARAMETERS_KEY)) {
-      builder.setShippingAddressParameters(shippingAddressParameters)
+      builder.shippingAddressParameters = shippingAddressParameters
     }
   }
 }

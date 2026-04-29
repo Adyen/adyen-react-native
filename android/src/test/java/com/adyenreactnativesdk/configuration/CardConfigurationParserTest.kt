@@ -135,21 +135,19 @@ class CardConfigurationParserTest {
     val mockBuilder = mock(CardConfiguration.Builder::class.java)
     sut.applyConfiguration(mockBuilder)
 
-    verify(mockBuilder, times(1)).setShowStorePaymentField(false)
-    verify(mockBuilder, times(1)).setHolderNameRequired(true)
-    verify(mockBuilder, times(1)).setHideCvc(true)
-    verify(mockBuilder, times(1)).setHideCvcStoredCard(true)
-    verify(mockBuilder, times(1)).setKcpAuthVisibility(KCPAuthVisibility.SHOW)
-    verify(mockBuilder, times(1)).setAddressConfiguration(any())
-    verify(mockBuilder, times(1)).setSocialSecurityNumberVisibility(
-      SocialSecurityNumberVisibility.SHOW,
-    )
-    verify(mockBuilder, times(1)).setSupportedCardTypes(
-      *arrayOf(
+    verify(mockBuilder, times(1)).isStorePaymentFieldVisible = false
+    verify(mockBuilder, times(1)).isHolderNameRequired = true
+    verify(mockBuilder, times(1)).isHideCvc = true
+    verify(mockBuilder, times(1)).isHideCvcStoredCard = true
+    verify(mockBuilder, times(1)).kcpAuthVisibility = KCPAuthVisibility.SHOW
+    verify(mockBuilder, times(1)).addressConfiguration = any()
+    verify(mockBuilder, times(1)).socialSecurityNumberVisibility =
+      SocialSecurityNumberVisibility.SHOW
+    verify(mockBuilder, times(1)).supportedCardBrands =
+      listOf(
         CardBrand("mc"),
         CardBrand("visa"),
         CardBrand("maestro"),
-      ),
-    )
+      )
   }
 }

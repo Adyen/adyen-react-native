@@ -41,7 +41,7 @@ class ThreeDSConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(0)).setThreeDSRequestorAppURL(any())
+    verify(mockBuilder, times(0)).threeDSRequestorAppURL = any()
   }
 
   @Test
@@ -75,7 +75,7 @@ class ThreeDSConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setThreeDSRequestorAppURL("https://testing.com")
+    verify(mockBuilder, times(1)).threeDSRequestorAppURL = "https://testing.com"
   }
 
   @Test

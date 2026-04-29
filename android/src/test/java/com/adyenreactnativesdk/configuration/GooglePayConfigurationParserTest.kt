@@ -32,15 +32,15 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(0)).setAllowedAuthMethods(any())
-    verify(mockBuilder, times(0)).setAllowedCardNetworks(any())
-    verify(mockBuilder, times(0)).setAllowCreditCards(any())
-    verify(mockBuilder, times(0)).setAllowPrepaidCards(any())
-    verify(mockBuilder, times(0)).setEmailRequired(any())
-    verify(mockBuilder, times(0)).setShippingAddressRequired(any())
-    verify(mockBuilder, times(0)).setBillingAddressRequired(any())
-    verify(mockBuilder, times(0)).setTotalPriceStatus(any())
-    verify(mockBuilder, times(0)).setMerchantAccount(any())
+    verify(mockBuilder, times(0)).allowedAuthMethods = any()
+    verify(mockBuilder, times(0)).allowedCardNetworks = any()
+    verify(mockBuilder, times(0)).isAllowCreditCards = any()
+    verify(mockBuilder, times(0)).isAllowPrepaidCards = any()
+    verify(mockBuilder, times(0)).isEmailRequired = any()
+    verify(mockBuilder, times(0)).isShippingAddressRequired = any()
+    verify(mockBuilder, times(0)).isBillingAddressRequired = any()
+    verify(mockBuilder, times(0)).totalPriceStatus = any()
+    verify(mockBuilder, times(0)).merchantAccount = any()
   }
 
   @Test
@@ -55,7 +55,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setAllowCreditCards(true)
+    verify(mockBuilder, times(1)).isAllowCreditCards = true
   }
 
   @Test
@@ -70,7 +70,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setAllowPrepaidCards(true)
+    verify(mockBuilder, times(1)).isAllowPrepaidCards = true
   }
 
   @Test
@@ -85,7 +85,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setEmailRequired(true)
+    verify(mockBuilder, times(1)).isEmailRequired = true
   }
 
   @Test
@@ -100,7 +100,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setShippingAddressRequired(true)
+    verify(mockBuilder, times(1)).isShippingAddressRequired = true
   }
 
   @Test
@@ -115,7 +115,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setBillingAddressRequired(true)
+    verify(mockBuilder, times(1)).isBillingAddressRequired = true
   }
 
   @Test
@@ -130,7 +130,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setTotalPriceStatus("FINAL")
+    verify(mockBuilder, times(1)).totalPriceStatus = "FINAL"
   }
 
   @Test
@@ -145,7 +145,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setMerchantAccount("Merchant_account")
+    verify(mockBuilder, times(1)).merchantAccount = "Merchant_account"
   }
 
   @Test
@@ -163,9 +163,8 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setAllowedAuthMethods(
-      arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS"),
-    )
+    verify(mockBuilder, times(1)).allowedAuthMethods =
+      arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS")
   }
 
   @Test
@@ -185,8 +184,7 @@ class GooglePayConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).setAllowedCardNetworks(
-      arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value"),
-    )
+    verify(mockBuilder, times(1)).allowedCardNetworks =
+      arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value")
   }
 }
