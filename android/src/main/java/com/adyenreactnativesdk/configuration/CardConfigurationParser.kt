@@ -36,6 +36,10 @@ class CardConfigurationParser(
     const val SUPPORTED_CARD_TYPES_KEY = "supported"
     const val SUPPORTED_COUNTRY_LIST_KEY = "allowedAddressCountryCodes"
     const val INSTALLMENT_OPTIONS_KEY = "installmentOptions"
+    const val INSTALLMENT_VALUES_KEY = "values"
+    const val INSTALLMENT_PLANS_KEY = "plans"
+    const val INSTALLMENT_DEFAULT_KEY = "card"
+    const val INSTALLMENT_PLAN_REVOLVING = "revolving"
   }
 
   private var config: ReadableMap
@@ -195,16 +199,16 @@ class CardConfigurationParser(
       val optionMap = installmentOptionsMap.getMap(key) ?: continue
 
       val values =
-        optionMap.getArray("values")?.toArrayList()?.mapNotNull { it as? Int } ?: continue
+        optionMap.getArray(INSTALLMENT_VALUES_KEY)?.toArrayList()?.mapNotNull { it as? Int } ?: continue
       val plans =
-        if (optionMap.hasKey("plans")) {
-          optionMap.getArray("plans")?.toArrayList()?.map { it.toString() } ?: emptyList()
+        if (optionMap.hasKey(INSTALLMENT_PLANS_KEY)) {
+          optionMap.getArray(INSTALLMENT_PLANS_KEY)?.toArrayList()?.map { it.toString() } ?: emptyList()
         } else {
           emptyList()
         }
-      val includeRevolving = plans.contains("revolving")
+      val includeRevolving = plans.contains(INSTALLMENT_PLAN_REVOLVING)
 
-      if (key.equals("card", ignoreCase = true)) {
+      if (key.equals(INSTALLMENT_DEFAULT_KEY, ignoreCase = true)) {
         // Default options for all cards
         defaultOptions = InstallmentOptions.DefaultInstallmentOptions(values, includeRevolving)
       } else {
