@@ -36,10 +36,6 @@ class CardConfigurationParser(
     const val SUPPORTED_CARD_TYPES_KEY = "supported"
     const val SUPPORTED_COUNTRY_LIST_KEY = "allowedAddressCountryCodes"
     const val INSTALLMENT_OPTIONS_KEY = "installmentOptions"
-    const val INSTALLMENT_VALUES_KEY = "values"
-    const val INSTALLMENT_PLANS_KEY = "plans"
-    const val INSTALLMENT_DEFAULT_KEY = "card"
-    const val INSTALLMENT_PLAN_REVOLVING = "revolving"
   }
 
   private var config: ReadableMap
@@ -180,7 +176,7 @@ class CardConfigurationParser(
       return when {
         config.hasKey(INSTALLMENT_OPTIONS_KEY) -> {
           val installmentOptionsMap = config.getMap(INSTALLMENT_OPTIONS_KEY) ?: return null
-          parseInstallmentConfiguration(installmentOptionsMap)
+          InstallmentConfigurationParser(installmentOptionsMap).installmentConfiguration
         }
 
         else -> {
@@ -188,52 +184,4 @@ class CardConfigurationParser(
         }
       }
     }
-
-  private fun parseInstallmentConfiguration(installmentOptionsMap: ReadableMap): InstallmentConfiguration? {
-    var defaultOptions: InstallmentOptions.DefaultInstallmentOptions? = null
-    val cardBasedOptions = mutableListOf<InstallmentOptions.CardBasedInstallmentOptions>()
-
-    val iterator = installmentOptionsMap.keySetIterator()
-    while (iterator.hasNextKey()) {
-      val key = iterator.nextKey()
-      val optionMap = installmentOptionsMap.getMap(key) ?: continue
-
-      val values =
-        optionMap.getArray(INSTALLMENT_VALUES_KEY)?.toArrayList()?.mapNotNull { it as? Int } ?: continue
-      val plans =
-        if (optionMap.hasKey(INSTALLMENT_PLANS_KEY)) {
-          optionMap.getArray(INSTALLMENT_PLANS_KEY)?.toArrayList()?.map { it.toString() } ?: emptyList()
-        } else {
-          emptyList()
-        }
-      val includeRevolving = plans.contains(INSTALLMENT_PLAN_REVOLVING)
-
-      if (key.equals(INSTALLMENT_DEFAULT_KEY, ignoreCase = true)) {
-        // Default options for all cards
-        defaultOptions = InstallmentOptions.DefaultInstallmentOptions(values, includeRevolving)
-      } else {
-        // Card-specific options
-        val cardType = CardType.getByBrandName(key)
-        if (cardType != null) {
-          cardBasedOptions.add(
-            InstallmentOptions.CardBasedInstallmentOptions(
-              values,
-              includeRevolving,
-              CardBrand(cardType),
-            ),
-          )
-        }
-      }
-    }
-
-    // Return configuration only if we have at least one option
-    return if (defaultOptions != null || cardBasedOptions.isNotEmpty()) {
-      InstallmentConfiguration(
-        defaultOptions = defaultOptions,
-        cardBasedOptions = cardBasedOptions,
-      )
-    } else {
-      null
-    }
-  }
 }

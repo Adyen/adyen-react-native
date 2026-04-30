@@ -4,17 +4,11 @@ export interface BinLookupData {
   brand: string;
 }
 
-export type InstallmentPlan = 'revolving' | 'bonus' | 'regular';
-
-export interface InstallmentsState {
-  value: number | null;
-  plan?: InstallmentPlan;
-}
+export type InstallmentPlan = 'regular' | 'revolving' | 'bonus';
 
 export interface InstallmentOption {
   values: number[];
   plans?: InstallmentPlan[];
-  preselectedValue?: number;
 }
 
 export interface InstallmentOptions {
