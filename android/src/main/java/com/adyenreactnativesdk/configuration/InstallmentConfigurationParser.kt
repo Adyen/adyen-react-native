@@ -13,6 +13,7 @@ import com.facebook.react.bridge.ReadableMap
 
 internal class InstallmentConfigurationParser(
   private val config: ReadableMap,
+  private val showInstallmentAmount: Boolean = true,
 ) {
   companion object {
     private const val INSTALLMENT_VALUES_KEY = "values"
@@ -64,6 +65,7 @@ internal class InstallmentConfigurationParser(
         InstallmentConfiguration(
           defaultOptions = defaultOptions,
           cardBasedOptions = cardBasedOptions,
+          showInstallmentAmount = showInstallmentAmount,
         )
       } else {
         null

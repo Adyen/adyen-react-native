@@ -46,6 +46,7 @@ internal enum CardKeys: SubConfig {
     static let allowedCardTypes = "supported"
     static let billingAddressCountryCodes = "allowedAddressCountryCodes"
     static let installmentOptions = "installmentOptions"
+    static let showInstallmentAmount = "showInstallmentAmount"
 
     enum Installment {
         static let values = "values"

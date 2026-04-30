@@ -9,9 +9,11 @@ import Adyen
 internal struct InstallmentConfigurationParser {
 
     private let dict: NSDictionary
+    private let showInstallmentAmount: Bool
 
-    internal init(configuration: NSDictionary) {
+    internal init(configuration: NSDictionary, showInstallmentAmount: Bool = true) {
         self.dict = configuration
+        self.showInstallmentAmount = showInstallmentAmount
     }
 
     var installmentConfiguration: InstallmentConfiguration? {
@@ -53,7 +55,7 @@ internal struct InstallmentConfigurationParser {
         return InstallmentConfiguration(
             cardBasedOptions: cardBasedConfigurations,
             defaultOptions: defaultOptions,
-            showInstallmentAmount: true
+            showInstallmentAmount: showInstallmentAmount
         )
     }
 

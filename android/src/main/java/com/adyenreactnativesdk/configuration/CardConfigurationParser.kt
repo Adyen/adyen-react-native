@@ -36,6 +36,7 @@ class CardConfigurationParser(
     const val SUPPORTED_CARD_TYPES_KEY = "supported"
     const val SUPPORTED_COUNTRY_LIST_KEY = "allowedAddressCountryCodes"
     const val INSTALLMENT_OPTIONS_KEY = "installmentOptions"
+    const val SHOW_INSTALLMENT_AMOUNT_KEY = "showInstallmentAmount"
   }
 
   private var config: ReadableMap
@@ -176,7 +177,16 @@ class CardConfigurationParser(
       return when {
         config.hasKey(INSTALLMENT_OPTIONS_KEY) -> {
           val installmentOptionsMap = config.getMap(INSTALLMENT_OPTIONS_KEY) ?: return null
-          InstallmentConfigurationParser(installmentOptionsMap).installmentConfiguration
+          val showInstallmentAmount =
+            if (config.hasKey(SHOW_INSTALLMENT_AMOUNT_KEY)) {
+              config.getBoolean(SHOW_INSTALLMENT_AMOUNT_KEY)
+            } else {
+              true
+            }
+          InstallmentConfigurationParser(
+            installmentOptionsMap,
+            showInstallmentAmount,
+          ).installmentConfiguration
         }
 
         else -> {

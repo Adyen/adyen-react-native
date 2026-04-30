@@ -108,6 +108,11 @@ export interface CardsConfiguration {
    * ```
    */
   installmentOptions?: InstallmentOptions;
+  /**
+   * Indicates whether to show the installment amount in the payment form.
+   * @default true
+   */
+  showInstallmentAmount?: boolean;
 }
 
 /** Collection of values for address field visibility. */
