@@ -21,14 +21,14 @@ internal struct InstallmentConfigurationParser {
         for (key, value) in dict {
             guard let keyString = key as? String,
                   let optionDict = value as? NSDictionary,
-                  let valuesArray = optionDict["values"] as? [UInt] else {
+                  let valuesArray = optionDict[CardKeys.Installment.values] as? [UInt] else {
                 continue
             }
 
-            let plansArray = optionDict["plans"] as? [String] ?? []
-            let includeRevolving = plansArray.contains("revolving")
+            let plansArray = optionDict[CardKeys.Installment.plans] as? [String] ?? []
+            let includeRevolving = plansArray.contains(CardKeys.Installment.revolvingPlan)
 
-            if keyString.lowercased() == "card" {
+            if keyString.lowercased() == CardKeys.Installment.defaultKey {
                 // Default options for all cards
                 defaultOptions = InstallmentOptions(
                     monthValues: valuesArray,
