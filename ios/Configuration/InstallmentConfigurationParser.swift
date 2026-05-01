@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2021 Adyen N.V.
+// Copyright (c) 2026 Adyen N.V.
 //
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
@@ -23,7 +23,7 @@ internal struct InstallmentConfigurationParser {
         for (key, value) in dict {
             guard let keyString = key as? String,
                   let optionDict = value as? NSDictionary,
-                  let valuesArray = optionDict[CardKeys.Installment.values] as? [UInt] else {
+                  let valuesArray = (optionDict[CardKeys.Installment.values] as? [NSNumber])?.map({ UInt(truncating: $0) }) else {
                 continue
             }
 

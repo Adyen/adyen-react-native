@@ -4,7 +4,7 @@ export interface BinLookupData {
   brand: string;
 }
 
-export type InstallmentPlan = 'regular' | 'revolving' | 'bonus';
+export type InstallmentPlan = 'regular' | 'revolving';
 
 export interface InstallmentOption {
   values: number[];
@@ -101,9 +101,9 @@ export interface CardsConfiguration {
    * @example
    * ```
    * {
-   *   card: { values: [1, 2, 3] },
-   *   visa: { values: [1, 2, 3, 4], plans: ['regular', 'revolving'] },
-   *   mc: { values: [1, 2, 3], preselectedValue: 2 }
+   *   card: { values: [2, 3] },
+   *   visa: { values: [2, 3, 4], plans: ['revolving'] },
+   *   mc: { values: [2, 3] }
    * }
    * ```
    */

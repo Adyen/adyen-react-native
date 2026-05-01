@@ -14,7 +14,6 @@ import com.adyen.checkout.card.CardBrand
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.InstallmentConfiguration
-import com.adyen.checkout.card.InstallmentOptions
 import com.adyen.checkout.card.KCPAuthVisibility
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
 import com.facebook.react.bridge.ReadableMap

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Adyen N.V.
+ * Copyright (c) 2026 Adyen N.V.
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
@@ -33,7 +33,14 @@ internal class InstallmentConfigurationParser(
         val optionMap = config.getMap(key) ?: continue
 
         val values =
-          optionMap.getArray(INSTALLMENT_VALUES_KEY)?.toArrayList()?.mapNotNull { it as? Int } ?: continue
+          optionMap
+            .getArray(INSTALLMENT_VALUES_KEY)
+            ?.toArrayList()
+            ?.mapNotNull {
+              (it as? Number)?.toInt()
+            }?.filter { it > 1 }
+            ?.takeIf { it.isNotEmpty() }
+            ?: continue
         val plans =
           if (optionMap.hasKey(INSTALLMENT_PLANS_KEY)) {
             optionMap.getArray(INSTALLMENT_PLANS_KEY)?.toArrayList()?.map { it.toString() } ?: emptyList()
