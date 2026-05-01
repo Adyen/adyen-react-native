@@ -70,20 +70,23 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
       onBinLookup: (binData: BinLookupData[]) => {
         console.debug('BIN data: ', JSON.stringify(binData));
       },
-      installmentOptions: {
-        card: {
-          values: [2, 3, 6],
-          plans: ['regular'],
-        },
-        visa: {
-          values: [1, 2, 3, 4, 5, 12],
-          plans: ['regular', 'revolving'],
-        },
-        mc: {
-          values: [1, 2, 3, 4, 5, 12],
-          plans: ['regular', 'revolving'],
-        },
-      },
+      installmentOptions: config.cardSettings?.enableInstallments
+        ? {
+            card: {
+              values: [2, 3, 6],
+              plans: ['regular'],
+            },
+            visa: {
+              values: [1, 2, 3, 4, 5, 12],
+              plans: ['regular', 'revolving'],
+            },
+            mc: {
+              values: [1, 2, 3, 4, 5, 12],
+              plans: ['regular', 'revolving'],
+            },
+          }
+        : undefined,
+      showInstallmentAmount: config.cardSettings?.showInstallmentAmount,
     },
     applepay: {
       merchantID:

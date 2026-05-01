@@ -36,6 +36,12 @@ const CardSettingsView = ({ navigation }: Props) => {
   const [socialSecurity, setSocialSecurity] = useState<
     CardSettings['socialSecurity']
   >(existing.socialSecurity ?? 'hide');
+  const [enableInstallments, setEnableInstallments] = useState(
+    existing.enableInstallments ?? false
+  );
+  const [showInstallmentAmount, setShowInstallmentAmount] = useState(
+    existing.showInstallmentAmount ?? false
+  );
 
   const saveAndGoBack = useCallback(() => {
     update({
@@ -47,6 +53,8 @@ const CardSettingsView = ({ navigation }: Props) => {
         hideCvc,
         kcpVisibility,
         socialSecurity,
+        enableInstallments,
+        showInstallmentAmount,
       },
     });
     navigation.goBack();
@@ -60,6 +68,8 @@ const CardSettingsView = ({ navigation }: Props) => {
     hideCvc,
     kcpVisibility,
     socialSecurity,
+    enableInstallments,
+    showInstallmentAmount,
   ]);
 
   return (
@@ -97,6 +107,16 @@ const CardSettingsView = ({ navigation }: Props) => {
         value={socialSecurity ?? 'hide'}
         options={[...fieldVisibilities]}
         onChange={setSocialSecurity}
+      />
+      <FormToggle
+        title="Enable Installments"
+        value={enableInstallments}
+        onValueChange={setEnableInstallments}
+      />
+      <FormToggle
+        title="Show Installment Amount"
+        value={showInstallmentAmount}
+        onValueChange={setShowInstallmentAmount}
       />
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />

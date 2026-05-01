@@ -8,6 +8,8 @@ export type CardSettings = {
   hideCvc?: boolean;
   kcpVisibility?: 'show' | 'hide';
   socialSecurity?: 'show' | 'hide';
+  enableInstallments?: boolean;
+  showInstallmentAmount?: boolean;
 };
 
 export type DropInSettings = {
