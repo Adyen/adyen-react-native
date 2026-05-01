@@ -91,7 +91,7 @@ public struct CardConfigurationParser {
             return nil
         }
 
-        let showInstallmentAmount = dict[CardKeys.showInstallmentAmount] as? Bool ?? true
+        let showInstallmentAmount = dict[CardKeys.showInstallmentAmount] as? Bool ?? false
         return InstallmentConfigurationParser(
             configuration: installmentOptionsDict,
             showInstallmentAmount: showInstallmentAmount

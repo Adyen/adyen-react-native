@@ -181,7 +181,7 @@ class CardConfigurationParser(
             if (config.hasKey(SHOW_INSTALLMENT_AMOUNT_KEY)) {
               config.getBoolean(SHOW_INSTALLMENT_AMOUNT_KEY)
             } else {
-              true
+              false
             }
           InstallmentConfigurationParser(
             installmentOptionsMap,

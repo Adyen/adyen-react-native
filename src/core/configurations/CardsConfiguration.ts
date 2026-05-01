@@ -110,7 +110,7 @@ export interface CardsConfiguration {
   installmentOptions?: InstallmentOptions;
   /**
    * Indicates whether to show the installment amount in the payment form.
-   * @default true
+   * @default false
    */
   showInstallmentAmount?: boolean;
 }

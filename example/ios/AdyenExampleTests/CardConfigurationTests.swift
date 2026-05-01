@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Adyen
+@_spi(AdyenInternal) import Adyen
 import adyen_react_native
 import PassKit
 import XCTest
@@ -191,7 +191,7 @@ final class CardConfigurationTests: XCTestCase {
         
         // THEN
         XCTAssertNotNil(sut.configuration.installmentConfiguration)
-        XCTAssertEqual(sut.configuration.installmentConfiguration?.defaultOptions?.monthValues, [1, 2, 3])
+        XCTAssertEqual(sut.configuration.installmentConfiguration?.defaultOptions?.regularInstallmentMonths, [2, 3])
         XCTAssertFalse(sut.configuration.installmentConfiguration?.defaultOptions?.includesRevolving ?? true)
     }
 
@@ -236,7 +236,7 @@ final class CardConfigurationTests: XCTestCase {
         
         // THEN
         XCTAssertNotNil(sut.configuration.installmentConfiguration)
-        XCTAssertEqual(sut.configuration.installmentConfiguration?.cardBasedConfigurations.count, 2)
+        XCTAssertEqual(sut.configuration.installmentConfiguration?.cardBasedOptions?.count, 2)
     }
 
     func test_configuration_setsInstallmentConfiguration_withMixedOptions() throws {
@@ -260,8 +260,67 @@ final class CardConfigurationTests: XCTestCase {
         
         // THEN
         XCTAssertNotNil(sut.configuration.installmentConfiguration)
-        XCTAssertEqual(sut.configuration.installmentConfiguration?.defaultOptions?.monthValues, [1, 2])
-        XCTAssertEqual(sut.configuration.installmentConfiguration?.cardBasedConfigurations.count, 1)
+    }
+
+    func test_configuration_showInstallmentAmount_defaultsToFalse() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "card": [
+                "installmentOptions": [
+                    "card": [
+                        "values": [1, 2, 3]
+                    ]
+                ]
+            ]
+        ]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        XCTAssertFalse(sut.configuration.installmentConfiguration?.showInstallmentAmount ?? true)
+    }
+
+    func test_configuration_showInstallmentAmount_canBeSetToTrue() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "card": [
+                "installmentOptions": [
+                    "card": [
+                        "values": [1, 2, 3]
+                    ]
+                ],
+                "showInstallmentAmount": true
+            ]
+        ]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        let showInstallmentAmount = try XCTUnwrap(sut.configuration.installmentConfiguration?.showInstallmentAmount)
+        XCTAssertTrue(showInstallmentAmount)
+    }
+
+    func test_configuration_showInstallmentAmount_canBeSetToFalse() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "card": [
+                "installmentOptions": [
+                    "card": [
+                        "values": [1, 2, 3]
+                    ]
+                ],
+                "showInstallmentAmount": false
+            ]
+        ]
+        
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        
+        // THEN
+        let showInstallmentAmount = try XCTUnwrap(sut.configuration.installmentConfiguration?.showInstallmentAmount)
+        XCTAssertFalse(showInstallmentAmount)
     }
 
 }

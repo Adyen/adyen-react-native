@@ -11,7 +11,7 @@ internal struct InstallmentConfigurationParser {
     private let dict: NSDictionary
     private let showInstallmentAmount: Bool
 
-    internal init(configuration: NSDictionary, showInstallmentAmount: Bool = true) {
+    internal init(configuration: NSDictionary, showInstallmentAmount: Bool = false) {
         self.dict = configuration
         self.showInstallmentAmount = showInstallmentAmount
     }
@@ -48,15 +48,30 @@ internal struct InstallmentConfigurationParser {
         }
 
         // Return configuration only if we have at least one option
-        guard defaultOptions != nil || !cardBasedConfigurations.isEmpty else {
+        switch (defaultOptions, cardBasedConfigurations.isEmpty) {
+        case let (.some(options), false):
+            // Both defaultOptions and cardBasedOptions
+            return InstallmentConfiguration(
+                cardBasedOptions: cardBasedConfigurations,
+                defaultOptions: options,
+                showInstallmentAmount: showInstallmentAmount
+            )
+        case let (.some(options), true):
+            // Only defaultOptions
+            return InstallmentConfiguration(
+                defaultOptions: options,
+                showInstallmentAmount: showInstallmentAmount
+            )
+        case (.none, false):
+            // Only cardBasedOptions
+            return InstallmentConfiguration(
+                cardBasedOptions: cardBasedConfigurations,
+                showInstallmentAmount: showInstallmentAmount
+            )
+        case (.none, true):
+            // Neither - return nil
             return nil
         }
-
-        return InstallmentConfiguration(
-            cardBasedOptions: cardBasedConfigurations,
-            defaultOptions: defaultOptions,
-            showInstallmentAmount: showInstallmentAmount
-        )
     }
 
 }
