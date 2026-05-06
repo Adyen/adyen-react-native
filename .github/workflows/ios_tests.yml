@@ -88,11 +88,13 @@ jobs:
           retention-days: 1
 
       - name: Generate code Coverage
-        working-directory: example/ios
         run: |
-          mkdir ${{ github.workspace }}/reports
-          ${{ github.workspace }}/scripts/xccov-to-sonarqube-generic.sh $(find . -name "*.xcresult") > ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
-          sed -i '' "s#${{ github.workspace }}/example/node_modules/@adyen/react-native/##g" ${{ github.workspace }}/reports/sonarqube-generic-coverage.xml
+          mkdir reports
+          scripts/xccov-to-sonarqube-generic.sh \
+            $(find example/ios -name "*.xcresult") \
+            --filter "$PWD/ios" \
+            --strip "$PWD/" \
+            > reports/sonarqube-generic-coverage.xml
 
       - name: SwiftLint
         working-directory: ios
