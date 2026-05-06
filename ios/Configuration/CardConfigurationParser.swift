@@ -86,6 +86,18 @@ public struct CardConfigurationParser {
         return billingAddressConfiguration
     }
 
+    var installmentConfiguration: InstallmentConfiguration? {
+        guard let installmentOptionsDict = dict[CardKeys.installmentOptions] as? NSDictionary else {
+            return nil
+        }
+
+        let showInstallmentAmount = dict[CardKeys.showInstallmentAmount] as? Bool ?? false
+        return InstallmentConfigurationParser(
+            configuration: installmentOptionsDict,
+            showInstallmentAmount: showInstallmentAmount
+        ).installmentConfiguration
+    }
+
     public var configuration: CardComponent.Configuration {
         .init(style: FormComponentStyle(),
               shopperInformation: nil,
@@ -97,7 +109,7 @@ public struct CardConfigurationParser {
               socialSecurityNumberMode: socialSecurityVisibility,
               storedCardConfiguration: storedCardConfiguration,
               allowedCardTypes: allowedCardTypes,
-              installmentConfiguration: nil,
+              installmentConfiguration: installmentConfiguration,
               billingAddress: billingAddressConfiguration)
     }
 
@@ -109,7 +121,7 @@ public struct CardConfigurationParser {
               socialSecurityNumberMode: socialSecurityVisibility,
               storedCardConfiguration: storedCardConfiguration,
               allowedCardTypes: allowedCardTypes,
-              installmentConfiguration: nil,
+              installmentConfiguration: installmentConfiguration,
               billingAddress: billingAddressConfiguration)
     }
 

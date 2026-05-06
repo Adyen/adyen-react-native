@@ -150,4 +150,170 @@ class CardConfigurationParserTest {
         CardBrand("maestro"),
       )
   }
+
+  @Test
+  fun testInstallmentConfiguration_withDefaultOptions() {
+    // GIVEN
+    val config = WritableMapMock()
+    val installmentOptions = WritableMapMock()
+    val cardOption = WritableMapMock()
+    val valuesArray = mock(ReadableArray::class.java)
+    `when`(valuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4))
+    cardOption.putArray("values", valuesArray)
+    installmentOptions.putMap("card", cardOption)
+    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
+
+    // WHEN
+    val sut = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertTrue(sut.installmentConfiguration != null)
+    assertTrue(sut.installmentConfiguration?.defaultOptions != null)
+    assertEquals(listOf(2, 3, 4), sut.installmentConfiguration?.defaultOptions?.values)
+    assertEquals(false, sut.installmentConfiguration?.defaultOptions?.includeRevolving)
+    assertEquals(false, sut.installmentConfiguration?.showInstallmentAmount)
+  }
+
+  @Test
+  fun testInstallmentConfiguration_withRevolvingPlan() {
+    // GIVEN
+    val config = WritableMapMock()
+    val installmentOptions = WritableMapMock()
+    val cardOption = WritableMapMock()
+    val valuesArray = mock(ReadableArray::class.java)
+    `when`(valuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4))
+    cardOption.putArray("values", valuesArray)
+    val plansArray = mock(ReadableArray::class.java)
+    `when`(plansArray.toArrayList()).thenReturn(arrayListOf("revolving", "regular"))
+    cardOption.putArray("plans", plansArray)
+    installmentOptions.putMap("card", cardOption)
+    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
+
+    // WHEN
+    val sut = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertTrue(sut.installmentConfiguration != null)
+    assertTrue(sut.installmentConfiguration?.defaultOptions?.includeRevolving == true)
+  }
+
+  @Test
+  fun testInstallmentConfiguration_withCardBasedOptions() {
+    // GIVEN
+    val config = WritableMapMock()
+    val installmentOptions = WritableMapMock()
+
+    val visaOption = WritableMapMock()
+    val visaValuesArray = mock(ReadableArray::class.java)
+    `when`(visaValuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4, 5))
+    visaOption.putArray("values", visaValuesArray)
+    installmentOptions.putMap("visa", visaOption)
+
+    val mcOption = WritableMapMock()
+    val mcValuesArray = mock(ReadableArray::class.java)
+    `when`(mcValuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4))
+    mcOption.putArray("values", mcValuesArray)
+    installmentOptions.putMap("mc", mcOption)
+
+    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
+
+    // WHEN
+    val sut = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertTrue(sut.installmentConfiguration != null)
+    assertEquals(2, sut.installmentConfiguration?.cardBasedOptions?.size)
+  }
+
+  @Test
+  fun testInstallmentConfiguration_withMixedOptions() {
+    // GIVEN
+    val config = WritableMapMock()
+    val installmentOptions = WritableMapMock()
+
+    val cardOption = WritableMapMock()
+    val cardValuesArray = mock(ReadableArray::class.java)
+    `when`(cardValuesArray.toArrayList()).thenReturn(arrayListOf(2, 3))
+    cardOption.putArray("values", cardValuesArray)
+    installmentOptions.putMap("card", cardOption)
+
+    val visaOption = WritableMapMock()
+    val visaValuesArray = mock(ReadableArray::class.java)
+    `when`(visaValuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4, 5))
+    visaOption.putArray("values", visaValuesArray)
+    val plansArray = mock(ReadableArray::class.java)
+    `when`(plansArray.toArrayList()).thenReturn(arrayListOf("revolving"))
+    visaOption.putArray("plans", plansArray)
+    installmentOptions.putMap("visa", visaOption)
+
+    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
+
+    // WHEN
+    val sut = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertTrue(sut.installmentConfiguration != null)
+    assertTrue(sut.installmentConfiguration?.defaultOptions != null)
+    assertEquals(listOf(2, 3), sut.installmentConfiguration?.defaultOptions?.values)
+    assertEquals(1, sut.installmentConfiguration?.cardBasedOptions?.size)
+  }
+
+  @Test
+  fun testInstallmentConfiguration_showInstallmentAmount_defaultsToFalse() {
+    // GIVEN
+    val config = WritableMapMock()
+    val installmentOptions = WritableMapMock()
+    val cardOption = WritableMapMock()
+    val valuesArray = mock(ReadableArray::class.java)
+    `when`(valuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4))
+    cardOption.putArray("values", valuesArray)
+    installmentOptions.putMap("card", cardOption)
+    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
+
+    // WHEN
+    val sut = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertEquals(false, sut.installmentConfiguration?.showInstallmentAmount)
+  }
+
+  @Test
+  fun testInstallmentConfiguration_showInstallmentAmount_canBeSetToTrue() {
+    // GIVEN
+    val config = WritableMapMock()
+    val installmentOptions = WritableMapMock()
+    val cardOption = WritableMapMock()
+    val valuesArray = mock(ReadableArray::class.java)
+    `when`(valuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4))
+    cardOption.putArray("values", valuesArray)
+    installmentOptions.putMap("card", cardOption)
+    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
+    config.putBoolean(CardConfigurationParser.SHOW_INSTALLMENT_AMOUNT_KEY, true)
+
+    // WHEN
+    val sut = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertEquals(true, sut.installmentConfiguration?.showInstallmentAmount)
+  }
+
+  @Test
+  fun testInstallmentConfiguration_showInstallmentAmount_canBeSetToFalse() {
+    // GIVEN
+    val config = WritableMapMock()
+    val installmentOptions = WritableMapMock()
+    val cardOption = WritableMapMock()
+    val valuesArray = mock(ReadableArray::class.java)
+    `when`(valuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4))
+    cardOption.putArray("values", valuesArray)
+    installmentOptions.putMap("card", cardOption)
+    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
+    config.putBoolean(CardConfigurationParser.SHOW_INSTALLMENT_AMOUNT_KEY, false)
+
+    // WHEN
+    val sut = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertEquals(false, sut.installmentConfiguration?.showInstallmentAmount)
+  }
 }

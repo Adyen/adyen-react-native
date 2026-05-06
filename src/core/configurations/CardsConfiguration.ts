@@ -4,6 +4,17 @@ export interface BinLookupData {
   brand: string;
 }
 
+export type InstallmentPlan = 'regular' | 'revolving';
+
+export interface InstallmentOption {
+  values: number[];
+  plans?: InstallmentPlan[];
+}
+
+export interface InstallmentOptions {
+  [key: string]: InstallmentOption;
+}
+
 export interface CardsConfiguration {
   /**
    * Determines whether the field for the cardholder's name is required.
@@ -84,6 +95,24 @@ export interface CardsConfiguration {
    * @param binValue - The Bank Identification Number (BIN) value.
    */
   onBinValue?(binValue: string): void;
+  /**
+   * Configuration for installment options. Each key should be a card brand (e.g., "visa", "mc", "amex")
+   * or "card" for default options that apply to all brands.
+   * @example
+   * ```
+   * {
+   *   card: { values: [2, 3] },
+   *   visa: { values: [2, 3, 4], plans: ['revolving'] },
+   *   mc: { values: [2, 3] }
+   * }
+   * ```
+   */
+  installmentOptions?: InstallmentOptions;
+  /**
+   * Indicates whether to show the installment amount in the payment form.
+   * @default false
+   */
+  showInstallmentAmount?: boolean;
 }
 
 /** Collection of values for address field visibility. */

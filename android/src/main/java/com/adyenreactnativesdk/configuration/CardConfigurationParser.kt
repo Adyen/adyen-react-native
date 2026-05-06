@@ -13,6 +13,7 @@ import com.adyen.checkout.card.AddressConfiguration.PostalCode
 import com.adyen.checkout.card.CardBrand
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.card.CardType
+import com.adyen.checkout.card.InstallmentConfiguration
 import com.adyen.checkout.card.KCPAuthVisibility
 import com.adyen.checkout.card.SocialSecurityNumberVisibility
 import com.facebook.react.bridge.ReadableMap
@@ -33,6 +34,8 @@ class CardConfigurationParser(
     const val SOCIAL_SECURITY_VISIBILITY_KEY = "socialSecurity"
     const val SUPPORTED_CARD_TYPES_KEY = "supported"
     const val SUPPORTED_COUNTRY_LIST_KEY = "allowedAddressCountryCodes"
+    const val INSTALLMENT_OPTIONS_KEY = "installmentOptions"
+    const val SHOW_INSTALLMENT_AMOUNT_KEY = "showInstallmentAmount"
   }
 
   private var config: ReadableMap
@@ -54,6 +57,7 @@ class CardConfigurationParser(
     addressVisibility?.let { builder.addressConfiguration = it }
     kcpVisibility?.let { builder.kcpAuthVisibility = it }
     socialSecurityNumberVisibility?.let { builder.socialSecurityNumberVisibility = it }
+    installmentConfiguration?.let { builder.installmentConfiguration = it }
   }
 
   fun applyConfiguration(builder: BcmcConfiguration.Builder) {
@@ -167,5 +171,26 @@ class CardConfigurationParser(
       }
     }
 
-  // TODO: add InstallmentConfiguration getInstallmentConfiguration
+  internal val installmentConfiguration: InstallmentConfiguration?
+    get() {
+      return when {
+        config.hasKey(INSTALLMENT_OPTIONS_KEY) -> {
+          val installmentOptionsMap = config.getMap(INSTALLMENT_OPTIONS_KEY) ?: return null
+          val showInstallmentAmount =
+            if (config.hasKey(SHOW_INSTALLMENT_AMOUNT_KEY)) {
+              config.getBoolean(SHOW_INSTALLMENT_AMOUNT_KEY)
+            } else {
+              false
+            }
+          InstallmentConfigurationParser(
+            installmentOptionsMap,
+            showInstallmentAmount,
+          ).installmentConfiguration
+        }
+
+        else -> {
+          null
+        }
+      }
+    }
 }

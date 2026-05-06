@@ -45,6 +45,15 @@ internal enum CardKeys: SubConfig {
     static let socialSecurity = "socialSecurity"
     static let allowedCardTypes = "supported"
     static let billingAddressCountryCodes = "allowedAddressCountryCodes"
+    static let installmentOptions = "installmentOptions"
+    static let showInstallmentAmount = "showInstallmentAmount"
+
+    enum Installment {
+        static let values = "values"
+        static let plans = "plans"
+        static let defaultKey = "card"
+        static let revolvingPlan = "revolving"
+    }
 }
 
 internal enum ApplePayKeys: SubConfig {
