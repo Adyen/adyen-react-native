@@ -90,10 +90,8 @@ jobs:
       - name: Generate code Coverage
         run: |
           mkdir reports
-          scripts/xccov-to-sonarqube-generic.sh \
-            $(find example/ios -name "*.xcresult") \
-            --filter "$PWD/ios" \
-            --strip "$PWD/" \
+          xcrun xccov view --archive $(find example/ios -name "*.xcresult") \
+            | swift scripts/xccov-to-sonarqube-generic.swift --filter "$PWD/ios" --strip "$PWD/" \
             > reports/sonarqube-generic-coverage.xml
 
       - name: SwiftLint
