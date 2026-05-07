@@ -37,11 +37,11 @@ internal interface ViewModelInterface<TState : PaymentComponentState<*>> {
   val componentDataFlow: Flow<ComponentData<TState>>
 }
 
-abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>> :
+abstract class BaseViewModel<TState : PaymentComponentState<*>> :
   ViewModel(),
   ViewModelInterface<TState> {
-  private val _componentDataFlow = MutableStateFlow<TComponentData?>(null)
-  override val componentDataFlow: Flow<TComponentData> =
+  private val _componentDataFlow = MutableStateFlow<ComponentData<TState>?>(null)
+  override val componentDataFlow: Flow<ComponentData<TState>> =
     _componentDataFlow.filterNotNull()
 
   private val _events = MutableSharedFlow<ComponentEvent>()
@@ -60,7 +60,7 @@ abstract class BaseViewModel<TState : PaymentComponentState<*>, TComponentData :
   }
 
   protected suspend fun emitData(componentData: ComponentData<TState>) {
-    _componentDataFlow.emit(componentData as TComponentData)
+    _componentDataFlow.emit(componentData)
   }
 
   companion object {

@@ -14,8 +14,8 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class SessionsComponentViewModel<TState : PaymentComponentState<*>, TComponentData : ComponentData<TState>> :
-  BaseViewModel<TState, TComponentData>(),
+class SessionsComponentViewModel<TState : PaymentComponentState<*>> :
+  BaseViewModel<TState>(),
   SessionComponentCallback<TState> {
   override fun startPayment(
     paymentMethod: PaymentMethod,

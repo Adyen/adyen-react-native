@@ -37,8 +37,8 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
         TComponent : ActionHandlingComponent {
   var component: TComponent? = null
 
-  private val advancedViewModel: AdvancedComponentViewModel<TState, ComponentData<TState>> by viewModels()
-  private val sessionViewModel: SessionsComponentViewModel<TState, ComponentData<TState>> by viewModels()
+  private val advancedViewModel: AdvancedComponentViewModel<TState> by viewModels()
+  private val sessionViewModel: SessionsComponentViewModel<TState> by viewModels()
 
   internal val viewModel: ViewModelInterface<TState>
     get() {
@@ -68,7 +68,9 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
 
   abstract fun setupComponent(componentData: ComponentData<TState>)
 
-  open fun runComponent() { }
+  open fun runComponent() {
+    // No-op: subclasses may override to start the component lifecycle
+  }
 
   private fun onEvent(event: ComponentEvent) {
     when (event) {
