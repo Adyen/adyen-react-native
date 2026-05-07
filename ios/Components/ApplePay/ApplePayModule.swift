@@ -50,7 +50,7 @@ internal class ApplePayModule: BaseModuleSender {
     func isAvailable(_ paymentMethodDict: NSDictionary,
                      configuration: NSDictionary,
                      resolver: @escaping RCTPromiseResolveBlock,
-                     rejecter: @escaping RCTPromiseRejectBlock) {
+                     rejecter _: @escaping RCTPromiseRejectBlock) {
         let parser = RootConfigurationParser(configuration: configuration)
         let applePayParser = ApplepayConfigurationParser(configuration: configuration)
 

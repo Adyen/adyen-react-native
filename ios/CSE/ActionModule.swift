@@ -82,15 +82,15 @@ internal final class ActionModule: BaseModule {
 }
 
 extension ActionModule: ActionComponentDelegate {
-    func didProvide(_ data: Adyen.ActionComponentData, from component: Adyen.ActionComponent) {
+    func didProvide(_ data: Adyen.ActionComponentData, from _: Adyen.ActionComponent) {
         resolver?(data.jsonObject)
     }
 
-    func didComplete(from component: Adyen.ActionComponent) {
+    func didComplete(from _: Adyen.ActionComponent) {
         resolver?(ResultDTO(result: .presentToShopper).jsonObject)
     }
 
-    func didFail(with error: Error, from component: Adyen.ActionComponent) {
+    func didFail(with error: Error, from _: Adyen.ActionComponent) {
         reject(with: error)
     }
 }

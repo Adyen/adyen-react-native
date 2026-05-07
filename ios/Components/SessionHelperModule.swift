@@ -76,16 +76,18 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
 extension SessionHelperModule: AdyenSessionDelegate {
 
-    func didComplete(with result: Adyen.AdyenSessionResult, component: Adyen.Component, session: Adyen.AdyenSession) {
+    func didComplete(with result: Adyen.AdyenSessionResult, component _: Adyen.Component, session: Adyen.AdyenSession) {
         var dict = result.jsonObject
         dict[Key.sessionId] = session.sessionContext.identifier
         dict[Key.sessionData] = session.sessionContext.data
         sendEvent(withName: EventName.completeSession.rawValue, body: dict)
     }
 
-    func didFail(with error: Error, from component: Adyen.Component, session: Adyen.AdyenSession) {
+    func didFail(with error: Error, from _: Adyen.Component, session _: Adyen.AdyenSession) {
         sendError(error: error)
     }
 
-    func didOpenExternalApplication(component: Adyen.ActionComponent, session: Adyen.AdyenSession) {}
+    func didOpenExternalApplication(component _: Adyen.ActionComponent, session _: Adyen.AdyenSession) {
+        // No-op: external application redirects are handled by the OS
+    }
 }

@@ -36,13 +36,13 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     @objc
-    func hide(_ success: NSNumber, event: NSDictionary) {
+    func hide(_ success: NSNumber, event _: NSDictionary) {
         dismiss(success.boolValue)
     }
 
     // MARK: - Internal methods
 
-    open func sendError(error: Error) {
+    open func sendError(error _: Error) {
         assertionFailure("Not implemented")
     }
 
