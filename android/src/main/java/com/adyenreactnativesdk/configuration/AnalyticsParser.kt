@@ -26,7 +26,7 @@ class AnalyticsParser(
   }
 
   private val analyticsEnabled: Boolean
-    get() = if (config.hasKey(ENABLED_KEY)) config.getBoolean(ENABLED_KEY) else true
+    get() = !config.hasKey(ENABLED_KEY) || config.getBoolean(ENABLED_KEY)
 
   internal val verboseLogs: Boolean
     get() = config.hasKey(VERBOSE_LOGS_KEY) && config.getBoolean(VERBOSE_LOGS_KEY)

@@ -58,7 +58,7 @@ class DynamicComponentView(
   }
 }
 
-interface LayoutListener {
+fun interface LayoutListener {
   fun onLayoutSizeUpdate(
     viewId: Int,
     size: Size,

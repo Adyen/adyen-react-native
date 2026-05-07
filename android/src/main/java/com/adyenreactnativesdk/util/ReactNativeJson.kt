@@ -104,7 +104,7 @@ object ReactNativeJson {
     val array = JSONArray()
     for (i in 0 until readableArray!!.size()) {
       when (readableArray.getType(i)) {
-        ReadableType.Null -> {}
+        ReadableType.Null -> { /* null values are not added to the array */ }
 
         ReadableType.Boolean -> {
           array.put(readableArray.getBoolean(i))
