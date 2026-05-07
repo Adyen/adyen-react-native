@@ -12,12 +12,12 @@ import UIKit
 internal class GooglePayModuleMock: BaseModuleSender {
 
     @objc
-    func open(_ paymentMethodsDict _: NSDictionary, configuration _: NSDictionary) {
+    func open(_: NSDictionary, configuration _: NSDictionary) {
         sendError(error: ModuleException.notSupported)
     }
 
     @objc
-    func isAvailable(_ paymentMethodDict _: NSDictionary,
+    func isAvailable(_: NSDictionary,
                      configuration _: NSDictionary,
                      resolver: @escaping RCTPromiseResolveBlock,
                      rejecter _: @escaping RCTPromiseRejectBlock) {
