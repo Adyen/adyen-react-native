@@ -17,7 +17,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
   { merchantIdentifier, useFrameworks }
 ) => {
   config = withAppDelegate(config, (newConfig) => {
-    const appDelegate = newConfig.modResults.contents;
+    let appDelegate = newConfig.modResults.contents;
     if (
       appDelegate.includes('ADYRedirectComponent') ||
       appDelegate.includes('import Adyen')
