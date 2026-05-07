@@ -15,18 +15,17 @@ export function setAppTheme(androidStyles: any) {
     resources.style = styles;
   }
 
-  let appTheme = styles.find((item: any) => item.$.name === defaultTheme);
-  if (!appTheme) {
-    console.log(
-      `Default theme is not '${defaultTheme}'. Please set your theme parent as descendent of 'Theme.MaterialComponents'`
-    );
-  } else {
-    var parentTheme = 'Theme.MaterialComponents.Light.NoActionBar';
-    const oldParent = appTheme.$.parent;
-    if (oldParent && oldParent.includes('DayNight')) {
+  const appTheme = styles.find((item: any) => item.$.name === defaultTheme);
+  if (appTheme) {
+    let parentTheme = 'Theme.MaterialComponents.Light.NoActionBar';
+    if (appTheme.$.parent?.includes('DayNight')) {
       parentTheme = 'Theme.MaterialComponents.DayNight.NoActionBar';
     }
     appTheme.$ = { name: defaultTheme, parent: parentTheme };
+  } else {
+    console.log(
+      `Default theme is not '${defaultTheme}'. Please set your theme parent as descendent of 'Theme.MaterialComponents'`
+    );
   }
 
   let unwantedAppTheme = styles.findLast(

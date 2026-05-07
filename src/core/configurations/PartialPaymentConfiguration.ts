@@ -44,7 +44,7 @@ export interface PartialPaymentConfiguration {
    */
   onOrderCancel(
     order: Order,
-    shouldUpdatePaymentMethods: Boolean,
+    shouldUpdatePaymentMethods: boolean,
     component: PartialPaymentComponent
   ): void;
 }

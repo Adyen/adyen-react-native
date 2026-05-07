@@ -45,7 +45,7 @@ export interface ApplePaySummaryItem {
   /** A short, localized description of the summary item. */
   label: string;
   /** The amount associated with the summary item. */
-  amount: Number | string;
+  amount: number | string;
   /** The summary item’s type that indicates whether the amount is final. */
   type?: 'pending' | 'final';
 }
@@ -116,7 +116,7 @@ export interface ApplePayRecurringSummaryItem extends ApplePaySummaryItem {
   /** The interval at which payments will be taken (daily, weekly, monthly, yearly, etc.). The default value is NSCalendarUnitMonth. */
   intervalUnit?: ApplePayCalendarUnit;
   /** The number of intervals between payments. Default is 1. */
-  intervalCount?: Number;
+  intervalCount?: number;
   /**The timestamp in ISO 8601 date format (ex. 2025-04-21) which the recurring payments will end. The default value is null which specifies no end date. */
   endDate?: string;
 }
