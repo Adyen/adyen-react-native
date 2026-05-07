@@ -6,4 +6,4 @@
 
 import Foundation
 
-internal var adyenSDKVersion = "{SDK_VERSION}"
+internal let adyenSDKVersion = "{SDK_VERSION}"
