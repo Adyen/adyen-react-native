@@ -4,7 +4,7 @@ export function setAppTheme(androidStyles: any) {
   let resources = androidStyles.resources;
   if (!resources) {
     resources = {
-      $: { 'xmlns:tools': 'http://schemas.android.com/tools' },
+      $: { 'xmlns:tools': 'http://schemas.android.com/tools' }, // NOSONAR: this is an XML namespace URI, not a network call
     };
     androidStyles.resources = resources;
   }
