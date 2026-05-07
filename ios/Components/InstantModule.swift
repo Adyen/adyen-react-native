@@ -24,7 +24,6 @@ internal final class InstantModule: BaseActionModule {
             return sendError(error: error)
         }
 
-        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
         let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale
 
         createActionHandlerIfNeeded(context: context, locale: locale)

@@ -130,12 +130,7 @@ public struct CardConfigurationParser {
             return .hide
         }
 
-        switch value {
-        case "show":
-            return .show
-        default:
-            return .hide
-        }
+        return value == "show" ? .show : .hide
     }
 
 }

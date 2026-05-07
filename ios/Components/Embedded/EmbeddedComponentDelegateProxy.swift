@@ -75,15 +75,17 @@ extension EmbeddedComponentDelegateProxy: ActionComponentDelegate {
         sendError(error: error)
     }
 
-    // No-op: external application opens are handled by the OS
-    func didOpenExternalApplication(component _: ActionComponent) {}
+    func didOpenExternalApplication(component _: ActionComponent) {
+        // No-op: external application opens are handled by the OS
+    }
 }
 
 // MARK: - CardComponentDelegate
 
 extension EmbeddedComponentDelegateProxy: CardComponentDelegate {
-    // No-op: lastFour/finalBIN are not forwarded to JS
-    func didSubmit(lastFour _: String, finalBIN _: String, component _: CardComponent) {}
+    func didSubmit(lastFour _: String, finalBIN _: String, component _: CardComponent) {
+        // No-op: lastFour/finalBIN are not forwarded to JS
+    }
 
     func didChangeBIN(_ value: String, component _: CardComponent) {
         guard let bus else { return }

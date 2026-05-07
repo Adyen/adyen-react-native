@@ -90,7 +90,7 @@ internal final class DropInModule: BaseAddressModule {
 
     @objc
     func getReturnURL(_ resolver: @escaping RCTPromiseResolveBlock,
-                      rejecter: @escaping RCTPromiseRejectBlock) {
+                      rejecter _: @escaping RCTPromiseRejectBlock) {
         resolver(nil)
     }
 

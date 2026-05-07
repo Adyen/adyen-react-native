@@ -48,7 +48,7 @@ internal final class AdyenCSEModule: NSObject {
     func validateCardNumber(_ cardNumber: NSString,
                             enableLuhnCheck: Bool,
                             resolver: RCTPromiseResolveBlock,
-                            rejecter: RCTPromiseRejectBlock) {
+                            rejecter _: RCTPromiseRejectBlock) {
         let isValid = CardNumberValidator(
             isLuhnCheckEnabled: enableLuhnCheck,
             isEnteredBrandSupported: true
@@ -60,7 +60,7 @@ internal final class AdyenCSEModule: NSObject {
     func validateCardExpiryDate(_ expiryMonth: NSString,
                                 expiryYear: NSString,
                                 resolver: RCTPromiseResolveBlock,
-                                rejecter: RCTPromiseRejectBlock) {
+                                rejecter _: RCTPromiseRejectBlock) {
         let yearString = expiryYear as String
         let isValid: Bool
         if yearString.count == 2 || yearString.count == 4 {
@@ -76,7 +76,7 @@ internal final class AdyenCSEModule: NSObject {
     func validateCardSecurityCode(_ securityCode: NSString,
                                   cardBrand: NSString?,
                                   resolver: RCTPromiseResolveBlock,
-                                  rejecter: RCTPromiseRejectBlock) {
+                                  rejecter _: RCTPromiseRejectBlock) {
         if let cardBrand = cardBrand as String? {
             let cardType = CardType(rawValue: cardBrand)
             resolver(CardSecurityCodeValidator(cardType: cardType).isValid(securityCode as String))
