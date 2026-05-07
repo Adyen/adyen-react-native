@@ -17,15 +17,17 @@ class DynamicComponentView(
   var layoutListener: LayoutListener? = null
   var isViewSet = false
 
-  private val resizeRunnable: Runnable =
-    Runnable {
-      measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.UNSPECIFIED)
-      val size = Size((measuredWidth / screenDensity).toInt(), (measuredHeight / screenDensity).toInt())
-      if (oldSize != size) {
-        oldSize = size
-        layoutListener?.onLayoutSizeUpdate(id, size)
+  private val resizeRunnable =
+    object : Runnable {
+      override fun run() {
+        measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.UNSPECIFIED)
+        val size = Size((measuredWidth / screenDensity).toInt(), (measuredHeight / screenDensity).toInt())
+        if (oldSize != size) {
+          oldSize = size
+          layoutListener?.onLayoutSizeUpdate(id, size)
+        }
+        postDelayed(this, TIMEOUT)
       }
-      postDelayed(resizeRunnable, TIMEOUT)
     }
 
   override fun requestLayout() {
