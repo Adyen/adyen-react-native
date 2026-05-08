@@ -18,6 +18,7 @@ internal class ApplePayModule: BaseModuleSender {
     internal var shippingMethodHandler: ((PKPaymentRequestShippingMethodUpdate) -> Void)?
     internal var authorizationHandler: ((PKPaymentAuthorizationResult) -> Void)?
     internal var currentApplePayPayment: ApplePayPayment?
+    internal var currentShippingMethods: [PKShippingMethod] = []
 
     @available(iOS 15.0, *)
     internal var couponCodeHandler: ((PKPaymentRequestCouponCodeUpdate) -> Void)? {
@@ -58,6 +59,7 @@ internal class ApplePayModule: BaseModuleSender {
             return sendError(error: error)
         }
 
+        currentShippingMethods = applePayParser.shippingMethods ?? []
         currentComponent = applePayComponent
         applePayComponent.delegate = BaseModule.session ?? self
         applePayComponent.applePayDelegate = self
@@ -71,6 +73,7 @@ internal class ApplePayModule: BaseModuleSender {
         _couponCodeHandler = nil
         authorizationHandler = nil
         currentApplePayPayment = nil
+        currentShippingMethods = []
         super.cleanUp()
     }
 

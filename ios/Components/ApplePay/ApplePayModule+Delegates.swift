@@ -76,7 +76,7 @@ extension ApplePayModule {
         shippingContactHandler = nil
         let dict = update as? [String: Any] ?? [:]
         let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
-        let shippingMethods = parseShippingMethods(dict) ?? []
+        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
         let errors = parseErrors(dict)
         DispatchQueue.main.async {
             handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
@@ -101,7 +101,7 @@ extension ApplePayModule {
             couponCodeHandler = nil
             let dict = update as? [String: Any] ?? [:]
             let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
-            let shippingMethods = parseShippingMethods(dict) ?? []
+            let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
             let errors = parseErrors(dict)
             DispatchQueue.main.async {
                 handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
