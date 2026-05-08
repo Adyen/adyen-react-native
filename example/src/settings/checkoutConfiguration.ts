@@ -98,8 +98,13 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
     applepay: {
       merchantID:
         config.applePaySettings?.merchantID ?? ENVIRONMENT.applepayMerchantID,
-      merchantName: config.applePaySettings?.merchantName ?? 'Test Merchant',
       allowOnboarding: config.applePaySettings?.allowOnboarding,
+      summaryItems: [
+        {
+          label: config.applePaySettings?.merchantName ?? 'Test Merchant',
+          amount: config.amount / 100,
+        },
+      ],
       shippingType: config.applePaySettings?.shippingType,
       requiredBillingContactFields: ['phoneticName', 'postalAddress'],
       requiredShippingContactFields: [
@@ -119,8 +124,8 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
         resolve({
           shippingMethods: mockShippingMethods,
           paymentSummaryItems: [
-            { label: 'Shipping', amount: 500 },
-            { label: 'Total', amount: config.amount + 500 },
+            { label: 'Shipping', amount: 5 },
+            { label: 'Total', amount: config.amount / 100 + 5 },
           ],
         });
       },
@@ -129,12 +134,11 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
         resolve: (update: ApplePayShippingMethodUpdateRequest) => void
       ) => {
         console.debug('Apple Pay shipping method changed:', shippingMethod);
-        const shippingCost =
-          shippingMethod.identifier === 'express' ? 1500 : 500;
+        const shippingCost = shippingMethod.identifier === 'express' ? 15 : 5;
         resolve({
           paymentSummaryItems: [
             { label: shippingMethod.label, amount: shippingCost },
-            { label: 'Total', amount: config.amount + shippingCost },
+            { label: 'Total', amount: config.amount / 100 + shippingCost },
           ],
         });
       },
@@ -190,13 +194,13 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
 const mockShippingMethods: ApplePayShippingMethod[] = [
   {
     label: 'Standard Shipping',
-    amount: 500,
+    amount: 5,
     identifier: 'standard',
     detail: '5–7 business days',
   },
   {
     label: 'Express Shipping',
-    amount: 1500,
+    amount: 15,
     identifier: 'express',
     detail: '1–2 business days',
   },
