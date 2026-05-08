@@ -74,18 +74,16 @@ extension PKShippingMethod {
 /// Converts a JS error descriptor dictionary into an NSError for Apple Pay.
 /// Expected keys: `type` (string), `field` (string, optional), `message` (string).
 internal func applePayError(from dict: [String: Any]) -> Error? {
-    guard let type = dict["type"] as? String,
-          let message = dict["message"] as? String else { return nil }
+    guard let type = dict[ApplePayKeys.PaymentError.type] as? String,
+          let message = dict[ApplePayKeys.PaymentError.message] as? String else { return nil }
+    let field = dict[ApplePayKeys.PaymentError.field] as? String
     switch type {
     case "shippingAddress":
-        let key = postalAddressKey(for: dict["field"] as? String)
-        return PKPaymentRequest.paymentShippingAddressInvalidError(withKey: key, localizedDescription: message)
+        return PKPaymentRequest.paymentShippingAddressInvalidError(withKey: postalAddressKey(for: field), localizedDescription: message)
     case "billingAddress":
-        let key = postalAddressKey(for: dict["field"] as? String)
-        return PKPaymentRequest.paymentBillingAddressInvalidError(withKey: key, localizedDescription: message)
+        return PKPaymentRequest.paymentBillingAddressInvalidError(withKey: postalAddressKey(for: field), localizedDescription: message)
     case "contactField":
-        let field = contactField(for: dict["field"] as? String)
-        return PKPaymentRequest.paymentContactInvalidError(withContactField: field, localizedDescription: message)
+        return PKPaymentRequest.paymentContactInvalidError(withContactField: PKContactField.fromString(field ?? ""), localizedDescription: message)
     case "couponCodeExpired":
         if #available(iOS 15.0, *) {
             return PKPaymentRequest.paymentCouponCodeExpiredError(localizedDescription: message)
@@ -98,31 +96,6 @@ internal func applePayError(from dict: [String: Any]) -> Error? {
         return nil
     default:
         return nil
-    }
-}
-
-private func postalAddressKey(for field: String?) -> String {
-    switch field {
-    case "street", "addressLines": return CNPostalAddressStreetKey
-    case "city", "locality": return CNPostalAddressCityKey
-    case "state", "administrativeArea": return CNPostalAddressStateKey
-    case "postalCode": return CNPostalAddressPostalCodeKey
-    case "country": return CNPostalAddressCountryKey
-    case "countryCode": return CNPostalAddressISOCountryCodeKey
-    case "subLocality": return CNPostalAddressSubLocalityKey
-    case "subAdministrativeArea": return CNPostalAddressSubAdministrativeAreaKey
-    default: return field ?? CNPostalAddressStreetKey
-    }
-}
-
-private func contactField(for field: String?) -> PKContactField {
-    switch field {
-    case "phoneNumber", "phone": return .phoneNumber
-    case "emailAddress", "email": return .emailAddress
-    case "name": return .name
-    case "phoneticName": return .phoneticName
-    case "postalAddress": return .postalAddress
-    default: return PKContactField(rawValue: field ?? "")
     }
 }
 
@@ -160,5 +133,19 @@ extension PKContact {
         }
 
         return dictionary
+    }
+}
+
+private func postalAddressKey(for field: String?) -> String {
+    switch field {
+    case "street", "addressLines": return CNPostalAddressStreetKey
+    case "city", "locality": return CNPostalAddressCityKey
+    case "state", "administrativeArea": return CNPostalAddressStateKey
+    case "postalCode": return CNPostalAddressPostalCodeKey
+    case "country": return CNPostalAddressCountryKey
+    case "countryCode": return CNPostalAddressISOCountryCodeKey
+    case "subLocality": return CNPostalAddressSubLocalityKey
+    case "subAdministrativeArea": return CNPostalAddressSubAdministrativeAreaKey
+    default: return field ?? CNPostalAddressStreetKey
     }
 }

@@ -54,13 +54,13 @@ extension ApplePayModule: ApplePayAuthorizationDelegate {
         authorizationHandler = completion
         var body: [String: Any] = [:]
         if let billing = payment.billingContact {
-            body["billingContact"] = billing.jsonObject
+            body[ApplePayKeys.billingContact] = billing.jsonObject
         }
         if let shipping = payment.shippingContact {
-            body["shippingContact"] = shipping.jsonObject
+            body[ApplePayKeys.shippingContact] = shipping.jsonObject
         }
         if let method = payment.shippingMethod {
-            body["shippingMethod"] = method.jsonObject
+            body[ApplePayKeys.shippingMethod] = method.jsonObject
         }
         sendEvent(event: .authorizePayment, body: body)
     }
@@ -114,7 +114,7 @@ extension ApplePayModule {
         guard let handler = authorizationHandler else { return }
         authorizationHandler = nil
         let dict = result as? [String: Any] ?? [:]
-        let success = (dict["status"] as? String) == "success"
+        let success = (dict[ApplePayKeys.Update.status] as? String) == "success"
         let errors = parseErrors(dict)
         let status: PKPaymentAuthorizationStatus = success ? .success : .failure
         DispatchQueue.main.async {
@@ -125,19 +125,19 @@ extension ApplePayModule {
     // MARK: - Private parsing helpers
 
     private func parseSummaryItems(_ dict: [String: Any]) -> [PKPaymentSummaryItem]? {
-        guard let raw = dict["paymentSummaryItems"] as? [[String: Any]] else { return nil }
+        guard let raw = dict[ApplePayKeys.Update.paymentSummaryItems] as? [[String: Any]] else { return nil }
         let items = raw.compactMap(PKPaymentSummaryItem.init)
         return items.isEmpty ? nil : items
     }
 
     private func parseShippingMethods(_ dict: [String: Any]) -> [PKShippingMethod]? {
-        guard let raw = dict["shippingMethods"] as? [[String: Any]] else { return nil }
+        guard let raw = dict[ApplePayKeys.Update.shippingMethods] as? [[String: Any]] else { return nil }
         let methods = raw.compactMap(PKShippingMethod.initiate)
         return methods.isEmpty ? nil : methods
     }
 
     private func parseErrors(_ dict: [String: Any]) -> [Error]? {
-        guard let raw = dict["errors"] as? [[String: Any]] else { return nil }
+        guard let raw = dict[ApplePayKeys.Update.errors] as? [[String: Any]] else { return nil }
         let errors = raw.compactMap { applePayError(from: $0) }
         return errors.isEmpty ? nil : errors
     }
