@@ -96,6 +96,10 @@ export interface ApplePayConfiguration {
   shippingMethods?: ApplePayShippingMethod[];
   /** An optional request to set up a recurring payment, typically a subscription. */
   recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
+  /** Enables the coupon code entry field in the Apple Pay sheet (iOS 15+). */
+  supportsCouponCode?: boolean;
+  /** Pre-fills the coupon code field in the Apple Pay sheet (iOS 15+). */
+  couponCode?: string;
   /**
    * Called when the shopper selects or updates a shipping contact.
    * Call `resolve` with updated summary items, shipping methods, or errors.

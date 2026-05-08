@@ -70,6 +70,8 @@ internal enum ApplePayKeys: SubConfig {
     static let supportedCountries = "supportedCountries"
     static let shippingMethods = "shippingMethods"
     static let recurringPaymentRequest = "recurringPaymentRequest"
+    static let supportsCouponCode = "supportsCouponCode"
+    static let couponCode = "couponCode"
 
     enum Recurring {
         static let paymentDescription = "description"

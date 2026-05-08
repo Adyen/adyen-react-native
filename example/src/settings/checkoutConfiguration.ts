@@ -106,6 +106,7 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
         },
       ],
       shippingType: config.applePaySettings?.shippingType,
+      supportsCouponCode: true,
       requiredBillingContactFields: ['phoneticName', 'postalAddress'],
       requiredShippingContactFields: [
         'name',
