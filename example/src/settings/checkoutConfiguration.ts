@@ -158,7 +158,7 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
           resolve({});
         }
       },
-      onAuthorization: (
+      onAuthorize: (
         payment: ApplePayPaymentAuthorization,
         resolve: (result: ApplePayAuthorizationResultRequest) => void
       ) => {

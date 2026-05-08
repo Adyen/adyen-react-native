@@ -216,7 +216,7 @@ export function startEventListeners(
     (payment) => {
       const resolve = (result: ApplePayAuthorizationResultRequest) =>
         applePayModule.provideAuthorizationResult(result);
-      const callback = refs.config.current.applepay?.onAuthorization;
+      const callback = refs.config.current.applepay?.onAuthorize;
       if (callback) {
         callback(payment, resolve);
       } else {

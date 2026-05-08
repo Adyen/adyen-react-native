@@ -92,7 +92,7 @@
 | `onShippingContactChange(contact, resolve) => {}` | Called when the shopper selects or updates a shipping contact. Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet. Omit fields to keep current values.                                                                                                                                                                                   | No                                      |
 | `onShippingMethodChange(shippingMethod, resolve) => {}` | Called when the shopper selects a shipping method. Call `resolve({ paymentSummaryItems, errors })` to update the sheet.                                                                                                                                                                                                                                               | No                                      |
 | `onCouponCodeChange(couponCode, resolve) => {}` | Called when the shopper enters or updates a coupon code. Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet. Requires `supportsCouponCode: true` and iOS 15+.                                                                                                                                                                        | No                                      |
-| `onAuthorization(payment, resolve) => {}` | Called after the shopper authorizes the payment, before it is submitted to Adyen. Call `resolve({ status: 'success' })` to proceed or `resolve({ status: 'failure', errors })` to show validation errors and keep the sheet open.                                                                                                                                      | No                                      |
+| `onAuthorize(payment, resolve) => {}` | Called after the shopper authorizes the payment, before it is submitted to Adyen. Call `resolve({ status: 'success' })` to proceed or `resolve({ status: 'failure', errors })` to show validation errors and keep the sheet open.                                                                                                                                      | No                                      |
 
 #### ApplePay Recurring payment
 
@@ -274,7 +274,7 @@ const configuration = {
         resolve({});
       }
     },
-    onAuthorization: (payment, resolve) => {
+    onAuthorize: (payment, resolve) => {
       // Optionally validate billing/shipping address before submission.
       resolve({ status: 'success' });
     },

@@ -128,7 +128,7 @@ export interface ApplePayConfiguration {
    * Called when the shopper authorizes the payment, before it is submitted to Adyen.
    * Call `resolve` with `{ status: 'success' }` to proceed or `{ status: 'failure', errors }` to show errors.
    */
-  onAuthorization?: (
+  onAuthorize?: (
     payment: ApplePayPaymentAuthorization,
     resolve: (result: ApplePayAuthorizationResultRequest) => void
   ) => void;
