@@ -14,6 +14,19 @@ internal class ApplePayModule: BaseModuleSender {
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
+    internal var shippingContactHandler: ((PKPaymentRequestShippingContactUpdate) -> Void)?
+    internal var shippingMethodHandler: ((PKPaymentRequestShippingMethodUpdate) -> Void)?
+    internal var authorizationHandler: ((PKPaymentAuthorizationResult) -> Void)?
+    internal var currentApplePayPayment: ApplePayPayment?
+
+    @available(iOS 15.0, *)
+    internal var couponCodeHandler: ((PKPaymentRequestCouponCodeUpdate) -> Void)? {
+        get { _couponCodeHandler as? (PKPaymentRequestCouponCodeUpdate) -> Void }
+        set { _couponCodeHandler = newValue }
+    }
+
+    private var _couponCodeHandler: Any?
+
     override init() {
         self.paymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()
         super.init()
@@ -22,6 +35,10 @@ internal class ApplePayModule: BaseModuleSender {
     init(pkPaymentAuthorizationService: PKPaymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()) {
         self.paymentAuthorizationService = pkPaymentAuthorizationService
         super.init()
+    }
+
+    override func supportedEvents() -> [String]! {
+        super.supportedEvents() + EventName.applePayEvents.map(\.rawValue)
     }
 
     @objc
@@ -43,7 +60,18 @@ internal class ApplePayModule: BaseModuleSender {
 
         currentComponent = applePayComponent
         applePayComponent.delegate = BaseModule.session ?? self
+        applePayComponent.applePayDelegate = self
+        applePayComponent.authorizationDelegate = self
         present(component: applePayComponent)
+    }
+
+    override func cleanUp() {
+        shippingContactHandler = nil
+        shippingMethodHandler = nil
+        _couponCodeHandler = nil
+        authorizationHandler = nil
+        currentApplePayPayment = nil
+        super.cleanUp()
     }
 
     @objc

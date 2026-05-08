@@ -1,3 +1,76 @@
+/** An error object describing why a field in the Apple Pay sheet is invalid. */
+export interface ApplePayError {
+  /**
+   * The category of the error.
+   * - `shippingAddress` — an invalid field in the shipping postal address.
+   * - `billingAddress` — an invalid field in the billing postal address.
+   * - `contactField` — an invalid contact field (phone, email, name, etc.).
+   * - `couponCode` — the coupon code is invalid.
+   * - `couponCodeExpired` — the coupon code has expired.
+   */
+  type:
+    | 'shippingAddress'
+    | 'billingAddress'
+    | 'contactField'
+    | 'couponCode'
+    | 'couponCodeExpired';
+  /**
+   * For `shippingAddress` / `billingAddress`: the CNPostalAddress key of the invalid field
+   * (e.g. `"postalCode"`, `"city"`, `"street"`, `"country"`, `"countryCode"`).
+   * For `contactField`: the PKContactField name
+   * (e.g. `"phoneNumber"`, `"emailAddress"`, `"name"`, `"postalAddress"`).
+   */
+  field?: string;
+  /** A localized description shown in the Apple Pay sheet. */
+  message: string;
+}
+
+/** Data passed to the shipping contact callback. */
+export interface ApplePayShippingContactUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
+  /** Updated shipping methods. If omitted, the current methods are kept. */
+  shippingMethods?: ApplePayShippingMethod[];
+  /** Validation errors to display in the sheet. */
+  errors?: ApplePayError[];
+}
+
+/** Data passed to the shipping method callback. */
+export interface ApplePayShippingMethodUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
+  /** Validation errors to display in the sheet. */
+  errors?: ApplePayError[];
+}
+
+/** Data passed to the coupon code callback. */
+export interface ApplePayCouponCodeUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
+  /** Updated shipping methods. If omitted, the current methods are kept. */
+  shippingMethods?: ApplePayShippingMethod[];
+  /** Validation errors to display in the sheet. */
+  errors?: ApplePayError[];
+}
+
+/** Data passed to the authorization callback. */
+export interface ApplePayAuthorizationResultRequest {
+  /** Whether the authorization succeeded. */
+  status: 'success' | 'failure';
+  /** Validation errors shown when status is `failure`. */
+  errors?: ApplePayError[];
+}
+
+/** Payment details provided in the authorization callback. */
+export interface ApplePayPaymentAuthorization {
+  /** The billing contact if requested. */
+  billingContact?: ApplePayPaymentContact;
+  /** The shipping contact if requested. */
+  shippingContact?: ApplePayPaymentContact;
+  /** The selected shipping method, if any. */
+  shippingMethod?: ApplePayShippingMethod;
+}
+
 export interface ApplePayConfiguration {
   /**  The merchant identifier for apple pay. */
   merchantID: string;
@@ -23,6 +96,38 @@ export interface ApplePayConfiguration {
   shippingMethods?: ApplePayShippingMethod[];
   /** An optional request to set up a recurring payment, typically a subscription. */
   recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
+  /**
+   * Called when the shopper selects or updates a shipping contact.
+   * Call `resolve` with updated summary items, shipping methods, or errors.
+   */
+  onShippingContactChange?: (
+    contact: ApplePayPaymentContact,
+    resolve: (update: ApplePayShippingContactUpdateRequest) => void
+  ) => void;
+  /**
+   * Called when the shopper selects a shipping method.
+   * Call `resolve` with updated summary items or errors.
+   */
+  onShippingMethodChange?: (
+    shippingMethod: ApplePayShippingMethod,
+    resolve: (update: ApplePayShippingMethodUpdateRequest) => void
+  ) => void;
+  /**
+   * Called when the shopper enters or updates a coupon code (iOS 15+).
+   * Call `resolve` with updated summary items, shipping methods, or errors.
+   */
+  onCouponCodeChange?: (
+    couponCode: string,
+    resolve: (update: ApplePayCouponCodeUpdateRequest) => void
+  ) => void;
+  /**
+   * Called when the shopper authorizes the payment, before it is submitted to Adyen.
+   * Call `resolve` with `{ status: 'success' }` to proceed or `{ status: 'failure', errors }` to show errors.
+   */
+  onAuthorization?: (
+    payment: ApplePayPaymentAuthorization,
+    resolve: (result: ApplePayAuthorizationResultRequest) => void
+  ) => void;
 }
 
 /** Collection of values for address field visibility. */

@@ -175,6 +175,92 @@ final class ApplePayModuleTests: XCTestCase {
         XCTAssertTrue(canMakePayments)
     }
 
+    func test_provideShippingContactUpdate_callsHandler() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideShippingContactUpdate([:])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertNotNil(receivedUpdate)
+        XCTAssertNil(sut.shippingContactHandler)
+    }
+
+    func test_provideShippingMethodUpdate_callsHandler() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedUpdate: PKPaymentRequestShippingMethodUpdate?
+        sut.shippingMethodHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideShippingMethodUpdate([:])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertNotNil(receivedUpdate)
+        XCTAssertNil(sut.shippingMethodHandler)
+    }
+
+    func test_provideAuthorizationResult_callsHandlerWithSuccess() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedResult: PKPaymentAuthorizationResult?
+        sut.authorizationHandler = { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideAuthorizationResult(["status": "success"])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedResult?.status, .success)
+        XCTAssertNil(sut.authorizationHandler)
+    }
+
+    func test_provideAuthorizationResult_callsHandlerWithFailure() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedResult: PKPaymentAuthorizationResult?
+        sut.authorizationHandler = { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideAuthorizationResult(["status": "failure"])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedResult?.status, .failure)
+    }
+
+    func test_cleanUp_clearsAllHandlers() {
+        // GIVEN
+        sut.shippingContactHandler = { _ in }
+        sut.shippingMethodHandler = { _ in }
+        sut.authorizationHandler = { _ in }
+
+        // WHEN
+        sut.cleanUp()
+
+        // THEN
+        XCTAssertNil(sut.shippingContactHandler)
+        XCTAssertNil(sut.shippingMethodHandler)
+        XCTAssertNil(sut.authorizationHandler)
+    }
+
     func test_hide_callsDismiss() {
         // GIVEN
         let expectation = self.expectation(description: "dismiss should be called")

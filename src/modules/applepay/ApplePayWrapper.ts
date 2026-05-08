@@ -1,5 +1,9 @@
 import type {
   AdyenActionComponent,
+  ApplePayAuthorizationResultRequest,
+  ApplePayCouponCodeUpdateRequest,
+  ApplePayShippingContactUpdateRequest,
+  ApplePayShippingMethodUpdateRequest,
   Configuration,
   PaymentAction,
   PaymentMethod,
@@ -10,13 +14,16 @@ import type { PaymentModule } from '../base/PaymentComponentWrapper';
 
 /** Native module interface specific to ApplePay */
 interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
-  // TODO: add express payment events
+  provideShippingContactUpdate(
+    update: ApplePayShippingContactUpdateRequest
+  ): void;
+  provideShippingMethodUpdate(
+    update: ApplePayShippingMethodUpdateRequest
+  ): void;
+  provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void;
+  provideAuthorizationResult(result: ApplePayAuthorizationResultRequest): void;
 }
 
-/**
- * Apple Pay wrapper - no additional events beyond inherited ones.
- * @todo add express payment events
- */
 export class ApplePayWrapper
   extends PaymentComponentWrapper<ApplePayNativeModule>
   implements ApplePayModule, AdyenActionComponent
@@ -37,5 +44,25 @@ export class ApplePayWrapper
           'This is likely a bug in your integration.'
       );
     }
+  }
+
+  provideShippingContactUpdate(
+    update: ApplePayShippingContactUpdateRequest
+  ): void {
+    this.nativeModule.provideShippingContactUpdate(update);
+  }
+
+  provideShippingMethodUpdate(
+    update: ApplePayShippingMethodUpdateRequest
+  ): void {
+    this.nativeModule.provideShippingMethodUpdate(update);
+  }
+
+  provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void {
+    this.nativeModule.provideCouponCodeUpdate(update);
+  }
+
+  provideAuthorizationResult(result: ApplePayAuthorizationResultRequest): void {
+    this.nativeModule.provideAuthorizationResult(result);
   }
 }

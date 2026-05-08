@@ -4,6 +4,13 @@ import type {
   AddressLookupItem,
   AdyenActionComponent,
   AdyenError,
+  ApplePayCouponCodeUpdateRequest,
+  ApplePayPaymentAuthorization,
+  ApplePayPaymentContact,
+  ApplePayShippingContactUpdateRequest,
+  ApplePayShippingMethod,
+  ApplePayShippingMethodUpdateRequest,
+  ApplePayAuthorizationResultRequest,
   Configuration,
   Order,
   PartialPaymentComponent,
@@ -14,6 +21,7 @@ import type {
   SubmitModel,
 } from '../../core';
 import { Event } from '../../core';
+import type { ApplePayModule } from '../../modules/applepay/AdyenApplePay';
 import type { RemovesStoredPayment } from '../../modules/dropin/DropInWrapper';
 import type { AdyenEventListener } from '../../modules/base/EventListenerWrapper';
 
@@ -157,6 +165,64 @@ export function startEventListeners(
         shouldUpdatePaymentMethods,
         partialComponent
       )
+  );
+
+  // Apple Pay delegate callbacks
+  const applePayModule = nativeComponent as unknown as ApplePayModule;
+  subscribeIfSupported<ApplePayPaymentContact>(
+    Event.onApplePayShippingContactChange,
+    (contact) => {
+      const resolve = (update: ApplePayShippingContactUpdateRequest) =>
+        applePayModule.provideShippingContactUpdate(update);
+      const callback = refs.config.current.applepay?.onShippingContactChange;
+      if (callback) {
+        callback(contact, resolve);
+      } else {
+        resolve({});
+      }
+    }
+  );
+
+  subscribeIfSupported<ApplePayShippingMethod>(
+    Event.onApplePayShippingMethodChange,
+    (shippingMethod) => {
+      const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
+        applePayModule.provideShippingMethodUpdate(update);
+      const callback = refs.config.current.applepay?.onShippingMethodChange;
+      if (callback) {
+        callback(shippingMethod, resolve);
+      } else {
+        resolve({});
+      }
+    }
+  );
+
+  subscribeIfSupported<string>(
+    Event.onApplePayCouponCodeChange,
+    (couponCode) => {
+      const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
+        applePayModule.provideCouponCodeUpdate(update);
+      const callback = refs.config.current.applepay?.onCouponCodeChange;
+      if (callback) {
+        callback(couponCode, resolve);
+      } else {
+        resolve({});
+      }
+    }
+  );
+
+  subscribeIfSupported<ApplePayPaymentAuthorization>(
+    Event.onApplePayAuthorization,
+    (payment) => {
+      const resolve = (result: ApplePayAuthorizationResultRequest) =>
+        applePayModule.provideAuthorizationResult(result);
+      const callback = refs.config.current.applepay?.onAuthorization;
+      if (callback) {
+        callback(payment, resolve);
+      } else {
+        resolve({ status: 'success' });
+      }
+    }
   );
 
   return eventSubscriptions;

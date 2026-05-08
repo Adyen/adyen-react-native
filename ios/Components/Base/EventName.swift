@@ -21,6 +21,10 @@ internal enum EventName: String, CaseIterable {
     case changeBinValue = "didChangeBinValueCallback"
     case completeSession = "didSessionCompleteCallback"
     case failSession = "didSessionErrorCallback"
+    case updateShippingContact = "didUpdateShippingContactCallback"
+    case updateShippingMethod = "didUpdateShippingMethodCallback"
+    case updateCouponCode = "didUpdateCouponCodeCallback"
+    case authorizePayment = "didAuthorizePaymentCallback"
 
     static var coreEvents: [EventName] {
         [.fail, .submit, .additionalDetails, .complete]
@@ -40,5 +44,9 @@ internal enum EventName: String, CaseIterable {
 
     static var dropInEvents: [EventName] {
         [.requestOrder, .cancelOrder, .checkBalance, .disableStoredPaymentMethod]
+    }
+
+    static var applePayEvents: [EventName] {
+        [.updateShippingContact, .updateShippingMethod, .updateCouponCode, .authorizePayment]
     }
 }

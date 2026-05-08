@@ -10,6 +10,10 @@ function createMockApplePayModule() {
     hide: jest.fn(),
     open: jest.fn(),
     isAvailable: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    provideShippingContactUpdate: jest.fn(),
+    provideShippingMethodUpdate: jest.fn(),
+    provideCouponCodeUpdate: jest.fn(),
+    provideAuthorizationResult: jest.fn(),
   } as any;
 }
 
@@ -39,6 +43,46 @@ describe('ApplePayWrapper', () => {
       );
 
       warnSpy.mockRestore();
+    });
+  });
+
+  describe('provider methods', () => {
+    test('provideShippingContactUpdate delegates to native module', () => {
+      const wrapper = new ApplePayWrapper(mockNativeModule);
+      const update = { paymentSummaryItems: [{ label: 'Total', amount: 10 }] };
+      wrapper.provideShippingContactUpdate(update);
+      expect(
+        mockNativeModule.provideShippingContactUpdate
+      ).toHaveBeenCalledWith(update);
+    });
+
+    test('provideShippingMethodUpdate delegates to native module', () => {
+      const wrapper = new ApplePayWrapper(mockNativeModule);
+      const update = { paymentSummaryItems: [{ label: 'Total', amount: 10 }] };
+      wrapper.provideShippingMethodUpdate(update);
+      expect(mockNativeModule.provideShippingMethodUpdate).toHaveBeenCalledWith(
+        update
+      );
+    });
+
+    test('provideCouponCodeUpdate delegates to native module', () => {
+      const wrapper = new ApplePayWrapper(mockNativeModule);
+      const update = {
+        errors: [{ type: 'couponCode' as const, message: 'Invalid' }],
+      };
+      wrapper.provideCouponCodeUpdate(update);
+      expect(mockNativeModule.provideCouponCodeUpdate).toHaveBeenCalledWith(
+        update
+      );
+    });
+
+    test('provideAuthorizationResult delegates to native module', () => {
+      const wrapper = new ApplePayWrapper(mockNativeModule);
+      const result = { status: 'success' as const };
+      wrapper.provideAuthorizationResult(result);
+      expect(mockNativeModule.provideAuthorizationResult).toHaveBeenCalledWith(
+        result
+      );
     });
   });
 
