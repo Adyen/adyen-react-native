@@ -87,6 +87,12 @@
 | `supportedCountries`            | A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.                                                                                                                                                                                    | No                                      |
 | `shippingMethods`               | The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods).                                                                                                                                                                       | No                                      |
 | `recurringPaymentRequest`       | A class that represents a request to set up a recurring payment, typically a subscription. Corresponds to [PKRecurringPaymentRequest](#applepay-recurring-payment).                                                                                                                                                                                                                         | No                                      |
+| `supportsCouponCode`            | When **true**, the Apple Pay sheet displays a coupon code field. Requires iOS 15+. Defaults to **false**.                                                                                                                                                                                                                                                                                   | No                                      |
+| `couponCode`                    | Pre-fills the coupon code field in the Apple Pay sheet. Requires iOS 15+.                                                                                                                                                                                                                                                                                                                   | No                                      |
+| `onShippingContactChange(contact, resolve) => {}` | Called when the shopper selects or updates a shipping contact. Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet. Omit fields to keep current values.                                                                                                                                                                                   | No                                      |
+| `onShippingMethodChange(shippingMethod, resolve) => {}` | Called when the shopper selects a shipping method. Call `resolve({ paymentSummaryItems, errors })` to update the sheet.                                                                                                                                                                                                                                               | No                                      |
+| `onCouponCodeChange(couponCode, resolve) => {}` | Called when the shopper enters or updates a coupon code. Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet. Requires `supportsCouponCode: true` and iOS 15+.                                                                                                                                                                        | No                                      |
+| `onAuthorization(payment, resolve) => {}` | Called after the shopper authorizes the payment, before it is submitted to Adyen. Call `resolve({ status: 'success' })` to proceed or `resolve({ status: 'failure', errors })` to show validation errors and keep the sheet open.                                                                                                                                      | No                                      |
 
 #### ApplePay Recurring payment
 
@@ -239,6 +245,39 @@ const configuration = {
     ],
     requiredBillingContactFields: ['phoneticName', 'postalAddress'],
     requiredShippingContactFields: ['name', 'phone', 'email', 'postalAddress'],
+    supportsCouponCode: true,
+    onShippingContactChange: (contact, resolve) => {
+      resolve({
+        shippingMethods: [
+          { label: 'Standard', amount: 5, identifier: 'standard', detail: '5–7 days' },
+          { label: 'Express', amount: 15, identifier: 'express', detail: '1–2 days' },
+        ],
+        paymentSummaryItems: [
+          { label: 'Shipping', amount: 5 },
+          { label: '{YOUR_MERCHANT_NAME}', amount: 103 },
+        ],
+      });
+    },
+    onShippingMethodChange: (shippingMethod, resolve) => {
+      const shippingCost = shippingMethod.identifier === 'express' ? 15 : 5;
+      resolve({
+        paymentSummaryItems: [
+          { label: shippingMethod.label, amount: shippingCost },
+          { label: '{YOUR_MERCHANT_NAME}', amount: 98 + shippingCost },
+        ],
+      });
+    },
+    onCouponCodeChange: (couponCode, resolve) => {
+      if (couponCode === 'INVALID') {
+        resolve({ errors: [{ type: 'couponCode', message: 'This coupon code is not valid.' }] });
+      } else {
+        resolve({});
+      }
+    },
+    onAuthorization: (payment, resolve) => {
+      // Optionally validate billing/shipping address before submission.
+      resolve({ status: 'success' });
+    },
     recurringPaymentRequest: {
             description: 'My Subscription',
             regularBilling: {
