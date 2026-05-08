@@ -1,7 +1,14 @@
 import type {
   AddressLookup,
   AddressLookupItem,
+  ApplePayAuthorizationResultRequest,
+  ApplePayCouponCodeUpdateRequest,
+  ApplePayPaymentAuthorization,
+  ApplePayPaymentContact,
   ApplePayRecurringPaymentRequest,
+  ApplePayShippingContactUpdateRequest,
+  ApplePayShippingMethod,
+  ApplePayShippingMethodUpdateRequest,
   BinLookupData,
   Configuration,
   StoredPaymentMethod,
@@ -102,6 +109,59 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
         'postalAddress',
       ],
       recurringPaymentRequest: mockApplePayRecurringPayment,
+      onShippingContactChange: (
+        contact: ApplePayPaymentContact,
+        resolve: (update: ApplePayShippingContactUpdateRequest) => void
+      ) => {
+        console.debug('Apple Pay shipping contact changed:', contact);
+        // Update shipping methods and summary items based on the new contact.
+        // Call resolve() with no arguments to keep the current values unchanged.
+        resolve({
+          shippingMethods: mockShippingMethods,
+          paymentSummaryItems: [
+            { label: 'Shipping', amount: 500 },
+            { label: 'Total', amount: config.amount + 500 },
+          ],
+        });
+      },
+      onShippingMethodChange: (
+        shippingMethod: ApplePayShippingMethod,
+        resolve: (update: ApplePayShippingMethodUpdateRequest) => void
+      ) => {
+        console.debug('Apple Pay shipping method changed:', shippingMethod);
+        const shippingCost =
+          shippingMethod.identifier === 'express' ? 1500 : 500;
+        resolve({
+          paymentSummaryItems: [
+            { label: shippingMethod.label, amount: shippingCost },
+            { label: 'Total', amount: config.amount + shippingCost },
+          ],
+        });
+      },
+      onCouponCodeChange: (
+        couponCode: string,
+        resolve: (update: ApplePayCouponCodeUpdateRequest) => void
+      ) => {
+        console.debug('Apple Pay coupon code entered:', couponCode);
+        if (couponCode === 'INVALID') {
+          resolve({
+            errors: [
+              { type: 'couponCode', message: 'This coupon code is not valid.' },
+            ],
+          });
+        } else {
+          resolve({});
+        }
+      },
+      onAuthorization: (
+        payment: ApplePayPaymentAuthorization,
+        resolve: (result: ApplePayAuthorizationResultRequest) => void
+      ) => {
+        console.debug('Apple Pay payment authorized:', payment);
+        // Validate billing/shipping address before submission.
+        // Call resolve({ status: 'failure', errors: [...] }) to show errors.
+        resolve({ status: 'success' });
+      },
     },
     googlepay: {
       allowPrepaidCards: config.googlePaySettings?.allowPrepaidCards,
@@ -126,6 +186,21 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
   };
   return configuration;
 };
+
+const mockShippingMethods: ApplePayShippingMethod[] = [
+  {
+    label: 'Standard Shipping',
+    amount: 500,
+    identifier: 'standard',
+    detail: '5–7 business days',
+  },
+  {
+    label: 'Express Shipping',
+    amount: 1500,
+    identifier: 'express',
+    detail: '1–2 business days',
+  },
+];
 
 const mockAddresses: AddressLookupItem[] = [
   {
