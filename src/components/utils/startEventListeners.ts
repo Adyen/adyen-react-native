@@ -171,14 +171,14 @@ export function startEventListeners(
   // Apple Pay delegate callbacks
   const applePayModule = nativeComponent as unknown as ApplePayModule;
 
-  subscribeIfSupported<string>(
+  subscribeIfSupported<{ couponCode: string }>(
     Event.onApplePayCouponCodeChange,
-    (couponCode) => {
+    (data) => {
       const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
         applePayModule.provideCouponCodeUpdate(update);
       const callback = refs.config.current.applepay?.onCouponCodeChange;
       if (callback) {
-        callback(couponCode, resolve);
+        callback(data.couponCode, resolve);
       } else {
         resolve({});
       }

@@ -38,6 +38,7 @@ function createComponent(supported: Event[] = []) {
     handle: jest.fn(),
     provideShippingContactUpdate: jest.fn(),
     provideShippingMethodUpdate: jest.fn(),
+    provideCouponCodeUpdate: jest.fn(),
     provideAuthorizationResult: jest.fn(),
     removeStored: jest.fn(),
     provideBalance: jest.fn(),
@@ -261,6 +262,43 @@ describe('startEventListeners', () => {
     fire(Event.onApplePayShippingMethodChange, {});
 
     expect(component.provideShippingMethodUpdate).toHaveBeenCalledWith({});
+  });
+
+  // -------------------------------------------------------------------------
+  // Apple Pay — onCouponCodeChange
+  // -------------------------------------------------------------------------
+
+  test('onApplePayCouponCodeChange — calls user callback with coupon code string', () => {
+    const onCouponCodeChange = jest.fn();
+    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    startEventListeners(component, createRefs({ onCouponCodeChange }));
+
+    fire(Event.onApplePayCouponCodeChange, { couponCode: 'SAVE10' });
+
+    expect(onCouponCodeChange).toHaveBeenCalledWith('SAVE10', expect.any(Function));
+  });
+
+  test('onApplePayCouponCodeChange — resolve calls provideCouponCodeUpdate', () => {
+    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    const onCouponCodeChange = jest.fn((_code: any, resolve: any) =>
+      resolve({ errors: [{ type: 'couponCode', message: 'Invalid' }] })
+    );
+    startEventListeners(component, createRefs({ onCouponCodeChange }));
+
+    fire(Event.onApplePayCouponCodeChange, { couponCode: 'BADCODE' });
+
+    expect(component.provideCouponCodeUpdate).toHaveBeenCalledWith({
+      errors: [{ type: 'couponCode', message: 'Invalid' }],
+    });
+  });
+
+  test('onApplePayCouponCodeChange — auto-resolves with {} when no callback', () => {
+    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    startEventListeners(component, createRefs({}));
+
+    fire(Event.onApplePayCouponCodeChange, { couponCode: 'CODE' });
+
+    expect(component.provideCouponCodeUpdate).toHaveBeenCalledWith({});
   });
 
   // -------------------------------------------------------------------------

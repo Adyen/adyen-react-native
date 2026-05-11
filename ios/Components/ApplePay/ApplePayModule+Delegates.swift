@@ -33,20 +33,6 @@ extension ApplePayModule: ApplePayComponentDelegate {
 
     @available(iOS 15.0, *)
     func didUpdate(
-        couponCode _: String,
-        for payment: ApplePayPayment,
-        completion: @escaping (PKPaymentRequestCouponCodeUpdate) -> Void
-    ) {
-        // Coupon code support is added in the next PR. Auto-resolve to keep the sheet responsive.
-        completion(.init(errors: nil, paymentSummaryItems: payment.summaryItems, shippingMethods: currentShippingMethods))
-    }
-}
-
-// MARK: - Coupon code delegate (iOS 15+)
-
-extension ApplePayModule {
-    @available(iOS 15.0, *)
-    func didUpdate(
         couponCode: String,
         for payment: ApplePayPayment,
         completion: @escaping (PKPaymentRequestCouponCodeUpdate) -> Void
