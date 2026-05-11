@@ -116,8 +116,7 @@ extension ApplePayModule {
 
     private func parseShippingMethods(_ dict: [String: Any]) -> [PKShippingMethod]? {
         guard let raw = dict[ApplePayKeys.Update.shippingMethods] as? [[String: Any]] else { return nil }
-        let methods = raw.compactMap(PKShippingMethod.initiate)
-        return methods.isEmpty ? nil : methods
+        return raw.compactMap(PKShippingMethod.initiate)
     }
 
     internal func parseErrors(_ dict: [String: Any]) -> [Error]? {
