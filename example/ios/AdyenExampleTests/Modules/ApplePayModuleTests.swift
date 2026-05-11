@@ -242,6 +242,236 @@ final class ApplePayModuleTests: XCTestCase {
         XCTAssertEqual(receivedResult?.errors?.count, 1)
     }
 
+    // MARK: - provideShippingContactUpdate
+
+    func test_provideShippingContactUpdate_callsHandler() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideShippingContactUpdate([:])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertNotNil(receivedUpdate)
+        XCTAssertNil(sut.shippingContactHandler)
+    }
+
+    func test_provideShippingContactUpdate_doesNothing_whenNoHandler() {
+        // GIVEN
+        sut.shippingContactHandler = nil
+
+        // WHEN / THEN — no crash
+        sut.provideShippingContactUpdate([:])
+    }
+
+    func test_provideShippingContactUpdate_usesSummaryItemsFromDict() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideShippingContactUpdate(["paymentSummaryItems": [["label": "Total", "amount": "20"]]])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.paymentSummaryItems.first?.label, "Total")
+    }
+
+    func test_provideShippingContactUpdate_fallsBackToCurrentPaymentSummaryItems() throws {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        sut.currentApplePayPayment = try ApplePayPayment(
+            countryCode: "US",
+            currencyCode: "USD",
+            summaryItems: [PKPaymentSummaryItem(label: "Fallback", amount: 10)]
+        )
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN — no paymentSummaryItems in dict
+        sut.provideShippingContactUpdate([:])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.paymentSummaryItems.first?.label, "Fallback")
+    }
+
+    func test_provideShippingContactUpdate_usesShippingMethodsFromDict() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+        let update: NSDictionary = [
+            "paymentSummaryItems": [["label": "Total", "amount": "5"]],
+            "shippingMethods": [["label": "Express", "amount": "15", "identifier": "express"]]
+        ]
+
+        // WHEN
+        sut.provideShippingContactUpdate(update)
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.shippingMethods.first?.identifier, "express")
+    }
+
+    func test_provideShippingContactUpdate_allowsEmptyShippingMethods() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        let fallback = PKShippingMethod(label: "Standard", amount: 5)
+        sut.currentShippingMethods = [fallback]
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN — explicit empty array should clear methods, not fall back
+        sut.provideShippingContactUpdate(["paymentSummaryItems": [["label": "Total", "amount": "5"]], "shippingMethods": []])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.shippingMethods.count, 0)
+    }
+
+    func test_provideShippingContactUpdate_fallsBackToCurrentShippingMethods() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        let fallback = PKShippingMethod(label: "Standard", amount: 5)
+        fallback.identifier = "standard"
+        sut.currentShippingMethods = [fallback]
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN — no shippingMethods key in dict
+        sut.provideShippingContactUpdate([:])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.shippingMethods.first?.identifier, "standard")
+    }
+
+    func test_provideShippingContactUpdate_parsesErrors() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingContactUpdate?
+        sut.shippingContactHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+        let update: NSDictionary = [
+            "paymentSummaryItems": [["label": "Total", "amount": "5"]],
+            "errors": [["type": "shippingAddress", "field": "postalCode", "message": "Invalid postal code"]]
+        ]
+
+        // WHEN
+        sut.provideShippingContactUpdate(update)
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.errors?.count, 1)
+    }
+
+    // MARK: - provideShippingMethodUpdate
+
+    func test_provideShippingMethodUpdate_callsHandler() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedUpdate: PKPaymentRequestShippingMethodUpdate?
+        sut.shippingMethodHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideShippingMethodUpdate([:])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertNotNil(receivedUpdate)
+        XCTAssertNil(sut.shippingMethodHandler)
+    }
+
+    func test_provideShippingMethodUpdate_doesNothing_whenNoHandler() {
+        // GIVEN
+        sut.shippingMethodHandler = nil
+
+        // WHEN / THEN — no crash
+        sut.provideShippingMethodUpdate([:])
+    }
+
+    func test_provideShippingMethodUpdate_usesSummaryItemsFromDict() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingMethodUpdate?
+        sut.shippingMethodHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideShippingMethodUpdate(["paymentSummaryItems": [["label": "Express Total", "amount": "25"]]])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.paymentSummaryItems.first?.label, "Express Total")
+    }
+
+    func test_provideShippingMethodUpdate_fallsBackToCurrentPaymentSummaryItems() throws {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedUpdate: PKPaymentRequestShippingMethodUpdate?
+        sut.currentApplePayPayment = try ApplePayPayment(
+            countryCode: "US",
+            currencyCode: "USD",
+            summaryItems: [PKPaymentSummaryItem(label: "Fallback Total", amount: 10)]
+        )
+        sut.shippingMethodHandler = { update in
+            receivedUpdate = update
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideShippingMethodUpdate([:])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedUpdate?.paymentSummaryItems.first?.label, "Fallback Total")
+    }
+
+    func test_cleanUp_clearsAllHandlers() {
+        // GIVEN
+        sut.shippingContactHandler = { _ in }
+        sut.shippingMethodHandler = { _ in }
+        sut.authorizationHandler = { _ in }
+
+        // WHEN
+        sut.cleanUp()
+
+        // THEN
+        XCTAssertNil(sut.shippingContactHandler)
+        XCTAssertNil(sut.shippingMethodHandler)
+        XCTAssertNil(sut.authorizationHandler)
+    }
+
     func test_cleanUp_clearsAuthorizationHandler() {
         // GIVEN
         sut.authorizationHandler = { _ in }
