@@ -5,6 +5,7 @@ import type {
   AdyenActionComponent,
   AdyenError,
   ApplePayAuthorizationActions,
+  ApplePayCouponCodeEvent,
   ApplePayCouponCodeUpdateRequest,
   ApplePayPaymentAuthorization,
   ApplePayPaymentContact,
@@ -171,7 +172,7 @@ export function startEventListeners(
   // Apple Pay delegate callbacks
   const applePayModule = nativeComponent as unknown as ApplePayModule;
 
-  subscribeIfSupported<{ couponCode: string }>(
+  subscribeIfSupported<ApplePayCouponCodeEvent>(
     Event.onApplePayCouponCodeChange,
     (data) => {
       const resolve = (update: ApplePayCouponCodeUpdateRequest) =>

@@ -190,6 +190,11 @@ export interface ApplePayShippingContactUpdateRequest {
   errors?: ApplePayError[];
 }
 
+/** Payload received from the native coupon code event. */
+export interface ApplePayCouponCodeEvent {
+  couponCode: string;
+}
+
 /** Data passed to the coupon code callback. */
 export interface ApplePayCouponCodeUpdateRequest {
   /** Updated payment summary items. If omitted, the current items are kept. */
