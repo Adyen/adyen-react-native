@@ -1,4 +1,5 @@
 import Adyen
+import Contacts
 import PassKit
 
 extension ApplePayDetails {
@@ -41,6 +42,57 @@ extension PKPaymentNetwork {
         }
     }
 
+}
+
+extension PKShippingMethod {
+    var jsonObject: [String: Any] {
+        var dict: [String: Any] = [
+            ApplePayKeys.SummaryItem.label: label,
+            ApplePayKeys.SummaryItem.amount: amount.stringValue,
+            ApplePayKeys.SummaryItem.type: type == .pending ? "pending" : "final"
+        ]
+        if let identifier {
+            dict[ApplePayKeys.ShippingMethod.identifier] = identifier
+        }
+        if let detail {
+            dict[ApplePayKeys.ShippingMethod.detail] = detail
+        }
+        return dict
+    }
+}
+
+// MARK: - Apple Pay error helpers
+
+/// Converts a JS error descriptor dictionary into an NSError for Apple Pay.
+/// Expected keys: `type` (string), `field` (string, optional), `message` (string).
+internal func applePayError(from dict: [String: Any]) -> Error? {
+    guard let type = dict[ApplePayKeys.PaymentError.type] as? String,
+          let message = dict[ApplePayKeys.PaymentError.message] as? String else { return nil }
+    let field = dict[ApplePayKeys.PaymentError.field] as? String
+    switch type {
+    case "shippingAddress":
+        return PKPaymentRequest.paymentShippingAddressInvalidError(withKey: postalAddressKey(for: field), localizedDescription: message)
+    case "billingAddress":
+        return PKPaymentRequest.paymentBillingAddressInvalidError(withKey: postalAddressKey(for: field), localizedDescription: message)
+    case "contactField":
+        return PKPaymentRequest.paymentContactInvalidError(withContactField: PKContactField.fromString(field ?? ""), localizedDescription: message)
+    default:
+        return nil
+    }
+}
+
+private func postalAddressKey(for field: String?) -> String {
+    switch field {
+    case "street", "addressLines": return CNPostalAddressStreetKey
+    case "city", "locality": return CNPostalAddressCityKey
+    case "state", "administrativeArea": return CNPostalAddressStateKey
+    case "postalCode": return CNPostalAddressPostalCodeKey
+    case "country": return CNPostalAddressCountryKey
+    case "countryCode": return CNPostalAddressISOCountryCodeKey
+    case "subLocality": return CNPostalAddressSubLocalityKey
+    case "subAdministrativeArea": return CNPostalAddressSubAdministrativeAreaKey
+    default: return field ?? CNPostalAddressStreetKey
+    }
 }
 
 extension PKContact {

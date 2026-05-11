@@ -23,6 +23,14 @@ export interface ApplePayConfiguration {
   shippingMethods?: ApplePayShippingMethod[];
   /** An optional request to set up a recurring payment, typically a subscription. */
   recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
+  /**
+   * Called after the shopper authorizes the payment, before it is submitted to Adyen.
+   * Call `resolve({ status: 'success' })` to proceed or `resolve({ status: 'failure', errors })` to show validation errors.
+   */
+  onAuthorize?: (
+    payment: ApplePayPaymentAuthorization,
+    resolve: (result: ApplePayAuthorizationResultRequest) => void
+  ) => void;
 }
 
 /** Collection of values for address field visibility. */
@@ -123,3 +131,41 @@ export interface ApplePayRecurringSummaryItem extends ApplePaySummaryItem {
 
 /** A type that indicates calendrical units, such as year, month, day, and hour. */
 export type ApplePayCalendarUnit = `year` | `month` | `day` | `hour` | `minute`;
+
+/** An error object describing why a field in the Apple Pay sheet is invalid. */
+export interface ApplePayError {
+  /**
+   * The category of the error.
+   * - `shippingAddress` — an invalid field in the shipping postal address.
+   * - `billingAddress` — an invalid field in the billing postal address.
+   * - `contactField` — an invalid contact field (phone, email, name, etc.).
+   */
+  type: 'shippingAddress' | 'billingAddress' | 'contactField';
+  /**
+   * For `shippingAddress` / `billingAddress`: the CNPostalAddress key of the invalid field
+   * (e.g. `"postalCode"`, `"city"`, `"street"`, `"country"`, `"countryCode"`).
+   * For `contactField`: the PKContactField name
+   * (e.g. `"phoneNumber"`, `"emailAddress"`, `"name"`, `"postalAddress"`).
+   */
+  field?: string;
+  /** A localized description shown in the Apple Pay sheet. */
+  message: string;
+}
+
+/** Data passed to the authorization callback. */
+export interface ApplePayAuthorizationResultRequest {
+  /** Whether the authorization succeeded. */
+  status: 'success' | 'failure';
+  /** Validation errors shown when status is `failure`. */
+  errors?: ApplePayError[];
+}
+
+/** Payment details provided in the authorization callback. */
+export interface ApplePayPaymentAuthorization {
+  /** The billing contact if requested. */
+  billingContact?: ApplePayPaymentContact;
+  /** The shipping contact if requested. */
+  shippingContact?: ApplePayPaymentContact;
+  /** The selected shipping method, if any. */
+  shippingMethod?: ApplePayShippingMethod;
+}
