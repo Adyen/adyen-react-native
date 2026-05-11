@@ -548,8 +548,11 @@ final class ApplePayModuleUtilitiesTests: XCTestCase {
     func test_pkShippingMethod_jsonObject_includesDateRange() {
         // GIVEN
         let method = PKShippingMethod(label: "Standard", amount: 5)
-        let start = DateComponents(year: 2026, month: 6, day: 1)
-        let end = DateComponents(year: 2026, month: 6, day: 5)
+        let calendar = Calendar.current
+        var start = calendar.dateComponents([.calendar, .year, .month, .day], from: Date())
+        start.year = 2026; start.month = 6; start.day = 1
+        var end = calendar.dateComponents([.calendar, .year, .month, .day], from: Date())
+        end.year = 2026; end.month = 6; end.day = 5
         method.dateComponentsRange = PKDateComponentsRange(start: start, end: end)
 
         // WHEN
