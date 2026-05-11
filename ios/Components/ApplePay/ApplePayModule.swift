@@ -14,7 +14,11 @@ internal class ApplePayModule: BaseModuleSender {
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
+    internal var shippingContactHandler: ((PKPaymentRequestShippingContactUpdate) -> Void)?
+    internal var shippingMethodHandler: ((PKPaymentRequestShippingMethodUpdate) -> Void)?
     internal var authorizationHandler: ((PKPaymentAuthorizationResult) -> Void)?
+    internal var currentApplePayPayment: ApplePayPayment?
+    internal var currentShippingMethods: [PKShippingMethod] = []
 
     override init() {
         self.paymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()
@@ -47,14 +51,20 @@ internal class ApplePayModule: BaseModuleSender {
             return sendError(error: error)
         }
 
+        currentShippingMethods = applePayParser.shippingMethods ?? []
         currentComponent = applePayComponent
         applePayComponent.delegate = BaseModule.session ?? self
+        applePayComponent.applePayDelegate = self
         applePayComponent.authorizationDelegate = self
         present(component: applePayComponent)
     }
 
     override func cleanUp() {
+        shippingContactHandler = nil
+        shippingMethodHandler = nil
         authorizationHandler = nil
+        currentApplePayPayment = nil
+        currentShippingMethods = []
         super.cleanUp()
     }
 

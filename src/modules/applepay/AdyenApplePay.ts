@@ -1,11 +1,20 @@
 import { NativeModules } from 'react-native';
 import { ModuleMock } from '../base/ModuleMock';
 import { ApplePayWrapper } from './ApplePayWrapper';
-import type { AdyenComponent, ConditionalPaymentComponent } from '../../core';
+import type {
+  AdyenComponent,
+  ApplePayShippingContactUpdateRequest,
+  ApplePayShippingMethodUpdateRequest,
+  ConditionalPaymentComponent,
+} from '../../core';
 import type { ApplePayAuthorizationResult } from './ApplePayInternalTypes';
 
 export interface ApplePayModule
   extends AdyenComponent, ConditionalPaymentComponent {
+  provideShippingContactUpdate(
+    update: ApplePayShippingContactUpdateRequest
+  ): void;
+  provideShippingMethodUpdate(update: ApplePayShippingMethodUpdateRequest): void;
   provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
 

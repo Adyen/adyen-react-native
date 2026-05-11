@@ -57,6 +57,14 @@ extension PKShippingMethod {
         if let detail {
             dict[ApplePayKeys.ShippingMethod.detail] = detail
         }
+        if #available(iOS 15.0, *), let range = dateComponentsRange {
+            if let start = Calendar.current.date(from: range.startDateComponents) {
+                dict[ApplePayKeys.ShippingMethod.startDate] = iso8601Formatter.string(from: start)
+            }
+            if let end = Calendar.current.date(from: range.endDateComponents) {
+                dict[ApplePayKeys.ShippingMethod.endDate] = iso8601Formatter.string(from: end)
+            }
+        }
         return dict
     }
 }

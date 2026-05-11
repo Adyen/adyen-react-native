@@ -1,5 +1,7 @@
 import type {
   AdyenActionComponent,
+  ApplePayShippingContactUpdateRequest,
+  ApplePayShippingMethodUpdateRequest,
   Configuration,
   PaymentAction,
   PaymentMethod,
@@ -11,6 +13,10 @@ import type { PaymentModule } from '../base/PaymentComponentWrapper';
 
 /** Native module interface specific to ApplePay */
 interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
+  provideShippingContactUpdate(
+    update: ApplePayShippingContactUpdateRequest
+  ): void;
+  provideShippingMethodUpdate(update: ApplePayShippingMethodUpdateRequest): void;
   provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
 
@@ -34,6 +40,14 @@ export class ApplePayWrapper
           'This is likely a bug in your integration.'
       );
     }
+  }
+
+  provideShippingContactUpdate(update: ApplePayShippingContactUpdateRequest): void {
+    this.nativeModule.provideShippingContactUpdate(update);
+  }
+
+  provideShippingMethodUpdate(update: ApplePayShippingMethodUpdateRequest): void {
+    this.nativeModule.provideShippingMethodUpdate(update);
   }
 
   provideAuthorizationResult(result: ApplePayAuthorizationResult): void {
