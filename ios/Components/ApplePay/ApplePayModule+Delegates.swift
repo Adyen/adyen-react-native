@@ -30,6 +30,16 @@ extension ApplePayModule: ApplePayComponentDelegate {
         currentApplePayPayment = payment
         sendEvent(event: .updateShippingMethod, body: shippingMethod.jsonObject)
     }
+
+    @available(iOS 15.0, *)
+    func didUpdate(
+        couponCode _: String,
+        for payment: ApplePayPayment,
+        completion: @escaping (PKPaymentRequestCouponCodeUpdate) -> Void
+    ) {
+        // Coupon code support is added in the next PR. Auto-resolve to keep the sheet responsive.
+        completion(.init(errors: nil, paymentSummaryItems: payment.summaryItems, shippingMethods: currentShippingMethods))
+    }
 }
 
 // MARK: - ApplePayAuthorizationDelegate
