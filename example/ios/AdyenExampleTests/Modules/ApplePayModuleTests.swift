@@ -544,6 +544,22 @@ final class ApplePayModuleUtilitiesTests: XCTestCase {
         XCTAssertEqual(json["type"] as? String, "final")
     }
 
+    @available(iOS 15.0, *)
+    func test_pkShippingMethod_jsonObject_includesDateRange() {
+        // GIVEN
+        let method = PKShippingMethod(label: "Standard", amount: 5)
+        let start = DateComponents(year: 2026, month: 6, day: 1)
+        let end = DateComponents(year: 2026, month: 6, day: 5)
+        method.dateComponentsRange = PKDateComponentsRange(start: start, end: end)
+
+        // WHEN
+        let json = method.jsonObject
+
+        // THEN
+        XCTAssertNotNil(json["startDate"])
+        XCTAssertNotNil(json["endDate"])
+    }
+
     func test_pkShippingMethod_jsonObject_omitsNilIdentifierAndDetail() {
         // GIVEN
         let method = PKShippingMethod(label: "Free", amount: 0)
@@ -584,6 +600,24 @@ final class ApplePayModuleUtilitiesTests: XCTestCase {
     func test_applePayError_shippingAddress_usesDefaultKey_whenFieldIsNil() {
         let error = applePayError(from: ["type": "shippingAddress", "message": "Error"])
         XCTAssertNotNil(error)
+    }
+
+    func test_applePayError_shippingAddress_allPostalAddressFields() {
+        let fields = [
+            "street", "addressLines",
+            "city", "locality",
+            "state", "administrativeArea",
+            "postalCode",
+            "country",
+            "countryCode",
+            "subLocality",
+            "subAdministrativeArea",
+            "unknownField"
+        ]
+        for field in fields {
+            let error = applePayError(from: ["type": "shippingAddress", "field": field, "message": "Error"])
+            XCTAssertNotNil(error, "Expected non-nil error for field '\(field)'")
+        }
     }
 
     // MARK: - ApplePayPaymentMethod.supportedNetworks
