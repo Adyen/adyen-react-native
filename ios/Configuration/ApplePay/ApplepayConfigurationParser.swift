@@ -104,6 +104,14 @@ public struct ApplepayConfigurationParser {
         return shippingMethods.isEmpty ? nil : shippingMethods
     }
 
+    var supportsCouponCode: Bool {
+        dict[ApplePayKeys.supportsCouponCode] as? Bool ?? false
+    }
+
+    var couponCode: String? {
+        dict[ApplePayKeys.couponCode] as? String
+    }
+
     @available(iOS 16.0, *)
     var recurringPaymentRequest: PKRecurringPaymentRequest? {
         guard let recurringDict = dict[ApplePayKeys.recurringPaymentRequest] as? NSDictionary else {
@@ -151,6 +159,13 @@ public struct ApplepayConfigurationParser {
         paymentRequest.shippingType = shippingType ?? .shipping
         paymentRequest.supportedCountries = supportedCountries
         paymentRequest.shippingMethods = shippingMethods
+
+        if #available(iOS 15.0, *) {
+            paymentRequest.supportsCouponCode = supportsCouponCode
+            if let couponCode {
+                paymentRequest.couponCode = couponCode
+            }
+        }
 
         if #available(iOS 16.0, *), let recurringPaymentRequest {
             paymentRequest.recurringPaymentRequest = recurringPaymentRequest

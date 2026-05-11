@@ -23,6 +23,10 @@ export interface ApplePayConfiguration {
   shippingMethods?: ApplePayShippingMethod[];
   /** An optional request to set up a recurring payment, typically a subscription. */
   recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
+  /** Enable the coupon code entry field in the Apple Pay sheet (iOS 15+). */
+  supportsCouponCode?: boolean;
+  /** Pre-fill the coupon code field with this value (iOS 15+). */
+  couponCode?: string;
   /**
    * Called when the shopper selects or updates a shipping contact.
    * Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet.
@@ -38,6 +42,14 @@ export interface ApplePayConfiguration {
   onShippingMethodChange?: (
     shippingMethod: ApplePayShippingMethod,
     resolve: (update: ApplePayShippingMethodUpdateRequest) => void
+  ) => void;
+  /**
+   * Called when the shopper enters or changes a coupon code (iOS 15+).
+   * Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet.
+   */
+  onCouponCodeChange?: (
+    couponCode: string,
+    resolve: (update: ApplePayCouponCodeUpdateRequest) => void
   ) => void;
   /**
    * Called after the shopper authorizes the payment, before it is submitted to Adyen.
@@ -170,6 +182,16 @@ export interface ApplePayError {
 
 /** Data passed to the shipping contact callback. */
 export interface ApplePayShippingContactUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
+  /** Updated shipping methods. If omitted, the current methods are kept. */
+  shippingMethods?: ApplePayShippingMethod[];
+  /** Validation errors to display in the sheet. */
+  errors?: ApplePayError[];
+}
+
+/** Data passed to the coupon code callback. */
+export interface ApplePayCouponCodeUpdateRequest {
   /** Updated payment summary items. If omitted, the current items are kept. */
   paymentSummaryItems?: ApplePaySummaryItem[];
   /** Updated shipping methods. If omitted, the current methods are kept. */

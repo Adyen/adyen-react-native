@@ -42,6 +42,21 @@ extension ApplePayModule: ApplePayComponentDelegate {
     }
 }
 
+// MARK: - Coupon code delegate (iOS 15+)
+
+extension ApplePayModule {
+    @available(iOS 15.0, *)
+    func didUpdate(
+        couponCode: String,
+        for payment: ApplePayPayment,
+        completion: @escaping (PKPaymentRequestCouponCodeUpdate) -> Void
+    ) {
+        couponCodeHandler = completion
+        currentApplePayPayment = payment
+        sendEvent(event: .updateCouponCode, body: [ApplePayKeys.couponCode: couponCode])
+    }
+}
+
 // MARK: - ApplePayAuthorizationDelegate
 
 extension ApplePayModule: ApplePayAuthorizationDelegate {
@@ -79,6 +94,20 @@ extension ApplePayModule {
         let status: PKPaymentAuthorizationStatus = success ? .success : .failure
         DispatchQueue.main.async {
             handler(PKPaymentAuthorizationResult(status: status, errors: errors))
+        }
+    }
+
+    @available(iOS 15.0, *)
+    @objc
+    func provideCouponCodeUpdate(_ update: NSDictionary) {
+        guard let handler = couponCodeHandler else { return }
+        couponCodeHandler = nil
+        let dict = update as? [String: Any] ?? [:]
+        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
+        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
+        let errors = parseErrors(dict)
+        DispatchQueue.main.async {
+            handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
         }
     }
 

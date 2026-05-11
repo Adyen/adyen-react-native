@@ -34,6 +34,8 @@ export enum Event {
   onApplePayShippingContactChange = 'didUpdateShippingContactCallback',
   /** Apple Pay: called when the shopper selects or changes a shipping method. */
   onApplePayShippingMethodChange = 'didUpdateShippingMethodCallback',
+  /** Apple Pay: called when the shopper enters or changes a coupon code (iOS 15+). */
+  onApplePayCouponCodeChange = 'didUpdateCouponCodeCallback',
 }
 
 /** Collection of errors components can throw. */

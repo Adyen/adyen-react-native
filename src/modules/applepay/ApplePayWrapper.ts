@@ -1,5 +1,6 @@
 import type {
   AdyenActionComponent,
+  ApplePayCouponCodeUpdateRequest,
   ApplePayShippingContactUpdateRequest,
   ApplePayShippingMethodUpdateRequest,
   Configuration,
@@ -13,6 +14,7 @@ import type { PaymentModule } from '../base/PaymentComponentWrapper';
 
 /** Native module interface specific to ApplePay */
 interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
+  provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void;
   provideShippingContactUpdate(
     update: ApplePayShippingContactUpdateRequest
   ): void;
@@ -40,6 +42,10 @@ export class ApplePayWrapper
           'This is likely a bug in your integration.'
       );
     }
+  }
+
+  provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void {
+    this.nativeModule.provideCouponCodeUpdate(update);
   }
 
   provideShippingContactUpdate(update: ApplePayShippingContactUpdateRequest): void {
