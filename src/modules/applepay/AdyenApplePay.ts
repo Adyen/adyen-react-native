@@ -1,15 +1,12 @@
 import { NativeModules } from 'react-native';
 import { ModuleMock } from '../base/ModuleMock';
 import { ApplePayWrapper } from './ApplePayWrapper';
-import type {
-  AdyenComponent,
-  ApplePayAuthorizationResultRequest,
-  ConditionalPaymentComponent,
-} from '../../core';
+import type { AdyenComponent, ConditionalPaymentComponent } from '../../core';
+import type { ApplePayAuthorizationResult } from './ApplePayInternalTypes';
 
 export interface ApplePayModule
   extends AdyenComponent, ConditionalPaymentComponent {
-  provideAuthorizationResult(result: ApplePayAuthorizationResultRequest): void;
+  provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
 
 /** Apple Pay component (only available for iOS) */

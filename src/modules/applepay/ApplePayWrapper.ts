@@ -1,17 +1,17 @@
 import type {
   AdyenActionComponent,
-  ApplePayAuthorizationResultRequest,
   Configuration,
   PaymentAction,
   PaymentMethod,
 } from '../../core';
+import type { ApplePayAuthorizationResult } from './ApplePayInternalTypes';
 import { PaymentComponentWrapper } from '../base/PaymentComponentWrapper';
 import type { ApplePayModule } from './AdyenApplePay';
 import type { PaymentModule } from '../base/PaymentComponentWrapper';
 
 /** Native module interface specific to ApplePay */
 interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
-  provideAuthorizationResult(result: ApplePayAuthorizationResultRequest): void;
+  provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
 
 export class ApplePayWrapper
@@ -36,7 +36,7 @@ export class ApplePayWrapper
     }
   }
 
-  provideAuthorizationResult(result: ApplePayAuthorizationResultRequest): void {
+  provideAuthorizationResult(result: ApplePayAuthorizationResult): void {
     this.nativeModule.provideAuthorizationResult(result);
   }
 }

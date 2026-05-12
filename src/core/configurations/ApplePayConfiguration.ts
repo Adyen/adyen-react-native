@@ -25,11 +25,11 @@ export interface ApplePayConfiguration {
   recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
   /**
    * Called after the shopper authorizes the payment, before it is submitted to Adyen.
-   * Call `resolve({ status: 'success' })` to proceed or `resolve({ status: 'failure', errors })` to show validation errors.
+   * Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show validation errors in the sheet.
    */
   onAuthorize?: (
     payment: ApplePayPaymentAuthorization,
-    resolve: (result: ApplePayAuthorizationResultRequest) => void
+    actions: ApplePayAuthorizationActions
   ) => void;
 }
 
@@ -152,12 +152,12 @@ export interface ApplePayError {
   message: string;
 }
 
-/** Data passed to the authorization callback. */
-export interface ApplePayAuthorizationResultRequest {
-  /** Whether the authorization succeeded. */
-  status: 'success' | 'failure';
-  /** Validation errors shown when status is `failure`. */
-  errors?: ApplePayError[];
+/** Actions passed to the `onAuthorize` callback. */
+export interface ApplePayAuthorizationActions {
+  /** Approve the payment and proceed to submission. */
+  resolve: () => void;
+  /** Reject the payment with optional field-level errors shown in the sheet. */
+  reject: (errors?: ApplePayError[]) => void;
 }
 
 /** Payment details provided in the authorization callback. */

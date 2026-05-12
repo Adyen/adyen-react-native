@@ -183,7 +183,7 @@ describe('startEventListeners', () => {
   // Apple Pay — onAuthorize
   // -------------------------------------------------------------------------
 
-  test('onApplePayAuthorization — calls user callback with payment data', () => {
+  test('onApplePayAuthorization — calls user callback with payment and actions', () => {
     const onAuthorize = jest.fn();
     const component = createComponent([Event.onApplePayAuthorization]);
     startEventListeners(component, createRefs({ onAuthorize }));
@@ -191,16 +191,32 @@ describe('startEventListeners', () => {
     const payment = { billingContact: { emailAddress: 'a@b.com' } };
     fire(Event.onApplePayAuthorization, payment);
 
-    expect(onAuthorize).toHaveBeenCalledWith(payment, expect.any(Function));
+    expect(onAuthorize).toHaveBeenCalledWith(
+      payment,
+      expect.objectContaining({
+        resolve: expect.any(Function),
+        reject: expect.any(Function),
+      })
+    );
   });
 
-  test('onApplePayAuthorization — resolve calls provideAuthorizationResult', () => {
+  test('onApplePayAuthorization — actions.resolve() calls provideAuthorizationResult with success', () => {
     const component = createComponent([Event.onApplePayAuthorization]);
-    const onAuthorize = jest.fn((_payment: any, resolve: any) =>
-      resolve({
-        status: 'failure',
-        errors: [{ type: 'billingAddress', message: 'Bad address' }],
-      })
+    const onAuthorize = jest.fn((_payment: any, actions: any) => actions.resolve());
+    startEventListeners(component, createRefs({ onAuthorize }));
+
+    fire(Event.onApplePayAuthorization, {});
+
+    expect(component.provideAuthorizationResult).toHaveBeenCalledWith({
+      status: 'success',
+    });
+  });
+
+  test('onApplePayAuthorization — actions.reject(errors) calls provideAuthorizationResult with failure', () => {
+    const component = createComponent([Event.onApplePayAuthorization]);
+    const errors = [{ type: 'billingAddress', message: 'Bad address' }];
+    const onAuthorize = jest.fn((_payment: any, actions: any) =>
+      actions.reject(errors)
     );
     startEventListeners(component, createRefs({ onAuthorize }));
 
@@ -208,7 +224,22 @@ describe('startEventListeners', () => {
 
     expect(component.provideAuthorizationResult).toHaveBeenCalledWith({
       status: 'failure',
-      errors: [{ type: 'billingAddress', message: 'Bad address' }],
+      errors,
+    });
+  });
+
+  test('onApplePayAuthorization — actions.reject() without errors passes undefined', () => {
+    const component = createComponent([Event.onApplePayAuthorization]);
+    const onAuthorize = jest.fn((_payment: any, actions: any) =>
+      actions.reject()
+    );
+    startEventListeners(component, createRefs({ onAuthorize }));
+
+    fire(Event.onApplePayAuthorization, {});
+
+    expect(component.provideAuthorizationResult).toHaveBeenCalledWith({
+      status: 'failure',
+      errors: undefined,
     });
   });
 
