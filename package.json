@@ -74,7 +74,7 @@
     "prettier": "^3.8.1",
     "react": "19.0.0",
     "react-native": "0.78.3",
-    "react-native-builder-bob": "^0.40.17",
+    "react-native-builder-bob": "^0.41.0",
     "typescript": "^5.2.2"
   },
   "peerDependencies": {
