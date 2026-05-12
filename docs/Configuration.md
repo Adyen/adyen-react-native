@@ -87,6 +87,7 @@
 | `supportedCountries`            | A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.                                                                                                                                                                                    | No                                      |
 | `shippingMethods`               | The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods).                                                                                                                                                                       | No                                      |
 | `recurringPaymentRequest`       | A class that represents a request to set up a recurring payment, typically a subscription. Corresponds to [PKRecurringPaymentRequest](#applepay-recurring-payment).                                                                                                                                                                                                                         | No                                      |
+| `onAuthorize(payment, actions) => {}` | Called after the shopper authorizes the payment (Face ID / Touch ID), before it is submitted to Adyen. Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show field-level errors and keep the sheet open. If omitted, the payment is automatically approved. | No                                      |
 
 #### ApplePay Recurring payment
 
@@ -239,6 +240,12 @@ const configuration = {
     ],
     requiredBillingContactFields: ['phoneticName', 'postalAddress'],
     requiredShippingContactFields: ['name', 'phone', 'email', 'postalAddress'],
+    onAuthorize: (payment, actions) => {
+      // Optionally validate billing/shipping contact before submission.
+      actions.resolve();
+      // Or reject with field-level errors:
+      // actions.reject([{ type: 'shippingAddress', field: 'postalCode', message: 'We do not ship here.' }]);
+    },
     recurringPaymentRequest: {
             description: 'My Subscription',
             regularBilling: {
