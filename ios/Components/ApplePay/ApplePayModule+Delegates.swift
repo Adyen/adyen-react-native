@@ -91,6 +91,7 @@ extension ApplePayModule {
         let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
         let errors = parseErrors(dict)
         DispatchQueue.main.async {
+            self.currentShippingMethods = shippingMethods
             handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
         }
     }
