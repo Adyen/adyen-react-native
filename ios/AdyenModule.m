@@ -66,6 +66,10 @@ RCT_EXTERN_METHOD(isAvailable:(nonnull NSDictionary *)paymentMethod
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(provideShippingContactUpdate:(nonnull NSDictionary *)update)
+
+RCT_EXTERN_METHOD(provideShippingMethodUpdate:(nonnull NSDictionary *)update)
+
 RCT_EXTERN_METHOD(provideAuthorizationResult:(nonnull NSDictionary *)result)
 
 @end

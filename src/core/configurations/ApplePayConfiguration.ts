@@ -24,6 +24,22 @@ export interface ApplePayConfiguration {
   /** An optional request to set up a recurring payment, typically a subscription. */
   recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
   /**
+   * Called when the shopper selects or updates a shipping contact.
+   * Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet.
+   */
+  onShippingContactChange?: (
+    contact: ApplePayPaymentContact,
+    resolve: (update: ApplePayShippingContactUpdateRequest) => void
+  ) => void;
+  /**
+   * Called when the shopper selects a shipping method.
+   * Call `resolve({ paymentSummaryItems, errors })` to update the sheet.
+   */
+  onShippingMethodChange?: (
+    shippingMethod: ApplePayShippingMethod,
+    resolve: (update: ApplePayShippingMethodUpdateRequest) => void
+  ) => void;
+  /**
    * Called after the shopper authorizes the payment, before it is submitted to Adyen.
    * Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show validation errors in the sheet.
    */
@@ -150,6 +166,22 @@ export interface ApplePayError {
   field?: string;
   /** A localized description shown in the Apple Pay sheet. */
   message: string;
+}
+
+/** Data passed to the shipping contact callback. */
+export interface ApplePayShippingContactUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
+  /** Updated shipping methods. If omitted, the current methods are kept. */
+  shippingMethods?: ApplePayShippingMethod[];
+  /** Validation errors to display in the sheet. */
+  errors?: ApplePayError[];
+}
+
+/** Data passed to the shipping method callback. */
+export interface ApplePayShippingMethodUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
 }
 
 /** Actions passed to the `onAuthorize` callback. */

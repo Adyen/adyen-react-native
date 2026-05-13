@@ -10,6 +10,9 @@ function createMockApplePayModule() {
     hide: jest.fn(),
     open: jest.fn(),
     isAvailable: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    provideShippingContactUpdate: jest.fn(),
+    provideShippingMethodUpdate: jest.fn(),
+    provideAuthorizationResult: jest.fn(),
   } as any;
 }
 
@@ -72,6 +75,32 @@ describe('ApplePayWrapper', () => {
       );
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('provideShippingContactUpdate', () => {
+    test('should delegate to native module', () => {
+      const wrapper = new ApplePayWrapper(mockNativeModule);
+      const update = { paymentSummaryItems: [{ label: 'Total', amount: '10' }] };
+
+      wrapper.provideShippingContactUpdate(update as any);
+
+      expect(mockNativeModule.provideShippingContactUpdate).toHaveBeenCalledWith(
+        update
+      );
+    });
+  });
+
+  describe('provideShippingMethodUpdate', () => {
+    test('should delegate to native module', () => {
+      const wrapper = new ApplePayWrapper(mockNativeModule);
+      const update = { paymentSummaryItems: [{ label: 'Total', amount: '15' }] };
+
+      wrapper.provideShippingMethodUpdate(update as any);
+
+      expect(mockNativeModule.provideShippingMethodUpdate).toHaveBeenCalledWith(
+        update
+      );
     });
   });
 });
