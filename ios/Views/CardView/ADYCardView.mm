@@ -86,8 +86,8 @@ using namespace facebook::react;
   return static_cast<const CardViewEventEmitter &>(*_eventEmitter);
 }
 
-Class<RCTComponentViewProtocol> ADYCardViewCls(void) {
+@end
+
+Class<RCTComponentViewProtocol> CardViewCls(void) {
   return ADYCardView.class;
 }
-
-@end
