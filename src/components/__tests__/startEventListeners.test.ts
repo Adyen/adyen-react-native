@@ -275,7 +275,10 @@ describe('startEventListeners', () => {
 
     fire(Event.onApplePayCouponCodeChange, { couponCode: 'SAVE10' });
 
-    expect(onCouponCodeChange).toHaveBeenCalledWith('SAVE10', expect.any(Function));
+    expect(onCouponCodeChange).toHaveBeenCalledWith(
+      'SAVE10',
+      expect.any(Function)
+    );
   });
 
   test('onApplePayCouponCodeChange — resolve calls provideCouponCodeUpdate', () => {

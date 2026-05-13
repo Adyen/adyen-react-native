@@ -16,7 +16,9 @@ export interface ApplePayModule
   provideShippingContactUpdate(
     update: ApplePayShippingContactUpdateRequest
   ): void;
-  provideShippingMethodUpdate(update: ApplePayShippingMethodUpdateRequest): void;
+  provideShippingMethodUpdate(
+    update: ApplePayShippingMethodUpdateRequest
+  ): void;
   provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
 

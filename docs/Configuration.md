@@ -52,6 +52,8 @@
 | `onConfirmAddress: (address, lookup) => {}` | The callback to confirm the selected `address` to the `lookup`. Used when `addressVisibility` is set to **lookup**                                        | No       |
 | `onBinLookup: (binData) => {}`              | An optional callback that is triggered when the BIN lookup data is available.                                                                             | No       |
 | `onBinValue: (binValue) => {}`              | An optional callback that is triggered when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field in `CardComponent` changes.           | No       |
+| `installmentOptions`                        | Configuration for installment options. Each key is a card brand (e.g., `"visa"`, `"mc"`, `"amex"`) or `"card"` for defaults that apply to all brands. Each entry has `values` (array of allowed installment counts) and optional `plans` (`"regular"` and/or `"revolving"`). | No       |
+| `showInstallmentAmount`                     | Indicates whether to show the installment amount in the payment form. Defaults to **false**.                                                              | No       |
 
 ### 3D Secure 2
 
@@ -166,6 +168,12 @@ const configuration = {
     onBinLookup: binData => {
       console.log('BIN data: ', JSON.stringify(binData));
     },
+    installmentOptions: {
+      card: { values: [2, 3] },
+      visa: { values: [2, 3, 4], plans: ['revolving'] },
+      mc: { values: [2, 3] },
+    },
+    showInstallmentAmount: true,
   },
   threeDS2: {
     requestorAppUrl: 'https://YOUR_UNIVERSAL_APP_LINK.com/',
