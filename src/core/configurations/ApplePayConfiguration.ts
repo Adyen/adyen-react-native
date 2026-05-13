@@ -167,8 +167,9 @@ export interface ApplePayError {
    * - `shippingAddress` — an invalid field in the shipping postal address.
    * - `billingAddress` — an invalid field in the billing postal address.
    * - `contactField` — an invalid contact field (phone, email, name, etc.).
+   * - `couponCode` — an invalid or unrecognised coupon code (iOS 15+).
    */
-  type: 'shippingAddress' | 'billingAddress' | 'contactField';
+  type: 'shippingAddress' | 'billingAddress' | 'contactField' | 'couponCode';
   /**
    * For `shippingAddress` / `billingAddress`: the CNPostalAddress key of the invalid field
    * (e.g. `"postalCode"`, `"city"`, `"street"`, `"country"`, `"countryCode"`).

@@ -84,6 +84,11 @@ internal func applePayError(from dict: [String: Any]) -> Error? {
         return PKPaymentRequest.paymentBillingAddressInvalidError(withKey: postalAddressKey(for: field), localizedDescription: message)
     case "contactField":
         return PKPaymentRequest.paymentContactInvalidError(withContactField: PKContactField.fromString(field ?? ""), localizedDescription: message)
+    case "couponCode":
+        if #available(iOS 15.0, *) {
+            return PKPaymentRequest.paymentCouponCodeInvalidError(localizedDescription: message)
+        }
+        return nil
     default:
         return nil
     }
