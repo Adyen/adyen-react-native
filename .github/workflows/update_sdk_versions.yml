@@ -14,21 +14,37 @@ on:
           - iOS
           - Android
       version:
-        description: 'New SDK version'
-        required: true
+        description: 'SDK version (leave empty to fetch latest release)'
+        required: false
         type: string
 
 jobs:
   update-sdk:
     runs-on: ${{ inputs.platform == 'iOS' && 'macos-latest' || 'ubuntu-latest' }}
     env:
-      VERSION: ${{ inputs.version }}
       PLATFORM: ${{ inputs.platform }}
 
     steps:
     - uses: actions/checkout@v6
 
-    - name: Update SDK version and badges ${{ inputs.platform }} SDK to ${{ inputs.version }}
+    - name: Fetch latest SDK version
+      id: fetch-version
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+        elif [ "$PLATFORM" = "iOS" ]; then
+          VERSION=$(gh api repos/Adyen/adyen-ios/releases/latest --jq '.tag_name')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        else
+          VERSION=$(gh api repos/Adyen/adyen-android/releases/latest --jq '.tag_name')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Update SDK version and badges ${{ inputs.platform }} SDK to ${{ steps.fetch-version.outputs.version }}
+      env:
+        VERSION: ${{ steps.fetch-version.outputs.version }}
       run: |
         # Set platform-specific sed flag (macOS requires empty backup extension)
         if [ "$(uname)" = "Darwin" ]; then SED_FLAG=(-i ''); else SED_FLAG=(-i); fi
@@ -70,9 +86,9 @@ jobs:
       uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "chore: update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
-        title: "Update ${{ inputs.platform }} SDK to ${{ inputs.version }}"
-        branch: "update-${{ inputs.platform }}-${{ inputs.version }}"
+        commit-message: "chore: update ${{ inputs.platform }} SDK to ${{ steps.fetch-version.outputs.version }}"
+        title: "Update ${{ inputs.platform }} SDK to ${{ steps.fetch-version.outputs.version }}"
+        branch: "update-${{ inputs.platform }}-${{ steps.fetch-version.outputs.version }}"
         add-paths: |
           README.md
           adyen-react-native.podspec
@@ -80,7 +96,7 @@ jobs:
           example/ios/Podfile.lock
         body: |
           # Open PR
-          This PR updates the ${{ inputs.platform }} SDK version to ${{ inputs.version }}.
+          This PR updates the ${{ inputs.platform }} SDK version to ${{ steps.fetch-version.outputs.version }}.
 
           ## Changes:
           - Updated ${{ inputs.platform }} SDK version in configuration files
