@@ -23,6 +23,34 @@ export interface ApplePayConfiguration {
   shippingMethods?: ApplePayShippingMethod[];
   /** An optional request to set up a recurring payment, typically a subscription. */
   recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
+  /** Enable the coupon code entry field in the Apple Pay sheet (iOS 15+). */
+  supportsCouponCode?: boolean;
+  /** Pre-fill the coupon code field with this value (iOS 15+). */
+  couponCode?: string;
+  /**
+   * Called when the shopper selects or updates a shipping contact.
+   * Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet.
+   */
+  onShippingContactChange?: (
+    contact: ApplePayPaymentContact,
+    resolve: (update: ApplePayShippingContactUpdateRequest) => void
+  ) => void;
+  /**
+   * Called when the shopper selects a shipping method.
+   * Call `resolve({ paymentSummaryItems, errors })` to update the sheet.
+   */
+  onShippingMethodChange?: (
+    shippingMethod: ApplePayShippingMethod,
+    resolve: (update: ApplePayShippingMethodUpdateRequest) => void
+  ) => void;
+  /**
+   * Called when the shopper enters or changes a coupon code (iOS 15+).
+   * Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet.
+   */
+  onCouponCodeChange?: (
+    couponCode: string,
+    resolve: (update: ApplePayCouponCodeUpdateRequest) => void
+  ) => void;
   /**
    * Called after the shopper authorizes the payment, before it is submitted to Adyen.
    * Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show validation errors in the sheet.
@@ -139,8 +167,9 @@ export interface ApplePayError {
    * - `shippingAddress` — an invalid field in the shipping postal address.
    * - `billingAddress` — an invalid field in the billing postal address.
    * - `contactField` — an invalid contact field (phone, email, name, etc.).
+   * - `couponCode` — an invalid or unrecognised coupon code (iOS 15+).
    */
-  type: 'shippingAddress' | 'billingAddress' | 'contactField';
+  type: 'shippingAddress' | 'billingAddress' | 'contactField' | 'couponCode';
   /**
    * For `shippingAddress` / `billingAddress`: the CNPostalAddress key of the invalid field
    * (e.g. `"postalCode"`, `"city"`, `"street"`, `"country"`, `"countryCode"`).
@@ -150,6 +179,37 @@ export interface ApplePayError {
   field?: string;
   /** A localized description shown in the Apple Pay sheet. */
   message: string;
+}
+
+/** Data passed to the shipping contact callback. */
+export interface ApplePayShippingContactUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
+  /** Updated shipping methods. If omitted, the current methods are kept. */
+  shippingMethods?: ApplePayShippingMethod[];
+  /** Validation errors to display in the sheet. */
+  errors?: ApplePayError[];
+}
+
+/** Payload received from the native coupon code event. */
+export interface ApplePayCouponCodeEvent {
+  couponCode: string;
+}
+
+/** Data passed to the coupon code callback. */
+export interface ApplePayCouponCodeUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
+  /** Updated shipping methods. If omitted, the current methods are kept. */
+  shippingMethods?: ApplePayShippingMethod[];
+  /** Validation errors to display in the sheet. */
+  errors?: ApplePayError[];
+}
+
+/** Data passed to the shipping method callback. */
+export interface ApplePayShippingMethodUpdateRequest {
+  /** Updated payment summary items. If omitted, the current items are kept. */
+  paymentSummaryItems?: ApplePaySummaryItem[];
 }
 
 /** Actions passed to the `onAuthorize` callback. */

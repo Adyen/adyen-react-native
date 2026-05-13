@@ -5,7 +5,13 @@ import type {
   AdyenActionComponent,
   AdyenError,
   ApplePayAuthorizationActions,
+  ApplePayCouponCodeEvent,
+  ApplePayCouponCodeUpdateRequest,
   ApplePayPaymentAuthorization,
+  ApplePayPaymentContact,
+  ApplePayShippingContactUpdateRequest,
+  ApplePayShippingMethod,
+  ApplePayShippingMethodUpdateRequest,
   Configuration,
   Order,
   PartialPaymentComponent,
@@ -163,8 +169,52 @@ export function startEventListeners(
       )
   );
 
-  // Apple Pay — authorization callback
+  // Apple Pay delegate callbacks
   const applePayModule = nativeComponent as unknown as ApplePayModule;
+
+  subscribeIfSupported<ApplePayCouponCodeEvent>(
+    Event.onApplePayCouponCodeChange,
+    (data) => {
+      const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
+        applePayModule.provideCouponCodeUpdate(update);
+      const callback = refs.config.current.applepay?.onCouponCodeChange;
+      if (callback) {
+        callback(data.couponCode, resolve);
+      } else {
+        resolve({});
+      }
+    }
+  );
+
+  subscribeIfSupported<ApplePayPaymentContact>(
+    Event.onApplePayShippingContactChange,
+    (contact) => {
+      const resolve = (update: ApplePayShippingContactUpdateRequest) =>
+        applePayModule.provideShippingContactUpdate(update);
+      const callback = refs.config.current.applepay?.onShippingContactChange;
+      if (callback) {
+        callback(contact, resolve);
+      } else {
+        resolve({});
+      }
+    }
+  );
+
+  subscribeIfSupported<ApplePayShippingMethod>(
+    Event.onApplePayShippingMethodChange,
+    (shippingMethod) => {
+      const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
+        applePayModule.provideShippingMethodUpdate(update);
+      const callback = refs.config.current.applepay?.onShippingMethodChange;
+      if (callback) {
+        callback(shippingMethod, resolve);
+      } else {
+        resolve({});
+      }
+    }
+  );
+
+  // Apple Pay — authorization callback
   subscribeIfSupported<ApplePayPaymentAuthorization>(
     Event.onApplePayAuthorization,
     (payment) => {

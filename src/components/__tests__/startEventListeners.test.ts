@@ -36,6 +36,9 @@ function createComponent(supported: Event[] = []) {
     eventEmitterTarget: {},
     hide: jest.fn(),
     handle: jest.fn(),
+    provideShippingContactUpdate: jest.fn(),
+    provideShippingMethodUpdate: jest.fn(),
+    provideCouponCodeUpdate: jest.fn(),
     provideAuthorizationResult: jest.fn(),
     removeStored: jest.fn(),
     provideBalance: jest.fn(),
@@ -177,6 +180,125 @@ describe('startEventListeners', () => {
     startEventListeners(createComponent([Event.onError]), refs, 'view-1');
     fire(Event.onError, { viewId: 'view-1', message: 'err', errorCode: 'x' });
     expect(refs.onError.current).toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Apple Pay — onShippingContactChange
+  // -------------------------------------------------------------------------
+
+  test('onApplePayShippingContactChange — calls user callback when configured', () => {
+    const onShippingContactChange = jest.fn();
+    const component = createComponent([Event.onApplePayShippingContactChange]);
+    startEventListeners(component, createRefs({ onShippingContactChange }));
+
+    const contact = { emailAddress: 'a@b.com' };
+    fire(Event.onApplePayShippingContactChange, contact);
+
+    expect(onShippingContactChange).toHaveBeenCalledWith(
+      contact,
+      expect.any(Function)
+    );
+  });
+
+  test('onApplePayShippingContactChange — resolve calls provideShippingContactUpdate', () => {
+    const component = createComponent([Event.onApplePayShippingContactChange]);
+    const onShippingContactChange = jest.fn((_contact: any, resolve: any) =>
+      resolve({ paymentSummaryItems: [] })
+    );
+    startEventListeners(component, createRefs({ onShippingContactChange }));
+
+    fire(Event.onApplePayShippingContactChange, {});
+
+    expect(component.provideShippingContactUpdate).toHaveBeenCalledWith({
+      paymentSummaryItems: [],
+    });
+  });
+
+  test('onApplePayShippingContactChange — auto-resolves with {} when no callback', () => {
+    const component = createComponent([Event.onApplePayShippingContactChange]);
+    startEventListeners(component, createRefs({}));
+
+    fire(Event.onApplePayShippingContactChange, {});
+
+    expect(component.provideShippingContactUpdate).toHaveBeenCalledWith({});
+  });
+
+  // -------------------------------------------------------------------------
+  // Apple Pay — onShippingMethodChange
+  // -------------------------------------------------------------------------
+
+  test('onApplePayShippingMethodChange — calls user callback when configured', () => {
+    const onShippingMethodChange = jest.fn();
+    const component = createComponent([Event.onApplePayShippingMethodChange]);
+    startEventListeners(component, createRefs({ onShippingMethodChange }));
+
+    const method = { label: 'Express', amount: '15', identifier: 'express' };
+    fire(Event.onApplePayShippingMethodChange, method);
+
+    expect(onShippingMethodChange).toHaveBeenCalledWith(
+      method,
+      expect.any(Function)
+    );
+  });
+
+  test('onApplePayShippingMethodChange — resolve calls provideShippingMethodUpdate', () => {
+    const component = createComponent([Event.onApplePayShippingMethodChange]);
+    const onShippingMethodChange = jest.fn((_method: any, resolve: any) =>
+      resolve({ paymentSummaryItems: [] })
+    );
+    startEventListeners(component, createRefs({ onShippingMethodChange }));
+
+    fire(Event.onApplePayShippingMethodChange, {});
+
+    expect(component.provideShippingMethodUpdate).toHaveBeenCalledWith({
+      paymentSummaryItems: [],
+    });
+  });
+
+  test('onApplePayShippingMethodChange — auto-resolves with {} when no callback', () => {
+    const component = createComponent([Event.onApplePayShippingMethodChange]);
+    startEventListeners(component, createRefs({}));
+
+    fire(Event.onApplePayShippingMethodChange, {});
+
+    expect(component.provideShippingMethodUpdate).toHaveBeenCalledWith({});
+  });
+
+  // -------------------------------------------------------------------------
+  // Apple Pay — onCouponCodeChange
+  // -------------------------------------------------------------------------
+
+  test('onApplePayCouponCodeChange — calls user callback with coupon code string', () => {
+    const onCouponCodeChange = jest.fn();
+    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    startEventListeners(component, createRefs({ onCouponCodeChange }));
+
+    fire(Event.onApplePayCouponCodeChange, { couponCode: 'SAVE10' });
+
+    expect(onCouponCodeChange).toHaveBeenCalledWith('SAVE10', expect.any(Function));
+  });
+
+  test('onApplePayCouponCodeChange — resolve calls provideCouponCodeUpdate', () => {
+    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    const onCouponCodeChange = jest.fn((_code: any, resolve: any) =>
+      resolve({ errors: [{ type: 'couponCode', message: 'Invalid' }] })
+    );
+    startEventListeners(component, createRefs({ onCouponCodeChange }));
+
+    fire(Event.onApplePayCouponCodeChange, { couponCode: 'BADCODE' });
+
+    expect(component.provideCouponCodeUpdate).toHaveBeenCalledWith({
+      errors: [{ type: 'couponCode', message: 'Invalid' }],
+    });
+  });
+
+  test('onApplePayCouponCodeChange — auto-resolves with {} when no callback', () => {
+    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    startEventListeners(component, createRefs({}));
+
+    fire(Event.onApplePayCouponCodeChange, { couponCode: 'CODE' });
+
+    expect(component.provideCouponCodeUpdate).toHaveBeenCalledWith({});
   });
 
   // -------------------------------------------------------------------------

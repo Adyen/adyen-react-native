@@ -30,6 +30,12 @@ export enum Event {
   onSessionError = 'didSessionErrorCallback',
   /** Apple Pay: called when the shopper authorizes the payment (before submission). */
   onApplePayAuthorization = 'didAuthorizePaymentCallback',
+  /** Apple Pay: called when the shopper selects or changes a shipping contact. */
+  onApplePayShippingContactChange = 'didUpdateShippingContactCallback',
+  /** Apple Pay: called when the shopper selects or changes a shipping method. */
+  onApplePayShippingMethodChange = 'didUpdateShippingMethodCallback',
+  /** Apple Pay: called when the shopper enters or changes a coupon code (iOS 15+). */
+  onApplePayCouponCodeChange = 'didUpdateCouponCodeCallback',
 }
 
 /** Collection of errors components can throw. */

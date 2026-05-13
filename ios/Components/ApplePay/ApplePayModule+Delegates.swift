@@ -7,6 +7,42 @@
 import Adyen
 import PassKit
 
+// MARK: - ApplePayComponentDelegate
+
+extension ApplePayModule: ApplePayComponentDelegate {
+
+    func didUpdate(
+        contact: PKContact,
+        for payment: ApplePayPayment,
+        completion: @escaping (PKPaymentRequestShippingContactUpdate) -> Void
+    ) {
+        shippingContactHandler = completion
+        currentApplePayPayment = payment
+        sendEvent(event: .updateShippingContact, body: contact.jsonObject)
+    }
+
+    func didUpdate(
+        shippingMethod: PKShippingMethod,
+        for payment: ApplePayPayment,
+        completion: @escaping (PKPaymentRequestShippingMethodUpdate) -> Void
+    ) {
+        shippingMethodHandler = completion
+        currentApplePayPayment = payment
+        sendEvent(event: .updateShippingMethod, body: shippingMethod.jsonObject)
+    }
+
+    @available(iOS 15.0, *)
+    func didUpdate(
+        couponCode: String,
+        for payment: ApplePayPayment,
+        completion: @escaping (PKPaymentRequestCouponCodeUpdate) -> Void
+    ) {
+        couponCodeHandler = completion
+        currentApplePayPayment = payment
+        sendEvent(event: .updateCouponCode, body: [ApplePayKeys.couponCode: couponCode])
+    }
+}
+
 // MARK: - ApplePayAuthorizationDelegate
 
 extension ApplePayModule: ApplePayAuthorizationDelegate {
@@ -47,7 +83,58 @@ extension ApplePayModule {
         }
     }
 
+    @available(iOS 15.0, *)
+    @objc
+    func provideCouponCodeUpdate(_ update: NSDictionary) {
+        guard let handler = couponCodeHandler else { return }
+        couponCodeHandler = nil
+        let dict = update as? [String: Any] ?? [:]
+        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
+        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
+        let errors = parseErrors(dict)
+        DispatchQueue.main.async {
+            self.currentShippingMethods = shippingMethods
+            handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
+        }
+    }
+
+    @objc
+    func provideShippingContactUpdate(_ update: NSDictionary) {
+        guard let handler = shippingContactHandler else { return }
+        shippingContactHandler = nil
+        let dict = update as? [String: Any] ?? [:]
+        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
+        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
+        let errors = parseErrors(dict)
+        DispatchQueue.main.async {
+            self.currentShippingMethods = shippingMethods
+            handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
+        }
+    }
+
+    @objc
+    func provideShippingMethodUpdate(_ update: NSDictionary) {
+        guard let handler = shippingMethodHandler else { return }
+        shippingMethodHandler = nil
+        let dict = update as? [String: Any] ?? [:]
+        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
+        DispatchQueue.main.async {
+            handler(.init(paymentSummaryItems: summaryItems))
+        }
+    }
+
     // MARK: - Private parsing helpers
+
+    private func parseSummaryItems(_ dict: [String: Any]) -> [PKPaymentSummaryItem]? {
+        guard let raw = dict[ApplePayKeys.Update.paymentSummaryItems] as? [[String: Any]] else { return nil }
+        let items = raw.compactMap(PKPaymentSummaryItem.init)
+        return items.isEmpty ? nil : items
+    }
+
+    private func parseShippingMethods(_ dict: [String: Any]) -> [PKShippingMethod]? {
+        guard let raw = dict[ApplePayKeys.Update.shippingMethods] as? [[String: Any]] else { return nil }
+        return raw.compactMap(PKShippingMethod.initiate)
+    }
 
     internal func parseErrors(_ dict: [String: Any]) -> [Error]? {
         guard let raw = dict[ApplePayKeys.Update.errors] as? [[String: Any]] else { return nil }
