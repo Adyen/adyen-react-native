@@ -81,20 +81,24 @@ describe('ApplePayWrapper', () => {
   describe('provideShippingContactUpdate', () => {
     test('should delegate to native module', () => {
       const wrapper = new ApplePayWrapper(mockNativeModule);
-      const update = { paymentSummaryItems: [{ label: 'Total', amount: '10' }] };
+      const update = {
+        paymentSummaryItems: [{ label: 'Total', amount: '10' }],
+      };
 
       wrapper.provideShippingContactUpdate(update as any);
 
-      expect(mockNativeModule.provideShippingContactUpdate).toHaveBeenCalledWith(
-        update
-      );
+      expect(
+        mockNativeModule.provideShippingContactUpdate
+      ).toHaveBeenCalledWith(update);
     });
   });
 
   describe('provideShippingMethodUpdate', () => {
     test('should delegate to native module', () => {
       const wrapper = new ApplePayWrapper(mockNativeModule);
-      const update = { paymentSummaryItems: [{ label: 'Total', amount: '15' }] };
+      const update = {
+        paymentSummaryItems: [{ label: 'Total', amount: '15' }],
+      };
 
       wrapper.provideShippingMethodUpdate(update as any);
 

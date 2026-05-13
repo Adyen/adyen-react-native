@@ -18,7 +18,9 @@ interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
   provideShippingContactUpdate(
     update: ApplePayShippingContactUpdateRequest
   ): void;
-  provideShippingMethodUpdate(update: ApplePayShippingMethodUpdateRequest): void;
+  provideShippingMethodUpdate(
+    update: ApplePayShippingMethodUpdateRequest
+  ): void;
   provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
 
@@ -48,11 +50,15 @@ export class ApplePayWrapper
     this.nativeModule.provideCouponCodeUpdate(update);
   }
 
-  provideShippingContactUpdate(update: ApplePayShippingContactUpdateRequest): void {
+  provideShippingContactUpdate(
+    update: ApplePayShippingContactUpdateRequest
+  ): void {
     this.nativeModule.provideShippingContactUpdate(update);
   }
 
-  provideShippingMethodUpdate(update: ApplePayShippingMethodUpdateRequest): void {
+  provideShippingMethodUpdate(
+    update: ApplePayShippingMethodUpdateRequest
+  ): void {
     this.nativeModule.provideShippingMethodUpdate(update);
   }
 
