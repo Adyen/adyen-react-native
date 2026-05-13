@@ -286,7 +286,9 @@ describe('startEventListeners', () => {
 
   test('onApplePayAuthorization — actions.resolve() calls provideAuthorizationResult with success', () => {
     const component = createComponent([Event.onApplePayAuthorization]);
-    const onAuthorize = jest.fn((_payment: any, actions: any) => actions.resolve());
+    const onAuthorize = jest.fn((_payment: any, actions: any) =>
+      actions.resolve()
+    );
     startEventListeners(component, createRefs({ onAuthorize }));
 
     fire(Event.onApplePayAuthorization, {});
