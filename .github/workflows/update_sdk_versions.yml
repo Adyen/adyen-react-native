@@ -89,6 +89,7 @@ jobs:
         commit-message: "chore: update ${{ inputs.platform }} SDK to ${{ steps.fetch-version.outputs.version }}"
         title: "Update ${{ inputs.platform }} SDK to ${{ steps.fetch-version.outputs.version }}"
         branch: "update-${{ inputs.platform }}-${{ steps.fetch-version.outputs.version }}"
+        labels: run-e2e-tests
         add-paths: |
           README.md
           adyen-react-native.podspec
