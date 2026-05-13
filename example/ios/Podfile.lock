@@ -1,14 +1,14 @@
 PODS:
-  - Adyen (5.23.1):
-    - Adyen/Actions (= 5.23.1)
-    - Adyen/Card (= 5.23.1)
-    - Adyen/Components (= 5.23.1)
-    - Adyen/Core (= 5.23.1)
-    - Adyen/DropIn (= 5.23.1)
-    - Adyen/Encryption (= 5.23.1)
-    - Adyen/Session (= 5.23.1)
+  - Adyen (5.24.0):
+    - Adyen/Actions (= 5.24.0)
+    - Adyen/Card (= 5.24.0)
+    - Adyen/Components (= 5.24.0)
+    - Adyen/Core (= 5.24.0)
+    - Adyen/DropIn (= 5.24.0)
+    - Adyen/Encryption (= 5.24.0)
+    - Adyen/Session (= 5.24.0)
   - adyen-react-native (2.0.0-local.1):
-    - Adyen (= 5.23.1)
+    - Adyen (= 5.24.0)
     - DoubleConversion
     - glog
     - hermes-engine
@@ -29,25 +29,25 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - Adyen/Actions (5.23.1):
+  - Adyen/Actions (5.24.0):
     - Adyen/Core
     - Adyen3DS2 (= 2.4.4)
-  - Adyen/Card (5.23.1):
+  - Adyen/Card (5.24.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Components (5.23.1):
+  - Adyen/Components (5.24.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Core (5.23.1):
+  - Adyen/Core (5.24.0):
     - AdyenNetworking (= 3.0.1)
-  - Adyen/DropIn (5.23.1):
+  - Adyen/DropIn (5.24.0):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (5.23.1)
-  - Adyen/Session (5.23.1):
+  - Adyen/Encryption (5.24.0)
+  - Adyen/Session (5.24.0):
     - Adyen/Actions
     - Adyen/Core
   - Adyen3DS2 (2.4.4)
@@ -1938,8 +1938,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: aad750e085f602d89340c0b81d1f761d2df92c50
-  adyen-react-native: bc5c7e4587207498c160f09391c08e4c9ae0e9f4
+  Adyen: 0d38bafa5543e13202de4e5d0f645853b125da36
+  adyen-react-native: 86eb26b506540c4eaf8a585ccfbf6ee39ce1b892
   Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
   AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
