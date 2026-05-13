@@ -4,19 +4,16 @@ import type {
   PaymentAction,
   PaymentMethod,
 } from '../../core';
+import type { ApplePayAuthorizationResult } from './ApplePayInternalTypes';
 import { PaymentComponentWrapper } from '../base/PaymentComponentWrapper';
 import type { ApplePayModule } from './AdyenApplePay';
 import type { PaymentModule } from '../base/PaymentComponentWrapper';
 
 /** Native module interface specific to ApplePay */
 interface ApplePayNativeModule extends ApplePayModule, PaymentModule {
-  // TODO: add express payment events
+  provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
 
-/**
- * Apple Pay wrapper - no additional events beyond inherited ones.
- * @todo add express payment events
- */
 export class ApplePayWrapper
   extends PaymentComponentWrapper<ApplePayNativeModule>
   implements ApplePayModule, AdyenActionComponent
@@ -37,5 +34,9 @@ export class ApplePayWrapper
           'This is likely a bug in your integration.'
       );
     }
+  }
+
+  provideAuthorizationResult(result: ApplePayAuthorizationResult): void {
+    this.nativeModule.provideAuthorizationResult(result);
   }
 }

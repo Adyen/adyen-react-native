@@ -14,6 +14,8 @@ internal class ApplePayModule: BaseModuleSender {
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
+    internal var authorizationHandler: ((PKPaymentAuthorizationResult) -> Void)?
+
     override init() {
         self.paymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()
         super.init()
@@ -22,6 +24,10 @@ internal class ApplePayModule: BaseModuleSender {
     init(pkPaymentAuthorizationService: PKPaymentAuthorizationService = PKPaymentAuthorizationServiceAdapter()) {
         self.paymentAuthorizationService = pkPaymentAuthorizationService
         super.init()
+    }
+
+    override func supportedEvents() -> [String]! {
+        super.supportedEvents() + EventName.applePayEvents.map(\.rawValue)
     }
 
     @objc
@@ -43,7 +49,13 @@ internal class ApplePayModule: BaseModuleSender {
 
         currentComponent = applePayComponent
         applePayComponent.delegate = BaseModule.session ?? self
+        applePayComponent.authorizationDelegate = self
         present(component: applePayComponent)
+    }
+
+    override func cleanUp() {
+        authorizationHandler = nil
+        super.cleanUp()
     }
 
     @objc

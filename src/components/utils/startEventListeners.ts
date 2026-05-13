@@ -4,6 +4,8 @@ import type {
   AddressLookupItem,
   AdyenActionComponent,
   AdyenError,
+  ApplePayAuthorizationActions,
+  ApplePayPaymentAuthorization,
   Configuration,
   Order,
   PartialPaymentComponent,
@@ -14,6 +16,8 @@ import type {
   SubmitModel,
 } from '../../core';
 import { Event } from '../../core';
+import type { ApplePayModule } from '../../modules/applepay/AdyenApplePay';
+import type { ApplePayAuthorizationResult } from '../../modules/applepay/ApplePayInternalTypes';
 import type { RemovesStoredPayment } from '../../modules/dropin/DropInWrapper';
 import type { AdyenEventListener } from '../../modules/base/EventListenerWrapper';
 
@@ -157,6 +161,26 @@ export function startEventListeners(
         shouldUpdatePaymentMethods,
         partialComponent
       )
+  );
+
+  // Apple Pay — authorization callback
+  const applePayModule = nativeComponent as unknown as ApplePayModule;
+  subscribeIfSupported<ApplePayPaymentAuthorization>(
+    Event.onApplePayAuthorization,
+    (payment) => {
+      const provide = (result: ApplePayAuthorizationResult) =>
+        applePayModule.provideAuthorizationResult(result);
+      const actions: ApplePayAuthorizationActions = {
+        resolve: () => provide({ status: 'success' }),
+        reject: (errors?) => provide({ status: 'failure', errors }),
+      };
+      const callback = refs.config.current.applepay?.onAuthorize;
+      if (callback) {
+        callback(payment, actions);
+      } else {
+        actions.resolve();
+      }
+    }
   );
 
   return eventSubscriptions;

@@ -40,7 +40,7 @@ final class ApplePayModuleTests: XCTestCase {
         super.tearDown()
     }
 
-    func test_isAvailable_returnsTrue_whenCanMakePaymentsAndHasAuthorizationViewController() throws {
+    func test_isAvailable_returnsTrue_whenCanMakePaymentsAndHasAuthorizationViewController() {
         // GIVEN
         mockPaymentAuthorizationService.authorizationViewControllerResult = PKPaymentAuthorizationViewController(paymentRequest: mockPaymentRequest)
 
@@ -54,7 +54,7 @@ final class ApplePayModuleTests: XCTestCase {
         }
     }
 
-    func test_isAvailable_returnsFalse_whenNoAmount() throws {
+    func test_isAvailable_returnsFalse_whenNoAmount() {
         // GIVEN
         mockPaymentAuthorizationService.canMakePaymentsResult = true
         let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
@@ -77,7 +77,7 @@ final class ApplePayModuleTests: XCTestCase {
         }
     }
 
-    func test_isAvailable_returnsFalse_whenHasNoAuthorizationViewController() throws {
+    func test_isAvailable_returnsFalse_whenHasNoAuthorizationViewController() {
         // GIVEN
         mockPaymentAuthorizationService.canMakePaymentsResult = true
         let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
@@ -92,7 +92,7 @@ final class ApplePayModuleTests: XCTestCase {
         }
     }
 
-    func test_isAvailable_returnsFalse_whenCanMakePaymentsIsFalse() throws {
+    func test_isAvailable_returnsFalse_whenCanMakePaymentsIsFalse() {
         // GIVEN
         mockPaymentAuthorizationService.canMakePaymentsResult = false
         let sut = ApplePayModule(pkPaymentAuthorizationService: mockPaymentAuthorizationService)
@@ -173,6 +173,84 @@ final class ApplePayModuleTests: XCTestCase {
         // But we can at least test that the methods don't crash and return expected types
         XCTAssertNotNil(viewController)
         XCTAssertTrue(canMakePayments)
+    }
+
+    // MARK: - provideAuthorizationResult
+
+    func test_provideAuthorizationResult_callsHandlerWithSuccess() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedResult: PKPaymentAuthorizationResult?
+        sut.authorizationHandler = { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideAuthorizationResult(["status": "success"])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedResult?.status, .success)
+        XCTAssertNil(sut.authorizationHandler)
+    }
+
+    func test_provideAuthorizationResult_callsHandlerWithFailure() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler should be called")
+        var receivedResult: PKPaymentAuthorizationResult?
+        sut.authorizationHandler = { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        // WHEN
+        sut.provideAuthorizationResult(["status": "failure"])
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedResult?.status, .failure)
+    }
+
+    func test_provideAuthorizationResult_doesNothing_whenNoHandler() {
+        // GIVEN
+        sut.authorizationHandler = nil
+
+        // WHEN / THEN — no crash
+        sut.provideAuthorizationResult(["status": "success"])
+    }
+
+    func test_provideAuthorizationResult_withErrors_passesThemThrough() {
+        // GIVEN
+        let expectation = self.expectation(description: "handler called")
+        var receivedResult: PKPaymentAuthorizationResult?
+        sut.authorizationHandler = { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+        let result: NSDictionary = [
+            "status": "failure",
+            "errors": [["type": "shippingAddress", "field": "postalCode", "message": "Bad zip"]]
+        ]
+
+        // WHEN
+        sut.provideAuthorizationResult(result)
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedResult?.status, .failure)
+        XCTAssertEqual(receivedResult?.errors?.count, 1)
+    }
+
+    func test_cleanUp_clearsAuthorizationHandler() {
+        // GIVEN
+        sut.authorizationHandler = { _ in }
+
+        // WHEN
+        sut.cleanUp()
+
+        // THEN
+        XCTAssertNil(sut.authorizationHandler)
     }
 
     func test_hide_callsDismiss() {

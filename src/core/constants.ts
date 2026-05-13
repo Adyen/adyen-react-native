@@ -28,6 +28,8 @@ export enum Event {
   onSessionComplete = 'didSessionCompleteCallback',
   /** Event handler, called when a session flow about to be terminate. */
   onSessionError = 'didSessionErrorCallback',
+  /** Apple Pay: called when the shopper authorizes the payment (before submission). */
+  onApplePayAuthorization = 'didAuthorizePaymentCallback',
 }
 
 /** Collection of errors components can throw. */
