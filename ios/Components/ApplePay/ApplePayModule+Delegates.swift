@@ -33,12 +33,13 @@ extension ApplePayModule: ApplePayComponentDelegate {
 
     @available(iOS 15.0, *)
     func didUpdate(
-        couponCode _: String,
+        couponCode: String,
         for payment: ApplePayPayment,
         completion: @escaping (PKPaymentRequestCouponCodeUpdate) -> Void
     ) {
-        // Coupon code support is added in the next PR. Auto-resolve to keep the sheet responsive.
-        completion(.init(errors: nil, paymentSummaryItems: payment.summaryItems, shippingMethods: currentShippingMethods))
+        couponCodeHandler = completion
+        currentApplePayPayment = payment
+        sendEvent(event: .updateCouponCode, body: [ApplePayKeys.couponCode: couponCode])
     }
 }
 
@@ -79,6 +80,21 @@ extension ApplePayModule {
         let status: PKPaymentAuthorizationStatus = success ? .success : .failure
         DispatchQueue.main.async {
             handler(PKPaymentAuthorizationResult(status: status, errors: errors))
+        }
+    }
+
+    @available(iOS 15.0, *)
+    @objc
+    func provideCouponCodeUpdate(_ update: NSDictionary) {
+        guard let handler = couponCodeHandler else { return }
+        couponCodeHandler = nil
+        let dict = update as? [String: Any] ?? [:]
+        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
+        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
+        let errors = parseErrors(dict)
+        DispatchQueue.main.async {
+            self.currentShippingMethods = shippingMethods
+            handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
         }
     }
 

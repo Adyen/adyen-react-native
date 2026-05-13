@@ -88,6 +88,12 @@ final class ApplePayModuleUtilitiesTests: XCTestCase {
         XCTAssertNotNil(error)
     }
 
+    @available(iOS 15.0, *)
+    func test_applePayError_couponCode_returnsError() {
+        let error = applePayError(from: ["type": "couponCode", "message": "Invalid coupon"])
+        XCTAssertNotNil(error)
+    }
+
     func test_applePayError_shippingAddress_usesDefaultKey_whenFieldIsNil() {
         let error = applePayError(from: ["type": "shippingAddress", "message": "Error"])
         XCTAssertNotNil(error)

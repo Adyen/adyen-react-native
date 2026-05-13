@@ -17,6 +17,13 @@ internal class ApplePayModule: BaseModuleSender {
     internal var shippingContactHandler: ((PKPaymentRequestShippingContactUpdate) -> Void)?
     internal var shippingMethodHandler: ((PKPaymentRequestShippingMethodUpdate) -> Void)?
     internal var authorizationHandler: ((PKPaymentAuthorizationResult) -> Void)?
+    private var _couponCodeHandler: Any?
+    @available(iOS 15.0, *)
+    internal var couponCodeHandler: ((PKPaymentRequestCouponCodeUpdate) -> Void)? {
+        get { _couponCodeHandler as? (PKPaymentRequestCouponCodeUpdate) -> Void }
+        set { _couponCodeHandler = newValue }
+    }
+
     internal var currentApplePayPayment: ApplePayPayment?
     internal var currentShippingMethods: [PKShippingMethod] = []
 
@@ -62,6 +69,7 @@ internal class ApplePayModule: BaseModuleSender {
     override func cleanUp() {
         shippingContactHandler = nil
         shippingMethodHandler = nil
+        if #available(iOS 15.0, *) { couponCodeHandler = nil }
         authorizationHandler = nil
         currentApplePayPayment = nil
         currentShippingMethods = []
