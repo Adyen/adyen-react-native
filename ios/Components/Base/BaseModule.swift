@@ -99,16 +99,8 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     internal func cleanUp() {
-        BaseModule.session = nil
-        BaseModule.currentModule = nil
-        currentComponent = nil
-
-        guard BaseModule.currentPresenter?.presentedViewController != nil else {
-            BaseModule.currentPresenter = nil
-            return
-        }
-        BaseModule.currentPresenter?.dismiss(animated: true) {
-            BaseModule.currentPresenter = nil
+        ensureMainThread { [weak self] in
+            self?.cleanUpOnMainThread()
         }
     }
 
@@ -133,6 +125,21 @@ internal class BaseModule: RCTEventEmitter {
         }
         return error
     }
+
+    private func cleanUpOnMainThread() {
+        BaseModule.session = nil
+        BaseModule.currentModule = nil
+        currentComponent = nil
+
+        guard BaseModule.currentPresenter?.presentedViewController != nil else {
+            BaseModule.currentPresenter = nil
+            return
+        }
+
+        BaseModule.currentPresenter?.dismiss(animated: true) {
+            BaseModule.currentPresenter = nil
+        }
+    }
 }
 
 extension BaseModule: PresentationDelegate {
@@ -140,7 +147,7 @@ extension BaseModule: PresentationDelegate {
     internal func present(component: PresentableComponent) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            
+
             guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
                 return self.sendError(error: ModuleException.notKeyWindow)
             }
