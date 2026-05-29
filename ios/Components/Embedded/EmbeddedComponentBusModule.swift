@@ -12,6 +12,9 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     static var shared: EmbeddedComponentBusModule?
 
+    // Main-thread-only mutable state. Access these properties via the `*OnMainThread` helpers
+    // or through JS entry points that dispatch with `ensureMainThread(_:)`.
+
     /// Per-viewId delegate proxies
     private var delegates: [String: EmbeddedComponentDelegateProxy] = [:]
 
