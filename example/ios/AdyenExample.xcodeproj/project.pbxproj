@@ -14,6 +14,7 @@
 		82F3A2CBB5BB992B05F32EE3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CF789D357E922939DFD4AED9 /* PrivacyInfo.xcprivacy */; };
 		945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */; };
 		94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */; };
+		E70D4FB42FF77A5D00C09021 /* ThreadingSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */; };
 		E732B0CD2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */; };
 		E741F0FE2E38DECD000D0F42 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */; };
 		E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */; };
@@ -59,6 +60,7 @@
 		948B9B002A83D269003D15B4 /* AdyenExampleTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AdyenExampleTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardConfigurationTests.swift; sourceTree = "<group>"; };
 		CF789D357E922939DFD4AED9 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = AdyenExample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadingSafetyTests.swift; sourceTree = "<group>"; };
 		E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayModuleUtilitiesTests.swift; sourceTree = "<group>"; };
 		E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 				E77961CD2F334E4300728F99 /* BaseAddressLookupTests.swift */,
 				E77961CE2F334E4300728F99 /* BaseModuleSenderTests.swift */,
 				E77961CF2F334E4300728F99 /* MockEmitter.swift */,
+				E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */,
 				E7BBA45B2E8AB9040068997A /* ApplePayModuleTests.swift */,
 				E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */,
 			);
@@ -464,6 +467,7 @@
 				E77961D02F334E4300728F99 /* BaseAddressLookupTests.swift in Sources */,
 				E77961D12F334E4300728F99 /* BaseModuleSenderTests.swift in Sources */,
 				E77961D22F334E4300728F99 /* MockEmitter.swift in Sources */,
+				E70D4FB42FF77A5D00C09021 /* ThreadingSafetyTests.swift in Sources */,
 				94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */,
 				E77D207A2CDBB31900FED3F0 /* AnalyticsParserTests.swift in Sources */,
 				E77D207B2CDBB31900FED3F0 /* RootConfigurationtParserTests.swift in Sources */,
@@ -684,7 +688,7 @@
 					"$(inherited)",
 					" ",
 				);
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_VERSION = 5.0;
@@ -762,7 +766,7 @@
 					"$(inherited)",
 					" ",
 				);
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;
