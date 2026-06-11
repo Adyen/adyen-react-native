@@ -74,7 +74,7 @@ jobs:
   ios-test:
     name: iOS Test
     needs: setup
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
