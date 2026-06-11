@@ -53,8 +53,8 @@
     "start": "rm yarn.lock && yarn && yarn prepare && husky"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.6.0",
-    "@commitlint/config-conventional": "^19.6.0",
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
