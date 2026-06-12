@@ -1,8 +1,6 @@
-import {
-  type NativeModule,
-  type EmitterSubscription,
-  NativeEventEmitter,
-} from 'react-native';
+import { NativeEventEmitter } from 'react-native';
+import type { EventSubscription } from 'react-native';
+import type { NativeModule } from '../base/EventListenerWrapper';
 import {
   Event,
   type AdyenComponent,
@@ -23,14 +21,19 @@ interface SessionNativeModule extends NativeModule, AdyenComponent {
   ): Promise<SessionContext>;
 }
 
+type SessionEventMap = {
+  [Event.onSessionComplete]: [SessionsResult];
+  [Event.onSessionError]: [AdyenError];
+};
+
 export class SessionWrapper implements SessionHelperModule {
   private readonly nativeModule: SessionNativeModule;
-  private readonly eventEmitter: NativeEventEmitter;
-  private readonly subscriptions: Map<string, EmitterSubscription> = new Map();
+  private readonly eventEmitter: NativeEventEmitter<SessionEventMap>;
+  private readonly subscriptions: Map<string, EventSubscription> = new Map();
 
   constructor(nativeModule: SessionNativeModule) {
     this.nativeModule = nativeModule;
-    this.eventEmitter = new NativeEventEmitter(nativeModule);
+    this.eventEmitter = new NativeEventEmitter<SessionEventMap>(nativeModule);
   }
 
   hide(success: boolean, option?: HideOption): void {
@@ -51,7 +54,7 @@ export class SessionWrapper implements SessionHelperModule {
    */
   assignCompletionHandler(
     callback: (result: SessionsResult) => void
-  ): EmitterSubscription {
+  ): EventSubscription {
     this.subscriptions.get(Event.onSessionComplete)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionComplete,
@@ -66,9 +69,7 @@ export class SessionWrapper implements SessionHelperModule {
    * @param callback - Called when the session fails with an error.
    * @returns EmitterSubscription that can be used to remove the listener.
    */
-  assignErrorHandler(
-    callback: (error: AdyenError) => void
-  ): EmitterSubscription {
+  assignErrorHandler(callback: (error: AdyenError) => void): EventSubscription {
     this.subscriptions.get(Event.onSessionError)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionError,

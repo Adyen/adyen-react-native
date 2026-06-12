@@ -6,6 +6,7 @@
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
+    "customConditions": ["react-native-strict-api"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
@@ -15,8 +16,6 @@
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "noImplicitUseStrict": false,
-    "noStrictGenericChecks": false,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -24,8 +23,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
-    "verbatimModuleSyntax": true,
-    "noImplicitAny": true
+    "verbatimModuleSyntax": true
   },
   "include": ["src"],
   "exclude": ["**/__mocks__/*", "**/__tests__/*"]

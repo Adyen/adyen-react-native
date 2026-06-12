@@ -1,4 +1,3 @@
-import type { NativeModule } from 'react-native';
 import type {
   AdyenActionComponent,
   AddressLookup,
@@ -7,7 +6,10 @@ import type {
   PaymentAction,
   Event,
 } from '../../core';
-import type { AdyenEventListener } from '../base/EventListenerWrapper';
+import type {
+  AdyenEventListener,
+  NativeModule,
+} from '../base/EventListenerWrapper';
 import type { EmbeddedComponentBusWrapper } from './EmbeddedComponentBusWrapper';
 
 /**

@@ -1,4 +1,4 @@
-import type { NativeModule } from 'react-native';
+import type { TurboModule } from 'react-native';
 import type {
   BaseConfiguration,
   PaymentAction,
@@ -7,7 +7,7 @@ import type {
 import type { ActionModule } from './AdyenAction';
 
 /** Native module interface specific to Action */
-interface ActionNativeModule extends NativeModule {
+interface ActionNativeModule extends TurboModule {
   handle(
     action: PaymentAction,
     configuration: BaseConfiguration

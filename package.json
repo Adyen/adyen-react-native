@@ -18,11 +18,17 @@
     "payments",
     "components"
   ],
-  "react-native": "src/index.ts",
-  "main": "./lib/commonjs/index.js",
+  "main": "./lib/module/index.js",
   "module": "lib/module/index.js",
-  "source": "./src/index.ts",
   "types": "./lib/typescript/src/index.d.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./lib/typescript/src/index.d.ts",
+      "default": "./lib/module/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "lib",
     "android",
@@ -48,34 +54,38 @@
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "clean": "git clean -fxd",
+    "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "./scripts/set-version.sh && bob build",
     "start": "rm yarn.lock && yarn && yarn prepare && husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
-    "@eslint/compat": "^1.2.7",
-    "@eslint/eslintrc": "^3.3.3",
-    "@eslint/js": "^9.39.2",
+    "@eslint/compat": "^2.1.0",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
     "@expo/config-plugins": "^10.0.2",
-    "@react-native-community/cli": "15.0.1",
-    "@react-native/babel-preset": "^0.78.2",
-    "@react-native/eslint-config": "^0.78.0",
+    "@jest/globals": "^29.7.0",
+    "@react-native/babel-preset": "0.85.0",
+    "@react-native/eslint-config": "0.85.0",
+    "@react-native/jest-preset": "0.85.0",
     "@types/jest": "^29.5.5",
-    "@types/react": "^19.0.0",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.1",
+    "@types/react": "^19.2.0",
+    "del-cli": "^7.0.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jest": "^27.0.1",
-    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-prettier": "^5.5.5",
     "expo-module-scripts": "^4.1.0",
     "husky": "^9.0.11",
     "jest": "^29.7.0",
-    "prettier": "^3.8.1",
-    "react": "19.0.0",
-    "react-native": "0.78.3",
-    "react-native-builder-bob": "^0.40.17",
-    "typescript": "^5.2.2"
+    "prettier": "^3.8.3",
+    "react": "19.2.3",
+    "react-native": "0.85.0",
+    "react-native-builder-bob": "^0.41.0",
+    "react-test-renderer": "19.2.3",
+    "turbo": "^2.9.14",
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "expo": ">=52",
@@ -99,13 +109,22 @@
     "source": "src",
     "output": "lib",
     "targets": [
-      "commonjs",
-      "module",
-      "typescript"
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
     ]
   },
   "jest": {
-    "preset": "react-native",
+    "preset": "@react-native/jest-preset",
     "testPathIgnorePatterns": [
       "e2e-tests"
     ],
@@ -114,6 +133,13 @@
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
     ]
+  },
+  "prettier": {
+    "quoteProps": "consistent",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false
   },
   "packageManager": "yarn@4.13.0",
   "codegenConfig": {

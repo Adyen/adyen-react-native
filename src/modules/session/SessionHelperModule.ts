@@ -1,4 +1,4 @@
-import { NativeModules, type EmitterSubscription } from 'react-native';
+import { NativeModules, type EventSubscription } from 'react-native';
 import type {
   AdyenComponent,
   AdyenError,
@@ -29,16 +29,14 @@ export interface SessionHelperModule extends AdyenComponent {
    */
   assignCompletionHandler(
     callback: (result: SessionsResult) => void
-  ): EmitterSubscription;
+  ): EventSubscription;
 
   /**
    * Subscribe to session error events.
    * @param callback - Called when the session fails with an error.
-   * @returns EmitterSubscription that can be used to remove the listener.
+   * @returns EventSubscription that can be used to remove the listener.
    */
-  assignErrorHandler(
-    callback: (error: AdyenError) => void
-  ): EmitterSubscription;
+  assignErrorHandler(callback: (error: AdyenError) => void): EventSubscription;
 
   /**
    * Remove all session event listeners.
