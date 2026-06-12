@@ -21,19 +21,14 @@ interface SessionNativeModule extends NativeModule, AdyenComponent {
   ): Promise<SessionContext>;
 }
 
-type SessionEventMap = {
-  [Event.onSessionComplete]: [SessionsResult];
-  [Event.onSessionError]: [AdyenError];
-};
-
 export class SessionWrapper implements SessionHelperModule {
   private readonly nativeModule: SessionNativeModule;
-  private readonly eventEmitter: NativeEventEmitter<SessionEventMap>;
+  private readonly eventEmitter: NativeEventEmitter;
   private readonly subscriptions: Map<string, EventSubscription> = new Map();
 
   constructor(nativeModule: SessionNativeModule) {
     this.nativeModule = nativeModule;
-    this.eventEmitter = new NativeEventEmitter<SessionEventMap>(nativeModule);
+    this.eventEmitter = new NativeEventEmitter(nativeModule);
   }
 
   hide(success: boolean, option?: HideOption): void {
@@ -58,7 +53,7 @@ export class SessionWrapper implements SessionHelperModule {
     this.subscriptions.get(Event.onSessionComplete)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionComplete,
-      callback
+      callback as (event: any) => void
     );
     this.subscriptions.set(Event.onSessionComplete, subscription);
     return subscription;
@@ -73,7 +68,7 @@ export class SessionWrapper implements SessionHelperModule {
     this.subscriptions.get(Event.onSessionError)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionError,
-      callback
+      callback as (event: any) => void
     );
     this.subscriptions.set(Event.onSessionError, subscription);
     return subscription;
