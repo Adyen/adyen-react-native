@@ -13,13 +13,13 @@
     "build:ios": "react-native build-ios --mode Debug"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^2.1.2",
-    "@react-navigation/native": "^7.0.9",
-    "@react-navigation/native-stack": "^7.3.3",
+    "@react-native-async-storage/async-storage": "^3.1.0",
+    "@react-navigation/native": "^7.2.4",
+    "@react-navigation/native-stack": "^7.15.1",
     "react": "19.2.3",
     "react-native": "0.85.0",
-    "react-native-safe-area-context": "^5.4.1",
-    "react-native-screens": "4.11.1"
+    "react-native-safe-area-context": "^5.8.0",
+    "react-native-screens": "^4.25.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
