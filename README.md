@@ -3,19 +3,10 @@
 [![Adyen Android](https://img.shields.io/badge/android-v5.19.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.19.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
-> [!Important]
-> **React Native New Architecture Support** </br>
->
-> The **New Architecture** for React Native is exclusively supported on versions **0.76.0 and above**.
->
-> For projects using versions lower than 0.76.0, please:
->
-> - Continue utilizing the **Old Architecture**.
-> - Alternatively, disable bridgeless mode by setting `load(bridgelessEnabled=false)`.
-
-> [!Note]
->
-> For compatibility with officially unsupported versions below v0.74 check [this document](docs/Compatibility.md).
+> [!IMPORTANT]
+> **Requirements**
+> - React Native **0.76 or above** (New Architecture required)
+> - Android: **JDK 17 or above**
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 

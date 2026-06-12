@@ -18,8 +18,10 @@
     "payments",
     "components"
   ],
+  "react-native": "src/index.ts",
   "main": "./lib/module/index.js",
   "module": "lib/module/index.js",
+  "source": "./src/index.ts",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
     ".": {
@@ -90,7 +92,7 @@
   "peerDependencies": {
     "expo": ">=52",
     "react": "*",
-    "react-native": "*"
+    "react-native": ">=0.76.0"
   },
   "peerDependenciesMeta": {
     "expo": {
@@ -128,13 +130,6 @@
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
     ]
-  },
-  "prettier": {
-    "quoteProps": "consistent",
-    "singleQuote": true,
-    "tabWidth": 2,
-    "trailingComma": "es5",
-    "useTabs": false
   },
   "packageManager": "yarn@4.13.0",
   "codegenConfig": {
