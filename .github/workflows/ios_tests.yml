@@ -50,13 +50,8 @@ jobs:
           restore-keys: pods-
 
       - name: Pod install
-        working-directory: example/ios
         run: |
-          if [ "${{ steps.pods-cache.outputs.cache-hit }}" != "true" ]; then
-            pod install --repo-update
-          else
-            pod install
-          fi
+          yarn app pod
 
       - name: Resolve iOS Simulator
         id: simulator
