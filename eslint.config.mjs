@@ -24,6 +24,16 @@ export default defineConfig([
     },
   },
   {
+    // Spec files use deep imports intentionally for backward compatibility
+    // with RN 0.76-0.79, where the top-level import is not supported by
+    // @react-native/babel-plugin-codegen. The deep path is deprecated but
+    // functional across the full supported range (>=0.76).
+    files: ['src/specs/**'],
+    rules: {
+      '@react-native/no-deep-imports': 'off',
+    },
+  },
+  {
     ignores: ['node_modules/', 'lib/'],
   },
 ]);

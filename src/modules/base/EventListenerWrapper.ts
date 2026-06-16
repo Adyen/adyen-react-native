@@ -1,5 +1,13 @@
-import type { NativeModule } from 'react-native';
 import { Event } from '../../core';
+
+/**
+ * Minimal interface compatible with NativeEventEmitter's constructor parameter
+ * (mirrors the internal NativeModule type removed from public react-native exports in 0.85).
+ */
+export type NativeModule = {
+  addListener: (eventType: string) => void;
+  removeListeners: (count: number) => void;
+};
 
 /** Extended NativeModule interface with optional getConstants */
 export interface NativeModuleWithConstants extends NativeModule {

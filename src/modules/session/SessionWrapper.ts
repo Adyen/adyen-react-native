@@ -1,8 +1,6 @@
-import {
-  type NativeModule,
-  type EmitterSubscription,
-  NativeEventEmitter,
-} from 'react-native';
+import { NativeEventEmitter } from 'react-native';
+import type { EventSubscription } from 'react-native';
+import type { NativeModule } from '../base/EventListenerWrapper';
 import {
   Event,
   type AdyenComponent,
@@ -26,7 +24,7 @@ interface SessionNativeModule extends NativeModule, AdyenComponent {
 export class SessionWrapper implements SessionHelperModule {
   private readonly nativeModule: SessionNativeModule;
   private readonly eventEmitter: NativeEventEmitter;
-  private readonly subscriptions: Map<string, EmitterSubscription> = new Map();
+  private readonly subscriptions: Map<string, EventSubscription> = new Map();
 
   constructor(nativeModule: SessionNativeModule) {
     this.nativeModule = nativeModule;
@@ -47,15 +45,15 @@ export class SessionWrapper implements SessionHelperModule {
   /**
    * Subscribe to session completion events.
    * @param callback - Called when the session completes successfully.
-   * @returns EmitterSubscription that can be used to remove the listener.
+   * @returns EventSubscription that can be used to remove the listener.
    */
   assignCompletionHandler(
     callback: (result: SessionsResult) => void
-  ): EmitterSubscription {
+  ): EventSubscription {
     this.subscriptions.get(Event.onSessionComplete)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionComplete,
-      callback
+      callback as (event: any) => void
     );
     this.subscriptions.set(Event.onSessionComplete, subscription);
     return subscription;
@@ -64,15 +62,13 @@ export class SessionWrapper implements SessionHelperModule {
   /**
    * Subscribe to session error events.
    * @param callback - Called when the session fails with an error.
-   * @returns EmitterSubscription that can be used to remove the listener.
+   * @returns EventSubscription that can be used to remove the listener.
    */
-  assignErrorHandler(
-    callback: (error: AdyenError) => void
-  ): EmitterSubscription {
+  assignErrorHandler(callback: (error: AdyenError) => void): EventSubscription {
     this.subscriptions.get(Event.onSessionError)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionError,
-      callback
+      callback as (event: any) => void
     );
     this.subscriptions.set(Event.onSessionError, subscription);
     return subscription;
