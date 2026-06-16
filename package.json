@@ -26,6 +26,7 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
+      "require": "./lib/commonjs/index.js",
       "types": "./lib/typescript/commonjs/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
