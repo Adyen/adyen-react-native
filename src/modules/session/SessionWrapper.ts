@@ -53,7 +53,7 @@ export class SessionWrapper implements SessionHelperModule {
     this.subscriptions.get(Event.onSessionComplete)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionComplete,
-      callback as (event: any) => void
+      (event) => callback(event)
     );
     this.subscriptions.set(Event.onSessionComplete, subscription);
     return subscription;
@@ -68,7 +68,7 @@ export class SessionWrapper implements SessionHelperModule {
     this.subscriptions.get(Event.onSessionError)?.remove();
     const subscription = this.eventEmitter.addListener(
       Event.onSessionError,
-      callback as (event: any) => void
+      (event) => callback(event)
     );
     this.subscriptions.set(Event.onSessionError, subscription);
     return subscription;
