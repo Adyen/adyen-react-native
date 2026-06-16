@@ -19,14 +19,14 @@
     "components"
   ],
   "react-native": "src/index.ts",
-  "main": "./lib/module/index.js",
+  "main": "./lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "source": "./src/index.ts",
-  "types": "./lib/typescript/src/index.d.ts",
+  "types": "./lib/typescript/commonjs/src/index.d.ts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./lib/typescript/src/index.d.ts",
+      "types": "./lib/typescript/commonjs/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
     "./package.json": "./package.json"
@@ -111,6 +111,7 @@
     "source": "src",
     "output": "lib",
     "targets": [
+      "commonjs",
       [
         "module",
         {
