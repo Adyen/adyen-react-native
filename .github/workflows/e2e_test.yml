@@ -158,6 +158,8 @@ jobs:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
       ANDROID_API_LEVEL: 35
+      APPIUM_VERSION: '3.4.2'
+      APPIUM_UIAUTOMATOR2_VERSION: '7.5.2'
 
     steps:
       - name: Download Fixture
@@ -177,8 +179,8 @@ jobs:
 
       - name: Setup Appium
         run: |
-          npm i -g appium
-          appium driver install uiautomator2
+          npm i -g appium@${{ env.APPIUM_VERSION }}
+          appium driver install uiautomator2@${{ env.APPIUM_UIAUTOMATOR2_VERSION }}
 
       - name: Start Appium
         run: bash ./start_appium.sh 4723 30

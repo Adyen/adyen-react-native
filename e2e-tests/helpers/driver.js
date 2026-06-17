@@ -36,6 +36,8 @@ async function createDriver() {
         'appium:appPackage': androidAppPackage,
         'appium:appActivity': androidAppActivity,
         'appium:newCommandTimeout': 120,
+        'appium:uiautomator2ServerInstallTimeout': 60000,
+        'appium:uiautomator2ServerLaunchTimeout': 60000,
       }
     : {
         'platformName': 'iOS',
