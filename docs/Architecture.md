@@ -97,7 +97,7 @@ src/
 Supported events are read from the native module's `getConstants().supportedEvents` at construction time.
 
 ```
-NativeModule (react-native)
+NativeModule (local interface, extends TurboModule)
     │
     ▼
 EventListenerWrapper<T>                                      # Abstract - manages event subscriptions
@@ -164,8 +164,8 @@ ActionModuleWrapper                                          # implements Action
 SessionWrapper                                               # implements SessionHelperModule
     - createSession(session, config) → Promise<SessionContext>
     - hide(success, option?)
-    - onComplete(callback) → EmitterSubscription
-    - onError(callback) → EmitterSubscription
+    - assignCompletionHandler(callback) → EventSubscription
+    - assignErrorHandler(callback) → EventSubscription
     - removeAllListeners()
 
 AdyenCSEModuleWrapper                                        # implements AdyenCSEModule
