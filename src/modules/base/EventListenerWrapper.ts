@@ -1,5 +1,14 @@
-import type { NativeModule } from 'react-native';
+import type { TurboModule } from 'react-native';
 import { Event } from '../../core';
+
+/**
+ * Minimal interface for native modules used as NativeEventEmitter sources.
+ * Extends TurboModule (New Architecture) and adds the event emitter contract.
+ */
+export interface NativeModule extends TurboModule {
+  addListener: (eventType: string) => void;
+  removeListeners: (count: number) => void;
+}
 
 /** Extended NativeModule interface with optional getConstants */
 export interface NativeModuleWithConstants extends NativeModule {
