@@ -53,12 +53,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['0.76.8', '0.85.3']
+        include:
+          - version: '0.76.8'
+            node-version: '20'
+          - version: '0.85.3'
+            node-version: '22'
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'react-native'
       version: ${{ matrix.version }}
-      node-version: ${{ vars.NODE_VERSION }}
+      node-version: ${{ matrix.node-version }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
