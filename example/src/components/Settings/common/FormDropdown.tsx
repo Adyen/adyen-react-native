@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   TouchableOpacity,
   Pressable,
@@ -36,31 +36,37 @@ const FormDropdown = <T extends string>({
     : Colors.textBackgroundLight;
   const textColor = isDarkMode ? Colors.textDark : Colors.textLight;
 
-  const handleClose = () => setVisible(false);
+  const handleClose = useCallback(() => setVisible(false), []);
 
-  const handleSelect = (item: T) => {
-    onChange(item);
-    handleClose();
-  };
+  const handleSelect = useCallback(
+    (item: T) => {
+      onChange(item);
+      handleClose();
+    },
+    [onChange, handleClose]
+  );
 
-  const renderItem = ({ item }: { item: T }) => (
-    <TouchableOpacity
-      style={[
-        Styles.dropdownItem,
-        item === value && Styles.dropdownItemSelected,
-      ]}
-      onPress={() => handleSelect(item)}
-    >
-      <AdaptiveText
+  const renderItem = useCallback(
+    ({ item }: { item: T }) => (
+      <TouchableOpacity
         style={[
-          Styles.dropdownText,
-          { color: textColor },
-          item === value && Styles.dropdownItemSelectedText,
+          Styles.dropdownItem,
+          item === value && Styles.dropdownItemSelected,
         ]}
+        onPress={() => handleSelect(item)}
       >
-        {labelExtractor(item)}
-      </AdaptiveText>
-    </TouchableOpacity>
+        <AdaptiveText
+          style={[
+            Styles.dropdownText,
+            { color: textColor },
+            item === value && Styles.dropdownItemSelectedText,
+          ]}
+        >
+          {labelExtractor(item)}
+        </AdaptiveText>
+      </TouchableOpacity>
+    ),
+    [value, textColor, labelExtractor, handleSelect]
   );
 
   return (

@@ -44,7 +44,7 @@ const FormSearchDropdown = <T extends string>({
     if (!searchQuery) return options;
     const query = searchQuery.toLowerCase();
     return options.filter((item) =>
-      labelExtractor(item).toLowerCase().includes(query)
+      (labelExtractor(item) ?? '').toLowerCase().includes(query)
     );
   }, [options, searchQuery, labelExtractor]);
 
@@ -124,6 +124,7 @@ const FormSearchDropdown = <T extends string>({
             renderItem={renderItem}
             style={Styles.fullScreenList}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           />
         </SafeAreaView>
       </Modal>
