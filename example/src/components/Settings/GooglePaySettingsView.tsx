@@ -3,7 +3,7 @@ import { Button, ScrollView, View } from 'react-native';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
-import FormDropdown from '../common/FormDropdown';
+import FormDropdown from './common/FormDropdown';
 import type { GooglePaySettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';

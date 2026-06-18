@@ -4,7 +4,7 @@ import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormTextInput from '../common/FormTextInput';
-import FormDropdown from '../common/FormDropdown';
+import FormDropdown from './common/FormDropdown';
 import { ENVIRONMENT } from '../../Configuration';
 import type { ApplePaySettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';

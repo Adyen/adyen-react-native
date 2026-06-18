@@ -4,7 +4,7 @@ import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import { Button, ScrollView, TouchableOpacity, View } from 'react-native';
 import FormTextInput from '../common/FormTextInput';
-import FormDropdown from '../common/FormDropdown';
+import FormSearchDropdown from './common/FormSearchDropdown';
 import AdaptiveText from '../common/AdaptiveText';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
@@ -66,13 +66,12 @@ const SettingView = ({ navigation }: Props) => {
       style={Styles.page}
       contentContainerStyle={{ paddingBottom: insets.bottom }}
     >
-      <FormDropdown
+      <FormSearchDropdown
         title="Country"
         value={countryCode}
         options={COUNTRY_CODES}
         onChange={setCountryCode}
         labelExtractor={getCountryLabel}
-        fullScreen
       />
       <FormTextInput
         title="Amount"
