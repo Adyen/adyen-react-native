@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import { Button, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -53,13 +54,18 @@ const SettingView = ({ navigation }: Props) => {
     ]
   );
 
+  const insets = useSafeAreaInsets();
+
   const saveAndClose = useCallback(() => {
     save(settings);
     navigateToRoot();
   }, [settings, save, navigateToRoot]);
 
   return (
-    <ScrollView style={Styles.page}>
+    <ScrollView
+      style={Styles.page}
+      contentContainerStyle={{ paddingBottom: insets.bottom }}
+    >
       <FormDropdown
         title="Country"
         value={countryCode}
