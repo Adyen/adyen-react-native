@@ -16,7 +16,7 @@ const defaultLabelExtractor = (v: string): string => v;
 type FormDropdownProps<T extends string> = {
   title: string;
   value: T;
-  options: T[];
+  options: readonly T[];
   onChange: (value: T) => void;
   labelExtractor?: (value: T) => string;
 };
