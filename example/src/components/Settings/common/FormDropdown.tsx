@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   TouchableOpacity,
+  Pressable,
   Modal,
   FlatList,
   useColorScheme,
@@ -9,6 +10,8 @@ import Styles from '../../common/Styles';
 import AdaptiveText from '../../common/AdaptiveText';
 import Colors from '../../common/Assets';
 import DropdownTrigger from './DropdownTrigger';
+
+const defaultLabelExtractor = (v: string): string => v;
 
 type FormDropdownProps<T extends string> = {
   title: string;
@@ -23,7 +26,7 @@ const FormDropdown = <T extends string>({
   value,
   options,
   onChange,
-  labelExtractor = (v) => v,
+  labelExtractor = defaultLabelExtractor,
 }: FormDropdownProps<T>) => {
   const [visible, setVisible] = useState(false);
   const isDarkMode = useColorScheme() === 'dark';
@@ -72,13 +75,8 @@ const FormDropdown = <T extends string>({
         animationType="fade"
         onRequestClose={handleClose}
       >
-        <TouchableOpacity
-          style={Styles.dropdownOverlay}
-          activeOpacity={1}
-          onPress={handleClose}
-        >
-          <TouchableOpacity
-            activeOpacity={1}
+        <Pressable style={Styles.dropdownOverlay} onPress={handleClose}>
+          <Pressable
             onPress={() => {}}
             style={[Styles.dropdownMenu, { backgroundColor }]}
           >
@@ -87,8 +85,8 @@ const FormDropdown = <T extends string>({
               keyExtractor={(item) => item}
               renderItem={renderItem}
             />
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
     </DropdownTrigger>
   );

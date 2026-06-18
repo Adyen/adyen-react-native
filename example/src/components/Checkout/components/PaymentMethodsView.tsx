@@ -38,7 +38,9 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom }}>
+    <ScrollView
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
+    >
       {showDropIn && <DropInButton />}
 
       {showEmbeddedComponents && (

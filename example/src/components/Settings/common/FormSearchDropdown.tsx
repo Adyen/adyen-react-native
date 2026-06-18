@@ -1,17 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   TouchableOpacity,
   Modal,
   FlatList,
   TextInput,
-  SafeAreaView,
   View,
   useColorScheme,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Styles from '../../common/Styles';
 import AdaptiveText from '../../common/AdaptiveText';
 import Colors from '../../common/Assets';
 import DropdownTrigger from './DropdownTrigger';
+
+const defaultLabelExtractor = (v: string): string => v;
 
 type FormSearchDropdownProps<T extends string> = {
   title: string;
@@ -26,7 +28,7 @@ const FormSearchDropdown = <T extends string>({
   value,
   options,
   onChange,
-  labelExtractor = (v) => v,
+  labelExtractor = defaultLabelExtractor,
 }: FormSearchDropdownProps<T>) => {
   const [visible, setVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,34 +48,40 @@ const FormSearchDropdown = <T extends string>({
     );
   }, [options, searchQuery, labelExtractor]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setVisible(false);
     setSearchQuery('');
-  };
+  }, []);
 
-  const handleSelect = (item: T) => {
-    onChange(item);
-    handleClose();
-  };
+  const handleSelect = useCallback(
+    (item: T) => {
+      onChange(item);
+      handleClose();
+    },
+    [onChange, handleClose]
+  );
 
-  const renderItem = ({ item }: { item: T }) => (
-    <TouchableOpacity
-      style={[
-        Styles.dropdownItem,
-        item === value && Styles.dropdownItemSelected,
-      ]}
-      onPress={() => handleSelect(item)}
-    >
-      <AdaptiveText
+  const renderItem = useCallback(
+    ({ item }: { item: T }) => (
+      <TouchableOpacity
         style={[
-          Styles.dropdownText,
-          { color: textColor },
-          item === value && Styles.dropdownItemSelectedText,
+          Styles.dropdownItem,
+          item === value && Styles.dropdownItemSelected,
         ]}
+        onPress={() => handleSelect(item)}
       >
-        {labelExtractor(item)}
-      </AdaptiveText>
-    </TouchableOpacity>
+        <AdaptiveText
+          style={[
+            Styles.dropdownText,
+            { color: textColor },
+            item === value && Styles.dropdownItemSelectedText,
+          ]}
+        >
+          {labelExtractor(item)}
+        </AdaptiveText>
+      </TouchableOpacity>
+    ),
+    [value, textColor, labelExtractor, handleSelect]
   );
 
   return (

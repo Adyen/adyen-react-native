@@ -64,7 +64,7 @@ const SettingView = ({ navigation }: Props) => {
   return (
     <ScrollView
       style={Styles.page}
-      contentContainerStyle={{ paddingBottom: insets.bottom }}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
     >
       <FormSearchDropdown
         title="Country"
