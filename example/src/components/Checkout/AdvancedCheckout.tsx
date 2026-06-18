@@ -123,6 +123,7 @@ const AdvancedCheckout = () => {
           showDropIn={true}
           showEmbeddedComponents={true}
           showDropBasedComponents={true}
+          showInstant={true}
         />
       </AdyenCheckout>
     </View>

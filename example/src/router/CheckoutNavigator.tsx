@@ -12,6 +12,7 @@ export type CheckoutStackParamList = {
     showDropIn?: boolean;
     showEmbeddedComponents?: boolean;
     showDropBasedComponents?: boolean;
+    showInstant?: boolean;
   };
   CardForm: undefined;
 };
@@ -26,11 +27,17 @@ export interface CheckoutNavigatorProps {
   showDropIn?: boolean;
   showEmbeddedComponents?: boolean;
   showDropBasedComponents?: boolean;
+  showInstant?: boolean;
 }
 
 // Generic Checkout Navigator with CardForm modal
 export const CheckoutNavigator = (prop: CheckoutNavigatorProps) => {
-  const { showDropIn, showEmbeddedComponents, showDropBasedComponents } = prop;
+  const {
+    showDropIn,
+    showEmbeddedComponents,
+    showDropBasedComponents,
+    showInstant,
+  } = prop;
 
   return (
     <CheckoutStack.Navigator>
@@ -41,6 +48,7 @@ export const CheckoutNavigator = (prop: CheckoutNavigatorProps) => {
           showDropIn,
           showEmbeddedComponents,
           showDropBasedComponents,
+          showInstant,
         }}
         options={{ headerShown: false }}
       />
