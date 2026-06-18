@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Button, ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button, View } from 'react-native';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormDropdown from './common/FormDropdown';
+import PageScrollView from '../common/PageScrollView';
 import type { GooglePaySettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
@@ -22,7 +22,6 @@ const totalPriceStatuses = [
 
 const GooglePaySettingsView = ({ navigation }: Props) => {
   const { configuration, update } = useAppContext();
-  const insets = useSafeAreaInsets();
   const existing = configuration.googlePaySettings ?? {};
 
   const [allowPrepaidCards, setAllowPrepaidCards] = useState(
@@ -72,10 +71,7 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
   ]);
 
   return (
-    <ScrollView
-      style={Styles.page}
-      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
-    >
+    <PageScrollView>
       <FormToggle
         title="Allow Prepaid Cards"
         value={allowPrepaidCards}
@@ -115,7 +111,7 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />
       </View>
-    </ScrollView>
+    </PageScrollView>
   );
 };
 

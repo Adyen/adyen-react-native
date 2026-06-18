@@ -1,6 +1,6 @@
 import { useAdyenCheckout } from '@adyen/react-native';
-import { Text, ScrollView, ActivityIndicator } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, ActivityIndicator } from 'react-native';
+import PageScrollView from '../../common/PageScrollView';
 import PaymentMethodsList from './PaymentMethodsList';
 import DropInButton from './DropInButton';
 import PlatformPayButton from './PlatformPayButton';
@@ -21,7 +21,6 @@ export type PaymentMethodsProps = NativeStackScreenProps<
 
 const PaymentMethods = (prop: PaymentMethodsProps) => {
   const { isReady, paymentMethods } = useAdyenCheckout();
-  const insets = useSafeAreaInsets();
 
   const showDropIn = prop.route.params?.showDropIn ?? false;
   const showEmbeddedComponents =
@@ -38,9 +37,7 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
-    >
+    <PageScrollView>
       {showDropIn && <DropInButton />}
 
       {showEmbeddedComponents && (
@@ -57,7 +54,7 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
       {showDropinBasedComponents && (
         <PaymentMethodsList paymentMethods={paymentMethods.paymentMethods} />
       )}
-    </ScrollView>
+    </PageScrollView>
   );
 };
 

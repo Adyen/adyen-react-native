@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Button, ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button, View } from 'react-native';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormTextInput from '../common/FormTextInput';
+import PageScrollView from '../common/PageScrollView';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
 
@@ -12,7 +12,6 @@ type Props = NativeStackScreenProps<SettingsStackParamList, 'DropInSettings'>;
 
 const DropInSettingsView = ({ navigation }: Props) => {
   const { configuration, update } = useAppContext();
-  const insets = useSafeAreaInsets();
   const existing = configuration.dropInSettings ?? {};
 
   const [showPreselected, setShowPreselected] = useState(
@@ -46,10 +45,7 @@ const DropInSettingsView = ({ navigation }: Props) => {
   ]);
 
   return (
-    <ScrollView
-      style={Styles.page}
-      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
-    >
+    <PageScrollView>
       <FormToggle
         title="Show Preselected Stored Payment"
         value={showPreselected}
@@ -74,7 +70,7 @@ const DropInSettingsView = ({ navigation }: Props) => {
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />
       </View>
-    </ScrollView>
+    </PageScrollView>
   );
 };
 

@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
-import { Button, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Button, TouchableOpacity, View } from 'react-native';
 import FormTextInput from '../common/FormTextInput';
 import FormSearchDropdown from './common/FormSearchDropdown';
+import PageScrollView from '../common/PageScrollView';
 import AdaptiveText from '../common/AdaptiveText';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
@@ -54,18 +54,13 @@ const SettingView = ({ navigation }: Props) => {
     ]
   );
 
-  const insets = useSafeAreaInsets();
-
   const saveAndClose = useCallback(() => {
     save(settings);
     navigateToRoot();
   }, [settings, save, navigateToRoot]);
 
   return (
-    <ScrollView
-      style={Styles.page}
-      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
-    >
+    <PageScrollView>
       <FormSearchDropdown
         title="Country"
         value={countryCode}
@@ -135,7 +130,7 @@ const SettingView = ({ navigation }: Props) => {
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndClose} />
       </View>
-    </ScrollView>
+    </PageScrollView>
   );
 };
 
