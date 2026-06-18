@@ -87,6 +87,9 @@ const FormDropdown = <T extends string>({
         <AdaptiveText style={Styles.dropdownText}>
           {labelExtractor(value)}
         </AdaptiveText>
+        <AdaptiveText style={[Styles.dropdownText, { color: textColor }]}>
+          {'\u203a'}
+        </AdaptiveText>
       </TouchableOpacity>
       <Modal
         visible={visible}
@@ -137,13 +140,17 @@ const FormDropdown = <T extends string>({
             activeOpacity={1}
             onPress={handleClose}
           >
-            <View style={[Styles.dropdownMenu, { backgroundColor }]}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => {}}
+              style={[Styles.dropdownMenu, { backgroundColor }]}
+            >
               <FlatList
                 data={options}
                 keyExtractor={(item) => item}
                 renderItem={renderItem}
               />
-            </View>
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
       </Modal>
