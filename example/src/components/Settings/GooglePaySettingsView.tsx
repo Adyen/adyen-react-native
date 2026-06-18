@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Button, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
@@ -21,6 +22,7 @@ const totalPriceStatuses = [
 
 const GooglePaySettingsView = ({ navigation }: Props) => {
   const { configuration, update } = useAppContext();
+  const insets = useSafeAreaInsets();
   const existing = configuration.googlePaySettings ?? {};
 
   const [allowPrepaidCards, setAllowPrepaidCards] = useState(
@@ -70,7 +72,10 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
   ]);
 
   return (
-    <ScrollView style={Styles.page}>
+    <ScrollView
+      style={Styles.page}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
+    >
       <FormToggle
         title="Allow Prepaid Cards"
         value={allowPrepaidCards}

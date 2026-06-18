@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Button, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
@@ -15,6 +16,7 @@ const fieldVisibilities = ['show', 'hide'] as const;
 
 const CardSettingsView = ({ navigation }: Props) => {
   const { configuration, update } = useAppContext();
+  const insets = useSafeAreaInsets();
   const existing = configuration.cardSettings ?? {};
 
   const [holderNameRequired, setHolderNameRequired] = useState(
@@ -73,7 +75,10 @@ const CardSettingsView = ({ navigation }: Props) => {
   ]);
 
   return (
-    <ScrollView style={Styles.page}>
+    <ScrollView
+      style={Styles.page}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
+    >
       <FormToggle
         title="Holder Name Required"
         value={holderNameRequired}

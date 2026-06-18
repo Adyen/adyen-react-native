@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Button, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
@@ -11,6 +12,7 @@ type Props = NativeStackScreenProps<SettingsStackParamList, 'DropInSettings'>;
 
 const DropInSettingsView = ({ navigation }: Props) => {
   const { configuration, update } = useAppContext();
+  const insets = useSafeAreaInsets();
   const existing = configuration.dropInSettings ?? {};
 
   const [showPreselected, setShowPreselected] = useState(
@@ -44,7 +46,10 @@ const DropInSettingsView = ({ navigation }: Props) => {
   ]);
 
   return (
-    <ScrollView style={Styles.page}>
+    <ScrollView
+      style={Styles.page}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
+    >
       <FormToggle
         title="Show Preselected Stored Payment"
         value={showPreselected}

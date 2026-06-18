@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Button, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
@@ -21,6 +22,7 @@ const shippingTypes = [
 
 const ApplePaySettingsView = ({ navigation }: Props) => {
   const { configuration, update } = useAppContext();
+  const insets = useSafeAreaInsets();
   const existing = configuration.applePaySettings ?? {};
 
   const [merchantID, setMerchantID] = useState(
@@ -54,7 +56,10 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
   ]);
 
   return (
-    <ScrollView style={Styles.page}>
+    <ScrollView
+      style={Styles.page}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
+    >
       <FormTextInput
         title="Merchant ID"
         value={merchantID}
