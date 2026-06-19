@@ -18,7 +18,7 @@ import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragme
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
 import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
 
-class PayByBankFragment(
+class PayByBankUSFragment(
   configuration: CheckoutConfiguration,
   paymentMethod: PaymentMethod,
   session: CheckoutSession?,
@@ -52,9 +52,9 @@ class PayByBankFragment(
     )
 
   companion object : IInstantFragment by InstantFragmentDelegate(
-    "PayByBankFragment",
-    ::PayByBankFragment,
+    "PayByBankUSFragment",
+    ::PayByBankUSFragment,
   ) {
-    internal const val TAG = "PayByBankFragment"
+    internal const val TAG = "PayByBankUSFragment"
   }
 }

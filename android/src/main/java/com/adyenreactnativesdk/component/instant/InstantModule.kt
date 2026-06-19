@@ -14,7 +14,8 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
 import com.adyenreactnativesdk.component.instant.fragment.IdealFragment
 import com.adyenreactnativesdk.component.instant.fragment.InstantFragment
-import com.adyenreactnativesdk.component.instant.fragment.PayByBankFragment
+import com.adyenreactnativesdk.component.instant.fragment.PayByBankGlobalFragment
+import com.adyenreactnativesdk.component.instant.fragment.PayByBankUSFragment
 import com.adyenreactnativesdk.component.instant.fragment.TwintFragment
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.messaging.MessageBus
@@ -57,7 +58,8 @@ class InstantModule(
     fragment =
       when (paymentMethod.type) {
         PaymentMethodTypes.IDEAL -> IdealFragment
-        PaymentMethodTypes.PAY_BY_BANK_US -> PayByBankFragment
+        PaymentMethodTypes.PAY_BY_BANK -> PayByBankGlobalFragment
+        PaymentMethodTypes.PAY_BY_BANK_US -> PayByBankUSFragment
         PaymentMethodTypes.TWINT -> TwintFragment
         else -> InstantFragment
       }
