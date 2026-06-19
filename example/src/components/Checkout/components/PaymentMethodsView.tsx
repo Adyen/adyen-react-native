@@ -34,6 +34,10 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
     prop.route.params?.showDropBasedComponents ?? false;
   const showInstant = prop.route.params?.showInstant ?? false;
 
+  if (!paymentMethods) {
+    return <Text>No payment methods available</Text>;
+  }
+
   const nonNativeMethods = paymentMethods?.paymentMethods.filter(
     (pm) =>
       !NATIVE_COMPONENTS.includes(pm.type) &&
@@ -45,10 +49,6 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
 
   if (!isReady) {
     return <ActivityIndicator />;
-  }
-
-  if (!paymentMethods) {
-    return <Text>No payment methods available</Text>;
   }
 
   return (

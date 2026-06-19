@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk.component.base.instant
 
 import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -51,6 +52,11 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
     super.onCreateDialog(savedInstanceState).also {
       it.setCanceledOnTouchOutside(false)
     }
+
+  override fun onCancel(dialog: DialogInterface) {
+    super.onCancel(dialog)
+    viewModel.cancel()
+  }
 
   override fun onCreateView(
     inflater: LayoutInflater,
