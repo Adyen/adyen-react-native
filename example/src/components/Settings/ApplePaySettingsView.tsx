@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Button, ScrollView, View } from 'react-native';
+import { Button, View } from 'react-native';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormTextInput from '../common/FormTextInput';
-import FormDropdown from '../common/FormDropdown';
+import FormDropdown from './common/FormDropdown';
+import PageScrollView from '../common/PageScrollView';
 import { ENVIRONMENT } from '../../Configuration';
 import type { ApplePaySettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -54,7 +55,7 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
   ]);
 
   return (
-    <ScrollView style={Styles.page}>
+    <PageScrollView>
       <FormTextInput
         title="Merchant ID"
         value={merchantID}
@@ -79,7 +80,7 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />
       </View>
-    </ScrollView>
+    </PageScrollView>
   );
 };
 
