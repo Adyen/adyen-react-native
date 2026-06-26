@@ -17,7 +17,16 @@ internal class BaseModule: RCTEventEmitter {
     internal static var session: AdyenSession?
     internal weak static var sessionDelegate: SessionErrorDelegate?
     internal weak static var currentModule: BaseModule?
-    internal static var currentPresenter: UIViewController?
+
+    /// Stack of view controllers that have presented payment UI.
+    /// Appended to on each `present(component:)` call; cleared on cleanup.
+    /// Dismissing from the first entry cascades through the whole chain.
+    internal static var presenterStack: [UIViewController] = []
+
+    /// The most-recently-added presenter (used when deciding where to present next).
+    internal static var currentPresenter: UIViewController? {
+        presenterStack.last
+    }
 
     internal var currentComponent: Component?
 
@@ -105,7 +114,7 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     internal func dismiss(_ result: Bool) {
-        DispatchQueue.main.async { [weak self] in
+        ensureMainThread { [weak self] in
             guard let self else { return }
             if let component = self.currentComponent {
                 component.finalizeIfNeeded(with: result) {
@@ -131,14 +140,11 @@ internal class BaseModule: RCTEventEmitter {
         BaseModule.currentModule = nil
         currentComponent = nil
 
-        guard BaseModule.currentPresenter?.presentedViewController != nil else {
-            BaseModule.currentPresenter = nil
-            return
-        }
+        let root = BaseModule.presenterStack.first
+        BaseModule.presenterStack.removeAll()
 
-        BaseModule.currentPresenter?.dismiss(animated: true) {
-            BaseModule.currentPresenter = nil
-        }
+        guard root?.presentedViewController != nil else { return }
+        root?.dismiss(animated: true)
     }
 }
 
@@ -148,12 +154,17 @@ extension BaseModule: PresentationDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            guard let presenter = BaseModule.currentPresenter ?? UIViewController.topPresenter else {
+            let presenter: UIViewController
+            if let currentPResenter = BaseModule.currentPresenter {
+                presenter = currentPResenter
+            } else if let topPresenter = UIViewController.topPresenter {
+                presenter = topPresenter
+                BaseModule.presenterStack.append(topPresenter)
+            } else {
                 return self.sendError(error: ModuleException.notKeyWindow)
             }
 
             defer {
-                BaseModule.currentPresenter = presenter
                 BaseModule.currentModule = self
             }
 
@@ -168,6 +179,7 @@ extension BaseModule: PresentationDelegate {
             }
 
             presenter.present(viewController, animated: true)
+            BaseModule.presenterStack.append(viewController)
         }
     }
 

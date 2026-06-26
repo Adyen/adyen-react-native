@@ -28,13 +28,33 @@ internal final class InstantModule: BaseActionModule {
 
         createActionHandlerIfNeeded(context: context, locale: locale)
 
-        let component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
+        let component: PaymentComponent
+        switch paymentMethod {
+        case let bankMethod as PayByBankUSPaymentMethod:
+            component = PayByBankUSComponent(paymentMethod: bankMethod, context: context)
+        case let issuerMethod as IssuerListPaymentMethod:
+            component = IssuerListComponent(paymentMethod: issuerMethod, context: context)
+        default:
+            component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
+        }
+
         component.delegate = BaseModule.session ?? self
         currentComponent = component
 
-        DispatchQueue.main.async {
-            component.initiatePayment()
+        if let instantComponent = component as? InstantPaymentComponent {
+            DispatchQueue.main.async {
+                instantComponent.initiatePayment()
+            }
+        } else if let presentableCompomponent = component as? PresentableComponent {
+            present(component: presentableCompomponent)
         }
+    }
+
+    // MARK: - Presentation
+
+    @objc private func closeButtonPressed() {
+        sendError(error: ModuleException.canceled)
+        dismiss(false)
     }
 
 }
