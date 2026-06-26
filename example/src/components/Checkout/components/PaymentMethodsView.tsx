@@ -34,6 +34,10 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
     prop.route.params?.showDropBasedComponents ?? false;
   const showInstant = prop.route.params?.showInstant ?? false;
 
+  if (!isReady) {
+    return <ActivityIndicator />;
+  }
+
   if (!paymentMethods) {
     return <Text>No payment methods available</Text>;
   }
@@ -46,10 +50,6 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
   const nativeMethods = paymentMethods?.paymentMethods.filter((pm) =>
     NATIVE_COMPONENTS.includes(pm.type)
   );
-
-  if (!isReady) {
-    return <ActivityIndicator />;
-  }
 
   return (
     <PageScrollView>
