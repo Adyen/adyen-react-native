@@ -50,11 +50,4 @@ internal final class InstantModule: BaseActionModule {
         }
     }
 
-    // MARK: - Presentation
-
-    @objc private func closeButtonPressed() {
-        sendError(error: ModuleException.canceled)
-        dismiss(false)
-    }
-
 }
