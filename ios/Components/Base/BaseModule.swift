@@ -155,8 +155,8 @@ extension BaseModule: PresentationDelegate {
             guard let self else { return }
 
             let presenter: UIViewController
-            if let currentPResenter = BaseModule.currentPresenter {
-                presenter = currentPResenter
+            if let currentPresenter = BaseModule.currentPresenter {
+                presenter = currentPresenter
             } else if let topPresenter = UIViewController.topPresenter {
                 presenter = topPresenter
                 BaseModule.presenterStack.append(topPresenter)
