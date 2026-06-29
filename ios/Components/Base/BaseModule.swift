@@ -28,6 +28,10 @@ internal class BaseModule: RCTEventEmitter {
         presenterStack.last
     }
 
+    /// Resolves the topmost view controller when the presenter stack is empty.
+    /// Defaults to `UIViewController.topPresenter`; override in tests to inject a mock.
+    internal static var topPresenterProvider: @MainActor () -> UIViewController? = { UIViewController.topPresenter }
+
     internal var currentComponent: Component?
 
     #if DEBUG
@@ -151,13 +155,13 @@ internal class BaseModule: RCTEventEmitter {
 extension BaseModule: PresentationDelegate {
 
     internal func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.async { @MainActor [weak self] in
             guard let self else { return }
 
             let presenter: UIViewController
             if let currentPresenter = BaseModule.currentPresenter {
                 presenter = currentPresenter
-            } else if let topPresenter = UIViewController.topPresenter {
+            } else if let topPresenter = BaseModule.topPresenterProvider() {
                 presenter = topPresenter
                 BaseModule.presenterStack.append(topPresenter)
             } else {
