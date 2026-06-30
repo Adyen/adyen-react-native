@@ -7,6 +7,7 @@ import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.dropin.dropIn
 import com.adyen.checkout.giftcard.giftCard
 import com.adyen.checkout.googlepay.googlePay
+import com.adyen.checkout.twint.twint
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.facebook.react.bridge.ReadableMap
 
@@ -47,6 +48,9 @@ object CheckoutConfigurationFactory {
       giftCard {
         val parser = PartialPaymentParser(json)
         setPinRequired(parser.pinRequired)
+      }
+      twint {
+        showStorePaymentField = false
       }
     }
   }
