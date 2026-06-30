@@ -55,14 +55,7 @@ class InstantModule(
       return sendError(e)
     }
 
-    fragment =
-      when (paymentMethod.type) {
-        PaymentMethodTypes.IDEAL -> IdealFragment
-        PaymentMethodTypes.PAY_BY_BANK -> PayByBankGlobalFragment
-        PaymentMethodTypes.PAY_BY_BANK_US -> PayByBankUSFragment
-        PaymentMethodTypes.TWINT -> TwintFragment
-        else -> InstantFragment
-      }
+    fragment = fragmentForType(paymentMethod.type)
 
     currentModule = this
     fragment?.show(
@@ -96,5 +89,14 @@ class InstantModule(
   companion object {
     private const val COMPONENT_NAME = "AdyenInstant"
     private var fragment: IInstantFragment? = null
+
+    internal fun fragmentForType(type: String?): IInstantFragment =
+      when (type) {
+        PaymentMethodTypes.IDEAL -> IdealFragment
+        PaymentMethodTypes.PAY_BY_BANK -> PayByBankGlobalFragment
+        PaymentMethodTypes.PAY_BY_BANK_US -> PayByBankUSFragment
+        PaymentMethodTypes.TWINT -> TwintFragment
+        else -> InstantFragment
+      }
   }
 }
