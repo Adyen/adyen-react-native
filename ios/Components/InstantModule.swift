@@ -12,6 +12,28 @@ import React
 @objc(AdyenInstant)
 internal final class InstantModule: BaseActionModule {
 
+    // MARK: - Internal
+
+    internal enum Flow {
+        case payByBankUS(PayByBankUSPaymentMethod)
+        case issuerList(IssuerListPaymentMethod)
+        case instant(PaymentMethod)
+    }
+
+    /// Maps a `PaymentMethod` to the matching `Flow`. Pure logic — no context required.
+    internal static func flow(for paymentMethod: PaymentMethod) -> Flow {
+        switch paymentMethod {
+        case let bankMethod as PayByBankUSPaymentMethod:
+            return .payByBankUS(bankMethod)
+        case let issuerMethod as IssuerListPaymentMethod:
+            return .issuerList(issuerMethod)
+        default:
+            return .instant(paymentMethod)
+        }
+    }
+
+    // MARK: - React Methods
+
     @objc
     func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
         let parser = RootConfigurationParser(configuration: configuration)
@@ -29,13 +51,13 @@ internal final class InstantModule: BaseActionModule {
         createActionHandlerIfNeeded(context: context, locale: locale)
 
         let component: PaymentComponent
-        switch paymentMethod {
-        case let bankMethod as PayByBankUSPaymentMethod:
+        switch InstantModule.flow(for: paymentMethod) {
+        case let .payByBankUS(bankMethod):
             component = PayByBankUSComponent(paymentMethod: bankMethod, context: context)
-        case let issuerMethod as IssuerListPaymentMethod:
+        case let .issuerList(issuerMethod):
             component = IssuerListComponent(paymentMethod: issuerMethod, context: context)
-        default:
-            component = InstantPaymentComponent(paymentMethod: paymentMethod, context: context, order: nil)
+        case let .instant(method):
+            component = InstantPaymentComponent(paymentMethod: method, context: context, order: nil)
         }
 
         component.delegate = BaseModule.session ?? self

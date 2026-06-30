@@ -11,7 +11,7 @@ import UIKit
 
 final class BaseModuleTests: XCTestCase {
 
-    var sut: TestableModule!
+    private var sut: TestableModule!
 
     override func setUp() {
         super.setUp()
@@ -358,7 +358,7 @@ private final class MockDismissableViewController: UIViewController {
 
 private final class MockComponent: Component {
     var context: AdyenContext = .init(
-        apiContext: try! APIContext(environment: .test, clientKey: "local_DUMMYKEYFORTESTING"),
+      apiContext: try! APIContext(environment: Environment.test, clientKey: "local_DUMMYKEYFORTESTING"),
         payment: nil
     )
 }
@@ -378,7 +378,7 @@ private final class MockPresentingViewController: UIViewController {
 
 private final class MockPresentableComponent: PresentableComponent {
     var context: AdyenContext = .init(
-        apiContext: try! APIContext(environment: .test, clientKey: "local_DUMMYKEYFORTESTING"),
+        apiContext: try! APIContext(environment: Environment.test, clientKey: "local_DUMMYKEYFORTESTING"),
         payment: nil
     )
     let viewController = UIViewController()
