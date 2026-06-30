@@ -14,10 +14,24 @@ internal final class InstantModule: BaseActionModule {
 
     // MARK: - Internal
 
+    internal enum LaunchStyle: Equatable {
+        case initiatePayment
+        case present
+    }
+
     internal enum Flow {
         case payByBankUS(PayByBankUSPaymentMethod)
         case issuerList(IssuerListPaymentMethod)
         case instant(PaymentMethod)
+
+        var launchStyle: LaunchStyle {
+            switch self {
+            case .instant:
+                return .initiatePayment
+            case .payByBankUS, .issuerList:
+                return .present
+            }
+        }
     }
 
     /// Maps a `PaymentMethod` to the matching `Flow`. Pure logic — no context required.
@@ -29,6 +43,18 @@ internal final class InstantModule: BaseActionModule {
             return .issuerList(issuerMethod)
         default:
             return .instant(paymentMethod)
+        }
+    }
+
+    /// Creates the appropriate `PaymentComponent` for a given `Flow`. Pure factory — no module state required.
+    internal static func makeComponent(for flow: Flow, context: AdyenContext) -> PaymentComponent {
+        switch flow {
+        case let .payByBankUS(pm):
+            return PayByBankUSComponent(paymentMethod: pm, context: context)
+        case let .issuerList(pm):
+            return IssuerListComponent(paymentMethod: pm, context: context)
+        case let .instant(pm):
+            return InstantPaymentComponent(paymentMethod: pm, context: context, order: nil)
         }
     }
 
@@ -47,28 +73,28 @@ internal final class InstantModule: BaseActionModule {
         }
 
         let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale
-
         createActionHandlerIfNeeded(context: context, locale: locale)
 
-        let component: PaymentComponent
-        switch InstantModule.flow(for: paymentMethod) {
-        case let .payByBankUS(bankMethod):
-            component = PayByBankUSComponent(paymentMethod: bankMethod, context: context)
-        case let .issuerList(issuerMethod):
-            component = IssuerListComponent(paymentMethod: issuerMethod, context: context)
-        case let .instant(method):
-            component = InstantPaymentComponent(paymentMethod: method, context: context, order: nil)
-        }
-
+        let flow = InstantModule.flow(for: paymentMethod)
+        let component = InstantModule.makeComponent(for: flow, context: context)
         component.delegate = BaseModule.session ?? self
         currentComponent = component
 
-        if let instantComponent = component as? InstantPaymentComponent {
-            DispatchQueue.main.async {
-                instantComponent.initiatePayment()
+        ensureMainThread { [weak self] in
+            self?.launch(component, style: flow.launchStyle)
+        }
+    }
+
+    // MARK: - Private
+
+    private func launch(_ component: PaymentComponent, style: LaunchStyle) {
+        switch style {
+        case .initiatePayment:
+            (component as? InstantPaymentComponent)?.initiatePayment()
+        case .present:
+            if let presentable = component as? PresentableComponent {
+                present(component: presentable)
             }
-        } else if let presentableCompomponent = component as? PresentableComponent {
-            present(component: presentableCompomponent)
         }
     }
 

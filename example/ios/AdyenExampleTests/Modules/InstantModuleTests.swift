@@ -10,10 +10,25 @@ import XCTest
 
 final class InstantModuleTests: XCTestCase {
 
+    // MARK: - Setup
+
+    private var context: AdyenContext!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        let apiContext = try APIContext(environment: Environment.test, clientKey: "test_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        context = AdyenContext(apiContext: apiContext, payment: nil)
+    }
+
+    override func tearDown() {
+        context = nil
+        super.tearDown()
+    }
+
     // MARK: - flow(for:)
 
     func test_flow_payByBankUS() throws {
-        // GIVEN – decode from JSON so we don't depend on any internal init
+        // GIVEN
         let dict: NSDictionary = ["type": "paybybank_AIS_DD", "name": "Pay By Bank US"]
         let method: PayByBankUSPaymentMethod = try dict.decode()
 
@@ -27,7 +42,7 @@ final class InstantModuleTests: XCTestCase {
     }
 
     func test_flow_issuerList() throws {
-        // GIVEN – IssuerListPaymentMethod only has init(from:), so use JSON decode
+        // GIVEN
         let dict: NSDictionary = ["type": "ideal", "name": "iDEAL", "issuers": []]
         let method: IssuerListPaymentMethod = try dict.decode()
 
@@ -41,7 +56,7 @@ final class InstantModuleTests: XCTestCase {
     }
 
     func test_flow_instant_fallsBackForUnknownType() {
-        // GIVEN – InstantPaymentMethod is the SDK's generic fallback type
+        // GIVEN
         let method = InstantPaymentMethod(type: .payPal, name: "PayPal")
 
         // WHEN
@@ -51,5 +66,70 @@ final class InstantModuleTests: XCTestCase {
         guard case .instant = flow else {
             return XCTFail("Expected .instant, got \(flow)")
         }
+    }
+
+    // MARK: - Flow.launchStyle
+
+    func test_launchStyle_payByBankUS() throws {
+        // GIVEN
+        let dict: NSDictionary = ["type": "paybybank_AIS_DD", "name": "Pay By Bank US"]
+        let method: PayByBankUSPaymentMethod = try dict.decode()
+
+        // WHEN / THEN
+        XCTAssertEqual(InstantModule.Flow.payByBankUS(method).launchStyle, .present)
+    }
+
+    func test_launchStyle_issuerList() throws {
+        // GIVEN
+        let dict: NSDictionary = ["type": "ideal", "name": "iDEAL", "issuers": []]
+        let method: IssuerListPaymentMethod = try dict.decode()
+
+        // WHEN / THEN
+        XCTAssertEqual(InstantModule.Flow.issuerList(method).launchStyle, .present)
+    }
+
+    func test_launchStyle_instant() {
+        // GIVEN
+        let method = InstantPaymentMethod(type: .payPal, name: "PayPal")
+
+        // WHEN / THEN
+        XCTAssertEqual(InstantModule.Flow.instant(method).launchStyle, .initiatePayment)
+    }
+
+    // MARK: - makeComponent(for:context:)
+
+    func test_makeComponent_payByBankUS() throws {
+        // GIVEN
+        let dict: NSDictionary = ["type": "paybybank_AIS_DD", "name": "Pay By Bank US"]
+        let method: PayByBankUSPaymentMethod = try dict.decode()
+
+        // WHEN
+        let component = InstantModule.makeComponent(for: .payByBankUS(method), context: context)
+
+        // THEN
+        XCTAssertTrue(component is PayByBankUSComponent, "Expected PayByBankUSComponent, got \(type(of: component))")
+    }
+
+    func test_makeComponent_issuerList() throws {
+        // GIVEN
+        let dict: NSDictionary = ["type": "ideal", "name": "iDEAL", "issuers": []]
+        let method: IssuerListPaymentMethod = try dict.decode()
+
+        // WHEN
+        let component = InstantModule.makeComponent(for: .issuerList(method), context: context)
+
+        // THEN
+        XCTAssertTrue(component is IssuerListComponent, "Expected IssuerListComponent, got \(type(of: component))")
+    }
+
+    func test_makeComponent_instant() {
+        // GIVEN
+        let method = InstantPaymentMethod(type: .payPal, name: "PayPal")
+
+        // WHEN
+        let component = InstantModule.makeComponent(for: .instant(method), context: context)
+
+        // THEN
+        XCTAssertTrue(component is InstantPaymentComponent, "Expected InstantPaymentComponent, got \(type(of: component))")
     }
 }

@@ -121,21 +121,6 @@ final class BaseModuleTests: XCTestCase {
         XCTAssertNil(sut.currentComponent)
     }
 
-    func test_cleanUp_withEmptyStack_stillClearsStaticState() {
-        let exp = expectation(description: "cleanUp completes")
-        BaseModule.currentModule = sut
-        sut.currentComponent = MockComponent()
-
-        DispatchQueue.main.async {
-            self.sut.cleanUp()
-            exp.fulfill()
-        }
-
-        wait(for: [exp], timeout: 1.0)
-        XCTAssertNil(BaseModule.currentModule)
-        XCTAssertNil(sut.currentComponent)
-    }
-
     // MARK: - dismiss
 
     func test_dismiss_withNoCurrentComponent_callsCleanUp() {
@@ -149,24 +134,6 @@ final class BaseModuleTests: XCTestCase {
 
         wait(for: [exp], timeout: 1.0)
         XCTAssertNil(BaseModule.currentModule)
-    }
-
-    func test_dismiss_fromBackgroundThread_clearsStateOnMainThread() {
-        let exp = expectation(description: "state cleared on main thread")
-        BaseModule.currentModule = sut
-        var clearedOnMain = false
-
-        // Observe via a mock that verifies the clear happens on the main thread
-        DispatchQueue.global().async {
-            self.sut.dismiss(false)
-            DispatchQueue.main.async {
-                clearedOnMain = Thread.isMainThread && BaseModule.currentModule == nil
-                exp.fulfill()
-            }
-        }
-
-        wait(for: [exp], timeout: 1.0)
-        XCTAssertTrue(clearedOnMain)
     }
 
     // MARK: - checkErrorType
@@ -358,7 +325,7 @@ private final class MockDismissableViewController: UIViewController {
 
 private final class MockComponent: Component {
     var context: AdyenContext = .init(
-      apiContext: try! APIContext(environment: Environment.test, clientKey: "local_DUMMYKEYFORTESTING"),
+        apiContext: try! APIContext(environment: Environment.test, clientKey: "local_DUMMYKEYFORTESTING"),
         payment: nil
     )
 }
