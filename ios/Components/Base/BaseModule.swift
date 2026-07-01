@@ -175,6 +175,7 @@ extension BaseModule: PresentationDelegate {
             let viewController: UIViewController
             if component.requiresModalPresentation {
                 viewController = UINavigationController(rootViewController: component.viewController)
+                viewController.presentationController?.delegate = self
                 component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
                                                                                    target: self,
                                                                                    action: #selector(self.cancelDidPress))
@@ -192,4 +193,12 @@ extension BaseModule: PresentationDelegate {
         sendError(error: ModuleException.canceled)
     }
 
+}
+
+extension BaseModule: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        // Remove the swiped-away VC from the stack
+        BaseModule.presenterStack.removeAll { $0 === presentationController.presentedViewController }
+        cancelDidPress()
+    }
 }
