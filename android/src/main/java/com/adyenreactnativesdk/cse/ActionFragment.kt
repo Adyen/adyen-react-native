@@ -23,12 +23,6 @@ class ActionFragment(
   private var actionHandled: Boolean = false
   var component: GenericActionComponent? = null
 
-  override fun onCreateView(
-    inflater: LayoutInflater,
-    container: ViewGroup?,
-    savedInstanceState: Bundle?,
-  ): View = inflater.inflate(R.layout.fragment_instant, container)
-
   override fun onStart() {
     super.onStart()
 
