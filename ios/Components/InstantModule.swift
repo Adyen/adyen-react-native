@@ -14,47 +14,42 @@ internal final class InstantModule: BaseActionModule {
 
     // MARK: - Internal
 
-    internal enum LaunchStyle: Equatable {
-        case initiatePayment
-        case present
-    }
+    internal enum PaymentFlow {
+        case submit(InstantPaymentComponent)
+        case present(PaymentComponent & PresentableComponent)
 
-    internal enum Flow {
-        case payByBankUS(PayByBankUSPaymentMethod)
-        case issuerList(IssuerListPaymentMethod)
-        case instant(PaymentMethod)
-
-        var launchStyle: LaunchStyle {
+        var paymentComponent: PaymentComponent {
             switch self {
-            case .instant:
-                return .initiatePayment
-            case .payByBankUS, .issuerList:
-                return .present
+            case let .submit(instant):
+                return instant
+            case let .present(presentable):
+                return presentable
             }
         }
     }
 
-    /// Maps a `PaymentMethod` to the matching `Flow`. Pure logic — no context required.
-    internal static func flow(for paymentMethod: PaymentMethod) -> Flow {
-        switch paymentMethod {
-        case let bankMethod as PayByBankUSPaymentMethod:
-            return .payByBankUS(bankMethod)
-        case let issuerMethod as IssuerListPaymentMethod:
-            return .issuerList(issuerMethod)
-        default:
-            return .instant(paymentMethod)
-        }
-    }
+    internal enum PaymentFlowType {
+        case payByBankUS(PayByBankUSPaymentMethod)
+        case issuerList(IssuerListPaymentMethod)
+        case instant(PaymentMethod)
 
-    /// Creates the appropriate `PaymentComponent` for a given `Flow`. Pure factory — no module state required.
-    internal static func makeComponent(for flow: Flow, context: AdyenContext) -> PaymentComponent {
-        switch flow {
-        case let .payByBankUS(pm):
-            return PayByBankUSComponent(paymentMethod: pm, context: context)
-        case let .issuerList(pm):
-            return IssuerListComponent(paymentMethod: pm, context: context)
-        case let .instant(pm):
-            return InstantPaymentComponent(paymentMethod: pm, context: context, order: nil)
+        internal init(_ paymentMethod: PaymentMethod) {
+            switch paymentMethod {
+            case let pm as PayByBankUSPaymentMethod: self = .payByBankUS(pm)
+            case let pm as IssuerListPaymentMethod: self = .issuerList(pm)
+            default: self = .instant(paymentMethod)
+            }
+        }
+
+        internal func buildFlow(with context: AdyenContext) -> PaymentFlow {
+            switch self {
+            case let .payByBankUS(pm):
+                return .present(PayByBankUSComponent(paymentMethod: pm, context: context))
+            case let .issuerList(pm):
+                return .present(IssuerListComponent(paymentMethod: pm, context: context))
+            case let .instant(pm):
+                return .submit(InstantPaymentComponent(paymentMethod: pm, context: context, order: nil))
+            }
         }
     }
 
@@ -75,26 +70,24 @@ internal final class InstantModule: BaseActionModule {
         let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale
         createActionHandlerIfNeeded(context: context, locale: locale)
 
-        let flow = InstantModule.flow(for: paymentMethod)
-        let component = InstantModule.makeComponent(for: flow, context: context)
-        component.delegate = BaseModule.session ?? self
-        currentComponent = component
+        let flow = PaymentFlowType(paymentMethod).buildFlow(with: context)
 
-        ensureMainThread { [weak self] in
-            self?.launch(component, style: flow.launchStyle)
-        }
+        flow.paymentComponent.delegate = BaseModule.session ?? self
+        currentComponent = flow.paymentComponent
+
+        launch(flow)
     }
 
     // MARK: - Private
 
-    private func launch(_ component: PaymentComponent, style: LaunchStyle) {
-        switch style {
-        case .initiatePayment:
-            (component as? InstantPaymentComponent)?.initiatePayment()
-        case .present:
-            if let presentable = component as? PresentableComponent {
-                present(component: presentable)
+    private func launch(_ type: PaymentFlow) {
+        switch type {
+        case let .submit(instant):
+            ensureMainThread {
+                instant.initiatePayment()
             }
+        case let .present(presentable):
+            present(component: presentable)
         }
     }
 

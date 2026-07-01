@@ -25,111 +25,94 @@ final class InstantModuleTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - flow(for:)
+    // MARK: - PaymentFlowType.init(_:)
 
-    func test_flow_payByBankUS() throws {
+    func test_flowType_payByBankUS() throws {
         // GIVEN
         let dict: NSDictionary = ["type": "paybybank_AIS_DD", "name": "Pay By Bank US"]
         let method: PayByBankUSPaymentMethod = try dict.decode()
 
         // WHEN
-        let flow = InstantModule.flow(for: method)
+        let flowType = InstantModule.PaymentFlowType(method)
 
         // THEN
-        guard case .payByBankUS = flow else {
-            return XCTFail("Expected .payByBankUS, got \(flow)")
+        guard case .payByBankUS = flowType else {
+            return XCTFail("Expected .payByBankUS, got \(flowType)")
         }
     }
 
-    func test_flow_issuerList() throws {
+    func test_flowType_issuerList() throws {
         // GIVEN
         let dict: NSDictionary = ["type": "ideal", "name": "iDEAL", "issuers": []]
         let method: IssuerListPaymentMethod = try dict.decode()
 
         // WHEN
-        let flow = InstantModule.flow(for: method)
+        let flowType = InstantModule.PaymentFlowType(method)
 
         // THEN
-        guard case .issuerList = flow else {
-            return XCTFail("Expected .issuerList, got \(flow)")
+        guard case .issuerList = flowType else {
+            return XCTFail("Expected .issuerList, got \(flowType)")
         }
     }
 
-    func test_flow_instant_fallsBackForUnknownType() {
+    func test_flowType_instant_fallsBackForUnknownType() {
         // GIVEN
         let method = InstantPaymentMethod(type: .payPal, name: "PayPal")
 
         // WHEN
-        let flow = InstantModule.flow(for: method)
+        let flowType = InstantModule.PaymentFlowType(method)
 
         // THEN
-        guard case .instant = flow else {
-            return XCTFail("Expected .instant, got \(flow)")
+        guard case .instant = flowType else {
+            return XCTFail("Expected .instant, got \(flowType)")
         }
     }
 
-    // MARK: - Flow.launchStyle
+    // MARK: - PaymentFlowType.buildFlow(with:)
 
-    func test_launchStyle_payByBankUS() throws {
-        // GIVEN
-        let dict: NSDictionary = ["type": "paybybank_AIS_DD", "name": "Pay By Bank US"]
-        let method: PayByBankUSPaymentMethod = try dict.decode()
-
-        // WHEN / THEN
-        XCTAssertEqual(InstantModule.Flow.payByBankUS(method).launchStyle, .present)
-    }
-
-    func test_launchStyle_issuerList() throws {
-        // GIVEN
-        let dict: NSDictionary = ["type": "ideal", "name": "iDEAL", "issuers": []]
-        let method: IssuerListPaymentMethod = try dict.decode()
-
-        // WHEN / THEN
-        XCTAssertEqual(InstantModule.Flow.issuerList(method).launchStyle, .present)
-    }
-
-    func test_launchStyle_instant() {
-        // GIVEN
-        let method = InstantPaymentMethod(type: .payPal, name: "PayPal")
-
-        // WHEN / THEN
-        XCTAssertEqual(InstantModule.Flow.instant(method).launchStyle, .initiatePayment)
-    }
-
-    // MARK: - makeComponent(for:context:)
-
-    func test_makeComponent_payByBankUS() throws {
+    func test_buildFlow_payByBankUS() throws {
         // GIVEN
         let dict: NSDictionary = ["type": "paybybank_AIS_DD", "name": "Pay By Bank US"]
         let method: PayByBankUSPaymentMethod = try dict.decode()
 
         // WHEN
-        let component = InstantModule.makeComponent(for: .payByBankUS(method), context: context)
+        let flow = InstantModule.PaymentFlowType.payByBankUS(method).buildFlow(with: context)
 
         // THEN
+        guard case let .present(component) = flow else {
+            return XCTFail("Expected .present, got \(flow)")
+        }
         XCTAssertTrue(component is PayByBankUSComponent, "Expected PayByBankUSComponent, got \(type(of: component))")
+        XCTAssertTrue(flow.paymentComponent is PayByBankUSComponent, "Expected paymentComponent to be PayByBankUSComponent, got \(type(of: flow.paymentComponent))")
     }
 
-    func test_makeComponent_issuerList() throws {
+    func test_buildFlow_issuerList() throws {
         // GIVEN
         let dict: NSDictionary = ["type": "ideal", "name": "iDEAL", "issuers": []]
         let method: IssuerListPaymentMethod = try dict.decode()
 
         // WHEN
-        let component = InstantModule.makeComponent(for: .issuerList(method), context: context)
+        let flow = InstantModule.PaymentFlowType.issuerList(method).buildFlow(with: context)
 
         // THEN
+        guard case let .present(component) = flow else {
+            return XCTFail("Expected .present, got \(flow)")
+        }
         XCTAssertTrue(component is IssuerListComponent, "Expected IssuerListComponent, got \(type(of: component))")
+        XCTAssertTrue(flow.paymentComponent is IssuerListComponent, "Expected paymentComponent to be IssuerListComponent, got \(type(of: flow.paymentComponent))")
     }
 
-    func test_makeComponent_instant() {
+    func test_buildFlow_instant() {
         // GIVEN
         let method = InstantPaymentMethod(type: .payPal, name: "PayPal")
 
         // WHEN
-        let component = InstantModule.makeComponent(for: .instant(method), context: context)
+        let flow = InstantModule.PaymentFlowType.instant(method).buildFlow(with: context)
 
         // THEN
-        XCTAssertTrue(component is InstantPaymentComponent, "Expected InstantPaymentComponent, got \(type(of: component))")
+        guard case let .submit(instant) = flow else {
+            return XCTFail("Expected .submit, got \(flow)")
+        }
+        XCTAssertTrue(flow.paymentComponent is InstantPaymentComponent, "Expected paymentComponent to be InstantPaymentComponent, got \(type(of: flow.paymentComponent))")
     }
 }
