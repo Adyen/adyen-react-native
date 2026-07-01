@@ -69,7 +69,7 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
     savedInstanceState: Bundle?,
   ) {
     super.onViewCreated(view, savedInstanceState)
-    view.findViewById<ImageButton>(R.id.close_button).setOnClickListener {
+    view.findViewById<ImageButton>(R.id.close_button)?.setOnClickListener {
       viewModel.cancel()
     }
     viewLifecycleOwner.lifecycleScope.launch {
