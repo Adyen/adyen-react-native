@@ -133,6 +133,9 @@ const Styles = StyleSheet.create({
     marginHorizontal: 16,
     padding: 12,
     borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   dropdownText: {
     fontSize: 16,
@@ -163,6 +166,42 @@ const Styles = StyleSheet.create({
   dropdownItemSelectedText: {
     color: '#007AFF',
     fontWeight: '600',
+  },
+  fullScreenModal: {
+    flex: 1,
+  },
+  fullScreenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  fullScreenTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  fullScreenCancel: {
+    fontSize: 17,
+    color: '#007AFF',
+  },
+  fullScreenHeaderSpacer: {
+    width: 60,
+  },
+  searchContainer: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+  },
+  searchInput: {
+    fontSize: 16,
+    paddingVertical: 10,
+  },
+  fullScreenList: {
+    flex: 1,
   },
 });
 
