@@ -42,6 +42,10 @@ class SessionsComponentViewModel<TState : PaymentComponentState<*>> :
     AdyenPaymentPackage.messageBus.onSessionException(exception)
   }
 
+  override fun cancel() {
+    AdyenPaymentPackage.messageBus.onSessionException(ModuleException.Canceled())
+  }
+
   companion object {
     private const val TAG = "SessionsViewModel"
   }

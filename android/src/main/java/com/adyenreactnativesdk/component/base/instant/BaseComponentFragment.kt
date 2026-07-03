@@ -6,10 +6,13 @@
 
 package com.adyenreactnativesdk.component.base.instant
 
+import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -45,6 +48,16 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
       return if (session == null) advancedViewModel else sessionViewModel
     }
 
+  override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
+    super.onCreateDialog(savedInstanceState).also {
+      it.setCanceledOnTouchOutside(false)
+    }
+
+  override fun onCancel(dialog: DialogInterface) {
+    super.onCancel(dialog)
+    viewModel.cancel()
+  }
+
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
@@ -56,6 +69,9 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
     savedInstanceState: Bundle?,
   ) {
     super.onViewCreated(view, savedInstanceState)
+    view.findViewById<ImageButton>(R.id.close_button)?.setOnClickListener {
+      viewModel.cancel()
+    }
     viewLifecycleOwner.lifecycleScope.launch {
       repeatOnLifecycle(Lifecycle.State.STARTED) {
         launch { viewModel.componentDataFlow.collect(::setupComponent) }

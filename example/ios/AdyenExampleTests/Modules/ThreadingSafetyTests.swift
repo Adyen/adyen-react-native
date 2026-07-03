@@ -12,7 +12,7 @@ import XCTest
 final class ThreadingSafetyTests: XCTestCase {
 
     override func tearDown() {
-        BaseModule.currentPresenter = nil
+        BaseModule.presenterStack.removeAll()
         BaseModule.currentModule = nil
         BaseModule.session = nil
         EmbeddedComponentBusModule.shared = nil
@@ -26,7 +26,7 @@ final class ThreadingSafetyTests: XCTestCase {
         presenter.onDismiss = {
             expectation.fulfill()
         }
-        BaseModule.currentPresenter = presenter
+        BaseModule.presenterStack = [presenter]
 
         DispatchQueue.global().async {
             sut.cleanUp()
@@ -45,7 +45,7 @@ final class ThreadingSafetyTests: XCTestCase {
         presenter.onDismiss = {
             expectation.fulfill()
         }
-        BaseModule.currentPresenter = presenter
+        BaseModule.presenterStack = [presenter]
 
         sut.subscribe("card-view")
 
@@ -95,7 +95,7 @@ final class ThreadingSafetyTests: XCTestCase {
 
         DispatchQueue.main.async {
             let sut = TestableBaseModule()
-            BaseModule.currentPresenter = UIViewController()
+            BaseModule.presenterStack = [UIViewController()]
 
             sut.cleanUp()
 
@@ -175,7 +175,7 @@ final class ThreadingSafetyTests: XCTestCase {
         presenter.onDismiss = {
             expectation.fulfill()
         }
-        BaseModule.currentPresenter = presenter
+        BaseModule.presenterStack = [presenter]
 
         _ = sut.register(viewId: "card-view")
 

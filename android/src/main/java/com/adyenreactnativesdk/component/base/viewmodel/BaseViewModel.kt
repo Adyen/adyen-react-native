@@ -33,6 +33,8 @@ internal interface ViewModelInterface<TState : PaymentComponentState<*>> {
 
   fun componentStarted()
 
+  fun cancel()
+
   val events: Flow<ComponentEvent>
   val componentDataFlow: Flow<ComponentData<TState>>
 }
@@ -58,6 +60,8 @@ abstract class BaseViewModel<TState : PaymentComponentState<*>> :
       _events.emit(ComponentEvent.ComponentCreated)
     }
   }
+
+  abstract override fun cancel()
 
   protected suspend fun emitData(componentData: ComponentData<TState>) {
     _componentDataFlow.emit(componentData)

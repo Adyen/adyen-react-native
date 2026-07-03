@@ -46,6 +46,10 @@ class AdvancedComponentViewModel<TState : PaymentComponentState<*>> :
     AdyenPaymentPackage.messageBus.onException(exception)
   }
 
+  override fun cancel() {
+    AdyenPaymentPackage.messageBus.onException(ModuleException.Canceled())
+  }
+
   companion object {
     private const val TAG = "AdvancedViewModel"
   }

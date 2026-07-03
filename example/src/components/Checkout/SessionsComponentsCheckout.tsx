@@ -90,7 +90,7 @@ const SessionsComponentsCheckout = () => {
         onComplete={didComplete}
         onError={didFail}
       >
-        <CheckoutNavigator showEmbeddedComponents={true} />
+        <CheckoutNavigator showEmbeddedComponents={true} showInstant={true} />
       </AdyenCheckout>
     </View>
   );
