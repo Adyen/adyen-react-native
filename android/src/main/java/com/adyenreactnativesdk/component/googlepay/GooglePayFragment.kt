@@ -19,6 +19,7 @@ import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
 import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
+import com.adyenreactnativesdk.component.instant.fragment.PayByBankGlobalFragment
 
 class GooglePayFragment(
   configuration: CheckoutConfiguration,
@@ -67,33 +68,10 @@ class GooglePayFragment(
     }
   }
 
-  companion object : IInstantFragment {
+  companion object : IInstantFragment by InstantFragmentDelegate(
+    "GooglePayFragment",
+    ::GooglePayFragment,
+  ) {
     internal const val TAG = "GooglePayFragment"
-
-    private val instantDelegate =
-      InstantFragmentDelegate(
-        "GooglePayFragment",
-        ::GooglePayFragment,
-      )
-
-    override fun show(
-      fragmentManager: FragmentManager,
-      configuration: CheckoutConfiguration,
-      paymentMethod: PaymentMethod,
-      session: CheckoutSession?,
-    ) {
-      instantDelegate.show(fragmentManager, configuration, paymentMethod, session)
-    }
-
-    override fun handle(
-      fragmentManager: FragmentManager,
-      action: Action,
-    ) {
-      instantDelegate.handle(fragmentManager, action)
-    }
-
-    override fun hide(fragmentManager: FragmentManager) {
-      instantDelegate.hide(fragmentManager)
-    }
   }
 }
