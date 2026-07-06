@@ -23,7 +23,6 @@ This is a React Native SDK with three platform targets:
 
 ## Git & GitHub
 
-- **Remote operations**: Use `gh` CLI for all GitHub operations. Before pushing, always set the remote URL to use the current gh CLI token: `git remote set-url origin https://x-access-token:$(gh auth token)@github.com/Adyen/adyen-react-native.git`
 - **Working directory**: At the start of every new session, ask the user whether to work in the current directory or a separate worktree. For parallel feature work, use `git worktree add`.
 - **Default branch**: `develop`, not `main`.
 - **Branch hygiene**: Start new work from latest `origin/develop` on a dedicated branch.
