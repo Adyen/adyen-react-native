@@ -512,7 +512,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertNotNil(shippingMethods)
         XCTAssertEqual(shippingMethods?.count, 2)
 
-        var shippingMethod = try XCTUnwrap(shippingMethods?[0])
+        var shippingMethod = try XCTUnwrap(shippingMethods?.first)
         XCTAssertEqual(shippingMethod.label, "Label 1")
         XCTAssertEqual(shippingMethod.amount, NSDecimalNumber(string: "10.1"))
         XCTAssertEqual(shippingMethod.type, .pending)
@@ -524,7 +524,7 @@ final class ApplePayConfigurationTests: XCTestCase {
             XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.day, 1)
         }
 
-        shippingMethod = try XCTUnwrap(shippingMethods?[1])
+        shippingMethod = try XCTUnwrap(shippingMethods?.dropFirst().first)
         XCTAssertEqual(shippingMethod.label, "Label 2")
         XCTAssertEqual(shippingMethod.amount, NSDecimalNumber(string: "10.1"))
         XCTAssertEqual(shippingMethod.type, .final)

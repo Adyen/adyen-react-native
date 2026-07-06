@@ -94,7 +94,7 @@ final class BaseModuleTests: XCTestCase {
     func test_cleanUp_withMultipleVCsInStack_dismissesOnlyFirstVC() {
         // GIVEN
         let exp = expectation(description: "first VC dismissed")
-        let rootMock = makeMockDismissableVC(onDismiss: exp.fulfill())
+        let rootMock = makeMockDismissableVC(onDismiss: { exp.fulfill() })
         let paymentMock = makeMockDismissableVC()
         BaseModule.presenterStack = [rootMock, paymentMock]
 
@@ -188,7 +188,7 @@ final class BaseModuleTests: XCTestCase {
     func test_hide_success_callsDismiss_andClearsState() {
         // GIVEN
         let exp = expectation(description: "hide clears state")
-        let rootMock = makeMockDismissableVC(onDismiss: exp.fulfill())
+        let rootMock = makeMockDismissableVC(onDismiss: { exp.fulfill() })
         BaseModule.presenterStack = [rootMock]
 
         // WHEN
