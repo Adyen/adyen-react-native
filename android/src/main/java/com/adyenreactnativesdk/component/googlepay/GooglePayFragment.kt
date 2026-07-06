@@ -19,7 +19,6 @@ import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
 import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
-import com.adyenreactnativesdk.component.instant.fragment.PayByBankGlobalFragment
 
 class GooglePayFragment(
   configuration: CheckoutConfiguration,
