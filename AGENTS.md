@@ -38,6 +38,14 @@ This is a React Native SDK with three platform targets:
 ## Refactoring Conventions
 
 - **Before adding or refactoring native modules, events, or class hierarchies**, review `docs/Architecture.md` to understand the existing structure and patterns.
+- **After changing any of the following, update `docs/Architecture.md` in the same PR**:
+  - Directory structure (files added/removed/renamed under `src/`, `ios/`, `android/`)
+  - Wrapper class hierarchy or native class hierarchies (iOS `BaseModule` tree, Android `BaseModule`/`AppCompatModule` tree)
+  - Core interfaces in `core/types.ts` (`AdyenComponent`, `AdyenActionComponent`, `ConditionalPaymentComponent`, module interfaces)
+  - Configuration hierarchy (`core/configurations/`)
+  - Embedded view event-bus contracts (`modules/embedded/`, `specs/`)
+  - Cross-platform event names, error codes, or result codes
+- **Validate `docs/Architecture.md` integrity before committing**: grep the codebase for every class/interface named in the document and confirm each still exists with the documented signature. Remove or update stale entries — do not leave the document describing classes that no longer exist.
 - **Cross-platform consistency**: Check for mismatched class names, error codes, and enum values across all three platforms.
 - **Before renaming symbols with `sed`**, verify there are no unintended substring matches — e.g. `s/Event/PaymentEvent/g` will correctly rename `EventName` but also corrupt `coreEvent` into `corePaymentEvent`. Use whole-word matching or targeted per-symbol replacements.
 - **After moving a file to a new package/directory**, update the `package` declaration (Kotlin) and update imports in every consumer (Kotlin and JS/TS).
@@ -46,6 +54,15 @@ This is a React Native SDK with three platform targets:
   - **JS**: `src/**/__tests__/`
   - **iOS**: `example/ios/AdyenExampleTests/`
   - **Android**: `android/src/test/java/com/adyenreactnativesdk/`
+
+## Public API
+
+The package's public API is the set of symbols re-exported through `src/index.ts` (barrel: `./components`, `./core`, `./hooks`, `./modules`). Treat these as the contractual API.
+
+- **`docs/Architecture.md` must contain a "Public API" section** listing every exported symbol grouped by category (components, hooks, types/interfaces, configurations, constants/enums, module wrappers). Keep it in sync with `src/index.ts`.
+- **Before adding a new export**, ask the user whether it should be public. Prefer exporting from the most specific barrel (`core/index.ts`, `modules/index.ts`, etc.) rather than reaching for `src/index.ts` directly.
+- **Before removing or renaming an export**, treat it as a breaking change: search `example/`, all three test targets, and `docs/` for usages; update them in the same PR; and follow the breaking-change review in the Verification Checklist.
+- **Never re-export internal helpers** (e.g. `getWrapper`, `ModuleMock`, `utils.ts`) through a public barrel.
 
 ## Code Style
 
@@ -75,5 +92,6 @@ Before considering work complete:
 4. Kotlin files formatted (`ktlint android -F`)
 5. Cross-platform naming verified (JS, iOS, Android aligned)
 6. Old references updated in all three test targets
-7. If public API changed: reviewed for breaking changes and discussed with user
+7. If public API changed: `docs/Architecture.md` "Public API" section updated, breaking changes reviewed and discussed with user, and `example/` usages updated
+8. If directory structure, class hierarchy, interfaces, configurations, or event/error/result codes changed: `docs/Architecture.md` updated and integrity-validated (every documented symbol still exists in code)
 
