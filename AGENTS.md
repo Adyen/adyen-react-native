@@ -57,12 +57,12 @@ This is a React Native SDK with three platform targets:
 
 ## Public API
 
-The package's public API is the set of symbols re-exported through `src/index.ts` (barrel: `./components`, `./core`, `./hooks`, `./modules`). Treat these as the contractual API.
+The package's public API is the set of symbols re-exported through `src/index.ts` (barrel: `./components`, `./core`, `./hooks`, `./modules`). Treat these as the contractual API. The canonical list of exports lives in `docs/PublicAPI.md`.
 
-- **`docs/Architecture.md` must contain a "Public API" section** listing every exported symbol grouped by category (components, hooks, types/interfaces, configurations, constants/enums, module wrappers). Keep it in sync with `src/index.ts`.
+- **`docs/PublicAPI.md` is the source of truth for the public API surface.** Keep it in sync with `src/index.ts` — when the barrels change, update `docs/PublicAPI.md` in the same PR.
 - **Before adding a new export**, ask the user whether it should be public. Prefer exporting from the most specific barrel (`core/index.ts`, `modules/index.ts`, etc.) rather than reaching for `src/index.ts` directly.
 - **Before removing or renaming an export**, treat it as a breaking change: search `example/`, all three test targets, and `docs/` for usages; update them in the same PR; and follow the breaking-change review in the Verification Checklist.
-- **Never re-export internal helpers** (e.g. `getWrapper`, `ModuleMock`, `utils.ts`) through a public barrel.
+- **Never re-export internal helpers** (e.g. `getWrapper`, `ModuleMock`, `utils.ts`) through a public barrel. The "Internal (not exported)" section of `docs/PublicAPI.md` lists symbols that must stay internal.
 
 ## Code Style
 
@@ -92,6 +92,6 @@ Before considering work complete:
 4. Kotlin files formatted (`ktlint android -F`)
 5. Cross-platform naming verified (JS, iOS, Android aligned)
 6. Old references updated in all three test targets
-7. If public API changed: `docs/Architecture.md` "Public API" section updated, breaking changes reviewed and discussed with user, and `example/` usages updated
+7. If public API changed: `docs/PublicAPI.md` updated, breaking changes reviewed and discussed with user, and `example/` usages updated
 8. If directory structure, class hierarchy, interfaces, configurations, or event/error/result codes changed: `docs/Architecture.md` updated and integrity-validated (every documented symbol still exists in code)
 
