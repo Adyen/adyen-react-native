@@ -67,33 +67,10 @@ class GooglePayFragment(
     }
   }
 
-  companion object : IInstantFragment {
+  companion object : IInstantFragment by InstantFragmentDelegate(
+    "GooglePayFragment",
+    ::GooglePayFragment,
+  ) {
     internal const val TAG = "GooglePayFragment"
-
-    private val instantDelegate =
-      InstantFragmentDelegate(
-        "GooglePayFragment",
-        ::GooglePayFragment,
-      )
-
-    override fun show(
-      fragmentManager: FragmentManager,
-      configuration: CheckoutConfiguration,
-      paymentMethod: PaymentMethod,
-      session: CheckoutSession?,
-    ) {
-      instantDelegate.show(fragmentManager, configuration, paymentMethod, session)
-    }
-
-    override fun handle(
-      fragmentManager: FragmentManager,
-      action: Action,
-    ) {
-      instantDelegate.handle(fragmentManager, action)
-    }
-
-    override fun hide(fragmentManager: FragmentManager) {
-      instantDelegate.hide(fragmentManager)
-    }
   }
 }
