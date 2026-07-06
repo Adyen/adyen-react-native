@@ -59,52 +59,52 @@ Re-exported (as types) from `src/core/types.ts` via `src/core/index.ts`.
 
 ## Configurations
 
-Re-exported (as types) from `src/core/configurations/` via `src/core/index.ts`.
+Re-exported (as types) from `src/core/configurations/` via `src/core/index.ts`. The configurations barrel uses `export type *`, so all symbols below are **type-only** — they can be used in type annotations but not as runtime values.
 
 | Symbol | Kind | Source |
 | --- | --- | --- |
-| `Configuration` | interface | `configurations/Configuration.ts` |
-| `BaseConfiguration` | interface | `configurations/Configuration.ts` |
-| `EnvironmentConfiguration` | interface | `configurations/Configuration.ts` |
-| `Environment` | type | `configurations/Configuration.ts` |
-| `AnalyticsOptions` | interface | `configurations/Configuration.ts` |
-| `ApplePayConfiguration` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayShippingType` | type | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayAddressFields` | type | `configurations/ApplePayConfiguration.ts` |
-| `ApplePaySummaryItem` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayShippingMethod` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayPaymentContact` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayRecurringPaymentRequest` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayRecurringSummaryItem` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayCalendarUnit` | type | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayError` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayShippingContactUpdateRequest` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayCouponCodeEvent` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayCouponCodeUpdateRequest` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayShippingMethodUpdateRequest` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayAuthorizationActions` | interface | `configurations/ApplePayConfiguration.ts` |
-| `ApplePayPaymentAuthorization` | interface | `configurations/ApplePayConfiguration.ts` |
-| `CardsConfiguration` | interface | `configurations/CardsConfiguration.ts` |
-| `BinLookupData` | interface | `configurations/CardsConfiguration.ts` |
-| `InstallmentPlan` | type | `configurations/CardsConfiguration.ts` |
-| `InstallmentOption` | interface | `configurations/CardsConfiguration.ts` |
-| `InstallmentOptions` | interface | `configurations/CardsConfiguration.ts` |
-| `AddressMode` | type | `configurations/CardsConfiguration.ts` |
-| `FieldVisibility` | type | `configurations/CardsConfiguration.ts` |
-| `GooglePayConfiguration` | interface | `configurations/GooglePayConfiguration.ts` |
-| `GooglePayShippingAddressParameters` | interface | `configurations/GooglePayConfiguration.ts` |
-| `GooglePayBillingAddressParameters` | interface | `configurations/GooglePayConfiguration.ts` |
-| `GooglePayBillingAddressFormat` | type | `configurations/GooglePayConfiguration.ts` |
-| `TotalPriceStatus` | type | `configurations/GooglePayConfiguration.ts` |
-| `CardAuthMethod` | type | `configurations/GooglePayConfiguration.ts` |
-| `GooglePayEnvironment` | enum | `configurations/GooglePayConfiguration.ts` |
-| `DropInConfiguration` | interface | `configurations/DropInConfiguration.ts` |
-| `ThreeDSConfiguration` | interface | `configurations/ThreeDSConfiguration.ts` |
-| `PartialPaymentConfiguration` | interface | `configurations/PartialPaymentConfiguration.ts` |
-| `PartialPaymentComponent` | interface | `configurations/PartialPaymentConfiguration.ts` |
-| `AddressLookup` | interface | `configurations/AddressLookup.ts` |
-| `PostalAddress` | interface | `configurations/AddressLookup.ts` |
-| `AddressLookupItem` | interface | `configurations/AddressLookup.ts` |
+| `Configuration` | interface | `core/configurations/Configuration.ts` |
+| `BaseConfiguration` | interface | `core/configurations/Configuration.ts` |
+| `EnvironmentConfiguration` | interface | `core/configurations/Configuration.ts` |
+| `Environment` | type | `core/configurations/Configuration.ts` |
+| `AnalyticsOptions` | interface | `core/configurations/Configuration.ts` |
+| `ApplePayConfiguration` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayShippingType` | type | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayAddressFields` | type | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePaySummaryItem` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayShippingMethod` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayPaymentContact` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayRecurringPaymentRequest` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayRecurringSummaryItem` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayCalendarUnit` | type | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayError` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayShippingContactUpdateRequest` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayCouponCodeEvent` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayCouponCodeUpdateRequest` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayShippingMethodUpdateRequest` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayAuthorizationActions` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `ApplePayPaymentAuthorization` | interface | `core/configurations/ApplePayConfiguration.ts` |
+| `CardsConfiguration` | interface | `core/configurations/CardsConfiguration.ts` |
+| `BinLookupData` | interface | `core/configurations/CardsConfiguration.ts` |
+| `InstallmentPlan` | type | `core/configurations/CardsConfiguration.ts` |
+| `InstallmentOption` | interface | `core/configurations/CardsConfiguration.ts` |
+| `InstallmentOptions` | interface | `core/configurations/CardsConfiguration.ts` |
+| `AddressMode` | type | `core/configurations/CardsConfiguration.ts` |
+| `FieldVisibility` | type | `core/configurations/CardsConfiguration.ts` |
+| `GooglePayConfiguration` | interface | `core/configurations/GooglePayConfiguration.ts` |
+| `GooglePayShippingAddressParameters` | interface | `core/configurations/GooglePayConfiguration.ts` |
+| `GooglePayBillingAddressParameters` | interface | `core/configurations/GooglePayConfiguration.ts` |
+| `GooglePayBillingAddressFormat` | type | `core/configurations/GooglePayConfiguration.ts` |
+| `TotalPriceStatus` | type | `core/configurations/GooglePayConfiguration.ts` |
+| `CardAuthMethod` | type | `core/configurations/GooglePayConfiguration.ts` |
+| `GooglePayEnvironment` | enum (type-only) | `core/configurations/GooglePayConfiguration.ts` |
+| `DropInConfiguration` | interface | `core/configurations/DropInConfiguration.ts` |
+| `ThreeDSConfiguration` | interface | `core/configurations/ThreeDSConfiguration.ts` |
+| `PartialPaymentConfiguration` | interface | `core/configurations/PartialPaymentConfiguration.ts` |
+| `PartialPaymentComponent` | interface | `core/configurations/PartialPaymentConfiguration.ts` |
+| `AddressLookup` | interface | `core/configurations/AddressLookup.ts` |
+| `PostalAddress` | interface | `core/configurations/AddressLookup.ts` |
+| `AddressLookupItem` | interface | `core/configurations/AddressLookup.ts` |
 
 ## Constants & Enums
 
