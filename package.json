@@ -117,7 +117,7 @@
       "<rootDir>/lib/"
     ]
   },
-  "packageManager": "yarn@4.13.0",
+  "packageManager": "yarn@4.17.0",
   "codegenConfig": {
     "name": "AdyenPaymentSpec",
     "type": "all",
