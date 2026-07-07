@@ -6,7 +6,6 @@
 
 @testable @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
-
 import XCTest
 
 class EncodablePaymentComponentDataTests: XCTestCase {
@@ -21,7 +20,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
 
         // WHEN
         let data = try encoder.encode(encodableData)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
 
         // THEN
         XCTAssertNotNil(json["paymentMethod"])
@@ -31,7 +30,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
         XCTAssertNil(json["order"])
         XCTAssertNil(json["checkoutAttemptId"])
         XCTAssertNil(json["installments"])
-        XCTAssertTrue(json["supportNativeRedirect"] as! Bool)
+        XCTAssertTrue(try XCTUnwrap(json["supportNativeRedirect"] as? Bool))
         XCTAssertNil(json["delegatedAuthenticationData"])
     }
 
@@ -50,11 +49,11 @@ class EncodablePaymentComponentDataTests: XCTestCase {
 
         // WHEN
         let data = try encoder.encode(encodableData)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
 
         // THEN
         XCTAssertNotNil(json["paymentMethod"])
-        XCTAssertTrue(json["storePaymentMethod"] as! Bool)
+        XCTAssertTrue(try XCTUnwrap(json["storePaymentMethod"] as? Bool))
         XCTAssertNotNil(json["browserInfo"])
         XCTAssertNotNil(json["amount"])
         XCTAssertNotNil(json["order"])
@@ -77,7 +76,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
 
         // WHEN
         let data = try encoder.encode(encodableData)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
 
         // THEN
         XCTAssertNotNil(json["paymentMethod"])
@@ -99,7 +98,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
 
         // WHEN
         let data = try encoder.encode(encodableData)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
 
         // THEN
         XCTAssertNotNil(json["paymentMethod"])
