@@ -13,6 +13,8 @@ This is a React Native SDK with three platform targets:
 ## Build & Test Commands
 
 > **Before anything else in a fresh clone, run `npm start`.** This bootstraps the project and installs Husky git hooks (linters + JS tests run on every commit). Skipping this will cause commit hooks to fail. If packages fail to resolve, do not attempt to override the registry (e.g. do not add `--registry https://registry.npmjs.org`). Inform the user instead — the environment may use a private registry.
+>
+> **Note:** `npm start` also modifies `yarn.lock`, `android/build.gradle`, and `ios/Version.swift` (version stamping). Leave these out of your commits.
 
 - **JS tests**: `yarn test`
 - **Typecheck**: `yarn typecheck`
