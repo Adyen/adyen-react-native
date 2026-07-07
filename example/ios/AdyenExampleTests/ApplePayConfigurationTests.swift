@@ -537,6 +537,91 @@ final class ApplePayConfigurationTests: XCTestCase {
         }
     }
 
+    func test_merchantCapabilities_defaultsToThreeDSecure_whenNotConfigured() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["applepay": [
+            "merchantID": "merchant.com.adyen.test",
+            "merchantName": "SomeName"
+        ]]
+
+        // WHEN
+        let parser = ApplepayConfigurationParser(configuration: configDict)
+
+        // THEN
+        XCTAssertTrue(parser.merchantCapabilities.contains(.threeDSecure))
+        XCTAssertFalse(parser.merchantCapabilities.contains(.debit))
+        XCTAssertFalse(parser.merchantCapabilities.contains(.credit))
+    }
+
+    func test_merchantCapabilities_includesDebit_whenConfigured() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["applepay": [
+            "merchantID": "merchant.com.adyen.test",
+            "merchantName": "SomeName",
+            "merchantCapabilities": ["debit"]
+        ]]
+
+        // WHEN
+        let parser = ApplepayConfigurationParser(configuration: configDict)
+
+        // THEN
+        XCTAssertTrue(parser.merchantCapabilities.contains(.threeDSecure))
+        XCTAssertTrue(parser.merchantCapabilities.contains(.debit))
+        XCTAssertFalse(parser.merchantCapabilities.contains(.credit))
+    }
+
+    func test_merchantCapabilities_includesDebitAndCredit_whenBothConfigured() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["applepay": [
+            "merchantID": "merchant.com.adyen.test",
+            "merchantName": "SomeName",
+            "merchantCapabilities": ["debit", "credit"]
+        ]]
+
+        // WHEN
+        let parser = ApplepayConfigurationParser(configuration: configDict)
+
+        // THEN
+        XCTAssertTrue(parser.merchantCapabilities.contains(.threeDSecure))
+        XCTAssertTrue(parser.merchantCapabilities.contains(.debit))
+        XCTAssertTrue(parser.merchantCapabilities.contains(.credit))
+    }
+
+    func test_merchantCapabilities_ignoresInvalidValues() throws {
+        // GIVEN
+        let configDict: NSDictionary = ["applepay": [
+            "merchantID": "merchant.com.adyen.test",
+            "merchantName": "SomeName",
+            "merchantCapabilities": ["emv", "invalid"]
+        ]]
+
+        // WHEN
+        let parser = ApplepayConfigurationParser(configuration: configDict)
+
+        // THEN
+        XCTAssertEqual(parser.merchantCapabilities, .threeDSecure)
+    }
+
+    func test_buildPaymentRequest_setsMerchantCapabilities_whenConfigured() throws {
+        // GIVEN
+        let configDict: NSDictionary = [
+            "applepay": [
+                "merchantID": "merchant.com.adyen.test",
+                "merchantName": "SomeName",
+                "merchantCapabilities": ["debit"]
+            ]
+        ]
+        let sut = ApplepayConfigurationParser(configuration: configDict)
+
+        // WHEN
+        let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
+
+        // THEN
+        XCTAssertTrue(paymentRequest.merchantCapabilities.contains(.threeDSecure))
+        XCTAssertTrue(paymentRequest.merchantCapabilities.contains(.debit))
+        XCTAssertFalse(paymentRequest.merchantCapabilities.contains(.credit))
+    }
+
     @available(iOS 16.0, *)
     func test_recurringPaymentRequest_isConfigured_whenProvided() throws {
         // GIVEN
