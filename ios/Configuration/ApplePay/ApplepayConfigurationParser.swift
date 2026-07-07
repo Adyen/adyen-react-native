@@ -88,6 +88,18 @@ public struct ApplepayConfigurationParser {
         return ApplePayShippingType(rawValue: type)?.toAppleType
     }
 
+    /// `.threeDSecure` is always included. When `merchantCapabilities` is not configured, both
+    /// `.debit` and `.credit` remain unrestricted (Apple's default when neither is explicitly set).
+    var merchantCapabilities: PKMerchantCapability {
+        var capabilities: PKMerchantCapability = .threeDSecure
+        guard let rawValues = dict[ApplePayKeys.merchantCapabilities] as? [String] else {
+            return capabilities
+        }
+        rawValues.compactMap { ApplePayMerchantCapability(rawValue: $0)?.toAppleType }
+            .forEach { capabilities.insert($0) }
+        return capabilities
+    }
+
     var supportedCountries: Set<String>? {
         guard let items = dict[ApplePayKeys.supportedCountries] as? [String] else {
             return nil
@@ -154,7 +166,7 @@ public struct ApplepayConfigurationParser {
         paymentRequest.billingContact = billingContact
         paymentRequest.requiredShippingContactFields = requiredShippingContactFields
         paymentRequest.requiredBillingContactFields = requiredBillingContactFields
-        paymentRequest.merchantCapabilities = [.capability3DS]
+        paymentRequest.merchantCapabilities = merchantCapabilities
         paymentRequest.shippingContact = shippingContact
         paymentRequest.shippingType = shippingType ?? .shipping
         paymentRequest.supportedCountries = supportedCountries
