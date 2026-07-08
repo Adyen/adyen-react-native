@@ -27,15 +27,15 @@ class ActionFragment : BottomSheetDialogFragment() {
   private var actionHandled: Boolean = false
   var component: GenericActionComponent? = null
 
-  private val configuration: CheckoutConfiguration
-    get() =
-      BundleCompat.getParcelable(requireArguments(), KEY_CONFIGURATION, CheckoutConfiguration::class.java)
-        ?: throw IllegalStateException("Missing $KEY_CONFIGURATION argument")
+  private val configuration: CheckoutConfiguration by lazy {
+    BundleCompat.getParcelable(requireArguments(), KEY_CONFIGURATION, CheckoutConfiguration::class.java)
+      ?: throw IllegalStateException("Missing $KEY_CONFIGURATION argument")
+  }
 
-  private val action: Action
-    get() =
-      BundleCompat.getParcelable(requireArguments(), KEY_ACTION, Action::class.java)
-        ?: throw IllegalStateException("Missing $KEY_ACTION argument")
+  private val action: Action by lazy {
+    BundleCompat.getParcelable(requireArguments(), KEY_ACTION, Action::class.java)
+      ?: throw IllegalStateException("Missing $KEY_ACTION argument")
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -45,6 +45,13 @@ class ActionFragment : BottomSheetDialogFragment() {
   override fun onSaveInstanceState(outState: Bundle) {
     super.onSaveInstanceState(outState)
     outState.putBoolean(KEY_ACTION_HANDLED, actionHandled)
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    if (activity?.isChangingConfigurations == false) {
+      ActionModule.currentCallback = null
+    }
   }
 
   override fun onCreateView(

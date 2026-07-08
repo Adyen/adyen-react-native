@@ -51,18 +51,19 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
         TComponent : ActionHandlingComponent {
   var component: TComponent? = null
 
-  protected val configuration: CheckoutConfiguration
-    get() =
-      BundleCompat.getParcelable(requireArguments(), KEY_CONFIGURATION, CheckoutConfiguration::class.java)
-        ?: throw IllegalStateException("Missing $KEY_CONFIGURATION argument")
+  protected val configuration: CheckoutConfiguration by lazy {
+    BundleCompat.getParcelable(requireArguments(), KEY_CONFIGURATION, CheckoutConfiguration::class.java)
+      ?: throw IllegalStateException("Missing $KEY_CONFIGURATION argument")
+  }
 
-  protected val paymentMethod: PaymentMethod
-    get() =
-      BundleCompat.getParcelable(requireArguments(), KEY_PAYMENT_METHOD, PaymentMethod::class.java)
-        ?: throw IllegalStateException("Missing $KEY_PAYMENT_METHOD argument")
+  protected val paymentMethod: PaymentMethod by lazy {
+    BundleCompat.getParcelable(requireArguments(), KEY_PAYMENT_METHOD, PaymentMethod::class.java)
+      ?: throw IllegalStateException("Missing $KEY_PAYMENT_METHOD argument")
+  }
 
-  protected val session: CheckoutSession?
-    get() = sessionFromArguments(requireArguments())
+  protected val session: CheckoutSession? by lazy {
+    sessionFromArguments(requireArguments())
+  }
 
   private val advancedViewModel: AdvancedComponentViewModel<TState> by viewModels()
   private val sessionViewModel: SessionsComponentViewModel<TState> by viewModels()
