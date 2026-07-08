@@ -60,8 +60,8 @@ public final class CardComponentViewProxy: UIStackView {
     }
 
     @objc public func dispose() {
-        ensureMainThread { [weak self] in
-            self?.disposeOnMainThread()
+        ensureMainThread {
+            self.disposeOnMainThread()
         }
     }
 

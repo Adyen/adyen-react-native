@@ -202,21 +202,21 @@ final class ThreadingSafetyTests: XCTestCase {
         proxy.viewId = "card-view"
 
         let expectation = expectation(description: "Error should be reported on main thread")
+        // Each failed attempt resets `hasComponent`, so both setters can independently
+        // re-trigger initialization; both emissions call fulfill(), so over-fulfillment is expected.
+        expectation.assertForOverFulfill = false
+        emitter.onSend = {
+            expectation.fulfill()
+        }
 
         DispatchQueue.global().async {
             proxy.setPaymentMethod(Self.invalidCardPaymentMethodJSON)
             proxy.setConfiguration("{}")
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // Each failed attempt resets `hasComponent`, so both setters can independently
-            // re-trigger initialization; what matters is that every emission is main-thread.
-            XCTAssertGreaterThanOrEqual(emitter.eventCount, 1)
-            XCTAssertTrue(emitter.sentOnMainThread)
-            expectation.fulfill()
-        }
-
         wait(for: [expectation], timeout: 1.0)
+        XCTAssertGreaterThanOrEqual(emitter.eventCount, 1)
+        XCTAssertTrue(emitter.sentOnMainThread)
     }
 
     func test_embeddedComponentBusHide_fromBackgroundThread_dismissesPresenterOnMainThread() {
@@ -350,10 +350,12 @@ private final class TestableBaseModule: BaseModule {
 private final class ThreadTrackingEmitter: EventEmitter {
     private(set) var eventCount = 0
     private(set) var sentOnMainThread = false
+    var onSend: (() -> Void)?
 
     func send(event: EventName, body: Any?) {
         eventCount += 1
         sentOnMainThread = Thread.isMainThread
+        onSend?()
     }
 }
 
