@@ -16,30 +16,32 @@ internal class BaseAddressModule: BaseActionModule {
 
     @objc
     func update(_ results: NSArray) {
-        ensureMainThread { [weak self] in
-            guard let self, let lookupHandler = self.lookupHandler else { return }
+        let addressModels: [LookupAddressModel] = results
+            .compactMap { $0 as? NSDictionary }
+            .compactMap { try? $0.decode() }
 
-            let addressModels: [LookupAddressModel] = results
-                .compactMap { $0 as? NSDictionary }
-                .compactMap { try? $0.decode() }
-            lookupHandler(addressModels)
+        ensureMainThread { [weak self] in
+            self?.lookupHandler?(addressModels)
         }
     }
 
     @objc
     func confirm(_ success: NSNumber, address: NSDictionary) {
-        ensureMainThread { [weak self] in
-            guard let self, let lookupCompletionHandler = self.lookupCompletionHandler else { return }
-
-            if !success.boolValue, let message = address[Keys.message] as? String {
-                return lookupCompletionHandler(.failure(AddressError(message: message)))
+        if !success.boolValue, let message = address[Keys.message] as? String {
+            let error = AddressError(message: message)
+            return ensureMainThread { [weak self] in
+                self?.lookupCompletionHandler?(.failure(error))
             }
+        }
 
-            do {
-                let addressModel: LookupAddressModel = try address.decode()
-                lookupCompletionHandler(.success(addressModel.postalAddress))
-            } catch {
-                lookupCompletionHandler(.failure(error))
+        do {
+            let addressModel: LookupAddressModel = try address.decode()
+            ensureMainThread { [weak self] in
+                self?.lookupCompletionHandler?(.success(addressModel.postalAddress))
+            }
+        } catch {
+            ensureMainThread { [weak self] in
+                self?.lookupCompletionHandler?(.failure(error))
             }
         }
     }
