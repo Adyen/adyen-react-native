@@ -27,12 +27,12 @@ class ActionFragment : BottomSheetDialogFragment() {
   private var actionHandled: Boolean = false
   var component: GenericActionComponent? = null
 
-  private val configuration: CheckoutConfiguration by lazy {
+  internal val configuration: CheckoutConfiguration by lazy {
     BundleCompat.getParcelable(requireArguments(), KEY_CONFIGURATION, CheckoutConfiguration::class.java)
       ?: throw IllegalStateException("Missing $KEY_CONFIGURATION argument")
   }
 
-  private val action: Action by lazy {
+  internal val action: Action by lazy {
     BundleCompat.getParcelable(requireArguments(), KEY_ACTION, Action::class.java)
       ?: throw IllegalStateException("Missing $KEY_ACTION argument")
   }

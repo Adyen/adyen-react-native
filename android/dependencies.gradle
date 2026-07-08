@@ -13,6 +13,7 @@ ext {
     junit_jupiter_version = "5.14.0"
     mockito_kotlin_version = "4.1.0"
     mockito_version = "4.11.0"
+    robolectric_version = "4.16.1"
 
     testLibraries = [
             json            : "org.json:json:$json_version",
@@ -27,5 +28,6 @@ ext {
                     "org.mockito:mockito-inline:$mockito_version",
                     "org.mockito.kotlin:mockito-kotlin:$mockito_kotlin_version"
             ],
+            robolectric     : "org.robolectric:robolectric:$robolectric_version",
     ]
 }
