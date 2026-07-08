@@ -155,7 +155,7 @@ internal class BaseModule: RCTEventEmitter {
 extension BaseModule: PresentationDelegate {
 
     internal func present(component: PresentableComponent) {
-        DispatchQueue.main.async { [weak self] in
+        ensureMainThread { [weak self] in
             guard let self else { return }
 
             let presenter: UIViewController
