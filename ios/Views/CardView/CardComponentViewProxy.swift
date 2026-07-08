@@ -60,6 +60,12 @@ public final class CardComponentViewProxy: UIStackView {
     }
 
     @objc public func dispose() {
+        ensureMainThread { [weak self] in
+            self?.disposeOnMainThread()
+        }
+    }
+
+    private func disposeOnMainThread() {
         if let childVC = cardComponent?.viewController {
             childVC.willMove(toParent: nil)
             childVC.view.removeFromSuperview()
@@ -81,6 +87,12 @@ public final class CardComponentViewProxy: UIStackView {
     // MARK: - Component initialization
 
     private func initializeComponentIfNeeded() {
+        ensureMainThread { [weak self] in
+            self?.initializeComponentIfNeededOnMainThread()
+        }
+    }
+
+    private func initializeComponentIfNeededOnMainThread() {
         guard !hasComponent,
               let paymentMethodJSON,
               let configurationJSON,

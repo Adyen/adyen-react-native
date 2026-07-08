@@ -168,6 +168,57 @@ final class ThreadingSafetyTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
+    func test_cardComponentViewProxyDispose_fromBackgroundThread_doesNotCrash() {
+        let bus = EmbeddedComponentBusModule()
+        EmbeddedComponentBusModule.shared = bus
+        bus.createActionHandlerIfNeeded(context: Self.context, locale: nil)
+        _ = bus.register(viewId: "card-view")
+
+        let proxy = CardComponentViewProxy(frame: .zero)
+        proxy.viewId = "card-view"
+
+        let disposeExpectation = expectation(description: "Dispose should complete")
+        DispatchQueue.global().async {
+            proxy.dispose()
+            DispatchQueue.main.async {
+                disposeExpectation.fulfill()
+            }
+        }
+
+        wait(for: [disposeExpectation], timeout: 1.0)
+
+        // Bus should still be usable afterwards, proving state wasn't corrupted.
+        let newProxy = bus.register(viewId: "card-view-2")
+        XCTAssertNotNil(newProxy)
+    }
+
+    func test_cardComponentViewProxyInitialize_fromBackgroundThread_reportsErrorOnMainThread() {
+        let bus = EmbeddedComponentBusModule()
+        EmbeddedComponentBusModule.shared = bus
+        let emitter = ThreadTrackingEmitter()
+        bus.emitterOverride = emitter
+
+        let proxy = CardComponentViewProxy(frame: .zero)
+        proxy.viewId = "card-view"
+
+        let expectation = expectation(description: "Error should be reported on main thread")
+
+        DispatchQueue.global().async {
+            proxy.setPaymentMethod(Self.invalidCardPaymentMethodJSON)
+            proxy.setConfiguration("{}")
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // Each failed attempt resets `hasComponent`, so both setters can independently
+            // re-trigger initialization; what matters is that every emission is main-thread.
+            XCTAssertGreaterThanOrEqual(emitter.eventCount, 1)
+            XCTAssertTrue(emitter.sentOnMainThread)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
     func test_embeddedComponentBusHide_fromBackgroundThread_dismissesPresenterOnMainThread() {
         let expectation = expectation(description: "Presenter should be dismissed")
         let sut = EmbeddedComponentBusModule()
@@ -279,6 +330,10 @@ final class ThreadingSafetyTests: XCTestCase {
         apiContext: try! APIContext(environment: Environment.test, clientKey: "local_DUMMYKEYFORTESTING"),
         payment: nil
     )
+
+    /// "type" has the wrong JSON type (number instead of string), guaranteeing
+    /// `CardPaymentMethod` decoding fails and `createCardComponent` takes its error path.
+    private static let invalidCardPaymentMethodJSON = #"{"type":123}"#
 }
 
 private final class TestableBaseModule: BaseModule {
@@ -289,6 +344,16 @@ private final class TestableBaseModule: BaseModule {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+private final class ThreadTrackingEmitter: EventEmitter {
+    private(set) var eventCount = 0
+    private(set) var sentOnMainThread = false
+
+    func send(event: EventName, body: Any?) {
+        eventCount += 1
+        sentOnMainThread = Thread.isMainThread
     }
 }
 
