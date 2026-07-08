@@ -16,21 +16,21 @@ internal class BaseAddressModule: BaseActionModule {
 
     @objc
     func update(_ results: NSArray) {
-        guard let lookupHandler else { return }
+        ensureMainThread { [weak self] in
+            guard let self, let lookupHandler = self.lookupHandler else { return }
 
-        let addressModels: [LookupAddressModel] = results
-            .compactMap { $0 as? NSDictionary }
-            .compactMap { try? $0.decode() }
-        DispatchQueue.main.async {
+            let addressModels: [LookupAddressModel] = results
+                .compactMap { $0 as? NSDictionary }
+                .compactMap { try? $0.decode() }
             lookupHandler(addressModels)
         }
     }
 
     @objc
     func confirm(_ success: NSNumber, address: NSDictionary) {
-        guard let lookupCompletionHandler else { return }
+        ensureMainThread { [weak self] in
+            guard let self, let lookupCompletionHandler = self.lookupCompletionHandler else { return }
 
-        DispatchQueue.main.async {
             if !success.boolValue, let message = address[Keys.message] as? String {
                 return lookupCompletionHandler(.failure(AddressError(message: message)))
             }
