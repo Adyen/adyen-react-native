@@ -7,27 +7,18 @@
 
 package com.adyenreactnativesdk.component.instant.fragment
 
-import androidx.core.os.bundleOf
-import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.instant.InstantComponentState
 import com.adyen.checkout.instant.InstantPaymentComponent
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
-import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
+import com.adyenreactnativesdk.component.base.instant.instantFragmentDelegate
 
-class InstantFragment(
-  configuration: CheckoutConfiguration,
-  paymentMethod: PaymentMethod,
-  session: CheckoutSession?,
-) : BaseInstantComponentFragment<InstantPaymentComponent, InstantComponentState>(configuration, paymentMethod, session) {
-  override val logTag: String = TAG
-
+class InstantFragment : BaseInstantComponentFragment<InstantPaymentComponent, InstantComponentState>() {
   override fun createComponent(
     paymentMethod: PaymentMethod,
     configuration: CheckoutConfiguration,
@@ -54,26 +45,5 @@ class InstantFragment(
       callback,
     )
 
-  companion object : IInstantFragment by InstantFragmentDelegate(
-    "InstantFragment",
-    ::InstantFragment,
-  ) {
-    private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
-    internal const val TAG = "InstantFragment"
-
-    override fun show(
-      fragmentManager: FragmentManager,
-      configuration: CheckoutConfiguration,
-      paymentMethod: PaymentMethod,
-      session: CheckoutSession?,
-    ) {
-      InstantFragment(configuration, paymentMethod, session)
-        .apply {
-          arguments =
-            bundleOf(
-              PAYMENT_METHOD_TYPE_EXTRA to paymentMethod.type,
-            )
-        }.show(fragmentManager, TAG)
-    }
-  }
+  companion object : IInstantFragment by instantFragmentDelegate(::InstantFragment)
 }

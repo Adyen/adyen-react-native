@@ -16,15 +16,9 @@ import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
-import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
+import com.adyenreactnativesdk.component.base.instant.instantFragmentDelegate
 
-class PayByBankGlobalFragment(
-  configuration: CheckoutConfiguration,
-  paymentMethod: PaymentMethod,
-  session: CheckoutSession?,
-) : BaseInstantComponentFragment<PayByBankComponent, PayByBankComponentState>(configuration, paymentMethod, session) {
-  override val logTag: String = TAG
-
+class PayByBankGlobalFragment : BaseInstantComponentFragment<PayByBankComponent, PayByBankComponentState>() {
   override fun createComponent(
     paymentMethod: PaymentMethod,
     configuration: CheckoutConfiguration,
@@ -51,10 +45,5 @@ class PayByBankGlobalFragment(
       callback,
     )
 
-  companion object : IInstantFragment by InstantFragmentDelegate(
-    "PayByBankGlobalFragment",
-    ::PayByBankGlobalFragment,
-  ) {
-    internal const val TAG = "PayByBankGlobalFragment"
-  }
+  companion object : IInstantFragment by instantFragmentDelegate(::PayByBankGlobalFragment)
 }

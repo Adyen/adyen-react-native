@@ -16,15 +16,9 @@ import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
-import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
+import com.adyenreactnativesdk.component.base.instant.instantFragmentDelegate
 
-class IdealFragment(
-  configuration: CheckoutConfiguration,
-  paymentMethod: PaymentMethod,
-  session: CheckoutSession?,
-) : BaseInstantComponentFragment<IdealComponent, IdealComponentState>(configuration, paymentMethod, session) {
-  override val logTag: String = TAG
-
+class IdealFragment : BaseInstantComponentFragment<IdealComponent, IdealComponentState>() {
   override fun createComponent(
     paymentMethod: PaymentMethod,
     configuration: CheckoutConfiguration,
@@ -51,10 +45,5 @@ class IdealFragment(
       callback,
     )
 
-  companion object : IInstantFragment by InstantFragmentDelegate(
-    "IdealFragment",
-    ::IdealFragment,
-  ) {
-    internal const val TAG = "IdealFragment"
-  }
+  companion object : IInstantFragment by instantFragmentDelegate(::IdealFragment)
 }

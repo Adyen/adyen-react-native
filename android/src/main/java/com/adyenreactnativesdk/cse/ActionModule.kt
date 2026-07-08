@@ -46,10 +46,10 @@ class ActionModule(
       promise.reject(PARSING_ERROR, e.message, e)
       return
     }
+    currentCallback = this
     ActionFragment.show(
       appCompatActivity.supportFragmentManager,
       checkoutConfiguration,
-      this,
       action,
     )
   }
@@ -57,6 +57,7 @@ class ActionModule(
   @ReactMethod
   fun hide(success: Boolean?) {
     ActionFragment.hide(appCompatActivity.supportFragmentManager)
+    currentCallback = null
     promise = null
   }
 
@@ -66,6 +67,12 @@ class ActionModule(
     private const val THREEDS_VERSION_NAME = "threeDS2SdkVersion"
     private const val COMPONENT_ERROR = "actionError"
     private const val PARSING_ERROR = "parsingError"
+
+    /**
+     * [ActionComponentCallback] can't be put into [ActionFragment]'s arguments Bundle, so
+     * [ActionFragment] re-sources it from here after fragment re-creation (e.g. config changes).
+     */
+    internal var currentCallback: ActionComponentCallback? = null
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
