@@ -68,10 +68,7 @@ class ActionModule(
     private const val COMPONENT_ERROR = "actionError"
     private const val PARSING_ERROR = "parsingError"
 
-    /**
-     * [ActionComponentCallback] can't be put into [ActionFragment]'s arguments Bundle, so
-     * [ActionFragment] re-sources it from here after fragment re-creation (e.g. config changes).
-     */
+    /** Live callback re-sourced by [ActionFragment] after re-creation. */
     internal var currentCallback: ActionComponentCallback? = null
   }
 
