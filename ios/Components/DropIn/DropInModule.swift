@@ -26,7 +26,7 @@ internal final class DropInModule: BaseAddressModule {
 
     @objc
     func removeStored(_ success: NSNumber) {
-        DispatchQueue.main.async { [weak self] in
+        ensureMainThread { [weak self] in
             self?.disableStoredPaymentMethodHandler?(success.boolValue)
         }
     }
@@ -83,7 +83,7 @@ internal final class DropInModule: BaseAddressModule {
             return sendError(error: error)
         }
 
-        DispatchQueue.main.async { [weak self] in
+        ensureMainThread { [weak self] in
             self?.dropInComponent?.handle(action)
         }
     }

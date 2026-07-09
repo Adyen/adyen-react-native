@@ -113,7 +113,7 @@ internal class BaseModule: RCTEventEmitter {
 
     internal func cleanUp() {
         ensureMainThread { [weak self] in
-            self?.cleanUpOnMainThread()
+            self?.performCleanUp()
         }
     }
 
@@ -139,7 +139,7 @@ internal class BaseModule: RCTEventEmitter {
         return error
     }
 
-    private func cleanUpOnMainThread() {
+    private func performCleanUp() {
         BaseModule.session = nil
         BaseModule.currentModule = nil
         currentComponent = nil

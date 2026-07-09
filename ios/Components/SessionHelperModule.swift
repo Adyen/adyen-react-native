@@ -48,7 +48,7 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
         }
 
         let config = AdyenSession.Configuration(sessionIdentifier: id, initialSessionData: data, context: context)
-        DispatchQueue.main.async {
+        ensureMainThread {
             AdyenSession.initialize(with: config, delegate: self, presentationDelegate: self) { result in
                 switch result {
                 case let .success(session):

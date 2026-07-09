@@ -78,7 +78,7 @@ extension ApplePayModule {
         let success = (dict[ApplePayKeys.Update.status] as? String) == "success"
         let errors = parseErrors(dict)
         let status: PKPaymentAuthorizationStatus = success ? .success : .failure
-        DispatchQueue.main.async {
+        ensureMainThread {
             handler(PKPaymentAuthorizationResult(status: status, errors: errors))
         }
     }
@@ -92,7 +92,7 @@ extension ApplePayModule {
         let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
         let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
         let errors = parseErrors(dict)
-        DispatchQueue.main.async {
+        ensureMainThread {
             self.currentShippingMethods = shippingMethods
             handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
         }
@@ -106,7 +106,7 @@ extension ApplePayModule {
         let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
         let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
         let errors = parseErrors(dict)
-        DispatchQueue.main.async {
+        ensureMainThread {
             self.currentShippingMethods = shippingMethods
             handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
         }
@@ -118,7 +118,7 @@ extension ApplePayModule {
         shippingMethodHandler = nil
         let dict = update as? [String: Any] ?? [:]
         let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
-        DispatchQueue.main.async {
+        ensureMainThread {
             handler(.init(paymentSummaryItems: summaryItems))
         }
     }
