@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.action.core.GenericActionComponent
 import com.adyen.checkout.components.core.ActionComponentCallback
@@ -15,13 +16,48 @@ import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-class ActionFragment(
-  private val configuration: CheckoutConfiguration,
-  private val callback: ActionComponentCallback,
-  private val action: Action,
-) : BottomSheetDialogFragment() {
+/**
+ * Bottom sheet fragment that hosts the action component (3DS2, redirect, etc.).
+ *
+ * [configuration] and [action] are restored from [arguments]; the callback is re-sourced from
+ * [ActionModule.currentCallback].
+ */
+class ActionFragment : BottomSheetDialogFragment() {
   private var actionHandled: Boolean = false
   var component: GenericActionComponent? = null
+
+  private val configuration: CheckoutConfiguration by lazy {
+    BundleCompat.getParcelable(requireArguments(), KEY_CONFIGURATION, CheckoutConfiguration::class.java)
+      ?: throw IllegalStateException("Missing $KEY_CONFIGURATION argument")
+  }
+
+  private val action: Action by lazy {
+    BundleCompat.getParcelable(requireArguments(), KEY_ACTION, Action::class.java)
+      ?: throw IllegalStateException("Missing $KEY_ACTION argument")
+  }
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    actionHandled = savedInstanceState?.getBoolean(KEY_ACTION_HANDLED) ?: false
+  }
+
+  override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    outState.putBoolean(KEY_ACTION_HANDLED, actionHandled)
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    if (activity?.isChangingConfigurations == false) {
+      ActionModule.currentCallback = null
+    }
+  }
+
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?,
+  ): View = inflater.inflate(R.layout.fragment_instant, container)
 
   override fun onStart() {
     super.onStart()
@@ -30,6 +66,12 @@ class ActionFragment(
   }
 
   private fun setupComponent() {
+    val callback = ActionModule.currentCallback
+    if (callback == null) {
+      dismiss()
+      return
+    }
+
     val component =
       GenericActionComponent.PROVIDER.get(
         this,
@@ -62,18 +104,27 @@ class ActionFragment(
   }
 
   companion object {
-    private const val PAYMENT_METHOD_TYPE_EXTRA = "PAYMENT_METHOD_TYPE_EXTRA"
     internal const val TAG = "ActionFragment"
     const val FRAGMENT_ERROR =
       "Not able to find AdyenComponentView in `component_view` fragment"
 
+    private const val KEY_CONFIGURATION = "KEY_CONFIGURATION"
+    private const val KEY_ACTION = "KEY_ACTION"
+    private const val KEY_ACTION_HANDLED = "KEY_ACTION_HANDLED"
+
     fun show(
       fragmentManager: FragmentManager,
       configuration: CheckoutConfiguration,
-      callback: ActionComponentCallback,
       action: Action,
     ) {
-      ActionFragment(configuration, callback, action).show(fragmentManager, TAG)
+      ActionFragment()
+        .apply {
+          arguments =
+            Bundle().apply {
+              putParcelable(KEY_CONFIGURATION, configuration)
+              putParcelable(KEY_ACTION, action)
+            }
+        }.show(fragmentManager, TAG)
     }
 
     fun hide(fragmentManager: FragmentManager) {

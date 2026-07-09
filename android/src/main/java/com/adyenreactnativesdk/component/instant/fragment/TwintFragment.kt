@@ -16,15 +16,9 @@ import com.adyen.checkout.twint.TwintComponent
 import com.adyen.checkout.twint.TwintComponentState
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
-import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
+import com.adyenreactnativesdk.component.base.instant.instantFragmentDelegate
 
-class TwintFragment(
-  configuration: CheckoutConfiguration,
-  paymentMethod: PaymentMethod,
-  session: CheckoutSession?,
-) : BaseInstantComponentFragment<TwintComponent, TwintComponentState>(configuration, paymentMethod, session) {
-  override val logTag: String = TAG
-
+class TwintFragment : BaseInstantComponentFragment<TwintComponent, TwintComponentState>() {
   override fun createComponent(
     paymentMethod: PaymentMethod,
     configuration: CheckoutConfiguration,
@@ -51,10 +45,5 @@ class TwintFragment(
       callback,
     )
 
-  companion object : IInstantFragment by InstantFragmentDelegate(
-    "TwintFragment",
-    ::TwintFragment,
-  ) {
-    internal const val TAG = "TwintFragment"
-  }
+  companion object : IInstantFragment by instantFragmentDelegate(::TwintFragment)
 }
