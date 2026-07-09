@@ -53,8 +53,13 @@ class ActionFragmentTest {
   fun `configuration and action are cached after first access`() {
     val fragment = ActionFragment().apply { arguments = buildArguments() }
 
-    assertSame(fragment.configuration, fragment.configuration)
-    assertSame(fragment.action, fragment.action)
+    val config1 = fragment.configuration
+    val config2 = fragment.configuration
+    assertSame(config1, config2)
+
+    val action1 = fragment.action
+    val action2 = fragment.action
+    assertSame(action1, action2)
   }
 
   @Test

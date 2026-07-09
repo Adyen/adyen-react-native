@@ -91,8 +91,13 @@ class BaseComponentFragmentTest {
     val fragment = TestFragment()
     fragment.arguments = BaseComponentFragment.buildArguments(configuration, paymentMethod, session)
 
-    assertSame(fragment.exposedConfiguration, fragment.exposedConfiguration)
-    assertSame(fragment.exposedSession, fragment.exposedSession)
+    val config1 = fragment.exposedConfiguration
+    val config2 = fragment.exposedConfiguration
+    assertSame(config1, config2)
+
+    val session1 = fragment.exposedSession
+    val session2 = fragment.exposedSession
+    assertSame(session1, session2)
   }
 
   @Test(expected = IllegalStateException::class)
