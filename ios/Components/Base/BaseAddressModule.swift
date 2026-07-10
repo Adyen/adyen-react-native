@@ -34,15 +34,17 @@ internal class BaseAddressModule: BaseActionModule {
             }
         }
 
+        let result: Result<PostalAddress, Error>
+
         do {
             let addressModel: LookupAddressModel = try address.decode()
-            ensureMainThread { [weak self] in
-                self?.lookupCompletionHandler?(.success(addressModel.postalAddress))
-            }
+            result = .success(addressModel.postalAddress)
         } catch {
-            ensureMainThread { [weak self] in
-                self?.lookupCompletionHandler?(.failure(error))
-            }
+            result = .failure(error)
+        }
+
+        ensureMainThread { [weak self] in
+            self?.lookupCompletionHandler?(result)
         }
     }
 
