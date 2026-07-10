@@ -93,18 +93,19 @@ public final class CardComponentViewProxy: UIStackView {
     // MARK: - Component initialization
 
     private func initializeComponentIfNeeded() {
-        guard !hasComponent,
-              let paymentMethodJSON,
-              let configurationJSON,
-              let viewId else {
-            return
-        }
         ensureMainThread { [weak self] in
-            self?.performInitialization()
+            guard let self,
+                  !self.hasComponent,
+                  let paymentMethodJSON = self.paymentMethodJSON,
+                  let configurationJSON = self.configurationJSON,
+                  let viewId = self.viewId else {
+                return
+            }
+            self.performInitialization(paymentMethodJSON, configurationJSON, viewId)
         }
     }
 
-    private func performInitialization() {
+    private func performInitialization(_ paymentMethodJSON: NSDictionary, _ configurationJSON: NSDictionary, _ viewId: String) {
         self.hasComponent = true
         guard let componentBus = EmbeddedComponentBusModule.shared else {
             assertionFailure("EmbeddedComponentBusModule not initialized")
