@@ -11,6 +11,12 @@ import UIKit
     func onLayoutChange(width: CGFloat, height: CGFloat)
 }
 
+/// Hosts a native `CardComponent` inside a React Native Fabric view.
+///
+/// Component creation and view-hierarchy attachment are decoupled because Fabric's mount lifecycle
+/// delivers them in either order: props (triggering `performInitialization`) may arrive before or after
+/// the proxy is added to a window. `attachChildViewControllerIfNeeded()` is called from both
+/// `performInitialization` and `didMoveToWindow` to cover both cases; it is idempotent (`childVC.parent == nil` guard).
 @objc(CardComponentViewProxy)
 public final class CardComponentViewProxy: UIStackView {
 
@@ -61,11 +67,11 @@ public final class CardComponentViewProxy: UIStackView {
 
     @objc public func dispose() {
         ensureMainThread {
-            self.disposeOnMainThread()
+            self.performDispose()
         }
     }
 
-    private func disposeOnMainThread() {
+    private func performDispose() {
         if let childVC = cardComponent?.viewController {
             childVC.willMove(toParent: nil)
             childVC.view.removeFromSuperview()
@@ -88,17 +94,18 @@ public final class CardComponentViewProxy: UIStackView {
 
     private func initializeComponentIfNeeded() {
         ensureMainThread { [weak self] in
-            self?.initializeComponentIfNeededOnMainThread()
+            guard let self,
+                  !self.hasComponent,
+                  let paymentMethodJSON = self.paymentMethodJSON,
+                  let configurationJSON = self.configurationJSON,
+                  let viewId = self.viewId else {
+                return
+            }
+            self.performInitialization(paymentMethodJSON, configurationJSON, viewId)
         }
     }
 
-    private func initializeComponentIfNeededOnMainThread() {
-        guard !hasComponent,
-              let paymentMethodJSON,
-              let configurationJSON,
-              let viewId else {
-            return
-        }
+    private func performInitialization(_ paymentMethodJSON: NSDictionary, _ configurationJSON: NSDictionary, _ viewId: String) {
         self.hasComponent = true
         guard let componentBus = EmbeddedComponentBusModule.shared else {
             assertionFailure("EmbeddedComponentBusModule not initialized")
@@ -113,7 +120,8 @@ public final class CardComponentViewProxy: UIStackView {
                 proxy: proxy
             )
             self.cardComponent = component
-            embedComponentView(component)
+            loadComponentView(component)
+            attachChildViewControllerIfNeeded()
         } catch {
             self.hasComponent = false
             componentBus.sendError(error: error)
@@ -148,22 +156,29 @@ public final class CardComponentViewProxy: UIStackView {
 
     // MARK: - View embedding
 
-    private func embedComponentView(_ component: CardComponent) {
+    private func loadComponentView(_ component: CardComponent) {
         let childVC = component.viewController
         _ = childVC.view // force load view
+        componentView = childVC.view
+        addArrangedSubview(childVC.view)
+        disableNativeScrollingAndBouncing(in: childVC.view)
+    }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+    /// Attaches the child view controller to its parent if the proxy is already in the view hierarchy.
+    /// Called both from `performInitialization` and `didMoveToWindow` to handle either ordering:
+    /// component created before or after the proxy is added to the window.
+    private func attachChildViewControllerIfNeeded() {
+        guard let childVC = cardComponent?.viewController, childVC.parent == nil else { return }
+        guard let parentVC = parentViewController else { return }
+        parentVC.addChild(childVC)
+        childVC.didMove(toParent: parentVC)
+        layoutIfNeeded()
+    }
 
-            if let parentVC = self.parentViewController {
-                parentVC.addChild(childVC)
-                childVC.didMove(toParent: parentVC)
-            }
-
-            self.componentView = childVC.view
-            self.addArrangedSubview(childVC.view)
-            self.disableNativeScrollingAndBouncing(in: childVC.view)
-            self.layoutIfNeeded()
+    override public func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil {
+            attachChildViewControllerIfNeeded()
         }
     }
 

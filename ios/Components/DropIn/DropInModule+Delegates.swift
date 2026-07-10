@@ -61,9 +61,8 @@ extension DropInModule: PartialPaymentDelegate {
 
     @objc
     func provideBalance(_ success: NSNumber, balance: NSDictionary?, error: NSDictionary?) {
-        guard let checkBalanceHandler else { return }
-
-        DispatchQueue.main.async {
+        ensureMainThread { [weak self] in
+            guard let self, let checkBalanceHandler = self.checkBalanceHandler else { return }
             guard success.boolValue, let balance: Balance = try? balance?.decode() else {
                 let message = error.getErrorMessage
                 return checkBalanceHandler(.failure(ModuleException.balanceCheck(message: message)))
@@ -80,10 +79,8 @@ extension DropInModule: PartialPaymentDelegate {
 
     @objc
     func provideOrder(_ success: NSNumber, order: NSDictionary?, error: NSDictionary?) {
-        guard let requestOrderHandler else {
-            return
-        }
-        DispatchQueue.main.async {
+        ensureMainThread { [weak self] in
+            guard let self, let requestOrderHandler = self.requestOrderHandler else { return }
             guard success.boolValue, let order: PartialPaymentOrder = try? order?.decode() else {
                 let message = error.getErrorMessage
                 return requestOrderHandler(.failure(ModuleException.orderRequest(message: message)))

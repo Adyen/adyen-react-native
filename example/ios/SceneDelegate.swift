@@ -19,8 +19,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         appDelegate.startReactNative(in: sceneWindow)
     }
 
-  func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
-      guard let url = URLContexts.first?.url else { return }
-      RedirectComponent.applicationDidOpen(from: url)
-  }
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard let url = URLContexts.first?.url else { return }
+        RedirectComponent.applicationDidOpen(from: url)
+    }
 }
