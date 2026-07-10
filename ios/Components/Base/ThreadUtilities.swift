@@ -12,7 +12,7 @@ internal func ensureMainThread(_ work: @escaping @MainActor () -> Void) {
             work()
         }
     } else {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { @MainActor in
             work()
         }
     }
