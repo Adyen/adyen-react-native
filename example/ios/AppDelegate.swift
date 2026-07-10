@@ -6,10 +6,10 @@ import UIKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    var window: UIWindow?
-
     var reactNativeDelegate: ReactNativeDelegate?
     var reactNativeFactory: RCTReactNativeFactory?
+
+    private var launchOptions: [UIApplication.LaunchOptionsKey: Any]?
 
     func application(
         _ application: UIApplication,
@@ -21,16 +21,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         reactNativeDelegate = delegate
         reactNativeFactory = factory
+        self.launchOptions = launchOptions
 
-        window = UIWindow(frame: UIScreen.main.bounds)
+        return true
+    }
 
-        factory.startReactNative(
+    func startReactNative(in window: UIWindow) {
+        reactNativeFactory?.startReactNative(
             withModuleName: "AdyenExample",
             in: window,
             launchOptions: launchOptions
         )
-
-        return true
     }
 
     func application(

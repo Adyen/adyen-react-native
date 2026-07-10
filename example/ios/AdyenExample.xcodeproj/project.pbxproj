@@ -17,6 +17,7 @@
 		E70D4FB42FF77A5D00C09021 /* ThreadingSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */; };
 		E732B0CD2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */; };
 		E741F0FE2E38DECD000D0F42 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */; };
+		E741F2012E38DECD000D0F42 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E741F2002E38DEC6000D0F42 /* SceneDelegate.swift */; };
 		E745059C2FF3C380009FC440 /* InstantModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E745059B2FF3C380009FC440 /* InstantModuleTests.swift */; };
 		E745059D2FF3C380009FC440 /* BaseModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E745059A2FF3C380009FC440 /* BaseModuleTests.swift */; };
 		E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */; };
@@ -65,6 +66,7 @@
 		E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadingSafetyTests.swift; sourceTree = "<group>"; };
 		E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayModuleUtilitiesTests.swift; sourceTree = "<group>"; };
 		E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E741F2002E38DEC6000D0F42 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		E745059A2FF3C380009FC440 /* BaseModuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseModuleTests.swift; sourceTree = "<group>"; };
 		E745059B2FF3C380009FC440 /* InstantModuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantModuleTests.swift; sourceTree = "<group>"; };
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 			isa = PBXGroup;
 			children = (
 				E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */,
+				E741F2002E38DEC6000D0F42 /* SceneDelegate.swift */,
 				E757C9D727737E6700B62256 /* AdyenExample.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -496,6 +499,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E741F0FE2E38DECD000D0F42 /* AppDelegate.swift in Sources */,
+				E741F2012E38DECD000D0F42 /* SceneDelegate.swift in Sources */,
 				F5C555F429F6C9F5008E7AA8 /* AdyenAppearance.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
