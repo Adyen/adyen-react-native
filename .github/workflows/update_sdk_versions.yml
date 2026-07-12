@@ -73,7 +73,7 @@ jobs:
         yarn
         yarn app pod
 
-    - uses: actions/cache@v5
+    - uses: actions/cache@v6
       if: inputs.platform == 'iOS'
       id: pods-cache
       with:
