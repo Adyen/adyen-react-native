@@ -71,6 +71,7 @@ jobs:
       run: |
         rm -f example/ios/Podfile.lock
         yarn
+        bundle install
         yarn app pod
 
     - uses: actions/cache@v5
