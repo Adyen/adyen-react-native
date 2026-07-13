@@ -42,7 +42,7 @@ jobs:
       - name: Generate Fixture
         run: |
           bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}"
-    
+
       - name: Download Library
         uses: actions/download-artifact@v8
         with:
@@ -181,9 +181,6 @@ jobs:
         run: |
           npm i -g appium@${{ env.APPIUM_VERSION }}
           appium driver install uiautomator2@${{ env.APPIUM_UIAUTOMATOR2_VERSION }}
-
-      - name: Start Appium
-        run: bash ./start_appium.sh 4723 30
 
       - name: Inject Secrets
         if: ${{ env.ADYEN_CLIENT_KEY != '' && env.ADYEN_PUBLIC_KEY != '' }}
