@@ -5,10 +5,14 @@ import PaymentMethodListItem from './PaymentMethodListItem';
 import Styles from '../../common/Styles';
 
 interface PaymentMethodsListProps {
+  title: string;
   paymentMethods: PaymentMethod[] | undefined;
 }
 
-const PaymentMethodsList = ({ paymentMethods }: PaymentMethodsListProps) => {
+const PaymentMethodsList = ({
+  title,
+  paymentMethods,
+}: PaymentMethodsListProps) => {
   const { start } = useAdyenCheckout();
 
   if (!paymentMethods) {
@@ -17,7 +21,7 @@ const PaymentMethodsList = ({ paymentMethods }: PaymentMethodsListProps) => {
 
   return (
     <View>
-      <AdaptiveText style={Styles.paddedTitle}>Components</AdaptiveText>
+      <AdaptiveText style={Styles.paddedTitle}>{title}</AdaptiveText>
       {paymentMethods.map((paymentMethod) => {
         return (
           <PaymentMethodListItem

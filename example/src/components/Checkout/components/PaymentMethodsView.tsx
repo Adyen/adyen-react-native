@@ -1,4 +1,8 @@
-import { useAdyenCheckout } from '@adyen/react-native';
+import {
+  useAdyenCheckout,
+  NATIVE_COMPONENTS,
+  UNSUPPORTED_PAYMENT_METHODS,
+} from '@adyen/react-native';
 import { Text, ActivityIndicator } from 'react-native';
 import PageScrollView from '../../common/PageScrollView';
 import PaymentMethodsList from './PaymentMethodsList';
@@ -12,6 +16,7 @@ export type PaymentMethodsParams = {
   showDropIn?: boolean;
   showEmbeddedComponents?: boolean;
   showDropBasedComponents?: boolean;
+  showInstant?: boolean;
 };
 
 export type PaymentMethodsProps = NativeStackScreenProps<
@@ -27,6 +32,7 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
     prop.route.params?.showEmbeddedComponents ?? false;
   const showDropinBasedComponents =
     prop.route.params?.showDropBasedComponents ?? false;
+  const showInstant = prop.route.params?.showInstant ?? false;
 
   if (!isReady) {
     return <ActivityIndicator />;
@@ -35,6 +41,15 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
   if (!paymentMethods) {
     return <Text>No payment methods available</Text>;
   }
+
+  const nonNativeMethods = paymentMethods?.paymentMethods.filter(
+    (pm) =>
+      !NATIVE_COMPONENTS.includes(pm.type) &&
+      !UNSUPPORTED_PAYMENT_METHODS.includes(pm.type)
+  );
+  const nativeMethods = paymentMethods?.paymentMethods.filter((pm) =>
+    NATIVE_COMPONENTS.includes(pm.type)
+  );
 
   return (
     <PageScrollView>
@@ -51,8 +66,18 @@ const PaymentMethods = (prop: PaymentMethodsProps) => {
         </>
       )}
 
+      {showInstant && (
+        <PaymentMethodsList
+          title="Instant components"
+          paymentMethods={nonNativeMethods}
+        />
+      )}
+
       {showDropinBasedComponents && (
-        <PaymentMethodsList paymentMethods={paymentMethods.paymentMethods} />
+        <PaymentMethodsList
+          title="Drop-in based components (deprecated)"
+          paymentMethods={nativeMethods}
+        />
       )}
     </PageScrollView>
   );

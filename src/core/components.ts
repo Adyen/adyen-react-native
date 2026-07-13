@@ -63,7 +63,6 @@ export const NATIVE_COMPONENTS = [
   'billdesk_online',
   'billdesk_wallet',
   'dotpay',
-  'entercash',
   'eps',
   'molpay_ebanking_fpx_MY',
   'molpay_ebanking_TH',
@@ -73,7 +72,6 @@ export const NATIVE_COMPONENTS = [
   'onlinebanking_IN',
   'onlineBanking_PL',
   'onlineBanking_SK',
-  'paybybank',
   'wallet_IN',
 
   /** Await */

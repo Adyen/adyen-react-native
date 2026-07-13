@@ -25,7 +25,7 @@ jobs:
       PLATFORM: ${{ inputs.platform }}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Fetch latest SDK version
       id: fetch-version
@@ -71,6 +71,7 @@ jobs:
       run: |
         rm -f example/ios/Podfile.lock
         yarn
+        bundle install
         yarn app pod
 
     - uses: actions/cache@v5

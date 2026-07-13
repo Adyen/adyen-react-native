@@ -23,7 +23,7 @@ internal class BaseActionModule: BaseModuleSender {
             return sendError(error: error)
         }
 
-        DispatchQueue.main.async { [weak self] in
+        ensureMainThread { [weak self] in
             self?.actionHandler?.handle(action)
         }
     }

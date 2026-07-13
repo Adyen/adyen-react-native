@@ -48,7 +48,7 @@ internal final class ActionModule: BaseModule {
         actionHandler?.presentationDelegate = self
         currentComponent = actionHandler
 
-        DispatchQueue.main.async { [weak self] in
+        ensureMainThread { [weak self] in
             self?.actionHandler?.handle(action)
         }
     }

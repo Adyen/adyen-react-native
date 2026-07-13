@@ -10,21 +10,21 @@ package com.adyenreactnativesdk.component.instant.fragment
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.ideal.IdealComponent
-import com.adyen.checkout.ideal.IdealComponentState
+import com.adyen.checkout.paybybankus.PayByBankUSComponent
+import com.adyen.checkout.paybybankus.PayByBankUSComponentState
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
 import com.adyenreactnativesdk.component.base.instant.instantFragmentDelegate
 
-class IdealFragment : BaseInstantComponentFragment<IdealComponent, IdealComponentState>() {
+class PayByBankUSFragment : BaseInstantComponentFragment<PayByBankUSComponent, PayByBankUSComponentState>() {
   override fun createComponent(
     paymentMethod: PaymentMethod,
     configuration: CheckoutConfiguration,
-    callback: ComponentCallback<IdealComponentState>,
-  ): IdealComponent =
-    IdealComponent.PROVIDER.get(
+    callback: ComponentCallback<PayByBankUSComponentState>,
+  ): PayByBankUSComponent =
+    PayByBankUSComponent.PROVIDER.get(
       this,
       paymentMethod,
       configuration,
@@ -35,9 +35,9 @@ class IdealFragment : BaseInstantComponentFragment<IdealComponent, IdealComponen
     session: CheckoutSession,
     paymentMethod: PaymentMethod,
     configuration: CheckoutConfiguration,
-    callback: SessionComponentCallback<IdealComponentState>,
-  ): IdealComponent =
-    IdealComponent.PROVIDER.get(
+    callback: SessionComponentCallback<PayByBankUSComponentState>,
+  ): PayByBankUSComponent =
+    PayByBankUSComponent.PROVIDER.get(
       this,
       session,
       paymentMethod,
@@ -45,5 +45,5 @@ class IdealFragment : BaseInstantComponentFragment<IdealComponent, IdealComponen
       callback,
     )
 
-  companion object : IInstantFragment by instantFragmentDelegate(::IdealFragment)
+  companion object : IInstantFragment by instantFragmentDelegate(::PayByBankUSFragment)
 }

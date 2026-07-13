@@ -71,3 +71,17 @@ enum ApplePayShippingType: String {
         }
     }
 }
+
+enum ApplePayMerchantCapability: String {
+    case debit
+    case credit
+
+    var toAppleType: PKMerchantCapability {
+        switch self {
+        case .debit:
+            return .debit
+        case .credit:
+            return .credit
+        }
+    }
+}

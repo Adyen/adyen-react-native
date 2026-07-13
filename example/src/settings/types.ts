@@ -24,6 +24,7 @@ export type ApplePaySettings = {
   merchantName?: string;
   allowOnboarding?: boolean;
   shippingType?: 'shipping' | 'delivery' | 'storePickup' | 'servicePickup';
+  merchantCapabilities?: ('debit' | 'credit')[];
 };
 
 export type GooglePaySettings = {
