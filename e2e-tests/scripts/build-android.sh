@@ -48,8 +48,23 @@ else
 fi
 echo "::endgroup::"
 
+cleanup_appium() {
+  if [ -f .appium.pid ]; then
+    APPIUM_PID=$(cat .appium.pid)
+    kill "$APPIUM_PID" 2>/dev/null || true
+    for _ in {1..10}; do
+      kill -0 "$APPIUM_PID" 2>/dev/null || break
+      sleep 1
+    done
+    kill -9 "$APPIUM_PID" 2>/dev/null || true
+    rm -f .appium.pid
+  fi
+}
+
+trap cleanup_appium EXIT
+
 echo "::group::Start Appium [$(date '+%H:%M:%S')]"
-bash ./start_appium.sh 4723 30
+APPIUM_PID_FILE=.appium.pid bash ./start_appium.sh 4723 30
 echo "::endgroup::"
 
 echo "::group::Run Appium Tests [$(date '+%H:%M:%S')]"
