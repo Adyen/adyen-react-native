@@ -6,10 +6,14 @@
 
 import Foundation
 
-internal func ensureMainThread(_ work: @escaping () -> Void) {
+internal func ensureMainThread(_ work: @escaping @MainActor () -> Void) {
     if Thread.isMainThread {
-        work()
+        MainActor.assumeIsolated {
+            work()
+        }
     } else {
-        DispatchQueue.main.async(execute: work)
+        DispatchQueue.main.async { @MainActor in
+            work()
+        }
     }
 }

@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Button, ScrollView, View } from 'react-native';
+import { Button, View } from 'react-native';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
 import FormToggle from '../common/FormToggle';
 import FormTextInput from '../common/FormTextInput';
-import FormDropdown from '../common/FormDropdown';
+import FormDropdown from './common/FormDropdown';
+import PageScrollView from '../common/PageScrollView';
 import { ENVIRONMENT } from '../../Configuration';
 import type { ApplePaySettings } from '../../settings/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -33,6 +34,10 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
   const [shippingType, setShippingType] = useState<
     ApplePaySettings['shippingType']
   >(existing.shippingType ?? 'shipping');
+  const [debitOnly, setDebitOnly] = useState(
+    existing.merchantCapabilities?.length === 1 &&
+      existing.merchantCapabilities[0] === 'debit'
+  );
 
   const saveAndGoBack = useCallback(() => {
     update({
@@ -41,6 +46,7 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
         merchantName: merchantName || undefined,
         allowOnboarding,
         shippingType,
+        merchantCapabilities: debitOnly ? ['debit'] : undefined,
       },
     });
     navigation.goBack();
@@ -51,10 +57,11 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
     merchantName,
     allowOnboarding,
     shippingType,
+    debitOnly,
   ]);
 
   return (
-    <ScrollView style={Styles.page}>
+    <PageScrollView>
       <FormTextInput
         title="Merchant ID"
         value={merchantID}
@@ -76,10 +83,15 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
         options={[...shippingTypes]}
         onChange={setShippingType}
       />
+      <FormToggle
+        title="Debit Cards Only"
+        value={debitOnly}
+        onValueChange={setDebitOnly}
+      />
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />
       </View>
-    </ScrollView>
+    </PageScrollView>
   );
 };
 

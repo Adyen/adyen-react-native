@@ -1,11 +1,18 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAppContext } from '../../hooks/useAppContext';
 import Styles from '../common/Styles';
-import { Button, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Button, TouchableOpacity, View } from 'react-native';
 import FormTextInput from '../common/FormTextInput';
+import FormSearchDropdown from './common/FormSearchDropdown';
+import PageScrollView from '../common/PageScrollView';
 import AdaptiveText from '../common/AdaptiveText';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './SettingsNavigator';
+import {
+  COUNTRY_CODES,
+  getCountryLabel,
+  getCurrency,
+} from '../../assets/countries';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'GeneralSettings'>;
 
@@ -14,7 +21,6 @@ const SettingView = ({ navigation }: Props) => {
 
   const [countryCode, setCountryCode] = useState(configuration.countryCode);
   const [amount, setAmount] = useState(String(configuration.amount));
-  const [currency, setCurrency] = useState(configuration.currency);
   const [merchantAccount, setMerchantAccount] = useState(
     configuration.merchantAccount
   );
@@ -24,6 +30,8 @@ const SettingView = ({ navigation }: Props) => {
   const [shopperLocale, setShopperLocale] = useState(
     configuration.shopperLocale
   );
+
+  const currency = getCurrency(countryCode) ?? configuration.currency;
 
   const settings = useMemo(
     () => ({
@@ -52,18 +60,13 @@ const SettingView = ({ navigation }: Props) => {
   }, [settings, save, navigateToRoot]);
 
   return (
-    <ScrollView style={Styles.page}>
-      <FormTextInput
+    <PageScrollView>
+      <FormSearchDropdown
         title="Country"
         value={countryCode}
-        maxLength={2}
-        onChangeText={setCountryCode}
-      />
-      <FormTextInput
-        title="Currency"
-        value={currency}
-        maxLength={3}
-        onChangeText={setCurrency}
+        options={COUNTRY_CODES}
+        onChange={setCountryCode}
+        labelExtractor={getCountryLabel}
       />
       <FormTextInput
         title="Amount"
@@ -127,7 +130,7 @@ const SettingView = ({ navigation }: Props) => {
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndClose} />
       </View>
-    </ScrollView>
+    </PageScrollView>
   );
 };
 

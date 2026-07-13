@@ -6,11 +6,10 @@
 
 package com.adyenreactnativesdk.component.googlepay
 
-import androidx.fragment.app.FragmentManager
+import android.os.Bundle
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.ComponentCallback
 import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.googlepay.GooglePayComponent
 import com.adyen.checkout.googlepay.GooglePayComponentState
 import com.adyen.checkout.sessions.core.CheckoutSession
@@ -18,16 +17,20 @@ import com.adyen.checkout.sessions.core.SessionComponentCallback
 import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.instant.BaseInstantComponentFragment
 import com.adyenreactnativesdk.component.base.instant.IInstantFragment
-import com.adyenreactnativesdk.component.base.instant.InstantFragmentDelegate
+import com.adyenreactnativesdk.component.base.instant.instantFragmentDelegate
 
-class GooglePayFragment(
-  configuration: CheckoutConfiguration,
-  paymentMethod: PaymentMethod,
-  session: CheckoutSession?,
-) : BaseInstantComponentFragment<GooglePayComponent, GooglePayComponentState>(configuration, paymentMethod, session) {
-  override val logTag: String = TAG
-
+class GooglePayFragment : BaseInstantComponentFragment<GooglePayComponent, GooglePayComponentState>() {
   private var googlePayScreenVisible = false
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    googlePayScreenVisible = savedInstanceState?.getBoolean(KEY_GOOGLE_PAY_SCREEN_VISIBLE) ?: false
+  }
+
+  override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    outState.putBoolean(KEY_GOOGLE_PAY_SCREEN_VISIBLE, googlePayScreenVisible)
+  }
 
   override fun createComponent(
     paymentMethod: PaymentMethod,
@@ -67,33 +70,7 @@ class GooglePayFragment(
     }
   }
 
-  companion object : IInstantFragment {
-    internal const val TAG = "GooglePayFragment"
-
-    private val instantDelegate =
-      InstantFragmentDelegate(
-        "GooglePayFragment",
-        ::GooglePayFragment,
-      )
-
-    override fun show(
-      fragmentManager: FragmentManager,
-      configuration: CheckoutConfiguration,
-      paymentMethod: PaymentMethod,
-      session: CheckoutSession?,
-    ) {
-      instantDelegate.show(fragmentManager, configuration, paymentMethod, session)
-    }
-
-    override fun handle(
-      fragmentManager: FragmentManager,
-      action: Action,
-    ) {
-      instantDelegate.handle(fragmentManager, action)
-    }
-
-    override fun hide(fragmentManager: FragmentManager) {
-      instantDelegate.hide(fragmentManager)
-    }
+  companion object : IInstantFragment by instantFragmentDelegate(::GooglePayFragment) {
+    private const val KEY_GOOGLE_PAY_SCREEN_VISIBLE = "KEY_GOOGLE_PAY_SCREEN_VISIBLE"
   }
 }

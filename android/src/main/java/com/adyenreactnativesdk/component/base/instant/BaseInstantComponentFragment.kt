@@ -16,14 +16,12 @@ import com.adyenreactnativesdk.R
 import com.adyenreactnativesdk.component.base.ComponentData
 import com.adyenreactnativesdk.component.base.ModuleException
 
-abstract class BaseInstantComponentFragment<TComponent, TState : PaymentComponentState<*>>(
-  private val configuration: CheckoutConfiguration,
-  paymentMethod: PaymentMethod,
-  session: CheckoutSession?,
-) : BaseComponentFragment<TComponent, TState>(paymentMethod, session) where TComponent : Component,
+abstract class BaseInstantComponentFragment<TComponent, TState : PaymentComponentState<*>> :
+  BaseComponentFragment<TComponent, TState>() where TComponent : Component,
         TComponent : ActionHandlingComponent,
         TComponent : ViewableComponent {
-  protected abstract val logTag: String
+  protected open val logTag: String
+    get() = javaClass.simpleName
 
   protected abstract fun createComponent(
     paymentMethod: PaymentMethod,

@@ -20,7 +20,7 @@ jobs:
       target: google_apis
       arch: x86_64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download library
         uses: actions/download-artifact@v8

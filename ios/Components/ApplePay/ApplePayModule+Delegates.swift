@@ -72,13 +72,13 @@ extension ApplePayModule {
 
     @objc
     func provideAuthorizationResult(_ result: NSDictionary) {
-        guard let handler = authorizationHandler else { return }
-        authorizationHandler = nil
         let dict = result as? [String: Any] ?? [:]
         let success = (dict[ApplePayKeys.Update.status] as? String) == "success"
         let errors = parseErrors(dict)
         let status: PKPaymentAuthorizationStatus = success ? .success : .failure
-        DispatchQueue.main.async {
+        ensureMainThread { [weak self] in
+            guard let self, let handler = self.authorizationHandler else { return }
+            self.authorizationHandler = nil
             handler(PKPaymentAuthorizationResult(status: status, errors: errors))
         }
     }
@@ -86,13 +86,15 @@ extension ApplePayModule {
     @available(iOS 15.0, *)
     @objc
     func provideCouponCodeUpdate(_ update: NSDictionary) {
-        guard let handler = couponCodeHandler else { return }
-        couponCodeHandler = nil
         let dict = update as? [String: Any] ?? [:]
-        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
-        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
+        let parsedSummaryItems = parseSummaryItems(dict)
+        let parsedShippingMethods = parseShippingMethods(dict)
         let errors = parseErrors(dict)
-        DispatchQueue.main.async {
+        ensureMainThread { [weak self] in
+            guard let self, let handler = self.couponCodeHandler else { return }
+            self.couponCodeHandler = nil
+            let summaryItems = parsedSummaryItems ?? self.currentApplePayPayment?.summaryItems ?? []
+            let shippingMethods = parsedShippingMethods ?? self.currentShippingMethods
             self.currentShippingMethods = shippingMethods
             handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
         }
@@ -100,13 +102,15 @@ extension ApplePayModule {
 
     @objc
     func provideShippingContactUpdate(_ update: NSDictionary) {
-        guard let handler = shippingContactHandler else { return }
-        shippingContactHandler = nil
         let dict = update as? [String: Any] ?? [:]
-        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
-        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
+        let parsedSummaryItems = parseSummaryItems(dict)
+        let parsedShippingMethods = parseShippingMethods(dict)
         let errors = parseErrors(dict)
-        DispatchQueue.main.async {
+        ensureMainThread { [weak self] in
+            guard let self, let handler = self.shippingContactHandler else { return }
+            self.shippingContactHandler = nil
+            let summaryItems = parsedSummaryItems ?? self.currentApplePayPayment?.summaryItems ?? []
+            let shippingMethods = parsedShippingMethods ?? self.currentShippingMethods
             self.currentShippingMethods = shippingMethods
             handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
         }
@@ -114,11 +118,12 @@ extension ApplePayModule {
 
     @objc
     func provideShippingMethodUpdate(_ update: NSDictionary) {
-        guard let handler = shippingMethodHandler else { return }
-        shippingMethodHandler = nil
         let dict = update as? [String: Any] ?? [:]
-        let summaryItems = parseSummaryItems(dict) ?? currentApplePayPayment?.summaryItems ?? []
-        DispatchQueue.main.async {
+        let parsedSummaryItems = parseSummaryItems(dict)
+        ensureMainThread { [weak self] in
+            guard let self, let handler = self.shippingMethodHandler else { return }
+            self.shippingMethodHandler = nil
+            let summaryItems = parsedSummaryItems ?? self.currentApplePayPayment?.summaryItems ?? []
             handler(.init(paymentSummaryItems: summaryItems))
         }
     }
