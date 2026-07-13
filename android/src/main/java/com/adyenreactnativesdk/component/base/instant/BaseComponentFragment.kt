@@ -39,12 +39,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 
 /**
- * Base class for all instant/component bottom sheets.
- *
- * Kept to a no-argument constructor on purpose: [FragmentManager] recreates fragments via
- * reflection on config changes and process restoration, and only ever calls the no-arg
- * constructor before restoring [getArguments]. All payment state is therefore passed through
- * [arguments] instead of the constructor.
+ * Base class for all instant/component bottom sheets. Payment state is passed through [arguments].
  */
 abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<*>> :
   BottomSheetDialogFragment() where TComponent : Component,
@@ -142,9 +137,8 @@ abstract class BaseComponentFragment<TComponent, TState : PaymentComponentState<
     private const val KEY_SESSION_CLIENT_KEY = "KEY_SESSION_CLIENT_KEY"
 
     /**
-     * Builds the [Bundle] carrying the payment state as [android.os.Parcelable] arguments so it
-     * survives fragment re-creation. [CheckoutSession] itself isn't Parcelable, so it's split into
-     * its Parcelable parts and reassembled by [sessionFromArguments].
+     * Builds the [Bundle] of payment-state arguments. [CheckoutSession] is split into its
+     * Parcelable parts and reassembled by [sessionFromArguments].
      */
     fun buildArguments(
       configuration: CheckoutConfiguration,

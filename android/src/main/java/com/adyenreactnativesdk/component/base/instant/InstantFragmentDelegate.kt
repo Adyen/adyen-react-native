@@ -6,12 +6,7 @@ import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.sessions.core.CheckoutSession
 
-/**
- * Builds an [IInstantFragment] whose tag is derived from [T], so fragments don't need to declare
- * their class name as a string twice (once for the tag, once for logging). Uses the fully
- * qualified class name rather than the simple name: under R8/ProGuard obfuscation, simple names
- * of unrelated classes can collide, but fully qualified names are always unique.
- */
+/** Builds an [IInstantFragment] tagged with [T]'s fully qualified class name. */
 internal inline fun <reified T : BaseComponentFragment<*, *>> instantFragmentDelegate(noinline factory: () -> T): IInstantFragment =
   InstantFragmentDelegate(T::class.java.name, factory)
 

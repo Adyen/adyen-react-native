@@ -17,11 +17,10 @@ import com.adyenreactnativesdk.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /**
- * Kept to a no-argument constructor on purpose: [FragmentManager] recreates fragments via
- * reflection on config changes and process restoration, and only ever calls the no-arg
- * constructor before restoring [getArguments]. [configuration] and [action] are Parcelable and
- * travel through [arguments]. [callback] is a live RN module reference and can't be serialized,
- * so it's re-sourced from [ActionModule.currentCallback] instead.
+ * Bottom sheet fragment that hosts the action component (3DS2, redirect, etc.).
+ *
+ * [configuration] and [action] are restored from [arguments]; the callback is re-sourced from
+ * [ActionModule.currentCallback].
  */
 class ActionFragment : BottomSheetDialogFragment() {
   private var actionHandled: Boolean = false

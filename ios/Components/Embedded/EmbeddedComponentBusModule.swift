@@ -7,13 +7,13 @@
 import Adyen
 import React
 
+/// Bridge module coordinating embedded payment components (e.g. card) between JS and the native SDK.
+///
+/// All mutable state is main-thread-only; access is routed through `ensureMainThread(_:)`.
 @objc(AdyenComponentBus)
 internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     static var shared: EmbeddedComponentBusModule?
-
-    // Main-thread-only mutable state. Access these properties via the `*OnMainThread` helpers
-    // or through JS entry points that dispatch with `ensureMainThread(_:)`.
 
     /// Per-viewId delegate proxies
     private var delegates: [String: EmbeddedComponentDelegateProxy] = [:]
@@ -85,14 +85,14 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     @objc
     func subscribe(_ viewId: String) {
         ensureMainThread { [weak self] in
-            self?.subscribeOnMainThread(viewId)
+            self?.performSubscribe(viewId)
         }
     }
 
     @objc
     func unsubscribe(_ viewId: String) {
         ensureMainThread { [weak self] in
-            self?.unsubscribeOnMainThread(viewId)
+            self?.performUnsubscribe(viewId)
         }
     }
 
@@ -101,50 +101,50 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     @objc
     func handle(_ viewId: String, action actionDict: NSDictionary?) {
         ensureMainThread { [weak self] in
-            self?.handleOnMainThread(viewId, action: actionDict)
+            self?.performHandle(viewId, action: actionDict)
         }
     }
 
     @objc
     func update(_ viewId: String, results: NSArray?) {
         ensureMainThread { [weak self] in
-            self?.updateOnMainThread(viewId, results: results)
+            self?.performUpdate(viewId, results: results)
         }
     }
 
     @objc
     func confirm(_ viewId: String, success: NSNumber, address: NSDictionary) {
         ensureMainThread { [weak self] in
-            self?.confirmOnMainThread(viewId, success: success, address: address)
+            self?.performConfirm(viewId, success: success, address: address)
         }
     }
 
     @objc
     func hide(_ viewId: String, success: NSNumber, event _: NSDictionary) {
         ensureMainThread { [weak self] in
-            self?.hideOnMainThread(viewId, success: success)
+            self?.performHide(viewId, success: success)
         }
     }
 
     override func cleanUp() {
         ensureMainThread { [weak self] in
-            self?.cleanUpOnMainThread()
+            self?.performCleanUp()
         }
     }
 
-    private func subscribeOnMainThread(_ viewId: String) {
+    private func performSubscribe(_ viewId: String) {
         subscribedViews.insert(viewId)
     }
 
-    private func unsubscribeOnMainThread(_ viewId: String) {
+    private func performUnsubscribe(_ viewId: String) {
         subscribedViews.remove(viewId)
         unregister(viewId: viewId)
         if subscribedViews.isEmpty {
-            cleanUpOnMainThread()
+            performCleanUp()
         }
     }
 
-    private func handleOnMainThread(_ viewId: String, action actionDict: NSDictionary?) {
+    private func performHandle(_ viewId: String, action actionDict: NSDictionary?) {
         guard let actionDict else { return }
         guard let handler = actionHandler else {
             sendError(error: ModuleException.componentNotRegistered(viewId))
@@ -163,7 +163,7 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
         }
     }
 
-    private func updateOnMainThread(_ viewId: String, results: NSArray?) {
+    private func performUpdate(_ viewId: String, results: NSArray?) {
         guard let lookupHandler = lookupHandlers[viewId] else { return }
 
         let addressModels: [LookupAddressModel] = (results ?? [])
@@ -172,7 +172,7 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
         lookupHandler(addressModels)
     }
 
-    private func confirmOnMainThread(_ viewId: String, success: NSNumber, address: NSDictionary) {
+    private func performConfirm(_ viewId: String, success: NSNumber, address: NSDictionary) {
         guard let lookupCompletionHandler = lookupCompletionHandlers[viewId] else { return }
 
         if !success.boolValue, let message = address[Keys.message] as? String {
@@ -187,14 +187,14 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
         }
     }
 
-    private func hideOnMainThread(_ viewId: String, success: NSNumber) {
+    private func performHide(_ viewId: String, success: NSNumber) {
         unregister(viewId: viewId)
         if delegates.isEmpty {
             dismiss(success.boolValue)
         }
     }
 
-    private func cleanUpOnMainThread() {
+    private func performCleanUp() {
         delegates.removeAll()
         subscribedViews.removeAll()
         actionHandler?.cancelIfNeeded()
