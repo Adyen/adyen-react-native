@@ -41,6 +41,12 @@ android {
     buildConfig true
   }
 
+  testOptions {
+    unitTests {
+      includeAndroidResources = true
+    }
+  }
+
   buildTypes {
     release {
       minifyEnabled false
@@ -73,6 +79,7 @@ dependencies {
   testImplementation testLibraries.json
   testImplementation testLibraries.junit5
   testImplementation testLibraries.mockito
+  testImplementation testLibraries.robolectric
 }
 
 react {
