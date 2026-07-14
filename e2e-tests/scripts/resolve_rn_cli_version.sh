@@ -13,7 +13,7 @@ rn_version=${1:-}
 major_version=$(echo "$rn_version" | cut -d '.' -f 1,2)
 
 case $major_version in
-  '0.81' | '0.82' ) echo '^20.0.0' ;;
+  0.8[1-5]* ) echo '^20.0.0' ;;
   '0.80' ) echo '^19.0.0' ;;
   '0.79' ) echo '^18.0.0' ;;
   '0.76' | '0.77' | '0.78' ) echo '^15.0.0' ;;
