@@ -63,7 +63,7 @@ class ActionModule(
 
   companion object {
     private const val COMPONENT_NAME = "AdyenAction"
-    private var threeDS2Version = ThreeDS2Service.INSTANCE.sdkVersion
+    private val threeDS2Version by lazy { ThreeDS2Service.INSTANCE.sdkVersion }
     private const val THREEDS_VERSION_NAME = "threeDS2SdkVersion"
     private const val COMPONENT_ERROR = "actionError"
     private const val PARSING_ERROR = "parsingError"
