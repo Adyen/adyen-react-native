@@ -6,11 +6,21 @@ PROJECT_NAME=testproject
 APP_PACKAGE=com.$PROJECT_NAME
 
 platform=${1:-}
+BOOT_TIMEOUT=300
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+echo "::group::Booting emulator [$(date '+%H:%M:%S')]"
 adb wait-for-device
-until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; do
+boot_elapsed=0
+until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do
+  if [ "$boot_elapsed" -ge "$BOOT_TIMEOUT" ]; then
+    echo "Error: Emulator failed to boot within $BOOT_TIMEOUT seconds"
+    exit 1
+  fi
   sleep 2
+  boot_elapsed=$((boot_elapsed + 2))
 done
+echo "::endgroup::"
 
 if [ "$platform" = "expo" ]; then
   echo "::group::Prebuild Expo Android [$(date '+%H:%M:%S')]"
@@ -38,7 +48,7 @@ adb shell am start -n "$APP_PACKAGE/.MainActivity"
 echo "::endgroup::"
 
 echo "::group::Pre-install Appium APKs [$(date '+%H:%M:%S')]"
-SETTINGS_APK=$(find "$HOME/.appium" -name "settings_apk-debug.apk" -print -quit 2>/dev/null)
+SETTINGS_APK=$(find "$HOME/.appium" -name "settings_apk-debug.apk" 2>/dev/null | head -n 1)
 if [ -n "$SETTINGS_APK" ]; then
   echo "Installing io.appium.settings from: $SETTINGS_APK"
   adb install -r -t -g "$SETTINGS_APK"
@@ -64,7 +74,7 @@ cleanup_appium() {
 trap cleanup_appium EXIT
 
 echo "::group::Start Appium [$(date '+%H:%M:%S')]"
-APPIUM_PID_FILE=.appium.pid bash ./start_appium.sh 4723 30
+APPIUM_PID_FILE=.appium.pid bash "$SCRIPT_DIR/start_appium.sh" 4723 30
 echo "::endgroup::"
 
 echo "::group::Run Appium Tests [$(date '+%H:%M:%S')]"
