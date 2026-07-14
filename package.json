@@ -50,7 +50,7 @@
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "git clean -fxd",
     "prepare": "./scripts/set-version.sh && bob build",
-    "start": "rm yarn.lock && yarn && yarn prepare && husky && scripts/credentials.sh"
+    "start": "rm yarn.lock && yarn && yarn prepare && husky && bash ./scripts/credentials.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
