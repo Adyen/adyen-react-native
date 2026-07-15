@@ -12,7 +12,6 @@ import type {
 } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
-import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
@@ -21,7 +20,7 @@ import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 
 const AdvancedCheckout = () => {
-  const { configuration, processResult } = useAppContext();
+  const { configuration, processResult, apiClient } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [paymentMethods, setPaymentMethods] = useState<
@@ -32,7 +31,7 @@ const AdvancedCheckout = () => {
     const refreshPaymentMethods = async () => {
       try {
         const paymentMethodsResponse =
-          await ApiClient.paymentMethods(configuration);
+          await apiClient.paymentMethods(configuration);
         setPaymentMethods(paymentMethodsResponse);
       } catch (e) {
         setError(String(e));
@@ -41,7 +40,7 @@ const AdvancedCheckout = () => {
       }
     };
     refreshPaymentMethods();
-  }, [configuration, setPaymentMethods, setLoading]);
+  }, [configuration, setPaymentMethods, setLoading, apiClient]);
 
   const didSubmit = useCallback(
     async (
@@ -50,7 +49,7 @@ const AdvancedCheckout = () => {
       _extra: any // extra info for Apple and Google Pay
     ) => {
       try {
-        const result = await ApiClient.payments(
+        const result = await apiClient.payments(
           data,
           configuration,
           data.returnUrl
@@ -64,19 +63,19 @@ const AdvancedCheckout = () => {
         processError(error, nativeComponent);
       }
     },
-    [configuration, processResult]
+    [configuration, processResult, apiClient]
   );
 
   const didProvide = useCallback(
     async (data: PaymentDetailsData, nativeComponent: AdyenActionComponent) => {
       try {
-        const result = await ApiClient.paymentDetails(data);
+        const result = await apiClient.paymentDetails(data);
         processResult(result, nativeComponent);
       } catch (error) {
         processError(error, nativeComponent);
       }
     },
-    [processResult]
+    [processResult, apiClient]
   );
 
   const didFail = useCallback(
@@ -99,7 +98,7 @@ const AdvancedCheckout = () => {
       resolve: () => void,
       reject: () => void
     ) => {
-      const success = await ApiClient.tryRemoveStoredCard(
+      const success = await apiClient.tryRemoveStoredCard(
         storedPaymentMethod.id,
         configuration
       );
@@ -109,7 +108,7 @@ const AdvancedCheckout = () => {
         reject();
       }
     },
-    [configuration]
+    [configuration, apiClient]
   );
 
   if (loading) {

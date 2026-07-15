@@ -7,8 +7,8 @@
  */
 
 import { Alert, SafeAreaView, useColorScheme } from 'react-native';
-import { DEFAULT_CONFIGURATION } from './Configuration';
-
+import type { ConfigProvider } from './config/ConfigProvider';
+import type { ApiService } from './api/ApiService';
 import AppContextProvider from './hooks/useAppContext';
 import Styles from './components/common/Styles';
 
@@ -23,7 +23,12 @@ import {
 } from './router/RootStackNavigator';
 import { useMemo } from 'react';
 
-const App = () => {
+type AppProps = {
+  configProvider: ConfigProvider;
+  apiClient: ApiService;
+};
+
+const App = ({ configProvider, apiClient }: AppProps) => {
   const isDark = useColorScheme();
 
   const theme = useMemo(() => {
@@ -33,7 +38,8 @@ const App = () => {
   return (
     <NavigationContainer theme={theme} ref={rootNavigationRef}>
       <AppContextProvider
-        configuration={DEFAULT_CONFIGURATION}
+        configProvider={configProvider}
+        apiClient={apiClient}
         onError={(error: Error) => {
           Alert.alert('App error', error.message || 'Error');
         }}
