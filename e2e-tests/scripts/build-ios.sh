@@ -17,6 +17,17 @@ else
   echo "::endgroup::"
 fi
 
+echo "::group::Patch fmt for Xcode 26 [$(date '+%H:%M:%S')]"
+# Xcode 26's Apple Clang breaks consteval in fmt 11.0.2 (RN 0.80.2 / Expo SDK 52
+# fixtures). base.h ignores a pre-defined FMT_USE_CONSTEVAL, so patch the header.
+FMT_BASE="ios/Pods/fmt/include/fmt/base.h"
+if [ -f "$FMT_BASE" ] && ! grep -q "Xcode 26 workaround" "$FMT_BASE"; then
+  chmod 0644 "$FMT_BASE"
+  perl -0pi -e 's/(#elif defined\(__cpp_consteval\)\n#  define FMT_USE_CONSTEVAL) 1/\/\/ Xcode 26 workaround: disable consteval\n$1 0/' "$FMT_BASE"
+  echo "Patched $FMT_BASE"
+fi
+echo "::endgroup::"
+
 # Find the workspace file dynamically (after ios directory is created)
 WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
 if [ -z "$WORKSPACE" ]; then
