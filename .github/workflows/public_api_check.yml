@@ -98,20 +98,23 @@ jobs:
             const fs = require('fs');
             const marker = '<!-- public-api-diff -->';
             const diff = fs.readFileSync(process.env.API_DIFF, 'utf8');
-            const body = `${marker}
-            ## Public API changes detected
-
-            The generated Public API snapshot differs from the target branch because files under \`src/\` changed.
-
-            <details>
-            <summary>API snapshot diff</summary>
-
-            \`\`\`diff
-            ${diff}
-            \`\`\`
-            </details>
-
-            Please review the changes and update \`etc/api/adyen-react-native.api.md\` if this public API change is intentional.`;
+            const body = [
+              marker,
+              '## Public API changes detected',
+              '',
+              'The generated Public API snapshot differs from the target branch because files under `src/` changed.',
+              '',
+              '<details>',
+              '<summary>API snapshot diff</summary>',
+              '',
+              '```diff',
+              diff,
+              '```',
+              '</details>',
+              '',
+              'Please review the changes and update `etc/api/adyen-react-native.api.md` if this public API change is intentional.',
+              '',
+            ].join('\n');
 
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
