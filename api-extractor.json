@@ -5,7 +5,7 @@
   "apiReport": {
     "enabled": true,
     "reportFolder": "<projectFolder>/etc/api",
-    "reportTempFolder": "<projectFolder>/etc/api",
+    "reportTempFolder": "<projectFolder>/etc/api/.tmp",
     "reportFileName": "adyen-react-native.api.md"
   },
   "docModel": {

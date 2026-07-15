@@ -44,12 +44,12 @@ jobs:
           node-version: ${{ vars.NODE_VERSION }}
           cache: 'yarn'
 
-      - name: Install dependencies and regenerate API report
+      - name: Install dependencies and validate API report
         if: steps.source-changes.outputs.changed == 'true'
         run: |
           yarn install --frozen-lockfile
           yarn prepare
-          yarn api-extractor:update
+          yarn api-extractor
 
       - name: Compare API report with target branch
         id: api-diff
