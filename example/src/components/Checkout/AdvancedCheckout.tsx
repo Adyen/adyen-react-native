@@ -8,6 +8,7 @@ import type {
   PaymentDetailsData,
   AdyenError,
   AdyenComponent,
+  StoredPaymentMethod,
 } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
@@ -92,6 +93,25 @@ const AdvancedCheckout = () => {
     [processResult]
   );
 
+  const onDisableStoredPaymentMethod = useCallback(
+    async (
+      storedPaymentMethod: StoredPaymentMethod,
+      resolve: () => void,
+      reject: () => void
+    ) => {
+      const success = await ApiClient.tryRemoveStoredCard(
+        storedPaymentMethod.id,
+        configuration
+      );
+      if (success) {
+        resolve();
+      } else {
+        reject();
+      }
+    },
+    [configuration]
+  );
+
   if (loading) {
     return (
       <View style={Styles.centeredContent}>
@@ -108,11 +128,20 @@ const AdvancedCheckout = () => {
     );
   }
 
+  const baseConfig = checkoutConfiguration(configuration);
+  const checkoutConfig = {
+    ...baseConfig,
+    dropin: {
+      ...baseConfig.dropin,
+      onDisableStoredPaymentMethod,
+    },
+  };
+
   return (
     <View style={Styles.page}>
       <TopView />
       <AdyenCheckout
-        config={checkoutConfiguration(configuration)}
+        config={checkoutConfig}
         paymentMethods={paymentMethods}
         onSubmit={didSubmit}
         onAdditionalDetails={didProvide}
