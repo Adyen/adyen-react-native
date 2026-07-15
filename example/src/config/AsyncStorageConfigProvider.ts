@@ -10,7 +10,15 @@ export class AsyncStorageConfigProvider implements ConfigProvider {
   async loadConfiguration(): Promise<AppConfiguration> {
     const value = await AsyncStorage.getItem(storeKey);
     if (value) {
-      return { ...this.initialConfiguration, ...JSON.parse(value) };
+      try {
+        return { ...this.initialConfiguration, ...JSON.parse(value) };
+      } catch (e) {
+        console.warn(
+          'Failed to parse stored configuration, falling back to initial configuration',
+          e
+        );
+        return this.initialConfiguration;
+      }
     }
     return this.initialConfiguration;
   }
