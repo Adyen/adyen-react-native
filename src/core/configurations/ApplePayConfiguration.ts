@@ -234,3 +234,9 @@ export interface ApplePayPaymentAuthorization {
   /** The selected shipping method, if any. */
   shippingMethod?: ApplePayShippingMethod;
 }
+
+/** Result passed to the native `provideAuthorizationResult` bridge method. */
+export interface ApplePayAuthorizationResult {
+  status: 'success' | 'failure';
+  errors?: ApplePayError[];
+}
