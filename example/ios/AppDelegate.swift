@@ -30,6 +30,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         reactNativeFactory?.startReactNative(
             withModuleName: "AdyenExample",
             in: window,
+            initialProperties: parseExternalConfig(),
             launchOptions: launchOptions
         )
     }
@@ -44,6 +45,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         RedirectComponent.applicationDidOpen(from: url)
+    }
+
+    private func parseExternalConfig() -> [String: Any] {
+        let args = ProcessInfo.processInfo.arguments
+        guard let configIndex = args.firstIndex(of: "-config"),
+              configIndex + 1 < args.count else {
+            return [:]
+        }
+
+        let base64String = args[configIndex + 1]
+        guard let data = Data(base64Encoded: base64String),
+              let jsonString = String(data: data, encoding: .utf8) else {
+            return [:]
+        }
+
+        return ["externalConfig": jsonString]
     }
 }
 

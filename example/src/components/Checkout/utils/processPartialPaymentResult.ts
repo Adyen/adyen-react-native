@@ -1,7 +1,7 @@
 import { ResultCode } from '@adyen/react-native';
 import type { PaymentResponse } from '../../../api/types';
 import type { DropInModule, Order } from '@adyen/react-native';
-import ApiClient from '../../../api/APIClient';
+import type { ApiService } from '../../../api/ApiService';
 import type { PaymentConfiguration } from '../../../api/types';
 
 function isRefusedInPartialPaymentFlow(response: PaymentResponse) {
@@ -21,7 +21,8 @@ function isNonFullyPaidOrder(order: Order) {
 export async function processPartialPaymentResult(
   result: PaymentResponse,
   dropInComponent: DropInModule,
-  configuration: PaymentConfiguration
+  configuration: PaymentConfiguration,
+  apiClient: ApiService
 ): Promise<PaymentResponse | undefined> {
   var outcome: ResultCode = result.resultCode;
   const action = result.action;
@@ -33,7 +34,7 @@ export async function processPartialPaymentResult(
     outcome = ResultCode.refused;
   } else if (order && isNonFullyPaidOrder(order)) {
     try {
-      const paymentMethods = await ApiClient.paymentMethods(
+      const paymentMethods = await apiClient.paymentMethods(
         configuration,
         order
       );

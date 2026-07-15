@@ -16,7 +16,6 @@ import type {
 import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
-import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
@@ -24,7 +23,7 @@ import { processError } from './utils/processError';
 import { processPartialPaymentResult } from './utils/processPartialPaymentResult';
 
 const PartialPaymentCheckout = () => {
-  const { configuration, processResult } = useAppContext();
+  const { configuration, processResult, apiClient } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [paymentMethods, setPaymentMethods] = useState<
@@ -35,7 +34,7 @@ const PartialPaymentCheckout = () => {
     const refreshPaymentMethods = async () => {
       try {
         const paymentMethodsResponse =
-          await ApiClient.paymentMethods(configuration);
+          await apiClient.paymentMethods(configuration);
         setPaymentMethods(paymentMethodsResponse);
       } catch (e) {
         setError(String(e));
@@ -44,7 +43,7 @@ const PartialPaymentCheckout = () => {
       }
     };
     refreshPaymentMethods();
-  }, [configuration, setPaymentMethods, setLoading]);
+  }, [configuration, setPaymentMethods, setLoading, apiClient]);
 
   const didSubmit = useCallback(
     async (
@@ -53,7 +52,7 @@ const PartialPaymentCheckout = () => {
       _extra: any
     ) => {
       try {
-        const result = await ApiClient.payments(
+        const result = await apiClient.payments(
           data,
           configuration,
           data.returnUrl
@@ -61,7 +60,8 @@ const PartialPaymentCheckout = () => {
         const outcome = await processPartialPaymentResult(
           result,
           nativeComponent as DropInModule,
-          configuration
+          configuration,
+          apiClient
         );
         if (outcome) {
           processResult(outcome, nativeComponent);
@@ -70,17 +70,18 @@ const PartialPaymentCheckout = () => {
         processError(error, nativeComponent);
       }
     },
-    [configuration, processResult]
+    [configuration, processResult, apiClient]
   );
 
   const didProvide = useCallback(
     async (data: PaymentDetailsData, nativeComponent: AdyenActionComponent) => {
       try {
-        const result = await ApiClient.paymentDetails(data);
+        const result = await apiClient.paymentDetails(data);
         const outcome = await processPartialPaymentResult(
           result,
           nativeComponent as DropInModule,
-          configuration
+          configuration,
+          apiClient
         );
         if (outcome) {
           processResult(outcome, nativeComponent);
@@ -89,7 +90,7 @@ const PartialPaymentCheckout = () => {
         processError(error, nativeComponent);
       }
     },
-    [configuration, processResult]
+    [configuration, processResult, apiClient]
   );
 
   const didFail = useCallback(
@@ -106,7 +107,7 @@ const PartialPaymentCheckout = () => {
       reject: (error: Error) => void
     ) => {
       try {
-        const response = await ApiClient.checkBalance(
+        const response = await apiClient.checkBalance(
           paymentData,
           configuration
         );
@@ -116,20 +117,20 @@ const PartialPaymentCheckout = () => {
         reject(e as Error);
       }
     },
-    [configuration]
+    [configuration, apiClient]
   );
 
   const requestOrder = useCallback(
     async (resolve: (order: Order) => void, reject: (error: Error) => void) => {
       try {
-        const response = await ApiClient.requestOrder(configuration);
+        const response = await apiClient.requestOrder(configuration);
         resolve(response);
       } catch (e) {
         console.error('Order request error: ', e);
         reject(e as Error);
       }
     },
-    [configuration]
+    [configuration, apiClient]
   );
 
   const cancelOrder = useCallback(
@@ -139,9 +140,9 @@ const PartialPaymentCheckout = () => {
       component: PartialPaymentComponent
     ) => {
       try {
-        await ApiClient.cancelOrder(order, configuration);
+        await apiClient.cancelOrder(order, configuration);
         if (shouldUpdatePaymentMethods) {
-          const newPaymentMethods = await ApiClient.paymentMethods(
+          const newPaymentMethods = await apiClient.paymentMethods(
             configuration,
             order
           );
@@ -154,7 +155,7 @@ const PartialPaymentCheckout = () => {
         console.error("Order wasn't canceled! ", e);
       }
     },
-    [configuration]
+    [configuration, apiClient]
   );
 
   if (loading) {
