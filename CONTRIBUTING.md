@@ -118,6 +118,22 @@ The `package.json` file contains various scripts for common tasks:
 - `yarn example start`: start the Metro server for the example app.
 - `yarn example android`: run the example app on Android.
 - `yarn example ios`: run the example app on iOS.
+- `yarn prepare`: build the library and generate TypeScript declarations.
+- `yarn api-extractor`: check the public TypeScript API against the committed baseline.
+- `yarn api-extractor:update`: regenerate the baseline after intentionally changing the public API.
+
+### Public API changes
+
+The public TypeScript API is tracked in `etc/api/adyen-react-native.api.md`. Before changing or adding an exported type, component, hook, or module, run:
+
+```sh
+yarn prepare
+yarn api-extractor
+```
+
+If the change is intentional, update the baseline with `yarn api-extractor:update` and include the resulting report diff in the pull request. Use that diff to identify additions, removals, and signature changes when writing release notes. Do not update the report to hide an unintended API change.
+
+The API report covers the JavaScript/TypeScript package surface only; native iOS and Android API changes still require their corresponding platform review.
 
 ### Sending a pull request
 
