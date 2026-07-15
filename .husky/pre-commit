@@ -15,4 +15,4 @@ run_check yarn test
 run_check yarn lint
 run_check yarn typecheck
 run_check swiftformat --lint ios
-run_check ktlint android
+run_check ./example/android/gradlew -p example/android ktlint
