@@ -55,11 +55,15 @@ jobs:
         id: api-diff
         if: steps.source-changes.outputs.changed == 'true'
         run: |
-          git show "$BASE_SHA:$API_REPORT" > /tmp/base-api-report.md
-          if diff -u /tmp/base-api-report.md "$API_REPORT" > /tmp/api-diff.txt; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+          if git show "$BASE_SHA:$API_REPORT" > /tmp/base-api-report.md 2>/dev/null; then
+            if diff -u /tmp/base-api-report.md "$API_REPORT" > /tmp/api-diff.txt; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "## New file: $API_REPORT (no baseline on target branch)" > /tmp/api-diff.txt
           fi
 
       - name: Archive API diff
