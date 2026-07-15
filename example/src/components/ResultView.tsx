@@ -15,9 +15,7 @@ const ResultView = ({ route }: ResultViewProps) => {
 
   return (
     <View style={Styles.centeredContent}>
-      <AdaptiveText testID="result-code">
-        {route.params.resultCode}
-      </AdaptiveText>
+      <AdaptiveText>{route.params.resultCode}</AdaptiveText>
       <View style={Styles.padded}>
         <Button title="Back to Home" onPress={() => navigateToRoot()} />
       </View>

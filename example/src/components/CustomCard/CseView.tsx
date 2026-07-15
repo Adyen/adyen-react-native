@@ -13,7 +13,7 @@ import { formatMinorUnits } from '../utilities/formatMinorUnits';
 const CARD_VALIDATION_ERROR_TITLE = 'Invalid card details';
 
 const CseView = () => {
-  const { configuration, processResult, apiClient } = useAppContext();
+  const { configuration, processResult } = useAppContext();
   const [number, setNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
@@ -65,19 +65,13 @@ const CseView = () => {
         Alert.alert(CARD_VALIDATION_ERROR_TITLE, validationError);
         return;
       }
-      result = await payWithCard(unencryptedCard, configuration, apiClient);
+      result = await payWithCard(unencryptedCard, configuration);
       processResult(result, AdyenAction);
     } catch (e) {
       Alert.alert('Error', String(e));
       return;
     }
-  }, [
-    configuration,
-    unencryptedCard,
-    processResult,
-    apiClient,
-    validateCardData,
-  ]);
+  }, [configuration, unencryptedCard, processResult, validateCardData]);
 
   const amountLabel = useMemo(() => {
     return formatMinorUnits(

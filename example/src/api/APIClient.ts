@@ -12,10 +12,9 @@ import type {
   BalanceResponse,
   OrderResponse,
 } from './types';
-import type { ApiService } from './ApiService';
 
-class ApiClient implements ApiService {
-  payments(
+class ApiClient {
+  static payments(
     data: PaymentMethodData,
     configuration: PaymentConfiguration,
     returnUrl?: string
@@ -30,14 +29,16 @@ class ApiClient implements ApiService {
       returnUrl: returnUrl ?? data.returnUrl,
     };
 
-    return this.makeRequest(ENVIRONMENT.url + 'payments', body);
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
   }
 
-  paymentDetails = (data: PaymentDetailsData): Promise<PaymentResponse> => {
-    return this.makeRequest(ENVIRONMENT.url + 'payments/details', data);
+  static paymentDetails = (
+    data: PaymentDetailsData
+  ): Promise<PaymentResponse> => {
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
-  requestSession = (
+  static requestSession = (
     configuration: PaymentConfiguration,
     returnUrl: string
   ): Promise<SessionConfiguration> => {
@@ -49,10 +50,10 @@ class ApiClient implements ApiService {
       returnUrl: returnUrl,
       showRemovePaymentMethodButton: true,
     };
-    return this.makeRequest(ENVIRONMENT.url + 'sessions', body);
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
-  requestSessionResult = async (
+  static requestSessionResult = async (
     sessionId: string,
     sessionResult: string
   ): Promise<PaymentResponse> => {
@@ -79,7 +80,7 @@ class ApiClient implements ApiService {
     return { resultCode: payload.status };
   };
 
-  paymentMethods = (
+  static paymentMethods = (
     configuration: PaymentConfiguration,
     order?: Order
   ): Promise<PaymentMethodsResponse> => {
@@ -89,10 +90,10 @@ class ApiClient implements ApiService {
       ...serverConfiguration,
       ...(order && { order: parseOrder(order) }),
     };
-    return this.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
 
-  tryRemoveStoredCard = async (
+  static tryRemoveStoredCard = async (
     id: string,
     configuration: PaymentConfiguration
   ): Promise<boolean> => {
@@ -117,7 +118,7 @@ class ApiClient implements ApiService {
     }
   };
 
-  checkBalance = async (
+  static checkBalance = async (
     paymentData: PaymentMethodData,
     configuration: PaymentConfiguration
   ): Promise<BalanceResponse> => {
@@ -127,10 +128,13 @@ class ApiClient implements ApiService {
       merchantAccount: configuration.merchantAccount,
       reference: serverConfiguration.reference,
     };
-    return this.makeRequest(ENVIRONMENT.url + 'paymentMethods/balance', body);
+    return ApiClient.makeRequest(
+      ENVIRONMENT.url + 'paymentMethods/balance',
+      body
+    );
   };
 
-  requestOrder = async (
+  static requestOrder = async (
     configuration: PaymentConfiguration
   ): Promise<OrderResponse> => {
     const body = {
@@ -138,10 +142,10 @@ class ApiClient implements ApiService {
       merchantAccount: configuration.merchantAccount,
       reference: serverConfiguration.reference,
     };
-    return this.makeRequest(ENVIRONMENT.url + 'orders', body);
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders', body);
   };
 
-  cancelOrder = async (
+  static cancelOrder = async (
     order: Order,
     configuration: PaymentConfiguration
   ): Promise<OrderResponse> => {
@@ -149,11 +153,11 @@ class ApiClient implements ApiService {
       ...(order && { order: parseOrder(order) }),
       merchantAccount: configuration.merchantAccount,
     };
-    return this.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
+    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
   };
 
   /** @private */
-  private makeRequest = async (url: string, body: any) => {
+  static makeRequest = async (url: string, body: any) => {
     const bodyJSON = JSON.stringify(body);
     console.debug(`Request to: ${url}`);
     console.debug(`== ${bodyJSON}`);
@@ -179,7 +183,7 @@ class ApiClient implements ApiService {
   };
 }
 
-export default new ApiClient();
+export default ApiClient;
 
 const serverConfiguration = {
   channel: CHANNEL,

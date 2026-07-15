@@ -10,14 +10,14 @@ import type {
 import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
+import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 
 const SessionsDropInCheckout = () => {
-  const { configuration, processResult, navigateToRoot, apiClient } =
-    useAppContext();
+  const { configuration, processResult, navigateToRoot } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [session, setSession] = useState<SessionConfiguration | undefined>(
@@ -31,7 +31,7 @@ const SessionsDropInCheckout = () => {
           android: await AdyenDropIn.getReturnURL(),
           default: ENVIRONMENT.returnUrl,
         });
-        const newSession = await apiClient.requestSession(
+        const newSession = await ApiClient.requestSession(
           configuration,
           returnUrl
         );
@@ -43,7 +43,7 @@ const SessionsDropInCheckout = () => {
       }
     };
     refreshSession();
-  }, [configuration, apiClient, setSession, setLoading, setError]);
+  }, [configuration, setSession, setLoading, setError]);
 
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
@@ -55,20 +55,17 @@ const SessionsDropInCheckout = () => {
 
   const didComplete = useCallback(
     async (result: SessionsResult, nativeComponent: AdyenComponent) => {
-      if (
-        result.resultCode === 'PresentToShopper' ||
-        apiClient.usesDirectSessionResult
-      ) {
+      if (result.resultCode === 'PresentToShopper') {
         processResult(result, nativeComponent);
         return;
       }
-      const status = await apiClient.requestSessionResult(
+      const status = await ApiClient.requestSessionResult(
         result.sessionId,
         result.sessionResult
       );
       processResult(status, nativeComponent);
     },
-    [apiClient, processResult]
+    [processResult]
   );
 
   if (loading) {
@@ -91,7 +88,7 @@ const SessionsDropInCheckout = () => {
     <View style={Styles.page}>
       <TopView />
       <AdyenCheckout
-        config={checkoutConfiguration(configuration, apiClient)}
+        config={checkoutConfiguration(configuration)}
         session={session}
         onComplete={didComplete}
         onError={didFail}

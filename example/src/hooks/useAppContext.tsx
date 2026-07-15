@@ -12,14 +12,12 @@ import type { AppConfiguration } from '../settings/types';
 import type { PaymentResponse } from '../api/types';
 import type { NavigationContainerRef } from '@react-navigation/native';
 import type { AdyenComponent } from '@adyen/react-native';
-import type { ApiService } from '../api/ApiService';
 import type { ConfigProvider } from '../config/ConfigProvider';
 import { isSuccess } from '../components/utilities/isSuccess';
 import { RootStackParamList } from '../router/RootStackNavigator';
 
 type AppContextType = {
   configuration: AppConfiguration;
-  apiClient: ApiService;
   save: (config: AppConfiguration) => void;
   update: (partial: Partial<AppConfiguration>) => void;
   processResult: (
@@ -42,7 +40,6 @@ export const useAppContext = () => {
 
 type AppContextProp = {
   configProvider: ConfigProvider;
-  apiClient: ApiService;
   onError: (error: Error) => void;
   navigationRef: NavigationContainerRef<RootStackParamList>;
 };
@@ -108,7 +105,6 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
   const appState = useMemo<AppContextType>(
     () => ({
       configuration: config,
-      apiClient: props.apiClient,
       save: saveConfiguration,
       update: updateConfiguration,
       processResult,
@@ -117,7 +113,6 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
     }),
     [
       config,
-      props.apiClient,
       saveConfiguration,
       updateConfiguration,
       processResult,

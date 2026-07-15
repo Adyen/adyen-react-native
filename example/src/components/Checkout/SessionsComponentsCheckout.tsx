@@ -10,14 +10,14 @@ import type {
 import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
+import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 
 const SessionsComponentsCheckout = () => {
-  const { configuration, processResult, navigateToRoot, apiClient } =
-    useAppContext();
+  const { configuration, processResult, navigateToRoot } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [session, setSession] = useState<SessionConfiguration | undefined>(
@@ -28,7 +28,7 @@ const SessionsComponentsCheckout = () => {
     const refreshSession = async () => {
       try {
         const returnUrl = ENVIRONMENT.returnUrl;
-        const newSession = await apiClient.requestSession(
+        const newSession = await ApiClient.requestSession(
           configuration,
           returnUrl
         );
@@ -40,7 +40,7 @@ const SessionsComponentsCheckout = () => {
       }
     };
     refreshSession();
-  }, [configuration, apiClient, setSession, setLoading, setError]);
+  }, [configuration, setSession, setLoading, setError]);
 
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
@@ -56,13 +56,13 @@ const SessionsComponentsCheckout = () => {
         processResult(result, nativeComponent);
         return;
       }
-      const status = await apiClient.requestSessionResult(
+      const status = await ApiClient.requestSessionResult(
         result.sessionId,
         result.sessionResult
       );
       processResult(status, nativeComponent);
     },
-    [apiClient, processResult]
+    [processResult]
   );
 
   if (loading) {
@@ -85,7 +85,7 @@ const SessionsComponentsCheckout = () => {
     <View style={Styles.page}>
       <TopView />
       <AdyenCheckout
-        config={checkoutConfiguration(configuration, apiClient)}
+        config={checkoutConfiguration(configuration)}
         session={session}
         onComplete={didComplete}
         onError={didFail}
