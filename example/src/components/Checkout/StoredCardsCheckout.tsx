@@ -5,14 +5,13 @@ import { AdyenAction } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import StoredPaymentMethodsList from './components/StoredPaymentMethodsList';
-import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { processError } from './utils/processError';
 import { payByID } from './utils/payByID';
 import type { StoredCardPaymentMethod } from '../../api/types';
 
 const StoredCardsCheckout = () => {
-  const { configuration, processResult } = useAppContext();
+  const { configuration, processResult, apiClient } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [paymentMethods, setPaymentMethods] = useState<
@@ -23,7 +22,7 @@ const StoredCardsCheckout = () => {
     const refreshPaymentMethods = async () => {
       try {
         const paymentMethodsResponse =
-          await ApiClient.paymentMethods(configuration);
+          await apiClient.paymentMethods(configuration);
         setPaymentMethods(paymentMethodsResponse);
       } catch (e) {
         setError(String(e));
@@ -32,19 +31,24 @@ const StoredCardsCheckout = () => {
       }
     };
     refreshPaymentMethods();
-  }, [configuration, setPaymentMethods, setLoading]);
+  }, [configuration, setPaymentMethods, setLoading, apiClient]);
 
   const makePayment = useCallback(
     async (storedCard: StoredCardPaymentMethod) => {
       try {
         const cvv = '737';
-        const result = await payByID(storedCard.id, cvv, configuration);
+        const result = await payByID(
+          storedCard.id,
+          cvv,
+          configuration,
+          apiClient
+        );
         processResult(result, AdyenAction);
       } catch (e) {
         processError(e, AdyenAction);
       }
     },
-    [configuration, processResult]
+    [configuration, processResult, apiClient]
   );
 
   if (loading) {

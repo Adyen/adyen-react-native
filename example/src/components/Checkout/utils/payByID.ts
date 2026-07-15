@@ -5,12 +5,13 @@ import {
 } from '@adyen/react-native';
 import type { PaymentConfiguration } from '../../../api/types';
 import { ENVIRONMENT } from '../../../Configuration';
-import ApiClient from '../../../api/APIClient';
+import type { ApiService } from '../../../api/ApiService';
 
 export async function payByID(
   id: string,
   cvv: string,
-  configuration: PaymentConfiguration
+  configuration: PaymentConfiguration,
+  apiClient: ApiService
 ) {
   const encryptedCard = await AdyenCSE.encryptCard(
     { cvv },
@@ -26,14 +27,14 @@ export async function payByID(
     returnUrl: ENVIRONMENT.returnUrl,
   };
 
-  let result = await ApiClient.payments(paymentData, configuration);
+  let result = await apiClient.payments(paymentData, configuration);
   if (result.action) {
     const actionData = await AdyenAction.handle(result.action, {
       environment: ENVIRONMENT.environment,
       clientKey: ENVIRONMENT.clientKey,
     });
 
-    result = await ApiClient.paymentDetails(actionData);
+    result = await apiClient.paymentDetails(actionData);
   }
   return result;
 }

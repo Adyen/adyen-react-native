@@ -10,14 +10,14 @@ import type {
 import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
-import ApiClient from '../../api/APIClient';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 
 const SessionsDropInCheckout = () => {
-  const { configuration, processResult, navigateToRoot } = useAppContext();
+  const { configuration, processResult, navigateToRoot, apiClient } =
+    useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [session, setSession] = useState<SessionConfiguration | undefined>(
@@ -31,7 +31,7 @@ const SessionsDropInCheckout = () => {
           android: await AdyenDropIn.getReturnURL(),
           default: ENVIRONMENT.returnUrl,
         });
-        const newSession = await ApiClient.requestSession(
+        const newSession = await apiClient.requestSession(
           configuration,
           returnUrl
         );
@@ -43,7 +43,7 @@ const SessionsDropInCheckout = () => {
       }
     };
     refreshSession();
-  }, [configuration, setSession, setLoading, setError]);
+  }, [configuration, setSession, setLoading, setError, apiClient]);
 
   const didFail = useCallback(
     async (error: AdyenError, nativeComponent: AdyenComponent) => {
@@ -59,13 +59,13 @@ const SessionsDropInCheckout = () => {
         processResult(result, nativeComponent);
         return;
       }
-      const status = await ApiClient.requestSessionResult(
+      const status = await apiClient.requestSessionResult(
         result.sessionId,
         result.sessionResult
       );
       processResult(status, nativeComponent);
     },
-    [processResult]
+    [processResult, apiClient]
   );
 
   if (loading) {
