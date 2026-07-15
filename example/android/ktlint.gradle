@@ -1,0 +1,71 @@
+apply plugin: "base"
+
+configurations {
+    ktlint
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    ktlint("com.pinterest.ktlint:ktlint-cli:1.8.0") {
+        attributes {
+            attribute(
+                org.gradle.api.attributes.Bundling.BUNDLING_ATTRIBUTE,
+                objects.named(org.gradle.api.attributes.Bundling, org.gradle.api.attributes.Bundling.EXTERNAL)
+            )
+        }
+    }
+}
+
+def ktlintInputFiles = files(
+    fileTree("../../android/src") {
+        include "**/*.kt", "**/*.kts"
+        exclude "**/build/**", "**/.gradle/**"
+    },
+    fileTree("app/src") {
+        include "**/*.kt", "**/*.kts"
+        exclude "**/build/**", "**/.gradle/**"
+    }
+)
+
+def ktlintTask = tasks.register("ktlint", JavaExec) {
+    description = "Check Kotlin code style."
+    group = "verification"
+    inputs.files(ktlintInputFiles)
+
+    def outputFile = layout.buildDirectory.file("reports/ktlint/ktlint-report.txt")
+    outputs.file(outputFile)
+
+    classpath = configurations.ktlint
+    mainClass.set("com.pinterest.ktlint.Main")
+    args(
+        "--reporter=plain",
+        "--reporter=plain,output=${outputFile.get().asFile}",
+        "../../android/src/**/*.kt",
+        "../../android/src/**/*.kts",
+        "app/src/**/*.kt",
+        "app/src/**/*.kts",
+        "!**/build/**"
+    )
+}
+
+tasks.named("check") {
+    dependsOn(ktlintTask)
+}
+
+tasks.register("ktlintFormat", JavaExec) {
+    description = "Fix Kotlin code style deviations."
+    group = "formatting"
+    classpath = configurations.ktlint
+    mainClass.set("com.pinterest.ktlint.Main")
+    args(
+        "-F",
+        "../../android/src/**/*.kt",
+        "../../android/src/**/*.kts",
+        "app/src/**/*.kt",
+        "app/src/**/*.kts",
+        "!**/build/**"
+    )
+}
