@@ -42,7 +42,7 @@ def ktlintTask = tasks.register("ktlint", JavaExec) {
     mainClass.set("com.pinterest.ktlint.Main")
     args(
         "--reporter=plain",
-        "--reporter=plain,output=${outputFile.get().asFile}",
+        outputFile.map { "--reporter=plain,output=${it.asFile}" },
         "../../android/src/**/*.kt",
         "../../android/src/**/*.kts",
         "app/src/**/*.kt",
