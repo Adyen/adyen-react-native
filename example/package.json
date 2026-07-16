@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "android:netlify": "cd android && ENTRY_FILE=index.netlify.js ./gradlew assembleRelease",
     "ios": "react-native run-ios",
+    "ios:netlify": "cd ios && ENTRY_FILE=index.netlify.js xcodebuild -workspace AdyenExample.xcworkspace -scheme AdyenExample -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/netlify CODE_SIGNING_ALLOWED=NO ENABLE_USER_SCRIPT_SANDBOXING=NO",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",

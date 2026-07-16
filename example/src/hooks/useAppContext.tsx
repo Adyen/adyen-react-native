@@ -8,16 +8,18 @@ import {
   type PropsWithChildren,
   useCallback,
 } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppConfiguration } from '../settings/types';
 import type { PaymentResponse } from '../api/types';
 import type { NavigationContainerRef } from '@react-navigation/native';
 import type { AdyenComponent } from '@adyen/react-native';
+import type { ApiService } from '../api/ApiService';
+import type { ConfigProvider } from '../config/ConfigProvider';
 import { isSuccess } from '../components/utilities/isSuccess';
 import { RootStackParamList } from '../router/RootStackNavigator';
 
 type AppContextType = {
   configuration: AppConfiguration;
+  apiClient: ApiService;
   save: (config: AppConfiguration) => void;
   update: (partial: Partial<AppConfiguration>) => void;
   processResult: (
@@ -38,46 +40,43 @@ export const useAppContext = () => {
   return context;
 };
 
-const storeKey = '@config_storage';
-
 type AppContextProp = {
-  configuration: AppConfiguration;
+  configProvider: ConfigProvider;
+  apiClient: ApiService;
   onError: (error: Error) => void;
   navigationRef: NavigationContainerRef<RootStackParamList>;
 };
 
 const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
-  const [config, setConfig] = useState(props.configuration);
+  const [config, setConfig] = useState(
+    props.configProvider.initialConfiguration
+  );
   const configRef = useRef(config);
   configRef.current = config;
   const { navigationRef } = props;
 
   useEffect(() => {
-    AsyncStorage.getItem(storeKey)
-      .then((value) => {
-        if (value) {
-          const parsed = JSON.parse(value);
-          setConfig(parsed);
-        }
-      })
+    props.configProvider
+      .loadConfiguration()
+      .then(setConfig)
       .catch(props.onError);
-  }, [props.onError]);
+  }, [props.configProvider, props.onError]);
 
   const saveConfiguration = useCallback(
     async (newConfig = config) => {
-      await AsyncStorage.setItem(storeKey, JSON.stringify(newConfig));
+      await props.configProvider.saveConfiguration(newConfig);
       setConfig(newConfig);
     },
-    [config]
+    [config, props.configProvider]
   );
 
   const updateConfiguration = useCallback(
     async (partial: Partial<AppConfiguration>) => {
+      await props.configProvider.updateConfiguration(partial);
       const merged = { ...configRef.current, ...partial };
-      await AsyncStorage.setItem(storeKey, JSON.stringify(merged));
       setConfig(merged);
     },
-    []
+    [props.configProvider]
   );
 
   const processResult = useCallback(
@@ -109,6 +108,7 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
   const appState = useMemo<AppContextType>(
     () => ({
       configuration: config,
+      apiClient: props.apiClient,
       save: saveConfiguration,
       update: updateConfiguration,
       processResult,
@@ -117,6 +117,7 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
     }),
     [
       config,
+      props.apiClient,
       saveConfiguration,
       updateConfiguration,
       processResult,

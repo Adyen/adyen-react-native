@@ -12,9 +12,10 @@ import type {
   BalanceResponse,
   OrderResponse,
 } from './types';
+import type { ApiService } from './ApiService';
 
-class ApiClient {
-  static payments(
+class ApiClient implements ApiService {
+  payments(
     data: PaymentMethodData,
     configuration: PaymentConfiguration,
     returnUrl?: string
@@ -29,16 +30,14 @@ class ApiClient {
       returnUrl: returnUrl ?? data.returnUrl,
     };
 
-    return ApiClient.makeRequest(ENVIRONMENT.url + 'payments', body);
+    return this.makeRequest(ENVIRONMENT.url + 'payments', body);
   }
 
-  static paymentDetails = (
-    data: PaymentDetailsData
-  ): Promise<PaymentResponse> => {
-    return ApiClient.makeRequest(ENVIRONMENT.url + 'payments/details', data);
+  paymentDetails = (data: PaymentDetailsData): Promise<PaymentResponse> => {
+    return this.makeRequest(ENVIRONMENT.url + 'payments/details', data);
   };
 
-  static requestSession = (
+  requestSession = (
     configuration: PaymentConfiguration,
     returnUrl: string
   ): Promise<SessionConfiguration> => {
@@ -50,10 +49,10 @@ class ApiClient {
       returnUrl: returnUrl,
       showRemovePaymentMethodButton: true,
     };
-    return ApiClient.makeRequest(ENVIRONMENT.url + 'sessions', body);
+    return this.makeRequest(ENVIRONMENT.url + 'sessions', body);
   };
 
-  static requestSessionResult = async (
+  requestSessionResult = async (
     sessionId: string,
     sessionResult: string
   ): Promise<PaymentResponse> => {
@@ -80,7 +79,7 @@ class ApiClient {
     return { resultCode: payload.status };
   };
 
-  static paymentMethods = (
+  paymentMethods = (
     configuration: PaymentConfiguration,
     order?: Order
   ): Promise<PaymentMethodsResponse> => {
@@ -90,10 +89,10 @@ class ApiClient {
       ...serverConfiguration,
       ...(order && { order: parseOrder(order) }),
     };
-    return ApiClient.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
+    return this.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
   };
 
-  static tryRemoveStoredCard = async (
+  tryRemoveStoredCard = async (
     id: string,
     configuration: PaymentConfiguration
   ): Promise<boolean> => {
@@ -118,7 +117,7 @@ class ApiClient {
     }
   };
 
-  static checkBalance = async (
+  checkBalance = async (
     paymentData: PaymentMethodData,
     configuration: PaymentConfiguration
   ): Promise<BalanceResponse> => {
@@ -128,13 +127,10 @@ class ApiClient {
       merchantAccount: configuration.merchantAccount,
       reference: serverConfiguration.reference,
     };
-    return ApiClient.makeRequest(
-      ENVIRONMENT.url + 'paymentMethods/balance',
-      body
-    );
+    return this.makeRequest(ENVIRONMENT.url + 'paymentMethods/balance', body);
   };
 
-  static requestOrder = async (
+  requestOrder = async (
     configuration: PaymentConfiguration
   ): Promise<OrderResponse> => {
     const body = {
@@ -142,10 +138,10 @@ class ApiClient {
       merchantAccount: configuration.merchantAccount,
       reference: serverConfiguration.reference,
     };
-    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders', body);
+    return this.makeRequest(ENVIRONMENT.url + 'orders', body);
   };
 
-  static cancelOrder = async (
+  cancelOrder = async (
     order: Order,
     configuration: PaymentConfiguration
   ): Promise<OrderResponse> => {
@@ -153,11 +149,11 @@ class ApiClient {
       ...(order && { order: parseOrder(order) }),
       merchantAccount: configuration.merchantAccount,
     };
-    return ApiClient.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
+    return this.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
   };
 
   /** @private */
-  static makeRequest = async (url: string, body: any) => {
+  private makeRequest = async (url: string, body: any) => {
     const bodyJSON = JSON.stringify(body);
     console.debug(`Request to: ${url}`);
     console.debug(`== ${bodyJSON}`);
@@ -183,7 +179,7 @@ class ApiClient {
   };
 }
 
-export default ApiClient;
+export default new ApiClient();
 
 const serverConfiguration = {
   channel: CHANNEL,

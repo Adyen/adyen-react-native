@@ -50,7 +50,9 @@
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "git clean -fxd",
     "prepare": "./scripts/set-version.sh && bob build",
-    "start": "rm yarn.lock && yarn && yarn prepare && husky && bash ./scripts/credentials.sh"
+    "start": "rm yarn.lock && yarn && yarn prepare && husky && bash ./scripts/credentials.sh",
+    "api-extractor": "api-extractor run",
+    "api-extractor:update": "api-extractor run --local"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
@@ -59,6 +61,7 @@
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
     "@expo/config-plugins": "^10.0.2",
+    "@microsoft/api-extractor": "^7.58.9",
     "@react-native-community/cli": "15.0.1",
     "@react-native/babel-preset": "0.85.0",
     "@react-native/eslint-config": "0.85.0",

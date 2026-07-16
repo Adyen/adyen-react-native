@@ -4,10 +4,8 @@ import type {
   ApplePayRecurringPaymentRequest,
   BinLookupData,
   Configuration,
-  StoredPaymentMethod,
 } from '@adyen/react-native';
 import { ENVIRONMENT } from '../Configuration';
-import ApiClient from '../api/APIClient';
 import type { AppConfiguration } from './types';
 
 export const checkoutConfiguration = (config: AppConfiguration) => {
@@ -33,25 +31,10 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
       showRemovePaymentMethodButton:
         config.dropInSettings?.showRemovePaymentMethodButton ?? true,
       title: config.dropInSettings?.title,
-      onDisableStoredPaymentMethod: async (
-        storedPaymentMethod: StoredPaymentMethod,
-        resolve: () => void,
-        reject: () => void
-      ) => {
-        const success = await ApiClient.tryRemoveStoredCard(
-          storedPaymentMethod.id,
-          config
-        );
-        if (success) {
-          resolve();
-        } else {
-          reject();
-        }
-      },
     },
     card: {
       holderNameRequired: config.cardSettings?.holderNameRequired,
-      addressVisibility: config.cardSettings?.addressVisibility ?? 'lookup',
+      addressVisibility: config.cardSettings?.addressVisibility,
       showStorePaymentField: config.cardSettings?.showStorePaymentField,
       hideCvcStoredCard: config.cardSettings?.hideCvcStoredCard,
       hideCvc: config.cardSettings?.hideCvc,
