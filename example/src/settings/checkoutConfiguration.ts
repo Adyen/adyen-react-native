@@ -34,7 +34,7 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
     },
     card: {
       holderNameRequired: config.cardSettings?.holderNameRequired,
-      addressVisibility: config.cardSettings?.addressVisibility ?? 'lookup',
+      addressVisibility: config.cardSettings?.addressVisibility,
       showStorePaymentField: config.cardSettings?.showStorePaymentField,
       hideCvcStoredCard: config.cardSettings?.hideCvcStoredCard,
       hideCvc: config.cardSettings?.hideCvc,

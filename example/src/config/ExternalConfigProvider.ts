@@ -1,4 +1,4 @@
-import type { AppConfiguration } from '../settings/types';
+import type { AppConfiguration, CardSettings } from '../settings/types';
 import type { ConfigProvider } from './ConfigProvider';
 
 export class ExternalConfigProvider implements ConfigProvider {
@@ -9,7 +9,14 @@ export class ExternalConfigProvider implements ConfigProvider {
       ? parseExternalConfiguration(externalConfig)
       : null;
     this.initialConfiguration = external
-      ? { ...baseConfiguration, ...external }
+      ? {
+          ...baseConfiguration,
+          ...external,
+          cardSettings: {
+            ...(baseConfiguration.cardSettings ?? {}),
+            ...(external.cardSettings ?? {}),
+          },
+        }
       : baseConfiguration;
   }
 
@@ -34,22 +41,46 @@ const parseExternalConfiguration = (
     const card = config.CARD_CONFIGURATION;
     if (!card) return null;
 
-    return {
-      cardSettings: {
-        holderNameRequired: card.showCardholderName,
-        addressVisibility: card.addressMode,
-        showStorePaymentField: card.showStorePaymentField,
-        hideCvcStoredCard:
-          card.showCvcForStoredCard !== undefined
-            ? !card.showCvcForStoredCard
-            : undefined,
-        hideCvc: card.showCvc !== undefined ? !card.showCvc : undefined,
-        kcpVisibility: card.kcpFieldVisibility,
-        socialSecurity: card.socialSecurityNumberFieldVisibility,
-      },
-    };
+    return { cardSettings: parseCardSettings(card) };
   } catch {
     console.warn('Failed to parse externalConfig');
     return null;
   }
+};
+
+const parseCardSettings = (
+  card: Record<string, any>
+): Partial<CardSettings> => {
+  const settings: Partial<CardSettings> = {};
+
+  if (typeof card.showCardholderName === 'boolean') {
+    settings.holderNameRequired = card.showCardholderName;
+  }
+
+  const addressMode = card.addressVisibility ?? card.addressMode;
+  if (typeof addressMode === 'string') {
+    settings.addressVisibility = addressMode;
+  }
+
+  if (typeof card.showStorePaymentField === 'boolean') {
+    settings.showStorePaymentField = card.showStorePaymentField;
+  }
+
+  if (typeof card.showCvcForStoredCard === 'boolean') {
+    settings.hideCvcStoredCard = !card.showCvcForStoredCard;
+  }
+
+  if (typeof card.showCvc === 'boolean') {
+    settings.hideCvc = !card.showCvc;
+  }
+
+  if (typeof card.kcpFieldVisibility === 'string') {
+    settings.kcpVisibility = card.kcpFieldVisibility;
+  }
+
+  if (typeof card.socialSecurityNumberFieldVisibility === 'string') {
+    settings.socialSecurity = card.socialSecurityNumberFieldVisibility;
+  }
+
+  return settings;
 };
