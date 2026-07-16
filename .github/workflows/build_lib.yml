@@ -27,9 +27,12 @@ jobs:
           cache: 'yarn'
 
       - name: Build library
-        run: | 
+        run: |
           yarn install --frozen-lockfile
           yarn prepare
+
+      - name: Check public API
+        run: yarn api-extractor
 
       - name: Make JS coverage report
         run: |

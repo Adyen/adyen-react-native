@@ -14,5 +14,6 @@ run_check() {
 run_check yarn test
 run_check yarn lint
 run_check yarn typecheck
+run_check yarn api-extractor
 run_check swiftformat --lint ios
 run_check ./example/android/gradlew -p example/android ktlint
