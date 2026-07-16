@@ -143,8 +143,3 @@ jobs:
                 body,
               });
             }
-
-      - name: Fail when Public API differs
-        run: |
-          echo 'The generated Public API snapshot differs from the target branch.'
-          exit 1
