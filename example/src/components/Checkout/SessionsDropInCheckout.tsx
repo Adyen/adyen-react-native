@@ -55,7 +55,10 @@ const SessionsDropInCheckout = () => {
 
   const didComplete = useCallback(
     async (result: SessionsResult, nativeComponent: AdyenComponent) => {
-      if (result.resultCode === 'PresentToShopper') {
+      if (
+        result.resultCode === 'PresentToShopper' ||
+        apiClient.usesDirectSessionResult
+      ) {
         processResult(result, nativeComponent);
         return;
       }

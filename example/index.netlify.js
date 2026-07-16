@@ -8,7 +8,7 @@ import App from './src/App';
 import { ExternalConfigProvider } from './src/config/ExternalConfigProvider';
 import { DEFAULT_CONFIGURATION, ENVIRONMENT } from './src/Configuration';
 import NetlifyApiClient from './src/api/NetlifyApiClient';
-import { netlifyClientKey } from '../secrets.json';
+import { netlifyClientKey } from './secrets.json';
 import { name as appName } from './app.json';
 
 ENVIRONMENT.clientKey = netlifyClientKey;
