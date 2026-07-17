@@ -28,6 +28,32 @@ if [ "$platform" = "expo" ]; then
   echo "::endgroup::"
 fi
 
+if [ "$platform" = "expo" ]; then
+  cat >> android/gradle.properties <<'EOF'
+android.compileSdkVersion=36
+android.targetSdkVersion=36
+EOF
+else
+  node <<'NODE'
+const fs = require('fs');
+const path = 'android/build.gradle';
+const androidBuild = fs.readFileSync(path, 'utf8');
+const compileSdkPattern = /compileSdkVersion\s*=\s*\d+/g;
+const targetSdkPattern = /targetSdkVersion\s*=\s*\d+/g;
+
+if (!compileSdkPattern.test(androidBuild) || !targetSdkPattern.test(androidBuild)) {
+  throw new Error(`Could not find Android SDK versions in ${path}`);
+}
+
+fs.writeFileSync(
+  path,
+  androidBuild
+    .replace(compileSdkPattern, 'compileSdkVersion = 36')
+    .replace(targetSdkPattern, 'targetSdkVersion = 36'),
+);
+NODE
+fi
+
 echo "::group::Build Android [$(date '+%H:%M:%S')]"
 cd android || exit
 chmod +x ./gradlew
