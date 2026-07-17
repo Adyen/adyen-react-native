@@ -34,7 +34,7 @@ function isNonSemanticApiExtractorComment(line) {
   return (
     line === '//' ||
     line === '// (undocumented)' ||
-    line.startsWith('// Warning: (ae-')
+    line.startsWith('// Warning: (')
   );
 }
 

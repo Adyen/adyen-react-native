@@ -89,7 +89,7 @@ export interface Existing {
   it('ignores API Extractor comments when comparing declarations', () => {
     const base = `// @public
 export interface ApplePayModule {
-    // Warning: (ae-forgotten-export) The symbol "ApplePayAuthorizationResult" needs to be exported
+    // Warning: (generated-warning) The declaration needs to be updated
     //
     provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
 }
