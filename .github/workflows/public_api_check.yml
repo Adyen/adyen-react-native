@@ -75,7 +75,10 @@ jobs:
 
   report-public-api:
     name: Report Public API Changes
-    if: always() && needs.check-public-api.outputs.api-changed != ''
+    if: >-
+      always() &&
+      needs.check-public-api.outputs.api-changed != '' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     needs: [check-public-api]
     runs-on: ubuntu-24.04
     permissions:
