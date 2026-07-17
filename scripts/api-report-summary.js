@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const { spawnSync } = require('child_process');
+const ts = require('typescript');
 
 const REPORT_DIR = '/tmp/public-api-report';
 
@@ -106,6 +107,105 @@ function readReport(path) {
   return declarations;
 }
 
+function addSetDifference(target, base, head, format) {
+  for (const value of head) {
+    if (!base.has(value)) target.push(format(value));
+  }
+}
+
+function declarationMembers(body) {
+  const sourceFile = ts.createSourceFile(
+    'api-report.d.ts',
+    body,
+    ts.ScriptTarget.Latest,
+    true
+  );
+  const declaration = sourceFile.statements.find(
+    (statement) =>
+      ts.isClassDeclaration(statement) ||
+      ts.isEnumDeclaration(statement) ||
+      ts.isFunctionDeclaration(statement) ||
+      ts.isInterfaceDeclaration(statement)
+  );
+  const methods = new Map();
+  const parameters = new Set();
+  const enumCases = new Set();
+
+  if (!declaration) return { enumCases, methods, parameters };
+
+  const addParameters = (methodName, methodParameters) => {
+    const names = new Set(
+      methodParameters.map((parameter) => parameter.name.getText(sourceFile))
+    );
+    methods.set(methodName, names);
+    for (const parameterName of names) {
+      parameters.add(`${methodName}(${parameterName})`);
+    }
+  };
+
+  if (
+    ts.isClassDeclaration(declaration) ||
+    ts.isInterfaceDeclaration(declaration)
+  ) {
+    for (const member of declaration.members) {
+      if (ts.isMethodDeclaration(member) || ts.isMethodSignature(member)) {
+        addParameters(member.name.getText(sourceFile), member.parameters);
+      }
+    }
+  } else if (ts.isFunctionDeclaration(declaration)) {
+    addParameters('', declaration.parameters);
+  } else if (ts.isEnumDeclaration(declaration)) {
+    for (const member of declaration.members) {
+      enumCases.add(member.name.getText(sourceFile));
+    }
+  }
+
+  return { enumCases, methods, parameters };
+}
+
+function collectMemberChanges(base, head, changes) {
+  const baseMembers = declarationMembers(base.body);
+  const headMembers = declarationMembers(head.body);
+  const declarationName = head.name;
+
+  addSetDifference(
+    changes.addedMethods,
+    new Set(baseMembers.methods.keys()),
+    new Set(headMembers.methods.keys()),
+    (methodName) => `${declarationName}.${methodName}`
+  );
+  addSetDifference(
+    changes.removedMethods,
+    new Set(headMembers.methods.keys()),
+    new Set(baseMembers.methods.keys()),
+    (methodName) => `${declarationName}.${methodName}`
+  );
+  addSetDifference(
+    changes.addedParameters,
+    baseMembers.parameters,
+    headMembers.parameters,
+    (parameter) => `${declarationName}.${parameter}`
+  );
+  addSetDifference(
+    changes.removedParameters,
+    headMembers.parameters,
+    baseMembers.parameters,
+    (parameter) => `${declarationName}.${parameter}`
+  );
+  addSetDifference(
+    changes.addedEnumCases,
+    baseMembers.enumCases,
+    headMembers.enumCases,
+    (enumCase) => `${declarationName}.${enumCase}`
+  );
+  addSetDifference(
+    changes.removedEnumCases,
+    headMembers.enumCases,
+    baseMembers.enumCases,
+    (enumCase) => `${declarationName}.${enumCase}`
+  );
+}
+
 function classify(base, head) {
   const baseMap = new Map(base.map((d) => [d.name, d]));
   const headMap = new Map(head.map((d) => [d.name, d]));
@@ -114,6 +214,14 @@ function classify(base, head) {
   const removed = [];
   const modified = [];
   const renamed = [];
+  const memberChanges = {
+    addedEnumCases: [],
+    addedMethods: [],
+    addedParameters: [],
+    removedEnumCases: [],
+    removedMethods: [],
+    removedParameters: [],
+  };
   const usedAdded = new Set();
   const usedRemoved = new Set();
 
@@ -145,7 +253,10 @@ function classify(base, head) {
     if (b) {
       const fullB = `${b.releaseTag}\n${b.body}`;
       const fullH = `${h.releaseTag}\n${h.body}`;
-      if (fullB !== fullH) modified.push({ base: b, head: h });
+      if (fullB !== fullH) {
+        modified.push({ base: b, head: h });
+        collectMemberChanges(b, h, memberChanges);
+      }
     }
   }
 
@@ -156,6 +267,12 @@ function classify(base, head) {
     removed: finalRemoved.sort(byName),
     modified: modified.sort((a, b) => a.head.name.localeCompare(b.head.name)),
     renamed: renamed.sort((a, b) => a.old.name.localeCompare(b.old.name)),
+    ...Object.fromEntries(
+      Object.entries(memberChanges).map(([key, value]) => [
+        key,
+        value.sort((a, b) => a.localeCompare(b)),
+      ])
+    ),
   };
 }
 
@@ -173,12 +290,25 @@ function renderCategory(title, items, transform) {
   return `### ${title} (${items.length})\n\n${list}`;
 }
 
+function renderNamesCategory(title, names) {
+  if (names.length === 0) return '';
+  return `### ${title} (${names.length})\n\n${names
+    .map((name) => `- \`${name}\``)
+    .join('\n')}`;
+}
+
 function renderSummary(changes) {
   const changed =
     changes.added.length +
       changes.removed.length +
       changes.modified.length +
-      changes.renamed.length >
+      changes.renamed.length +
+      changes.addedMethods.length +
+      changes.removedMethods.length +
+      changes.addedParameters.length +
+      changes.removedParameters.length +
+      changes.addedEnumCases.length +
+      changes.removedEnumCases.length >
     0;
 
   if (!changed) {
@@ -203,6 +333,12 @@ function renderSummary(changes) {
       changes.modified.map((m) => m.head)
     ),
     renderCategory('🏷️ Renamed', renamedItems, (d) => d.oldName),
+    renderNamesCategory('🆕 Methods added', changes.addedMethods),
+    renderNamesCategory('❌ Methods removed', changes.removedMethods),
+    renderNamesCategory('🆕 Parameters added', changes.addedParameters),
+    renderNamesCategory('❌ Parameters removed', changes.removedParameters),
+    renderNamesCategory('🆕 Enum cases added', changes.addedEnumCases),
+    renderNamesCategory('❌ Enum cases removed', changes.removedEnumCases),
   ];
 
   return { changed: true, markdown: parts.filter(Boolean).join('\n\n') };

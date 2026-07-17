@@ -17,6 +17,7 @@ type Result = {
 function run(base: string | undefined, head: string): Result {
   const directory = mkdtempSync(join(tmpdir(), 'api-report-summary-'));
   const basePath = join(directory, 'base.md');
+  const missingBasePath = join(directory, 'missing-base.md');
   const headPath = join(directory, 'head.md');
   const outputPath = join(directory, 'output');
 
@@ -26,7 +27,12 @@ function run(base: string | undefined, head: string): Result {
 
     const result = spawnSync(
       'node',
-      [SCRIPT, base === undefined ? basePath : basePath, headPath, outputPath],
+      [
+        SCRIPT,
+        base === undefined ? missingBasePath : basePath,
+        headPath,
+        outputPath,
+      ],
       { encoding: 'utf8' }
     );
 
@@ -102,6 +108,86 @@ export interface NewName {
     expect(result.summary).toContain('`OldName` → `NewName`');
     expect(result.diff).toContain('-    value: string;');
     expect(result.diff).toContain('+    value: number;');
+  });
+
+  it('identifies class, interface, method, parameter, and enum-case changes', () => {
+    const base = `// @public
+export class ExistingClass {
+    keep(kept: string, removedParameter: number): void;
+    removedMethod(): void;
+}
+
+// @public
+export interface ExistingInterface {
+    existingMethod(): void;
+}
+
+// @public
+export enum ExistingEnum {
+    Existing,
+    RemovedCase
+}
+
+// @public
+export class RemovedClass {
+    removed: string;
+}
+
+// @public
+export interface RemovedInterface {
+    removed: string;
+}
+`;
+    const head = `// @public
+export class ExistingClass {
+    keep(kept: string, addedParameter: boolean): void;
+    addedMethod(): void;
+}
+
+// @public
+export interface ExistingInterface {
+    existingMethod(): void;
+    addedMethod(): void;
+}
+
+// @public
+export enum ExistingEnum {
+    Existing,
+    AddedCase
+}
+
+// @public
+export class AddedClass {
+    added: string;
+}
+
+// @public
+export interface AddedInterface {
+    added: string;
+}
+`;
+
+    const result = run(base, head);
+
+    expect(result.summary).toContain('### 🆕 Added (2)');
+    expect(result.summary).toContain('`AddedClass`');
+    expect(result.summary).toContain('`AddedInterface`');
+    expect(result.summary).toContain('### ❌ Removed (2)');
+    expect(result.summary).toContain('`RemovedClass`');
+    expect(result.summary).toContain('`RemovedInterface`');
+    expect(result.summary).toContain('### 🆕 Methods added (2)');
+    expect(result.summary).toContain('`ExistingClass.addedMethod`');
+    expect(result.summary).toContain('`ExistingInterface.addedMethod`');
+    expect(result.summary).toContain('### ❌ Methods removed (1)');
+    expect(result.summary).toContain('`ExistingClass.removedMethod`');
+    expect(result.summary).toContain('### 🆕 Parameters added (1)');
+    expect(result.summary).toContain('`ExistingClass.keep(addedParameter)`');
+    expect(result.summary).toContain('### ❌ Parameters removed (1)');
+    expect(result.summary).toContain('`ExistingClass.keep(removedParameter)`');
+    expect(result.summary).toContain('### 🆕 Enum cases added (1)');
+    expect(result.summary).toContain('`ExistingEnum.AddedCase`');
+    expect(result.summary).toContain('### ❌ Enum cases removed (1)');
+    expect(result.summary).toContain('`ExistingEnum.RemovedCase`');
   });
 
   it('treats a missing baseline as an empty API report', () => {
