@@ -28,7 +28,7 @@ function normalizeBody(body, name) {
 
 function splitBlocks(text) {
   const blocks = [];
-  const lines = text.split('\n');
+  const lines = text.split(/\r?\n/);
   let i = 0;
 
   while (i < lines.length) {
@@ -184,13 +184,19 @@ function collectMemberChanges(base, head, changes) {
     changes.addedParameters,
     baseMembers.parameters,
     headMembers.parameters,
-    (parameter) => `${declarationName}.${parameter}`
+    (parameter) =>
+      parameter.startsWith('(')
+        ? `${declarationName}${parameter}`
+        : `${declarationName}.${parameter}`
   );
   addSetDifference(
     changes.removedParameters,
     headMembers.parameters,
     baseMembers.parameters,
-    (parameter) => `${declarationName}.${parameter}`
+    (parameter) =>
+      parameter.startsWith('(')
+        ? `${declarationName}${parameter}`
+        : `${declarationName}.${parameter}`
   );
   addSetDifference(
     changes.addedEnumCases,

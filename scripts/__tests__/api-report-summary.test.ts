@@ -63,6 +63,19 @@ export interface Existing {
     expect(result.summary).toContain('Public API is unchanged');
   });
 
+  it('normalizes CRLF line endings', () => {
+    const report = `// @public
+export interface Existing {
+    value: string;
+}
+`;
+
+    const result = run(report, report.replace(/\n/g, '\r\n'));
+
+    expect(result.changed).toBe('false');
+    expect(result.summary).toContain('Public API is unchanged');
+  });
+
   it('groups added, removed, modified, and renamed declarations', () => {
     const base = `// @public
 export interface Existing {
@@ -188,6 +201,20 @@ export interface AddedInterface {
     expect(result.summary).toContain('`ExistingEnum.AddedCase`');
     expect(result.summary).toContain('### ❌ Enum cases removed (1)');
     expect(result.summary).toContain('`ExistingEnum.RemovedCase`');
+  });
+
+  it('formats top-level function parameters without an extra dot', () => {
+    const base = `// @public
+export function submit(payment: string): void;
+`;
+    const head = `// @public
+export function submit(payment: string, configuration: string): void;
+`;
+
+    const result = run(base, head);
+
+    expect(result.summary).toContain('`submit(configuration)`');
+    expect(result.summary).not.toContain('`submit.(configuration)`');
   });
 
   it('treats a missing baseline as an empty API report', () => {
