@@ -30,12 +30,20 @@ function normalizeBody(body, name) {
   );
 }
 
+function isNonSemanticApiExtractorComment(line) {
+  return (
+    line === '//' ||
+    line === '// (undocumented)' ||
+    line.startsWith('// Warning: (ae-')
+  );
+}
+
 function normalizeDeclarationBody(body) {
   return body
     .split('\n')
     .filter((line) => {
       const trimmed = line.trim();
-      return trimmed !== '' && !trimmed.startsWith('//');
+      return trimmed !== '' && !isNonSemanticApiExtractorComment(trimmed);
     })
     .join('\n');
 }

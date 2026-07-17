@@ -106,6 +106,25 @@ export interface ApplePayModule {
     expect(result.summary).toContain('Public API is unchanged');
   });
 
+  it('retains non-generated comments when comparing declarations', () => {
+    const base = `// @public
+export interface ApplePayModule {
+    // This comment is part of the declaration contract.
+    provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
+}
+`;
+    const head = `// @public
+export interface ApplePayModule {
+    provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
+}
+`;
+
+    const result = run(base, head);
+
+    expect(result.changed).toBe(true);
+    expect(result.summary).toContain('Modified (1)');
+  });
+
   it('writes the changed state to GITHUB_OUTPUT', () => {
     const report = `// @public
 export interface Existing {
