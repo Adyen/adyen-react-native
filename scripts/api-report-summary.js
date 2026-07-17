@@ -7,6 +7,10 @@ const ts = require('typescript');
 
 const REPORT_DIR = '/tmp/public-api-report';
 
+/*
+ * Usage: node api-report-summary.js <base-report> <head-report> [out-dir]
+ * Writes summary.md, diff.txt, and changed.txt to out-dir.
+ */
 function readFile(path) {
   try {
     return fs.readFileSync(path, 'utf8');
