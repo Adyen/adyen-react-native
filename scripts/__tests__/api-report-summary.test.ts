@@ -9,21 +9,30 @@ import { spawnSync } from 'child_process';
 const SCRIPT = resolve(__dirname, '../api-report-summary.js');
 
 type Result = {
-  changed: string;
+  changed: boolean;
   diff: string;
+  githubOutput?: string;
   summary: string;
 };
 
-function run(base: string | undefined, head: string): Result {
+function run(
+  base: string | undefined,
+  head: string,
+  includeGithubOutput = false
+): Result {
   const directory = mkdtempSync(join(tmpdir(), 'api-report-summary-'));
   const basePath = join(directory, 'base.md');
   const missingBasePath = join(directory, 'missing-base.md');
   const headPath = join(directory, 'head.md');
   const outputPath = join(directory, 'output');
+  const githubOutputPath = join(directory, 'github-output.txt');
 
   try {
     if (base !== undefined) writeFileSync(basePath, base);
     writeFileSync(headPath, head);
+    const env = { ...process.env };
+    if (includeGithubOutput) env.GITHUB_OUTPUT = githubOutputPath;
+    else delete env.GITHUB_OUTPUT;
 
     const result = spawnSync(
       'node',
@@ -33,15 +42,16 @@ function run(base: string | undefined, head: string): Result {
         headPath,
         outputPath,
       ],
-      { encoding: 'utf8' }
+      { encoding: 'utf8', env }
     );
 
     expect(result.status).toBe(0);
 
     return {
-      changed: readFileSync(join(outputPath, 'changed.txt'), 'utf8'),
-      diff: readFileSync(join(outputPath, 'diff.txt'), 'utf8'),
-      summary: readFileSync(join(outputPath, 'summary.md'), 'utf8'),
+      ...JSON.parse(readFileSync(join(outputPath, 'report.json'), 'utf8')),
+      githubOutput: includeGithubOutput
+        ? readFileSync(githubOutputPath, 'utf8')
+        : undefined,
     };
   } finally {
     rmSync(directory, { force: true, recursive: true });
@@ -58,7 +68,7 @@ export interface Existing {
 
     const result = run(report, report);
 
-    expect(result.changed).toBe('false');
+    expect(result.changed).toBe(false);
     expect(result.diff).toBe('');
     expect(result.summary).toContain('Public API is unchanged');
   });
@@ -72,8 +82,20 @@ export interface Existing {
 
     const result = run(report, report.replace(/\n/g, '\r\n'));
 
-    expect(result.changed).toBe('false');
+    expect(result.changed).toBe(false);
     expect(result.summary).toContain('Public API is unchanged');
+  });
+
+  it('writes the changed state to GITHUB_OUTPUT', () => {
+    const report = `// @public
+export interface Existing {
+    value: string;
+}
+`;
+
+    const result = run(report, report, true);
+
+    expect(result.githubOutput).toBe('changed=false\n');
   });
 
   it('groups added, removed, modified, and renamed declarations', () => {
@@ -110,7 +132,7 @@ export interface NewName {
 
     const result = run(base, head);
 
-    expect(result.changed).toBe('true');
+    expect(result.changed).toBe(true);
     expect(result.summary).toContain('Added (1)');
     expect(result.summary).toContain('`Added`');
     expect(result.summary).toContain('Removed (1)');
@@ -226,7 +248,7 @@ export interface Added {
 
     const result = run(undefined, head);
 
-    expect(result.changed).toBe('true');
+    expect(result.changed).toBe(true);
     expect(result.summary).toContain('Added (1)');
     expect(result.diff).toContain('+// @public');
   });

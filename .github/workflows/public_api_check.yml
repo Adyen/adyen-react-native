@@ -62,15 +62,13 @@ jobs:
             : > /tmp/base-api-report.md
           fi
           node scripts/api-report-summary.js /tmp/base-api-report.md "$API_REPORT"
-          changed=$(cat /tmp/public-api-report/changed.txt)
-          echo "changed=$changed" >> "$GITHUB_OUTPUT"
 
       - name: Archive API report
         if: steps.source-changes.outputs.changed == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: public-api-report
-          path: /tmp/public-api-report/
+          path: /tmp/public-api-report/report.json
           retention-days: 1
 
   report-public-api:
@@ -85,6 +83,8 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v7
         with:
           name: public-api-report
@@ -93,72 +93,8 @@ jobs:
       - name: Comment API changes on pull request
         uses: actions/github-script@v8
         env:
-          SUMMARY: /tmp/public-api-report/summary.md
-          DIFF: /tmp/public-api-report/diff.txt
-          CHANGED: /tmp/public-api-report/changed.txt
+          REPORT: /tmp/public-api-report/report.json
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
-            const marker = '<!-- public-api-diff -->';
-            const summary = fs.readFileSync(process.env.SUMMARY, 'utf8');
-            const diff = fs.readFileSync(process.env.DIFF, 'utf8');
-            const changed = fs.readFileSync(process.env.CHANGED, 'utf8').trim() === 'true';
-
-            const title = changed
-              ? '## 🟡 Public API changes detected'
-              : '## 🟢 No public API changes';
-
-            const parts = [marker, title, '', summary];
-
-            if (changed && diff.trim()) {
-              const displayDiff =
-                diff.length > 60000 ? diff.slice(0, 60000) + '\n\n... (truncated)' : diff;
-              parts.push(
-                '',
-                '<details>',
-                '<summary>API snapshot diff</summary>',
-                '',
-                '```diff',
-                displayDiff,
-                '```',
-                '</details>',
-              );
-            }
-
-            parts.push(
-              '',
-              changed
-                ? 'Please review the changes and update `etc/api/adyen-react-native.api.md` if this public API change is intentional.'
-                : 'No action needed — the public API snapshot matches the target branch.',
-            );
-
-            const body = parts.join('\n');
-
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number,
-              per_page: 100,
-            });
-            const existingComment = comments.find(
-              (comment) => comment.user.type === 'Bot' && comment.body.includes(marker),
-            );
-
-            if (existingComment) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existingComment.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
-              });
-            }
+            await require(`${process.env.GITHUB_WORKSPACE}/scripts/post-api-report-comment`)({ github, context });

@@ -9,7 +9,7 @@ const REPORT_DIR = '/tmp/public-api-report';
 
 /*
  * Usage: node api-report-summary.js <base-report> <head-report> [out-dir]
- * Writes summary.md, diff.txt, and changed.txt to out-dir.
+ * Writes report.json to out-dir.
  */
 function readFile(path) {
   try {
@@ -354,20 +354,17 @@ function renderSummary(changes) {
   return { changed: true, markdown: parts.filter(Boolean).join('\n\n') };
 }
 
-function produceDiff(basePath, headPath, outPath) {
+function produceDiff(basePath, headPath) {
   const result = spawnSync('diff', ['-u', basePath, headPath], {
     encoding: 'utf8',
   });
   if (result.status === 0) {
-    fs.writeFileSync(outPath, '');
+    return '';
   } else if (result.status === 1) {
-    fs.writeFileSync(outPath, result.stdout);
-  } else {
-    fs.writeFileSync(
-      outPath,
-      `diff failed (status ${result.status}):\n${result.stderr || ''}`
-    );
+    return result.stdout;
   }
+
+  return `diff failed (status ${result.status}):\n${result.stderr || ''}`;
 }
 
 function main() {
@@ -392,13 +389,17 @@ function main() {
   const head = readReport(headPath);
   const changes = classify(base, head);
   const { changed, markdown } = renderSummary(changes);
-
-  produceDiff(baseReportPath, headPath, `${outDir}/diff.txt`);
-  fs.writeFileSync(`${outDir}/summary.md`, markdown);
-  fs.writeFileSync(`${outDir}/changed.txt`, changed ? 'true' : 'false');
+  const diff = produceDiff(baseReportPath, headPath);
+  fs.writeFileSync(
+    `${outDir}/report.json`,
+    JSON.stringify({ changed, diff, summary: markdown })
+  );
 
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n\n`);
+  }
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${changed}\n`);
   }
 }
 
