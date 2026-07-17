@@ -24,10 +24,20 @@ function escapeRegExp(string) {
 }
 
 function normalizeBody(body, name) {
-  return body.replace(
+  return normalizeDeclarationBody(body).replace(
     new RegExp(`\\b${escapeRegExp(name)}\\b`, 'g'),
     '__NAME__'
   );
+}
+
+function normalizeDeclarationBody(body) {
+  return body
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim();
+      return trimmed !== '' && !trimmed.startsWith('//');
+    })
+    .join('\n');
 }
 
 function splitBlocks(text) {
@@ -261,8 +271,8 @@ function classify(base, head) {
   for (const [name, h] of headMap) {
     const b = baseMap.get(name);
     if (b) {
-      const fullB = `${b.releaseTag}\n${b.body}`;
-      const fullH = `${h.releaseTag}\n${h.body}`;
+      const fullB = `${b.releaseTag}\n${normalizeDeclarationBody(b.body)}`;
+      const fullH = `${h.releaseTag}\n${normalizeDeclarationBody(h.body)}`;
       if (fullB !== fullH) {
         modified.push({ base: b, head: h });
         collectMemberChanges(b, h, memberChanges);

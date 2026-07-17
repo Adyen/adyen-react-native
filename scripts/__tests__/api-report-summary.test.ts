@@ -86,6 +86,26 @@ export interface Existing {
     expect(result.summary).toContain('Public API is unchanged');
   });
 
+  it('ignores API Extractor comments when comparing declarations', () => {
+    const base = `// @public
+export interface ApplePayModule {
+    // Warning: (ae-forgotten-export) The symbol "ApplePayAuthorizationResult" needs to be exported
+    //
+    provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
+}
+`;
+    const head = `// @public
+export interface ApplePayModule {
+    provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
+}
+`;
+
+    const result = run(base, head);
+
+    expect(result.changed).toBe(false);
+    expect(result.summary).toContain('Public API is unchanged');
+  });
+
   it('writes the changed state to GITHUB_OUTPUT', () => {
     const report = `// @public
 export interface Existing {
