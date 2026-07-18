@@ -91,7 +91,7 @@ jobs:
           path: /tmp/public-api-report
 
       - name: Comment API changes on pull request
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           REPORT: /tmp/public-api-report/report.json
         with:
