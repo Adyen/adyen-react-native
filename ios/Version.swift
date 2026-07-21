@@ -42,7 +42,7 @@ internal enum SDKVersion {
 
     private static func version(in bundle: Bundle) -> String? {
         guard let url = bundle.url(forResource: fileName, withExtension: fileExtension),
-              let source = try? String(contentsOf: url) else {
+              let source = try? String(contentsOf: url, encoding: .utf8) else {
             return nil
         }
         return parse(source)
