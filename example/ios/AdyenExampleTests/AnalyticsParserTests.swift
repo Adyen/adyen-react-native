@@ -66,4 +66,16 @@ class AnalyticsParserTests: XCTestCase {
         // THEN
         XCTAssertFalse(sut.verboseLogsOn)
     }
+
+    func test_sdkVersion_readsGeneratedVersionFile() {
+        XCTAssertFalse(SDKVersion.current.isEmpty)
+    }
+
+    func test_sdkVersion_parsesGeneratedVersionFile() {
+        XCTAssertEqual(SDKVersion.parse("export const adyenSDKVersion = '2.0.0-local.1';\n"), "2.0.0-local.1")
+    }
+
+    func test_sdkVersion_returnsNil_forInvalidGeneratedVersionFile() {
+        XCTAssertNil(SDKVersion.parse("export const sdkVersion = '2.0.0-local.1';\n"))
+    }
 }

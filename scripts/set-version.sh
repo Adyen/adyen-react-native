@@ -1,16 +1,7 @@
 #!/bin/bash
 
-VERSION=$(cat package.json | python3 -c "import sys, json; print(json.load(sys.stdin)['version'])")
-echo "Set Version"
-echo $VERSION
+set -euo pipefail
 
-IOS_PATH="ios/Version.swift"
-ANDROID_PATH="android/build.gradle"
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/{SDK_VERSION}/$VERSION/g" $IOS_PATH
-    sed -i '' "s/{SDK_VERSION}/$VERSION/g" $ANDROID_PATH
-else
-    sed -i -e "s|{SDK_VERSION}|$VERSION|g" $IOS_PATH
-    sed -i -e "s|{SDK_VERSION}|$VERSION|g" $ANDROID_PATH
-fi
+VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
+mkdir -p lib
+printf "export const adyenSDKVersion = '%s';\n" "$VERSION" > lib/Version.ts
