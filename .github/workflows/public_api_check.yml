@@ -38,7 +38,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         if: steps.source-changes.outputs.changed == 'true'
         with:
           node-version: ${{ vars.NODE_VERSION }}
