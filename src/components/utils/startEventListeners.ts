@@ -5,6 +5,7 @@ import type {
   AdyenActionComponent,
   AdyenError,
   ApplePayAuthorizationActions,
+  ApplePayAuthorizationResult,
   ApplePayCouponCodeEvent,
   ApplePayCouponCodeUpdateRequest,
   ApplePayPaymentAuthorization,
@@ -23,7 +24,6 @@ import type {
 } from '../../core';
 import { Event } from '../../core';
 import type { ApplePayModule } from '../../modules/applepay/AdyenApplePay';
-import type { ApplePayAuthorizationResult } from '../../modules/applepay/ApplePayInternalTypes';
 import type { RemovesStoredPayment } from '../../modules/dropin/DropInWrapper';
 import type { AdyenEventListener } from '../../modules/base/EventListenerWrapper';
 

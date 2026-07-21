@@ -38,7 +38,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         if: steps.source-changes.outputs.changed == 'true'
         with:
           node-version: ${{ vars.NODE_VERSION }}
@@ -56,95 +56,45 @@ jobs:
         if: steps.source-changes.outputs.changed == 'true'
         run: |
           if git show "$BASE_SHA:$API_REPORT" > /tmp/base-api-report.md 2>/dev/null; then
-            if diff -u /tmp/base-api-report.md "$API_REPORT" > /tmp/api-diff.txt; then
-              echo "changed=false" >> "$GITHUB_OUTPUT"
-            else
-              echo "changed=true" >> "$GITHUB_OUTPUT"
-            fi
+            echo "Baseline API report found"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "## New file: $API_REPORT (no baseline on target branch)" > /tmp/api-diff.txt
+            echo "No baseline API report on target branch"
+            : > /tmp/base-api-report.md
           fi
+          node scripts/api-report-summary.js /tmp/base-api-report.md "$API_REPORT"
 
-      - name: Archive API diff
-        if: steps.api-diff.outputs.changed == 'true'
+      - name: Archive API report
+        if: steps.source-changes.outputs.changed == 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: public-api-diff
-          path: /tmp/api-diff.txt
+          name: public-api-report
+          path: /tmp/public-api-report/report.json
           retention-days: 1
 
   report-public-api:
     name: Report Public API Changes
-    if: always() && needs.check-public-api.outputs.api-changed == 'true'
+    if: >-
+      always() &&
+      needs.check-public-api.outputs.api-changed != '' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     needs: [check-public-api]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
         with:
-          name: public-api-diff
-          path: /tmp
+          name: public-api-report
+          path: /tmp/public-api-report
 
       - name: Comment API changes on pull request
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
-          API_DIFF: /tmp/api-diff.txt
+          REPORT: /tmp/public-api-report/report.json
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
-            const marker = '<!-- public-api-diff -->';
-            const diff = fs.readFileSync(process.env.API_DIFF, 'utf8');
-            const body = [
-              marker,
-              '## Public API changes detected',
-              '',
-              'The generated Public API snapshot differs from the target branch because files under `src/` changed.',
-              '',
-              '<details>',
-              '<summary>API snapshot diff</summary>',
-              '',
-              '```diff',
-              diff,
-              '```',
-              '</details>',
-              '',
-              'Please review the changes and update `etc/api/adyen-react-native.api.md` if this public API change is intentional.',
-              '',
-            ].join('\n');
-
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number,
-              per_page: 100,
-            });
-            const existingComment = comments.find(comment =>
-              comment.user.type === 'Bot' && comment.body.includes(marker)
-            );
-
-            if (existingComment) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existingComment.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
-              });
-            }
-
-      - name: Fail when Public API differs
-        run: |
-          echo 'The generated Public API snapshot differs from the target branch.'
-          exit 1
+            await require(`${process.env.GITHUB_WORKSPACE}/scripts/post-api-report-comment`)({ github, context });
