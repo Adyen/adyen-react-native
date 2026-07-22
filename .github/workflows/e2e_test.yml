@@ -93,9 +93,6 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: 'yarn'
 
-      - name: Restore Swift compatibility library resolution
-        run: sudo rm -rf /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain*/Metal.xctoolchain
-
       - name: Setup Ruby & Cocoapods
         uses: ruby/setup-ruby@v1
         with:

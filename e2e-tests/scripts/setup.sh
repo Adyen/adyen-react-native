@@ -31,6 +31,11 @@ else
     echo "== Building React-Native $version (CLI $cli_version)"
     npx @react-native-community/cli@"$cli_version" init --directory $path --version "$version" --install-pods false --skip-install "$PROJECT_NAME"
 
+    project_file="$path/ios/$PROJECT_NAME.xcodeproj/project.pbxproj"
+    if grep -q '\$(TOOLCHAIN_DIR)/usr/lib/swift/\$(PLATFORM_NAME)' "$project_file"; then
+        perl -0pi -e 's/\$\(TOOLCHAIN_DIR\)(\/usr\/lib\/swift\/\$\(PLATFORM_NAME\))/\$(DT_TOOLCHAIN_DIR)$1/g' "$project_file"
+    fi
+
     cd $path || exit 1
     
     # Add React Native-specific files
