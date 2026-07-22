@@ -6,7 +6,7 @@
 
 import Foundation
 
-internal enum SDKVersion {
+internal final class SDKVersion: NSObject {
     private static let fileName = "Version"
     private static let fileExtension = "ts"
     private static let resourceBundleName = "adyen-react-native"
@@ -31,7 +31,7 @@ internal enum SDKVersion {
         return String(source[versionRange])
     }
 
-    private static let bundles = [Bundle.main, Bundle(for: BundleToken.self)]
+    private static let bundles = [Bundle.main, Bundle(for: SDKVersion.self)]
 
     private static func resourceBundle(in bundle: Bundle) -> Bundle? {
         guard let url = bundle.url(forResource: resourceBundleName, withExtension: "bundle") else {
@@ -48,7 +48,5 @@ internal enum SDKVersion {
         return parse(source)
     }
 }
-
-private final class BundleToken {}
 
 internal let adyenSDKVersion = SDKVersion.current
