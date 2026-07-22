@@ -2186,7 +2186,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Adyen: bfb5baaf4dded13ec151d336368ac1c26e9a99b4
-  adyen-react-native: 7af7d67561bbd6ee270e33b2c3f4a50537b1fb5c
+  adyen-react-native: 3b3ce2d7486adedd59f2339c3df5df10827f0735
   Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
   AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
   FBLazyVector: c00c20551d40126351a6783c47ce75f5b374851b

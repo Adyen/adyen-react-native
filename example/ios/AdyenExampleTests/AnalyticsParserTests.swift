@@ -66,5 +66,4 @@ class AnalyticsParserTests: XCTestCase {
         // THEN
         XCTAssertFalse(sut.verboseLogsOn)
     }
-
 }
