@@ -67,6 +67,7 @@ abstract class BaseModule(
     var currentModule: BaseModule? = null
       internal set
 
+    @Volatile
     var sdkVersion: String? = null
       internal set
 
