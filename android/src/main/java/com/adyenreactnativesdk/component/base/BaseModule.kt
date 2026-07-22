@@ -6,8 +6,11 @@
 
 package com.adyenreactnativesdk.component.base
 
+import android.annotation.SuppressLint
 import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
+import com.adyen.checkout.components.core.internal.util.CheckoutPlatform
+import com.adyen.checkout.components.core.internal.util.CheckoutPlatformParams
 import com.adyen.checkout.sessions.core.CheckoutSession
 import com.adyenreactnativesdk.AdyenCheckout
 import com.adyenreactnativesdk.util.ReactNativeJson
@@ -63,5 +66,16 @@ abstract class BaseModule(
 
     var currentModule: BaseModule? = null
       internal set
+
+    var sdkVersion: String? = null
+      internal set
+
+    // This is intended.
+    @SuppressLint("RestrictedApi")
+    fun configureAnalytics() {
+      sdkVersion?.let {
+        CheckoutPlatformParams.overrideForCrossPlatform(CheckoutPlatform.REACT_NATIVE, it)
+      }
+    }
   }
 }

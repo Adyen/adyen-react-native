@@ -17,6 +17,7 @@ internal class BaseModule: RCTEventEmitter {
     internal static var session: AdyenSession?
     internal weak static var sessionDelegate: SessionErrorDelegate?
     internal weak static var currentModule: BaseModule?
+    internal static var sdkVersion: String?
 
     /// Stack of view controllers that have presented payment UI.
     /// Appended to on each `present(component:)` call; cleared on cleanup.

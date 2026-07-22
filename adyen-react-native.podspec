@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   s.public_header_files = "ios/ADYRedirectComponent.h"
 
   s.dependency "Adyen", '5.25.1'
-  s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy', 'lib/Version.ts' ] }
+  s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
 
   install_modules_dependencies(s)
 end

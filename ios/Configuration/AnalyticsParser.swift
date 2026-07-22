@@ -29,10 +29,12 @@ public struct AnalyticsParser {
     public var configuration: AnalyticsConfiguration {
         var analytics = AnalyticsConfiguration()
         analytics.isEnabled = analyticsOn
-        CheckoutPlatformParams.shared.overrideForCrossPlatform(
-            platform: .reactNative,
-            version: adyenSDKVersion
-        )
+        if let sdkVersion = BaseModule.sdkVersion {
+            CheckoutPlatformParams.shared.overrideForCrossPlatform(
+                platform: .reactNative,
+                version: sdkVersion
+            )
+        }
         AdyenLogging.isEnabled = verboseLogsOn
         return analytics
     }
