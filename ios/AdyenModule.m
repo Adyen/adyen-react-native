@@ -120,6 +120,8 @@ RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
 
 @interface RCT_EXTERN_MODULE(SessionHelper, NSObject)
 
+RCT_EXTERN_METHOD(setSdkVersion:(NSString *)sdkVersion)
+
 RCT_EXTERN_METHOD(createSession:(NSDictionary *)sessionModelJSON
                   configuration:(NSDictionary *)configurationJSON
                   resolver:(RCTPromiseResolveBlock)resolve

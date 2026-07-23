@@ -6,9 +6,6 @@
 
 package com.adyenreactnativesdk
 
-import android.annotation.SuppressLint
-import com.adyen.checkout.components.core.internal.util.CheckoutPlatform
-import com.adyen.checkout.components.core.internal.util.CheckoutPlatformParams
 import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
 import com.adyenreactnativesdk.component.SessionHelperModule
 import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
@@ -40,7 +37,6 @@ class AdyenPaymentPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     ensureInitialized(reactContext)
     val sharedBus = messageBus
-    configureAnalytics()
     return listOf(
       DropInModule(reactContext, sharedBus),
       InstantModule(reactContext, sharedBus),
@@ -51,13 +47,6 @@ class AdyenPaymentPackage : ReactPackage {
       ActionModule(reactContext),
       EmbeddedComponentBusModule(reactContext, sharedBus),
     )
-  }
-
-  // This is intended.
-  @SuppressLint("RestrictedApi")
-  private fun configureAnalytics() {
-    val version = BuildConfig.CHECKOUT_VERSION
-    CheckoutPlatformParams.overrideForCrossPlatform(CheckoutPlatform.REACT_NATIVE, version)
   }
 
   companion object {

@@ -4,6 +4,7 @@ import com.adyen.checkout.components.core.AnalyticsConfiguration
 import com.adyen.checkout.components.core.AnalyticsLevel
 import com.adyen.checkout.core.AdyenLogLevel
 import com.adyen.checkout.core.AdyenLogger
+import com.adyenreactnativesdk.component.base.BaseModule
 import com.facebook.react.bridge.ReadableMap
 
 class AnalyticsParser(
@@ -35,6 +36,7 @@ class AnalyticsParser(
     get() {
       val logLevel = if (verboseLogs) AdyenLogLevel.VERBOSE else AdyenLogLevel.ERROR
       AdyenLogger.setLogLevel(logLevel)
+      BaseModule.configureAnalytics()
       return AnalyticsConfiguration(if (analyticsEnabled) AnalyticsLevel.ALL else AnalyticsLevel.NONE)
     }
 }
