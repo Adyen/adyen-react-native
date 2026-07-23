@@ -21,6 +21,11 @@ internal final class SessionHelperModule: BaseModule, SessionErrorDelegate {
     }
 
     @objc
+    func setSdkVersion(_ sdkVersion: String) {
+        BaseModule.sdkVersion = sdkVersion
+    }
+
+    @objc
     override func hide(_ success: NSNumber, event: NSDictionary) {
         super.hide(success, event: event)
         // Delegate hide to the current active module (DropIn, GooglePay, etc.)

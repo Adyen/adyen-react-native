@@ -34,11 +34,6 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-    buildConfigField "String", "CHECKOUT_VERSION", "\"{SDK_VERSION}\""
-  }
-
-  buildFeatures {
-    buildConfig true
   }
 
   testOptions {

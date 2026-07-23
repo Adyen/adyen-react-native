@@ -43,6 +43,11 @@ class SessionHelperModule(
   }
 
   @ReactMethod
+  fun setSdkVersion(sdkVersion: String) {
+    BaseModule.sdkVersion = sdkVersion
+  }
+
+  @ReactMethod
   override fun hide(
     success: Boolean,
     message: ReadableMap?,

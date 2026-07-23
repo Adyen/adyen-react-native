@@ -6,6 +6,7 @@
 
 import Adyen
 import Adyen3DS2
+import Foundation
 import React
 import UIKit
 
@@ -17,6 +18,20 @@ internal class BaseModule: RCTEventEmitter {
     internal static var session: AdyenSession?
     internal weak static var sessionDelegate: SessionErrorDelegate?
     internal weak static var currentModule: BaseModule?
+    private static let sdkVersionLock = NSLock()
+    private static var sdkVersionStorage: String?
+    internal static var sdkVersion: String? {
+        get {
+            sdkVersionLock.lock()
+            defer { sdkVersionLock.unlock() }
+            return sdkVersionStorage
+        }
+        set {
+            sdkVersionLock.lock()
+            defer { sdkVersionLock.unlock() }
+            sdkVersionStorage = newValue
+        }
+    }
 
     /// Stack of view controllers that have presented payment UI.
     /// Appended to on each `present(component:)` call; cleared on cleanup.

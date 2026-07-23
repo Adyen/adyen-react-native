@@ -38,7 +38,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         if: steps.source-changes.outputs.changed == 'true'
         with:
           node-version: ${{ vars.NODE_VERSION }}
@@ -85,13 +85,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: public-api-report
           path: /tmp/public-api-report
 
       - name: Comment API changes on pull request
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           REPORT: /tmp/public-api-report/report.json
         with:
