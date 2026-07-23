@@ -3,12 +3,12 @@ import { ModuleMock } from '../base/ModuleMock';
 import { ApplePayWrapper } from './ApplePayWrapper';
 import type {
   AdyenComponent,
+  ApplePayAuthorizationResult,
   ApplePayCouponCodeUpdateRequest,
   ApplePayShippingContactUpdateRequest,
   ApplePayShippingMethodUpdateRequest,
   ConditionalPaymentComponent,
 } from '../../core';
-import type { ApplePayAuthorizationResult } from './ApplePayInternalTypes';
 
 export interface ApplePayModule
   extends AdyenComponent, ConditionalPaymentComponent {

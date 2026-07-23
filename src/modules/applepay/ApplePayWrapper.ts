@@ -1,5 +1,6 @@
 import type {
   AdyenActionComponent,
+  ApplePayAuthorizationResult,
   ApplePayCouponCodeUpdateRequest,
   ApplePayShippingContactUpdateRequest,
   ApplePayShippingMethodUpdateRequest,
@@ -7,7 +8,6 @@ import type {
   PaymentAction,
   PaymentMethod,
 } from '../../core';
-import type { ApplePayAuthorizationResult } from './ApplePayInternalTypes';
 import { PaymentComponentWrapper } from '../base/PaymentComponentWrapper';
 import type { ApplePayModule } from './AdyenApplePay';
 import type { PaymentModule } from '../base/PaymentComponentWrapper';

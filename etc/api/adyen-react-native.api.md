@@ -121,6 +121,14 @@ export interface ApplePayAuthorizationActions {
     resolve: () => void;
 }
 
+// @public
+export interface ApplePayAuthorizationResult {
+    // (undocumented)
+    errors?: ApplePayError[];
+    // (undocumented)
+    status: 'success' | 'failure';
+}
+
 // @public (undocumented)
 export const ApplePayButton: (input: ApplePayButtonProps) => JSX.Element;
 
@@ -218,8 +226,6 @@ export type ApplePayMerchantCapability = 'debit' | 'credit';
 
 // @public (undocumented)
 export interface ApplePayModule extends AdyenComponent, ConditionalPaymentComponent {
-    // Warning: (ae-forgotten-export) The symbol "ApplePayAuthorizationResult" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
     // (undocumented)
