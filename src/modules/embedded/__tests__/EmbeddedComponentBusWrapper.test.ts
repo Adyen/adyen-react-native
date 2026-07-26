@@ -9,6 +9,7 @@ function createMockEmbeddedModule(supportedEvents: string[] = []) {
     getConstants: jest.fn(() => ({ supportedEvents })),
     subscribe: jest.fn(),
     unsubscribe: jest.fn(),
+    submit: jest.fn(),
     handle: jest.fn(),
     hide: jest.fn(),
     update: jest.fn(),
@@ -73,6 +74,25 @@ describe('EmbeddedComponentBusWrapper', () => {
         'CardComponent'
       );
     });
+
+    test('should remove the submission availability listener', () => {
+      const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
+      const listener = jest.fn();
+      wrapper.addSubmissionAvailabilityListener('CardComponent', listener);
+
+      wrapper.unsubscribe('CardComponent');
+      wrapper.hide('CardComponent', false);
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('submit', () => {
+    test('should call native module submit with viewId', () => {
+      const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
+      wrapper.submit('CardComponent');
+      expect(mockNativeModule.submit).toHaveBeenCalledWith('CardComponent');
+    });
   });
 
   describe('handle', () => {
@@ -106,6 +126,21 @@ describe('EmbeddedComponentBusWrapper', () => {
         false,
         undefined
       );
+    });
+
+    test('should report submission availability from the hide result', () => {
+      const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
+      const listener = jest.fn();
+      wrapper.addSubmissionAvailabilityListener('CardComponent', listener);
+
+      wrapper.hide('CardComponent', false);
+      wrapper.hide('CardComponent', true);
+
+      expect(listener).toHaveBeenNthCalledWith(1, true);
+      expect(listener).toHaveBeenNthCalledWith(2, false);
+
+      wrapper.hide('CardComponent', false);
+      expect(listener).toHaveBeenCalledTimes(2);
     });
   });
 

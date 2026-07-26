@@ -57,6 +57,14 @@ class CardViewState(
     eventDispatcher?.dispatchEvent(event)
   }
 
+  override fun onSubmit() {
+    componentManager?.submit()
+  }
+
+  override fun onStopLoading() {
+    componentManager?.stopLoading()
+  }
+
   override fun onAction(action: Action) {
     componentManager?.handleAction(action)
   }

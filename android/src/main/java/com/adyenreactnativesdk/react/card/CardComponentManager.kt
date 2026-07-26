@@ -86,6 +86,14 @@ class CardComponentManager(
     component?.setAddressLookupResult(addressLookupResult)
   }
 
+  fun submit() {
+    component?.submit() ?: Log.e("CardComponentManager", "Can not submit, Component is null")
+  }
+
+  fun stopLoading() {
+    component?.setInteractionBlocked(false) ?: Log.e("CardComponentManager", "Can not stop loading, Component is null")
+  }
+
   fun handleAction(action: Action) {
     component?.let {
       AdyenCheckout.setComponent(it)

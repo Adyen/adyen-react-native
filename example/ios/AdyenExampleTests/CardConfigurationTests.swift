@@ -42,6 +42,28 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertNotNil(sut.configuration)
     }
 
+    func test_configuration_showsSubmitButtonByDefault() {
+        // GIVEN
+        let configDict: NSDictionary = ["card": [:]]
+
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+
+        // THEN
+        XCTAssertTrue(sut.configuration.showsSubmitButton)
+    }
+
+    func test_configuration_hidesSubmitButton_whenConfigured() {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["showSubmitButton": false]]
+
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+
+        // THEN
+        XCTAssertFalse(sut.configuration.showsSubmitButton)
+    }
+
     func test_configuration_setsShowStorePaymentField_whenProvided() {
         // GIVEN
         let configDict: NSDictionary = ["card": ["showStorePaymentField": false]]

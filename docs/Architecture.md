@@ -76,7 +76,7 @@ src/
     │   └── DropInWrapper.ts
     ├── embedded/                           # Embedded component bus (for CardView and future embedded views)
     │   ├── EmbeddedComponentBus.ts           # Singleton bus instance
-    │   ├── EmbeddedComponentBusWrapper.ts    # Wrapper with subscribe/unsubscribe/handle/hide/update/confirm
+    │   ├── EmbeddedComponentBusWrapper.ts    # Wrapper with subscribe/unsubscribe/submit/handle/hide/update/confirm
     │   └── EmbeddedComponentProxy.ts         # Per-component proxy that binds a key to bus calls
     ├── googlepay/                          # Google Pay module
     │   ├── AdyenGooglePay.ts
@@ -140,6 +140,8 @@ EventListenerWrapper<EmbeddedNativeModule>
     │
     └──► EmbeddedComponentBusWrapper                         # Bus for all embedded views
             - subscribe(key), unsubscribe(key)
+            - submit(key)
+            - addSubmissionAvailabilityListener(key, listener)
             - handle(key, action), hide(key, success)
             - update(key, results), confirm(key, success, body)
 
@@ -359,6 +361,7 @@ Embedded views are rendered inline within the React tree using Fabric codegen. U
 │  CardView.tsx                                                            │
 │    ├── ref → findNodeHandle() → reactTag                                 │
 │    ├── subscribe(reactTag) → EmbeddedComponentBus                        │
+│    ├── ref.submit() → EmbeddedComponentBus.submit(reactTag)              │
 │    └── <NativeCardView paymentMethod={...} configuration={...} />        │
 │                                                                          │
 │  useSubscriptionManager                                                  │
@@ -420,7 +423,7 @@ CardViewState                                        # Per-view state holder
     - cardComponentManager: CardComponentManager
     - renderComponentIfNeeded(view) — creates component, registers with bus
     - dispose(view) — unregisters, clears state
-    - onAction/onAddressLookup* — delegates to cardComponentManager
+    - onSubmit/onStopLoading/onAction/onAddressLookup* — delegates to cardComponentManager
 
 CardComponentManager                                 # Creates and manages CardComponent
     - createComponent(config, paymentMethod) → CardComponent
@@ -698,4 +701,3 @@ override fun getConstants(): MutableMap<String, Any> =
 | ---------------- | ---------------- | ------------------------------------ |
 | `onLayoutChange` | `CardView`       | Embedded view size changed (w × h)   |
 | `onButtonPress`  | `PlatformPayView`| Pay button tapped                    |
-
