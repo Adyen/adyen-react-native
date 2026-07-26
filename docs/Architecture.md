@@ -141,7 +141,6 @@ EventListenerWrapper<EmbeddedNativeModule>
     └──► EmbeddedComponentBusWrapper                         # Bus for all embedded views
             - subscribe(key), unsubscribe(key)
             - submit(key)
-            - addSubmissionAvailabilityListener(key, listener)
             - handle(key, action), hide(key, success)
             - update(key, results), confirm(key, success, body)
 

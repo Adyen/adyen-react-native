@@ -74,17 +74,6 @@ describe('EmbeddedComponentBusWrapper', () => {
         'CardComponent'
       );
     });
-
-    test('should remove the submission availability listener', () => {
-      const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
-      const listener = jest.fn();
-      wrapper.addSubmissionAvailabilityListener('CardComponent', listener);
-
-      wrapper.unsubscribe('CardComponent');
-      wrapper.hide('CardComponent', false);
-
-      expect(listener).not.toHaveBeenCalled();
-    });
   });
 
   describe('submit', () => {
@@ -126,21 +115,6 @@ describe('EmbeddedComponentBusWrapper', () => {
         false,
         undefined
       );
-    });
-
-    test('should report submission availability from the hide result', () => {
-      const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
-      const listener = jest.fn();
-      wrapper.addSubmissionAvailabilityListener('CardComponent', listener);
-
-      wrapper.hide('CardComponent', false);
-      wrapper.hide('CardComponent', true);
-
-      expect(listener).toHaveBeenNthCalledWith(1, true);
-      expect(listener).toHaveBeenNthCalledWith(2, false);
-
-      wrapper.hide('CardComponent', false);
-      expect(listener).toHaveBeenCalledTimes(2);
     });
   });
 

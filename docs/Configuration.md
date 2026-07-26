@@ -61,20 +61,18 @@
 Set `card.showSubmitButton` to `false` and use a `CardViewHandle` ref when your checkout owns the primary submit button:
 
 ```tsx
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Button } from 'react-native';
 import { CardView, type CardViewHandle } from '@adyen/react-native';
 
 function CheckoutCard() {
   const cardViewRef = useRef<CardViewHandle>(null);
-  const [isCardReady, setIsCardReady] = useState(false);
 
   return (
     <>
-      <CardView ref={cardViewRef} onReadyChange={setIsCardReady} />
+      <CardView ref={cardViewRef} />
       <Button
         title="Pay"
-        disabled={!isCardReady}
         onPress={() => cardViewRef.current?.submit()}
       />
     </>
@@ -82,7 +80,7 @@ function CheckoutCard() {
 }
 ```
 
-`submit()` returns `false` until the native component is ready. Once submitted, the existing `onSubmit` callback receives the payment data and component proxy. Call `component.hide(false)` after a recoverable submission failure to restore card interaction and allow another attempt.
+Calling `submit()` validates the card form and, when valid, invokes the existing `onSubmit` callback with the payment data and component proxy. Call `component.hide(false)` after a recoverable submission failure to restore card interaction and allow another attempt.
 
 ### 3D Secure 2
 

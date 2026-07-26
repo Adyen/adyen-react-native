@@ -1,5 +1,5 @@
 import React, { createRef } from 'react';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { CardView, type CardViewHandle } from '../CardView';
 
@@ -8,8 +8,6 @@ const mockUnsubscribe = jest.fn();
 const mockSubmit = jest.fn();
 let mockPaymentMethods:
   { paymentMethods: { type: string; name: string }[] } | undefined;
-let mockSubmissionAvailabilityListener:
-  ((isAvailable: boolean) => void) | undefined;
 
 jest.mock('../../hooks/useAdyenCheckout', () => ({
   useAdyenCheckout: () => ({
@@ -27,17 +25,6 @@ jest.mock('../../hooks/useComponent', () => ({
 
 jest.mock('../../modules/embedded/EmbeddedComponentBus', () => ({
   EmbeddedComponentBus: {
-    addSubmissionAvailabilityListener: (
-      _viewId: string,
-      listener: (isAvailable: boolean) => void
-    ) => {
-      mockSubmissionAvailabilityListener = listener;
-      return () => {
-        if (mockSubmissionAvailabilityListener === listener) {
-          mockSubmissionAvailabilityListener = undefined;
-        }
-      };
-    },
     submit: (viewId: string) => mockSubmit(viewId),
   },
 }));
@@ -67,85 +54,34 @@ describe('CardView', () => {
     mockPaymentMethods = {
       paymentMethods: [{ type: 'scheme', name: 'Credit card' }],
     };
-    mockSubmissionAvailabilityListener = undefined;
   });
 
-  test('submits through the embedded component bus once ready', () => {
+  test('submits through the embedded component bus', () => {
     const ref = createRef<CardViewHandle>();
-    const onReadyChange = jest.fn();
-    const { getByTestId } = render(
-      <CardView ref={ref} onReadyChange={onReadyChange} />
-    );
+    render(<CardView ref={ref} />);
 
-    expect(ref.current?.submit()).toBe(false);
-    expect(mockSubmit).not.toHaveBeenCalled();
-
-    fireEvent(getByTestId('native-card-view'), 'layoutChange', {
-      nativeEvent: { height: 120, width: 320 },
-    });
-
-    expect(onReadyChange).toHaveBeenLastCalledWith(true);
-    expect(ref.current?.submit()).toBe(true);
+    ref.current?.submit();
     expect(mockSubmit).toHaveBeenCalledWith('42');
   });
 
-  test('stops reporting ready after successful native cleanup', () => {
+  test('ignores submission when the native view is unavailable', () => {
     const ref = createRef<CardViewHandle>();
-    const onReadyChange = jest.fn();
-    const { getByTestId } = render(
-      <CardView ref={ref} onReadyChange={onReadyChange} />
-    );
-    fireEvent(getByTestId('native-card-view'), 'layoutChange', {
-      nativeEvent: { height: 120, width: 320 },
-    });
-
-    act(() => mockSubmissionAvailabilityListener?.(false));
-
-    expect(onReadyChange).toHaveBeenLastCalledWith(false);
-    expect(ref.current?.submit()).toBe(false);
-  });
-
-  test('does not reuse layout readiness after the native view remounts', () => {
-    const ref = createRef<CardViewHandle>();
-    const onReadyChange = jest.fn();
     const consoleError = jest
       .spyOn(console, 'error')
       .mockImplementation(() => undefined);
-    const { getByTestId, rerender } = render(
-      <CardView ref={ref} onReadyChange={onReadyChange} />
-    );
-    fireEvent(getByTestId('native-card-view'), 'layoutChange', {
-      nativeEvent: { height: 120, width: 320 },
-    });
-    expect(ref.current?.submit()).toBe(true);
-
     mockPaymentMethods = undefined;
-    rerender(<CardView ref={ref} onReadyChange={onReadyChange} />);
-    expect(ref.current?.submit()).toBe(false);
+    render(<CardView ref={ref} />);
 
-    mockPaymentMethods = {
-      paymentMethods: [{ type: 'scheme', name: 'Credit card' }],
-    };
-    rerender(<CardView ref={ref} onReadyChange={onReadyChange} />);
+    ref.current?.submit();
 
-    expect(ref.current?.submit()).toBe(false);
-    expect(onReadyChange).toHaveBeenLastCalledWith(false);
+    expect(mockSubmit).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 
-  test('reports not ready and unsubscribes when unmounted', () => {
-    const onReadyChange = jest.fn();
-    const { getByTestId, unmount } = render(
-      <CardView onReadyChange={onReadyChange} />
-    );
+  test('unsubscribes when unmounted', () => {
+    const { unmount } = render(<CardView />);
 
-    fireEvent(getByTestId('native-card-view'), 'layoutChange', {
-      nativeEvent: { height: 120, width: 320 },
-    });
-
-    act(unmount);
-
-    expect(onReadyChange).toHaveBeenLastCalledWith(false);
+    unmount();
     expect(mockUnsubscribe).toHaveBeenCalledWith('42');
   });
 });

@@ -370,12 +370,11 @@ export const CardView: React_2.ForwardRefExoticComponent<CardViewProps & React_2
 
 // @public
 export interface CardViewHandle {
-    submit(): boolean;
+    submit(): void;
 }
 
 // @public (undocumented)
 export interface CardViewProps {
-    onReadyChange?: (isReady: boolean) => void;
     paymentMethod?: PaymentMethod;
 }
 
