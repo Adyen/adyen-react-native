@@ -1,5 +1,5 @@
 ---
-name: react-native-update-ios-sdk
+name: update-ios-sdk
 description: Bumps this React Native plugin's underlying native iOS dependency to its latest released version.
 user-invocable: true
 ---
@@ -40,7 +40,8 @@ All paths below are relative to the repository root.
      version before continuing.
 
 7. Commit and push:
-   - Only stage the files changed by this skill — do not use `git add -A` or `git add .`.
+   - Only stage the files changed by this skill (including `example/ios/Podfile.lock` if it was
+     modified by `pod install` in the previous step) — do not use `git add -A` or `git add .`.
    - Commit with the format `chore: update iOS SDK to vX.X.X` (no `Co-authored-by` trailer).
    - Push the branch immediately after committing.
 
