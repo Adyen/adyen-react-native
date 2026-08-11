@@ -6,7 +6,7 @@
 
 package com.adyenreactnativesdk.component.base
 
-import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.core.action.data.Action
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus

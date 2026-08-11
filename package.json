@@ -130,8 +130,7 @@
     },
     "ios": {
       "componentProvider": {
-        "PlatformPayView": "ADYPlatformPayView",
-        "CardView": "ADYCardView"
+        "AdyenComponentView": "ADYAdyenComponentView"
       }
     }
   }

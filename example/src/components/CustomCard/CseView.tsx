@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button, View, Alert, ScrollView } from 'react-native';
 import { AdyenAction, AdyenCSE } from '@adyen/react-native';
+import type { PaymentResultHandler } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import { payWithCard } from './utils/payWithCard';
 import { useAppContext } from '../../hooks/useAppContext';
@@ -66,7 +67,7 @@ const CseView = () => {
         return;
       }
       result = await payWithCard(unencryptedCard, configuration, apiClient);
-      processResult(result, AdyenAction);
+      processResult(result, AdyenAction as unknown as PaymentResultHandler);
     } catch (e) {
       Alert.alert('Error', String(e));
       return;

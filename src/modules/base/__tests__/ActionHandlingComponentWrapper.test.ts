@@ -1,28 +1,28 @@
 import { describe, expect, test } from '@jest/globals';
 import { Event } from '../../../core';
-import { ActionHandlingComponentWrapper } from '../ActionHandlingComponentWrapper';
+import { PaymentComponentWrapper } from '../PaymentComponentWrapper';
 import {
-  createMockActionHandlingModule,
+  createMockPaymentModule,
   mockPaymentAction,
 } from './_mock_NativeModule';
 
 /** Concrete implementation for testing */
-class TestActionWrapper extends ActionHandlingComponentWrapper {
+class TestPaymentActionWrapper extends PaymentComponentWrapper {
   get name(): string {
-    return 'TestActionWrapper';
+    return 'TestPaymentActionWrapper';
   }
 }
 
-describe('ActionHandlingComponentWrapper', () => {
+describe('PaymentComponentWrapper (action handling)', () => {
   describe('constructor', () => {
     test('should read supported events from native module getConstants', () => {
-      const mockNativeModule = createMockActionHandlingModule([
+      const mockNativeModule = createMockPaymentModule([
         Event.onError,
         Event.onComplete,
         Event.onSubmit,
         Event.onAdditionalDetails,
       ]);
-      const wrapper = new TestActionWrapper(mockNativeModule);
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
       expect(wrapper.isSupported(Event.onError)).toBe(true);
       expect(wrapper.isSupported(Event.onComplete)).toBe(true);
       expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
@@ -30,54 +30,54 @@ describe('ActionHandlingComponentWrapper', () => {
     });
   });
 
-  describe('handle', () => {
-    test('should call native module handle with payment action', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
-      wrapper.handle(mockPaymentAction);
-      expect(mockNativeModule.handle).toHaveBeenCalledWith(mockPaymentAction);
+  describe('action', () => {
+    test('should call native module action with payment action', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
+      wrapper.action(mockPaymentAction);
+      expect(mockNativeModule.action).toHaveBeenCalledWith(mockPaymentAction);
     });
 
     test('should handle redirect action', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
       const redirectAction = {
         type: 'redirect',
         paymentMethodType: 'ideal',
         url: 'https://example.com/redirect',
       };
-      wrapper.handle(redirectAction);
-      expect(mockNativeModule.handle).toHaveBeenCalledWith(redirectAction);
+      wrapper.action(redirectAction);
+      expect(mockNativeModule.action).toHaveBeenCalledWith(redirectAction);
     });
 
     test('should handle threeDS2 action', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
       const threeDS2Action = {
         type: 'threeDS2',
         paymentMethodType: 'scheme',
         token: 'test_token',
       };
-      wrapper.handle(threeDS2Action);
-      expect(mockNativeModule.handle).toHaveBeenCalledWith(threeDS2Action);
+      wrapper.action(threeDS2Action);
+      expect(mockNativeModule.action).toHaveBeenCalledWith(threeDS2Action);
     });
 
     test('should handle voucher action', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
       const voucherAction = {
         type: 'voucher',
         paymentMethodType: 'boletobancario',
       };
-      wrapper.handle(voucherAction);
-      expect(mockNativeModule.handle).toHaveBeenCalledWith(voucherAction);
+      wrapper.action(voucherAction);
+      expect(mockNativeModule.action).toHaveBeenCalledWith(voucherAction);
     });
   });
 
   describe('inherited methods', () => {
     test('should inherit open method from PaymentComponentWrapper', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
       const paymentMethods = { paymentMethods: [] };
       const config = {
         environment: 'test' as const,
@@ -93,35 +93,46 @@ describe('ActionHandlingComponentWrapper', () => {
       );
     });
 
-    test('should inherit hide method from ModuleWrapper', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
-      wrapper.hide(true, { message: 'Success' });
-      expect(mockNativeModule.hide).toHaveBeenCalledWith(true, {
-        message: 'Success',
-      });
+    test('should inherit completion method from ModuleWrapper', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
+      wrapper.completion('Authorised');
+      expect(mockNativeModule.completion).toHaveBeenCalledWith('Authorised');
+    });
+
+    test('should inherit retry method from ModuleWrapper', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
+      wrapper.retry('Try again');
+      expect(mockNativeModule.retry).toHaveBeenCalledWith('Try again');
     });
   });
 
-  describe('AdyenActionComponent implementation', () => {
-    test('should implement handle method from AdyenActionComponent interface', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
-      expect(typeof wrapper.handle).toBe('function');
+  describe('PaymentResultHandler implementation', () => {
+    test('should implement action method', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
+      expect(typeof wrapper.action).toBe('function');
     });
 
-    test('should implement hide method from AdyenComponent interface', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
-      expect(typeof wrapper.hide).toBe('function');
+    test('should implement completion method', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
+      expect(typeof wrapper.completion).toBe('function');
+    });
+
+    test('should implement retry method', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
+      expect(typeof wrapper.retry).toBe('function');
     });
   });
 
   describe('name property', () => {
     test('should return correct name', () => {
-      const mockNativeModule = createMockActionHandlingModule();
-      const wrapper = new TestActionWrapper(mockNativeModule);
-      expect(wrapper.name).toBe('TestActionWrapper');
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentActionWrapper(mockNativeModule);
+      expect(wrapper.name).toBe('TestPaymentActionWrapper');
     });
   });
 });

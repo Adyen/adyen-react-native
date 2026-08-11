@@ -1,14 +1,18 @@
 import { createContext, useContext } from 'react';
+import type { Configuration } from '../core';
 import { COMPONENT_MISSING_CONTEXT_ERROR } from './constants';
 
 /**
- * Context for embedded components to subscribe/unsubscribe to MessageBus events.
+ * Context for embedded components to subscribe/unsubscribe to MessageBus events
+ * and to read the checkout configuration owned by the `<AdyenCheckout>` provider.
  */
 export interface AdyenComponentContextType {
   /** Subscribe an embedded view to MessageBus events by its viewId (reactTag) */
   subscribe: (viewId: string) => void;
   /** Unsubscribe an embedded view from MessageBus events by its viewId (reactTag) */
   unsubscribe: (viewId: string) => void;
+  /** Configuration provided to `<AdyenCheckout>`, forwarded to the native view. */
+  configuration: Configuration;
 }
 
 export const AdyenComponentContext =

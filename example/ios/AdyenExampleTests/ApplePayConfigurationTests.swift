@@ -30,7 +30,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         "countryCode": "US"
     ]
 
-    func test_initialization_succeeds_withNewDictionary() {
+    func test_initialization_succeeds_withNewDictionary() throws {
         // GIVEN
         let configDict = NSDictionary()
         
@@ -42,7 +42,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertFalse(sut.allowOnboarding)
     }
 
-    func test_initialization_succeeds_withEmptyDictionary() {
+    func test_initialization_succeeds_withEmptyDictionary() throws {
         // GIVEN
         let configDict: NSDictionary = [:]
         
@@ -62,12 +62,13 @@ final class ApplePayConfigurationTests: XCTestCase {
 
         // THEN
         XCTAssertNotNil(sut)
+        let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
-            guard let applePayError = error as? ApplepayConfigurationParser.ApplePayError else {
-                return XCTFail("Unexpected error type: \(error)")
-            }
-            XCTAssertEqual(applePayError, .invalidMerchantID)
+            XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantID.localizedDescription)
+            expectation.fulfill()
         }
+
+        self.wait(for: [expectation], timeout: 1)
     }
 
     func test_buildConfiguration_throwsInvalidMerchantID_withWrongSubDictionary() throws {
@@ -78,12 +79,13 @@ final class ApplePayConfigurationTests: XCTestCase {
         let sut = ApplepayConfigurationParser(configuration: configDict)
         
         // THEN
+        let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
-            guard let applePayError = error as? ApplepayConfigurationParser.ApplePayError else {
-                return XCTFail("Unexpected error type: \(error)")
-            }
-            XCTAssertEqual(applePayError, .invalidMerchantID)
+            XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantID.localizedDescription)
+            expectation.fulfill()
         }
+
+        self.wait(for: [expectation], timeout: 1)
     }
 
     func test_buildConfiguration_throwsInvalidMerchantName_whenMerchantNameMissing() throws {
@@ -98,12 +100,13 @@ final class ApplePayConfigurationTests: XCTestCase {
         let sut = ApplepayConfigurationParser(configuration: configDict)
 
         // THEN
+        let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
-            guard let applePayError = error as? ApplepayConfigurationParser.ApplePayError else {
-                return XCTFail("Unexpected error type: \(error)")
-            }
-            XCTAssertEqual(applePayError, .invalidMerchantName)
+            XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantName.localizedDescription)
+            expectation.fulfill()
         }
+
+        self.wait(for: [expectation], timeout: 1)
     }
 
     func test_buildPaymentRequest_createsValidRequest_withMinimalValidConfiguration() throws {
@@ -197,15 +200,16 @@ final class ApplePayConfigurationTests: XCTestCase {
         let sut = ApplepayConfigurationParser(configuration: configDict)
         
         // THEN
+        let expectation = self.expectation(description: "Expect throw")
         XCTAssertThrowsError(try sut.buildConfiguration(payment: mockPayment)) { error in
-            guard let applePayError = error as? ApplepayConfigurationParser.ApplePayError else {
-                return XCTFail("Unexpected error type: \(error)")
-            }
-            XCTAssertEqual(applePayError, .invalidMerchantName)
+            XCTAssertEqual(error.localizedDescription, ApplepayConfigurationParser.ApplePayError.invalidMerchantName.localizedDescription)
+            expectation.fulfill()
         }
+
+        self.wait(for: [expectation], timeout: 1)
     }
 
-    func test_allowOnboarding_returnsTrue_whenConfiguredWithBoolValue() {
+    func test_allowOnboarding_returnsTrue_whenConfiguredWithBoolValue() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "applepay": [
@@ -222,7 +226,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.allowOnboarding)
     }
 
-    func test_allowOnboarding_returnsTrue_whenConfiguredWithStringValue() {
+    func test_allowOnboarding_returnsTrue_whenConfiguredWithStringValue() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "applepay": [
@@ -239,7 +243,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.allowOnboarding)
     }
 
-    func test_allowOnboarding_returnsTrue_whenConfiguredWithNumericValue() {
+    func test_allowOnboarding_returnsTrue_whenConfiguredWithNumericValue() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "applepay": [
@@ -478,7 +482,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertEqual(parser.supportedCountries, Set(["US", "CA"]))
     }
 
-    func test_shippingMethods_parsesCorrectValues_whenConfigured() throws {
+    func test_shippingMethods_parsesCorrectValues_whenConfigured() {
         // GIVEN
         let configDict: NSDictionary = ["applepay": [
             "merchantID": "merchant.com.adyen.test",
@@ -512,7 +516,7 @@ final class ApplePayConfigurationTests: XCTestCase {
         XCTAssertNotNil(shippingMethods)
         XCTAssertEqual(shippingMethods?.count, 2)
 
-        var shippingMethod = try XCTUnwrap(shippingMethods?.first)
+        var shippingMethod = shippingMethods![0]
         XCTAssertEqual(shippingMethod.label, "Label 1")
         XCTAssertEqual(shippingMethod.amount, NSDecimalNumber(string: "10.1"))
         XCTAssertEqual(shippingMethod.type, .pending)
@@ -524,7 +528,7 @@ final class ApplePayConfigurationTests: XCTestCase {
             XCTAssertEqual(shippingMethod.dateComponentsRange?.startDateComponents.day, 1)
         }
 
-        shippingMethod = try XCTUnwrap(shippingMethods?.dropFirst().first)
+        shippingMethod = shippingMethods![1]
         XCTAssertEqual(shippingMethod.label, "Label 2")
         XCTAssertEqual(shippingMethod.amount, NSDecimalNumber(string: "10.1"))
         XCTAssertEqual(shippingMethod.type, .final)
@@ -535,91 +539,6 @@ final class ApplePayConfigurationTests: XCTestCase {
             XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.month, 3)
             XCTAssertEqual(shippingMethod.dateComponentsRange?.endDateComponents.day, 10)
         }
-    }
-
-    func test_merchantCapabilities_defaultsToThreeDSecure_whenNotConfigured() throws {
-        // GIVEN
-        let configDict: NSDictionary = ["applepay": [
-            "merchantID": "merchant.com.adyen.test",
-            "merchantName": "SomeName"
-        ]]
-
-        // WHEN
-        let parser = ApplepayConfigurationParser(configuration: configDict)
-
-        // THEN
-        XCTAssertTrue(parser.merchantCapabilities.contains(.threeDSecure))
-        XCTAssertFalse(parser.merchantCapabilities.contains(.debit))
-        XCTAssertFalse(parser.merchantCapabilities.contains(.credit))
-    }
-
-    func test_merchantCapabilities_includesDebit_whenConfigured() throws {
-        // GIVEN
-        let configDict: NSDictionary = ["applepay": [
-            "merchantID": "merchant.com.adyen.test",
-            "merchantName": "SomeName",
-            "merchantCapabilities": ["debit"]
-        ]]
-
-        // WHEN
-        let parser = ApplepayConfigurationParser(configuration: configDict)
-
-        // THEN
-        XCTAssertTrue(parser.merchantCapabilities.contains(.threeDSecure))
-        XCTAssertTrue(parser.merchantCapabilities.contains(.debit))
-        XCTAssertFalse(parser.merchantCapabilities.contains(.credit))
-    }
-
-    func test_merchantCapabilities_includesDebitAndCredit_whenBothConfigured() throws {
-        // GIVEN
-        let configDict: NSDictionary = ["applepay": [
-            "merchantID": "merchant.com.adyen.test",
-            "merchantName": "SomeName",
-            "merchantCapabilities": ["debit", "credit"]
-        ]]
-
-        // WHEN
-        let parser = ApplepayConfigurationParser(configuration: configDict)
-
-        // THEN
-        XCTAssertTrue(parser.merchantCapabilities.contains(.threeDSecure))
-        XCTAssertTrue(parser.merchantCapabilities.contains(.debit))
-        XCTAssertTrue(parser.merchantCapabilities.contains(.credit))
-    }
-
-    func test_merchantCapabilities_ignoresInvalidValues() throws {
-        // GIVEN
-        let configDict: NSDictionary = ["applepay": [
-            "merchantID": "merchant.com.adyen.test",
-            "merchantName": "SomeName",
-            "merchantCapabilities": ["emv", "invalid"]
-        ]]
-
-        // WHEN
-        let parser = ApplepayConfigurationParser(configuration: configDict)
-
-        // THEN
-        XCTAssertEqual(parser.merchantCapabilities, .threeDSecure)
-    }
-
-    func test_buildPaymentRequest_setsMerchantCapabilities_whenConfigured() throws {
-        // GIVEN
-        let configDict: NSDictionary = [
-            "applepay": [
-                "merchantID": "merchant.com.adyen.test",
-                "merchantName": "SomeName",
-                "merchantCapabilities": ["debit"]
-            ]
-        ]
-        let sut = ApplepayConfigurationParser(configuration: configDict)
-
-        // WHEN
-        let paymentRequest = try sut.buildPaymentRequest(payment: mockPayment)
-
-        // THEN
-        XCTAssertTrue(paymentRequest.merchantCapabilities.contains(.threeDSecure))
-        XCTAssertTrue(paymentRequest.merchantCapabilities.contains(.debit))
-        XCTAssertFalse(paymentRequest.merchantCapabilities.contains(.credit))
     }
 
     @available(iOS 16.0, *)

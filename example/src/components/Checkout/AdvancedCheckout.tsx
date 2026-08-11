@@ -1,23 +1,78 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { Text, ActivityIndicator, View } from 'react-native';
-import { AdyenCheckout } from '@adyen/react-native';
+import {
+  AdyenCheckout,
+  AdyenComponent,
+  useAdyenCheckout,
+} from '@adyen/react-native';
 import type {
-  AdyenActionComponent,
+  AdvancedCallbacks,
+  PaymentResultHandler,
+  PaymentSubmitResultHandler,
+  PaymentAdditionalResultHandler,
   PaymentMethodsResponse,
   PaymentMethodData,
   PaymentDetailsData,
   AdyenError,
-  AdyenComponent,
-  StoredPaymentMethod,
 } from '@adyen/react-native';
 import Styles from '../common/Styles';
+import AdaptiveText from '../common/AdaptiveText';
+import PageScrollView from '../common/PageScrollView';
 import TopView from './components/TopView';
+import AvailablePaymentComponent from './components/AvailablePaymentComponent';
 import { useAppContext } from '../../hooks/useAppContext';
 import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
-import { PaymentResponse } from '../../api/types';
-import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
+
+interface AdvancedCheckoutContentProps {
+  paymentMethods: PaymentMethodsResponse;
+  callbacks: AdvancedCallbacks;
+}
+
+const AdvancedCheckoutContent = ({
+  paymentMethods,
+  callbacks,
+}: AdvancedCheckoutContentProps) => {
+  const { setupAdvanced, checkout } = useAdyenCheckout();
+  const [setupError, setSetupError] = useState<string | undefined>(undefined);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) {
+      return;
+    }
+    started.current = true;
+    setupAdvanced(paymentMethods, callbacks).catch((e) =>
+      setSetupError(String(e))
+    );
+  }, [setupAdvanced, paymentMethods, callbacks]);
+
+  if (setupError) {
+    return (
+      <View style={Styles.centeredContent}>
+        <Text style={Styles.errorText}>{setupError}</Text>
+      </View>
+    );
+  }
+
+  if (!checkout) {
+    return (
+      <View style={Styles.centeredContent}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <PageScrollView>
+      <AdaptiveText style={Styles.paddedTitle}>Card</AdaptiveText>
+      <AdyenComponent checkout={checkout} type="scheme" />
+      <AvailablePaymentComponent checkout={checkout} type="applepay" />
+      <AvailablePaymentComponent checkout={checkout} type="googlepay" />
+    </PageScrollView>
+  );
+};
 
 const AdvancedCheckout = () => {
   const { configuration, processResult, apiClient } = useAppContext();
@@ -40,13 +95,12 @@ const AdvancedCheckout = () => {
       }
     };
     refreshPaymentMethods();
-  }, [configuration, setPaymentMethods, setLoading, apiClient]);
+  }, [configuration, apiClient]);
 
   const didSubmit = useCallback(
     async (
       data: PaymentMethodData,
-      nativeComponent: AdyenActionComponent,
-      _extra: any // extra info for Apple and Google Pay
+      nativeComponent: PaymentSubmitResultHandler
     ) => {
       try {
         const result = await apiClient.payments(
@@ -55,7 +109,7 @@ const AdvancedCheckout = () => {
           data.returnUrl
         );
         if (result.action) {
-          nativeComponent.handle(result.action);
+          nativeComponent.action(result.action);
         } else {
           processResult(result, nativeComponent);
         }
@@ -67,7 +121,10 @@ const AdvancedCheckout = () => {
   );
 
   const didProvide = useCallback(
-    async (data: PaymentDetailsData, nativeComponent: AdyenActionComponent) => {
+    async (
+      data: PaymentDetailsData,
+      nativeComponent: PaymentAdditionalResultHandler
+    ) => {
       try {
         const result = await apiClient.paymentDetails(data);
         processResult(result, nativeComponent);
@@ -79,36 +136,24 @@ const AdvancedCheckout = () => {
   );
 
   const didFail = useCallback(
-    async (error: AdyenError, nativeComponent: AdyenComponent) => {
+    async (error: AdyenError, nativeComponent: PaymentResultHandler) => {
       processAdyenError(error, nativeComponent);
     },
     []
   );
 
-  const didComplete = useCallback(
-    async (result: PaymentResponse, nativeComponent: AdyenComponent) => {
-      processResult(result, nativeComponent);
-    },
-    [processResult]
+  const callbacks = useMemo<AdvancedCallbacks>(
+    () => ({
+      onSubmit: didSubmit,
+      onAdditionalDetails: didProvide,
+      onError: didFail,
+    }),
+    [didSubmit, didProvide, didFail]
   );
 
-  const onDisableStoredPaymentMethod = useCallback(
-    async (
-      storedPaymentMethod: StoredPaymentMethod,
-      resolve: () => void,
-      reject: () => void
-    ) => {
-      const success = await apiClient.tryRemoveStoredCard(
-        storedPaymentMethod.id,
-        configuration
-      );
-      if (success) {
-        resolve();
-      } else {
-        reject();
-      }
-    },
-    [configuration, apiClient]
+  const config = useMemo(
+    () => checkoutConfiguration(configuration),
+    [configuration]
   );
 
   if (loading) {
@@ -119,39 +164,23 @@ const AdvancedCheckout = () => {
     );
   }
 
-  if (initError) {
+  if (initError || !paymentMethods) {
     return (
       <View style={Styles.centeredContent}>
-        <Text style={Styles.errorText}>{initError}</Text>
+        <Text style={Styles.errorText}>
+          {initError ?? 'No payment methods available'}
+        </Text>
       </View>
     );
   }
 
-  const baseConfig = checkoutConfiguration(configuration);
-  const checkoutConfig = {
-    ...baseConfig,
-    dropin: {
-      ...baseConfig.dropin,
-      onDisableStoredPaymentMethod,
-    },
-  };
-
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout
-        config={checkoutConfig}
-        paymentMethods={paymentMethods}
-        onSubmit={didSubmit}
-        onAdditionalDetails={didProvide}
-        onComplete={didComplete}
-        onError={didFail}
-      >
-        <CheckoutNavigator
-          showDropIn={true}
-          showEmbeddedComponents={true}
-          showDropBasedComponents={true}
-          showInstant={true}
+      <AdyenCheckout configuration={config}>
+        <AdvancedCheckoutContent
+          paymentMethods={paymentMethods}
+          callbacks={callbacks}
         />
       </AdyenCheckout>
     </View>

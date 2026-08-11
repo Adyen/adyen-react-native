@@ -1,26 +1,71 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { Text, ActivityIndicator, View } from 'react-native';
-import { AdyenCheckout } from '@adyen/react-native';
+import { AdyenCheckout, useAdyenCheckout } from '@adyen/react-native';
 import type {
-  AdyenActionComponent,
+  AdvancedCallbacks,
+  Configuration,
+  PaymentResultHandler,
+  PaymentSubmitResultHandler,
+  PaymentAdditionalResultHandler,
   PaymentMethodsResponse,
   PaymentMethodData,
   PaymentDetailsData,
   AdyenError,
-  AdyenComponent,
   Order,
-  DropInModule,
   Balance,
   PartialPaymentComponent,
 } from '@adyen/react-native';
-import { CheckoutNavigator } from '../../router/CheckoutNavigator';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
+import DropInButton from './components/DropInButton';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
-import { processPartialPaymentResult } from './utils/processPartialPaymentResult';
+
+interface PartialPaymentContentProps {
+  paymentMethods: PaymentMethodsResponse;
+  callbacks: AdvancedCallbacks;
+  configuration: Configuration;
+}
+
+const PartialPaymentContent = ({
+  paymentMethods,
+  callbacks,
+  configuration,
+}: PartialPaymentContentProps) => {
+  const { setupAdvanced, checkout } = useAdyenCheckout();
+  const [setupError, setSetupError] = useState<string | undefined>(undefined);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) {
+      return;
+    }
+    started.current = true;
+    setupAdvanced(paymentMethods, callbacks).catch((e) =>
+      setSetupError(String(e))
+    );
+  }, [setupAdvanced, paymentMethods, callbacks]);
+
+  if (setupError) {
+    return (
+      <View style={Styles.centeredContent}>
+        <Text style={Styles.errorText}>{setupError}</Text>
+      </View>
+    );
+  }
+
+  if (!checkout) {
+    return (
+      <View style={Styles.centeredContent}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return <DropInButton checkout={checkout} configuration={configuration} />;
+};
 
 const PartialPaymentCheckout = () => {
   const { configuration, processResult, apiClient } = useAppContext();
@@ -43,13 +88,12 @@ const PartialPaymentCheckout = () => {
       }
     };
     refreshPaymentMethods();
-  }, [configuration, setPaymentMethods, setLoading, apiClient]);
+  }, [configuration, apiClient]);
 
   const didSubmit = useCallback(
     async (
       data: PaymentMethodData,
-      nativeComponent: AdyenActionComponent,
-      _extra: any
+      nativeComponent: PaymentSubmitResultHandler
     ) => {
       try {
         const result = await apiClient.payments(
@@ -57,14 +101,15 @@ const PartialPaymentCheckout = () => {
           configuration,
           data.returnUrl
         );
-        const outcome = await processPartialPaymentResult(
-          result,
-          nativeComponent as DropInModule,
-          configuration,
-          apiClient
-        );
-        if (outcome) {
-          processResult(outcome, nativeComponent);
+        // TODO: Partial-payment continuation (reloading Drop-in with refreshed
+        // payment methods for a non-fully-paid order via providePaymentMethods)
+        // is not available on the v6 handlers. Re-enable once the v6 DropIn
+        // partial-payment continuation API lands. For now, handle the result
+        // like a standard payment.
+        if (result.action) {
+          nativeComponent.action(result.action);
+        } else {
+          processResult(result, nativeComponent);
         }
       } catch (error) {
         processError(error, nativeComponent);
@@ -74,27 +119,25 @@ const PartialPaymentCheckout = () => {
   );
 
   const didProvide = useCallback(
-    async (data: PaymentDetailsData, nativeComponent: AdyenActionComponent) => {
+    async (
+      data: PaymentDetailsData,
+      nativeComponent: PaymentAdditionalResultHandler
+    ) => {
       try {
         const result = await apiClient.paymentDetails(data);
-        const outcome = await processPartialPaymentResult(
-          result,
-          nativeComponent as DropInModule,
-          configuration,
-          apiClient
-        );
-        if (outcome) {
-          processResult(outcome, nativeComponent);
-        }
+        // TODO: Partial-payment continuation is not available on the v6
+        // handlers (see didSubmit). Handle the result like a standard payment
+        // until the v6 DropIn partial-payment continuation API lands.
+        processResult(result, nativeComponent);
       } catch (error) {
         processError(error, nativeComponent);
       }
     },
-    [configuration, processResult, apiClient]
+    [processResult, apiClient]
   );
 
   const didFail = useCallback(
-    async (error: AdyenError, nativeComponent: AdyenComponent) => {
+    async (error: AdyenError, nativeComponent: PaymentResultHandler) => {
       processAdyenError(error, nativeComponent);
     },
     []
@@ -142,20 +185,40 @@ const PartialPaymentCheckout = () => {
       try {
         await apiClient.cancelOrder(order, configuration);
         if (shouldUpdatePaymentMethods) {
-          const newPaymentMethods = await apiClient.paymentMethods(
-            configuration,
-            order
+          // TODO: Reload Drop-in with refreshed payment methods via the v6
+          // DropIn partial-payment continuation API (providePaymentMethods),
+          // which the v6 handlers do not yet expose. Clearing the UI for now.
+          console.warn(
+            'Partial payment: reloading Drop-in after order cancel is not supported in v6 alpha yet.'
           );
-          const dropIn = component as unknown as DropInModule;
-          dropIn.providePaymentMethods(newPaymentMethods, undefined);
-        } else {
-          component.hide(false);
         }
+        component.completion('Cancelled');
       } catch (e) {
         console.error("Order wasn't canceled! ", e);
       }
     },
     [configuration, apiClient]
+  );
+
+  const callbacks = useMemo<AdvancedCallbacks>(
+    () => ({
+      onSubmit: didSubmit,
+      onAdditionalDetails: didProvide,
+      onError: didFail,
+    }),
+    [didSubmit, didProvide, didFail]
+  );
+
+  const config = useMemo<Configuration>(
+    () => ({
+      ...checkoutConfiguration(configuration),
+      partialPayment: {
+        onBalanceCheck: checkBalance,
+        onOrderRequest: requestOrder,
+        onOrderCancel: cancelOrder,
+      },
+    }),
+    [configuration, checkBalance, requestOrder, cancelOrder]
   );
 
   if (loading) {
@@ -166,10 +229,12 @@ const PartialPaymentCheckout = () => {
     );
   }
 
-  if (initError) {
+  if (initError || !paymentMethods) {
     return (
       <View style={Styles.centeredContent}>
-        <Text style={Styles.errorText}>{initError}</Text>
+        <Text style={Styles.errorText}>
+          {initError ?? 'No payment methods available'}
+        </Text>
       </View>
     );
   }
@@ -177,21 +242,12 @@ const PartialPaymentCheckout = () => {
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout
-        config={{
-          ...checkoutConfiguration(configuration),
-          partialPayment: {
-            onBalanceCheck: checkBalance,
-            onOrderRequest: requestOrder,
-            onOrderCancel: cancelOrder,
-          },
-        }}
-        paymentMethods={paymentMethods}
-        onSubmit={didSubmit}
-        onAdditionalDetails={didProvide}
-        onError={didFail}
-      >
-        <CheckoutNavigator showDropIn={true} />
+      <AdyenCheckout configuration={config}>
+        <PartialPaymentContent
+          paymentMethods={paymentMethods}
+          callbacks={callbacks}
+          configuration={config}
+        />
       </AdyenCheckout>
     </View>
   );

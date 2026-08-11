@@ -1,229 +1,282 @@
 import React, {
-  useRef,
   useCallback,
   useEffect,
-  type ReactNode,
-  useState,
   useMemo,
+  useRef,
+  useState,
+  type ReactNode,
 } from 'react';
-import { ErrorCode } from '../core';
 import type {
-  AdyenActionComponent,
-  AdyenComponent,
+  AdvancedCallbacks,
   AdyenError,
+  ApplePayAuthorizationActions,
+  ApplePayAuthorizationResult,
+  ApplePayCouponCodeUpdateRequest,
+  ApplePayShippingContactUpdateRequest,
+  ApplePayShippingMethodUpdateRequest,
+  Checkout,
   Configuration,
+  PaymentAdditionalResultHandler,
   PaymentDetailsData,
   PaymentMethodData,
   PaymentMethodsResponse,
-  SessionConfiguration,
+  PaymentResultHandler,
+  PaymentSubmitResultHandler,
+  SessionCallbacks,
   SessionsResult,
 } from '../core';
+import { createCheckout } from '../core/Checkout';
 import {
   AdyenCheckoutContext,
   type AdyenCheckoutContextType,
 } from '../hooks/useAdyenCheckout';
-import { getWrapper } from '../modules/base/getWrapper';
-import { SessionHelper } from '../modules/session/SessionHelperModule';
-import type { SessionContext } from '../modules/session/types';
-import { checkConfiguration } from './utils/checkConfiguration';
-import { checkPaymentMethodsResponse } from './utils/checkPaymentMethodsResponse';
 import {
-  startEventListeners,
-  type EventHandlerRefs,
-} from './utils/startEventListeners';
-import { AdyenComponentContext } from '../hooks/useComponent';
+  AdyenComponentContext,
+  type AdyenComponentContextType,
+} from '../hooks/useComponent';
 import { useSubscriptionManager } from '../hooks/useSubscriptionManager';
+import { AdyenContext } from '../modules/context/ContextModule';
+import { checkConfiguration } from './utils/checkConfiguration';
+import type { EventHandlerRefs } from './utils/startEventListeners';
 
 /**
- * Props for AdyenCheckout
+ * Builds a completion-only handler for the session-flow, error, and
+ * additional-details callbacks. The SDK owns action/retry handling in these
+ * flows, so the merchant is only handed `completion` — exposing `action`/`retry`
+ * here would let merchants call methods the flow does not support.
+ */
+const createResultHandler = (): PaymentResultHandler => ({
+  completion: (resultCode) => AdyenContext.completion(resultCode),
+});
+
+/**
+ * Builds the full advanced-flow submit handler exposing the complete set of
+ * outcomes the merchant may forward after a `/payments` call.
+ */
+const createSubmitHandler = (): PaymentSubmitResultHandler => ({
+  action: (action) => AdyenContext.action(action),
+  completion: (resultCode) => AdyenContext.completion(resultCode),
+  retry: (message) => AdyenContext.retry(message),
+});
+
+/**
+ * Props for AdyenCheckout.
  */
 export type AdyenCheckoutProps = {
-  /** Collection of all necessary configurations */
-  config: Configuration;
-  /** JSON response from Adyen API `\paymentMethods` */
-  paymentMethods?: PaymentMethodsResponse;
-  /** The payment session data from backend response. */
-  session?: SessionConfiguration;
-  /**
-   * Event callback, called when the shopper selects the Pay button and payment details are valid.
-   * @param data - The payment method data.
-   * @param component - The Adyen payment component.
-   * @param extra - Additional data (optional).
-   */
-  onSubmit?: (
-    data: PaymentMethodData,
-    component: AdyenActionComponent,
-    extra?: any
-  ) => void;
-  /**
-   * Event callback, called when payment about to be terminate.
-   * @param data - The payment method data.
-   * @param component - The Adyen payment component.
-   */
-  onError: (error: AdyenError, component: AdyenComponent) => void;
-  /**
-   * Event callback, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods.
-   * @param data - The payment method data.
-   * @param component - The Adyen payment component.
-   */
-  onAdditionalDetails?: (
-    data: PaymentDetailsData,
-    component: AdyenActionComponent
-  ) => void;
-  /**
-   * An optional callback function invoked when a payment session or component
-   * interaction is successfully completed. This method provides the result of the session
-   * and a reference to the Adyen component that triggered the completion.
-   * @param result - The response object containing encoded result data and result code of the completed session.
-   * @param component - The Adyen component instance that completed the interaction.
-   */
-  onComplete?: (result: SessionsResult, component: AdyenComponent) => void;
-  /** Inner components */
+  /** Collection of all necessary configurations (environment, clientKey, locale, etc.). */
+  configuration: Configuration;
+  /** Inner components. */
   children: ReactNode;
 };
 
+/**
+ * Provider that owns the native checkout context lifecycle and exposes the
+ * `useAdyenCheckout` hook. Payment flow callbacks are supplied to `setup()` /
+ * `setupAdvanced()` rather than as props. Unmounting tears the context down.
+ */
 export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
-  config,
-  paymentMethods,
-  session,
-  onSubmit,
-  onError,
-  onAdditionalDetails,
-  onComplete,
+  configuration,
   children,
 }) => {
-  const onCompleteRef = useRef(onComplete);
-  const onErrorRef = useRef(onError);
-  const onSubmitRef = useRef(onSubmit);
-  const onAdditionalDetailsRef = useRef(onAdditionalDetails);
-  const configRef = useRef(config);
+  const configRef = useRef<Configuration>(configuration);
+  const sessionCallbacksRef = useRef<SessionCallbacks | null>(null);
+  const advancedCallbacksRef = useRef<AdvancedCallbacks | null>(null);
+  const checkoutRef = useRef<Checkout | null>(null);
+  const [checkout, setCheckout] = useState<Checkout | null>(null);
 
-  const eventHandlerRefs = useMemo<EventHandlerRefs>(
-    () => ({
-      onSubmit: onSubmitRef,
-      onError: onErrorRef,
-      onComplete: onCompleteRef,
-      onAdditionalDetails: onAdditionalDetailsRef,
-      config: configRef,
-    }),
-    []
+  // Stable event handler refs delegating to whichever callback set is active.
+  // They are handed to per-view listeners so embedded component events resolve
+  // through the merchant callbacks with a viewId-bound result handler.
+  const onSubmitRef = useRef<
+    | ((data: PaymentMethodData, component: PaymentResultHandler) => void)
+    | undefined
+  >((data, component) =>
+    advancedCallbacksRef.current?.onSubmit(
+      data,
+      component as PaymentSubmitResultHandler
+    )
   );
+  const onAdditionalDetailsRef = useRef<
+    | ((data: PaymentDetailsData, component: PaymentResultHandler) => void)
+    | undefined
+  >((data, component) =>
+    advancedCallbacksRef.current?.onAdditionalDetails(
+      data,
+      component as PaymentAdditionalResultHandler
+    )
+  );
+  const onCompleteRef = useRef<
+    | ((result: SessionsResult, component: PaymentResultHandler) => void)
+    | undefined
+  >((result, component) =>
+    sessionCallbacksRef.current?.onComplete(result, component)
+  );
+  const onErrorRef = useRef<
+    (error: AdyenError, component: PaymentResultHandler) => void
+  >((error, component) => {
+    const handler =
+      advancedCallbacksRef.current?.onError ??
+      sessionCallbacksRef.current?.onError;
+    handler?.(error, component);
+  });
 
-  const { subscribe, unsubscribe, removeEventListeners, storeEventListeners } =
-    useSubscriptionManager(eventHandlerRefs);
+  const eventHandlerRefs = useRef<EventHandlerRefs>({
+    onSubmit: onSubmitRef,
+    onError: onErrorRef,
+    onComplete: onCompleteRef,
+    onAdditionalDetails: onAdditionalDetailsRef,
+    config: configRef,
+  }).current;
 
-  const [sessionContext, setSessionContext] = useState<
-    SessionContext | undefined
-  >(undefined);
-
-  const currentPaymentMethods = useMemo<
-    PaymentMethodsResponse | undefined
-  >(() => {
-    return paymentMethods ?? sessionContext?.paymentMethods;
-  }, [paymentMethods, sessionContext]);
+  const { subscribe, unsubscribe } = useSubscriptionManager(eventHandlerRefs);
 
   useEffect(() => {
-    checkConfiguration(config);
-    configRef.current = config;
-  }, [config]);
+    checkConfiguration(configuration);
+    configRef.current = configuration;
+  }, [configuration]);
 
   useEffect(() => {
-    onCompleteRef.current = onComplete;
-  }, [onComplete]);
-
-  useEffect(() => {
-    onErrorRef.current = onError;
-  }, [onError]);
-
-  useEffect(() => {
-    onSubmitRef.current = onSubmit;
-  }, [onSubmit]);
-
-  useEffect(() => {
-    onAdditionalDetailsRef.current = onAdditionalDetails;
-  }, [onAdditionalDetails]);
-
-  useEffect(() => {
-    const completeHandler = (result: any) =>
-      onCompleteRef.current?.(result, SessionHelper);
-    const errorHandler = (error: any) =>
-      onErrorRef.current?.(error, SessionHelper);
-
-    SessionHelper.assignCompletionHandler(completeHandler);
-    SessionHelper.assignErrorHandler(errorHandler);
-
     return () => {
-      SessionHelper.removeAllListeners();
-      SessionHelper.hide(true);
+      AdyenContext.removeAllListeners();
+      AdyenContext.cleanup();
+      checkoutRef.current = null;
     };
   }, []);
 
-  useEffect(() => {
-    if (session && !sessionContext) {
-      SessionHelper.createSession(session, configRef.current)
-        .then((sessionResponse) => setSessionContext(sessionResponse))
-        .catch((error) => {
-          const errorDTO: AdyenError = {
-            message: String(error),
-            errorCode: ErrorCode.sessionError,
-          };
-          onErrorRef.current?.(errorDTO, SessionHelper);
-        });
-    }
-  }, [session, sessionContext]);
-
-  const start = useCallback(
-    (typeName: string) => {
-      const validPaymentMethods = checkPaymentMethodsResponse(
-        currentPaymentMethods
-      );
-
-      const { nativeComponent, paymentMethod } = getWrapper(
-        typeName,
-        validPaymentMethods
-      );
-
-      removeEventListeners(nativeComponent);
-      const listeners = startEventListeners(nativeComponent, eventHandlerRefs);
-      storeEventListeners(nativeComponent, listeners);
-
-      if (paymentMethod) {
-        const singlePaymentMethods = { paymentMethods: [paymentMethod] };
-        const singlePaymentConfig = {
-          ...configRef.current,
-          dropin: { skipListWhenSinglePaymentMethod: true },
-        };
-        nativeComponent.open(singlePaymentMethods, singlePaymentConfig);
+  // Apple Pay sheet interactions (iOS) flow through AdyenContext events regardless of session or
+  // advanced flow. Each handler invokes the matching merchant callback from the configuration and
+  // resumes the suspended native closure; when no callback is configured it resolves with a no-op
+  // so the Apple Pay sheet never hangs.
+  const subscribeApplePayHandlers = useCallback(() => {
+    AdyenContext.assignApplePayAuthorizationHandler((payment) => {
+      const provide = (result: ApplePayAuthorizationResult) =>
+        AdyenContext.provideAuthorizationResult(result);
+      const actions: ApplePayAuthorizationActions = {
+        resolve: () => provide({ status: 'success' }),
+        reject: (errors) => provide({ status: 'failure', errors }),
+      };
+      const callback = configRef.current.applepay?.onAuthorize;
+      if (callback) {
+        callback(payment, actions);
       } else {
-        nativeComponent.open(validPaymentMethods, configRef.current);
+        actions.resolve();
       }
+    });
+    AdyenContext.assignApplePayShippingContactHandler((contact) => {
+      const resolve = (update: ApplePayShippingContactUpdateRequest) =>
+        AdyenContext.provideShippingContactUpdate(update);
+      const callback = configRef.current.applepay?.onShippingContactChange;
+      if (callback) {
+        callback(contact, resolve);
+      } else {
+        resolve({});
+      }
+    });
+    AdyenContext.assignApplePayShippingMethodHandler((shippingMethod) => {
+      const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
+        AdyenContext.provideShippingMethodUpdate(update);
+      const callback = configRef.current.applepay?.onShippingMethodChange;
+      if (callback) {
+        callback(shippingMethod, resolve);
+      } else {
+        resolve({});
+      }
+    });
+    AdyenContext.assignApplePayCouponCodeHandler((data) => {
+      const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
+        AdyenContext.provideCouponCodeUpdate(update);
+      const callback = configRef.current.applepay?.onCouponCodeChange;
+      if (callback) {
+        callback(data.couponCode, resolve);
+      } else {
+        resolve({});
+      }
+    });
+  }, []);
+
+  const setup = useCallback(
+    async (
+      sessionID: string,
+      sessionData: string,
+      callbacks: SessionCallbacks
+    ): Promise<Checkout> => {
+      // Tear down any prior context so a re-setup never reuses stale native state.
+      if (checkoutRef.current) {
+        AdyenContext.cleanup();
+      }
+      sessionCallbacksRef.current = callbacks;
+      AdyenContext.removeAllListeners();
+      AdyenContext.assignCompletionHandler((result) =>
+        sessionCallbacksRef.current?.onComplete(result, createResultHandler())
+      );
+      AdyenContext.assignErrorHandler((error) =>
+        sessionCallbacksRef.current?.onError(error, createResultHandler())
+      );
+      subscribeApplePayHandlers();
+
+      const context = await AdyenContext.createSession(
+        { id: sessionID, sessionData },
+        configRef.current
+      );
+      const created = createCheckout(context.paymentMethods);
+      checkoutRef.current = created;
+      setCheckout(created);
+      return created;
     },
-    [
-      eventHandlerRefs,
-      currentPaymentMethods,
-      removeEventListeners,
-      storeEventListeners,
-    ]
+    [subscribeApplePayHandlers]
   );
 
-  const checkoutContextValue = useMemo<AdyenCheckoutContextType>(
-    () => ({
-      start,
-      config,
-      paymentMethods: currentPaymentMethods,
-      isReady: currentPaymentMethods !== undefined,
-    }),
-    [currentPaymentMethods, start, config]
+  const setupAdvanced = useCallback(
+    async (
+      paymentMethods: PaymentMethodsResponse,
+      callbacks: AdvancedCallbacks
+    ): Promise<Checkout> => {
+      // Tear down any prior context so a re-setup never reuses stale native state.
+      if (checkoutRef.current) {
+        AdyenContext.cleanup();
+      }
+      advancedCallbacksRef.current = callbacks;
+      AdyenContext.removeAllListeners();
+      AdyenContext.assignSubmitHandler(({ paymentData }) => {
+        const payload = {
+          ...paymentData,
+          returnUrl: paymentData.returnUrl ?? configRef.current.returnUrl,
+        };
+        advancedCallbacksRef.current?.onSubmit(payload, createSubmitHandler());
+      });
+      AdyenContext.assignAdditionalDetailsHandler((data) =>
+        advancedCallbacksRef.current?.onAdditionalDetails(
+          data,
+          createResultHandler()
+        )
+      );
+      AdyenContext.assignAdvancedErrorHandler((error) =>
+        advancedCallbacksRef.current?.onError(error, createResultHandler())
+      );
+      subscribeApplePayHandlers();
+
+      await AdyenContext.setup(paymentMethods, configRef.current);
+      const created = createCheckout(paymentMethods);
+      checkoutRef.current = created;
+      setCheckout(created);
+      return created;
+    },
+    [subscribeApplePayHandlers]
+  );
+
+  const contextValue = useMemo<AdyenCheckoutContextType>(
+    () => ({ setup, setupAdvanced, checkout }),
+    [setup, setupAdvanced, checkout]
+  );
+
+  const componentContextValue = useMemo<AdyenComponentContextType>(
+    () => ({ subscribe, unsubscribe, configuration }),
+    [subscribe, unsubscribe, configuration]
   );
 
   return (
-    <AdyenCheckoutContext.Provider value={checkoutContextValue}>
-      <AdyenComponentContext.Provider
-        value={useMemo(
-          () => ({ subscribe, unsubscribe }),
-          [subscribe, unsubscribe]
-        )}
-      >
+    <AdyenCheckoutContext.Provider value={contextValue}>
+      <AdyenComponentContext.Provider value={componentContextValue}>
         {children}
       </AdyenComponentContext.Provider>
     </AdyenCheckoutContext.Provider>

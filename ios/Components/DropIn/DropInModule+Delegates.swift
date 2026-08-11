@@ -27,7 +27,10 @@ extension DropInModule: DropInComponentDelegate {
 
     func didComplete(from _: Adyen.ActionComponent,
                      in _: Adyen.AnyDropInComponent) {
-        sendCompleteEvent()
+        // Drop-in is not supported in v6 alpha (`open()` fails early), so this delegate should
+        // never fire. Report an explicit not-supported error rather than falsely reporting an
+        // authorised payment if the SDK ever invokes it.
+        sendError(error: ModuleException.notSupported)
     }
 
     func didFail(with error: Error,
@@ -60,14 +63,14 @@ extension DropInModule: PartialPaymentDelegate {
     }
 
     @objc
-    func provideBalance(_ success: NSNumber, balance: NSDictionary?, error: NSDictionary?) {
+    func provideBalance(_: NSNumber, balance _: NSDictionary?, error: NSDictionary?) {
+        // Partial payments are unsupported in v6 alpha: `Balance` is a package struct that no
+        // longer conforms to `Decodable`, so a balance cannot be reconstructed from JS. Fail the
+        // pending balance check rather than resolving it with a value we cannot build.
         ensureMainThread { [weak self] in
             guard let self, let checkBalanceHandler = self.checkBalanceHandler else { return }
-            guard success.boolValue, let balance: Balance = try? balance?.decode() else {
-                let message = error.getErrorMessage
-                return checkBalanceHandler(.failure(ModuleException.balanceCheck(message: message)))
-            }
-            checkBalanceHandler(.success(balance))
+            let message = error.getErrorMessage
+            checkBalanceHandler(.failure(ModuleException.balanceCheck(message: message)))
         }
     }
 
@@ -90,8 +93,9 @@ extension DropInModule: PartialPaymentDelegate {
     }
 
     func cancelOrder(_ order: Adyen.PartialPaymentOrder, component _: any Adyen.Component) {
-        let orderData = CancelOrderData(shouldUpdatePaymentMethods: false, order: order)
-        sendEvent(event: .cancelOrder, body: orderData.jsonObject)
+        // The `CancelOrderData` wrapper model was removed with the v6 partial-payment rework; emit
+        // the order payload directly so the event still fires without the retired type.
+        sendEvent(event: .cancelOrder, body: order.jsonObject)
     }
 
     @objc(providePaymentMethods:order:)

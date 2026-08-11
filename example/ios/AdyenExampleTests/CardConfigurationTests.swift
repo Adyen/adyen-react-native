@@ -20,7 +20,7 @@ final class CardConfigurationTests: XCTestCase {
     let mockAmount = Amount(value: 1000, currencyCode: "USD", localeIdentifier: "en-US")
     let mockAddressLookupProvider = AddressLookupProviderMock()
 
-    func test_initialization_createsConfiguration_withEmptyDictionary() {
+    func test_initialization_createsConfiguration_withEmptyDictionary() throws {
         // GIVEN
         let emptyDict = NSDictionary()
         
@@ -31,7 +31,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertNotNil(sut.configuration)
     }
 
-    func test_initialization_createsConfiguration_withEmptySubDictionary() {
+    func test_initialization_createsConfiguration_withEmptySubDictionary() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": [:]]
         
@@ -42,7 +42,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertNotNil(sut.configuration)
     }
 
-    func test_configuration_setsShowStorePaymentField_whenProvided() {
+    func test_configuration_setsShowStorePaymentField_whenProvided() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["showStorePaymentField": false]]
         
@@ -53,7 +53,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertFalse(sut.configuration.showsStorePaymentMethodField)
     }
 
-    func test_configuration_setsShowsHolderNameField_whenHolderNameRequired() {
+    func test_configuration_setsShowsHolderNameField_whenHolderNameRequired() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["holderNameRequired": true]]
         
@@ -64,7 +64,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.configuration.showsHolderNameField)
     }
 
-    func test_configuration_setsShowsSecurityCodeField_forStoredCard() {
+    func test_configuration_setsShowsSecurityCodeField_forStoredCard() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["hideCvcStoredCard": false]]
         
@@ -75,7 +75,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.configuration.stored.showsSecurityCodeField) // inverted
     }
 
-    func test_configuration_setsShowsSecurityCodeField_whenHideCvcIsFalse() {
+    func test_configuration_setsShowsSecurityCodeField_whenHideCvcIsFalse() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["hideCvc": false]]
         
@@ -86,7 +86,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.configuration.showsSecurityCodeField) // inverted
     }
 
-    func test_configuration_setsBillingAddressMode_toFull() {
+    func test_configuration_setsBillingAddressMode_toFull() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["addressVisibility": "full"]]
         
@@ -97,7 +97,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.billingAddress.mode, .full)
     }
 
-    func test_configuration_setsBillingAddressMode_toPostalCode() {
+    func test_configuration_setsBillingAddressMode_toPostalCode() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["addressVisibility": "postal"]]
         
@@ -108,7 +108,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.billingAddress.mode, .postalCode)
     }
 
-    func test_configuration_setsKoreanAuthenticationMode_toHide() {
+    func test_configuration_setsKoreanAuthenticationMode_toHide() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["kcpVisibility": "hide"]]
         
@@ -119,7 +119,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .hide)
     }
 
-    func test_configuration_setsKoreanAuthenticationMode_toShow() {
+    func test_configuration_setsKoreanAuthenticationMode_toShow() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["kcpVisibility": "show"]]
         
@@ -130,7 +130,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .show)
     }
 
-    func test_configuration_setsSocialSecurityNumberMode_toHide() {
+    func test_configuration_setsSocialSecurityNumberMode_toHide() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["socialSecurity": "hide"]]
         
@@ -141,7 +141,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .hide)
     }
 
-    func test_configuration_setsSocialSecurityNumberMode_toShow() {
+    func test_configuration_setsSocialSecurityNumberMode_toShow() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["socialSecurity": "show"]]
         
@@ -152,7 +152,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .show)
     }
 
-    func test_configuration_setsAllowedCardTypes_whenProvided() {
+    func test_configuration_setsAllowedCardTypes_whenProvided() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["supported": ["visa", "mc", "maestro"]]]
         
@@ -163,7 +163,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.allowedCardTypes?.count, 3)
     }
 
-    func test_configuration_setsBillingAddressCountryCodes_whenProvided() {
+    func test_configuration_setsBillingAddressCountryCodes_whenProvided() throws {
         // GIVEN
         let configDict: NSDictionary = ["card": ["allowedAddressCountryCodes": ["GB", "US"]]]
         
@@ -174,7 +174,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.billingAddress.countryCodes?.count, 2)
     }
 
-    func test_configuration_setsInstallmentConfiguration_withDefaultOptions() {
+    func test_configuration_setsInstallmentConfiguration_withDefaultOptions() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "card": [
@@ -195,7 +195,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertFalse(sut.configuration.installmentConfiguration?.defaultOptions?.includesRevolving ?? true)
     }
 
-    func test_configuration_setsInstallmentConfiguration_withRevolvingPlan() {
+    func test_configuration_setsInstallmentConfiguration_withRevolvingPlan() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "card": [
@@ -216,7 +216,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertTrue(sut.configuration.installmentConfiguration?.defaultOptions?.includesRevolving ?? false)
     }
 
-    func test_configuration_setsInstallmentConfiguration_withCardBasedOptions() {
+    func test_configuration_setsInstallmentConfiguration_withCardBasedOptions() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "card": [
@@ -239,7 +239,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertEqual(sut.configuration.installmentConfiguration?.cardBasedOptions?.count, 2)
     }
 
-    func test_configuration_setsInstallmentConfiguration_withMixedOptions() {
+    func test_configuration_setsInstallmentConfiguration_withMixedOptions() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "card": [
@@ -262,7 +262,7 @@ final class CardConfigurationTests: XCTestCase {
         XCTAssertNotNil(sut.configuration.installmentConfiguration)
     }
 
-    func test_configuration_showInstallmentAmount_defaultsToFalse() {
+    func test_configuration_showInstallmentAmount_defaultsToFalse() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "card": [

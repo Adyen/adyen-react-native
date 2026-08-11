@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { type EmitterSubscription } from 'react-native';
-import { EmbeddedComponentBus } from '../modules/embedded/EmbeddedComponentBus';
-import { EmbeddedComponentProxy } from '../modules/embedded/EmbeddedComponentProxy';
+import { AdyenComponent } from '../modules/component/AdyenComponentModule';
+import { ComponentProxy } from '../modules/component/ComponentProxy';
 import {
   startEventListeners,
   type EventHandlerRefs,
 } from '../components/utils/startEventListeners';
-import type { AdyenComponentContextType } from './useComponent';
 import type {
   EventListenerWrapper,
   NativeModuleWithConstants,
 } from '../modules/base/EventListenerWrapper';
 
-type ComponentSubscriptionManager = AdyenComponentContextType & {
+type ComponentSubscriptionManager = {
+  subscribe: (viewId: string) => void;
+  unsubscribe: (viewId: string) => void;
   removeEventListeners: <T extends NativeModuleWithConstants>(
     nativeComponent: EventListenerWrapper<T>
   ) => void;
@@ -51,8 +52,8 @@ export function useSubscriptionManager(
   const subscribe = useCallback(
     (viewId: string) => {
       if (subscriptions.current.has(viewId)) return;
-      EmbeddedComponentBus.subscribe(viewId);
-      const proxy = new EmbeddedComponentProxy(EmbeddedComponentBus, viewId);
+      AdyenComponent.subscribe(viewId);
+      const proxy = new ComponentProxy(AdyenComponent, viewId);
       const bag = startEventListeners(proxy, eventHandlerRefs, viewId);
       subscriptions.current.set(viewId, bag);
     },
@@ -63,13 +64,13 @@ export function useSubscriptionManager(
     const bag = subscriptions.current.get(viewId);
     bag?.forEach((s) => s.remove());
     subscriptions.current.delete(viewId);
-    EmbeddedComponentBus.unsubscribe(viewId);
+    AdyenComponent.unsubscribe(viewId);
   }, []);
 
   function cleanup() {
     subscriptions.current.forEach((listeners, viewId) => {
       listeners.forEach((s) => s.remove());
-      EmbeddedComponentBus.unsubscribe(viewId);
+      AdyenComponent.unsubscribe(viewId);
     });
     subscriptions.current.clear();
   }

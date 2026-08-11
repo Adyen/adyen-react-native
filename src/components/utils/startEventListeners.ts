@@ -2,7 +2,7 @@ import { type EmitterSubscription, NativeEventEmitter } from 'react-native';
 import type {
   AddressLookup,
   AddressLookupItem,
-  AdyenActionComponent,
+  PaymentResultHandler,
   AdyenError,
   ApplePayAuthorizationActions,
   ApplePayAuthorizationResult,
@@ -23,28 +23,39 @@ import type {
   SubmitModel,
 } from '../../core';
 import { Event } from '../../core';
-import type { ApplePayModule } from '../../modules/applepay/AdyenApplePay';
 import type { RemovesStoredPayment } from '../../modules/dropin/DropInWrapper';
 import type { AdyenEventListener } from '../../modules/base/EventListenerWrapper';
+
+/** Apple Pay delegate callbacks the native component exposes for JS to resolve. */
+interface ApplePayCallbackHandler {
+  provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void;
+  provideShippingContactUpdate(
+    update: ApplePayShippingContactUpdateRequest
+  ): void;
+  provideShippingMethodUpdate(
+    update: ApplePayShippingMethodUpdateRequest
+  ): void;
+  provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
+}
 
 export type EventHandlerRefs = {
   onSubmit: React.RefObject<
     | ((
         data: PaymentMethodData,
-        component: AdyenActionComponent,
+        component: PaymentResultHandler,
         extra?: any
       ) => void)
     | undefined
   >;
   onError: React.RefObject<
-    (error: AdyenError, component: AdyenActionComponent) => void
+    (error: AdyenError, component: PaymentResultHandler) => void
   >;
   onComplete: React.RefObject<
-    | ((result: SessionsResult, component: AdyenActionComponent) => void)
+    | ((result: SessionsResult, component: PaymentResultHandler) => void)
     | undefined
   >;
   onAdditionalDetails: React.RefObject<
-    | ((data: PaymentDetailsData, component: AdyenActionComponent) => void)
+    | ((data: PaymentDetailsData, component: PaymentResultHandler) => void)
     | undefined
   >;
   config: React.RefObject<Configuration>;
@@ -58,7 +69,7 @@ export type EventHandlerRefs = {
  * @param viewId - When set, events are filtered by `data.viewId` (embedded component mode).
  */
 export function startEventListeners(
-  nativeComponent: AdyenEventListener & AdyenActionComponent,
+  nativeComponent: AdyenEventListener & PaymentResultHandler,
   refs: EventHandlerRefs,
   viewId?: string
 ): EmitterSubscription[] {
@@ -170,7 +181,7 @@ export function startEventListeners(
   );
 
   // Apple Pay delegate callbacks
-  const applePayModule = nativeComponent as unknown as ApplePayModule;
+  const applePayModule = nativeComponent as unknown as ApplePayCallbackHandler;
 
   subscribeIfSupported<ApplePayCouponCodeEvent>(
     Event.onApplePayCouponCodeChange,

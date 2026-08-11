@@ -1,14 +1,8 @@
 PODS:
-  - Adyen (5.25.1):
-    - Adyen/Actions (= 5.25.1)
-    - Adyen/Card (= 5.25.1)
-    - Adyen/Components (= 5.25.1)
-    - Adyen/Core (= 5.25.1)
-    - Adyen/DropIn (= 5.25.1)
-    - Adyen/Encryption (= 5.25.1)
-    - Adyen/Session (= 5.25.1)
+  - Adyen (6.0.0-alpha.1):
+    - Adyen/Checkout (= 6.0.0-alpha.1)
   - adyen-react-native (2.0.0-local.1):
-    - Adyen (= 5.25.1)
+    - Adyen (= 6.0.0-alpha.1)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -30,25 +24,38 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - Adyen/Actions (5.25.1):
+  - Adyen/Actions (6.0.0-alpha.1):
     - Adyen/Core
+    - Adyen/CoreUI
     - Adyen3DS2 (= 2.4.4)
-  - Adyen/Card (5.25.1):
+  - Adyen/Card (6.0.0-alpha.1):
     - Adyen/Core
+    - Adyen/CoreUI
     - Adyen/Encryption
-  - Adyen/Components (5.25.1):
+  - Adyen/Checkout (6.0.0-alpha.1):
+    - Adyen/Actions
+    - Adyen/Card
+    - Adyen/Components
     - Adyen/Core
+    - Adyen/DropIn
     - Adyen/Encryption
-  - Adyen/Core (5.25.1):
+    - Adyen/Session
+  - Adyen/Components (6.0.0-alpha.1):
+    - Adyen/Core
+    - Adyen/CoreUI
+    - Adyen/Encryption
+  - Adyen/Core (6.0.0-alpha.1):
     - AdyenNetworking (= 3.0.1)
-  - Adyen/DropIn (5.25.1):
+  - Adyen/CoreUI (6.0.0-alpha.1):
+    - Adyen/Core
+  - Adyen/DropIn (6.0.0-alpha.1):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (5.25.1)
-  - Adyen/Session (5.25.1):
+  - Adyen/Encryption (6.0.0-alpha.1)
+  - Adyen/Session (6.0.0-alpha.1):
     - Adyen/Actions
     - Adyen/Core
   - Adyen3DS2 (2.4.4)
@@ -2185,12 +2192,12 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: bfb5baaf4dded13ec151d336368ac1c26e9a99b4
-  adyen-react-native: 3b3ce2d7486adedd59f2339c3df5df10827f0735
+  Adyen: 042fc55889c411e59b42f9c5f74ba448ec845c7a
+  adyen-react-native: 806be5ea772a0482dd33a53b28668df36602a5b1
   Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
   AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
   FBLazyVector: c00c20551d40126351a6783c47ce75f5b374851b
-  hermes-engine: a817566f22c85d19c97456c8112e2bc20f0beb6d
+  hermes-engine: 9ddf501f9a4d02a3240ee569c6118c47b7861faf
   RCTDeprecation: 3bb167081b134461cfeb875ff7ae1945f8635257
   RCTRequired: 74839f55d5058a133a0bc4569b0afec750957f64
   RCTSwiftUI: 87a316382f3eab4dd13d2a0d0fd2adcce917361a
@@ -2199,7 +2206,7 @@ SPEC CHECKSUMS:
   React: 1b1536b9099195944034e65b1830f463caaa8390
   React-callinvoker: 6dff6d17d1d6cc8fdf85468a649bafed473c65f5
   React-Core: 00faa4d038298089a1d5a5b21dde8660c4f0820d
-  React-Core-prebuilt: 2794b50872ef93e631f9ea5c8f39ba6c74848607
+  React-Core-prebuilt: f38729cac4734a43428136b71dda72141a003e06
   React-CoreModules: a17807f849bfd86045b0b9a75ec8c19373b482f6
   React-cxxreact: c7b53ace5827be54048288bce5c55f337c41e95f
   React-debug: e1f00fcd2cef58a2897471a6d76a4ef5f5f90c74
@@ -2261,11 +2268,11 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 5787b37b8e2e51dfeab697ec031cc7c4080dcea2
   ReactCodegen: b3184a229afd01e7f8058dd81b805b843caa2bf9
   ReactCommon: fe2a3af8975e63efa60f95fca8c34dc85deee360
-  ReactNativeDependencies: 8b0ee9be647e5534e887b8fafcf9a4d888f3e070
+  ReactNativeDependencies: 90856f61463436a23a666845d14efd1e61214a51
   RNCAsyncStorage: 2ad919e88b8bc2cd80e8697ce66d04d006743283
   RNScreens: 991cc417cd396602a6cf59a42139e5a9d91462a9
   Yoga: e83c3121d079541e69f3c5c623faaaf933fb5812
 
-PODFILE CHECKSUM: eda0e5d5cab8c57a802b6d505abac2d6d53c3430
+PODFILE CHECKSUM: 0b3c0f5858d4e1b75ece307df8228218f8d8913c
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

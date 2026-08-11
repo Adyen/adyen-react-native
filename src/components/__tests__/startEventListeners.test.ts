@@ -34,8 +34,9 @@ function createComponent(supported: Event[] = []) {
   return {
     isSupported: jest.fn((e: Event) => supported.includes(e)),
     eventEmitterTarget: {},
-    hide: jest.fn(),
-    handle: jest.fn(),
+    action: jest.fn(),
+    completion: jest.fn(),
+    retry: jest.fn(),
     provideShippingContactUpdate: jest.fn(),
     provideShippingMethodUpdate: jest.fn(),
     provideCouponCodeUpdate: jest.fn(),

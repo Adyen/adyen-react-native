@@ -134,9 +134,15 @@ public struct ApplepayConfigurationParser {
         return parser.paymentRequest
     }
 
-    public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
+    /// Builds the v6 ``ApplePayConfiguration`` from the parsed configuration.
+    ///
+    /// The returned configuration only carries the `PKPaymentRequest` and the onboarding flag.
+    /// The Apple Pay callback closures (authorization, shipping, coupon) are attached by
+    /// ``ContextModule`` because they capture the module instance.
+    public func buildConfiguration(payment: Payment) throws -> ApplePayConfiguration {
         let paymentRequest = try buildPaymentRequest(payment: payment)
-        return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
+        return try ApplePayConfiguration(paymentRequest: paymentRequest)
+            .allowOnboarding(allowOnboarding)
     }
 
     public func buildPaymentRequest(payment: Payment) throws -> PKPaymentRequest {

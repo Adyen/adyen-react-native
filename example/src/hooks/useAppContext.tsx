@@ -11,10 +11,9 @@ import {
 import type { AppConfiguration } from '../settings/types';
 import type { PaymentResponse } from '../api/types';
 import type { NavigationContainerRef } from '@react-navigation/native';
-import type { AdyenComponent } from '@adyen/react-native';
+import type { PaymentResultHandler } from '@adyen/react-native';
 import type { ApiService } from '../api/ApiService';
 import type { ConfigProvider } from '../config/ConfigProvider';
-import { isSuccess } from '../components/utilities/isSuccess';
 import { RootStackParamList } from '../router/RootStackNavigator';
 
 type AppContextType = {
@@ -24,7 +23,7 @@ type AppContextType = {
   update: (partial: Partial<AppConfiguration>) => void;
   processResult: (
     result: PaymentResponse,
-    nativeComponent: AdyenComponent
+    nativeComponent: PaymentResultHandler
   ) => void;
   navigateToRoot: () => void;
   navigateToSettings: () => void;
@@ -80,9 +79,8 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
   );
 
   const processResult = useCallback(
-    (result: PaymentResponse, nativeComponent: AdyenComponent) => {
-      const success = isSuccess(result.resultCode);
-      nativeComponent.hide(success);
+    (result: PaymentResponse, nativeComponent: PaymentResultHandler) => {
+      nativeComponent.completion(result.resultCode);
       if (navigationRef.isReady()) {
         navigationRef.navigate('Result', { resultCode: result.resultCode });
       }

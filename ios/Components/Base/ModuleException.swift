@@ -101,7 +101,7 @@ enum ModuleException: LocalizedError, KnownError {
 extension Error {
 
     var isComponentCanceled: Bool {
-        (self as? ComponentError) == ComponentError.cancelled
+        (self as? CheckoutError)?.code == .cancelled
     }
 
     var is3DSCanceled: Bool {

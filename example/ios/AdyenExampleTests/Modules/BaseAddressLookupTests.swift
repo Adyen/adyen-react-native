@@ -69,7 +69,7 @@ final class BaseAddressModuleTests: XCTestCase {
     func test_update_callsLookupHandler() {
         // GIVEN
         let expectation = self.expectation(description: "lookupHandler called")
-        var receivedAddresses: [LookupAddressModel]?
+        var receivedAddresses: [AddressLookupResult]?
 
         sut.lookupHandler = { addresses in
             receivedAddresses = addresses
@@ -191,56 +191,6 @@ final class BaseAddressModuleTests: XCTestCase {
         // THEN
         XCTAssertNil(sut.lookupHandler)
         XCTAssertNil(sut.lookupCompletionHandler)
-    }
-
-    // MARK: - AddressLookupProvider Tests
-
-    func test_lookUp_setsHandlerAndSendsEvent() {
-        // GIVEN
-        var handlerCalled = false
-
-        // WHEN
-        sut.lookUp(searchTerm: "test") { _ in
-            handlerCalled = true
-        }
-
-        // THEN
-        XCTAssertNotNil(sut.lookupHandler)
-        XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, EventName.updateAddress.rawValue)
-
-        // Verify handler is stored correctly
-        sut.lookupHandler?([])
-        XCTAssertTrue(handlerCalled)
-    }
-
-    func test_complete_setsHandlerAndSendsEvent() {
-        // GIVEN
-        var handlerCalled = false
-        let address = LookupAddressModel(
-            identifier: "addr1",
-            postalAddress: PostalAddress(
-                city: "Amsterdam",
-                country: "NL",
-                houseNumberOrName: "123",
-                postalCode: "1012AB",
-                street: "Main St"
-            )
-        )
-
-        // WHEN
-        sut.complete(incompleteAddress: address) { _ in
-            handlerCalled = true
-        }
-
-        // THEN
-        XCTAssertNotNil(sut.lookupCompletionHandler)
-        XCTAssertEqual(mockEmitter.events.count, 1)
-        XCTAssertEqual(mockEmitter.events[0].name, EventName.confirmAddress.rawValue)
-
-        // Verify handler is stored correctly
-        sut.lookupCompletionHandler?(.success(PostalAddress()))
-        XCTAssertTrue(handlerCalled)
     }
 }
 

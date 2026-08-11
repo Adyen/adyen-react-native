@@ -1,11 +1,11 @@
 import type { AddressLookup, AddressLookupItem } from '../../core';
 import {
-  ActionHandlingComponentWrapper,
-  type ActionHandlingNativeModule,
-} from './ActionHandlingComponentWrapper';
+  PaymentComponentWrapper,
+  type PaymentModule,
+} from './PaymentComponentWrapper';
 
 /** Native module interface for address-lookup-capable components */
-export interface AddressLookupNativeModule extends ActionHandlingNativeModule {
+export interface AddressLookupNativeModule extends PaymentModule {
   update(results: AddressLookupItem[]): void;
   confirm(
     success: boolean,
@@ -20,7 +20,7 @@ export interface AddressLookupNativeModule extends ActionHandlingNativeModule {
 export abstract class AddressLookupModule<
   T extends AddressLookupNativeModule = AddressLookupNativeModule,
 >
-  extends ActionHandlingComponentWrapper<T>
+  extends PaymentComponentWrapper<T>
   implements AddressLookup
 {
   update(results: AddressLookupItem[]) {

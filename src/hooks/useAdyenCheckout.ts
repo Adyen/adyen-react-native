@@ -1,29 +1,55 @@
 import { createContext, useContext } from 'react';
-import type { PaymentMethodsResponse, Configuration } from '../core';
+import type {
+  AdvancedCallbacks,
+  Checkout,
+  PaymentMethodsResponse,
+  SessionCallbacks,
+} from '../core';
 import { MISSING_CONTEXT_ERROR } from './constants';
 
 /**
  * Shape of the AdyenCheckout context value.
  */
 export interface AdyenCheckoutContextType {
-  /** Start payment with Drop-in or any payment method available in `paymentMethods` collection. */
-  start: (typeName: string) => void;
+  /**
+   * Sets up the sessions flow. Creates the checkout context, registers the
+   * session lifecycle listeners, stores the callbacks and resolves to a
+   * {@link Checkout}.
+   * @param sessionID - The session identifier from the `/sessions` response.
+   * @param sessionData - The session data from the `/sessions` response.
+   * @param callbacks - Callbacks invoked for the session lifecycle.
+   */
+  setup(
+    sessionID: string,
+    sessionData: string,
+    callbacks: SessionCallbacks
+  ): Promise<Checkout>;
 
-  /** Configuration object. */
-  config: Configuration;
+  /**
+   * Sets up the advanced flow. Creates the checkout context, registers the
+   * advanced lifecycle listeners, stores the callbacks and resolves to a
+   * {@link Checkout}.
+   * @param paymentMethods - The payment methods response from the Adyen API.
+   * @param callbacks - Callbacks invoked for the advanced lifecycle.
+   */
+  setupAdvanced(
+    paymentMethods: PaymentMethodsResponse,
+    callbacks: AdvancedCallbacks
+  ): Promise<Checkout>;
 
-  /** Payment methods available for payment. */
-  paymentMethods?: PaymentMethodsResponse;
-
-  /** True if the checkout is ready to be used. */
-  isReady: boolean;
+  /**
+   * The active {@link Checkout}, or `null` until `setup`/`setupAdvanced`
+   * resolves.
+   */
+  checkout: Checkout | null;
 }
 
 export const AdyenCheckoutContext =
   createContext<AdyenCheckoutContextType | null>(null);
 
 /**
- * Returns AdyenCheckout context. This context allows you to initiate payment with Drop-in or any payment method available in `paymentMethods` collection.
+ * Returns the AdyenCheckout context. Must be called from within an
+ * `<AdyenCheckout>` provider; throws otherwise.
  */
 export const useAdyenCheckout = (): AdyenCheckoutContextType => {
   const context = useContext(AdyenCheckoutContext);

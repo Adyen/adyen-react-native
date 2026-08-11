@@ -287,15 +287,11 @@ final class ApplePayModuleTests: XCTestCase {
         XCTAssertEqual(receivedUpdate?.paymentSummaryItems.first?.label, "Total")
     }
 
-    func test_provideShippingContactUpdate_fallsBackToCurrentPaymentSummaryItems() throws {
+    func test_provideShippingContactUpdate_fallsBackToCurrentPaymentSummaryItems() {
         // GIVEN
         let expectation = self.expectation(description: "handler called")
         var receivedUpdate: PKPaymentRequestShippingContactUpdate?
-        sut.currentApplePayPayment = try ApplePayPayment(
-            countryCode: "US",
-            currencyCode: "USD",
-            summaryItems: [PKPaymentSummaryItem(label: "Fallback", amount: 10)]
-        )
+        sut.currentSummaryItems = [PKPaymentSummaryItem(label: "Fallback", amount: 10)]
         sut.shippingContactHandler = { update in
             receivedUpdate = update
             expectation.fulfill()
@@ -435,15 +431,11 @@ final class ApplePayModuleTests: XCTestCase {
         XCTAssertEqual(receivedUpdate?.paymentSummaryItems.first?.label, "Express Total")
     }
 
-    func test_provideShippingMethodUpdate_fallsBackToCurrentPaymentSummaryItems() throws {
+    func test_provideShippingMethodUpdate_fallsBackToCurrentPaymentSummaryItems() {
         // GIVEN
         let expectation = self.expectation(description: "handler called")
         var receivedUpdate: PKPaymentRequestShippingMethodUpdate?
-        sut.currentApplePayPayment = try ApplePayPayment(
-            countryCode: "US",
-            currencyCode: "USD",
-            summaryItems: [PKPaymentSummaryItem(label: "Fallback Total", amount: 10)]
-        )
+        sut.currentSummaryItems = [PKPaymentSummaryItem(label: "Fallback Total", amount: 10)]
         sut.shippingMethodHandler = { update in
             receivedUpdate = update
             expectation.fulfill()

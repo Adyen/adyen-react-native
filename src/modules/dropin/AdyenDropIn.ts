@@ -1,18 +1,32 @@
 import { NativeModules } from 'react-native';
 import type {
-  AdyenActionComponent,
+  Checkout,
+  Configuration,
+  PaymentSubmitResultHandler,
   Order,
   PaymentMethodsResponse,
 } from '../../core';
 import { ModuleMock } from '../base/ModuleMock';
 import { DropInWrapper } from './DropInWrapper';
 
+// TODO: Re-add providePaymentResult/provideAdditionalDetailsResult as convenience methods in a future version
+
 /** Describes Drop-in module. */
-export interface DropInModule extends AdyenActionComponent {
+export interface DropInModule extends PaymentSubmitResultHandler {
   /**
    * Provides return URL for current application.
    */
   getReturnURL: () => Promise<string>;
+
+  /**
+   * Launches the Drop-in modal for the shared checkout context created by
+   * `setup()` / `setupAdvanced()`. Drop-in does not own or manage session
+   * state — it reads the payment methods from the shared {@link Checkout} and
+   * opens the native modal with the provider configuration.
+   * @param checkout - The shared checkout obtained from `useAdyenCheckout`.
+   * @param configuration - The configuration supplied to `<AdyenCheckout>`.
+   */
+  start(checkout: Checkout, configuration: Configuration): void;
 
   /**
    * Reloads the DropIn with a new PaymentMethods object and partial payment order.

@@ -57,29 +57,36 @@ public struct RootConfigurationParser {
 
 extension RootConfigurationParser {
 
-    internal func fetchContext(session: AdyenSession?) throws -> AdyenContext {
+    /// Builds a v6 ``CheckoutConfiguration`` from the parsed root configuration.
+    ///
+    /// Component configurations (card, Apple Pay, authentication, etc.) are supplied
+    /// through the DSL `content` builder by the calling module.
+    /// - Parameters:
+    ///   - amount: An amount that overrides the one parsed from the configuration (for example, a
+    ///     session amount). When `nil`, the amount parsed from the configuration is used.
+    ///   - content: The component configuration builder.
+    internal func checkoutConfiguration(
+        amount: Amount? = nil,
+        @CheckoutConfigurationBuilder content: () throws -> CheckoutConfigurable
+    ) throws -> CheckoutConfiguration {
         guard let clientKey = self.clientKey else {
             throw ModuleException.noClientKey
         }
 
-        guard ClientKeyValidator().isValid(clientKey) else {
-            throw ModuleException.invalidClientKey
-        }
-
-        let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
-
         let analytics = AnalyticsParser(configuration: configuration).configuration
 
-        var payment: Payment?
-        if
-            let context = session?.sessionContext,
-            let countryCode = context.countryCode ?? self.countryCode {
-            payment = Payment(amount: context.amount, countryCode: countryCode)
-        } else {
-            payment = self.payment
-        }
+        let config = try CheckoutConfiguration(
+            environment: environment,
+            amount: amount ?? self.amount,
+            clientKey: clientKey,
+            analyticsConfiguration: analytics,
+            content: content
+        )
 
-        return AdyenContext(apiContext: apiContext, payment: payment, analyticsConfiguration: analytics)
+        guard let theme = AdyenAppearanceLoader.findStyle() else {
+            return config
+        }
+        return config.theme(theme)
     }
 }
 

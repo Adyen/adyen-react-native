@@ -56,15 +56,15 @@ final class BaseModuleSenderTests: XCTestCase {
 
     // MARK: - sendCompleteEvent Tests
 
-    func test_sendCompleteEvent_emitsCompleteEventWithPresentToShopperResult() {
+    func test_sendCompleteEvent_emitsCompleteEventWithResultCode() {
         // WHEN
-        sut.sendCompleteEvent()
+        sut.sendCompleteEvent(resultCode: .authorised)
 
         // THEN
         XCTAssertEqual(mockEmitter.events.count, 1)
         XCTAssertEqual(mockEmitter.events[0].name, EventName.complete.rawValue)
         let body = mockEmitter.events[0].body as? [String: Any]
-        XCTAssertEqual(body?["resultCode"] as? String, "PresentToShopper")
+        XCTAssertEqual(body?["resultCode"] as? String, "Authorised")
     }
 }
 

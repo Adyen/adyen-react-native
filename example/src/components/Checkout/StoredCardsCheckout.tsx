@@ -1,6 +1,9 @@
 import { useEffect, useCallback, useState } from 'react';
 import { Text, ActivityIndicator, View, ScrollView } from 'react-native';
-import type { PaymentMethodsResponse } from '@adyen/react-native';
+import type {
+  PaymentMethodsResponse,
+  PaymentResultHandler,
+} from '@adyen/react-native';
 import { AdyenAction } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
@@ -43,9 +46,9 @@ const StoredCardsCheckout = () => {
           configuration,
           apiClient
         );
-        processResult(result, AdyenAction);
+        processResult(result, AdyenAction as unknown as PaymentResultHandler);
       } catch (e) {
-        processError(e, AdyenAction);
+        processError(e, AdyenAction as unknown as PaymentResultHandler);
       }
     },
     [configuration, processResult, apiClient]

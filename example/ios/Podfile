@@ -5,7 +5,7 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-platform :ios, min_ios_version_supported
+platform :ios, ['16.0', min_ios_version_supported].max
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -50,6 +50,21 @@ target 'AdyenExample' do
           File.chmod(0644, fmt_base)
           File.write(fmt_base, patched)
         end
+      end
+    end
+
+    # The Adyen 6 pod ships with BUILD_LIBRARY_FOR_DISTRIBUTION = YES, which makes
+    # Xcode 26 emit and verify a textual .swiftinterface. That verification fails with
+    # "underlying Objective-C module 'Adyen' not found" even though the module compiles
+    # and links correctly. Library evolution is only needed for binary distribution, not
+    # for building the pod from source here, so disable it (and the verification it
+    # triggers) for the Adyen targets.
+    installer.pods_project.targets.each do |target|
+      next unless target.name.start_with?('Adyen')
+
+      target.build_configurations.each do |config|
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
+        config.build_settings['SWIFT_VERIFY_EMITTED_MODULE_INTERFACE'] = 'NO'
       end
     end
   end

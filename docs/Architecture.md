@@ -1,5 +1,18 @@
 # Architecture
 
+> [!IMPORTANT]
+> **v6 Alpha Architecture Changes**
+>
+> This document describes the v5 architecture. The v6 alpha migration introduced significant changes to the native bridge layers:
+>
+> **iOS**: All delegate protocols (`PaymentComponentDelegate`, `ActionComponentDelegate`, `DropInComponentDelegate`, etc.) are removed. Entry points use `Checkout.setup()` returning `AdvancedCheckout` or `SessionCheckout` objects. Callbacks use closures (`.onSubmit`, `.onAdditionalDetails`, `.onComplete`, `.onFailure`) with `CheckedContinuation` bridging to the RN event model. `BaseModuleSender+Delegates.swift` is replaced by `BaseModuleSender+Callbacks.swift`.
+>
+> **Android**: `ComponentCallback<T>`, `SessionComponentCallback<T>`, and `ActionComponentCallback` interfaces are removed. Drop-in uses `AdvancedCheckoutService` with `suspend fun onSubmit(): SubmitResult`. Embedded components use `CheckoutController` + Compose `CheckoutPaymentFlow`. Per-method fragments (IdealFragment, TwintFragment, etc.) are replaced by a single `InstantFragment` with Compose. `AdyenCheckout` no longer holds a single component reference; redirect routing uses `CheckoutControllerRegistry`.
+>
+> **TypeScript**: Public API uses a unified `PaymentResultHandler` interface with `action()`, `completion()`, and `retry()` replacing the old `handle()`/`hide()` methods. `AdyenComponent` and `AdyenActionComponent` are removed. Unsupported alpha features (partial payments, stored payment removal) are annotated with TODO comments.
+>
+> See `docs/ios-bridge-migration-guide.md` and `docs/android-bridge-migration-guide.md` for complete details.
+
 ## Data Flow
 
 ![Data Flow](./assets/Architecture.png)
@@ -54,9 +67,8 @@ src/
     ├── index.ts
     ├── base/                               # Base wrapper classes
     │   ├── EventListenerWrapper.ts           # Abstract base for event handling
-    │   ├── ModuleWrapper.ts                  # Abstract base with hide()
+    │   ├── ModuleWrapper.ts                  # Abstract base with action(), completion(), retry()
     │   ├── PaymentComponentWrapper.ts        # Abstract base with open()
-    │   ├── ActionHandlingComponentWrapper.ts # Abstract base with handle()
     │   ├── ModuleMock.ts                     # Mock for unavailable modules
     │   ├── constants.ts                      # Module-specific constants
     │   ├── getWrapper.ts                     # Factory to resolve payment method wrappers
@@ -76,7 +88,7 @@ src/
     │   └── DropInWrapper.ts
     ├── embedded/                           # Embedded component bus (for CardView and future embedded views)
     │   ├── EmbeddedComponentBus.ts           # Singleton bus instance
-    │   ├── EmbeddedComponentBusWrapper.ts    # Wrapper with subscribe/unsubscribe/handle/hide/update/confirm
+    │   ├── EmbeddedComponentBusWrapper.ts    # Wrapper with subscribe/unsubscribe/action/completion/retry/update/confirm
     │   └── EmbeddedComponentProxy.ts         # Per-component proxy that binds a key to bus calls
     ├── googlepay/                          # Google Pay module
     │   ├── AdyenGooglePay.ts
@@ -106,18 +118,14 @@ EventListenerWrapper<T>                                      # Abstract - manage
     │                                                          - eventEmitterTarget (for NativeEventEmitter)
     │                                                          - addListener/removeListeners
     ▼
-ModuleWrapper<T>                                             # Abstract - adds hide()
-    │   implements AdyenComponent
+ModuleWrapper<T>                                             # Abstract - adds action(), completion(), retry()
+    │   implements PaymentResultHandler
     │
     ▼
 PaymentComponentWrapper<T>                                   # Abstract - adds open()
     │
-    ├──► ApplePayWrapper                                     # implements ApplePayModule, AdyenActionComponent
+    ├──► ApplePayWrapper                                     # implements ApplePayModule
     │       + isAvailable()
-    │
-    ▼
-ActionHandlingComponentWrapper<T>                            # Abstract - adds handle()
-    │   implements AdyenActionComponent
     │
     ├──► GooglePayWrapper                                    # implements GooglePayModule
     │       + isAvailable()
@@ -140,14 +148,15 @@ EventListenerWrapper<EmbeddedNativeModule>
     │
     └──► EmbeddedComponentBusWrapper                         # Bus for all embedded views
             - subscribe(key), unsubscribe(key)
-            - handle(key, action), hide(key, success)
+            - action(key, action), completion(key, resultCode), retry(key, message)
             - update(key, results), confirm(key, success, body)
 
 EmbeddedComponentProxy                                       # Per-view proxy (not a wrapper subclass)
-    implements AdyenActionComponent, AddressLookup, AdyenEventListener
+    implements PaymentResultHandler, AddressLookup, AdyenEventListener
     - constructor(wrapper, viewId)
-    - handle(action) → wrapper.handle(key, action)
-    - hide(success) → wrapper.hide(key, success)
+    - action(action) → wrapper.action(key, action)
+    - completion(resultCode) → wrapper.completion(key, resultCode)
+    - retry(message) → wrapper.retry(key, message)
     - update/confirm/reject → wrapper.update/confirm(key, ...)
 ```
 
@@ -157,13 +166,15 @@ These don't inherit from `EventListenerWrapper` as they don't need event subscri
 
 ```
 ActionModuleWrapper                                          # implements ActionModule
-    - handle(action, config) → Promise<PaymentDetailsData>
-    - hide(success)
+    - action(action, config) → Promise<PaymentDetailsData>
+    - completion(resultCode)
+    - retry(message?)
     - threeDS2SdkVersion
 
 SessionWrapper                                               # implements SessionHelperModule
     - createSession(session, config) → Promise<SessionContext>
-    - hide(success, option?)
+    - completion(resultCode)
+    - retry(message?)
     - assignCompletionHandler(callback) → EventSubscription
     - assignErrorHandler(callback) → EventSubscription
     - removeAllListeners()
@@ -178,22 +189,21 @@ AdyenCSEModuleWrapper                                        # implements AdyenC
 ### Core Interfaces (`core/types.ts`)
 
 ```
-AdyenComponent                    # Base interface
-    │   hide(success, option?)
-    │
-    └──► AdyenActionComponent     # Extends AdyenComponent
-            + handle(action)
+PaymentResultHandler              # Single interface for all payment result handling
+    action(action)
+    completion(resultCode)
+    retry(message?)
 
 ConditionalPaymentComponent       # Standalone interface
     isAvailable(paymentMethod, configuration) → Promise<boolean>
 ```
 
-**Public module interfaces** mirror this structure, extending core interfaces:
+**Public module interfaces** extend `PaymentResultHandler`:
 
-- `ApplePayModule` — extends `AdyenActionComponent`, `ConditionalPaymentComponent`
-- `GooglePayModule` — extends `AdyenActionComponent`, `ConditionalPaymentComponent`
-- `InstantModule` — extends `AdyenActionComponent`
-- `DropInModule` — extends `AdyenActionComponent` + partial payment & address lookup methods
+- `ApplePayModule` — extends `PaymentResultHandler`, `ConditionalPaymentComponent`
+- `GooglePayModule` — extends `PaymentResultHandler`, `ConditionalPaymentComponent`
+- `InstantModule` — extends `PaymentResultHandler`
+- `DropInModule` — extends `PaymentResultHandler` + partial payment & address lookup methods
 - `ActionModule`, `AdyenCSEModule`, `SessionHelperModule` — standalone
 
 ### Configuration Hierarchy
@@ -228,20 +238,21 @@ BaseModule                                           # Base class for all iOS mo
     │   - currentModule: BaseModule? (static)
     │   - currentPresenter: UIViewController? (static)
     │   - currentComponent: Component?
-    │   - hide(success, event)
+    │   - completion(_ resultCode:)
+    │   - retry(_ message:)
     │   - present(component)
     │   - cleanUp()
     │   - sendError(error)
     │
     ├──► SessionHelperModule                         # Session management
     │       - createSession(sessionModel, config)
+    │       - completion(), retry()
     │       - SessionErrorDelegate
-    │       - AdyenSessionDelegate
     │
     ├──► ActionModule                                # Standalone action handler (Promise-based)
-    │       - handle(action, config) → Promise
-    │       - hide(success)
-    │       - ActionComponentDelegate
+    │       - action(_ dictionary:) → Promise
+    │       - completion(_ resultCode:)
+    │       - retry(_ message:)
     │
     └──► BaseModuleSender                            # Adds event sending helpers
             │   - supportedEvents() → [String]
@@ -249,17 +260,13 @@ BaseModule                                           # Base class for all iOS mo
             │   - sendSubmitEvent(data)
             │   - sendCompleteEvent()
             │   - sendProvideEvent(actionData)
-            │   - PaymentComponentDelegate
-            │   - ActionComponentDelegate
-            │   - CardComponentDelegate
             │
             ├──► ApplePayModule                      # Apple Pay component
             │       - open(paymentMethods, config)
             │       - isAvailable(paymentMethod, config)
             │
-            ├──► BaseActionModule                    # Adds handle() for actions
-            │       │   - actionHandler: AdyenActionComponent?
-            │       │   - handle(action)
+            ├──► BaseActionModule                    # Adds action() for actions
+            │       │   - action(_ dictionary:)
             │       │
             │       └──► InstantModule               # Instant/redirect payments
             │               - open(paymentMethods, config)
@@ -271,19 +278,18 @@ BaseModule                                           # Base class for all iOS mo
                     │
                     ├──► DropInModule                # Drop-in component
                     │       - open(paymentMethods, config)
-                    │       - handle(action)
+                    │       - action(action)
+                    │       - completion(resultCode)
+                    │       - retry(message)
                     │       - removeStored(success)
                     │       - getReturnURL()
                     │       - provideBalance/Order/PaymentMethods
-                    │       - DropInComponentDelegate
-                    │       - StoredPaymentMethodsDelegate
-                    │       - PartialPaymentDelegate
                     │
                     └──► EmbeddedComponentBusModule   # Embedded component bus (singleton)
                             - delegates: [String: EmbeddedComponentDelegateProxy]
                             - subscribe/unsubscribe (JS lifecycle)
                             - register/unregister (native view lifecycle)
-                            - handle/update/confirm/hide (JS → native routing)
+                            - action/completion/retry/update/confirm (JS → native routing)
                             - Shared actionHandler for all embedded views
 ```
 
@@ -307,31 +313,34 @@ BaseModule                                           # Base class for payment mo
     │   - currentModule: BaseModule? (companion)
     │   - messageBus: MessageBus
     │   - supportedEvents(): List<String> (abstract)
-    │   - hide(success, message) (abstract)
+    │   - completion(resultCode) (abstract)
+    │   - retry(message) (abstract)
     │   - getConstants() → ["supportedEvents": ...]
     │   - cleanup()
     │   - sendError(exception)
     │
     ├──► SessionHelperModule                         # Session management
     │       - createSession(sessionModel, config)
-    │       - hide() delegates to currentModule
+    │       - completion(), retry() delegate to currentModule
     │
     └──► BaseActionModule                            # Adds parseActionFromMap() + mainEvents()
             │
             ├──► GooglePayModule                     # Google Pay component
             │       - open(paymentMethods, config)
-            │       - handle(action)
+            │       - action(actionMap)
             │       - isAvailable(paymentMethods, config)
             │
             ├──► InstantModule                       # Instant/redirect payments
             │       - open(paymentMethods, config)
-            │       - handle(action)
+            │       - action(actionMap)
             │
             └──► BaseAddressModule                   # Adds parseAddressOptions/parseLookupAddress() + addressLookupEvents()
                     │
                     ├──► DropInModule                # Drop-in component
                     │       - open(paymentMethods, config)
-                    │       - handle(action)
+                    │       - action(action)
+                    │       - completion(resultCode)
+                    │       - retry(message)
                     │       - removeStored(success)
                     │       - getReturnURL()
                     │       - update/confirm (address lookup)
@@ -341,7 +350,7 @@ BaseModule                                           # Base class for payment mo
                             - consumers: Map<String, ComponentContract> (companion, keyed by reactTag)
                             - subscribe/unsubscribe (JS lifecycle)
                             - register/unregister (native view lifecycle)
-                            - handle/update/confirm/hide (JS → native routing)
+                            - action/completion/retry/update/confirm (JS → native routing)
 ```
 
 ### Embedded Views (Fabric Native Components)
@@ -367,7 +376,7 @@ Embedded views are rendered inline within the React tree using Fabric codegen. U
 │    └── Filters incoming events by viewId === key                         │
 │                                                                          │
 │  EmbeddedComponentProxy                                                  │
-│    └── handle(action), hide(), update(), confirm() → routes to bus       │
+│    └── action(action), completion(), retry(), update(), confirm() → bus  │
 └──────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -381,7 +390,9 @@ Embedded views are rendered inline within the React tree using Fabric codegen. U
 │                                                                          │
 │  EmbeddedComponentBusModule                                              │
 │    ├── register(key, contract) — maps reactTag → native view state       │
-│    ├── handle(key, action) — routes actions from JS to correct view      │
+│    ├── action(key, action) — routes actions from JS to correct view      │
+│    ├── completion(key, resultCode) — completes payment for correct view  │
+│    ├── retry(key, message) — retries payment for correct view            │
 │    └── unregister(key) — cleanup on dispose                              │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -417,14 +428,15 @@ CardViewState                                        # Per-view state holder
     implements LayoutListener, ComponentContract
     - configuration, paymentMethod (props from JS)
     - viewId (reactTag)
-    - cardComponentManager: CardComponentManager
+    - componentManager: ComponentManager             # Unified manager (was CardComponentManager)
     - renderComponentIfNeeded(view) — creates component, registers with bus
     - dispose(view) — unregisters, clears state
-    - onAction/onAddressLookup* — delegates to cardComponentManager
+    - onAction/onAddressLookup* — delegates to componentManager
 
-CardComponentManager                                 # Creates and manages CardComponent
-    - createComponent(config, paymentMethod) → CardComponent
+ComponentManager                                     # Unified manager for all embedded components (in component/base/)
+    - createController(config, paymentMethod) → CheckoutController
     - handleAction(action)
+    - finish() / dispose()
     - setAddressLookupResult/updateAddressLookupOptions
 
 DynamicComponentView : FrameLayout                   # Auto-resizing container
@@ -437,9 +449,6 @@ ComponentContract                                    # Interface for bus → vie
     - onAction(action)
     - onAddressLookupResult(result)
     - onAddressLookupOptions(options)
-
-ComponentAdvancedCallback                            # Bridges SDK callbacks → MessageBus (advanced flow)
-ComponentSessionCallback                             # Bridges SDK callbacks → MessageBus (session flow)
 ```
 
 #### iOS Embedded View Classes
@@ -471,7 +480,7 @@ EmbeddedComponentBusModule : BaseAddressModule       # Singleton bus (shared ins
     - register(viewId:) → EmbeddedComponentDelegateProxy
     - unregister(viewId:)
     - subscribe/unsubscribe (JS lifecycle)
-    - handle/update/confirm/hide (JS → native routing)
+    - action/completion/retry/update/confirm (JS → native routing)
     - Shared actionHandler for all embedded views
 
 EmbeddedComponentDelegateProxy : NSObject            # Per-view delegate that tags events
@@ -539,17 +548,17 @@ Both platforms follow a consistent lifecycle for payment components:
 1. **Session Setup** (optional) - `SessionHelperModule.createSession()` stores session in static/companion property
 2. **Open** - Module sets `currentModule = self/this`, initializes component, presents UI
 3. **Events** - Native SDK callbacks are translated to JS events via emitter
-4. **Hide** - Cleanup resources, dismiss UI, clear static references
+4. **Complete/Retry** - Cleanup resources, dismiss UI, clear static references
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Session   │────►│    Open     │────►│   Events    │────►│    Hide     │
-│   (opt.)    │     │             │     │             │     │             │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-      │                   │                   │                   │
-      ▼                   ▼                   ▼                   ▼
- Store session      Set currentModule    Emit to JS         Clear refs
- in static prop     Present UI           via emitter        Dismiss UI
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
+│   Session   │────►│    Open     │────►│   Events    │────►│ Complete/Retry   │
+│   (opt.)    │     │             │     │             │     │                  │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────────┘
+      │                   │                   │                       │
+      ▼                   ▼                   ▼                       ▼
+ Store session      Set currentModule    Emit to JS             Clear refs
+ in static prop     Present UI           via emitter            Dismiss UI
 ```
 
 ### Static State Management
@@ -584,27 +593,38 @@ Errors are routed differently based on integration type:
     └─────────────────┘           └─────────────────┘
 ```
 
-### Hide Delegation Pattern
+### Completion/Retry Delegation Pattern
 
-`SessionHelperModule.hide()` delegates to the active component module:
+`SessionHelperModule.completion()` and `retry()` delegate to the active component module:
 
 **Android:**
 
 ```kotlin
-override fun hide(success: Boolean, message: ReadableMap?) {
-  currentModule?.hide(success, message)
-  cleanup()
+override fun completion(resultCode: String) {
+    currentModule?.completion(resultCode)
+    cleanup()
+}
+
+override fun retry(message: String?) {
+    currentModule?.retry(message)
 }
 ```
 
 **iOS:**
 
 ```swift
-override func hide(_ success: NSNumber, event: NSDictionary) {
-  super.hide(success, event: event)
-  if let activeModule = BaseModule.currentModule {
-    activeModule.hide(success, event: event)
-  }
+override func completion(_ resultCode: NSString) {
+    super.completion(resultCode)
+    if let activeModule = BaseModule.currentModule {
+        activeModule.completion(resultCode)
+    }
+}
+
+override func retry(_ message: NSString?) {
+    super.retry(message)
+    if let activeModule = BaseModule.currentModule {
+        activeModule.retry(message)
+    }
 }
 ```
 
@@ -619,7 +639,7 @@ override func hide(_ success: NSNumber, event: NSDictionary) {
 
 ### Delegate/Callback Pattern
 
-Both platforms translate native SDK delegates to JS events:
+Both platforms translate native SDK delegates to JS events. Note: the JS-facing API now uses `action()`/`completion()`/`retry()` instead of `handle()`/`hide()`:
 
 **iOS** - Protocol conformance:
 

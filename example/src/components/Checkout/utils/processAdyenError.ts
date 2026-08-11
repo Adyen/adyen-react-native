@@ -1,15 +1,15 @@
 import {
   type AdyenError,
-  type AdyenComponent,
+  type PaymentResultHandler,
   ErrorCode,
 } from '@adyen/react-native';
 import { Alert } from 'react-native';
 
 export function processAdyenError(
   error: AdyenError,
-  nativeComponent: AdyenComponent
+  nativeComponent: PaymentResultHandler
 ) {
-  nativeComponent.hide(false);
+  nativeComponent.completion('Error');
   if (error.errorCode === ErrorCode.canceled) {
     Alert.alert('Canceled');
   } else {

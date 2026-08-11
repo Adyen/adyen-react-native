@@ -5,48 +5,71 @@ import { AdyenCheckout } from '../AdyenCheckout';
 import { useAdyenCheckout } from '../../hooks/useAdyenCheckout';
 
 // Mock functions must be defined before jest.mock calls due to hoisting
-const mockOpen = jest.fn();
-const mockHide = jest.fn();
-const mockIsSupported = jest.fn().mockReturnValue(true);
 const mockCreateSession = jest.fn();
+const mockSetup = jest.fn();
+const mockCleanup = jest.fn();
+const mockRemoveAllListeners = jest.fn();
+const mockAssignCompletionHandler = jest.fn();
+const mockAssignErrorHandler = jest.fn();
+const mockAssignSubmitHandler = jest.fn();
+const mockAssignAdditionalDetailsHandler = jest.fn();
+const mockAssignAdvancedErrorHandler = jest.fn();
+const mockAssignApplePayAuthorizationHandler = jest.fn();
+const mockAssignApplePayShippingContactHandler = jest.fn();
+const mockAssignApplePayShippingMethodHandler = jest.fn();
+const mockAssignApplePayCouponCodeHandler = jest.fn();
+const mockProvideAuthorizationResult = jest.fn();
+const mockProvideShippingContactUpdate = jest.fn();
+const mockProvideShippingMethodUpdate = jest.fn();
+const mockProvideCouponCodeUpdate = jest.fn();
 
-const mockNativeModule = {
-  addListener: jest.fn(),
-  removeListeners: jest.fn(),
-};
-
-jest.mock('../../modules/base/getWrapper', () => ({
-  getWrapper: jest.fn(() => ({
-    nativeComponent: {
-      name: 'DropIn',
-      open: mockOpen,
-      hide: mockHide,
-      isSupported: mockIsSupported,
-      addListener: jest.fn(),
-      removeListeners: jest.fn(),
-      eventEmitterTarget: mockNativeModule,
-    },
-    paymentMethod: undefined,
-  })),
-}));
-
-jest.mock('../../hooks/useSubscriptionManager', () => ({
-  useSubscriptionManager: jest.fn(() => ({
+// The ComponentModule wrapper is constructed at import time; its ModuleMock
+// backing throws on any property access, so it is stubbed here. No embedded
+// view mounts in these provider tests, so subscribe/unsubscribe stay inert.
+jest.mock('../../modules/component/AdyenComponentModule', () => ({
+  AdyenComponent: {
+    name: 'AdyenComponent',
     subscribe: jest.fn(),
     unsubscribe: jest.fn(),
-    removeEventListeners: jest.fn(),
-    storeEventListeners: jest.fn(),
-  })),
+  },
 }));
 
-jest.mock('../../modules/session/SessionHelperModule', () => ({
-  SessionHelper: {
-    createSession: (session: any, config: any) =>
-      mockCreateSession(session, config),
-    hide: jest.fn(),
-    removeAllListeners: jest.fn(),
-    assignCompletionHandler: jest.fn(),
-    assignErrorHandler: jest.fn(),
+jest.mock('../../modules/context/ContextModule', () => ({
+  AdyenContext: {
+    createSession: (...args: any[]) => mockCreateSession(...args),
+    setup: (...args: any[]) => mockSetup(...args),
+    cleanup: (...args: any[]) => mockCleanup(...args),
+    removeAllListeners: (...args: any[]) => mockRemoveAllListeners(...args),
+    assignCompletionHandler: (...args: any[]) =>
+      mockAssignCompletionHandler(...args),
+    assignErrorHandler: (...args: any[]) => mockAssignErrorHandler(...args),
+    assignSubmitHandler: (...args: any[]) => mockAssignSubmitHandler(...args),
+    assignAdditionalDetailsHandler: (...args: any[]) =>
+      mockAssignAdditionalDetailsHandler(...args),
+    assignAdvancedErrorHandler: (...args: any[]) =>
+      mockAssignAdvancedErrorHandler(...args),
+    assignApplePayAuthorizationHandler: (...args: any[]) =>
+      mockAssignApplePayAuthorizationHandler(...args),
+    assignApplePayShippingContactHandler: (...args: any[]) =>
+      mockAssignApplePayShippingContactHandler(...args),
+    assignApplePayShippingMethodHandler: (...args: any[]) =>
+      mockAssignApplePayShippingMethodHandler(...args),
+    assignApplePayCouponCodeHandler: (...args: any[]) =>
+      mockAssignApplePayCouponCodeHandler(...args),
+    provideAuthorizationResult: (...args: any[]) =>
+      mockProvideAuthorizationResult(...args),
+    provideShippingContactUpdate: (...args: any[]) =>
+      mockProvideShippingContactUpdate(...args),
+    provideShippingMethodUpdate: (...args: any[]) =>
+      mockProvideShippingMethodUpdate(...args),
+    provideCouponCodeUpdate: (...args: any[]) =>
+      mockProvideCouponCodeUpdate(...args),
+    isAvailable: jest.fn(),
+    requiresUserInteraction: jest.fn(),
+    submit: jest.fn(),
+    completion: jest.fn(),
+    action: jest.fn(),
+    retry: jest.fn(),
   },
 }));
 
@@ -65,44 +88,59 @@ const mockPaymentMethods = {
   ],
 };
 
-// Consumer component to test context
+const sessionCallbacks = {
+  onComplete: jest.fn(),
+  onError: jest.fn(),
+};
+
+const advancedCallbacks = {
+  onSubmit: jest.fn(),
+  onAdditionalDetails: jest.fn(),
+  onError: jest.fn(),
+};
+
+// Consumer component to exercise the context
 function TestConsumer() {
-  const { start, config, paymentMethods, isReady } = useAdyenCheckout();
+  const { setup, setupAdvanced, checkout } = useAdyenCheckout();
   return (
     <View>
-      {isReady && (
-        <TouchableOpacity testID="start-btn" onPress={() => start('dropin')}>
-          <Text>Start</Text>
-        </TouchableOpacity>
-      )}
-      <Text testID="ready">{isReady ? 'ready' : 'not-ready'}</Text>
-      <Text testID="config">{config.clientKey}</Text>
-      <Text testID="payment-methods">
-        {paymentMethods?.paymentMethods?.length ?? 0}
+      <TouchableOpacity
+        testID="setup-btn"
+        onPress={() => setup('session_123', 'session_data', sessionCallbacks)}
+      >
+        <Text>Setup</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="setup-advanced-btn"
+        onPress={() => setupAdvanced(mockPaymentMethods, advancedCallbacks)}
+      >
+        <Text>SetupAdvanced</Text>
+      </TouchableOpacity>
+      <Text testID="checkout-status">{checkout ? 'ready' : 'null'}</Text>
+      <Text testID="pm-count">
+        {checkout?.paymentMethods?.paymentMethods?.length ?? -1}
       </Text>
     </View>
   );
 }
 
-describe('AdyenCheckout', () => {
-  const onError = jest.fn();
-  const onSubmit = jest.fn();
-  const onComplete = jest.fn();
-  const onAdditionalDetails = jest.fn();
+// Probe for verifying the hook throws outside of a provider
+function HookProbe() {
+  useAdyenCheckout();
+  return null;
+}
 
+describe('AdyenCheckout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockCreateSession.mockReset();
+    mockCreateSession.mockResolvedValue({ paymentMethods: mockPaymentMethods });
+    mockSetup.mockResolvedValue(undefined);
   });
 
   describe('rendering', () => {
     test('should render children', () => {
       const { getByTestId } = render(
-        <AdyenCheckout
-          config={mockConfig}
-          paymentMethods={mockPaymentMethods}
-          onError={onError}
-        >
+        <AdyenCheckout configuration={mockConfig}>
           <Text testID="child">Test Child</Text>
         </AdyenCheckout>
       );
@@ -110,202 +148,412 @@ describe('AdyenCheckout', () => {
       expect(getByTestId('child')).toBeTruthy();
     });
 
-    test('should provide context to children', () => {
+    test('should provide the hook context to children', () => {
       const { getByTestId } = render(
-        <AdyenCheckout
-          config={mockConfig}
-          paymentMethods={mockPaymentMethods}
-          onError={onError}
-        >
+        <AdyenCheckout configuration={mockConfig}>
           <TestConsumer />
         </AdyenCheckout>
       );
 
-      expect(getByTestId('config').props.children).toBe('test_ABCDEFGH');
+      // checkout is null until setup resolves
+      expect(getByTestId('checkout-status').props.children).toBe('null');
     });
   });
 
-  describe('context values', () => {
-    test('should set isReady to true when paymentMethods provided', () => {
-      const { getByTestId } = render(
-        <AdyenCheckout
-          config={mockConfig}
-          paymentMethods={mockPaymentMethods}
-          onError={onError}
-        >
-          <TestConsumer />
-        </AdyenCheckout>
+  describe('hook context guard', () => {
+    test('useAdyenCheckout throws when used outside the provider', () => {
+      const originalError = console.error;
+      console.error = jest.fn();
+      expect(() => render(<HookProbe />)).toThrow(
+        'useAdyenCheckout must be used within an AdyenCheckout'
       );
-
-      expect(getByTestId('ready').props.children).toBe('ready');
-    });
-
-    test('should set isReady to false when no paymentMethods', () => {
-      const { getByTestId } = render(
-        <AdyenCheckout config={mockConfig} onError={onError}>
-          <TestConsumer />
-        </AdyenCheckout>
-      );
-
-      expect(getByTestId('ready').props.children).toBe('not-ready');
-    });
-
-    test('should expose paymentMethods count in context', () => {
-      const { getByTestId } = render(
-        <AdyenCheckout
-          config={mockConfig}
-          paymentMethods={mockPaymentMethods}
-          onError={onError}
-        >
-          <TestConsumer />
-        </AdyenCheckout>
-      );
-
-      expect(getByTestId('payment-methods').props.children).toBe(2);
+      console.error = originalError;
     });
   });
 
-  describe('session handling', () => {
-    test('should create session when session prop provided', async () => {
-      const sessionConfig = { id: 'session_123', sessionData: 'test_data' };
-      const sessionResponse = {
-        id: 'session_123',
-        sessionData: 'response_data',
-        paymentMethods: mockPaymentMethods,
-      };
-      mockCreateSession.mockResolvedValue(sessionResponse);
-
-      render(
-        <AdyenCheckout
-          config={mockConfig}
-          session={sessionConfig}
-          onError={onError}
-        >
+  describe('setup (sessions flow)', () => {
+    test('creates the session, registers listeners and resolves checkout', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
           <TestConsumer />
         </AdyenCheckout>
       );
+
+      fireEvent.press(getByTestId('setup-btn'));
 
       await waitFor(() => {
         expect(mockCreateSession).toHaveBeenCalledWith(
-          sessionConfig,
+          { id: 'session_123', sessionData: 'session_data' },
           mockConfig
         );
       });
-    });
 
-    test('should call onError when session creation fails', async () => {
-      const sessionConfig = { id: 'session_123', sessionData: 'test_data' };
-      mockCreateSession.mockRejectedValue(new Error('Session failed'));
-
-      render(
-        <AdyenCheckout
-          config={mockConfig}
-          session={sessionConfig}
-          onError={onError}
-        >
-          <TestConsumer />
-        </AdyenCheckout>
-      );
+      expect(mockAssignCompletionHandler).toHaveBeenCalled();
+      expect(mockAssignErrorHandler).toHaveBeenCalled();
 
       await waitFor(() => {
-        expect(onError).toHaveBeenCalledWith(
-          expect.objectContaining({
-            message: expect.stringContaining('Session failed'),
-            errorCode: 'sessionError',
-          }),
-          expect.anything()
-        );
+        expect(getByTestId('checkout-status').props.children).toBe('ready');
       });
+      expect(getByTestId('pm-count').props.children).toBe(2);
     });
+  });
 
-    test('should create session even if paymentMethods provided', async () => {
-      const sessionConfig = { id: 'session_123', sessionData: 'test_data' };
-      const sessionResponse = {
-        id: 'session_123',
-        sessionData: 'response_data',
-        paymentMethods: mockPaymentMethods,
-      };
-      mockCreateSession.mockResolvedValue(sessionResponse);
-
-      render(
-        <AdyenCheckout
-          config={mockConfig}
-          paymentMethods={mockPaymentMethods}
-          session={sessionConfig}
-          onError={onError}
-        >
+  describe('setupAdvanced (advanced flow)', () => {
+    test('sets up the context, registers listeners and resolves checkout', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
           <TestConsumer />
         </AdyenCheckout>
       );
 
+      fireEvent.press(getByTestId('setup-advanced-btn'));
+
       await waitFor(() => {
-        // Session is created regardless of paymentMethods prop
+        expect(mockSetup).toHaveBeenCalledWith(mockPaymentMethods, mockConfig);
+      });
+
+      expect(mockAssignSubmitHandler).toHaveBeenCalled();
+      expect(mockAssignAdditionalDetailsHandler).toHaveBeenCalled();
+      expect(mockAssignAdvancedErrorHandler).toHaveBeenCalled();
+
+      await waitFor(() => {
+        expect(getByTestId('checkout-status').props.children).toBe('ready');
+      });
+      expect(getByTestId('pm-count').props.children).toBe(2);
+    });
+  });
+
+  describe('callback handler wiring', () => {
+    test('session onComplete receives a result handler exposing completion', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignCompletionHandler).toHaveBeenCalled();
+      });
+
+      // Simulate the native completion event flowing back to JS.
+      const nativeCompletionHandler =
+        mockAssignCompletionHandler.mock.calls[0][0];
+      const sessionResult = { resultCode: 'Authorised' };
+      nativeCompletionHandler(sessionResult);
+
+      expect(sessionCallbacks.onComplete).toHaveBeenCalledTimes(1);
+      const [resultArg, handlerArg] = sessionCallbacks.onComplete.mock.calls[0];
+      expect(resultArg).toBe(sessionResult);
+      expect(typeof handlerArg.completion).toBe('function');
+      // Completion-only handler must not leak action/retry at runtime.
+      expect('action' in handlerArg).toBe(false);
+      expect('retry' in handlerArg).toBe(false);
+    });
+
+    test('session onError receives a completion-only handler', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignErrorHandler).toHaveBeenCalled();
+      });
+
+      const nativeErrorHandler = mockAssignErrorHandler.mock.calls[0][0];
+      const sessionError = { message: 'boom', errorCode: 'unknown' };
+      nativeErrorHandler(sessionError);
+
+      expect(sessionCallbacks.onError).toHaveBeenCalledTimes(1);
+      const [errorArg, handlerArg] = sessionCallbacks.onError.mock.calls[0];
+      expect(errorArg).toBe(sessionError);
+      expect(typeof handlerArg.completion).toBe('function');
+      expect('action' in handlerArg).toBe(false);
+      expect('retry' in handlerArg).toBe(false);
+    });
+
+    test('advanced onSubmit receives a handler exposing action, completion and retry', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-advanced-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignSubmitHandler).toHaveBeenCalled();
+      });
+
+      // Simulate the native submit event flowing back to JS.
+      const nativeSubmitHandler = mockAssignSubmitHandler.mock.calls[0][0];
+      nativeSubmitHandler({
+        paymentData: { paymentMethod: { type: 'scheme' } },
+      });
+
+      expect(advancedCallbacks.onSubmit).toHaveBeenCalledTimes(1);
+      const [dataArg, handlerArg] = advancedCallbacks.onSubmit.mock.calls[0];
+      // returnUrl is injected from the provider configuration.
+      expect(dataArg.returnUrl).toBe('myapp://checkout');
+      expect(typeof handlerArg.action).toBe('function');
+      expect(typeof handlerArg.completion).toBe('function');
+      expect(typeof handlerArg.retry).toBe('function');
+    });
+
+    test('advanced onAdditionalDetails receives a completion-only handler', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-advanced-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignAdditionalDetailsHandler).toHaveBeenCalled();
+      });
+
+      // Simulate the native additional-details event flowing back to JS.
+      const nativeAdditionalDetailsHandler =
+        mockAssignAdditionalDetailsHandler.mock.calls[0][0];
+      const detailsData = { data: { details: {} } };
+      nativeAdditionalDetailsHandler(detailsData);
+
+      expect(advancedCallbacks.onAdditionalDetails).toHaveBeenCalledTimes(1);
+      const [dataArg, handlerArg] =
+        advancedCallbacks.onAdditionalDetails.mock.calls[0];
+      expect(dataArg).toBe(detailsData);
+      expect(typeof handlerArg.completion).toBe('function');
+      // Completion-only handler must not leak action/retry at runtime.
+      expect('action' in handlerArg).toBe(false);
+      expect('retry' in handlerArg).toBe(false);
+    });
+
+    test('advanced onError receives a completion-only handler', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-advanced-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignAdvancedErrorHandler).toHaveBeenCalled();
+      });
+
+      const nativeAdvancedErrorHandler =
+        mockAssignAdvancedErrorHandler.mock.calls[0][0];
+      const advancedError = { message: 'nope', errorCode: 'unknown' };
+      nativeAdvancedErrorHandler(advancedError);
+
+      expect(advancedCallbacks.onError).toHaveBeenCalledTimes(1);
+      const [errorArg, handlerArg] = advancedCallbacks.onError.mock.calls[0];
+      expect(errorArg).toBe(advancedError);
+      expect(typeof handlerArg.completion).toBe('function');
+      expect('action' in handlerArg).toBe(false);
+      expect('retry' in handlerArg).toBe(false);
+    });
+  });
+
+  describe('Apple Pay handler wiring', () => {
+    test('setup (sessions flow) subscribes to all Apple Pay events', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-btn'));
+
+      await waitFor(() => {
         expect(mockCreateSession).toHaveBeenCalled();
       });
+
+      expect(mockAssignApplePayAuthorizationHandler).toHaveBeenCalled();
+      expect(mockAssignApplePayShippingContactHandler).toHaveBeenCalled();
+      expect(mockAssignApplePayShippingMethodHandler).toHaveBeenCalled();
+      expect(mockAssignApplePayCouponCodeHandler).toHaveBeenCalled();
     });
-  });
 
-  describe('start function', () => {
-    test('should call getWrapper and open when start is called', async () => {
-      const { getWrapper } = require('../../modules/base/getWrapper');
+    test('setupAdvanced subscribes to all Apple Pay events', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
 
+      fireEvent.press(getByTestId('setup-advanced-btn'));
+
+      await waitFor(() => {
+        expect(mockSetup).toHaveBeenCalled();
+      });
+
+      expect(mockAssignApplePayAuthorizationHandler).toHaveBeenCalled();
+      expect(mockAssignApplePayShippingContactHandler).toHaveBeenCalled();
+      expect(mockAssignApplePayShippingMethodHandler).toHaveBeenCalled();
+      expect(mockAssignApplePayCouponCodeHandler).toHaveBeenCalled();
+    });
+
+    test('authorization auto-resolves success when no merchant callback', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignApplePayAuthorizationHandler).toHaveBeenCalled();
+      });
+
+      const nativeAuthHandler =
+        mockAssignApplePayAuthorizationHandler.mock.calls[0][0];
+      nativeAuthHandler({ billingContact: { emailAddress: 'a@b.com' } });
+
+      expect(mockProvideAuthorizationResult).toHaveBeenCalledWith({
+        status: 'success',
+      });
+    });
+
+    test('authorization forwards merchant reject with errors', async () => {
+      const onAuthorize = jest.fn((_payment: any, actions: any) =>
+        actions.reject([{ type: 'billingAddress', message: 'Bad' }])
+      );
       const { getByTestId } = render(
         <AdyenCheckout
-          config={mockConfig}
-          paymentMethods={mockPaymentMethods}
-          onError={onError}
-          onSubmit={onSubmit}
+          configuration={{ ...mockConfig, applepay: { onAuthorize } }}
         >
           <TestConsumer />
         </AdyenCheckout>
       );
 
-      // Simulate calling start through context
-      const startBtn = getByTestId('start-btn');
-      fireEvent.press(startBtn);
+      fireEvent.press(getByTestId('setup-btn'));
 
-      expect(getWrapper).toHaveBeenCalledWith('dropin', mockPaymentMethods);
-      expect(mockOpen).toHaveBeenCalledWith(mockPaymentMethods, mockConfig);
+      await waitFor(() => {
+        expect(mockAssignApplePayAuthorizationHandler).toHaveBeenCalled();
+      });
+
+      const payment = { billingContact: { emailAddress: 'a@b.com' } };
+      const nativeAuthHandler =
+        mockAssignApplePayAuthorizationHandler.mock.calls[0][0];
+      nativeAuthHandler(payment);
+
+      expect(onAuthorize).toHaveBeenCalledWith(payment, expect.any(Object));
+      expect(mockProvideAuthorizationResult).toHaveBeenCalledWith({
+        status: 'failure',
+        errors: [{ type: 'billingAddress', message: 'Bad' }],
+      });
     });
 
-    test('should throw error if paymentMethods undefined when start called', () => {
+    test('shipping contact auto-resolves with {} when no merchant callback', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout config={mockConfig} onError={onError}>
+        <AdyenCheckout configuration={mockConfig}>
           <TestConsumer />
         </AdyenCheckout>
       );
 
-      // isReady is false, so start button won't be shown
-      expect(() => getByTestId('start-btn')).toThrow();
+      fireEvent.press(getByTestId('setup-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignApplePayShippingContactHandler).toHaveBeenCalled();
+      });
+
+      const nativeContactHandler =
+        mockAssignApplePayShippingContactHandler.mock.calls[0][0];
+      nativeContactHandler({ emailAddress: 'a@b.com' });
+
+      expect(mockProvideShippingContactUpdate).toHaveBeenCalledWith({});
+    });
+
+    test('coupon code forwards merchant resolve payload', async () => {
+      const onCouponCodeChange = jest.fn((_code: string, resolve: any) =>
+        resolve({ errors: [{ type: 'couponCode', message: 'Invalid' }] })
+      );
+      const { getByTestId } = render(
+        <AdyenCheckout
+          configuration={{ ...mockConfig, applepay: { onCouponCodeChange } }}
+        >
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-btn'));
+
+      await waitFor(() => {
+        expect(mockAssignApplePayCouponCodeHandler).toHaveBeenCalled();
+      });
+
+      const nativeCouponHandler =
+        mockAssignApplePayCouponCodeHandler.mock.calls[0][0];
+      nativeCouponHandler({ couponCode: 'SAVE10' });
+
+      expect(onCouponCodeChange).toHaveBeenCalledWith(
+        'SAVE10',
+        expect.any(Function)
+      );
+      expect(mockProvideCouponCodeUpdate).toHaveBeenCalledWith({
+        errors: [{ type: 'couponCode', message: 'Invalid' }],
+      });
     });
   });
 
-  describe('props', () => {
-    test('should accept all optional callbacks', () => {
-      expect(() =>
-        render(
-          <AdyenCheckout
-            config={mockConfig}
-            paymentMethods={mockPaymentMethods}
-            onError={onError}
-            onSubmit={onSubmit}
-            onComplete={onComplete}
-            onAdditionalDetails={onAdditionalDetails}
-          >
-            <text>Test</text>
-          </AdyenCheckout>
-        )
-      ).not.toThrow();
+  describe('re-setup cleanup', () => {
+    test('does not call cleanup on the first setup', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-btn'));
+
+      await waitFor(() => {
+        expect(getByTestId('checkout-status').props.children).toBe('ready');
+      });
+
+      expect(mockCleanup).not.toHaveBeenCalled();
     });
 
-    test('should work with only required props', () => {
-      expect(() =>
-        render(
-          <AdyenCheckout config={mockConfig} onError={onError}>
-            <text>Test</text>
-          </AdyenCheckout>
-        )
-      ).not.toThrow();
+    test('calls cleanup before creating a new context on re-setup', async () => {
+      const { getByTestId } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      fireEvent.press(getByTestId('setup-btn'));
+      await waitFor(() => {
+        expect(getByTestId('checkout-status').props.children).toBe('ready');
+      });
+
+      fireEvent.press(getByTestId('setup-advanced-btn'));
+      await waitFor(() => {
+        expect(mockSetup).toHaveBeenCalled();
+      });
+
+      expect(mockCleanup).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('lifecycle', () => {
+    test('cleans up native listeners and context on unmount', () => {
+      const { unmount } = render(
+        <AdyenCheckout configuration={mockConfig}>
+          <TestConsumer />
+        </AdyenCheckout>
+      );
+
+      unmount();
+
+      expect(mockRemoveAllListeners).toHaveBeenCalled();
+      expect(mockCleanup).toHaveBeenCalled();
     });
   });
 });

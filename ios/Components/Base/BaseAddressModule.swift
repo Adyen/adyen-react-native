@@ -7,7 +7,12 @@
 import Adyen
 
 internal class BaseAddressModule: BaseActionModule {
-    internal var lookupHandler: (([LookupAddressModel]) -> Void)?
+
+    /// Invoked with the address candidates returned by JS for a search term.
+    /// Populated by the v6 card configuration's address-lookup closure (see components milestone).
+    internal var lookupHandler: (([AddressLookupResult]) -> Void)?
+
+    /// Invoked with the completed address (or error) selected by the shopper via JS.
     internal var lookupCompletionHandler: ((Result<PostalAddress, any Error>) -> Void)?
 
     override func supportedEvents() -> [String]! {
@@ -16,41 +21,40 @@ internal class BaseAddressModule: BaseActionModule {
 
     @objc
     func update(_ results: NSArray) {
-        let addressModels: [LookupAddressModel] = results
-            .compactMap { $0 as? NSDictionary }
-            .compactMap { try? $0.decode() }
+        guard let lookupHandler else { return }
 
-        ensureMainThread { [weak self] in
-            self?.lookupHandler?(addressModels)
+        let addressResults: [AddressLookupResult] = results
+            .compactMap { $0 as? NSDictionary }
+            .map { dictionary in
+                let identifier = dictionary[AddressKey.id] as? String ?? ""
+                let addressDictionary = dictionary[AddressKey.address] as? [String: Any] ?? [:]
+                return AddressLookupResult(identifier: identifier,
+                                           postalAddress: Self.postalAddress(from: addressDictionary))
+            }
+        DispatchQueue.main.async {
+            lookupHandler(addressResults)
         }
     }
 
     @objc
     func confirm(_ success: NSNumber, address: NSDictionary) {
-        if !success.boolValue, let message = address[Keys.message] as? String {
-            let error = AddressError(message: message)
-            return ensureMainThread { [weak self] in
-                self?.lookupCompletionHandler?(.failure(error))
+        guard let lookupCompletionHandler else { return }
+
+        DispatchQueue.main.async {
+            if !success.boolValue, let message = address[Keys.message] as? String {
+                return lookupCompletionHandler(.failure(AddressError(message: message)))
             }
-        }
 
-        let result: Result<PostalAddress, Error>
-
-        do {
-            let addressModel: LookupAddressModel = try address.decode()
-            result = .success(addressModel.postalAddress)
-        } catch {
-            result = .failure(error)
-        }
-
-        ensureMainThread { [weak self] in
-            self?.lookupCompletionHandler?(result)
+            let addressDictionary = address[AddressKey.address] as? [String: Any] ?? [:]
+            lookupCompletionHandler(.success(Self.postalAddress(from: addressDictionary)))
         }
     }
 
     override func cleanUp() {
-        lookupHandler = nil
-        lookupCompletionHandler = nil
+        ensureMainThread { [weak self] in
+            self?.lookupHandler = nil
+            self?.lookupCompletionHandler = nil
+        }
         super.cleanUp()
     }
 
@@ -61,20 +65,27 @@ internal class BaseAddressModule: BaseActionModule {
     internal func sendAddressConfirm(json: [String: Any]) {
         sendEvent(event: .confirmAddress, body: json)
     }
-}
 
-extension BaseAddressModule: AddressLookupProvider {
-    func lookUp(searchTerm: String, resultHandler: @escaping ([LookupAddressModel]) -> Void) {
-        lookupHandler = resultHandler
-        sendAddressUpdate(searchTerm: searchTerm)
+    private static func postalAddress(from dictionary: [String: Any]) -> PostalAddress {
+        PostalAddress(
+            city: dictionary[AddressKey.city] as? String,
+            country: dictionary[AddressKey.country] as? String,
+            houseNumberOrName: dictionary[AddressKey.houseNumberOrName] as? String,
+            postalCode: dictionary[AddressKey.postalCode] as? String,
+            stateOrProvince: dictionary[AddressKey.stateOrProvince] as? String,
+            street: dictionary[AddressKey.street] as? String
+        )
     }
 
-    func complete(
-        incompleteAddress: LookupAddressModel,
-        resultHandler: @escaping (Result<PostalAddress, any Error>) -> Void
-    ) {
-        lookupCompletionHandler = resultHandler
-        sendAddressConfirm(json: incompleteAddress.jsonObject)
+    private enum AddressKey {
+        static let id = "id"
+        static let address = "address"
+        static let city = "city"
+        static let country = "country"
+        static let houseNumberOrName = "houseNumberOrName"
+        static let postalCode = "postalCode"
+        static let stateOrProvince = "stateOrProvince"
+        static let street = "street"
     }
 }
 

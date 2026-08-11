@@ -4,14 +4,15 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
+import Foundation
+
 import Adyen
 @testable import adyen_react_native
-import Foundation
 import XCTest
 
 final class DropInConfigurationParserTests: XCTestCase {
 
-    func test_initialization_usesDefaultValues_withNewDictionary() {
+    func test_initialization_usesDefaultValues_withNewDictionary() throws {
         // GIVEN
         let configDict = NSDictionary()
         
@@ -22,7 +23,7 @@ final class DropInConfigurationParserTests: XCTestCase {
         XCTAssertTrue(sut.showPreselectedStoredPaymentMethod)
     }
 
-    func test_initialization_appliesProvidedSettings_withFullConfiguration() {
+    func test_initialization_appliesProvidedSettings_withFullConfiguration() throws {
         // GIVEN
         let configDict: NSDictionary = [
             "showPreselectedStoredPaymentMethod": false,
@@ -46,7 +47,7 @@ final class DropInConfigurationParserTests: XCTestCase {
         XCTAssertTrue(sut.configuration.paymentMethodsList.allowDisablingStoredPaymentMethods)
     }
 
-    func test_initialization_usesDefaultValues_withEmptySubDictionary() {
+    func test_initialization_usesDefaultValues_withEmptySubDictionary() throws {
         // GIVEN
         let configDict: NSDictionary = ["dropin": [:]]
 
@@ -57,7 +58,7 @@ final class DropInConfigurationParserTests: XCTestCase {
         XCTAssertTrue(sut.showPreselectedStoredPaymentMethod)
     }
 
-    func test_showPreselectedStoredPaymentMethod_returnsFalse_whenExplicitlySet() {
+    func test_showPreselectedStoredPaymentMethod_returnsFalse_whenExplicitlySet() throws {
         // GIVEN
         let configDict: NSDictionary = ["dropin": ["showPreselectedStoredPaymentMethod": false]]
         

@@ -206,6 +206,21 @@ export interface PaymentDetailsData {
 }
 
 /**
+ * Result of a merchant `/payments` or `/payments/details` call, forwarded to the native bridge to
+ * resume a Drop-in advanced-flow submission.
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments API Explorer /payments response}
+ */
+export interface PaymentResult {
+  /** The result code indicating the payment outcome. */
+  resultCode?: ResultCode;
+  /** An action to be handled by the component when the payment requires additional steps. */
+  action?: PaymentAction;
+  /** The reason a payment was refused, optionally surfaced to the shopper before a retry. */
+  refusalReason?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Session configuration
  */
 export interface SessionConfiguration {
@@ -273,34 +288,106 @@ export type SessionsResult = {
 };
 
 /**
- * Options for dismissing the payment component.
+ * Handler passed to the advanced-flow `onSubmit` callback. Supports the full set
+ * of outcomes: forwarding an action, finishing with a result, or letting the
+ * shopper retry.
  */
-export interface HideOption {
-  /** Alert message after dismiss. Used for Android DropIn and Components only */
-  message?: string;
+export interface PaymentSubmitResultHandler {
+  /**
+   * Forward a payment action to the SDK for handling (3DS2, redirect, etc.).
+   * @param action - The payment action received from the `/payments` response.
+   */
+  action(action: PaymentAction): void;
+
+  /**
+   * Signal that the payment flow reached a final result.
+   * @param resultCode - The result code from the `/payments` or `/payments/details` response
+   *                      (e.g. `'Authorised'`, `'Refused'`, `'Error'`).
+   */
+  completion(resultCode: string): void;
+
+  /**
+   * Let the shopper retry the payment, optionally showing a message.
+   * @param message - An optional reason shown to the shopper before retry.
+   */
+  retry(message?: string): void;
 }
 
 /**
- * Universal interface for an Adyen Native module.
+ * Handler passed to the advanced-flow `onAdditionalDetails` callback. The SDK has
+ * already resolved the action, so the merchant only forwards the final result.
  */
-export interface AdyenComponent {
+export interface PaymentAdditionalResultHandler {
   /**
-   * Dismiss the component from the screen.
-   * @param success - Indicates whether the component was dismissed successfully.
-   * @param option - Additional options for dismissing the component (optional).
+   * Signal that the payment flow reached a final result.
+   * @param resultCode - The result code from the `/payments/details` response.
    */
-  hide(success: boolean, option?: HideOption): void;
+  completion(resultCode: string): void;
 }
 
 /**
- * Describes an Adyen Component capable of handling payment actions.
+ * Handler passed to the session-flow and error callbacks. The SDK owns action and
+ * retry handling in these flows, so the merchant only forwards the final result.
  */
-export interface AdyenActionComponent extends AdyenComponent {
+export interface PaymentResultHandler {
   /**
-   * Handle a payment action received by the component.
-   * @param action - The payment action to be handled.
+   * Signal that the payment flow reached a final result.
+   * @param resultCode - The result code from the `/payments` or `/payments/details` response.
    */
-  handle(action: PaymentAction): void;
+  completion(resultCode: string): void;
+}
+
+/**
+ * Callbacks for the sessions flow, provided to `setup()`.
+ */
+export interface SessionCallbacks {
+  /**
+   * Invoked when the session reaches a final result.
+   * @param result - The session result payload.
+   * @param component - Handler for forwarding the final result.
+   */
+  onComplete(result: SessionsResult, component: PaymentResultHandler): void;
+
+  /**
+   * Invoked when the session fails with an error.
+   * @param error - The error describing the failure.
+   * @param component - Handler for forwarding the final result.
+   */
+  onError(error: AdyenError, component: PaymentResultHandler): void;
+}
+
+/**
+ * Callbacks for the advanced flow, provided to `setupAdvanced()`.
+ */
+export interface AdvancedCallbacks {
+  /**
+   * Invoked when the shopper submits a payment. Make the `/payments` call and
+   * forward the outcome through the handler.
+   * @param data - The payment method data to submit.
+   * @param component - Handler supporting action, completion and retry.
+   */
+  onSubmit(
+    data: PaymentMethodData,
+    component: PaymentSubmitResultHandler
+  ): void;
+
+  /**
+   * Invoked when a payment needs additional details. Make the `/payments/details`
+   * call and forward the outcome through the handler.
+   * @param data - The additional payment details.
+   * @param component - Handler supporting completion only.
+   */
+  onAdditionalDetails(
+    data: PaymentDetailsData,
+    component: PaymentAdditionalResultHandler
+  ): void;
+
+  /**
+   * Invoked when the payment fails with an error.
+   * @param error - The error describing the failure.
+   * @param component - Handler for forwarding the final result.
+   */
+  onError(error: AdyenError, component: PaymentResultHandler): void;
 }
 
 /**

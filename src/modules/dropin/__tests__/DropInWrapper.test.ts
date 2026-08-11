@@ -7,9 +7,10 @@ function createMockDropInModule() {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
     getConstants: jest.fn(() => ({ supportedEvents: [] })),
-    hide: jest.fn(),
+    action: jest.fn(),
+    completion: jest.fn(),
+    retry: jest.fn(),
     open: jest.fn(),
-    handle: jest.fn(),
     getReturnURL: jest
       .fn<() => Promise<string>>()
       .mockResolvedValue('myapp://checkout'),
@@ -163,12 +164,57 @@ describe('DropInWrapper', () => {
     });
   });
 
-  describe('inherited methods', () => {
-    test('handle should call native module handle', () => {
+  describe('start', () => {
+    test('should open native drop-in using the shared checkout payment methods and configuration', () => {
       const wrapper = new DropInWrapper(mockNativeModule);
-      const action = { type: 'redirect', paymentMethodType: 'ideal' };
-      wrapper.handle(action);
-      expect(mockNativeModule.handle).toHaveBeenCalledWith(action);
+      const paymentMethods = {
+        paymentMethods: [{ type: 'scheme', name: 'Card' }],
+      };
+      const checkout = {
+        paymentMethods,
+        isAvailable: jest.fn(),
+        requiresUserInteraction: jest.fn(),
+        submit: jest.fn(),
+      } as any;
+      const config = {
+        environment: 'test' as const,
+        clientKey: 'key',
+        countryCode: 'NL',
+        returnUrl: 'app://return',
+      };
+      wrapper.start(checkout, config);
+      expect(mockNativeModule.open).toHaveBeenCalledWith(
+        paymentMethods,
+        config
+      );
+    });
+
+    test('should not manage session state itself — payment methods come from the checkout', () => {
+      const wrapper = new DropInWrapper(mockNativeModule);
+      const paymentMethods = {
+        paymentMethods: [{ type: 'ideal', name: 'iDEAL' }],
+      };
+      const checkout = { paymentMethods } as any;
+      const config = {
+        environment: 'test' as const,
+        clientKey: 'key',
+        countryCode: 'NL',
+        returnUrl: 'app://return',
+      };
+      wrapper.start(checkout, config);
+      expect(mockNativeModule.open).toHaveBeenCalledWith(
+        checkout.paymentMethods,
+        config
+      );
+    });
+  });
+
+  describe('inherited methods', () => {
+    test('action should call native module action', () => {
+      const wrapper = new DropInWrapper(mockNativeModule);
+      const paymentAction = { type: 'redirect', paymentMethodType: 'ideal' };
+      wrapper.action(paymentAction);
+      expect(mockNativeModule.action).toHaveBeenCalledWith(paymentAction);
     });
 
     test('open should call native module open', () => {
@@ -189,10 +235,16 @@ describe('DropInWrapper', () => {
       );
     });
 
-    test('hide should call native module hide', () => {
+    test('completion should call native module completion', () => {
       const wrapper = new DropInWrapper(mockNativeModule);
-      wrapper.hide(true);
-      expect(mockNativeModule.hide).toHaveBeenCalledWith(true, { message: '' });
+      wrapper.completion('Authorised');
+      expect(mockNativeModule.completion).toHaveBeenCalledWith('Authorised');
+    });
+
+    test('retry should call native module retry', () => {
+      const wrapper = new DropInWrapper(mockNativeModule);
+      wrapper.retry('Try again');
+      expect(mockNativeModule.retry).toHaveBeenCalledWith('Try again');
     });
   });
 });

@@ -67,21 +67,35 @@ describe('PaymentComponentWrapper', () => {
     });
   });
 
-  describe('inherited hide', () => {
-    test('should inherit hide method from ModuleWrapper', () => {
+  describe('inherited completion', () => {
+    test('should inherit completion method from ModuleWrapper', () => {
       const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
-      wrapper.hide(true);
-      expect(mockNativeModule.hide).toHaveBeenCalledWith(true, { message: '' });
+      wrapper.completion('Authorised');
+      expect(mockNativeModule.completion).toHaveBeenCalledWith('Authorised');
     });
 
-    test('should pass message to hide', () => {
+    test('should pass result code to completion', () => {
       const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
-      wrapper.hide(false, { message: 'Error occurred' });
-      expect(mockNativeModule.hide).toHaveBeenCalledWith(false, {
-        message: 'Error occurred',
-      });
+      wrapper.completion('Error');
+      expect(mockNativeModule.completion).toHaveBeenCalledWith('Error');
+    });
+  });
+
+  describe('inherited retry', () => {
+    test('should inherit retry method from ModuleWrapper', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentWrapper(mockNativeModule);
+      wrapper.retry();
+      expect(mockNativeModule.retry).toHaveBeenCalledWith(undefined);
+    });
+
+    test('should pass message to retry', () => {
+      const mockNativeModule = createMockPaymentModule();
+      const wrapper = new TestPaymentWrapper(mockNativeModule);
+      wrapper.retry('Error occurred');
+      expect(mockNativeModule.retry).toHaveBeenCalledWith('Error occurred');
     });
   });
 
