@@ -40,16 +40,6 @@ public struct RootConfigurationParser {
         configuration[RootKeys.countryCode] as? String
     }
 
-    public var payment: Payment? {
-        guard let amount = self.amount,
-              let countryCode
-        else {
-            return nil
-        }
-
-        return Payment(amount: amount, countryCode: countryCode)
-    }
-
     public var shopperLocale: String? {
         configuration[RootKeys.locale] as? String
     }

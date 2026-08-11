@@ -22,7 +22,6 @@ final class BaseModuleTests: XCTestCase {
         sut = nil
         BaseModule.presenterStack.removeAll()
         BaseModule.currentModule = nil
-        BaseModule.session = nil
         BaseModule.topPresenterProvider = { UIViewController.topPresenter }
         super.tearDown()
     }

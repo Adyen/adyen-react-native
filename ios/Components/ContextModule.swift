@@ -109,10 +109,10 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
     }
 
     @objc
-    func createSession(_ sessionModelJSON: NSDictionary,
-                       configuration: NSDictionary,
-                       resolver: @escaping RCTPromiseResolveBlock,
-                       rejecter: @escaping RCTPromiseRejectBlock) {
+    func setup(_ sessionModelJSON: NSDictionary,
+               configuration: NSDictionary,
+               resolver: @escaping RCTPromiseResolveBlock,
+               rejecter: @escaping RCTPromiseRejectBlock) {
         guard let id = sessionModelJSON[Key.id] as? String,
               let sessionData = sessionModelJSON[Key.sessionData] as? String else {
             return rejecter("session", "Invalid session data", nil)
@@ -137,7 +137,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
                     return rejecter("session", "No payment methods available for the session", nil)
                 }
 
-                BaseModule.session = checkout
+                BaseModule.checkoutContext = checkout
                 BaseModule.sessionDelegate = self
 
                 let dto = SessionDTO(id: id, sessionData: sessionData, paymentMethods: paymentMethods)
@@ -153,10 +153,10 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
     /// React Native events consumed by the hook. The checkout context is stored on ``BaseModule``
     /// so downstream modules and headless ``submit(_:)`` can reuse it.
     @objc
-    func setup(_ paymentMethodsDict: NSDictionary,
-               configuration: NSDictionary,
-               resolver: @escaping RCTPromiseResolveBlock,
-               rejecter: @escaping RCTPromiseRejectBlock) {
+    func setupAdvanced(_ paymentMethodsDict: NSDictionary,
+                       configuration: NSDictionary,
+                       resolver: @escaping RCTPromiseResolveBlock,
+                       rejecter: @escaping RCTPromiseRejectBlock) {
         let parser = RootConfigurationParser(configuration: configuration)
         let paymentMethods: PaymentMethods
         do {
@@ -192,7 +192,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
                      rejecter _: @escaping RCTPromiseRejectBlock) {
         let typeString = type as String
         Task { @MainActor in
-            guard let checkout = BaseModule.session ?? BaseModule.checkoutContext,
+            guard let checkout = BaseModule.checkoutContext,
                   let paymentMethodType = PaymentMethodType(rawValue: typeString) else {
                 return resolver(false)
             }
@@ -217,7 +217,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
         let typeString = type as String
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard let checkout = BaseModule.session ?? BaseModule.checkoutContext else {
+            guard let checkout = BaseModule.checkoutContext else {
                 return rejecter("context", "Checkout context is not initialized", nil)
             }
             do {
@@ -234,7 +234,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
         let typeString = type as String
         Task { @MainActor [weak self] in
             guard let self,
-                  let checkout = BaseModule.session ?? BaseModule.checkoutContext else { return }
+                  let checkout = BaseModule.checkoutContext else { return }
             do {
                 let component = try self.resolveComponent(for: typeString, checkout: checkout)
                 component.submit()
@@ -327,7 +327,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
     override func sendError(error: any Error) {
         let errorToSend = checkErrorType(error)
         // Session errors surface on `failSession`; advanced-flow errors on `fail`.
-        let eventName: EventName = BaseModule.session != nil ? .failSession : .fail
+        let eventName: EventName = BaseModule.sessionDelegate != nil ? .failSession : .fail
         sendEvent(withName: eventName.rawValue, body: errorToSend.jsonObject)
     }
 

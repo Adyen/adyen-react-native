@@ -16,7 +16,7 @@ import UIKit
 @objc(AdyenComponentViewProxy)
 public final class AdyenComponentViewProxy: UIStackView {
 
-    private var controller: EmbeddedComponentDelegateProxy?
+    private var controller: ComponentProxy?
     private var componentViewController: UIViewController?
     private var type: String?
     private var configurationJSON: NSDictionary?

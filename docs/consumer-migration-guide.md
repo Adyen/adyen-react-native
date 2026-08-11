@@ -4,9 +4,9 @@
 
 `@adyen/react-native` 3.0.0-alpha.1 is built on **Adyen iOS SDK 6.0.0-alpha.1** and **Adyen Android SDK 6.0.0-alpha.1**. This is an alpha release intended for early testing and feedback.
 
-The TypeScript/JavaScript public API is **largely backward-compatible**. Most configuration property names (`holderNameRequired`, `addressVisibility`, `showStorePaymentField`, etc.) are unchanged -- native parsers translate the existing property names to the new v6 APIs internally. For most consumers, the TypeScript code changes are **minimal**.
+The v6 alpha introduces a **new public API** centered around `setup()` / `setupAdvanced()` and a `Checkout` object. Configuration and callbacks are now passed to these setup functions rather than as props on `<AdyenCheckout>`.
 
-The majority of required changes are in **native project configuration** (iOS deployment target, Kotlin version, redirect handling).
+The majority of required changes are in **native project configuration** (iOS deployment target, Kotlin version, redirect handling) and the **TypeScript integration pattern**.
 
 ---
 
@@ -43,40 +43,161 @@ The majority of required changes are in **native project configuration** (iOS de
 
 ## TypeScript API Changes
 
-### Preserved (No Changes Needed)
+### `<AdyenCheckout>` — No Configuration Prop
 
-The following APIs are fully backward-compatible -- no code changes required:
+In v5, configuration and callbacks were passed as props to `<AdyenCheckout>`. In v6, `<AdyenCheckout>` is a pure context provider with no props other than `children`:
 
-- All `Configuration` properties (`holderNameRequired`, `addressVisibility`, `showStorePaymentField`, `hideCvcStoredCard`, `hideCvc`, `kcpVisibility`, `socialSecurity`, `supported`, `installmentOptions`, etc.)
-- All component types (`AdyenCheckout`, `CardView`, `ApplePayButton`, `GooglePayButton`)
-- All module types (`AdyenDropIn`, `AdyenApplePay`, `AdyenGooglePay`, `AdyenInstant`, `AdyenAction`, `AdyenCSE`)
-- All event callbacks (`onSubmit`, `onAdditionalDetails`, `onComplete`, `onError`)
-- Session flow API (`SessionConfiguration`, `SessionsResult`)
-- All payment method types and data structures
-- Drop-In configuration (`showPreselectedStoredPaymentMethod`, `skipListWhenSinglePaymentMethod`, `title`)
-- Apple Pay and Google Pay configuration
-- 3D Secure 2 configuration
-- Address lookup callbacks (`onUpdateAddress`, `onConfirmAddress`)
-- `useAdyenCheckout` hook
+```tsx
+// Before (v5)
+<AdyenCheckout
+  config={configuration}
+  session={session}
+  paymentMethods={paymentMethods}
+  onSubmit={onSubmit}
+  onComplete={onComplete}
+  onError={onError}
+>
+  {children}
+</AdyenCheckout>
 
-### New Public API: `PaymentResultHandler`
+// After (v6)
+<AdyenCheckout>
+  {children}
+</AdyenCheckout>
+```
+
+### `useAdyenCheckout` Hook — Setup Functions
+
+The hook now returns `setup`, `setupAdvanced`, and `checkout` instead of `start`:
+
+```tsx
+const { setup, setupAdvanced, checkout } = useAdyenCheckout();
+```
+
+#### Session Flow
+
+```tsx
+const checkout = await setup(
+  session,         // SessionConfiguration: { id: string, sessionData: string }
+  configuration,   // Configuration object
+  {
+    onComplete: (result, component) => {
+      // Handle session completion
+      component.completion(resultCode);
+    },
+    onError: (error, component) => {
+      // Handle error
+    },
+  }
+);
+```
+
+#### Advanced Flow
+
+```tsx
+const checkout = await setupAdvanced(
+  paymentMethods,   // PaymentMethodsResponse from /paymentMethods API
+  configuration,    // Configuration object
+  {
+    onSubmit: async (data, component) => {
+      const result = await apiClient.payments(data);
+      if (result.action) {
+        component.action(result.action);
+      } else {
+        component.completion(result.resultCode);
+      }
+    },
+    onAdditionalDetails: async (data, component) => {
+      const result = await apiClient.paymentDetails(data);
+      component.completion(result.resultCode);
+    },
+    onError: (error, component) => {
+      // Handle error
+    },
+  }
+);
+```
+
+### `Checkout` Object
+
+Once `setup()` or `setupAdvanced()` resolves, you receive a `Checkout` object with headless APIs:
+
+```typescript
+// Check payment method availability
+const available = await checkout.isAvailable('googlepay');
+
+// Check if payment method needs UI
+const needsUI = await checkout.requiresUserInteraction('klarna');
+
+// Submit without UI (headless)
+checkout.submit('klarna');
+
+// Access payment methods
+const methods = checkout.paymentMethods;
+```
+
+### Drop-In
+
+Drop-in now uses `start(checkout)` instead of being launched via `start('dropin')`:
+
+```tsx
+// Before (v5)
+const { start } = useAdyenCheckout();
+start('dropin');
+
+// After (v6)
+import { AdyenDropIn } from '@adyen/react-native';
+AdyenDropIn.start(checkout);
+```
+
+### Embedded Components
+
+The new `<AdyenComponent>` replaces `CardView`, `ApplePayButton`, and `GooglePayButton`:
+
+```tsx
+// Before (v5)
+<CardView />
+<ApplePayButton />
+<GooglePayButton />
+
+// After (v6)
+<AdyenComponent checkout={checkout} type="scheme" />
+<AdyenComponent checkout={checkout} type="applepay" />
+<AdyenComponent checkout={checkout} type="googlepay" />
+```
+
+### `PaymentResultHandler` — Replaces `handle()` / `hide()`
 
 The old `AdyenComponent` and `AdyenActionComponent` interfaces (with `handle()` and `hide()`) have been replaced by a single `PaymentResultHandler` interface:
 
-- **`action(action: ActionData)`** -- Provide an action to the component (e.g., 3DS redirect). Replaces the old `handle(action)`.
-- **`completion(resultCode: string)`** -- Signal that the payment is complete with a result code. Replaces the old `hide(true)` / `hide(false)`.
-- **`retry(message?: string)`** -- Signal that the payment should be retried, optionally with an error message to display. This is a new concept replacing the error-case `hide(false, { message })` pattern.
+- **`action(action: ActionData)`** — Provide an action to the component (e.g., 3DS redirect). Replaces the old `handle(action)`.
+- **`completion(resultCode: string)`** — Signal that the payment is complete with a result code. Replaces the old `hide(true)` / `hide(false)`.
+- **`retry(message?: string)`** — Signal that the payment should be retried, optionally with an error message to display. This is a new concept replacing the error-case `hide(false, { message })` pattern.
 
-All payment modules (`AdyenDropIn`, `AdyenInstant`, `AdyenGooglePay`, `AdyenApplePay`, and embedded `CardView`) now expose `action()`, `completion()`, and `retry()` instead of `handle()` and `hide()`.
+### Removed Modules
 
-The `providePaymentResult()` and `provideAdditionalDetailsResult()` methods have been removed. Use the `action()`, `completion()`, and `retry()` methods directly in your `onSubmit` and `onAdditionalDetails` handlers.
+The following standalone modules have been removed and replaced by the `Checkout` headless APIs:
+
+| Removed Module | Replacement |
+|---|---|
+| `AdyenGooglePay` | `checkout.isAvailable('googlepay')` + `<AdyenComponent type="googlepay">` |
+| `AdyenApplePay` | `checkout.isAvailable('applepay')` + `<AdyenComponent type="applepay">` |
+| `AdyenInstant` | `checkout.requiresUserInteraction(type)` + `checkout.submit(type)` |
+
+### Configuration Object
+
+All `Configuration` properties remain unchanged — the same object shape is used, just passed to `setup()`/`setupAdvanced()` instead of `<AdyenCheckout>`:
+
+- All component-specific configs (`card`, `dropin`, `applepay`, `googlepay`, `threeDS2`, etc.)
+- All callback configs (`onUpdateAddress`, `onConfirmAddress`, `onBinValue`, `onBinLookup`, etc.)
+- Root configs (`environment`, `clientKey`, `amount`, `countryCode`, `locale`, `returnUrl`)
 
 ### Currently Unsupported Features (Alpha Limitations)
 
 These features exist in the TypeScript API with `TODO` markers but are **not functional** in this alpha release:
 
-- **Partial payments** -- `provideBalance`, `provideOrder`, `providePaymentMethods`, and `PartialPaymentConfiguration` (`onBalanceCheck`, `onOrderRequest`, `onOrderCancel`) are declared but not wired to native implementations.
-- **Stored payment method removal** -- `onDisableStoredPaymentMethod` and `showRemovePaymentMethodButton` in `DropInConfiguration` are declared but not functional.
+- **Partial payments** — `provideBalance`, `provideOrder`, `providePaymentMethods`, and `PartialPaymentConfiguration` (`onBalanceCheck`, `onOrderRequest`, `onOrderCancel`) are declared but not wired to native implementations.
+- **Stored payment method removal** — `onDisableStoredPaymentMethod` and `showRemovePaymentMethodButton` in `DropInConfiguration` are declared but not functional.
 
 If your app relies on either of these features, remove their usage for now or wait for the GA release.
 
@@ -155,13 +276,120 @@ No new ProGuard rules are needed. The SDK handles minification internally.
 
 ## Migration Steps
 
-1. **Update the SDK dependency** -- set `@adyen/react-native` to `3.0.0-alpha.1` in `package.json`.
-2. **Update iOS deployment target** -- set `platform :ios, '16.0'` in your `Podfile`.
-3. **Update Kotlin version** -- set `kotlinVersion = "2.3.21"` in `android/build.gradle` and pin the `kotlin-gradle-plugin` classpath to that version.
+1. **Update the SDK dependency** — set `@adyen/react-native` to `3.0.0-alpha.1` in `package.json`.
+2. **Update iOS deployment target** — set `platform :ios, '16.0'` in your `Podfile`.
+3. **Update Kotlin version** — set `kotlinVersion = "2.3.21"` in `android/build.gradle` and pin the `kotlin-gradle-plugin` classpath to that version.
 4. **Run `pod install`** in your `ios/` directory to fetch the new Adyen 6.0.0-alpha.1 pods.
-5. **Update Swift AppDelegate redirect handling** (if not using the Expo plugin) -- change the import to `adyen_react_native` and the call to `ADYRedirectComponent.applicationDidOpen(url)`.
-6. **Remove unsupported feature usage** -- if you use partial payments or stored payment method removal, remove or guard that code.
-7. **Build and test** on both platforms.
+5. **Update Swift AppDelegate redirect handling** (if not using the Expo plugin) — change the import to `adyen_react_native` and the call to `ADYRedirectComponent.applicationDidOpen(url)`.
+6. **Refactor `<AdyenCheckout>` usage** — remove all props; move configuration and callbacks into `setup()` / `setupAdvanced()` calls.
+7. **Replace `start('type')` with the new API** — use `AdyenDropIn.start(checkout)` for Drop-In, and `<AdyenComponent checkout={checkout} type="..." />` for embedded components.
+8. **Replace `handle()`/`hide()` with `action()`/`completion()`/`retry()`** in your payment result handling.
+9. **Replace per-method modules** — remove `AdyenGooglePay`, `AdyenApplePay`, `AdyenInstant` usage; use `Checkout` headless APIs instead.
+10. **Remove unsupported feature usage** — if you use partial payments or stored payment method removal, remove or guard that code.
+11. **Build and test** on both platforms.
+
+---
+
+## Complete Example: Session Flow
+
+```tsx
+import { AdyenCheckout, AdyenDropIn, useAdyenCheckout } from '@adyen/react-native';
+import type { SessionConfiguration, Configuration, SessionCallbacks } from '@adyen/react-native';
+
+const CheckoutContent = ({ session, config, callbacks }) => {
+  const { setup, checkout } = useAdyenCheckout();
+
+  useEffect(() => {
+    setup(session, config, callbacks);
+  }, []);
+
+  if (!checkout) return <ActivityIndicator />;
+
+  return <Button title="Drop-in" onPress={() => AdyenDropIn.start(checkout)} />;
+};
+
+const App = () => {
+  const config: Configuration = {
+    environment: 'test',
+    clientKey: '{YOUR_CLIENT_KEY}',
+    countryCode: 'NL',
+    amount: { currency: 'EUR', value: 9800 },
+    returnUrl: 'myapp://adyencheckout',
+  };
+
+  const callbacks: SessionCallbacks = {
+    onComplete: (result, component) => {
+      component.completion(result.resultCode);
+    },
+    onError: (error, component) => {
+      console.error(error);
+    },
+  };
+
+  return (
+    <AdyenCheckout>
+      <CheckoutContent session={session} config={config} callbacks={callbacks} />
+    </AdyenCheckout>
+  );
+};
+```
+
+## Complete Example: Advanced Flow
+
+```tsx
+import { AdyenCheckout, AdyenComponent, useAdyenCheckout } from '@adyen/react-native';
+import type { Configuration, AdvancedCallbacks, PaymentMethodsResponse } from '@adyen/react-native';
+
+const CheckoutContent = ({ paymentMethods, config, callbacks }) => {
+  const { setupAdvanced, checkout } = useAdyenCheckout();
+
+  useEffect(() => {
+    setupAdvanced(paymentMethods, config, callbacks);
+  }, []);
+
+  if (!checkout) return <ActivityIndicator />;
+
+  return <AdyenComponent checkout={checkout} type="scheme" />;
+};
+
+const App = () => {
+  const config: Configuration = {
+    environment: 'test',
+    clientKey: '{YOUR_CLIENT_KEY}',
+    countryCode: 'NL',
+    amount: { currency: 'EUR', value: 9800 },
+    returnUrl: 'myapp://adyencheckout',
+  };
+
+  const callbacks: AdvancedCallbacks = {
+    onSubmit: async (data, component) => {
+      const result = await myApiClient.payments(data);
+      if (result.action) {
+        component.action(result.action);
+      } else {
+        component.completion(result.resultCode);
+      }
+    },
+    onAdditionalDetails: async (data, component) => {
+      const result = await myApiClient.paymentDetails(data);
+      component.completion(result.resultCode);
+    },
+    onError: (error, component) => {
+      console.error(error);
+    },
+  };
+
+  return (
+    <AdyenCheckout>
+      <CheckoutContent
+        paymentMethods={paymentMethods}
+        config={config}
+        callbacks={callbacks}
+      />
+    </AdyenCheckout>
+  );
+};
+```
 
 ---
 
@@ -172,6 +400,11 @@ No new ProGuard rules are needed. The SDK handles minification internally.
 | iOS minimum deployment target raised to 16.0 | Apps targeting < iOS 16 will fail to build | Update `Podfile` to `platform :ios, '16.0'` |
 | Kotlin 2.3.21 required | Android build will fail with older Kotlin | Update `kotlinVersion` in `android/build.gradle` |
 | Swift redirect API changed | iOS redirect handling in AppDelegate.swift | Change import to `adyen_react_native` and method to `ADYRedirectComponent.applicationDidOpen(url)` |
+| `<AdyenCheckout>` no longer accepts props | Config/callbacks must move to setup functions | Use `setup()` / `setupAdvanced()` from `useAdyenCheckout` |
+| `start('type')` removed | Drop-in and component launch changed | Use `AdyenDropIn.start(checkout)` and `<AdyenComponent>` |
+| `handle()`/`hide()` removed | Payment result handling changed | Use `action()`/`completion()`/`retry()` |
+| `AdyenGooglePay`, `AdyenApplePay`, `AdyenInstant` removed | Per-method modules gone | Use `Checkout` headless APIs |
+| `CardView`, `ApplePayButton`, `GooglePayButton` removed | Per-method views gone | Use `<AdyenComponent checkout={checkout} type="...">` |
 | Partial payments not functional | Apps using partial payment flow | Remove usage or wait for GA release |
 | Stored payment method removal not functional | Apps using stored payment removal UI | Remove usage or wait for GA release |
 
@@ -198,4 +431,4 @@ No new ProGuard rules are needed. The SDK handles minification internally.
 ### General
 
 - **TypeScript type errors after upgrade**
-  The public API is preserved, so type errors are unlikely. If you encounter any, check that you are not referencing internal types that may have changed. The exported types from `@adyen/react-native` remain stable.
+  Check that you have updated all `<AdyenCheckout>` usage to remove props and moved configuration to `setup()` / `setupAdvanced()`. Verify that `handle()` / `hide()` calls have been replaced with `action()` / `completion()` / `retry()`.

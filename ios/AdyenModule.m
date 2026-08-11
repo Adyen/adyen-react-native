@@ -10,8 +10,7 @@
 
 @interface RCT_EXTERN_MODULE(AdyenDropIn, NSObject)
 
-RCT_EXTERN_METHOD(open:(nonnull NSDictionary *)paymentMethods
-                  configuration:(nonnull NSDictionary *)configuration)
+RCT_EXTERN_METHOD(start:(nonnull NSDictionary *)paymentMethods)
 
 RCT_EXTERN_METHOD(action:(nonnull NSDictionary *)actionJson)
 
@@ -84,12 +83,12 @@ RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
 
 @interface RCT_EXTERN_MODULE(AdyenContext, NSObject)
 
-RCT_EXTERN_METHOD(createSession:(NSDictionary *)sessionModelJSON
+RCT_EXTERN_METHOD(setup:(NSDictionary *)sessionModelJSON
                   configuration:(NSDictionary *)configurationJSON
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(setup:(NSDictionary *)paymentMethodsDict
+RCT_EXTERN_METHOD(setupAdvanced:(NSDictionary *)paymentMethodsDict
                   configuration:(NSDictionary *)configurationJSON
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)

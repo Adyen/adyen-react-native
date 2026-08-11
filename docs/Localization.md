@@ -6,7 +6,7 @@ Titles of payment methods are fetched from the Adyen API and localized according
 
 ## Enforcing specific localization
 
-Provide a specific locale to `configuration.locale` for `AdyenCheckout`. 
+Provide a specific `locale` in the `Configuration` object passed to `setup()` or `setupAdvanced()`.
 
 > [!IMPORTANT]
 > For Session flow `locale` will match value provided by your backend via [shopperLocale](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) parameter.

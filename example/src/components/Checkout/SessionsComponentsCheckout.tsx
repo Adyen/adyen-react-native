@@ -7,6 +7,7 @@ import {
 } from '@adyen/react-native';
 import type {
   AdyenError,
+  Configuration,
   PaymentResultHandler,
   SessionCallbacks,
   SessionsResult,
@@ -24,11 +25,13 @@ import { ENVIRONMENT } from '../../Configuration';
 
 interface SessionsComponentsContentProps {
   session: SessionConfiguration;
+  configuration: Configuration;
   callbacks: SessionCallbacks;
 }
 
 const SessionsComponentsContent = ({
   session,
+  configuration,
   callbacks,
 }: SessionsComponentsContentProps) => {
   const { setup, checkout } = useAdyenCheckout();
@@ -40,10 +43,10 @@ const SessionsComponentsContent = ({
       return;
     }
     started.current = true;
-    setup(session.id, session.sessionData, callbacks).catch((e) =>
+    setup(session, configuration, callbacks).catch((e) =>
       setSetupError(String(e))
     );
-  }, [setup, session, callbacks]);
+  }, [setup, session, configuration, callbacks]);
 
   if (setupError) {
     return (
@@ -155,8 +158,12 @@ const SessionsComponentsCheckout = () => {
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout configuration={config}>
-        <SessionsComponentsContent session={session} callbacks={callbacks} />
+      <AdyenCheckout>
+        <SessionsComponentsContent
+          session={session}
+          configuration={config}
+          callbacks={callbacks}
+        />
       </AdyenCheckout>
     </View>
   );

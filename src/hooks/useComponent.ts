@@ -11,8 +11,8 @@ export interface AdyenComponentContextType {
   subscribe: (viewId: string) => void;
   /** Unsubscribe an embedded view from MessageBus events by its viewId (reactTag) */
   unsubscribe: (viewId: string) => void;
-  /** Configuration provided to `<AdyenCheckout>`, forwarded to the native view. */
-  configuration: Configuration;
+  /** Configuration set by `setup()`/`setupAdvanced()`, forwarded to the native view. */
+  configuration: Configuration | null;
 }
 
 export const AdyenComponentContext =

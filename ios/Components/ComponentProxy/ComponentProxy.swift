@@ -16,7 +16,7 @@ import UIKit
 /// itself so events are emitted through ``ComponentModule`` (viewId-tagged) rather than the
 /// untagged ``ContextModule`` events; the session flow keeps ContextModule's session callbacks.
 @MainActor
-internal final class EmbeddedComponentDelegateProxy {
+internal final class ComponentProxy {
 
     private enum Keys {
         static let viewId = "viewId"
@@ -44,7 +44,7 @@ internal final class EmbeddedComponentDelegateProxy {
     /// through ``ComponentModule``.
     @MainActor
     func makeViewController(type: String, configuration _: NSDictionary) async throws -> UIViewController? {
-        guard let checkout = BaseModule.session ?? BaseModule.checkoutContext else {
+        guard let checkout = BaseModule.checkoutContext else {
             throw ModuleException.componentNotRegistered(viewId)
         }
         self.checkout = checkout
@@ -156,7 +156,7 @@ internal final class EmbeddedComponentDelegateProxy {
 
     func sendError(error: Error) {
         guard let bus else { return }
-        if BaseModule.session != nil {
+        if BaseModule.sessionDelegate != nil {
             BaseModule.sessionDelegate?.sendError(error: error)
             return
         }

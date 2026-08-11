@@ -41,10 +41,10 @@ const SessionsDropInContent = ({
       return;
     }
     started.current = true;
-    setup(session.id, session.sessionData, callbacks).catch((e) =>
+    setup(session, configuration, callbacks).catch((e) =>
       setSetupError(String(e))
     );
-  }, [setup, session, callbacks]);
+  }, [setup, session, configuration, callbacks]);
 
   if (setupError) {
     return (
@@ -62,7 +62,7 @@ const SessionsDropInContent = ({
     );
   }
 
-  return <DropInButton checkout={checkout} configuration={configuration} />;
+  return <DropInButton checkout={checkout} />;
 };
 
 const SessionsDropInCheckout = () => {
@@ -152,7 +152,7 @@ const SessionsDropInCheckout = () => {
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout configuration={config}>
+      <AdyenCheckout>
         <SessionsDropInContent
           session={session}
           callbacks={callbacks}

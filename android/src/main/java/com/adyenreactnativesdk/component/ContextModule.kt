@@ -174,23 +174,24 @@ class ContextModule(
   override fun getName(): String = COMPONENT_NAME
 
   @ReactMethod
-  fun createSession(
+  fun setup(
     sessionModelJSON: ReadableMap,
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
     appCompatActivity.lifecycleScope.launch {
-      createSessionAsync(sessionModelJSON, configurationJSON, promise)
+      setupSessionAsync(sessionModelJSON, configurationJSON, promise)
     }
   }
 
-  suspend fun createSessionAsync(
+  suspend fun setupSessionAsync(
     sessionModelJSON: ReadableMap,
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
     // Re-setup must never reuse stale controllers or a dangling checkout context.
     cleanup()
+    BaseModule.storedConfigurationJSON = configurationJSON
     val sessionResponse: SessionResponse
     val configuration: CheckoutConfiguration
     try {
@@ -220,23 +221,24 @@ class ContextModule(
   }
 
   @ReactMethod
-  fun setup(
+  fun setupAdvanced(
     paymentMethodsData: ReadableMap,
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
     appCompatActivity.lifecycleScope.launch {
-      setupAsync(paymentMethodsData, configurationJSON, promise)
+      setupAdvancedAsync(paymentMethodsData, configurationJSON, promise)
     }
   }
 
-  private suspend fun setupAsync(
+  private suspend fun setupAdvancedAsync(
     paymentMethodsData: ReadableMap,
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
     // Re-setup must never reuse stale controllers or a dangling checkout context.
     cleanup()
+    BaseModule.storedConfigurationJSON = configurationJSON
     val paymentMethods: PaymentMethods
     val configuration: CheckoutConfiguration
     try {

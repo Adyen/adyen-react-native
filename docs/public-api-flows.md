@@ -5,34 +5,45 @@
 ```mermaid
 sequenceDiagram
     participant App as Consumer App
-    participant AC as AdyenCheckout
-    participant Setup as AdyenSetup
-    participant Native as Native Module
+    participant AC as <AdyenCheckout>
+    participant Hook as useAdyenCheckout
+    participant Native as Native (ContextModule)
     participant SDK as Adyen SDK v6
 
-    App->>AC: <AdyenCheckout session={id,sessionData} config={...} onComplete onError>
-    AC->>Setup: createSession(session, config)
-    Setup->>SDK: Checkout.setup(session, config)
-    SDK-->>Setup: SessionContext + paymentMethods
-    Setup-->>AC: paymentMethods
-    AC-->>App: isReady = true
+    App->>AC: <AdyenCheckout> (no props)
+    App->>Hook: const { setup, checkout } = useAdyenCheckout()
 
-    App->>AC: start('dropin' | 'googlepay' | ...)
-    AC->>Native: open(paymentMethod, config)
-    Native->>SDK: createPaymentComponent(type)
-    SDK-->>Native: Payment UI
+    App->>Hook: const checkout = await setup(session, configuration, { onComplete, onError })
+    Hook->>Native: createSession(session, config)
+    Native->>SDK: Checkout.setup(session, config)
+    SDK-->>Native: SessionContext + paymentMethods
+    Native-->>Hook: paymentMethods
+    Note over Hook: checkout is now available
+
+    alt Drop-In
+        App->>App: AdyenDropIn.start(checkout)
+        App->>Native: open(paymentMethods)
+        Native->>SDK: Present Drop-In UI
+    else Embedded Component
+        App->>AC: render <AdyenComponent checkout={checkout} type="scheme" />
+        Note over AC: Native view renders card form<br/>User fills in and taps Pay
+    else Headless
+        App->>App: await checkout.isAvailable('klarna')
+        App->>App: await checkout.requiresUserInteraction('klarna')
+        App->>App: checkout.submit('klarna')
+    end
 
     Note over SDK: SDK handles /payments<br/>and /payments/details<br/>automatically
 
     alt Success
         SDK-->>Native: onComplete(result)
-        Native-->>AC: Event.onSessionComplete
-        AC-->>App: onComplete(result, component)
-        App->>AC: component.completion(resultCode)
+        Native-->>Hook: SessionsResult
+        Hook-->>App: onComplete(result, component)
+        App->>App: component.completion(resultCode)
     else Error
         SDK-->>Native: onError(error)
-        Native-->>AC: Event.onSessionError
-        AC-->>App: onError(error, component)
+        Native-->>Hook: error
+        Hook-->>App: onError(error, component)
     end
 ```
 
@@ -41,48 +52,51 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant App as Consumer App
-    participant AC as AdyenCheckout
-    participant Setup as AdyenSetup
-    participant Native as Native Module
+    participant Hook as useAdyenCheckout
+    participant View as <AdyenComponent>
+    participant Native as Native (ContextModule + ComponentModule)
     participant SDK as Adyen SDK v6
     participant Server as Merchant Server
 
     App->>Server: /paymentMethods
     Server-->>App: paymentMethods
 
-    App->>AC: <AdyenCheckout paymentMethods={...} config={...} onSubmit onAdditionalDetails onError>
-    AC->>Setup: setup(paymentMethods, config)
-    Setup->>SDK: Checkout.setup(paymentMethods, config)
-    SDK-->>Setup: CheckoutContext
-    AC-->>App: isReady = true
+    App->>Hook: const checkout = await setupAdvanced(paymentMethods, configuration, { onSubmit, onAdditionalDetails, onError })
+    Hook->>Native: setup(paymentMethods, config)
+    Native->>SDK: Checkout.setup(paymentMethods, config)
+    SDK-->>Native: CheckoutContext
+    Note over Hook: checkout is now available
 
-    App->>AC: start('dropin' | 'card' | 'ideal' | ...)
-    AC->>Native: open(paymentMethod, config)
-    Native->>SDK: createPaymentComponent(type)
-    SDK-->>Native: Payment UI
+    alt Drop-In
+        App->>App: AdyenDropIn.start(checkout)
+        Native->>SDK: Present Drop-In UI
+    else Embedded Component
+        App->>View: render <AdyenComponent checkout={checkout} type="scheme" />
+        Note over View: Native view renders card form<br/>User fills in and taps Pay
+    else Headless
+        App->>App: checkout.submit('klarna')
+    end
 
     SDK-->>Native: onSubmit(paymentData)
-    Native-->>AC: Event.onSubmit
-    AC-->>App: onSubmit(data, component)
+    Native-->>Hook: PaymentMethodData
+    Hook-->>App: onSubmit(data, component: PaymentSubmitResultHandler)
 
     App->>Server: /payments(data)
     Server-->>App: response
 
     alt Action required (3DS2, redirect, etc.)
-        App->>AC: component.action(response.action)
-        AC->>Native: action(actionData)
+        App->>App: component.action(response.action)
         Native->>SDK: SubmitResult.Action(action)
         SDK-->>Native: Action UI (3DS2 challenge, redirect, etc.)
         SDK-->>Native: onAdditionalDetails(data)
-        Native-->>AC: Event.onAdditionalDetails
-        AC-->>App: onAdditionalDetails(data, component)
+        Hook-->>App: onAdditionalDetails(data, component: PaymentAdditionalResultHandler)
         App->>Server: /payments/details(data)
         Server-->>App: finalResult
-        App->>AC: component.completion(resultCode)
+        App->>App: component.completion(resultCode)
     else Final result
-        App->>AC: component.completion(resultCode)
+        App->>App: component.completion(resultCode)
     else Retry (soft decline)
-        App->>AC: component.retry('Card declined')
+        App->>App: component.retry('Card declined')
         Note over Native: UI stays open,<br/>shopper can retry
     end
 ```
@@ -119,22 +133,14 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "Consumer API"
-        AC["&lt;AdyenCheckout&gt;<br/>config, session?, paymentMethods?<br/>onSubmit, onComplete, onError"]
-        Hook["useAdyenCheckout()<br/>{ start, config, paymentMethods, isReady }"]
-    end
-
-    subgraph "Setup Layer"
-        Setup["AdyenSetup<br/>createSession() | setup()<br/>completion() | retry()"]
+        AC["&lt;AdyenCheckout&gt;<br/>(no props, context provider)"]
+        Hook["useAdyenCheckout()<br/>{ setup, setupAdvanced, checkout }"]
+        Checkout["Checkout<br/>paymentMethods, isAvailable,<br/>requiresUserInteraction, submit"]
     end
 
     subgraph "Payment Modules"
-        DropIn["AdyenDropIn<br/>open, action, completion, retry<br/>+ address lookup, partial payments"]
-        Component["AdyenComponent<br/>forPaymentMethod(type)<br/>open, action, completion, retry"]
-    end
-
-    subgraph "Availability Modules"
-        GooglePay["AdyenGooglePay<br/>isAvailable()"]
-        ApplePay["AdyenApplePay<br/>isAvailable()<br/>+ PassKit callbacks"]
+        DropIn["AdyenDropIn<br/>start(checkout)"]
+        Component["&lt;AdyenComponent&gt;<br/>checkout, type"]
     end
 
     subgraph "Standalone"
@@ -142,23 +148,26 @@ graph TB
         CSE["AdyenCSE<br/>encryptCard, encryptBin<br/>validate*"]
     end
 
-    subgraph "Routing (getWrapper)"
-        Router{{"getWrapper(typeName)"}}
+    subgraph "Native Modules (internal)"
+        Context["ContextModule (AdyenContext)<br/>createSession, setup, cleanup,<br/>isAvailable, requiresUserInteraction, submit,<br/>action, completion, retry"]
+        CompMod["ComponentModule (AdyenComponent)<br/>subscribe, unsubscribe,<br/>action, completion, retry"]
+        DropInMod["DropInModule (AdyenDropIn)<br/>open, action, completion, retry"]
     end
 
     AC --> Hook
-    AC --> Setup
-    Hook -->|"start(type)"| Router
-    Router -->|"dropin, card, scheme,<br/>bcmc, native components"| DropIn
-    Router -->|"googlepay, applepay,<br/>ideal, paypal, ..."| Component
+    Hook --> Checkout
+    Checkout --> Context
+    DropIn --> DropInMod
+    Component --> CompMod
 
     style AC fill:#4a90d9,color:#fff
     style Hook fill:#4a90d9,color:#fff
-    style Setup fill:#f5a623,color:#fff
+    style Checkout fill:#4a90d9,color:#fff
     style DropIn fill:#7ed321,color:#fff
     style Component fill:#7ed321,color:#fff
-    style GooglePay fill:#9b59b6,color:#fff
-    style ApplePay fill:#9b59b6,color:#fff
     style ActionMod fill:#e74c3c,color:#fff
     style CSE fill:#95a5a6,color:#fff
+    style Context fill:#f5a623,color:#fff
+    style CompMod fill:#f5a623,color:#fff
+    style DropInMod fill:#f5a623,color:#fff
 ```

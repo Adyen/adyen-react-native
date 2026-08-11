@@ -2,8 +2,10 @@ import { createContext, useContext } from 'react';
 import type {
   AdvancedCallbacks,
   Checkout,
+  Configuration,
   PaymentMethodsResponse,
   SessionCallbacks,
+  SessionConfiguration,
 } from '../core';
 import { MISSING_CONTEXT_ERROR } from './constants';
 
@@ -15,13 +17,13 @@ export interface AdyenCheckoutContextType {
    * Sets up the sessions flow. Creates the checkout context, registers the
    * session lifecycle listeners, stores the callbacks and resolves to a
    * {@link Checkout}.
-   * @param sessionID - The session identifier from the `/sessions` response.
-   * @param sessionData - The session data from the `/sessions` response.
+   * @param session - The session configuration from the `/sessions` response.
+   * @param configuration - The checkout configuration.
    * @param callbacks - Callbacks invoked for the session lifecycle.
    */
   setup(
-    sessionID: string,
-    sessionData: string,
+    session: SessionConfiguration,
+    configuration: Configuration,
     callbacks: SessionCallbacks
   ): Promise<Checkout>;
 
@@ -30,10 +32,12 @@ export interface AdyenCheckoutContextType {
    * advanced lifecycle listeners, stores the callbacks and resolves to a
    * {@link Checkout}.
    * @param paymentMethods - The payment methods response from the Adyen API.
+   * @param configuration - The checkout configuration.
    * @param callbacks - Callbacks invoked for the advanced lifecycle.
    */
   setupAdvanced(
     paymentMethods: PaymentMethodsResponse,
+    configuration: Configuration,
     callbacks: AdvancedCallbacks
   ): Promise<Checkout>;
 

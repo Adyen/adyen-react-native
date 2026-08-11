@@ -23,10 +23,10 @@ extension ContextModule {
     internal func makeApplePayConfiguration(parser: RootConfigurationParser,
                                             configuration: NSDictionary) throws -> ApplePayConfiguration? {
         let applePayParser = ApplepayConfigurationParser(configuration: configuration)
-        guard applePayParser.merchantID != nil, let payment = parser.payment else {
+        guard applePayParser.merchantID != nil, let amount = parser.amount, let countryCode = parser.countryCode else {
             return nil
         }
-        return try attachCallbacks(to: applePayParser.buildConfiguration(payment: payment))
+        return try attachCallbacks(to: applePayParser.buildConfiguration(amount: amount, countryCode: countryCode))
     }
 
     private func attachCallbacks(to base: ApplePayConfiguration) -> ApplePayConfiguration {

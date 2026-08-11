@@ -16,7 +16,7 @@ internal final class ComponentModule: BaseAddressModule {
     // or through JS entry points that dispatch with `ensureMainThread(_:)`.
 
     /// Per-viewId component controllers. Each owns its own v6 checkout flow and payment component.
-    private var delegates: [String: EmbeddedComponentDelegateProxy] = [:]
+    private var delegates: [String: ComponentProxy] = [:]
 
     /// ViewIds with active JS subscriptions
     private var subscribedViews: Set<String> = []
@@ -38,8 +38,8 @@ internal final class ComponentModule: BaseAddressModule {
 
     // MARK: - Registration
 
-    func register(viewId: String) -> EmbeddedComponentDelegateProxy {
-        let proxy = EmbeddedComponentDelegateProxy(viewId: viewId, bus: self)
+    func register(viewId: String) -> ComponentProxy {
+        let proxy = ComponentProxy(viewId: viewId, bus: self)
         delegates[viewId] = proxy
         return proxy
     }
@@ -50,7 +50,7 @@ internal final class ComponentModule: BaseAddressModule {
         lookupCompletionHandlers.removeValue(forKey: viewId)
     }
 
-    // MARK: - Lookup handler storage (called by EmbeddedComponentDelegateProxy)
+    // MARK: - Lookup handler storage (called by ComponentProxy)
 
     func storeLookupHandler(for viewId: String, handler: @escaping ([AddressLookupResult]) -> Void) {
         lookupHandlers[viewId] = handler

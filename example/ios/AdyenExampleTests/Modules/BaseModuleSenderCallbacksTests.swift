@@ -23,7 +23,6 @@ final class BaseModuleSenderCallbacksTests: XCTestCase {
     override func tearDown() {
         sut = nil
         mockEmitter = nil
-        BaseModule.session = nil
         super.tearDown()
     }
 

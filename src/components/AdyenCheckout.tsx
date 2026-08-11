@@ -23,6 +23,7 @@ import type {
   PaymentResultHandler,
   PaymentSubmitResultHandler,
   SessionCallbacks,
+  SessionConfiguration,
   SessionsResult,
 } from '../core';
 import { createCheckout } from '../core/Checkout';
@@ -63,8 +64,6 @@ const createSubmitHandler = (): PaymentSubmitResultHandler => ({
  * Props for AdyenCheckout.
  */
 export type AdyenCheckoutProps = {
-  /** Collection of all necessary configurations (environment, clientKey, locale, etc.). */
-  configuration: Configuration;
   /** Inner components. */
   children: ReactNode;
 };
@@ -74,15 +73,13 @@ export type AdyenCheckoutProps = {
  * `useAdyenCheckout` hook. Payment flow callbacks are supplied to `setup()` /
  * `setupAdvanced()` rather than as props. Unmounting tears the context down.
  */
-export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
-  configuration,
-  children,
-}) => {
-  const configRef = useRef<Configuration>(configuration);
+export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({ children }) => {
+  const configRef = useRef<Configuration | null>(null);
   const sessionCallbacksRef = useRef<SessionCallbacks | null>(null);
   const advancedCallbacksRef = useRef<AdvancedCallbacks | null>(null);
   const checkoutRef = useRef<Checkout | null>(null);
   const [checkout, setCheckout] = useState<Checkout | null>(null);
+  const [config, setConfig] = useState<Configuration | null>(null);
 
   // Stable event handler refs delegating to whichever callback set is active.
   // They are handed to per-view listeners so embedded component events resolve
@@ -131,11 +128,6 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const { subscribe, unsubscribe } = useSubscriptionManager(eventHandlerRefs);
 
   useEffect(() => {
-    checkConfiguration(configuration);
-    configRef.current = configuration;
-  }, [configuration]);
-
-  useEffect(() => {
     return () => {
       AdyenContext.removeAllListeners();
       AdyenContext.cleanup();
@@ -155,7 +147,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         resolve: () => provide({ status: 'success' }),
         reject: (errors) => provide({ status: 'failure', errors }),
       };
-      const callback = configRef.current.applepay?.onAuthorize;
+      const callback = configRef.current?.applepay?.onAuthorize;
       if (callback) {
         callback(payment, actions);
       } else {
@@ -165,7 +157,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     AdyenContext.assignApplePayShippingContactHandler((contact) => {
       const resolve = (update: ApplePayShippingContactUpdateRequest) =>
         AdyenContext.provideShippingContactUpdate(update);
-      const callback = configRef.current.applepay?.onShippingContactChange;
+      const callback = configRef.current?.applepay?.onShippingContactChange;
       if (callback) {
         callback(contact, resolve);
       } else {
@@ -175,7 +167,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     AdyenContext.assignApplePayShippingMethodHandler((shippingMethod) => {
       const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
         AdyenContext.provideShippingMethodUpdate(update);
-      const callback = configRef.current.applepay?.onShippingMethodChange;
+      const callback = configRef.current?.applepay?.onShippingMethodChange;
       if (callback) {
         callback(shippingMethod, resolve);
       } else {
@@ -185,7 +177,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
     AdyenContext.assignApplePayCouponCodeHandler((data) => {
       const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
         AdyenContext.provideCouponCodeUpdate(update);
-      const callback = configRef.current.applepay?.onCouponCodeChange;
+      const callback = configRef.current?.applepay?.onCouponCodeChange;
       if (callback) {
         callback(data.couponCode, resolve);
       } else {
@@ -196,14 +188,17 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
 
   const setup = useCallback(
     async (
-      sessionID: string,
-      sessionData: string,
+      session: SessionConfiguration,
+      configuration: Configuration,
       callbacks: SessionCallbacks
     ): Promise<Checkout> => {
       // Tear down any prior context so a re-setup never reuses stale native state.
       if (checkoutRef.current) {
         AdyenContext.cleanup();
       }
+      configRef.current = configuration;
+      checkConfiguration(configuration);
+      setConfig(configuration);
       sessionCallbacksRef.current = callbacks;
       AdyenContext.removeAllListeners();
       AdyenContext.assignCompletionHandler((result) =>
@@ -215,8 +210,8 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       subscribeApplePayHandlers();
 
       const context = await AdyenContext.createSession(
-        { id: sessionID, sessionData },
-        configRef.current
+        { id: session.id, sessionData: session.sessionData },
+        configuration
       );
       const created = createCheckout(context.paymentMethods);
       checkoutRef.current = created;
@@ -229,18 +224,22 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   const setupAdvanced = useCallback(
     async (
       paymentMethods: PaymentMethodsResponse,
+      configuration: Configuration,
       callbacks: AdvancedCallbacks
     ): Promise<Checkout> => {
       // Tear down any prior context so a re-setup never reuses stale native state.
       if (checkoutRef.current) {
         AdyenContext.cleanup();
       }
+      configRef.current = configuration;
+      checkConfiguration(configuration);
+      setConfig(configuration);
       advancedCallbacksRef.current = callbacks;
       AdyenContext.removeAllListeners();
       AdyenContext.assignSubmitHandler(({ paymentData }) => {
         const payload = {
           ...paymentData,
-          returnUrl: paymentData.returnUrl ?? configRef.current.returnUrl,
+          returnUrl: paymentData.returnUrl ?? configuration.returnUrl,
         };
         advancedCallbacksRef.current?.onSubmit(payload, createSubmitHandler());
       });
@@ -255,7 +254,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
       );
       subscribeApplePayHandlers();
 
-      await AdyenContext.setup(paymentMethods, configRef.current);
+      await AdyenContext.setup(paymentMethods, configuration);
       const created = createCheckout(paymentMethods);
       checkoutRef.current = created;
       setCheckout(created);
@@ -270,8 +269,8 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
   );
 
   const componentContextValue = useMemo<AdyenComponentContextType>(
-    () => ({ subscribe, unsubscribe, configuration }),
-    [subscribe, unsubscribe, configuration]
+    () => ({ subscribe, unsubscribe, configuration: config }),
+    [subscribe, unsubscribe, config]
   );
 
   return (

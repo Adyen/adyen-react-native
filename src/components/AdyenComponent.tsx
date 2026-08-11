@@ -88,6 +88,11 @@ export const AdyenComponent: React.FC<AdyenComponentProps> = ({
     );
   }
 
+  // Configuration is null until setup()/setupAdvanced() has been called.
+  if (!configuration) {
+    return null;
+  }
+
   return (
     <NativeAdyenComponentView
       ref={nativeRef}

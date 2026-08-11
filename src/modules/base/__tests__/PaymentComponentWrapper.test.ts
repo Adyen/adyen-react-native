@@ -4,7 +4,6 @@ import { PaymentComponentWrapper } from '../PaymentComponentWrapper';
 import {
   createMockPaymentModule,
   mockPaymentMethodsResponse,
-  mockConfiguration,
 } from './_mock_NativeModule';
 
 /** Concrete implementation for testing */
@@ -30,13 +29,12 @@ describe('PaymentComponentWrapper', () => {
   });
 
   describe('open', () => {
-    test('should call native module open with payment methods and configuration', () => {
+    test('should call native module open with payment methods', () => {
       const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
-      wrapper.open(mockPaymentMethodsResponse, mockConfiguration);
+      wrapper.open(mockPaymentMethodsResponse);
       expect(mockNativeModule.open).toHaveBeenCalledWith(
-        mockPaymentMethodsResponse,
-        mockConfiguration
+        mockPaymentMethodsResponse
       );
     });
 
@@ -44,26 +42,8 @@ describe('PaymentComponentWrapper', () => {
       const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentWrapper(mockNativeModule);
       const emptyPaymentMethods = { paymentMethods: [] };
-      wrapper.open(emptyPaymentMethods, mockConfiguration);
-      expect(mockNativeModule.open).toHaveBeenCalledWith(
-        emptyPaymentMethods,
-        mockConfiguration
-      );
-    });
-
-    test('should pass configuration with all optional fields', () => {
-      const mockNativeModule = createMockPaymentModule();
-      const wrapper = new TestPaymentWrapper(mockNativeModule);
-      const fullConfig = {
-        ...mockConfiguration,
-        analytics: { enabled: true },
-        dropin: { showPreselectedStoredPaymentMethod: true },
-      };
-      wrapper.open(mockPaymentMethodsResponse, fullConfig);
-      expect(mockNativeModule.open).toHaveBeenCalledWith(
-        mockPaymentMethodsResponse,
-        fullConfig
-      );
+      wrapper.open(emptyPaymentMethods);
+      expect(mockNativeModule.open).toHaveBeenCalledWith(emptyPaymentMethods);
     });
   });
 

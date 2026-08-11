@@ -1,7 +1,6 @@
 import type {
   Balance,
   Checkout,
-  Configuration,
   Order,
   PartialPaymentComponent,
   PaymentMethodsResponse,
@@ -45,11 +44,11 @@ export class DropInWrapper
 {
   name: string = 'DropIn';
 
-  start(checkout: Checkout, configuration: Configuration): void {
+  start(checkout: Checkout): void {
     // Drop-in depends on the shared checkout context for its payment methods
     // instead of managing its own session state; the native v5 modal still
     // receives them explicitly through the internal open().
-    this.open(checkout.paymentMethods, configuration);
+    this.nativeModule.open(checkout.paymentMethods);
   }
 
   getReturnURL(): Promise<string> {

@@ -76,13 +76,16 @@ class DropInModule(
   override fun supportedEvents(): List<String> = super.supportedEvents() + EventName.cardEvents() + EventName.dropInEvents()
 
   @ReactMethod
-  fun open(
-    paymentMethodsData: ReadableMap?,
-    configuration: ReadableMap,
-  ) {
+  fun start(paymentMethodsData: ReadableMap?) {
     if (!isInitialized) {
       return sendError(ModuleException.NoActivity())
     }
+
+    val storedConfig = BaseModule.storedConfigurationJSON
+    if (storedConfig == null) {
+      return sendError(ModuleException.Unknown("Checkout context is not initialized. Call setup() or setupAdvanced() first."))
+    }
+
     // TODO: v6 migration - CheckoutConfigurationFactory now returns the new v6 CheckoutConfiguration type.
     //  The old DropIn.startPayment() expects com.adyen.checkout.components.core.CheckoutConfiguration.
     //  For now, create the old CheckoutConfiguration inline from the parsed values.
@@ -90,7 +93,7 @@ class DropInModule(
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
       paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-      checkoutConfiguration = buildOldCheckoutConfiguration(configuration)
+      checkoutConfiguration = buildOldCheckoutConfiguration(storedConfig)
     } catch (e: java.lang.Exception) {
       return sendError(e)
     }

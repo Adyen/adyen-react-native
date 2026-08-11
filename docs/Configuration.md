@@ -1,5 +1,18 @@
 # Configuration
 
+> [!IMPORTANT]
+> **v6 API change:** Configuration is no longer passed as a prop to `<AdyenCheckout>`. Instead, pass it to `setup()` or `setupAdvanced()` from the `useAdyenCheckout` hook:
+>
+> ```tsx
+> const { setup, setupAdvanced } = useAdyenCheckout();
+>
+> // Session flow:
+> const checkout = await setup(session, configuration, callbacks);
+>
+> // Advanced flow:
+> const checkout = await setupAdvanced(paymentMethods, configuration, callbacks);
+> ```
+
 ## Root configurations
 
 | Parameter     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Required                                                                 |

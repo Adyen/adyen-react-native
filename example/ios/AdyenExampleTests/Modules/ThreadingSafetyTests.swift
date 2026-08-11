@@ -14,8 +14,7 @@ final class ThreadingSafetyTests: XCTestCase {
     override func tearDown() {
         BaseModule.presenterStack.removeAll()
         BaseModule.currentModule = nil
-        BaseModule.session = nil
-        EmbeddedComponentBusModule.shared = nil
+        ComponentModule.shared = nil
         super.tearDown()
     }
 
@@ -42,9 +41,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusUnsubscribe_fromBackgroundThread_dismissesPresenterOnMainThread() {
-        // GIVEN an EmbeddedComponentBusModule with a subscribed, presented view
+        // GIVEN an ComponentModule with a subscribed, presented view
         let expectation = expectation(description: "Presenter should be dismissed")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
         let presenter = MockPresenterViewController()
         presenter.onDismiss = {
             expectation.fulfill()
@@ -122,9 +121,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusUpdate_fromBackgroundThread_callsLookupHandlerOnMainThread() {
-        // GIVEN an EmbeddedComponentBusModule with a registered lookup handler
+        // GIVEN an ComponentModule with a registered lookup handler
         let expectation = expectation(description: "Lookup handler should be called")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
 
         sut.storeLookupHandler(for: "card-view") { addresses in
             // THEN the handler is invoked on the main thread with the decoded addresses
@@ -143,9 +142,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusConfirmSuccess_fromBackgroundThread_callsCompletionOnMainThread() {
-        // GIVEN an EmbeddedComponentBusModule with a registered completion handler
+        // GIVEN an ComponentModule with a registered completion handler
         let expectation = expectation(description: "Completion handler should receive success")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
 
         sut.storeLookupCompletionHandler(for: "card-view") { result in
             // THEN the handler is invoked on the main thread with a success result
@@ -166,9 +165,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusConfirmFailure_fromBackgroundThread_callsCompletionOnMainThread() {
-        // GIVEN an EmbeddedComponentBusModule with a registered completion handler
+        // GIVEN an ComponentModule with a registered completion handler
         let expectation = expectation(description: "Completion handler should receive failure")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
 
         sut.storeLookupCompletionHandler(for: "card-view") { result in
             // THEN the handler is invoked on the main thread with a failure result
@@ -194,8 +193,8 @@ final class ThreadingSafetyTests: XCTestCase {
 
     func test_cardComponentViewProxyDispose_fromBackgroundThread_doesNotCrash() {
         // GIVEN a CardComponentViewProxy registered with the component bus
-        let bus = EmbeddedComponentBusModule()
-        EmbeddedComponentBusModule.shared = bus
+        let bus = ComponentModule()
+        ComponentModule.shared = bus
         bus.createActionHandlerIfNeeded(context: Self.context, locale: nil)
         _ = bus.register(viewId: "card-view")
 
@@ -220,8 +219,8 @@ final class ThreadingSafetyTests: XCTestCase {
 
     func test_cardComponentViewProxyInitialize_fromBackgroundThread_reportsErrorOnMainThread() {
         // GIVEN a CardComponentViewProxy that will fail to decode its payment method
-        let bus = EmbeddedComponentBusModule()
-        EmbeddedComponentBusModule.shared = bus
+        let bus = ComponentModule()
+        ComponentModule.shared = bus
         let emitter = ThreadTrackingEmitter()
         bus.emitterOverride = emitter
 
@@ -249,9 +248,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusHide_fromBackgroundThread_dismissesPresenterOnMainThread() {
-        // GIVEN an EmbeddedComponentBusModule with a registered, presented view
+        // GIVEN an ComponentModule with a registered, presented view
         let expectation = expectation(description: "Presenter should be dismissed")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
         let presenter = MockPresenterViewController()
         presenter.onDismiss = {
             expectation.fulfill()
@@ -273,9 +272,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusHandle_withNilAction_doesNotEmitError() {
-        // GIVEN an EmbeddedComponentBusModule with a mock emitter
+        // GIVEN an ComponentModule with a mock emitter
         let expectation = expectation(description: "No error should be emitted")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
         let emitter = MockEmitter()
         sut.emitterOverride = emitter
 
@@ -294,9 +293,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusHandle_withoutActionHandler_emitsError() {
-        // GIVEN an EmbeddedComponentBusModule without an action handler set up
+        // GIVEN an ComponentModule without an action handler set up
         let expectation = expectation(description: "Error should be emitted")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
         let emitter = MockEmitter()
         sut.emitterOverride = emitter
 
@@ -315,9 +314,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusHandle_withoutRegisteredProxy_emitsError() {
-        // GIVEN an EmbeddedComponentBusModule with an action handler but no registered proxy
+        // GIVEN an ComponentModule with an action handler but no registered proxy
         let expectation = expectation(description: "Error should be emitted")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
         let emitter = MockEmitter()
         sut.emitterOverride = emitter
         sut.createActionHandlerIfNeeded(context: Self.context, locale: nil)
@@ -337,9 +336,9 @@ final class ThreadingSafetyTests: XCTestCase {
     }
 
     func test_embeddedComponentBusHandle_withInvalidAction_emitsError() {
-        // GIVEN an EmbeddedComponentBusModule with a registered proxy and an invalid action
+        // GIVEN an ComponentModule with a registered proxy and an invalid action
         let expectation = expectation(description: "Invalid action error should be emitted")
-        let sut = EmbeddedComponentBusModule()
+        let sut = ComponentModule()
         let emitter = MockEmitter()
         sut.emitterOverride = emitter
         sut.createActionHandlerIfNeeded(context: Self.context, locale: nil)

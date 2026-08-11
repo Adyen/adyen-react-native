@@ -7,6 +7,7 @@ import {
 } from '@adyen/react-native';
 import type {
   AdvancedCallbacks,
+  Configuration,
   PaymentResultHandler,
   PaymentSubmitResultHandler,
   PaymentAdditionalResultHandler,
@@ -27,11 +28,13 @@ import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 
 interface AdvancedCheckoutContentProps {
   paymentMethods: PaymentMethodsResponse;
+  configuration: Configuration;
   callbacks: AdvancedCallbacks;
 }
 
 const AdvancedCheckoutContent = ({
   paymentMethods,
+  configuration,
   callbacks,
 }: AdvancedCheckoutContentProps) => {
   const { setupAdvanced, checkout } = useAdyenCheckout();
@@ -43,10 +46,10 @@ const AdvancedCheckoutContent = ({
       return;
     }
     started.current = true;
-    setupAdvanced(paymentMethods, callbacks).catch((e) =>
+    setupAdvanced(paymentMethods, configuration, callbacks).catch((e) =>
       setSetupError(String(e))
     );
-  }, [setupAdvanced, paymentMethods, callbacks]);
+  }, [setupAdvanced, paymentMethods, configuration, callbacks]);
 
   if (setupError) {
     return (
@@ -177,9 +180,10 @@ const AdvancedCheckout = () => {
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout configuration={config}>
+      <AdyenCheckout>
         <AdvancedCheckoutContent
           paymentMethods={paymentMethods}
+          configuration={config}
           callbacks={callbacks}
         />
       </AdyenCheckout>

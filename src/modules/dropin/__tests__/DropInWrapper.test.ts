@@ -165,7 +165,7 @@ describe('DropInWrapper', () => {
   });
 
   describe('start', () => {
-    test('should open native drop-in using the shared checkout payment methods and configuration', () => {
+    test('should open native drop-in using the shared checkout payment methods', () => {
       const wrapper = new DropInWrapper(mockNativeModule);
       const paymentMethods = {
         paymentMethods: [{ type: 'scheme', name: 'Card' }],
@@ -176,17 +176,8 @@ describe('DropInWrapper', () => {
         requiresUserInteraction: jest.fn(),
         submit: jest.fn(),
       } as any;
-      const config = {
-        environment: 'test' as const,
-        clientKey: 'key',
-        countryCode: 'NL',
-        returnUrl: 'app://return',
-      };
-      wrapper.start(checkout, config);
-      expect(mockNativeModule.open).toHaveBeenCalledWith(
-        paymentMethods,
-        config
-      );
+      wrapper.start(checkout);
+      expect(mockNativeModule.open).toHaveBeenCalledWith(paymentMethods);
     });
 
     test('should not manage session state itself — payment methods come from the checkout', () => {
@@ -195,16 +186,9 @@ describe('DropInWrapper', () => {
         paymentMethods: [{ type: 'ideal', name: 'iDEAL' }],
       };
       const checkout = { paymentMethods } as any;
-      const config = {
-        environment: 'test' as const,
-        clientKey: 'key',
-        countryCode: 'NL',
-        returnUrl: 'app://return',
-      };
-      wrapper.start(checkout, config);
+      wrapper.start(checkout);
       expect(mockNativeModule.open).toHaveBeenCalledWith(
-        checkout.paymentMethods,
-        config
+        checkout.paymentMethods
       );
     });
   });
@@ -222,17 +206,8 @@ describe('DropInWrapper', () => {
       const paymentMethods = {
         paymentMethods: [{ type: 'scheme', name: 'Card' }],
       };
-      const config = {
-        environment: 'test' as const,
-        clientKey: 'key',
-        countryCode: 'NL',
-        returnUrl: 'app://return',
-      };
-      wrapper.open(paymentMethods, config);
-      expect(mockNativeModule.open).toHaveBeenCalledWith(
-        paymentMethods,
-        config
-      );
+      wrapper.open(paymentMethods);
+      expect(mockNativeModule.open).toHaveBeenCalledWith(paymentMethods);
     });
 
     test('completion should call native module completion', () => {

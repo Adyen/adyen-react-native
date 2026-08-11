@@ -43,10 +43,10 @@ const PartialPaymentContent = ({
       return;
     }
     started.current = true;
-    setupAdvanced(paymentMethods, callbacks).catch((e) =>
+    setupAdvanced(paymentMethods, configuration, callbacks).catch((e) =>
       setSetupError(String(e))
     );
-  }, [setupAdvanced, paymentMethods, callbacks]);
+  }, [setupAdvanced, paymentMethods, configuration, callbacks]);
 
   if (setupError) {
     return (
@@ -64,7 +64,7 @@ const PartialPaymentContent = ({
     );
   }
 
-  return <DropInButton checkout={checkout} configuration={configuration} />;
+  return <DropInButton checkout={checkout} />;
 };
 
 const PartialPaymentCheckout = () => {
@@ -242,7 +242,7 @@ const PartialPaymentCheckout = () => {
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout configuration={config}>
+      <AdyenCheckout>
         <PartialPaymentContent
           paymentMethods={paymentMethods}
           callbacks={callbacks}

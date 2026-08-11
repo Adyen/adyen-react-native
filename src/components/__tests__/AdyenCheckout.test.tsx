@@ -100,19 +100,27 @@ const advancedCallbacks = {
 };
 
 // Consumer component to exercise the context
-function TestConsumer() {
+function TestConsumer({ config = mockConfig }: { config?: typeof mockConfig }) {
   const { setup, setupAdvanced, checkout } = useAdyenCheckout();
   return (
     <View>
       <TouchableOpacity
         testID="setup-btn"
-        onPress={() => setup('session_123', 'session_data', sessionCallbacks)}
+        onPress={() =>
+          setup(
+            { id: 'session_123', sessionData: 'session_data' },
+            config,
+            sessionCallbacks
+          )
+        }
       >
         <Text>Setup</Text>
       </TouchableOpacity>
       <TouchableOpacity
         testID="setup-advanced-btn"
-        onPress={() => setupAdvanced(mockPaymentMethods, advancedCallbacks)}
+        onPress={() =>
+          setupAdvanced(mockPaymentMethods, config, advancedCallbacks)
+        }
       >
         <Text>SetupAdvanced</Text>
       </TouchableOpacity>
@@ -140,7 +148,7 @@ describe('AdyenCheckout', () => {
   describe('rendering', () => {
     test('should render children', () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <Text testID="child">Test Child</Text>
         </AdyenCheckout>
       );
@@ -150,7 +158,7 @@ describe('AdyenCheckout', () => {
 
     test('should provide the hook context to children', () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -174,7 +182,7 @@ describe('AdyenCheckout', () => {
   describe('setup (sessions flow)', () => {
     test('creates the session, registers listeners and resolves checkout', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -201,7 +209,7 @@ describe('AdyenCheckout', () => {
   describe('setupAdvanced (advanced flow)', () => {
     test('sets up the context, registers listeners and resolves checkout', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -226,7 +234,7 @@ describe('AdyenCheckout', () => {
   describe('callback handler wiring', () => {
     test('session onComplete receives a result handler exposing completion', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -254,7 +262,7 @@ describe('AdyenCheckout', () => {
 
     test('session onError receives a completion-only handler', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -279,7 +287,7 @@ describe('AdyenCheckout', () => {
 
     test('advanced onSubmit receives a handler exposing action, completion and retry', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -307,7 +315,7 @@ describe('AdyenCheckout', () => {
 
     test('advanced onAdditionalDetails receives a completion-only handler', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -336,7 +344,7 @@ describe('AdyenCheckout', () => {
 
     test('advanced onError receives a completion-only handler', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -364,7 +372,7 @@ describe('AdyenCheckout', () => {
   describe('Apple Pay handler wiring', () => {
     test('setup (sessions flow) subscribes to all Apple Pay events', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -383,7 +391,7 @@ describe('AdyenCheckout', () => {
 
     test('setupAdvanced subscribes to all Apple Pay events', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -402,7 +410,7 @@ describe('AdyenCheckout', () => {
 
     test('authorization auto-resolves success when no merchant callback', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -426,11 +434,13 @@ describe('AdyenCheckout', () => {
       const onAuthorize = jest.fn((_payment: any, actions: any) =>
         actions.reject([{ type: 'billingAddress', message: 'Bad' }])
       );
+      const applePayConfig = {
+        ...mockConfig,
+        applepay: { onAuthorize },
+      };
       const { getByTestId } = render(
-        <AdyenCheckout
-          configuration={{ ...mockConfig, applepay: { onAuthorize } }}
-        >
-          <TestConsumer />
+        <AdyenCheckout>
+          <TestConsumer config={applePayConfig} />
         </AdyenCheckout>
       );
 
@@ -454,7 +464,7 @@ describe('AdyenCheckout', () => {
 
     test('shipping contact auto-resolves with {} when no merchant callback', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -476,11 +486,13 @@ describe('AdyenCheckout', () => {
       const onCouponCodeChange = jest.fn((_code: string, resolve: any) =>
         resolve({ errors: [{ type: 'couponCode', message: 'Invalid' }] })
       );
+      const couponConfig = {
+        ...mockConfig,
+        applepay: { onCouponCodeChange },
+      };
       const { getByTestId } = render(
-        <AdyenCheckout
-          configuration={{ ...mockConfig, applepay: { onCouponCodeChange } }}
-        >
-          <TestConsumer />
+        <AdyenCheckout>
+          <TestConsumer config={couponConfig} />
         </AdyenCheckout>
       );
 
@@ -507,7 +519,7 @@ describe('AdyenCheckout', () => {
   describe('re-setup cleanup', () => {
     test('does not call cleanup on the first setup', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -523,7 +535,7 @@ describe('AdyenCheckout', () => {
 
     test('calls cleanup before creating a new context on re-setup', async () => {
       const { getByTestId } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );
@@ -545,7 +557,7 @@ describe('AdyenCheckout', () => {
   describe('lifecycle', () => {
     test('cleans up native listeners and context on unmount', () => {
       const { unmount } = render(
-        <AdyenCheckout configuration={mockConfig}>
+        <AdyenCheckout>
           <TestConsumer />
         </AdyenCheckout>
       );

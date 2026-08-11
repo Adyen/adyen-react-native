@@ -15,14 +15,12 @@ final class ComponentModuleTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        BaseModule.session = nil
         mockEmitter = MockEmitter()
         sut = ComponentModule()
         sut.emitterOverride = mockEmitter
     }
 
     override func tearDown() {
-        BaseModule.session = nil
         sut = nil
         mockEmitter = nil
         super.tearDown()

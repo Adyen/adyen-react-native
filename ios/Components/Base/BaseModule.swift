@@ -14,7 +14,6 @@ import UIKit
 ///   while another is in progress will replace the current session and presenter.
 internal class BaseModule: RCTEventEmitter {
 
-    internal static var session: SessionCheckout?
     /// The pre-created advanced-flow checkout context set by ``ContextModule.setup()``.
     /// Downstream modules (``ComponentModule``, ``DropInModule``) can reuse this instead of
     /// creating their own ``AdvancedCheckout`` inline.
@@ -107,13 +106,6 @@ internal class BaseModule: RCTEventEmitter {
         return clientKey
     }
 
-    internal func fetchPayment(from parser: RootConfigurationParser) throws -> Payment {
-        guard let payment = parser.payment else {
-            throw ModuleException.noPayment
-        }
-        return payment
-    }
-
     internal func parsePaymentMethod<T: PaymentMethod>(from dictionary: NSDictionary, for type: T.Type) throws -> T {
         let paymentMethods = try parsePaymentMethods(from: dictionary)
 
@@ -156,7 +148,6 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     private func cleanUpOnMainThread() {
-        BaseModule.session = nil
         BaseModule.checkoutContext = nil
         BaseModule.currentModule = nil
 

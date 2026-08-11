@@ -1,12 +1,14 @@
-# React Native SDK v6 — Public API Proposal
+# React Native SDK v6 — Public API (Implemented)
+
+> This document reflects the final implemented API of the v6 alpha, not the original proposal.
 
 ## Hook API Surface
 
 ```mermaid
 classDiagram
     class useAdyenCheckout {
-        +setup(sessionID, sessionData, SessionCallbacks): Promise~Checkout~
-        +setupAdvanced(paymentMethods, AdvancedCallbacks): Promise~Checkout~
+        +setup(session, configuration, SessionCallbacks): Promise~Checkout~
+        +setupAdvanced(paymentMethods, configuration, AdvancedCallbacks): Promise~Checkout~
         +checkout: Checkout | null
     }
 
@@ -62,9 +64,8 @@ classDiagram
 ```mermaid
 classDiagram
     class AdyenCheckout {
-        +configuration: Configuration
         +children: ReactNode
-        Note: Owns the checkout context lifecycle
+        Note: Context provider only - no configuration prop
     }
 
     class AdyenComponent {
@@ -74,7 +75,7 @@ classDiagram
     }
 
     class AdyenDropIn {
-        +start(): void
+        +start(checkout): void
         Note: Must be used inside AdyenCheckout
     }
 
@@ -92,7 +93,7 @@ stateDiagram-v2
     SettingUp --> Ready: checkout !== null
 
     Ready --> Ready: checkout.isAvailable() / checkout.requiresUserInteraction() / checkout.submit()
-    Ready --> Ready: AdyenDropIn.start()
+    Ready --> Ready: AdyenDropIn.start(checkout)
     Ready --> Idle: setup() called again (implicit cleanup)
     Ready --> Destroyed: AdyenCheckout unmounts
 
@@ -138,11 +139,11 @@ sequenceDiagram
     participant Native as Native (ContextModule)
     participant SDK as Adyen SDK v6
 
-    App->>AC: <AdyenCheckout configuration={...}>
+    App->>AC: <AdyenCheckout> (no props)
     App->>Hook: const { setup, checkout } = useAdyenCheckout()
 
-    App->>Hook: const checkout = await setup(sessionID, sessionData, { onComplete, onError })
-    Hook->>Native: setup(id, data, config)
+    App->>Hook: const checkout = await setup(session, configuration, { onComplete, onError })
+    Hook->>Native: createSession(session, config)
     Native->>SDK: Checkout.setup(session, config)
     SDK-->>Native: SessionContext + paymentMethods
     Native-->>Hook: paymentMethods
@@ -192,8 +193,8 @@ sequenceDiagram
     App->>Server: /paymentMethods
     Server-->>App: paymentMethods
 
-    App->>Hook: const checkout = await setupAdvanced(paymentMethods, { onSubmit, onAdditionalDetails, onError })
-    Hook->>Native: setupAdvanced(paymentMethods, config)
+    App->>Hook: const checkout = await setupAdvanced(paymentMethods, configuration, { onSubmit, onAdditionalDetails, onError })
+    Hook->>Native: setup(paymentMethods, config)
     Native->>SDK: Checkout.setup(paymentMethods, config)
     SDK-->>Native: CheckoutContext
     Note over Hook: checkout is now available
@@ -245,8 +246,8 @@ sequenceDiagram
 
     Note over App: Inside <AdyenCheckout>, after setup() or setupAdvanced()
 
-    App->>DropIn: AdyenDropIn.start()
-    DropIn->>Native: open(paymentMethods, config)
+    App->>DropIn: AdyenDropIn.start(checkout)
+    DropIn->>Native: open(checkout.paymentMethods)
     Native->>Native: Uses BaseModule.checkoutContext
     Native->>SDK: Present Drop-In UI
 
@@ -289,42 +290,45 @@ flowchart TD
 ## Multiple Components Example
 
 ```
-✅ Allowed — different types:
+Allowed — different types:
 
-<AdyenCheckout configuration={config}>
-  <AdyenComponent checkout={checkout} type="scheme" />      ← Card form
-  <AdyenComponent checkout={checkout} type="applepay" />     ← Apple Pay button
-  <AdyenComponent checkout={checkout} type="googlepay" />    ← Google Pay button
-  <AdyenComponent checkout={checkout} type="ideal" />        ← Issuer list
+<AdyenCheckout>
+  <AdyenComponent checkout={checkout} type="scheme" />      — Card form
+  <AdyenComponent checkout={checkout} type="applepay" />     — Apple Pay button
+  <AdyenComponent checkout={checkout} type="googlepay" />    — Google Pay button
+  <AdyenComponent checkout={checkout} type="ideal" />        — Issuer list
 </AdyenCheckout>
 
-❌ Not allowed — duplicate type:
+Not allowed — duplicate type:
 
-<AdyenCheckout configuration={config}>
+<AdyenCheckout>
   <AdyenComponent checkout={checkout} type="scheme" />
-  <AdyenComponent checkout={checkout} type="scheme" />       ← Error: duplicate
+  <AdyenComponent checkout={checkout} type="scheme" />       — Error: duplicate
 </AdyenCheckout>
 ```
 
 ## Native Module Architecture
 
 ```
-Native modules (renamed):
+Native modules:
 ├── ContextModule (AdyenContext)         — lifecycle, controllers, headless APIs
-│   ├─ setup(sessionID, sessionData, config)
-│   ├─ setupAdvanced(paymentMethods, config)
+│   ├─ createSession(session, config)        (session flow setup)
+│   ├─ setup(paymentMethods, config)         (advanced flow setup)
 │   ├─ cleanup()
 │   ├─ isAvailable(type)
 │   ├─ requiresUserInteraction(type)
 │   ├─ submit(type)
+│   ├─ action(action) / completion(resultCode) / retry(message)
 │   └─ controllers: Map<type, CheckoutController>
 │
-├── ComponentModule (AdyenComponent)     — view event bus (renamed from EmbeddedComponentBusModule)
+├── ComponentModule (AdyenComponent)     — view event bus
 │   ├─ subscribe(viewId) / unsubscribe(viewId)
 │   └─ action(viewId) / completion(viewId) / retry(viewId)
 │
 ├── DropInModule (AdyenDropIn)           — modal Drop-In
-│   └─ start() → uses BaseModule.checkoutContext
+│   ├─ open(paymentMethods) → uses BaseModule.checkoutContext
+│   ├─ action / completion / retry
+│   └─ getReturnURL()
 │
 ├── AdyenAction                          — standalone action handling (kept)
 └── AdyenCSE                             — encryption/validation (kept)
@@ -333,25 +337,32 @@ Native modules (renamed):
 ## Module Simplification
 
 ```
-Before (v5/current v6 alpha):
+Before (v5):
 ├── AdyenDropIn          (open, action, completion, retry)
-├── AdyenComponent       (forPaymentMethod, open, action, completion, retry)  ← ELIMINATED
-├── AdyenGooglePay       (isAvailable)                    ← REMOVED
-├── AdyenApplePay        (isAvailable, provide* callbacks) ← REMOVED (callbacks → config)
-├── AdyenAction          (handle, hide)                    ← Keep
-├── AdyenCSE             (encrypt, validate)               ← Keep
-├── CardView             (native view, card only)          ← REMOVED
-├── ApplePayButton       (native view)                     ← REMOVED
-├── GooglePayButton      (native view)                     ← REMOVED
-├── SetupModule          (createSession, setup)             ← RENAMED to ContextModule
-├── EmbeddedComponentBusModule  (viewId routing)            ← RENAMED to ComponentModule
+├── AdyenGooglePay       (isAvailable)                    — standalone module
+├── AdyenApplePay        (isAvailable, provide* callbacks) — standalone module
+├── AdyenInstant         (open, action, completion, retry) — standalone module
+├── AdyenAction          (handle, hide)                    — standalone
+├── AdyenCSE             (encrypt, validate)               — standalone
+├── CardView             (native view, card only)
+├── ApplePayButton       (native view)
+├── GooglePayButton      (native view)
+├── SetupModule          (createSession, setup)
+├── EmbeddedComponentBusModule  (viewId routing)
 
-After (proposal):
-├── <AdyenCheckout>      (configuration, context provider)
+After (v6 — implemented):
+├── <AdyenCheckout>      (context provider, no props)
 ├── <AdyenComponent>     (checkout, type — generic native view for ANY payment method)
 ├── useAdyenCheckout     (setup, setupAdvanced, checkout)
 │   └── Checkout         (paymentMethods, isAvailable, requiresUserInteraction, submit)
-├── AdyenDropIn          (start)
+├── AdyenDropIn          (start(checkout))
 ├── AdyenAction          (handle, hide — standalone escape hatch)
 ├── AdyenCSE             (encrypt, validate)
+│
+│ Native modules (internal):
+├── ContextModule        (createSession, setup, cleanup, isAvailable, requiresUserInteraction, submit)
+├── ComponentModule      (subscribe, unsubscribe, action, completion, retry — view bus)
+├── DropInModule         (open, action, completion, retry)
+├── ActionModule         (action, hide)
+└── AdyenCSEModule       (encrypt, validate)
 ```

@@ -47,6 +47,7 @@ abstract class BaseModule(
   protected open fun cleanup() {
     checkoutContext = null
     currentModule = null
+    storedConfigurationJSON = null
   }
 
   protected fun sendError(exception: Exception) {
@@ -69,6 +70,9 @@ abstract class BaseModule(
 
     var currentModule: BaseModule? = null
       internal set
+
+    @Volatile
+    var storedConfigurationJSON: ReadableMap? = null
 
     @Volatile
     var sdkVersion: String? = null

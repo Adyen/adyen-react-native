@@ -58,7 +58,7 @@ export type EventHandlerRefs = {
     | ((data: PaymentDetailsData, component: PaymentResultHandler) => void)
     | undefined
   >;
-  config: React.RefObject<Configuration>;
+  config: React.RefObject<Configuration | null>;
 };
 
 /**
@@ -97,7 +97,7 @@ export function startEventListeners(
   function submitPayment(data: PaymentMethodData, extra: any) {
     const payload = {
       ...data,
-      returnUrl: data.returnUrl ?? refs.config.current.returnUrl,
+      returnUrl: data.returnUrl ?? refs.config.current?.returnUrl,
     };
     refs.onSubmit.current?.(payload, nativeComponent, extra);
   }
@@ -120,10 +120,10 @@ export function startEventListeners(
   const lookupModule = nativeComponent as unknown as AddressLookup;
   subscribeIfSupported(Event.onAddressUpdate, async (data: any) => {
     const prompt = viewId && typeof data === 'object' ? data.value : data;
-    refs.config.current.card?.onUpdateAddress?.(prompt, lookupModule);
+    refs.config.current?.card?.onUpdateAddress?.(prompt, lookupModule);
   });
   subscribeIfSupported(Event.onAddressConfirm, (address: AddressLookupItem) =>
-    refs.config.current.card?.onConfirmAddress?.(address, lookupModule)
+    refs.config.current?.card?.onConfirmAddress?.(address, lookupModule)
   );
 
   // BIN lookup and value
@@ -132,12 +132,12 @@ export function startEventListeners(
       viewId && !Array.isArray(data) && typeof data === 'object'
         ? data.data
         : data;
-    refs.config.current.card?.onBinLookup?.(lookupData);
+    refs.config.current?.card?.onBinLookup?.(lookupData);
   });
 
   subscribeIfSupported(Event.onBinValue, (data: any) => {
     const value = viewId && typeof data === 'object' ? data.value : data;
-    refs.config.current.card?.onBinValue?.(value);
+    refs.config.current?.card?.onBinValue?.(value);
   });
 
   // Stored payment method removal (Drop-in only)
@@ -145,7 +145,7 @@ export function startEventListeners(
   subscribeIfSupported<StoredPaymentMethod>(
     Event.onDisableStoredPaymentMethod,
     (data) =>
-      refs.config.current.dropin?.onDisableStoredPaymentMethod?.(
+      refs.config.current?.dropin?.onDisableStoredPaymentMethod?.(
         data,
         () => nativeModule.removeStored(true),
         () => nativeModule.removeStored(false)
@@ -158,14 +158,14 @@ export function startEventListeners(
   subscribeIfSupported(
     Event.onCheckBalance,
     async (paymentData: PaymentMethodData) =>
-      refs.config.current.partialPayment?.onBalanceCheck?.(
+      refs.config.current?.partialPayment?.onBalanceCheck?.(
         paymentData,
         (balance) => partialComponent.provideBalance(true, balance, undefined),
         (error) => partialComponent.provideBalance(false, undefined, error)
       )
   );
   subscribeIfSupported(Event.onRequestOrder, () => {
-    refs.config.current.partialPayment?.onOrderRequest?.(
+    refs.config.current?.partialPayment?.onOrderRequest?.(
       (order: Order) => partialComponent.provideOrder(true, order, undefined),
       (error: Error) => partialComponent.provideOrder(false, undefined, error)
     );
@@ -173,7 +173,7 @@ export function startEventListeners(
   subscribeIfSupported(
     Event.onCancelOrder,
     ({ order, shouldUpdatePaymentMethods }: any) =>
-      refs.config.current.partialPayment?.onOrderCancel?.(
+      refs.config.current?.partialPayment?.onOrderCancel?.(
         order,
         shouldUpdatePaymentMethods,
         partialComponent
@@ -188,7 +188,7 @@ export function startEventListeners(
     (data) => {
       const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
         applePayModule.provideCouponCodeUpdate(update);
-      const callback = refs.config.current.applepay?.onCouponCodeChange;
+      const callback = refs.config.current?.applepay?.onCouponCodeChange;
       if (callback) {
         callback(data.couponCode, resolve);
       } else {
@@ -202,7 +202,7 @@ export function startEventListeners(
     (contact) => {
       const resolve = (update: ApplePayShippingContactUpdateRequest) =>
         applePayModule.provideShippingContactUpdate(update);
-      const callback = refs.config.current.applepay?.onShippingContactChange;
+      const callback = refs.config.current?.applepay?.onShippingContactChange;
       if (callback) {
         callback(contact, resolve);
       } else {
@@ -216,7 +216,7 @@ export function startEventListeners(
     (shippingMethod) => {
       const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
         applePayModule.provideShippingMethodUpdate(update);
-      const callback = refs.config.current.applepay?.onShippingMethodChange;
+      const callback = refs.config.current?.applepay?.onShippingMethodChange;
       if (callback) {
         callback(shippingMethod, resolve);
       } else {
@@ -235,7 +235,7 @@ export function startEventListeners(
         resolve: () => provide({ status: 'success' }),
         reject: (errors?) => provide({ status: 'failure', errors }),
       };
-      const callback = refs.config.current.applepay?.onAuthorize;
+      const callback = refs.config.current?.applepay?.onAuthorize;
       if (callback) {
         callback(payment, actions);
       } else {

@@ -20,10 +20,6 @@ internal class BaseModuleSender: BaseModule {
         emitterOverride ?? self
     }
 
-    /// The active v6 checkout object that drives this flow. Retained so that JS-triggered
-    /// actions (e.g. `handle(action:)`) can be forwarded to the SDK.
-    internal var checkout: BaseCheckout?
-
     /// Continuation that suspends the `onSubmit` closure until JS returns a ``SubmitResult``.
     internal var submitContinuation: CheckedContinuation<SubmitResult, Never>?
 
@@ -74,7 +70,7 @@ internal class BaseModuleSender: BaseModule {
 
     override internal func sendError(error: Error) {
         let errorToSend = checkErrorType(error)
-        if BaseModule.session != nil {
+        if BaseModule.sessionDelegate != nil {
             BaseModule.sessionDelegate?.sendError(error: error)
             return
         }
@@ -87,7 +83,6 @@ internal class BaseModuleSender: BaseModule {
 
     override func cleanUp() {
         ensureMainThread { [weak self] in
-            self?.checkout = nil
             self?.submitContinuation?.resume(returning: .retry())
             self?.submitContinuation = nil
             self?.additionalDetailsContinuation?.resume(returning: .completion(resultCode: ""))

@@ -79,18 +79,8 @@ describe('PaymentComponentWrapper (action handling)', () => {
       const mockNativeModule = createMockPaymentModule();
       const wrapper = new TestPaymentActionWrapper(mockNativeModule);
       const paymentMethods = { paymentMethods: [] };
-      const config = {
-        environment: 'test' as const,
-        clientKey: 'test_key',
-        countryCode: 'NL',
-        amount: { value: 1000, currency: 'EUR' },
-        returnUrl: 'myapp://checkout',
-      };
-      wrapper.open(paymentMethods, config);
-      expect(mockNativeModule.open).toHaveBeenCalledWith(
-        paymentMethods,
-        config
-      );
+      wrapper.open(paymentMethods);
+      expect(mockNativeModule.open).toHaveBeenCalledWith(paymentMethods);
     });
 
     test('should inherit completion method from ModuleWrapper', () => {

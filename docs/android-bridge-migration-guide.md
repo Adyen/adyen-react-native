@@ -118,7 +118,7 @@ The React Native bridge layer was refactored after the initial v5→v6 native SD
 | `GooglePayModule` | Google Pay availability checks via `ContextModule.isAvailable("googlepay")`; rendering via `AdyenComponentViewManager` |
 | `ApplePayModuleMock` | Removed — Android mock no longer needed; `ContextModule.isAvailable("applepay")` returns `false` |
 | `InstantModule` | Instant payment methods handled via `ContextModule` headless APIs (`requiresUserInteraction`, `submit`) + `ComponentModule` / `AdyenComponentViewManager` |
-| `SessionHelperModule` | Consolidated into `ContextModule` (`createSession()` / `setup()` methods) |
+| `SessionHelperModule` | Consolidated into `ContextModule` (`setup()` / `setupAdvanced()` methods) |
 
 ### View Manager Renames
 
@@ -725,7 +725,7 @@ Key differences:
 ### DropInModule
 
 - **Registration**: `register(activity)` now calls `DropIn.registerForResult(activity, callbackHandler)` returning a `DropInLauncher` stored in the companion object.
-- **open()**: Advanced flow calls `Checkout.setup(paymentMethods, configuration)` then `DropIn.start(dropInLauncher, checkoutContext, AdvancedCheckoutService::class.java)`. Sessions flow calls `DropIn.start(dropInLauncher, sessionContext, SessionCheckoutService::class.java)`.
+- **start()**: Advanced flow calls `Checkout.setup(paymentMethods, configuration)` then `DropIn.start(dropInLauncher, checkoutContext, AdvancedCheckoutService::class.java)`. Sessions flow calls `DropIn.start(dropInLauncher, sessionContext, SessionCheckoutService::class.java)`.
 - **action()**: Calls `advancedService.provideSubmitResult(SubmitResult.Action(action))` instead of `sendAction()`. Replaces the former `handle()` method.
 - **completion()**: Calls `advancedService.finish(resultCode)` to resume any pending continuation with `SubmitResult.Completion(resultCode)`. Replaces the former `hide(true)` pattern.
 - **retry()**: Calls `advancedService.finish(errorMessage)` to resume any pending continuation with `SubmitResult.Retry(errorMessage)`. Replaces the former `hide(false, message)` pattern.
@@ -742,8 +742,8 @@ Key differences:
 Replaces `SetupModule` ("AdyenSetup") and absorbs `SessionHelperModule`. Registered as `"AdyenContext"`. Serves as the unified lifecycle and headless API entry point.
 
 - **`COMPONENT_NAME = "AdyenContext"`**
-- **`createSession(sessionModelJSON, configurationJSON, promise)`**: Session flow setup. Calls `cleanup()` first to dispose stale controllers, then `Checkout.setup(sessionResponse, configuration)`. Stores the resulting `CheckoutContext.Sessions` in `BaseModule.checkoutContext`. Returns the serialized `SessionSetupResponse` to JS.
-- **`setup(paymentMethodsData, configurationJSON, promise)`**: Advanced flow setup. Calls `cleanup()` first, then `Checkout.setup(paymentMethods, configuration)`. Stores the resulting `CheckoutContext.Advanced` in `BaseModule.checkoutContext`.
+- **`setup(sessionModelJSON, configurationJSON, promise)`**: Session flow setup. Calls `cleanup()` first to dispose stale controllers, then `Checkout.setup(sessionResponse, configuration)`. Stores the resulting `CheckoutContext.Sessions` in `BaseModule.checkoutContext`. Returns the serialized `SessionSetupResponse` to JS.
+- **`setupAdvanced(paymentMethodsData, configurationJSON, promise)`**: Advanced flow setup. Calls `cleanup()` first, then `Checkout.setup(paymentMethods, configuration)`. Stores the resulting `CheckoutContext.Advanced` in `BaseModule.checkoutContext`.
 - **`isAvailable(type, promise)`**: Checks payment method availability:
   - `"applepay"` → always returns `false` (not available on Android)
   - `"googlepay"` / `"googlepay_legacy"` → delegates to `GooglePayAvailability.isAvailable()` (after checking the payment methods list)
@@ -751,7 +751,7 @@ Replaces `SetupModule` ("AdyenSetup") and absorbs `SessionHelperModule`. Registe
 - **`requiresUserInteraction(type, promise)`**: Creates (and caches) a `ComponentManager` for the given type, builds a `CheckoutController`, and returns `controller.requiresUserInteraction()`.
 - **`submit(type)`**: Resolves the cached controller for the given type and calls `controller.submit()`.
 - **`cleanup()`**: Disposes all cached `ComponentManager` instances, clears the map, and resets `checkoutContext` via `super.cleanup()`.
-- **Re-setup safety**: Both `createSession()` and `setup()` call `cleanup()` before initializing, ensuring no stale controllers or contexts are reused.
+- **Re-setup safety**: Both `setup()` and `setupAdvanced()` call `cleanup()` before initializing, ensuring no stale controllers or contexts are reused.
 
 ### ComponentModule (AdyenComponent)
 
@@ -784,7 +784,7 @@ The merged result of the old modal `ComponentModule` and `EmbeddedComponentBusMo
 
 ### SessionHelperModule (REMOVED)
 
-`SessionHelperModule` has been consolidated into `ContextModule`. All session setup functionality (`createSession`, `parseSessionResponse`, result serialization) is now handled by `ContextModule.createSession()`. See the [ContextModule (AdyenContext)](#contextmodule-adyencontext) section above.
+`SessionHelperModule` has been consolidated into `ContextModule`. All session setup functionality (`setup`, `parseSessionResponse`, result serialization) is now handled by `ContextModule.setup()`. See the [ContextModule (AdyenContext)](#contextmodule-adyencontext) section above.
 
 ### BaseModule
 

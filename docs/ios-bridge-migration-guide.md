@@ -58,7 +58,7 @@ In addition to the native SDK v5-to-v6 migration, the React Native bridge layer 
 | `ApplePayModule` | **Removed.** Apple Pay callback bridging (authorization, shipping, coupon) moved to `ContextModule+ApplePay.swift` extension. The `provide*` methods are now on `ContextModule`. |
 | `GooglePayModule` | **Removed.** iOS had only a minimal stub; Google Pay is not available on iOS. `ContextModule.isAvailable("googlepay")` returns `false`. |
 | `InstantModule` | **Removed.** Instant/headless payments are handled via `ContextModule` headless APIs (`isAvailable`, `requiresUserInteraction`, `submit`). |
-| `SessionHelperModule` | **Consolidated into `ContextModule`.** Session creation (`createSession`) is now a method on `ContextModule`. |
+| `SessionHelperModule` | **Consolidated into `ContextModule`.** Session creation (`setup`) is now a method on `ContextModule`. |
 
 ### ObjC Bridge Registration
 
@@ -334,7 +334,7 @@ Three new JS-callable methods resume these continuations (replacing the removed 
 | `ios/Components/ContextModule.swift` | Replaces `SetupModule`. Unified lifecycle module (`@objc(AdyenContext)`) that handles session creation, advanced-flow setup, headless APIs (`isAvailable`, `requiresUserInteraction`, `submit`), and cleanup. |
 | `ios/Components/ContextModule+ApplePay.swift` | Apple Pay callback bridging extension. Builds `ApplePayConfiguration` and wires authorization, shipping, and coupon closures via `CheckedContinuation`. Replaces the removed `ApplePayModule`. |
 | `ios/Components/ContextModule+Advanced.swift` | Advanced-flow wiring extension. Contains `setupAdvancedCallbacks(on:)` with `onSubmit`, `onAdditionalDetails`, `onComplete`, `onFailure` closures that emit viewId-tagged React Native events. |
-| `ios/Components/ComponentModule.swift` | Replaces `EmbeddedComponentBusModule`. Per-viewId view event bus (`@objc(AdyenComponent)`) managing `EmbeddedComponentDelegateProxy` instances for embedded component lifecycle. |
+| `ios/Components/ComponentModule.swift` | Replaces `EmbeddedComponentBusModule`. Per-viewId view event bus (`@objc(AdyenComponent)`) managing `ComponentProxy` instances for embedded component lifecycle. |
 | `ios/Views/AdyenComponentView/ADYAdyenComponentView.h` | New generic Objective-C++ view header for embedded components. Replaces the removed type-specific `ADYCardView` and `ADYPlatformPayView`. |
 | `ios/Views/AdyenComponentView/ADYAdyenComponentView.mm` | New generic Objective-C++ view implementation for embedded components. |
 | `ios/Views/AdyenComponentView/AdyenComponentViewProxy.swift` | Swift proxy backing the new generic embedded component view. Replaces `CardComponentViewProxy`. |
@@ -349,7 +349,7 @@ Three new JS-callable methods resume these continuations (replacing the removed 
 | `ios/Model/CancelOrderData.swift` | Partial payments not yet supported in v6 alpha. |
 | `ios/Components/Base/BaseModuleSender+Delegates.swift` | v5 delegate conformances (`PaymentComponentDelegate`, `ActionComponentDelegate`, `CardComponentDelegate`). Replaced by closure callbacks. |
 | `ios/Components/SetupModule.swift` | Replaced by `ContextModule.swift`. Lifecycle and setup APIs consolidated under `@objc(AdyenContext)`. |
-| `ios/Components/SessionHelperModule.swift` | Session creation consolidated into `ContextModule.createSession()`. |
+| `ios/Components/SessionHelperModule.swift` | Session creation consolidated into `ContextModule.setup()`. |
 | `ios/Components/ApplePay/ApplePayModule.swift` | Apple Pay bridging moved to `ContextModule+ApplePay.swift` extension. |
 | `ios/Components/ApplePay/ApplePayModule+Delegates.swift` | v5 Apple Pay delegate conformances removed; callback closures now in `ContextModule+ApplePay.swift`. |
 | `ios/Components/ApplePay/ApplePayModuleUtilities.swift` | Apple Pay utilities consolidated into `ContextModule+ApplePay.swift`. |
@@ -372,28 +372,28 @@ Three new JS-callable methods resume these continuations (replacing the removed 
 
 This is a new module that consolidates `SetupModule`, `SessionHelperModule`, `ApplePayModule`, and `InstantModule` into a single `@objc(AdyenContext)` bridge module. It inherits from `BaseModule` and conforms to `SessionErrorDelegate`.
 
-#### Session Flow (`createSession`)
+#### Session Flow (`setup`)
 
-Creates a `SessionCheckout` via `Checkout.setup(with: SessionResponse, ...)`. Calls `performCleanup()` first to dispose of any prior checkout state. Wires `onComplete` and `onFailure` closures via `setupSessionCallbacks(on:sessionData:)`. Stores the checkout on `BaseModule.session` and returns a `SessionDTO` to JS containing the session ID, session data, and payment methods.
+Creates a `SessionCheckout` via `Checkout.setup(with: SessionResponse, ...)`. Calls `performCleanup()` first to dispose of any prior checkout state. Wires `onComplete` and `onFailure` closures via `setupSessionCallbacks(on:sessionData:)`. Stores the checkout on `BaseModule.checkoutContext` and returns a `SessionDTO` to JS containing the session ID, session data, and payment methods.
 
 ```swift
 @objc
-func createSession(_ sessionModelJSON: NSDictionary,
-                   configuration: NSDictionary,
-                   resolver: @escaping RCTPromiseResolveBlock,
-                   rejecter: @escaping RCTPromiseRejectBlock)
+func setup(_ sessionModelJSON: NSDictionary,
+           configuration: NSDictionary,
+           resolver: @escaping RCTPromiseResolveBlock,
+           rejecter: @escaping RCTPromiseRejectBlock)
 ```
 
-#### Advanced Flow (`setup`)
+#### Advanced Flow (`setupAdvanced`)
 
 Creates an `AdvancedCheckout` via `Checkout.setup(with: PaymentMethods, ...)`. Calls `performCleanup()` first. Wires `onSubmit`, `onAdditionalDetails`, `onComplete`, `onFailure` closures via `setupAdvancedCallbacks(on:)` (defined in `ContextModule+Advanced.swift`). Stores the checkout on `BaseModule.checkoutContext`.
 
 ```swift
 @objc
-func setup(_ paymentMethodsDict: NSDictionary,
-           configuration: NSDictionary,
-           resolver: @escaping RCTPromiseResolveBlock,
-           rejecter: @escaping RCTPromiseRejectBlock)
+func setupAdvanced(_ paymentMethodsDict: NSDictionary,
+                   configuration: NSDictionary,
+                   resolver: @escaping RCTPromiseResolveBlock,
+                   rejecter: @escaping RCTPromiseRejectBlock)
 ```
 
 The `setupAdvancedCallbacks(on:)` method in `ContextModule+Advanced.swift` wires the advanced-flow closures with viewId-tagged event emission:
@@ -428,7 +428,7 @@ internal func setupAdvancedCallbacks(on checkout: AdvancedCheckout) {
 #### Cleanup
 
 - **`cleanup()`** -- JS-callable explicit cleanup, delegates to `performCleanup()`.
-- **`performCleanup()`** -- Clears cached `components` dictionary, resumes any pending `submitContinuation` (with `.retry()`) and `additionalDetailsContinuation` (with `.completion(resultCode: "")`), nils them out, then calls `cleanUp()` on the base module. Invoked at the start of `createSession` and `setup` to prevent stale state.
+- **`performCleanup()`** -- Clears cached `components` dictionary, resumes any pending `submitContinuation` (with `.retry()`) and `additionalDetailsContinuation` (with `.completion(resultCode: "")`), nils them out, then calls `cleanUp()` on the base module. Invoked at the start of `setup` and `setupAdvanced` to prevent stale state.
 
 #### JS Response Methods
 
@@ -486,11 +486,11 @@ Replaces the former `EmbeddedComponentBusModule`. Registered as `@objc(AdyenComp
 | Aspect | v5 (EmbeddedComponentBusModule) | v6 (ComponentModule) |
 |---|---|---|
 | **ObjC name** | `AdyenComponentBus` | `AdyenComponent` |
-| **Architecture** | Per-viewId `EmbeddedComponentDelegateProxy` instances | Same architecture (unchanged) |
+| **Architecture** | Per-viewId `ComponentProxy` instances | Same architecture (unchanged) |
 | **Registration** | `register(viewId:)` / `unregister(viewId:)` | Same (unchanged) |
 | **Command routing** | `handle`/`hide` via viewId | `action`/`completion`/`retry` via viewId |
 
-**View event bus:** Per-viewId `EmbeddedComponentDelegateProxy` instances are created via `register(viewId:)` and disposed via `unregister(viewId:)`. Each proxy owns its own checkout flow and payment component.
+**View event bus:** Per-viewId `ComponentProxy` instances are created via `register(viewId:)` and disposed via `unregister(viewId:)`. Each proxy owns its own checkout flow and payment component.
 
 **JS-callable methods (all routed by viewId):**
 
@@ -509,15 +509,15 @@ Replaces the former `EmbeddedComponentBusModule`. Registered as `@objc(AdyenComp
 | Aspect | v5 | v6 |
 |---|---|---|
 | **Initialization** | `DropInComponent(paymentMethods:, context:, configuration:)` | `Checkout.setup(with: paymentMethods, configuration:, presentationDelegate:)` returns `AdvancedCheckout` |
-| **Session flow** | Created `DropInComponent` with session context | Reuses `SessionCheckout` from `BaseModule.session` |
+| **Session flow** | Created `DropInComponent` with session context | Reuses `SessionCheckout` from `BaseModule.checkoutContext` |
 | **Component presentation** | Presented `DropInComponent` directly (showed payment method list) | Creates individual `CheckoutPaymentComponent` via `checkout.createPaymentComponent(for:)`. No public Drop-in list in v6. |
 | **Delegates** | Conformed to `DropInComponentDelegate`, `StoredPaymentMethodsDelegate`, `PartialPaymentDelegate` | Closures via `setupCallbacks(on:)` |
 | **Action handling** | `handle(_:)` called `dropInComponent.handle(action:)` | `action(_:)` checks for pending `submitContinuation` first (resumes with `.action`), otherwise falls back to `checkout?.handle(action:)`. The former `handle()` method is replaced by `action()`. |
 | **Address lookup** | N/A or via delegate | Async closures via `withCheckedContinuation` in `awaitAddressLookup` and `awaitAddressSelection` |
 
-**Drop-in is effectively disabled in v6 alpha.** The `open()` method returns `ModuleException.notSupported` immediately without creating a `DropInComponent`. The v5 code is preserved as comments for reference during future migration.
+**Drop-in is effectively disabled in v6 alpha.** The `start()` method returns `ModuleException.notSupported` immediately without creating a `DropInComponent`. The v5 code is preserved as comments for reference during future migration.
 
-**`DropInModule+Delegates.swift`** still exists but contains stub implementations that send `ModuleException.notSupported`. The file implements `DropInComponentDelegate`, `StoredPaymentMethodsDelegate`, and `PartialPaymentDelegate` conformances, but since `open()` short-circuits, these delegates are never invoked at runtime.
+**`DropInModule+Delegates.swift`** still exists but contains stub implementations that send `ModuleException.notSupported`. The file implements `DropInComponentDelegate`, `StoredPaymentMethodsDelegate`, and `PartialPaymentDelegate` conformances, but since `start()` short-circuits, these delegates are never invoked at runtime.
 
 New property:
 ```swift
@@ -557,7 +557,7 @@ No significant changes. The `CardEncryptor`, `CardNumberValidator`, `CardExpiryD
 
 | Aspect | v5 | v6 |
 |---|---|---|
-| **Session storage** | `AdyenSession?` | `SessionCheckout?` |
+| **Session storage** | `AdyenSession?` (via `session`) | `SessionCheckout?` (via `checkoutContext`; `session` property removed) |
 | **Presenter stack** | Managed via `presenterStack` array | Same pattern (unchanged) |
 | **PresentationDelegate** | `present(component: PresentableComponent)` | Same signature (unchanged) |
 | **Error checking** | `ComponentError.cancelled` | `CheckoutError.Code.cancelled` via `.isComponentCanceled` |
@@ -609,9 +609,9 @@ The `action(_:)` method now forwards actions to `checkout?.handle(action:)` inst
 
 Minimal changes. The address lookup/completion handler pattern remains similar. The main difference is that address lookup callbacks are now wired via `CardConfiguration` closures (async) rather than through a `CardComponentDelegate`.
 
-### EmbeddedComponentDelegateProxy
+### ComponentProxy
 
-**File:** `ios/Components/Embedded/EmbeddedComponentDelegateProxy.swift`
+**File:** `ios/Components/ComponentProxy/ComponentProxy.swift`
 
 This is a new v6 class annotated with `@MainActor`. Each proxy:
 
@@ -706,7 +706,7 @@ All UI-presenting and state-mutating methods are annotated with `@MainActor`:
 - `awaitSubmitResult(for:)` / `awaitAdditionalDetailsResult(for:)`
 - `awaitAuthorization(payment:)` / `awaitShippingContact(...)` / `awaitShippingMethod(...)` / `awaitCouponCode(...)` (in `ContextModule+ApplePay.swift`)
 - `presentPaymentComponent(...)` / `present(viewController:)`
-- `EmbeddedComponentDelegateProxy` (entire class is `@MainActor`)
+- `ComponentProxy` (entire class is `@MainActor`)
 - `ContextModule.performCleanup()` (requires `@MainActor`)
 
 ### `ensureMainThread` Helper
@@ -790,7 +790,7 @@ var isEmpty401NetworkingResponseError: Bool {
 
 ## Known Alpha Limitations
 
-1. **Drop-in is effectively disabled** -- `DropInModule.open()` returns `ModuleException.notSupported` immediately. The v6 SDK does not expose a public Drop-in component that shows a list of payment methods. `DropInModule+Delegates.swift` contains stub delegate implementations that also send `notSupported`.
+1. **Drop-in is effectively disabled** -- `DropInModule.start()` returns `ModuleException.notSupported` immediately. The v6 SDK does not expose a public Drop-in component that shows a list of payment methods. `DropInModule+Delegates.swift` contains stub delegate implementations that also send `notSupported`.
 
 2. **ApplePayModule, GooglePayModule, InstantModule removed** -- All consolidated into `ContextModule`. Apple Pay callbacks route through `ContextModule+ApplePay.swift`. Instant/headless payments use the `ContextModule` headless APIs (`isAvailable`, `requiresUserInteraction`, `submit`). Google Pay is not available on iOS.
 
@@ -798,6 +798,6 @@ var isEmpty401NetworkingResponseError: Bool {
 
 4. **Stored payment method removal** -- `onDisableStoredPaymentMethod` is not supported. The `disableStoredPaymentMethod` event name is retained in `EventName` but the `StoredPaymentMethodsDelegate` conformance has been removed.
 
-5. **Session-flow embedded component callbacks** -- When using the session flow with `EmbeddedComponentDelegateProxy`, the `CardConfiguration` closures for BIN lookup (`onBinChange`, `onBinLookup`) and address lookup cannot be injected because the `SessionCheckout` was already created by `ContextModule` with its own `CheckoutConfiguration`. The proxy reuses `BaseModule.session` directly.
+5. **Session-flow embedded component callbacks** -- When using the session flow with `ComponentProxy`, the `CardConfiguration` closures for BIN lookup (`onBinChange`, `onBinLookup`) and address lookup cannot be injected because the `SessionCheckout` was already created by `ContextModule` with its own `CheckoutConfiguration`. The proxy reuses `BaseModule.checkoutContext` directly.
 
 6. **Session-flow Apple Pay** -- The `ApplePayConfiguration` (with its authorization/shipping closures) must be included in the initial `CheckoutConfiguration` passed to `Checkout.setup(with: SessionResponse, ...)`. It cannot be added after the `SessionCheckout` is created. `ContextModule.buildCheckoutConfiguration()` handles this by conditionally including the Apple Pay configuration in the builder DSL.
