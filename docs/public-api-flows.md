@@ -5,28 +5,24 @@
 ```mermaid
 sequenceDiagram
     participant App as Consumer App
-    participant AC as <AdyenCheckout>
-    participant Hook as useAdyenCheckout
+    participant AC as AdyenCheckout (static)
     participant Native as Native (ContextModule)
     participant SDK as Adyen SDK v6
 
-    App->>AC: <AdyenCheckout> (no props)
-    App->>Hook: const { setup, checkout } = useAdyenCheckout()
-
-    App->>Hook: const checkout = await setup(session, configuration, { onComplete, onError })
-    Hook->>Native: createSession(session, config)
+    App->>AC: const checkout = await AdyenCheckout.setup(session, configuration, callbacks)
+    AC->>Native: createSession(session, config)
     Native->>SDK: Checkout.setup(session, config)
     SDK-->>Native: SessionContext + paymentMethods
-    Native-->>Hook: paymentMethods
-    Note over Hook: checkout is now available
+    Native-->>AC: paymentMethods
+    Note over AC: checkout object returned
 
     alt Drop-In
         App->>App: AdyenDropIn.start(checkout)
         App->>Native: open(paymentMethods)
         Native->>SDK: Present Drop-In UI
     else Embedded Component
-        App->>AC: render <AdyenComponent checkout={checkout} type="scheme" />
-        Note over AC: Native view renders card form<br/>User fills in and taps Pay
+        App->>App: render <AdyenComponent checkout={checkout} type="scheme" />
+        Note over App: Native view renders card form<br/>User fills in and taps Pay
     else Headless
         App->>App: await checkout.isAvailable('klarna')
         App->>App: await checkout.requiresUserInteraction('klarna')
@@ -37,14 +33,16 @@ sequenceDiagram
 
     alt Success
         SDK-->>Native: onComplete(result)
-        Native-->>Hook: SessionsResult
-        Hook-->>App: onComplete(result, component)
+        Native-->>AC: SessionsResult
+        AC-->>App: onComplete(result, component)
         App->>App: component.completion(resultCode)
     else Error
         SDK-->>Native: onError(error)
-        Native-->>Hook: error
-        Hook-->>App: onError(error, component)
+        Native-->>AC: error
+        AC-->>App: onError(error, component)
     end
+
+    Note over App: Auto-cleanup on terminal callbacks,<br/>or explicit: checkout.cleanup() / AdyenCheckout.cleanup()
 ```
 
 ## Advanced Flow
@@ -52,7 +50,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant App as Consumer App
-    participant Hook as useAdyenCheckout
+    participant AC as AdyenCheckout (static)
     participant View as <AdyenComponent>
     participant Native as Native (ContextModule + ComponentModule)
     participant SDK as Adyen SDK v6
@@ -61,11 +59,11 @@ sequenceDiagram
     App->>Server: /paymentMethods
     Server-->>App: paymentMethods
 
-    App->>Hook: const checkout = await setupAdvanced(paymentMethods, configuration, { onSubmit, onAdditionalDetails, onError })
-    Hook->>Native: setup(paymentMethods, config)
+    App->>AC: const checkout = await AdyenCheckout.setupAdvanced(paymentMethods, configuration, callbacks)
+    AC->>Native: setup(paymentMethods, config)
     Native->>SDK: Checkout.setup(paymentMethods, config)
     SDK-->>Native: CheckoutContext
-    Note over Hook: checkout is now available
+    Note over AC: checkout object returned
 
     alt Drop-In
         App->>App: AdyenDropIn.start(checkout)
@@ -78,8 +76,8 @@ sequenceDiagram
     end
 
     SDK-->>Native: onSubmit(paymentData)
-    Native-->>Hook: PaymentMethodData
-    Hook-->>App: onSubmit(data, component: PaymentSubmitResultHandler)
+    Native-->>AC: PaymentMethodData
+    AC-->>App: onSubmit(data, component: PaymentSubmitResultHandler)
 
     App->>Server: /payments(data)
     Server-->>App: response
@@ -89,7 +87,7 @@ sequenceDiagram
         Native->>SDK: SubmitResult.Action(action)
         SDK-->>Native: Action UI (3DS2 challenge, redirect, etc.)
         SDK-->>Native: onAdditionalDetails(data)
-        Hook-->>App: onAdditionalDetails(data, component: PaymentAdditionalResultHandler)
+        AC-->>App: onAdditionalDetails(data, component: PaymentAdditionalResultHandler)
         App->>Server: /payments/details(data)
         Server-->>App: finalResult
         App->>App: component.completion(resultCode)
@@ -133,9 +131,8 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "Consumer API"
-        AC["&lt;AdyenCheckout&gt;<br/>(no props, context provider)"]
-        Hook["useAdyenCheckout()<br/>{ setup, setupAdvanced, checkout }"]
-        Checkout["Checkout<br/>paymentMethods, isAvailable,<br/>requiresUserInteraction, submit"]
+        AC["AdyenCheckout (static class)<br/>setup(), setupAdvanced(), cleanup()"]
+        Checkout["Checkout object<br/>paymentMethods, isAvailable,<br/>requiresUserInteraction, submit,<br/>configuration, subscribe, unsubscribe, cleanup"]
     end
 
     subgraph "Payment Modules"
@@ -154,14 +151,12 @@ graph TB
         DropInMod["DropInModule (AdyenDropIn)<br/>open, action, completion, retry"]
     end
 
-    AC --> Hook
-    Hook --> Checkout
+    AC --> Checkout
     Checkout --> Context
     DropIn --> DropInMod
     Component --> CompMod
 
     style AC fill:#4a90d9,color:#fff
-    style Hook fill:#4a90d9,color:#fff
     style Checkout fill:#4a90d9,color:#fff
     style DropIn fill:#7ed321,color:#fff
     style Component fill:#7ed321,color:#fff

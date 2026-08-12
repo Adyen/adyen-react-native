@@ -1,4 +1,2 @@
-export { useAdyenCheckout } from './useAdyenCheckout';
-export type { AdyenCheckoutContextType } from './useAdyenCheckout';
-export { useComponent } from './useComponent';
-export type { AdyenComponentContextType } from './useComponent';
+// Hooks have been replaced by the static AdyenCheckout class.
+// This file is intentionally empty; constants.ts is consumed internally only.

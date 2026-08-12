@@ -22,7 +22,7 @@ export interface DropInModule extends PaymentSubmitResultHandler {
    * `setup()` / `setupAdvanced()`. Drop-in does not own or manage session
    * state — it reads the payment methods from the shared {@link Checkout} and
    * opens the native modal.
-   * @param checkout - The shared checkout obtained from `useAdyenCheckout`.
+   * @param checkout - The shared checkout obtained from `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`.
    */
   start(checkout: Checkout): void;
 

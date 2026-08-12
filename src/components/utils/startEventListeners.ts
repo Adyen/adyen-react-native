@@ -39,26 +39,32 @@ interface ApplePayCallbackHandler {
 }
 
 export type EventHandlerRefs = {
-  onSubmit: React.RefObject<
-    | ((
-        data: PaymentMethodData,
-        component: PaymentResultHandler,
-        extra?: any
-      ) => void)
-    | undefined
-  >;
-  onError: React.RefObject<
-    (error: AdyenError, component: PaymentResultHandler) => void
-  >;
-  onComplete: React.RefObject<
-    | ((result: SessionsResult, component: PaymentResultHandler) => void)
-    | undefined
-  >;
-  onAdditionalDetails: React.RefObject<
-    | ((data: PaymentDetailsData, component: PaymentResultHandler) => void)
-    | undefined
-  >;
-  config: React.RefObject<Configuration | null>;
+  onSubmit: {
+    current:
+      | ((
+          data: PaymentMethodData,
+          component: PaymentResultHandler,
+          extra?: any
+        ) => void)
+      | undefined;
+  };
+  onError: {
+    current: (
+      error: AdyenError,
+      component: PaymentResultHandler
+    ) => void;
+  };
+  onComplete: {
+    current:
+      | ((result: SessionsResult, component: PaymentResultHandler) => void)
+      | undefined;
+  };
+  onAdditionalDetails: {
+    current:
+      | ((data: PaymentDetailsData, component: PaymentResultHandler) => void)
+      | undefined;
+  };
+  config: { current: Configuration | null };
 };
 
 /**

@@ -4,7 +4,7 @@
 
 `@adyen/react-native` 3.0.0-alpha.1 is built on **Adyen iOS SDK 6.0.0-alpha.1** and **Adyen Android SDK 6.0.0-alpha.1**. This is an alpha release intended for early testing and feedback.
 
-The v6 alpha introduces a **new public API** centered around `setup()` / `setupAdvanced()` and a `Checkout` object. Configuration and callbacks are now passed to these setup functions rather than as props on `<AdyenCheckout>`.
+The v6 alpha introduces a **new public API** centered around the static `AdyenCheckout` class. Configuration and callbacks are passed to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`, which return a `Checkout` object. There is no provider component or hook — `AdyenCheckout` is a plain static class, cross-platform aligned with the iOS, Android, and Flutter SDKs.
 
 The majority of required changes are in **native project configuration** (iOS deployment target, Kotlin version, redirect handling) and the **TypeScript integration pattern**.
 
@@ -43,9 +43,9 @@ The majority of required changes are in **native project configuration** (iOS de
 
 ## TypeScript API Changes
 
-### `<AdyenCheckout>` — No Configuration Prop
+### `<AdyenCheckout>` Provider Removed — Static Class API
 
-In v5, configuration and callbacks were passed as props to `<AdyenCheckout>`. In v6, `<AdyenCheckout>` is a pure context provider with no props other than `children`:
+In v5, `<AdyenCheckout>` was a React component that accepted configuration and callbacks as props. In v6, `AdyenCheckout` is a **static class** — there is no React provider component, no context, and no hooks. Configuration and callbacks are passed directly to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`:
 
 ```tsx
 // Before (v5)
@@ -60,30 +60,24 @@ In v5, configuration and callbacks were passed as props to `<AdyenCheckout>`. In
   {children}
 </AdyenCheckout>
 
-// After (v6)
-<AdyenCheckout>
-  {children}
-</AdyenCheckout>
-```
+// After (v6) — no provider, no hook
+import { AdyenCheckout } from '@adyen/react-native';
 
-### `useAdyenCheckout` Hook — Setup Functions
-
-The hook now returns `setup`, `setupAdvanced`, and `checkout` instead of `start`:
-
-```tsx
-const { setup, setupAdvanced, checkout } = useAdyenCheckout();
+const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
 ```
 
 #### Session Flow
 
 ```tsx
-const checkout = await setup(
+import { AdyenCheckout } from '@adyen/react-native';
+
+const checkout = await AdyenCheckout.setup(
   session,         // SessionConfiguration: { id: string, sessionData: string }
   configuration,   // Configuration object
   {
     onComplete: (result, component) => {
       // Handle session completion
-      component.completion(resultCode);
+      component.completion(result.resultCode);
     },
     onError: (error, component) => {
       // Handle error
@@ -95,7 +89,9 @@ const checkout = await setup(
 #### Advanced Flow
 
 ```tsx
-const checkout = await setupAdvanced(
+import { AdyenCheckout } from '@adyen/react-native';
+
+const checkout = await AdyenCheckout.setupAdvanced(
   paymentMethods,   // PaymentMethodsResponse from /paymentMethods API
   configuration,    // Configuration object
   {
@@ -120,7 +116,7 @@ const checkout = await setupAdvanced(
 
 ### `Checkout` Object
 
-Once `setup()` or `setupAdvanced()` resolves, you receive a `Checkout` object with headless APIs:
+Once `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()` resolves, you receive a `Checkout` object with headless APIs:
 
 ```typescript
 // Check payment method availability
@@ -134,11 +130,21 @@ checkout.submit('klarna');
 
 // Access payment methods
 const methods = checkout.paymentMethods;
+
+// Access configuration and manage subscriptions
+checkout.configuration;
+checkout.subscribe(...);
+checkout.unsubscribe(...);
+
+// Explicit cleanup (automatic on terminal callbacks)
+checkout.cleanup();
+// Or clean up all checkouts:
+AdyenCheckout.cleanup();
 ```
 
 ### Drop-In
 
-Drop-in now uses `start(checkout)` instead of being launched via `start('dropin')`:
+Drop-in now uses `AdyenDropIn.start(checkout)` instead of being launched via `start('dropin')`:
 
 ```tsx
 // Before (v5)
@@ -186,7 +192,7 @@ The following standalone modules have been removed and replaced by the `Checkout
 
 ### Configuration Object
 
-All `Configuration` properties remain unchanged — the same object shape is used, just passed to `setup()`/`setupAdvanced()` instead of `<AdyenCheckout>`:
+All `Configuration` properties remain unchanged — the same object shape is used, just passed to `AdyenCheckout.setup()`/`AdyenCheckout.setupAdvanced()` instead of the old `<AdyenCheckout>` component props:
 
 - All component-specific configs (`card`, `dropin`, `applepay`, `googlepay`, `threeDS2`, etc.)
 - All callback configs (`onUpdateAddress`, `onConfirmAddress`, `onBinValue`, `onBinLookup`, etc.)
@@ -281,7 +287,7 @@ No new ProGuard rules are needed. The SDK handles minification internally.
 3. **Update Kotlin version** — set `kotlinVersion = "2.3.21"` in `android/build.gradle` and pin the `kotlin-gradle-plugin` classpath to that version.
 4. **Run `pod install`** in your `ios/` directory to fetch the new Adyen 6.0.0-alpha.1 pods.
 5. **Update Swift AppDelegate redirect handling** (if not using the Expo plugin) — change the import to `adyen_react_native` and the call to `ADYRedirectComponent.applicationDidOpen(url)`.
-6. **Refactor `<AdyenCheckout>` usage** — remove all props; move configuration and callbacks into `setup()` / `setupAdvanced()` calls.
+6. **Replace `<AdyenCheckout>` provider and `useAdyenCheckout()` hook** — remove the provider component and hook calls entirely; use `AdyenCheckout.setup()` / `AdyenCheckout.setupAdvanced()` static methods instead.
 7. **Replace `start('type')` with the new API** — use `AdyenDropIn.start(checkout)` for Drop-In, and `<AdyenComponent checkout={checkout} type="..." />` for embedded components.
 8. **Replace `handle()`/`hide()` with `action()`/`completion()`/`retry()`** in your payment result handling.
 9. **Replace per-method modules** — remove `AdyenGooglePay`, `AdyenApplePay`, `AdyenInstant` usage; use `Checkout` headless APIs instead.
@@ -293,101 +299,81 @@ No new ProGuard rules are needed. The SDK handles minification internally.
 ## Complete Example: Session Flow
 
 ```tsx
-import { AdyenCheckout, AdyenDropIn, useAdyenCheckout } from '@adyen/react-native';
+import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
 import type { SessionConfiguration, Configuration, SessionCallbacks } from '@adyen/react-native';
 
-const CheckoutContent = ({ session, config, callbacks }) => {
-  const { setup, checkout } = useAdyenCheckout();
+const config: Configuration = {
+  environment: 'test',
+  clientKey: '{YOUR_CLIENT_KEY}',
+  countryCode: 'NL',
+  amount: { currency: 'EUR', value: 9800 },
+  returnUrl: 'myapp://adyencheckout',
+};
+
+const callbacks: SessionCallbacks = {
+  onComplete: (result, component) => {
+    component.completion(result.resultCode);
+  },
+  onError: (error, component) => {
+    console.error(error);
+  },
+};
+
+const App = () => {
+  const [checkout, setCheckout] = useState(null);
 
   useEffect(() => {
-    setup(session, config, callbacks);
+    AdyenCheckout.setup(session, config, callbacks).then(setCheckout);
   }, []);
 
   if (!checkout) return <ActivityIndicator />;
 
   return <Button title="Drop-in" onPress={() => AdyenDropIn.start(checkout)} />;
 };
-
-const App = () => {
-  const config: Configuration = {
-    environment: 'test',
-    clientKey: '{YOUR_CLIENT_KEY}',
-    countryCode: 'NL',
-    amount: { currency: 'EUR', value: 9800 },
-    returnUrl: 'myapp://adyencheckout',
-  };
-
-  const callbacks: SessionCallbacks = {
-    onComplete: (result, component) => {
-      component.completion(result.resultCode);
-    },
-    onError: (error, component) => {
-      console.error(error);
-    },
-  };
-
-  return (
-    <AdyenCheckout>
-      <CheckoutContent session={session} config={config} callbacks={callbacks} />
-    </AdyenCheckout>
-  );
-};
 ```
 
 ## Complete Example: Advanced Flow
 
 ```tsx
-import { AdyenCheckout, AdyenComponent, useAdyenCheckout } from '@adyen/react-native';
+import { AdyenCheckout, AdyenComponent } from '@adyen/react-native';
 import type { Configuration, AdvancedCallbacks, PaymentMethodsResponse } from '@adyen/react-native';
 
-const CheckoutContent = ({ paymentMethods, config, callbacks }) => {
-  const { setupAdvanced, checkout } = useAdyenCheckout();
+const config: Configuration = {
+  environment: 'test',
+  clientKey: '{YOUR_CLIENT_KEY}',
+  countryCode: 'NL',
+  amount: { currency: 'EUR', value: 9800 },
+  returnUrl: 'myapp://adyencheckout',
+};
+
+const callbacks: AdvancedCallbacks = {
+  onSubmit: async (data, component) => {
+    const result = await myApiClient.payments(data);
+    if (result.action) {
+      component.action(result.action);
+    } else {
+      component.completion(result.resultCode);
+    }
+  },
+  onAdditionalDetails: async (data, component) => {
+    const result = await myApiClient.paymentDetails(data);
+    component.completion(result.resultCode);
+  },
+  onError: (error, component) => {
+    console.error(error);
+  },
+};
+
+const App = () => {
+  const [checkout, setCheckout] = useState(null);
 
   useEffect(() => {
-    setupAdvanced(paymentMethods, config, callbacks);
+    AdyenCheckout.setupAdvanced(paymentMethods, config, callbacks).then(setCheckout);
   }, []);
 
   if (!checkout) return <ActivityIndicator />;
 
   return <AdyenComponent checkout={checkout} type="scheme" />;
-};
-
-const App = () => {
-  const config: Configuration = {
-    environment: 'test',
-    clientKey: '{YOUR_CLIENT_KEY}',
-    countryCode: 'NL',
-    amount: { currency: 'EUR', value: 9800 },
-    returnUrl: 'myapp://adyencheckout',
-  };
-
-  const callbacks: AdvancedCallbacks = {
-    onSubmit: async (data, component) => {
-      const result = await myApiClient.payments(data);
-      if (result.action) {
-        component.action(result.action);
-      } else {
-        component.completion(result.resultCode);
-      }
-    },
-    onAdditionalDetails: async (data, component) => {
-      const result = await myApiClient.paymentDetails(data);
-      component.completion(result.resultCode);
-    },
-    onError: (error, component) => {
-      console.error(error);
-    },
-  };
-
-  return (
-    <AdyenCheckout>
-      <CheckoutContent
-        paymentMethods={paymentMethods}
-        config={config}
-        callbacks={callbacks}
-      />
-    </AdyenCheckout>
-  );
 };
 ```
 
@@ -400,7 +386,7 @@ const App = () => {
 | iOS minimum deployment target raised to 16.0 | Apps targeting < iOS 16 will fail to build | Update `Podfile` to `platform :ios, '16.0'` |
 | Kotlin 2.3.21 required | Android build will fail with older Kotlin | Update `kotlinVersion` in `android/build.gradle` |
 | Swift redirect API changed | iOS redirect handling in AppDelegate.swift | Change import to `adyen_react_native` and method to `ADYRedirectComponent.applicationDidOpen(url)` |
-| `<AdyenCheckout>` no longer accepts props | Config/callbacks must move to setup functions | Use `setup()` / `setupAdvanced()` from `useAdyenCheckout` |
+| `<AdyenCheckout>` provider and `useAdyenCheckout()` hook removed | `AdyenCheckout` is now a static class | Use `AdyenCheckout.setup()` / `AdyenCheckout.setupAdvanced()` |
 | `start('type')` removed | Drop-in and component launch changed | Use `AdyenDropIn.start(checkout)` and `<AdyenComponent>` |
 | `handle()`/`hide()` removed | Payment result handling changed | Use `action()`/`completion()`/`retry()` |
 | `AdyenGooglePay`, `AdyenApplePay`, `AdyenInstant` removed | Per-method modules gone | Use `Checkout` headless APIs |
@@ -431,4 +417,4 @@ const App = () => {
 ### General
 
 - **TypeScript type errors after upgrade**
-  Check that you have updated all `<AdyenCheckout>` usage to remove props and moved configuration to `setup()` / `setupAdvanced()`. Verify that `handle()` / `hide()` calls have been replaced with `action()` / `completion()` / `retry()`.
+  Check that you have removed the `<AdyenCheckout>` provider component and `useAdyenCheckout()` hook, and replaced them with `AdyenCheckout.setup()` / `AdyenCheckout.setupAdvanced()` static method calls. Verify that `handle()` / `hide()` calls have been replaced with `action()` / `completion()` / `retry()`.

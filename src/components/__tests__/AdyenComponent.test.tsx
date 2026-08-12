@@ -17,14 +17,6 @@ const mockConfiguration = {
   returnUrl: 'myapp://checkout',
 };
 
-jest.mock('../../hooks/useComponent', () => ({
-  useComponent: () => ({
-    subscribe: (...args: any[]) => mockSubscribe(...args),
-    unsubscribe: (...args: any[]) => mockUnsubscribe(...args),
-    configuration: mockConfiguration,
-  }),
-}));
-
 // findNodeHandle drives the viewId used for subscribe/unsubscribe. It is re-exported
 // by the react-native index from RendererProxy, so stub it there to yield a stable tag.
 jest.mock('react-native/Libraries/ReactNative/RendererProxy', () => ({
@@ -48,6 +40,13 @@ import { AdyenComponent } from '../AdyenComponent';
 
 const fakeCheckout = {
   paymentMethods: { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+  configuration: mockConfiguration,
+  subscribe: (...args: any[]) => mockSubscribe(...args),
+  unsubscribe: (...args: any[]) => mockUnsubscribe(...args),
+  isAvailable: jest.fn(),
+  requiresUserInteraction: jest.fn(),
+  submit: jest.fn(),
+  cleanup: jest.fn(),
 } as unknown as Checkout;
 
 describe('AdyenComponent', () => {

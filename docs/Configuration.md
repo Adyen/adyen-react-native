@@ -1,16 +1,16 @@
 # Configuration
 
 > [!IMPORTANT]
-> **v6 API change:** Configuration is no longer passed as a prop to `<AdyenCheckout>`. Instead, pass it to `setup()` or `setupAdvanced()` from the `useAdyenCheckout` hook:
+> **v6 API change:** Configuration is passed to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`:
 >
 > ```tsx
-> const { setup, setupAdvanced } = useAdyenCheckout();
+> import { AdyenCheckout } from '@adyen/react-native';
 >
 > // Session flow:
-> const checkout = await setup(session, configuration, callbacks);
+> const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
 >
 > // Advanced flow:
-> const checkout = await setupAdvanced(paymentMethods, configuration, callbacks);
+> const checkout = await AdyenCheckout.setupAdvanced(paymentMethods, configuration, callbacks);
 > ```
 
 ## Root configurations

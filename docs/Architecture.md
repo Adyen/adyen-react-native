@@ -15,7 +15,7 @@ src/
 ├── index.ts                              # Main entry point (barrel exports)
 ├── components/                           # React components
 │   ├── index.ts
-│   ├── AdyenCheckout.tsx                   # Context provider (no config prop — config passed to setup/setupAdvanced)
+│   ├── AdyenCheckout.ts                    # Static checkout class (setup, setupAdvanced, cleanup)
 │   ├── AdyenComponent.tsx                  # Generic embedded payment view (checkout, type props)
 │   ├── utils/                              # Component utilities
 │   │   ├── checkConfiguration.ts             # Configuration validation
@@ -37,12 +37,6 @@ src/
 │       ├── GooglePayConfiguration.ts
 │       ├── PartialPaymentConfiguration.ts
 │       └── ThreeDSConfiguration.ts
-├── hooks/                                # React hooks
-│   ├── index.ts
-│   ├── constants.ts                        # Error message constants
-│   ├── useAdyenCheckout.ts                 # Context hook: setup, setupAdvanced, checkout
-│   ├── useComponent.ts                     # Context hook for embedded component subscribe/unsubscribe
-│   └── useSubscriptionManager.ts           # Manages event subscriptions for embedded components
 ├── plugin/                               # Expo config plugins
 │   ├── withAdyen.ts                        # Main plugin entry
 │   ├── withAdyenIos.ts                     # iOS-specific configuration
@@ -319,7 +313,7 @@ Embedded views are rendered inline within the React tree using Fabric codegen. U
 │    ├── subscribe(reactTag) → ComponentBus                                │
 │    └── <NativeAdyenComponentView type={...} configuration={...} />       │
 │                                                                          │
-│  useSubscriptionManager                                                  │
+│  SubscriptionManager (internal)                                          │
 │    ├── ComponentBus.subscribe(key)                                       │
 │    ├── ComponentProxy(bus, key) → startEventListeners()                  │
 │    └── Filters incoming events by viewId === key                         │

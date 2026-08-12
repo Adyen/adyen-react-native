@@ -5,19 +5,23 @@
 //
 
 import { AdyenContext } from '../modules/context/ContextModule';
+import type { Configuration } from './configurations/Configuration';
 import type { PaymentMethodsResponse } from './types';
 
 /**
  * The entry point for interacting with a configured checkout.
  *
- * A `Checkout` is only ever obtained by awaiting `setup()` or `setupAdvanced()`
- * from `useAdyenCheckout` — it has no public constructor. Because it exists only
- * after setup resolves, its methods cannot be called before the checkout context
- * is ready.
+ * A `Checkout` is only ever obtained by awaiting `AdyenCheckout.setup()` or
+ * `AdyenCheckout.setupAdvanced()` — it has no public constructor. Because it
+ * exists only after setup resolves, its methods cannot be called before the
+ * checkout context is ready.
  */
 export interface Checkout {
   /** Payment methods available for this checkout. */
   readonly paymentMethods: PaymentMethodsResponse;
+
+  /** The checkout configuration. */
+  readonly configuration: Configuration;
 
   /**
    * Checks whether a payment method type is available for the shopper.
@@ -37,6 +41,17 @@ export interface Checkout {
    * @param type - The payment method type.
    */
   submit(type: string): void;
+
+  /**
+   * Tears down the active checkout context, releasing all native resources.
+   */
+  cleanup(): void;
+
+  /** @internal Used by AdyenComponent to subscribe a native view to the event bus. */
+  subscribe(viewId: string): void;
+
+  /** @internal Used by AdyenComponent to unsubscribe a native view from the event bus. */
+  unsubscribe(viewId: string): void;
 }
 
 /**
@@ -47,13 +62,21 @@ export interface Checkout {
  * obtain a `Checkout` after setup resolves.
  */
 export function createCheckout(
-  paymentMethods: PaymentMethodsResponse
+  paymentMethods: PaymentMethodsResponse,
+  configuration: Configuration,
+  subscribeFn: (viewId: string) => void,
+  unsubscribeFn: (viewId: string) => void,
+  cleanupFn: () => void
 ): Checkout {
   return {
     paymentMethods,
+    configuration,
     isAvailable: (type: string) => AdyenContext.isAvailable(type),
     requiresUserInteraction: (type: string) =>
       AdyenContext.requiresUserInteraction(type),
     submit: (type: string) => AdyenContext.submit(type),
+    cleanup: cleanupFn,
+    subscribe: subscribeFn,
+    unsubscribe: unsubscribeFn,
   };
 }

@@ -10,7 +10,6 @@ import NativeAdyenComponentView, {
   type LayoutChangeEvent,
 } from '../specs/NativeAdyenComponentView';
 import type { Checkout } from '../core';
-import { useComponent } from '../hooks/useComponent';
 
 const styles = StyleSheet.create({
   container: { width: '100%' },
@@ -32,7 +31,8 @@ const duplicateTypeError = (type: string): string =>
  */
 export interface AdyenComponentProps {
   /**
-   * The active {@link Checkout} returned by `setup()` / `setupAdvanced()`.
+   * The active {@link Checkout} returned by `AdyenCheckout.setup()` /
+   * `AdyenCheckout.setupAdvanced()`.
    * Required — its presence is compile-time proof that setup has completed.
    */
   checkout: Checkout;
@@ -52,7 +52,15 @@ export const AdyenComponent: React.FC<AdyenComponentProps> = ({
   checkout,
   type,
 }) => {
-  const { subscribe, unsubscribe, configuration } = useComponent();
+  // Defensive guard for untyped (JS) callers; TypeScript already requires `checkout`.
+  if (!checkout) {
+    throw new Error(
+      'AdyenComponent requires a `checkout` obtained from AdyenCheckout.setup()/AdyenCheckout.setupAdvanced().'
+    );
+  }
+
+  // Read from checkout prop directly — no provider context needed
+  const { subscribe, unsubscribe, configuration } = checkout;
   const nativeRef = useRef(null);
   const [size, setSize] = useState<LayoutChangeEvent>();
 
@@ -80,13 +88,6 @@ export const AdyenComponent: React.FC<AdyenComponentProps> = ({
     subscribe(viewId);
     return () => unsubscribe(viewId);
   }, [subscribe, unsubscribe]);
-
-  // Defensive guard for untyped (JS) callers; TypeScript already requires `checkout`.
-  if (!checkout) {
-    throw new Error(
-      'AdyenComponent requires a `checkout` obtained from setup()/setupAdvanced().'
-    );
-  }
 
   // Configuration is null until setup()/setupAdvanced() has been called.
   if (!configuration) {

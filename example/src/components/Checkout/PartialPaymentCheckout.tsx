@@ -1,13 +1,12 @@
-import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { Text, ActivityIndicator, View } from 'react-native';
-import { AdyenCheckout, useAdyenCheckout } from '@adyen/react-native';
+import { AdyenCheckout } from '@adyen/react-native';
 import type {
-  AdvancedCallbacks,
+  Checkout,
   Configuration,
   PaymentResultHandler,
   PaymentSubmitResultHandler,
   PaymentAdditionalResultHandler,
-  PaymentMethodsResponse,
   PaymentMethodData,
   PaymentDetailsData,
   AdyenError,
@@ -23,72 +22,11 @@ import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { processError } from './utils/processError';
 
-interface PartialPaymentContentProps {
-  paymentMethods: PaymentMethodsResponse;
-  callbacks: AdvancedCallbacks;
-  configuration: Configuration;
-}
-
-const PartialPaymentContent = ({
-  paymentMethods,
-  callbacks,
-  configuration,
-}: PartialPaymentContentProps) => {
-  const { setupAdvanced, checkout } = useAdyenCheckout();
-  const [setupError, setSetupError] = useState<string | undefined>(undefined);
-  const started = useRef(false);
-
-  useEffect(() => {
-    if (started.current) {
-      return;
-    }
-    started.current = true;
-    setupAdvanced(paymentMethods, configuration, callbacks).catch((e) =>
-      setSetupError(String(e))
-    );
-  }, [setupAdvanced, paymentMethods, configuration, callbacks]);
-
-  if (setupError) {
-    return (
-      <View style={Styles.centeredContent}>
-        <Text style={Styles.errorText}>{setupError}</Text>
-      </View>
-    );
-  }
-
-  if (!checkout) {
-    return (
-      <View style={Styles.centeredContent}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return <DropInButton checkout={checkout} />;
-};
-
 const PartialPaymentCheckout = () => {
   const { configuration, processResult, apiClient } = useAppContext();
   const [loading, setLoading] = useState(true);
-  const [initError, setError] = useState<string | undefined>(undefined);
-  const [paymentMethods, setPaymentMethods] = useState<
-    PaymentMethodsResponse | undefined
-  >(undefined);
-
-  useEffect(() => {
-    const refreshPaymentMethods = async () => {
-      try {
-        const paymentMethodsResponse =
-          await apiClient.paymentMethods(configuration);
-        setPaymentMethods(paymentMethodsResponse);
-      } catch (e) {
-        setError(String(e));
-      } finally {
-        setLoading(false);
-      }
-    };
-    refreshPaymentMethods();
-  }, [configuration, apiClient]);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [checkout, setCheckout] = useState<Checkout | null>(null);
 
   const didSubmit = useCallback(
     async (
@@ -111,8 +49,8 @@ const PartialPaymentCheckout = () => {
         } else {
           processResult(result, nativeComponent);
         }
-      } catch (error) {
-        processError(error, nativeComponent);
+      } catch (err) {
+        processError(err, nativeComponent);
       }
     },
     [configuration, processResult, apiClient]
@@ -129,16 +67,16 @@ const PartialPaymentCheckout = () => {
         // handlers (see didSubmit). Handle the result like a standard payment
         // until the v6 DropIn partial-payment continuation API lands.
         processResult(result, nativeComponent);
-      } catch (error) {
-        processError(error, nativeComponent);
+      } catch (err) {
+        processError(err, nativeComponent);
       }
     },
     [processResult, apiClient]
   );
 
   const didFail = useCallback(
-    async (error: AdyenError, nativeComponent: PaymentResultHandler) => {
-      processAdyenError(error, nativeComponent);
+    async (adyenError: AdyenError, nativeComponent: PaymentResultHandler) => {
+      processAdyenError(adyenError, nativeComponent);
     },
     []
   );
@@ -200,15 +138,6 @@ const PartialPaymentCheckout = () => {
     [configuration, apiClient]
   );
 
-  const callbacks = useMemo<AdvancedCallbacks>(
-    () => ({
-      onSubmit: didSubmit,
-      onAdditionalDetails: didProvide,
-      onError: didFail,
-    }),
-    [didSubmit, didProvide, didFail]
-  );
-
   const config = useMemo<Configuration>(
     () => ({
       ...checkoutConfiguration(configuration),
@@ -221,6 +150,36 @@ const PartialPaymentCheckout = () => {
     [configuration, checkBalance, requestOrder, cancelOrder]
   );
 
+  useEffect(() => {
+    let active = true;
+    const init = async () => {
+      try {
+        const paymentMethods =
+          await apiClient.paymentMethods(configuration);
+        const c = await AdyenCheckout.setupAdvanced(paymentMethods, config, {
+          onSubmit: didSubmit,
+          onAdditionalDetails: didProvide,
+          onError: didFail,
+        });
+        if (active) {
+          setCheckout(c);
+        }
+      } catch (e) {
+        if (active) {
+          setError(String(e));
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+    init();
+    return () => {
+      active = false;
+    };
+  }, [configuration, apiClient, config, didSubmit, didProvide, didFail]);
+
   if (loading) {
     return (
       <View style={Styles.centeredContent}>
@@ -229,11 +188,11 @@ const PartialPaymentCheckout = () => {
     );
   }
 
-  if (initError || !paymentMethods) {
+  if (error || !checkout) {
     return (
       <View style={Styles.centeredContent}>
         <Text style={Styles.errorText}>
-          {initError ?? 'No payment methods available'}
+          {error ?? 'No payment methods available'}
         </Text>
       </View>
     );
@@ -242,13 +201,7 @@ const PartialPaymentCheckout = () => {
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout>
-        <PartialPaymentContent
-          paymentMethods={paymentMethods}
-          callbacks={callbacks}
-          configuration={config}
-        />
-      </AdyenCheckout>
+      <DropInButton checkout={checkout} />
     </View>
   );
 };
