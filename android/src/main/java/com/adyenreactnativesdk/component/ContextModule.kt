@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.component
 
+import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.components.Checkout
@@ -15,6 +16,7 @@ import com.adyen.checkout.core.components.paymentmethod.PaymentMethodTypes
 import com.adyen.checkout.core.sessions.SessionResponse
 import com.adyen.checkout.core.sessions.internal.data.model.SessionSetupResponse
 import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentManager
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.googlepay.GooglePayAvailability
@@ -52,16 +54,21 @@ class ContextModule(
   }
 
   @ReactMethod
-  override fun completion(resultCode: String) {
-    currentModule?.completion(resultCode)
+  fun completion(resultCode: String) {
+    if (BaseModule.checkoutState == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
+    }
     cleanup()
   }
 
   @ReactMethod
-  override fun retry(message: String?) {
-    currentModule?.retry(message)
+  fun retry(message: String?) {
+    if (BaseModule.checkoutState == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
+    }
   }
 
+  /** Called from JS terminal callbacks (onComplete / onError) via performAutoCleanup(). */
   @ReactMethod
   override fun cleanup() {
     componentManagers.values.forEach { it.dispose() }
@@ -74,8 +81,9 @@ class ContextModule(
     type: String,
     promise: Promise,
   ) {
-    val context = BaseModule.checkoutContext
+    val context = BaseModule.checkoutState?.checkoutContext
     if (context == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
       promise.resolve(false)
       return
     }
@@ -119,8 +127,9 @@ class ContextModule(
     type: String,
     promise: Promise,
   ) {
-    val context = BaseModule.checkoutContext
+    val context = BaseModule.checkoutState?.checkoutContext
     if (context == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
       promise.reject(ModuleException.Unknown("Checkout context is not initialized"))
       return
     }
@@ -141,7 +150,12 @@ class ContextModule(
 
   @ReactMethod
   fun submit(type: String) {
-    val context = BaseModule.checkoutContext ?: return
+    val state = BaseModule.checkoutState
+    if (state == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
+      return
+    }
+    val context = state.checkoutContext
     appCompatActivity.lifecycleScope.launch {
       try {
         resolveController(context, type)?.submit()
@@ -189,9 +203,10 @@ class ContextModule(
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
-    // Re-setup must never reuse stale controllers or a dangling checkout context.
-    cleanup()
-    BaseModule.storedConfigurationJSON = configurationJSON
+    // Re-setup: clear stale controllers without tearing down the native checkout context.
+    // The native side replaces its own state when the new setup completes.
+    componentManagers.values.forEach { it.dispose() }
+    componentManagers.clear()
     val sessionResponse: SessionResponse
     val configuration: CheckoutConfiguration
     try {
@@ -216,7 +231,10 @@ class ContextModule(
 
     val jsonObject = SessionSetupResponse.SERIALIZER.serialize(sessionsContext.checkoutSession.sessionSetupResponse)
     val sessionSetupResponseMap = ReactNativeJson.convertJsonToMap(jsonObject)
-    BaseModule.checkoutContext = sessionsContext
+    BaseModule.checkoutState = CheckoutState(
+      checkoutContext = sessionsContext,
+      configurationJSON = configurationJSON,
+    )
     promise.resolve(sessionSetupResponseMap)
   }
 
@@ -236,9 +254,10 @@ class ContextModule(
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
-    // Re-setup must never reuse stale controllers or a dangling checkout context.
-    cleanup()
-    BaseModule.storedConfigurationJSON = configurationJSON
+    // Re-setup: clear stale controllers without tearing down the native checkout context.
+    // The native side replaces its own state when the new setup completes.
+    componentManagers.values.forEach { it.dispose() }
+    componentManagers.clear()
     val paymentMethods: PaymentMethods
     val configuration: CheckoutConfiguration
     try {
@@ -251,7 +270,10 @@ class ContextModule(
 
     when (val result = Checkout.setup(paymentMethods, configuration)) {
       is Checkout.Result.Success -> {
-        BaseModule.checkoutContext = result.checkoutContext
+        BaseModule.checkoutState = CheckoutState(
+          checkoutContext = result.checkoutContext,
+          configurationJSON = configurationJSON,
+        )
         promise.resolve(null)
       }
 
@@ -270,6 +292,7 @@ class ContextModule(
   }
 
   companion object {
+    private const val TAG = "ContextModule"
     private const val COMPONENT_NAME = "AdyenContext"
     private const val ID = "id"
     private const val SESSION_DATA = "sessionData"

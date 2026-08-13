@@ -42,11 +42,6 @@ export interface Checkout {
    */
   submit(type: string): void;
 
-  /**
-   * Tears down the active checkout context, releasing all native resources.
-   */
-  cleanup(): void;
-
   /** @internal Used by AdyenComponent to subscribe a native view to the event bus. */
   subscribe(viewId: string): void;
 
@@ -65,8 +60,7 @@ export function createCheckout(
   paymentMethods: PaymentMethodsResponse,
   configuration: Configuration,
   subscribeFn: (viewId: string) => void,
-  unsubscribeFn: (viewId: string) => void,
-  cleanupFn: () => void
+  unsubscribeFn: (viewId: string) => void
 ): Checkout {
   return {
     paymentMethods,
@@ -75,7 +69,6 @@ export function createCheckout(
     requiresUserInteraction: (type: string) =>
       AdyenContext.requiresUserInteraction(type),
     submit: (type: string) => AdyenContext.submit(type),
-    cleanup: cleanupFn,
     subscribe: subscribeFn,
     unsubscribe: unsubscribeFn,
   };

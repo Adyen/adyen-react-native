@@ -14,6 +14,7 @@ import type {
   ApplePayShippingMethodUpdateRequest,
   Checkout,
   Configuration,
+  PaymentAdditionalResultHandler,
   PaymentMethodsResponse,
   PaymentResultHandler,
   PaymentSubmitResultHandler,
@@ -22,6 +23,7 @@ import type {
 } from './core';
 import { createCheckout } from './core/Checkout';
 import { AdyenContext } from './modules/context/ContextModule';
+import { AdyenDropIn } from './modules/dropin/AdyenDropIn';
 import { AdyenComponent as AdyenComponentModule } from './modules/component/AdyenComponentModule';
 import { ComponentProxy } from './modules/component/ComponentProxy';
 import {
@@ -30,15 +32,16 @@ import {
 } from './components/utils/startEventListeners';
 import { checkConfiguration } from './components/utils/checkConfiguration';
 
-// Result handlers for callbacks
+// Result handlers for DropIn callbacks — route directly to AdyenDropIn,
+// bypassing the ContextModule dispatch indirection.
 const createResultHandler = (): PaymentResultHandler => ({
-  completion: (resultCode) => AdyenContext.completion(resultCode),
+  completion: (resultCode) => AdyenDropIn.completion(resultCode),
 });
 
 const createSubmitHandler = (): PaymentSubmitResultHandler => ({
-  action: (action) => AdyenContext.action(action),
-  completion: (resultCode) => AdyenContext.completion(resultCode),
-  retry: (message) => AdyenContext.retry(message),
+  action: (action) => AdyenDropIn.action(action),
+  completion: (resultCode) => AdyenDropIn.completion(resultCode),
+  retry: (message) => AdyenDropIn.retry(message),
 });
 
 /**
@@ -70,7 +73,7 @@ export class AdyenCheckout {
   // Event handler refs (using .current for compatibility with startEventListeners)
   private static eventHandlerRefs: EventHandlerRefs = {
     onSubmit: { current: undefined },
-    onError: { current: () => {} },
+    onError: { current: undefined },
     onComplete: { current: undefined },
     onAdditionalDetails: { current: undefined },
     config: { current: null },
@@ -89,9 +92,10 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: SessionCallbacks
   ): Promise<Checkout> {
-    // Auto-clean any previous context
+    // Before re-setup, clear JS-side state without calling native cleanup.
+    // The native side will handle its own state when it receives the new setup call.
     if (!AdyenCheckout.isCleanedUp) {
-      AdyenCheckout.cleanup();
+      AdyenCheckout.clearJSState();
     }
 
     checkConfiguration(configuration);
@@ -102,25 +106,34 @@ export class AdyenCheckout {
     AdyenCheckout.eventHandlerRefs.config.current = configuration;
 
     // Wire event handler refs for per-view routing
+    // Session flow — terminal callbacks without handler
     AdyenCheckout.eventHandlerRefs.onSubmit.current = undefined;
     AdyenCheckout.eventHandlerRefs.onAdditionalDetails.current = undefined;
-    AdyenCheckout.eventHandlerRefs.onComplete.current = (result, component) =>
-      AdyenCheckout.sessionCallbacks?.onComplete(result, component);
-    AdyenCheckout.eventHandlerRefs.onError.current = (error, component) => {
-      AdyenCheckout.sessionCallbacks?.onError(error, component);
+    AdyenCheckout.eventHandlerRefs.onComplete.current = (result) =>
+      AdyenCheckout.sessionCallbacks?.onComplete(result);
+    AdyenCheckout.eventHandlerRefs.onError.current = (error) => {
+      AdyenCheckout.sessionCallbacks?.onError(error);
     };
 
     // Wire native event listeners
+    // Terminal callbacks — no handler parameter
     AdyenContext.removeAllListeners();
     AdyenContext.assignCompletionHandler((result) => {
-      AdyenCheckout.sessionCallbacks?.onComplete(result, createResultHandler());
+      AdyenCheckout.sessionCallbacks?.onComplete(result);
       AdyenCheckout.performAutoCleanup();
     });
     AdyenContext.assignErrorHandler((error) => {
-      AdyenCheckout.sessionCallbacks?.onError(error, createResultHandler());
+      AdyenCheckout.sessionCallbacks?.onError(error);
       AdyenCheckout.performAutoCleanup();
     });
     AdyenCheckout.subscribeApplePayHandlers();
+
+    // TODO: v6 alpha — wire onBeforeSubmit once native bridge supports it.
+    // Native ContextModule needs:
+    //   - iOS: setupSessionCallbacks to wire .onBeforeSubmit { data in await ... }
+    //   - Android: SessionCheckoutCallbacks(onBeforeSubmit = { data -> ... })
+    //   - New event type and handler methods on ContextModule for proceed/abort
+    // The callback type is ready in SessionCallbacks.onBeforeSubmit.
 
     const context = await AdyenContext.createSession(
       { id: session.id, sessionData: session.sessionData },
@@ -130,8 +143,7 @@ export class AdyenCheckout {
       context.paymentMethods,
       configuration,
       (viewId) => AdyenCheckout.subscribe(viewId),
-      (viewId) => AdyenCheckout.unsubscribe(viewId),
-      () => AdyenCheckout.cleanup()
+      (viewId) => AdyenCheckout.unsubscribe(viewId)
     );
     AdyenCheckout.activeCheckout = checkout;
     return checkout;
@@ -150,9 +162,10 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: AdvancedCallbacks
   ): Promise<Checkout> {
-    // Auto-clean any previous context
+    // Before re-setup, clear JS-side state without calling native cleanup.
+    // The native side will handle its own state when it receives the new setup call.
     if (!AdyenCheckout.isCleanedUp) {
-      AdyenCheckout.cleanup();
+      AdyenCheckout.clearJSState();
     }
 
     checkConfiguration(configuration);
@@ -163,6 +176,7 @@ export class AdyenCheckout {
     AdyenCheckout.eventHandlerRefs.config.current = configuration;
 
     // Wire event handler refs for per-view routing
+    // Advanced flow — intermediate with handler, terminal without
     AdyenCheckout.eventHandlerRefs.onSubmit.current = (data, component) =>
       AdyenCheckout.advancedCallbacks?.onSubmit(
         data,
@@ -174,14 +188,16 @@ export class AdyenCheckout {
     ) =>
       AdyenCheckout.advancedCallbacks?.onAdditionalDetails(
         data,
-        component as unknown as import('./core').PaymentAdditionalResultHandler
+        component as PaymentAdditionalResultHandler
       );
-    AdyenCheckout.eventHandlerRefs.onError.current = (error, component) => {
-      AdyenCheckout.advancedCallbacks?.onError(error, component);
+    AdyenCheckout.eventHandlerRefs.onComplete.current = (result) =>
+      AdyenCheckout.advancedCallbacks?.onComplete(result);
+    AdyenCheckout.eventHandlerRefs.onError.current = (error) => {
+      AdyenCheckout.advancedCallbacks?.onError(error);
     };
-    AdyenCheckout.eventHandlerRefs.onComplete.current = undefined;
 
     // Wire native event listeners
+    // Intermediate callbacks — keep handlers
     AdyenContext.removeAllListeners();
     AdyenContext.assignSubmitHandler(({ paymentData }) => {
       const payload = {
@@ -196,8 +212,13 @@ export class AdyenCheckout {
         createResultHandler()
       )
     );
+    // Terminal callbacks — no handler
+    AdyenContext.assignAdvancedCompleteHandler((result) => {
+      AdyenCheckout.advancedCallbacks?.onComplete(result);
+      AdyenCheckout.performAutoCleanup();
+    });
     AdyenContext.assignAdvancedErrorHandler((error) => {
-      AdyenCheckout.advancedCallbacks?.onError(error, createResultHandler());
+      AdyenCheckout.advancedCallbacks?.onError(error);
       AdyenCheckout.performAutoCleanup();
     });
     AdyenCheckout.subscribeApplePayHandlers();
@@ -207,17 +228,44 @@ export class AdyenCheckout {
       paymentMethods,
       configuration,
       (viewId) => AdyenCheckout.subscribe(viewId),
-      (viewId) => AdyenCheckout.unsubscribe(viewId),
-      () => AdyenCheckout.cleanup()
+      (viewId) => AdyenCheckout.unsubscribe(viewId)
     );
     AdyenCheckout.activeCheckout = checkout;
     return checkout;
   }
 
   /**
-   * Tears down the active checkout context, releasing all native resources.
+   * Clears JS-side state (listeners, subscriptions, callback refs) without
+   * calling native cleanup. Used on re-setup so the native side can manage
+   * its own state transition when it receives the new setup call.
    */
-  static cleanup(): void {
+  private static clearJSState(): void {
+    // Unsubscribe all embedded views
+    AdyenCheckout.subscriptions.forEach((listeners, viewId) => {
+      listeners.forEach((s) => s.remove());
+      AdyenComponentModule.unsubscribe(viewId);
+    });
+    AdyenCheckout.subscriptions.clear();
+    // Remove native event listeners
+    AdyenContext.removeAllListeners();
+    // Clear state
+    AdyenCheckout.configuration = null;
+    AdyenCheckout.sessionCallbacks = null;
+    AdyenCheckout.advancedCallbacks = null;
+    AdyenCheckout.activeCheckout = null;
+    AdyenCheckout.isCleanedUp = true;
+    AdyenCheckout.eventHandlerRefs.config.current = null;
+    AdyenCheckout.eventHandlerRefs.onSubmit.current = undefined;
+    AdyenCheckout.eventHandlerRefs.onError.current = undefined;
+    AdyenCheckout.eventHandlerRefs.onComplete.current = undefined;
+    AdyenCheckout.eventHandlerRefs.onAdditionalDetails.current = undefined;
+  }
+
+  /**
+   * Tears down the active checkout context, releasing all native resources.
+   * Called only from terminal callbacks (onComplete / onError) via performAutoCleanup().
+   */
+  private static cleanup(): void {
     if (AdyenCheckout.isCleanedUp) return;
     // Unsubscribe all embedded views
     AdyenCheckout.subscriptions.forEach((listeners, viewId) => {
@@ -236,7 +284,7 @@ export class AdyenCheckout {
     AdyenCheckout.isCleanedUp = true;
     AdyenCheckout.eventHandlerRefs.config.current = null;
     AdyenCheckout.eventHandlerRefs.onSubmit.current = undefined;
-    AdyenCheckout.eventHandlerRefs.onError.current = () => {};
+    AdyenCheckout.eventHandlerRefs.onError.current = undefined;
     AdyenCheckout.eventHandlerRefs.onComplete.current = undefined;
     AdyenCheckout.eventHandlerRefs.onAdditionalDetails.current = undefined;
   }

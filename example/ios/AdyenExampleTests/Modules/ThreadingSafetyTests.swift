@@ -13,7 +13,6 @@ final class ThreadingSafetyTests: XCTestCase {
 
     override func tearDown() {
         BaseModule.presenterStack.removeAll()
-        BaseModule.currentModule = nil
         ComponentModule.shared = nil
         super.tearDown()
     }

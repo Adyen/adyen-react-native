@@ -3,7 +3,7 @@ import { Text, ActivityIndicator, View } from 'react-native';
 import { AdyenCheckout, AdyenComponent } from '@adyen/react-native';
 import type {
   Checkout,
-  PaymentResultHandler,
+  PaymentResult,
   PaymentSubmitResultHandler,
   PaymentAdditionalResultHandler,
   PaymentMethodData,
@@ -69,9 +69,16 @@ const AdvancedCheckout = () => {
     [processResult, apiClient]
   );
 
+  const didComplete = useCallback(
+    async (result: PaymentResult) => {
+      processResult(result);
+    },
+    [processResult]
+  );
+
   const didFail = useCallback(
-    async (adyenError: AdyenError, nativeComponent: PaymentResultHandler) => {
-      processAdyenError(adyenError, nativeComponent);
+    async (adyenError: AdyenError) => {
+      processAdyenError(adyenError);
     },
     []
   );
@@ -85,6 +92,7 @@ const AdvancedCheckout = () => {
         const c = await AdyenCheckout.setupAdvanced(paymentMethods, config, {
           onSubmit: didSubmit,
           onAdditionalDetails: didProvide,
+          onComplete: didComplete,
           onError: didFail,
         });
         if (active) {
@@ -104,7 +112,7 @@ const AdvancedCheckout = () => {
     return () => {
       active = false;
     };
-  }, [configuration, apiClient, config, didSubmit, didProvide, didFail]);
+  }, [configuration, apiClient, config, didSubmit, didProvide, didComplete, didFail]);
 
   if (loading) {
     return (

@@ -45,9 +45,6 @@ class ComponentModule(
   fun unsubscribe(viewId: String) {
     subscribedViews.remove(viewId)
     unregister(viewId)
-    if (subscribedViews.isEmpty()) {
-      cleanup()
-    }
   }
 
   @ReactMethod
@@ -92,12 +89,10 @@ class ComponentModule(
     viewId: String,
     resultCode: String,
   ) {
-    // Terminal result — the consumer finishes the flow and the view is unregistered.
+    // Terminal result for this view — the consumer finishes the flow and the view is
+    // unregistered. Global cleanup happens when the TS-level terminal callback fires.
     getConsumer(viewId)?.onFinalResult(true, null)
     unregister(viewId)
-    if (subscribedViews.isEmpty()) {
-      cleanup()
-    }
   }
 
   @ReactMethod
@@ -107,20 +102,18 @@ class ComponentModule(
   ) {
     // A retriable failure loops back into onSubmit as SubmitResult.Retry, so the consumer
     // reports whether it stayed in-flight. The view remains registered when retained.
+    // Global cleanup happens when the TS-level terminal callback fires.
     val retained = getConsumer(viewId)?.onFinalResult(false, message) ?: false
     if (retained) return
 
     unregister(viewId)
-    if (subscribedViews.isEmpty()) {
-      cleanup()
-    }
   }
 
-  override fun completion(resultCode: String) {
+  fun completion(resultCode: String) {
     cleanup()
   }
 
-  override fun retry(message: String?) {
+  fun retry(message: String?) {
     cleanup()
   }
 

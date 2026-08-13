@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.react
 
+import android.util.Log
 import android.util.Size
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -30,6 +31,7 @@ import com.facebook.react.uimanager.UIManagerHelper
 import kotlinx.coroutines.launch
 
 private const val SCHEME = "scheme"
+private const val TAG = "AdyenComponentViewState"
 
 /**
  * Per-view state for the generic embedded `<AdyenComponent>` view. Owns the [ComponentManager]
@@ -51,7 +53,12 @@ class AdyenComponentViewState(
 
   fun renderView(dynamicComponentView: DynamicComponentView) {
     val paymentMethodType = type ?: return
-    val checkoutContext = BaseModule.checkoutContext ?: return
+    val state = BaseModule.checkoutState
+    if (state == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
+      return
+    }
+    val checkoutContext = state.checkoutContext
 
     val viewId = dynamicComponentView.id.toString()
     val bus = MessageBus(TaggedEmitter(emitter, viewId))

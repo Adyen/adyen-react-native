@@ -53,10 +53,10 @@ class DropInModule(
   private var taskId: Int? = null
 
   private val integration: String
-    get() = if (session != null) "session" else "advanced"
+    get() = if (BaseModule.checkoutState?.isSession == true) "session" else "advanced"
 
   private val service: BaseDropInServiceContract
-    get() = (if (session != null) sessionService else advancedService) ?: throw ModuleException.NoModuleListener(integration)
+    get() = (if (BaseModule.checkoutState?.isSession == true) sessionService else advancedService) ?: throw ModuleException.NoModuleListener(integration)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -81,8 +81,9 @@ class DropInModule(
       return sendError(ModuleException.NoActivity())
     }
 
-    val storedConfig = BaseModule.storedConfigurationJSON
+    val storedConfig = BaseModule.checkoutState?.configurationJSON
     if (storedConfig == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
       return sendError(ModuleException.Unknown("Checkout context is not initialized. Call setup() or setupAdvanced() first."))
     }
 
@@ -98,10 +99,8 @@ class DropInModule(
       return sendError(e)
     }
 
-    val session = session
-    currentModule = this
     startBackgroundService()
-    if (session != null) {
+    if (BaseModule.checkoutState?.isSession == true) {
       // TODO: v6 migration - session is now CheckoutContext.Sessions, not CheckoutSession.
       //  The old DropIn.startPayment() expects CheckoutSession. Session-flow Drop-in needs
       //  proper v6 migration.
@@ -132,8 +131,8 @@ class DropInModule(
   }
 
   @ReactMethod
-  override fun completion(resultCode: String) {
-    if (session == null) {
+  fun completion(resultCode: String) {
+    if (BaseModule.checkoutState?.isSession != true) {
       val result = DropInServiceResult.Finished(resultCode)
       service.sendResult(result)
     }
@@ -143,8 +142,8 @@ class DropInModule(
   }
 
   @ReactMethod
-  override fun retry(message: String?) {
-    if (session == null) {
+  fun retry(message: String?) {
+    if (BaseModule.checkoutState?.isSession != true) {
       val result = DropInServiceResult.Error(null, message, true)
       service.sendResult(result)
     }

@@ -29,7 +29,7 @@ internal final class DropInModule: BaseAddressModule {
     @objc
     func start(_ paymentMethodsDict: NSDictionary) {
         // TODO: v6 migration - Drop-in presentation not yet migrated.
-        // Get configuration from BaseModule.checkoutContext if needed.
+        // Get configuration from BaseModule.checkoutState?.checkoutContext if needed.
         sendError(error: ModuleException.notSupported)
     }
 

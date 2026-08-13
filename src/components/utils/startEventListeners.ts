@@ -18,7 +18,6 @@ import type {
   PartialPaymentComponent,
   PaymentDetailsData,
   PaymentMethodData,
-  SessionsResult,
   StoredPaymentMethod,
   SubmitModel,
 } from '../../core';
@@ -49,15 +48,10 @@ export type EventHandlerRefs = {
       | undefined;
   };
   onError: {
-    current: (
-      error: AdyenError,
-      component: PaymentResultHandler
-    ) => void;
+    current: ((error: AdyenError) => void) | undefined;
   };
   onComplete: {
-    current:
-      | ((result: SessionsResult, component: PaymentResultHandler) => void)
-      | undefined;
+    current: ((result: any) => void) | undefined;
   };
   onAdditionalDetails: {
     current:
@@ -113,10 +107,10 @@ export function startEventListeners(
     submitPayment(response.paymentData, response.extra)
   );
   subscribeIfSupported<AdyenError>(Event.onError, (error) =>
-    refs.onError.current?.(error, nativeComponent)
+    refs.onError.current?.(error)
   );
-  subscribeIfSupported<SessionsResult>(Event.onComplete, (data) =>
-    refs.onComplete.current?.(data, nativeComponent)
+  subscribeIfSupported(Event.onComplete, (data) =>
+    refs.onComplete.current?.(data)
   );
   subscribeIfSupported<PaymentDetailsData>(Event.onAdditionalDetails, (data) =>
     refs.onAdditionalDetails.current?.(data, nativeComponent)

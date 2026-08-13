@@ -23,7 +23,7 @@ type AppContextType = {
   update: (partial: Partial<AppConfiguration>) => void;
   processResult: (
     result: PaymentResponse,
-    nativeComponent: PaymentResultHandler
+    nativeComponent?: PaymentResultHandler
   ) => void;
   navigateToRoot: () => void;
   navigateToSettings: () => void;
@@ -79,8 +79,8 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
   );
 
   const processResult = useCallback(
-    (result: PaymentResponse, nativeComponent: PaymentResultHandler) => {
-      nativeComponent.completion(result.resultCode);
+    (result: PaymentResponse, nativeComponent?: PaymentResultHandler) => {
+      nativeComponent?.completion(result.resultCode);
       if (navigationRef.isReady()) {
         navigationRef.navigate('Result', { resultCode: result.resultCode });
       }

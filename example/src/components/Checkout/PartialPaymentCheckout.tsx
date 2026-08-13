@@ -4,7 +4,7 @@ import { AdyenCheckout } from '@adyen/react-native';
 import type {
   Checkout,
   Configuration,
-  PaymentResultHandler,
+  PaymentResult,
   PaymentSubmitResultHandler,
   PaymentAdditionalResultHandler,
   PaymentMethodData,
@@ -74,9 +74,16 @@ const PartialPaymentCheckout = () => {
     [processResult, apiClient]
   );
 
+  const didComplete = useCallback(
+    async (result: PaymentResult) => {
+      processResult(result);
+    },
+    [processResult]
+  );
+
   const didFail = useCallback(
-    async (adyenError: AdyenError, nativeComponent: PaymentResultHandler) => {
-      processAdyenError(adyenError, nativeComponent);
+    async (adyenError: AdyenError) => {
+      processAdyenError(adyenError);
     },
     []
   );
@@ -159,6 +166,7 @@ const PartialPaymentCheckout = () => {
         const c = await AdyenCheckout.setupAdvanced(paymentMethods, config, {
           onSubmit: didSubmit,
           onAdditionalDetails: didProvide,
+          onComplete: didComplete,
           onError: didFail,
         });
         if (active) {
@@ -178,7 +186,7 @@ const PartialPaymentCheckout = () => {
     return () => {
       active = false;
     };
-  }, [configuration, apiClient, config, didSubmit, didProvide, didFail]);
+  }, [configuration, apiClient, config, didSubmit, didProvide, didComplete, didFail]);
 
   if (loading) {
     return (

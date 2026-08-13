@@ -31,7 +31,6 @@ const configuration = {
 
 const mockSubscribeFn = jest.fn();
 const mockUnsubscribeFn = jest.fn();
-const mockCleanupFn = jest.fn();
 
 describe('createCheckout', () => {
   beforeEach(() => {
@@ -40,7 +39,6 @@ describe('createCheckout', () => {
     mockSubmit.mockReset();
     mockSubscribeFn.mockReset();
     mockUnsubscribeFn.mockReset();
-    mockCleanupFn.mockReset();
   });
 
   test('exposes the provided paymentMethods', () => {
@@ -50,8 +48,7 @@ describe('createCheckout', () => {
       paymentMethods,
       configuration,
       mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
+      mockUnsubscribeFn
     );
 
     expect(checkout.paymentMethods).toBe(paymentMethods);
@@ -64,8 +61,7 @@ describe('createCheckout', () => {
       paymentMethods,
       configuration,
       mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
+      mockUnsubscribeFn
     );
 
     expect(checkout.configuration).toBe(configuration);
@@ -79,8 +75,7 @@ describe('createCheckout', () => {
       paymentMethods,
       configuration,
       mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
+      mockUnsubscribeFn
     );
 
     await expect(checkout.isAvailable('scheme')).resolves.toBe(true);
@@ -95,8 +90,7 @@ describe('createCheckout', () => {
       paymentMethods,
       configuration,
       mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
+      mockUnsubscribeFn
     );
 
     await expect(checkout.requiresUserInteraction('googlepay')).resolves.toBe(
@@ -112,27 +106,11 @@ describe('createCheckout', () => {
       paymentMethods,
       configuration,
       mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
+      mockUnsubscribeFn
     );
     checkout.submit('applepay');
 
     expect(mockSubmit).toHaveBeenCalledWith('applepay');
-  });
-
-  test('cleanup delegates to provided cleanupFn', () => {
-    const { createCheckout } = require('../Checkout');
-
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
-    );
-    checkout.cleanup();
-
-    expect(mockCleanupFn).toHaveBeenCalled();
   });
 
   test('subscribe delegates to provided subscribeFn', () => {
@@ -142,8 +120,7 @@ describe('createCheckout', () => {
       paymentMethods,
       configuration,
       mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
+      mockUnsubscribeFn
     );
     checkout.subscribe('view-1');
 
@@ -157,8 +134,7 @@ describe('createCheckout', () => {
       paymentMethods,
       configuration,
       mockSubscribeFn,
-      mockUnsubscribeFn,
-      mockCleanupFn
+      mockUnsubscribeFn
     );
     checkout.unsubscribe('view-1');
 

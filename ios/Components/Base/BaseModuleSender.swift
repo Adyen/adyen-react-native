@@ -70,8 +70,11 @@ internal class BaseModuleSender: BaseModule {
 
     override internal func sendError(error: Error) {
         let errorToSend = checkErrorType(error)
-        if BaseModule.sessionDelegate != nil {
-            BaseModule.sessionDelegate?.sendError(error: error)
+        if BaseModule.checkoutState?.isSession == true {
+            let eventName: EventName = .failSession
+            ensureMainThread { [weak self] in
+                self?.emitter.send(event: eventName, body: errorToSend.jsonObject)
+            }
             return
         }
         ensureMainThread { [weak self] in

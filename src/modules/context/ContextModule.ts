@@ -1,6 +1,7 @@
 import { NativeModules, type EventSubscription } from 'react-native';
 import type {
   PaymentSubmitResultHandler,
+  PaymentResult,
   AdyenError,
   ApplePayAuthorizationResult,
   ApplePayCouponCodeEvent,
@@ -102,6 +103,15 @@ export interface AdyenContextModule extends PaymentSubmitResultHandler {
    */
   assignAdditionalDetailsHandler(
     callback: (data: PaymentDetailsData) => void
+  ): EventSubscription;
+
+  /**
+   * Subscribe to advanced-flow completion events.
+   * @param callback - Called when the advanced flow completes successfully.
+   * @returns EventSubscription that can be used to remove the listener.
+   */
+  assignAdvancedCompleteHandler(
+    callback: (result: PaymentResult) => void
   ): EventSubscription;
 
   /**

@@ -17,6 +17,7 @@ import {
   type PaymentAction,
   type PaymentDetailsData,
   type PaymentMethodsResponse,
+  type PaymentResult,
   type SessionConfiguration,
   type SessionsResult,
   type SubmitModel,
@@ -160,6 +161,17 @@ export class ContextModuleWrapper implements AdyenContextModule {
     callback: (data: PaymentDetailsData) => void
   ): EventSubscription {
     return this.subscribe(Event.onAdditionalDetails, callback);
+  }
+
+  /**
+   * Subscribe to advanced-flow completion events.
+   * @param callback - Called when the advanced flow completes successfully.
+   * @returns EventSubscription that can be used to remove the listener.
+   */
+  assignAdvancedCompleteHandler(
+    callback: (result: PaymentResult) => void
+  ): EventSubscription {
+    return this.subscribe(Event.onComplete, callback);
   }
 
   /**

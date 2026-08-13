@@ -338,22 +338,44 @@ export interface PaymentResultHandler {
 }
 
 /**
+ * Data provided to the `onBeforeSubmit` callback before a session payment is submitted.
+ * The consumer can inspect or modify shopper fields before proceeding.
+ */
+export interface BeforeSubmitData {
+  billingAddress?: object;
+  deliveryAddress?: object;
+  shopperName?: { firstName?: string; lastName?: string };
+  shopperEmail?: string;
+}
+
+/**
+ * Handler passed to the session-flow `onBeforeSubmit` callback.
+ * The consumer must call exactly one method to continue the flow.
+ */
+export interface BeforeSubmitHandler {
+  /** Continue with the (optionally modified) data. */
+  proceed(data: BeforeSubmitData, sessionData?: string): void;
+  /** Abort the payment submission. */
+  abort(): void;
+}
+
+/**
  * Callbacks for the sessions flow, provided to `setup()`.
  */
 export interface SessionCallbacks {
-  /**
-   * Invoked when the session reaches a final result.
-   * @param result - The session result payload.
-   * @param component - Handler for forwarding the final result.
-   */
-  onComplete(result: SessionsResult, component: PaymentResultHandler): void;
+  /** Called when the session flow completes successfully. Terminal — no further action needed. */
+  onComplete(result: SessionsResult): void;
+
+  /** Called when the session flow fails. Terminal — no further action needed. */
+  onError(error: AdyenError): void;
 
   /**
-   * Invoked when the session fails with an error.
-   * @param error - The error describing the failure.
-   * @param component - Handler for forwarding the final result.
+   * Optional. Called before a payment is submitted in the session flow.
+   * Intermediate — respond via the handler to proceed or abort.
+   * @param data - Shopper data that will be submitted.
+   * @param handler - Call `handler.proceed(data)` or `handler.abort()`.
    */
-  onError(error: AdyenError, component: PaymentResultHandler): void;
+  onBeforeSubmit?(data: BeforeSubmitData, handler: BeforeSubmitHandler): void;
 }
 
 /**
@@ -361,8 +383,7 @@ export interface SessionCallbacks {
  */
 export interface AdvancedCallbacks {
   /**
-   * Invoked when the shopper submits a payment. Make the `/payments` call and
-   * forward the outcome through the handler.
+   * Called when the shopper submits a payment. Intermediate — respond via the handler.
    * @param data - The payment method data to submit.
    * @param component - Handler supporting action, completion and retry.
    */
@@ -372,8 +393,7 @@ export interface AdvancedCallbacks {
   ): void;
 
   /**
-   * Invoked when a payment needs additional details. Make the `/payments/details`
-   * call and forward the outcome through the handler.
+   * Called when additional details are needed. Intermediate — respond via the handler.
    * @param data - The additional payment details.
    * @param component - Handler supporting completion only.
    */
@@ -382,12 +402,11 @@ export interface AdvancedCallbacks {
     component: PaymentAdditionalResultHandler
   ): void;
 
-  /**
-   * Invoked when the payment fails with an error.
-   * @param error - The error describing the failure.
-   * @param component - Handler for forwarding the final result.
-   */
-  onError(error: AdyenError, component: PaymentResultHandler): void;
+  /** Called when the advanced flow completes successfully. Terminal — no further action needed. */
+  onComplete(result: PaymentResult): void;
+
+  /** Called when the advanced flow fails. Terminal — no further action needed. */
+  onError(error: AdyenError): void;
 }
 
 /**

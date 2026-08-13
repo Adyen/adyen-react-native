@@ -14,12 +14,10 @@ import UIKit
 ///   while another is in progress will replace the current session and presenter.
 internal class BaseModule: RCTEventEmitter {
 
-    /// The pre-created advanced-flow checkout context set by ``ContextModule.setup()``.
+    /// The pre-created checkout state set by ``ContextModule.setup()`` or ``ContextModule.setupAdvanced()``.
     /// Downstream modules (``ComponentModule``, ``DropInModule``) can reuse this instead of
-    /// creating their own ``AdvancedCheckout`` inline.
-    internal static var checkoutContext: PaymentCheckout?
-    internal weak static var sessionDelegate: SessionErrorDelegate?
-    internal weak static var currentModule: BaseModule?
+    /// creating their own checkout inline.
+    internal static var checkoutState: CheckoutState?
 
     private static let sdkVersionLock = NSLock()
     private static var sdkVersionStorage: String?
@@ -148,8 +146,7 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     private func cleanUpOnMainThread() {
-        BaseModule.checkoutContext = nil
-        BaseModule.currentModule = nil
+        BaseModule.checkoutState = nil
 
         let root = BaseModule.presenterStack.first
         BaseModule.presenterStack.removeAll()
@@ -173,10 +170,6 @@ extension BaseModule: PresentationDelegate {
                 BaseModule.presenterStack.append(topPresenter)
             } else {
                 return self.sendError(error: ModuleException.notKeyWindow)
-            }
-
-            defer {
-                BaseModule.currentModule = self
             }
 
             let viewController = UINavigationController(rootViewController: component.viewController)

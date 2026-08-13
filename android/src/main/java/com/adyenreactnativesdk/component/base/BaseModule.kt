@@ -7,7 +7,6 @@
 package com.adyenreactnativesdk.component.base
 
 import android.annotation.SuppressLint
-import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.common.internal.helper.CheckoutPlatform
 import com.adyen.checkout.core.common.internal.helper.CheckoutPlatformParams
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethod
@@ -27,10 +26,6 @@ abstract class BaseModule(
 
   override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
 
-  abstract fun completion(resultCode: String)
-
-  abstract fun retry(message: String?)
-
   protected fun getPaymentMethods(paymentMethods: ReadableMap?): PaymentMethods =
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
@@ -45,13 +40,11 @@ abstract class BaseModule(
   ): PaymentMethod? = paymentMethods.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
 
   protected open fun cleanup() {
-    checkoutContext = null
-    currentModule = null
-    storedConfigurationJSON = null
+    checkoutState = null
   }
 
   protected fun sendError(exception: Exception) {
-    if (session == null) {
+    if (checkoutState?.isSession != true) {
       messageBus.onException(exception)
     } else {
       messageBus.onSessionException(exception)
@@ -60,19 +53,7 @@ abstract class BaseModule(
 
   companion object {
     @Volatile
-    internal var checkoutContext: CheckoutContext? = null
-
-    var session: CheckoutContext.Sessions?
-      get() = checkoutContext as? CheckoutContext.Sessions
-      internal set(value) {
-        checkoutContext = value
-      }
-
-    var currentModule: BaseModule? = null
-      internal set
-
-    @Volatile
-    var storedConfigurationJSON: ReadableMap? = null
+    internal var checkoutState: CheckoutState? = null
 
     @Volatile
     var sdkVersion: String? = null

@@ -21,7 +21,6 @@ final class BaseModuleTests: XCTestCase {
     override func tearDown() {
         sut = nil
         BaseModule.presenterStack.removeAll()
-        BaseModule.currentModule = nil
         BaseModule.topPresenterProvider = { UIViewController.topPresenter }
         super.tearDown()
     }
@@ -94,19 +93,6 @@ final class BaseModuleTests: XCTestCase {
 
     // MARK: - cleanUp — static state
 
-    func test_cleanUp_clearsCurrentModule() {
-        let exp = expectation(description: "cleanUp completes")
-        BaseModule.currentModule = sut
-
-        DispatchQueue.main.async {
-            self.sut.cleanUp()
-            exp.fulfill()
-        }
-
-        wait(for: [exp], timeout: 1.0)
-        XCTAssertNil(BaseModule.currentModule)
-    }
-
     func test_cleanUp_clearsCurrentComponent() {
         let exp = expectation(description: "cleanUp completes")
         sut.currentComponent = MockComponent()
@@ -124,7 +110,6 @@ final class BaseModuleTests: XCTestCase {
 
     func test_dismiss_withNoCurrentComponent_callsCleanUp() {
         let exp = expectation(description: "dismiss completes")
-        BaseModule.currentModule = sut
 
         DispatchQueue.global().async {
             self.sut.dismiss(false)
@@ -132,7 +117,7 @@ final class BaseModuleTests: XCTestCase {
         }
 
         wait(for: [exp], timeout: 1.0)
-        XCTAssertNil(BaseModule.currentModule)
+        XCTAssertTrue(BaseModule.presenterStack.isEmpty)
     }
 
     // MARK: - checkErrorType
@@ -234,7 +219,7 @@ final class BaseModuleTests: XCTestCase {
         XCTAssertTrue(BaseModule.presenterStack.last === mockComponent.viewController)
     }
 
-    func test_present_setsCurrentModule() {
+    func test_present_appendsToPresenterStack() {
         let exp = expectation(description: "present dispatched")
         let mockPresenter = MockPresentingViewController()
         mockPresenter.onPresent = { _ in exp.fulfill() }
@@ -243,7 +228,7 @@ final class BaseModuleTests: XCTestCase {
         sut.present(component: MockPresentableComponent(requiresModalPresentation: false))
 
         wait(for: [exp], timeout: 1.0)
-        XCTAssertTrue(BaseModule.currentModule === sut)
+        XCTAssertEqual(BaseModule.presenterStack.count, 2)
     }
 
     func test_present_withEmptyStack_usesTopPresenterProvider() {

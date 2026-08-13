@@ -415,6 +415,15 @@ describe('ContextModuleWrapper', () => {
       expect(typeof subscription.remove).toBe('function');
     });
 
+    test('assignAdvancedCompleteHandler should return a tracked subscription', () => {
+      const wrapper = new ContextModuleWrapper(mockNativeModule);
+
+      const subscription = wrapper.assignAdvancedCompleteHandler(jest.fn());
+
+      expect(subscription).toBeDefined();
+      expect(typeof subscription.remove).toBe('function');
+    });
+
     test('assignAdvancedErrorHandler should return a tracked subscription', () => {
       const wrapper = new ContextModuleWrapper(mockNativeModule);
 

@@ -44,9 +44,11 @@ internal final class ComponentProxy {
     /// through ``ComponentModule``.
     @MainActor
     func makeViewController(type: String, configuration _: NSDictionary) async throws -> UIViewController? {
-        guard let checkout = BaseModule.checkoutContext else {
+        guard let state = BaseModule.checkoutState else {
+            print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
             throw ModuleException.componentNotRegistered(viewId)
         }
+        let checkout = state.checkoutContext
         self.checkout = checkout
 
         guard let paymentMethodType = PaymentMethodType(rawValue: type) else {
@@ -156,8 +158,9 @@ internal final class ComponentProxy {
 
     func sendError(error: Error) {
         guard let bus else { return }
-        if BaseModule.sessionDelegate != nil {
-            BaseModule.sessionDelegate?.sendError(error: error)
+        if BaseModule.checkoutState?.isSession == true {
+            let errorToSend = bus.checkErrorType(error)
+            bus.sendEvent(event: .failSession, body: taggedBody(errorToSend.jsonObject))
             return
         }
         let errorToSend = bus.checkErrorType(error)

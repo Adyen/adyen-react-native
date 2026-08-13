@@ -9,6 +9,7 @@ const mockAssignCompletionHandler = jest.fn();
 const mockAssignErrorHandler = jest.fn();
 const mockAssignSubmitHandler = jest.fn();
 const mockAssignAdditionalDetailsHandler = jest.fn();
+const mockAssignAdvancedCompleteHandler = jest.fn();
 const mockAssignAdvancedErrorHandler = jest.fn();
 const mockAssignApplePayAuthorizationHandler = jest.fn();
 const mockAssignApplePayShippingContactHandler = jest.fn();
@@ -29,6 +30,18 @@ jest.mock('../../modules/component/AdyenComponentModule', () => ({
   },
 }));
 
+const mockDropInAction = jest.fn();
+const mockDropInCompletion = jest.fn();
+const mockDropInRetry = jest.fn();
+
+jest.mock('../../modules/dropin/AdyenDropIn', () => ({
+  AdyenDropIn: {
+    action: (...args: any[]) => mockDropInAction(...args),
+    completion: (...args: any[]) => mockDropInCompletion(...args),
+    retry: (...args: any[]) => mockDropInRetry(...args),
+  },
+}));
+
 jest.mock('../../modules/context/ContextModule', () => ({
   AdyenContext: {
     createSession: (...args: any[]) => mockCreateSession(...args),
@@ -41,6 +54,8 @@ jest.mock('../../modules/context/ContextModule', () => ({
     assignSubmitHandler: (...args: any[]) => mockAssignSubmitHandler(...args),
     assignAdditionalDetailsHandler: (...args: any[]) =>
       mockAssignAdditionalDetailsHandler(...args),
+    assignAdvancedCompleteHandler: (...args: any[]) =>
+      mockAssignAdvancedCompleteHandler(...args),
     assignAdvancedErrorHandler: (...args: any[]) =>
       mockAssignAdvancedErrorHandler(...args),
     assignApplePayAuthorizationHandler: (...args: any[]) =>
@@ -93,6 +108,7 @@ const sessionCallbacks = {
 const advancedCallbacks = {
   onSubmit: jest.fn(),
   onAdditionalDetails: jest.fn(),
+  onComplete: jest.fn(),
   onError: jest.fn(),
 };
 
@@ -101,8 +117,8 @@ describe('AdyenCheckout', () => {
     jest.clearAllMocks();
     mockCreateSession.mockResolvedValue({ paymentMethods: mockPaymentMethods });
     mockSetup.mockResolvedValue(undefined);
-    // Ensure a clean state for each test
-    AdyenCheckout.cleanup();
+    // Ensure a clean state for each test (cleanup is private; access via cast for testing)
+    (AdyenCheckout as any).cleanup();
     jest.clearAllMocks();
   });
 
@@ -135,7 +151,6 @@ describe('AdyenCheckout', () => {
       expect(typeof checkout.isAvailable).toBe('function');
       expect(typeof checkout.requiresUserInteraction).toBe('function');
       expect(typeof checkout.submit).toBe('function');
-      expect(typeof checkout.cleanup).toBe('function');
       expect(typeof checkout.subscribe).toBe('function');
       expect(typeof checkout.unsubscribe).toBe('function');
       expect(checkout.paymentMethods).toBe(mockPaymentMethods);
@@ -154,6 +169,7 @@ describe('AdyenCheckout', () => {
       expect(mockSetup).toHaveBeenCalledWith(mockPaymentMethods, mockConfig);
       expect(mockAssignSubmitHandler).toHaveBeenCalled();
       expect(mockAssignAdditionalDetailsHandler).toHaveBeenCalled();
+      expect(mockAssignAdvancedCompleteHandler).toHaveBeenCalled();
       expect(mockAssignAdvancedErrorHandler).toHaveBeenCalled();
       expect(checkout).toBeDefined();
       expect(checkout.paymentMethods).toBe(mockPaymentMethods);
@@ -162,7 +178,7 @@ describe('AdyenCheckout', () => {
   });
 
   describe('callback handler wiring', () => {
-    test('session onComplete receives a result handler exposing completion', async () => {
+    test('session onComplete is called with result only (no handler)', async () => {
       await AdyenCheckout.setup(
         { id: 'session_123', sessionData: 'session_data' },
         mockConfig,
@@ -178,15 +194,12 @@ describe('AdyenCheckout', () => {
       nativeCompletionHandler(sessionResult);
 
       expect(sessionCallbacks.onComplete).toHaveBeenCalledTimes(1);
-      const [resultArg, handlerArg] = sessionCallbacks.onComplete.mock.calls[0];
-      expect(resultArg).toBe(sessionResult);
-      expect(typeof handlerArg.completion).toBe('function');
-      // Completion-only handler must not leak action/retry at runtime.
-      expect('action' in handlerArg).toBe(false);
-      expect('retry' in handlerArg).toBe(false);
+      expect(sessionCallbacks.onComplete).toHaveBeenCalledWith(sessionResult);
+      // Terminal callback — no handler parameter
+      expect(sessionCallbacks.onComplete.mock.calls[0]).toHaveLength(1);
     });
 
-    test('session onError receives a completion-only handler', async () => {
+    test('session onError is called with error only (no handler)', async () => {
       await AdyenCheckout.setup(
         { id: 'session_123', sessionData: 'session_data' },
         mockConfig,
@@ -200,11 +213,9 @@ describe('AdyenCheckout', () => {
       nativeErrorHandler(sessionError);
 
       expect(sessionCallbacks.onError).toHaveBeenCalledTimes(1);
-      const [errorArg, handlerArg] = sessionCallbacks.onError.mock.calls[0];
-      expect(errorArg).toBe(sessionError);
-      expect(typeof handlerArg.completion).toBe('function');
-      expect('action' in handlerArg).toBe(false);
-      expect('retry' in handlerArg).toBe(false);
+      expect(sessionCallbacks.onError).toHaveBeenCalledWith(sessionError);
+      // Terminal callback — no handler parameter
+      expect(sessionCallbacks.onError.mock.calls[0]).toHaveLength(1);
     });
 
     test('advanced onSubmit receives a handler exposing action, completion and retry', async () => {
@@ -256,7 +267,27 @@ describe('AdyenCheckout', () => {
       expect('retry' in handlerArg).toBe(false);
     });
 
-    test('advanced onError receives a completion-only handler', async () => {
+    test('advanced onComplete is called with result only (no handler)', async () => {
+      await AdyenCheckout.setupAdvanced(
+        mockPaymentMethods,
+        mockConfig,
+        advancedCallbacks
+      );
+
+      expect(mockAssignAdvancedCompleteHandler).toHaveBeenCalled();
+
+      const nativeAdvancedCompleteHandler =
+        mockAssignAdvancedCompleteHandler.mock.calls[0][0];
+      const paymentResult = { resultCode: 'Authorised' };
+      nativeAdvancedCompleteHandler(paymentResult);
+
+      expect(advancedCallbacks.onComplete).toHaveBeenCalledTimes(1);
+      expect(advancedCallbacks.onComplete).toHaveBeenCalledWith(paymentResult);
+      // Terminal callback — no handler parameter
+      expect(advancedCallbacks.onComplete.mock.calls[0]).toHaveLength(1);
+    });
+
+    test('advanced onError is called with error only (no handler)', async () => {
       await AdyenCheckout.setupAdvanced(
         mockPaymentMethods,
         mockConfig,
@@ -271,11 +302,9 @@ describe('AdyenCheckout', () => {
       nativeAdvancedErrorHandler(advancedError);
 
       expect(advancedCallbacks.onError).toHaveBeenCalledTimes(1);
-      const [errorArg, handlerArg] = advancedCallbacks.onError.mock.calls[0];
-      expect(errorArg).toBe(advancedError);
-      expect(typeof handlerArg.completion).toBe('function');
-      expect('action' in handlerArg).toBe(false);
-      expect('retry' in handlerArg).toBe(false);
+      expect(advancedCallbacks.onError).toHaveBeenCalledWith(advancedError);
+      // Terminal callback — no handler parameter
+      expect(advancedCallbacks.onError.mock.calls[0]).toHaveLength(1);
     });
   });
 
@@ -413,7 +442,7 @@ describe('AdyenCheckout', () => {
       expect(mockCleanup).not.toHaveBeenCalled();
     });
 
-    test('calls cleanup before creating a new context on re-setup', async () => {
+    test('does not call native cleanup on re-setup (JS state cleared only)', async () => {
       await AdyenCheckout.setup(
         { id: 'session_123', sessionData: 'session_data' },
         mockConfig,
@@ -426,19 +455,22 @@ describe('AdyenCheckout', () => {
         advancedCallbacks
       );
 
-      expect(mockCleanup).toHaveBeenCalledTimes(1);
+      // Re-setup clears JS state but does NOT call native cleanup —
+      // the native side handles its own state when it receives the new setup call.
+      expect(mockCleanup).not.toHaveBeenCalled();
     });
   });
 
   describe('cleanup', () => {
-    test('cleans up native listeners and context', async () => {
+    test('cleans up native listeners and context when called internally', async () => {
       await AdyenCheckout.setup(
         { id: 'session_123', sessionData: 'session_data' },
         mockConfig,
         sessionCallbacks
       );
 
-      AdyenCheckout.cleanup();
+      // cleanup is private; access via cast for testing
+      (AdyenCheckout as any).cleanup();
 
       expect(mockRemoveAllListeners).toHaveBeenCalled();
       expect(mockCleanup).toHaveBeenCalled();
@@ -451,9 +483,9 @@ describe('AdyenCheckout', () => {
         sessionCallbacks
       );
 
-      AdyenCheckout.cleanup();
+      (AdyenCheckout as any).cleanup();
       jest.clearAllMocks();
-      AdyenCheckout.cleanup();
+      (AdyenCheckout as any).cleanup();
 
       expect(mockCleanup).not.toHaveBeenCalled();
     });
@@ -484,6 +516,20 @@ describe('AdyenCheckout', () => {
 
       const nativeErrorHandler = mockAssignErrorHandler.mock.calls[0][0];
       nativeErrorHandler({ message: 'err', errorCode: 'unknown' });
+
+      expect(mockCleanup).toHaveBeenCalled();
+    });
+
+    test('auto-cleans up after advanced onComplete', async () => {
+      await AdyenCheckout.setupAdvanced(
+        mockPaymentMethods,
+        mockConfig,
+        advancedCallbacks
+      );
+
+      const nativeAdvancedCompleteHandler =
+        mockAssignAdvancedCompleteHandler.mock.calls[0][0];
+      nativeAdvancedCompleteHandler({ resultCode: 'Authorised' });
 
       expect(mockCleanup).toHaveBeenCalled();
     });

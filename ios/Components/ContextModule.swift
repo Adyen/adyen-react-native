@@ -9,12 +9,8 @@ import Foundation
 import PassKit
 import React
 
-protocol SessionErrorDelegate: AnyObject {
-    func sendError(error: Error)
-}
-
 @objc(AdyenContext)
-internal final class ContextModule: BaseModule, SessionErrorDelegate {
+internal final class ContextModule: BaseModule {
 
     /// Pre-built payment components keyed by payment method type, populated by
     /// ``requiresUserInteraction(_:resolver:rejecter:)`` and reused by ``submit(_:)``.
@@ -83,10 +79,6 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
                 self.resolveAdditionalDetails(.completion(resultCode: resultCode as String))
                 return
             }
-            // Session / UI flow: forward to the presenting module, then tear down.
-            // currentModule must be read before `dismiss` clears the shared state.
-            BaseModule.currentModule?.completion(resultCode)
-            self.dismiss(true)
         }
     }
 
@@ -99,7 +91,6 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
                 self.resolveSubmit(.retry(errorMessage: msg.isEmpty ? nil : msg))
                 return
             }
-            BaseModule.currentModule?.retry(message)
         }
     }
 
@@ -122,7 +113,13 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            self.performCleanup()
+            // Re-setup: clear stale components and continuations without calling cleanUp().
+            // The native side replaces its own state when the new setup completes.
+            self.components.removeAll()
+            self.submitContinuation?.resume(returning: .retry())
+            self.submitContinuation = nil
+            self.additionalDetailsContinuation?.resume(returning: .completion(resultCode: ""))
+            self.additionalDetailsContinuation = nil
             do {
                 let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                 let sessionResponse = SessionResponse(id: id, sessionData: sessionData)
@@ -137,8 +134,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
                     return rejecter("session", "No payment methods available for the session", nil)
                 }
 
-                BaseModule.checkoutContext = checkout
-                BaseModule.sessionDelegate = self
+                BaseModule.checkoutState = CheckoutState(checkoutContext: checkout)
 
                 let dto = SessionDTO(id: id, sessionData: sessionData, paymentMethods: paymentMethods)
                 resolver(dto.jsonObject)
@@ -167,7 +163,13 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            self.performCleanup()
+            // Re-setup: clear stale components and continuations without calling cleanUp().
+            // The native side replaces its own state when the new setup completes.
+            self.components.removeAll()
+            self.submitContinuation?.resume(returning: .retry())
+            self.submitContinuation = nil
+            self.additionalDetailsContinuation?.resume(returning: .completion(resultCode: ""))
+            self.additionalDetailsContinuation = nil
             do {
                 let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                 let checkout = try await Checkout.setup(
@@ -176,7 +178,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
                     presentationDelegate: self
                 )
                 self.setupAdvancedCallbacks(on: checkout)
-                BaseModule.checkoutContext = checkout
+                BaseModule.checkoutState = CheckoutState(checkoutContext: checkout)
                 resolver(true)
             } catch {
                 rejecter("setup", nil, error)
@@ -192,8 +194,12 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
                      rejecter _: @escaping RCTPromiseRejectBlock) {
         let typeString = type as String
         Task { @MainActor in
-            guard let checkout = BaseModule.checkoutContext,
-                  let paymentMethodType = PaymentMethodType(rawValue: typeString) else {
+            guard let state = BaseModule.checkoutState else {
+                print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
+                return resolver(false)
+            }
+            let checkout = state.checkoutContext
+            guard let paymentMethodType = PaymentMethodType(rawValue: typeString) else {
                 return resolver(false)
             }
 
@@ -217,9 +223,11 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
         let typeString = type as String
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard let checkout = BaseModule.checkoutContext else {
+            guard let state = BaseModule.checkoutState else {
+                print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
                 return rejecter("context", "Checkout context is not initialized", nil)
             }
+            let checkout = state.checkoutContext
             do {
                 let component = try self.resolveComponent(for: typeString, checkout: checkout)
                 resolver(component.requiresUserInteraction)
@@ -233,8 +241,12 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
     func submit(_ type: NSString) {
         let typeString = type as String
         Task { @MainActor [weak self] in
-            guard let self,
-                  let checkout = BaseModule.checkoutContext else { return }
+            guard let self else { return }
+            guard let state = BaseModule.checkoutState else {
+                print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
+                return
+            }
+            let checkout = state.checkoutContext
             do {
                 let component = try self.resolveComponent(for: typeString, checkout: checkout)
                 component.submit()
@@ -244,6 +256,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
         }
     }
 
+    /// Called from JS terminal callbacks (onComplete / onError) via performAutoCleanup().
     @objc
     func cleanup() {
         ensureMainThread { [weak self] in
@@ -327,7 +340,7 @@ internal final class ContextModule: BaseModule, SessionErrorDelegate {
     override func sendError(error: any Error) {
         let errorToSend = checkErrorType(error)
         // Session errors surface on `failSession`; advanced-flow errors on `fail`.
-        let eventName: EventName = BaseModule.sessionDelegate != nil ? .failSession : .fail
+        let eventName: EventName = BaseModule.checkoutState?.isSession == true ? .failSession : .fail
         sendEvent(withName: eventName.rawValue, body: errorToSend.jsonObject)
     }
 

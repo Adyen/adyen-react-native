@@ -4,7 +4,6 @@ import { AdyenCheckout, AdyenComponent } from '@adyen/react-native';
 import type {
   AdyenError,
   Checkout,
-  PaymentResultHandler,
   SessionsResult,
 } from '@adyen/react-native';
 import Styles from '../common/Styles';
@@ -30,27 +29,27 @@ const SessionsComponentsCheckout = () => {
   );
 
   const didFail = useCallback(
-    async (adyenError: AdyenError, nativeComponent: PaymentResultHandler) => {
-      processAdyenError(adyenError, nativeComponent);
+    async (adyenError: AdyenError) => {
+      processAdyenError(adyenError);
       navigateToRoot();
     },
     [navigateToRoot]
   );
 
   const didComplete = useCallback(
-    async (result: SessionsResult, nativeComponent: PaymentResultHandler) => {
+    async (result: SessionsResult) => {
       if (
         result.resultCode === 'PresentToShopper' ||
         apiClient.usesDirectSessionResult
       ) {
-        processResult(result, nativeComponent);
+        processResult(result);
         return;
       }
       const status = await apiClient.requestSessionResult(
         result.sessionId,
         result.sessionResult
       );
-      processResult(status, nativeComponent);
+      processResult(status);
     },
     [processResult, apiClient]
   );

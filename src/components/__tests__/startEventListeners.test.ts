@@ -135,7 +135,7 @@ describe('startEventListeners', () => {
     startEventListeners(createComponent([Event.onError]), refs);
     const error = { message: 'fail', errorCode: 'canceledByShopper' };
     fire(Event.onError, error);
-    expect(refs.onError.current).toHaveBeenCalledWith(error, expect.anything());
+    expect(refs.onError.current).toHaveBeenCalledWith(error);
   });
 
   test('onComplete — calls onComplete ref', () => {
@@ -148,10 +148,7 @@ describe('startEventListeners', () => {
       sessionData: 'sd',
     };
     fire(Event.onComplete, result);
-    expect(refs.onComplete.current).toHaveBeenCalledWith(
-      result,
-      expect.anything()
-    );
+    expect(refs.onComplete.current).toHaveBeenCalledWith(result);
   });
 
   test('onAdditionalDetails — calls onAdditionalDetails ref', () => {
