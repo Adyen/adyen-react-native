@@ -45,6 +45,7 @@
 | `hideCvcStoredCard`                         | Indicates whether to show the security code field on a stored card payment. Defaults to **false**.                                                        | No       |
 | `holderNameRequired`                        | Indicates if the field for entering the holder name should be displayed in the form. Defaults to **false**.                                               | No       |
 | `kcpVisibility`                             | Indicates whether to show the security fields for South Korea-issued cards. Options: **"show"** or **"hide"**. Defaults to **"hide"**.                    | No       |
+| `showSubmitButton`                          | Indicates whether the native Card Component submit button is displayed. Set to **false** when submitting through an external button. Defaults to **true**. | No       |
 | `showStorePaymentField`                     | Indicates if the field for storing the card payment method should be displayed in the form. Defaults to **true**.                                         | No       |
 | `socialSecurity`                            | Indicates the visibility mode for the social security number field (CPF/CNPJ) for Brazilian cards. Options: "show" or **"hide"**. Defaults to **"hide"**. | No       |
 | `supported`                                 | The list of allowed card types. By default, a list of `brands` from the payment method is used. Fallbacks to a list of all known cards.                     | No       |
@@ -54,6 +55,32 @@
 | `onBinValue: (binValue) => {}`              | An optional callback that is triggered when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field in `CardComponent` changes.           | No       |
 | `installmentOptions`                        | Configuration for installment options. Each key is a card brand (e.g., `"visa"`, `"mc"`, `"amex"`) or `"card"` for defaults that apply to all brands. Each entry has `values` (array of allowed installment counts) and optional `plans` (`"regular"` and/or `"revolving"`). | No       |
 | `showInstallmentAmount`                     | Indicates whether to show the installment amount in the payment form. Defaults to **false**.                                                              | No       |
+
+#### External CardView submission
+
+Set `card.showSubmitButton` to `false` and use a `CardViewHandle` ref when your checkout owns the primary submit button:
+
+```tsx
+import { useRef } from 'react';
+import { Button } from 'react-native';
+import { CardView, type CardViewHandle } from '@adyen/react-native';
+
+function CheckoutCard() {
+  const cardViewRef = useRef<CardViewHandle>(null);
+
+  return (
+    <>
+      <CardView ref={cardViewRef} />
+      <Button
+        title="Pay"
+        onPress={() => cardViewRef.current?.submit()}
+      />
+    </>
+  );
+}
+```
+
+Calling `submit()` validates the card form and, when valid, invokes the existing `onSubmit` callback with the payment data and component proxy. Call `component.hide(false)` after a recoverable submission failure to restore card interaction and allow another attempt.
 
 ### 3D Secure 2
 

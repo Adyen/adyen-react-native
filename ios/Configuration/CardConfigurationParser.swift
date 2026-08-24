@@ -24,6 +24,10 @@ public struct CardConfigurationParser {
         dict[CardKeys.showStorePaymentField] as? Bool ?? true
     }
 
+    var showsSubmitButton: Bool {
+        dict[CardKeys.showSubmitButton] as? Bool ?? true
+    }
+
     var showsHolderNameField: Bool {
         dict[CardKeys.holderNameRequired] as? Bool ?? false
     }
@@ -100,6 +104,7 @@ public struct CardConfigurationParser {
 
     public var configuration: CardComponent.Configuration {
         .init(style: FormComponentStyle(),
+              showsSubmitButton: showsSubmitButton,
               shopperInformation: nil,
               localizationParameters: nil,
               showsHolderNameField: showsHolderNameField,

@@ -9,6 +9,7 @@ function createMockEmbeddedModule(supportedEvents: string[] = []) {
     getConstants: jest.fn(() => ({ supportedEvents })),
     subscribe: jest.fn(),
     unsubscribe: jest.fn(),
+    submit: jest.fn(),
     handle: jest.fn(),
     hide: jest.fn(),
     update: jest.fn(),
@@ -72,6 +73,14 @@ describe('EmbeddedComponentBusWrapper', () => {
       expect(mockNativeModule.unsubscribe).toHaveBeenCalledWith(
         'CardComponent'
       );
+    });
+  });
+
+  describe('submit', () => {
+    test('should call native module submit with viewId', () => {
+      const wrapper = new EmbeddedComponentBusWrapper(mockNativeModule);
+      wrapper.submit('CardComponent');
+      expect(mockNativeModule.submit).toHaveBeenCalledWith('CardComponent');
     });
   });
 

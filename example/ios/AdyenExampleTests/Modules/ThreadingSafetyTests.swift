@@ -197,7 +197,7 @@ final class ThreadingSafetyTests: XCTestCase {
         let bus = EmbeddedComponentBusModule()
         EmbeddedComponentBusModule.shared = bus
         bus.createActionHandlerIfNeeded(context: Self.context, locale: nil)
-        _ = bus.register(viewId: "card-view")
+        _ = bus.register(viewId: "card-view", submitHandler: {}, stopLoadingHandler: {})
 
         let proxy = CardComponentViewProxy(frame: .zero)
         proxy.viewId = "card-view"
@@ -214,7 +214,7 @@ final class ThreadingSafetyTests: XCTestCase {
         // THEN dispose completes without crashing and the bus state is not corrupted
         wait(for: [disposeExpectation], timeout: 1.0)
 
-        let newProxy = bus.register(viewId: "card-view-2")
+        let newProxy = bus.register(viewId: "card-view-2", submitHandler: {}, stopLoadingHandler: {})
         XCTAssertNotNil(newProxy)
     }
 
@@ -258,7 +258,7 @@ final class ThreadingSafetyTests: XCTestCase {
         }
         BaseModule.presenterStack = [presenter]
 
-        _ = sut.register(viewId: "card-view")
+        _ = sut.register(viewId: "card-view", submitHandler: {}, stopLoadingHandler: {})
 
         // WHEN hide() is called from a background thread
         DispatchQueue.global().async {
@@ -290,6 +290,50 @@ final class ThreadingSafetyTests: XCTestCase {
             expectation.fulfill()
         }
 
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func test_embeddedComponentBusSubmit_fromBackgroundThread_callsHandlerOnMainThread() {
+        // GIVEN an EmbeddedComponentBusModule with a registered submit handler
+        let expectation = expectation(description: "Submit handler should be called")
+        let sut = EmbeddedComponentBusModule()
+        _ = sut.register(
+            viewId: "card-view",
+            submitHandler: {
+                XCTAssertTrue(Thread.isMainThread)
+                expectation.fulfill()
+            },
+            stopLoadingHandler: {}
+        )
+
+        // WHEN submit() is called from a background thread
+        DispatchQueue.global().async {
+            sut.submit("card-view")
+        }
+
+        // THEN the handler is invoked on the main thread
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func test_embeddedComponentBusHideFailure_fromBackgroundThread_callsStopLoadingOnMainThread() {
+        // GIVEN an EmbeddedComponentBusModule with a registered stop-loading handler
+        let expectation = expectation(description: "Stop-loading handler should be called")
+        let sut = EmbeddedComponentBusModule()
+        _ = sut.register(
+            viewId: "card-view",
+            submitHandler: {},
+            stopLoadingHandler: {
+                XCTAssertTrue(Thread.isMainThread)
+                expectation.fulfill()
+            }
+        )
+
+        // WHEN hide(false) is called from a background thread
+        DispatchQueue.global().async {
+            sut.hide("card-view", success: NSNumber(value: false), event: [:])
+        }
+
+        // THEN the handler is invoked on the main thread
         wait(for: [expectation], timeout: 1.0)
     }
 
@@ -343,7 +387,7 @@ final class ThreadingSafetyTests: XCTestCase {
         let emitter = MockEmitter()
         sut.emitterOverride = emitter
         sut.createActionHandlerIfNeeded(context: Self.context, locale: nil)
-        _ = sut.register(viewId: "card-view")
+        _ = sut.register(viewId: "card-view", submitHandler: {}, stopLoadingHandler: {})
 
         // WHEN handle() is called from a background thread
         DispatchQueue.global().async {
