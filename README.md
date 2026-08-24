@@ -14,7 +14,7 @@
 > - Generic `<AdyenComponent>` replaces per-method views (`<CardView>`, `<GooglePayButton>`, `<ApplePayButton>`)
 > - `AdyenDropIn.start(checkout)` replaces `open()`
 > - Return-based callbacks: `onSubmit` returns `SubmitResult`, `onAdditionalDetails` returns `AdditionalDetailsResult`
-> - Auto-cleanup on terminal callbacks; explicit cleanup via `checkout.cleanup()` or `AdyenCheckout.cleanup()`
+> - Auto-cleanup on terminal callbacks
 > - Cross-platform aligned with iOS, Android, and Flutter SDK setup pattern
 >
 > **Known alpha limitations:**
@@ -64,8 +64,6 @@ You can integrate with Adyen React Native in two ways:
 - [Adyen test account](https://www.adyen.com/signup)
 - [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key)
 - [Client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key)
-- React Native >= 0.85
-- TypeScript ^6.0.3
 
 # Installation
 
@@ -240,7 +238,6 @@ const configuration: Configuration = {
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
-  returnUrl: 'myapp://payment',
 };
 
 // Session flow:
@@ -252,63 +249,36 @@ const checkout = await AdyenCheckout.setupAdvanced(paymentMethods, configuration
 
 To read more about other configuration options, see the [full list][configuration].
 
-### Return URL
-
-> [!IMPORTANT]
->
-> Use a custom URL scheme or App/Universal link of your app(s) for the `returnUrl`.
-
-<table>
-<tr>
-  <th> Scenario </th>
-  <th> How to use </th>
-</tr>
-<tr>
-  <td> Advanced flow </td>
-  <td>
-
-  During `onSubmit(data, component)` pass `"returnUrl": data.returnUrl` to make the `/payments` API call.
-
-  </td>
-</tr>
-<tr>
-  <td> Sessions flow </td>
-  <td>
-
-To make the `/sessions` API call use `AdyenDropIn.getReturnURL()` to fetch `returnUrl`.
-
-```js
-const returnUrl = Platform.select({
-  ios: 'myapp://payment',
-  android: await AdyenDropIn.getReturnURL(),
-});
-```
-
-  </td>
-</tr>
-</table>
-
 ## Sessions Flow
 
 The sessions flow lets the Adyen backend manage the payment lifecycle. Call `AdyenCheckout.setup()` with your session credentials, configuration, and callbacks:
 
 ```typescript
-import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
+import { AdyenCheckout, AdyenDropIn, type Checkout } from '@adyen/react-native';
+import { useCallback, useState } from 'react';
 
-const checkout = await AdyenCheckout.setup(
+const [checkout, setCheckout] = useState<Checkout | null>(null);
+
+const onComplete = useCallback((result) => {
+  // The session reached a final result.
+  // Call /sessions/{sessionId}?sessionResult={result.sessionResult}
+  // to get more information about the payment outcome.
+}, []);
+
+const onError = useCallback((error) => {
+  // The payment was terminated by the shopper or encountered an error.
+}, []);
+
+const newCheckout = await AdyenCheckout.setup(
   { id: '{SESSION_ID}', sessionData: '{SESSION_DATA}' },
   configuration,
   {
-    onComplete: (result) => {
-      // The session reached a final result.
-      // Call /sessions/{sessionId}?sessionResult={result.sessionResult}
-      // to get more information about the payment outcome.
-    },
-    onError: (error) => {
-      // The payment was terminated by the shopper or encountered an error.
-    },
+    onComplete,
+    onError
   }
 );
+
+setCheckout(newCheckout);
 
 // Launch Drop-in with the checkout object
 AdyenDropIn.start(checkout);
@@ -319,37 +289,55 @@ AdyenDropIn.start(checkout);
 The advanced flow gives you full control over the `/payments` and `/payments/details` calls. Call `AdyenCheckout.setupAdvanced()` with your payment methods response, configuration, and callbacks:
 
 ```typescript
-import { AdyenCheckout, AdyenDropIn, SubmitResult } from '@adyen/react-native';
+import {
+  AdyenCheckout,
+  AdyenDropIn,
+  SubmitResult,
+  type Checkout,
+} from '@adyen/react-native';
+import { useCallback, useState } from 'react';
 
-const checkout = await AdyenCheckout.setupAdvanced(
+const [checkout, setCheckout] = useState<Checkout | null>(null);
+
+const onSubmit = useCallback(async (data) => {
+  // Call your server to make the /payments request.
+  // Pass returnUrl: data.returnUrl for redirect flows.
+  const response = await server.makePayment(data);
+  if (response.action) {
+    return SubmitResult.action(response.action);
+  } else if (response.resultCode === 'Refused') {
+    return SubmitResult.retry(response.refusalReason);
+  } else {
+    return SubmitResult.completed(response.resultCode);
+  }
+}, []);
+
+const onAdditionalDetails = useCallback(async (data) => {
+  // Call your server to make the /payments/details request.
+  const response = await server.paymentDetails(data);
+  return { resultCode: response.resultCode };
+}, []);
+
+const onComplete = useCallback((result) => {
+  // The payment flow completed.
+}, []);
+
+const onError = useCallback((error) => {
+  // The payment was terminated by the shopper or encountered an error.
+}, []);
+
+const newCheckout = await AdyenCheckout.setupAdvanced(
   paymentMethodsResponse,
   configuration,
   {
-    onSubmit: async (data) => {
-      // Call your server to make the /payments request.
-      // Pass returnUrl: data.returnUrl for redirect flows.
-      const response = await server.makePayment(data);
-      if (response.action) {
-        return SubmitResult.action(response.action);
-      } else if (response.resultCode === 'Refused') {
-        return SubmitResult.retry(response.refusalReason);
-      } else {
-        return SubmitResult.completed(response.resultCode);
-      }
-    },
-    onAdditionalDetails: async (data) => {
-      // Call your server to make the /payments/details request.
-      const response = await server.paymentDetails(data);
-      return { resultCode: response.resultCode };
-    },
-    onComplete: (result) => {
-      // The payment flow completed.
-    },
-    onError: (error) => {
-      // The payment was terminated by the shopper or encountered an error.
-    },
+    onSubmit,
+    onAdditionalDetails,
+    onComplete,
+    onError
   }
 );
+
+setCheckout(newCheckout);
 
 // Launch Drop-in with the checkout object
 AdyenDropIn.start(checkout);
@@ -415,11 +403,11 @@ console.log(checkout.paymentMethods);
 const available = await checkout.isAvailable('googlepay');
 
 // Check if the payment method needs UI before submission
-const needsUI = await checkout.requiresUserInteraction('googlepay');
+const needsUI = await checkout.requiresUserInteraction('klarna');
 
 // Submit a payment method without displaying UI
 if (!needsUI) {
-  checkout.submit('googlepay');
+  checkout.submit('klarna');
 }
 ```
 
@@ -435,19 +423,6 @@ const data = await AdyenAction.handle(apiResponse.action, {
   clientKey: '{YOUR_CLIENT_KEY}',
 });
 const result = await ApiClient.paymentDetails(data);
-```
-
-# Build & Test
-
-```bash
-# Run unit tests (331 tests)
-yarn test
-
-# Type-check TypeScript
-yarn typecheck
-
-# Lint
-yarn lint
 ```
 
 # Documentation
