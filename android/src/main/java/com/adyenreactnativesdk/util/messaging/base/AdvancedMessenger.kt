@@ -1,17 +1,16 @@
 package com.adyenreactnativesdk.util.messaging.base
 
-import com.adyen.checkout.components.core.ActionComponentData
-import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyen.checkout.core.action.data.ActionComponentData
+import com.adyen.checkout.core.components.data.PaymentComponentData
 
 interface AdvancedMessenger {
-  fun onSubmit(
-    state: PaymentComponentState<*>,
-    returnUrl: String?,
-  )
+  fun onSubmit(data: PaymentComponentData<*>)
 
-  fun onAdditionalDetails(actionComponentData: ActionComponentData)
+  fun onAdditionalDetails(data: ActionComponentData)
 
   fun onException(exception: Exception)
 
   fun onFinished()
+
+  fun onFinished(resultCode: String)
 }

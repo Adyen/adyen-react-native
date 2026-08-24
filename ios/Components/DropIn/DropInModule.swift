@@ -6,7 +6,6 @@
 
 import Adyen
 import Foundation
-import PassKit
 import React
 
 @objc(AdyenDropIn)
@@ -20,10 +19,6 @@ internal final class DropInModule: BaseAddressModule {
         super.supportedEvents() + (EventName.cardEvents + EventName.dropInEvents).map(\.rawValue)
     }
 
-    private var dropInComponent: DropInComponent? {
-        currentComponent as? DropInComponent
-    }
-
     @objc
     func removeStored(_ success: NSNumber) {
         ensureMainThread { [weak self] in
@@ -32,60 +27,16 @@ internal final class DropInModule: BaseAddressModule {
     }
 
     @objc
-    func open(_ paymentMethodsDict: NSDictionary, configuration: NSDictionary) {
-        let parser = RootConfigurationParser(configuration: configuration)
-        let paymentMethods: PaymentMethods
-        let context: AdyenContext
-        do {
-            paymentMethods = try parsePaymentMethods(from: paymentMethodsDict)
-            context = try parser.fetchContext(session: BaseModule.session)
-        } catch {
-            return sendError(error: error)
-        }
-
-        let dropInConfigParser = DropInConfigurationParser(configuration: configuration)
-        let config = dropInConfigParser.configuration
-        config.card = CardConfigurationParser(configuration: configuration, delegate: self).dropinConfiguration
-        config.style = AdyenAppearanceLoader.findStyle() ?? DropInComponent.Style()
-        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
-            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
-        }
-        if let requestorAppUrl = ThreeDS2ConfigurationParser(configuration: configuration).requestorAppUrl,
-           let url = URL(string: requestorAppUrl) {
-            config.actionComponent.threeDS.requestorAppURL = url
-        }
-        if let payment = context.payment {
-            (try? ApplepayConfigurationParser(configuration: configuration).buildConfiguration(payment: payment)).map {
-                config.applePay = $0
-            }
-        }
-        let partialPaymentParser = PartialPaymentParser(configuration: configuration)
-        config.giftCard.showsSecurityCodeField = partialPaymentParser.pinRequired
-
-        let component = DropInComponent(paymentMethods: paymentMethods,
-                                        context: context,
-                                        configuration: config,
-                                        title: dropInConfigParser.title)
-        currentComponent = component
-        component.delegate = BaseModule.session ?? self
-        component.partialPaymentDelegate = BaseModule.session ?? self
-        component.storedPaymentMethodsDelegate = BaseModule.session ?? self
-        component.cardComponentDelegate = self
-        present(component: component)
+    func start(_ paymentMethodsDict: NSDictionary) {
+        // TODO: v6 migration - Drop-in presentation not yet migrated.
+        // Get configuration from BaseModule.checkoutState?.checkoutContext if needed.
+        sendError(error: ModuleException.notSupported)
     }
 
     @objc
-    override func handle(_ dictionary: NSDictionary) {
-        let action: Action
-        do {
-            action = try parseAction(from: dictionary)
-        } catch {
-            return sendError(error: error)
-        }
-
-        ensureMainThread { [weak self] in
-            self?.dropInComponent?.handle(action)
-        }
+    override func action(_ dictionary: NSDictionary) {
+        // TODO: v6 migration - action handling requires a reference to the active checkout.
+        sendError(error: ModuleException.notSupported)
     }
 
     @objc
@@ -95,9 +46,11 @@ internal final class DropInModule: BaseAddressModule {
     }
 
     override func cleanUp() {
-        disableStoredPaymentMethodHandler = nil
-        requestOrderHandler = nil
-        checkBalanceHandler = nil
+        ensureMainThread { [weak self] in
+            self?.disableStoredPaymentMethodHandler = nil
+            self?.requestOrderHandler = nil
+            self?.checkBalanceHandler = nil
+        }
         super.cleanUp()
     }
 

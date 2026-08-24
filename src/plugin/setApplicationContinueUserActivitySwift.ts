@@ -15,13 +15,13 @@ export function setApplicationContinueUserActivitySwift(
     const customTemplatePattern =
       /return super\.application\(application, continue: userActivity, restorationHandler: restorationHandler\)/g;
     if (defaultTemplatePattern.test(contents)) {
-      const newPattern = `if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
+      const newPattern = `if let url = userActivity.webpageURL, ADYRedirectComponent.applicationDidOpen(url) {
       return true
     }
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)`;
       return contents.replaceAll(defaultTemplatePattern, newPattern);
     } else if (customTemplatePattern.test(contents)) {
-      const newPattern = `if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
+      const newPattern = `if let url = userActivity.webpageURL, ADYRedirectComponent.applicationDidOpen(url) {
       return true
     }
     return super.application(application, continue: userActivity, restorationHandler: restorationHandler)`;
@@ -33,7 +33,7 @@ export function setApplicationContinueUserActivitySwift(
 
   // If the function doesn't exist, create it with the correct Expo pattern
   const continueActivityFunction = `     public override func application( _ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void ) -> Bool {
-    if let url = userActivity.webpageURL, RedirectComponent.applicationDidOpen(from: url) {
+    if let url = userActivity.webpageURL, ADYRedirectComponent.applicationDidOpen(url) {
       return true
     }
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)

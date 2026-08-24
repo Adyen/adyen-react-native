@@ -30,9 +30,10 @@ class EventNameTest {
     val sessionEvents = EventName.sessionEvents()
 
     // THEN
-    assertEquals(2, sessionEvents.size)
+    assertEquals(3, sessionEvents.size)
     assertTrue(sessionEvents.contains(EventName.SESSION_ERROR.value))
     assertTrue(sessionEvents.contains(EventName.COMPLETE_SESSION.value))
+    assertTrue(sessionEvents.contains(EventName.BEFORE_SUBMIT.value))
   }
 
   @Test

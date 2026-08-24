@@ -20,6 +20,7 @@ internal enum EventName: String, CaseIterable {
     case binLookup = "didBinLookupCallback"
     case changeBinValue = "didChangeBinValueCallback"
     case completeSession = "didSessionCompleteCallback"
+    case beforeSubmit = "didBeforeSubmitCallback"
     case failSession = "didSessionErrorCallback"
     case authorizePayment = "didAuthorizePaymentCallback"
     case updateShippingContact = "didUpdateShippingContactCallback"
@@ -31,7 +32,7 @@ internal enum EventName: String, CaseIterable {
     }
 
     static var sessionEvents: [EventName] {
-        [.failSession, .completeSession]
+        [.failSession, .completeSession, .beforeSubmit]
     }
 
     static var addressLookupEvents: [EventName] {

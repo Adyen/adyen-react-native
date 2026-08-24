@@ -5,10 +5,9 @@
  */
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.card.CardBrand
-import com.adyen.checkout.card.CardType
 import com.adyen.checkout.card.InstallmentConfiguration
 import com.adyen.checkout.card.InstallmentOptions
+import com.adyen.checkout.core.common.CardBrand
 import com.facebook.react.bridge.ReadableMap
 
 internal class InstallmentConfigurationParser(
@@ -24,8 +23,8 @@ internal class InstallmentConfigurationParser(
 
   val installmentConfiguration: InstallmentConfiguration?
     get() {
-      var defaultOptions: InstallmentOptions.DefaultInstallmentOptions? = null
-      val cardBasedOptions = mutableListOf<InstallmentOptions.CardBasedInstallmentOptions>()
+      var defaultOptions: InstallmentOptions? = null
+      val cardBasedOptions = mutableMapOf<CardBrand, InstallmentOptions>()
 
       val iterator = config.keySetIterator()
       while (iterator.hasNextKey()) {
@@ -47,23 +46,14 @@ internal class InstallmentConfigurationParser(
           } else {
             emptyList()
           }
-        val includeRevolving = plans.contains(INSTALLMENT_PLAN_REVOLVING)
+        val installmentOptions = buildInstallmentOptions(values, plans)
 
         if (key.equals(INSTALLMENT_DEFAULT_KEY, ignoreCase = true)) {
           // Default options for all cards
-          defaultOptions = InstallmentOptions.DefaultInstallmentOptions(values, includeRevolving)
+          defaultOptions = installmentOptions
         } else {
           // Card-specific options
-          val cardType = CardType.getByBrandName(key)
-          if (cardType != null) {
-            cardBasedOptions.add(
-              InstallmentOptions.CardBasedInstallmentOptions(
-                values,
-                includeRevolving,
-                CardBrand(cardType),
-              ),
-            )
-          }
+          cardBasedOptions[CardBrand(key)] = installmentOptions
         }
       }
 
@@ -78,4 +68,19 @@ internal class InstallmentConfigurationParser(
         null
       }
     }
+
+  private fun buildInstallmentOptions(
+    values: List<Int>,
+    plans: List<String>,
+  ): InstallmentOptions {
+    val installmentPlans = mutableListOf(InstallmentOptions.Plan.REGULAR)
+    if (plans.any { it.equals(INSTALLMENT_PLAN_REVOLVING, ignoreCase = true) }) {
+      installmentPlans.add(InstallmentOptions.Plan.REVOLVING)
+    }
+    return InstallmentOptions(
+      values = values,
+      plans = installmentPlans,
+      preselectedValue = null,
+    )
+  }
 }

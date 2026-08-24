@@ -15,12 +15,12 @@ export function setApplicationOpenUrlSwift(contents: string): string {
     if (defaultTemplatePattern.test(contents)) {
       return contents.replaceAll(
         defaultTemplatePattern,
-        'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)'
+        'return ADYRedirectComponent.applicationDidOpen(url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)'
       );
     } else if (customTemplatePattern.test(contents)) {
       return contents.replaceAll(
         customTemplatePattern,
-        'return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options)'
+        'return ADYRedirectComponent.applicationDidOpen(url) || super.application(app, open: url, options: options)'
       );
     }
     return contents;
@@ -28,7 +28,7 @@ export function setApplicationOpenUrlSwift(contents: string): string {
 
   // If the function doesn't exist, create it with the correct Expo pattern
   const openUrlFunction = `   public override func application( _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:] ) -> Bool {
-      return RedirectComponent.applicationDidOpen(from: url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
+      return ADYRedirectComponent.applicationDidOpen(url) || super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
     }`;
 
   // Find the end of the AppDelegate class

@@ -1,5 +1,5 @@
 import UIKit
-import Adyen
+import adyen_react_native
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -21,6 +21,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
-        RedirectComponent.applicationDidOpen(from: url)
+        ADYRedirectComponent.applicationDidOpen(url)
     }
 }

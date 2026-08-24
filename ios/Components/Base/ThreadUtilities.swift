@@ -8,12 +8,8 @@ import Foundation
 
 internal func ensureMainThread(_ work: @escaping @MainActor () -> Void) {
     if Thread.isMainThread {
-        MainActor.assumeIsolated {
-            work()
-        }
+        MainActor.assumeIsolated(work)
     } else {
-        DispatchQueue.main.async { @MainActor in
-            work()
-        }
+        DispatchQueue.main.async { MainActor.assumeIsolated(work) }
     }
 }

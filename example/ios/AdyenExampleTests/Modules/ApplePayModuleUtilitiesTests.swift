@@ -99,30 +99,8 @@ final class ApplePayModuleUtilitiesTests: XCTestCase {
         XCTAssertNotNil(error)
     }
 
-    // MARK: - ApplePayPaymentMethod.supportedNetworks
-
-    func test_supportedNetworks_returnsAllAvailable_whenBrandsIsNil() throws {
-        // GIVEN
-        let dict: NSDictionary = ["type": "applepay", "name": "Apple Pay"]
-        let method: ApplePayPaymentMethod = try dict.decode()
-
-        // WHEN
-        let networks = method.supportedNetworks
-
-        // THEN
-        XCTAssertFalse(networks.isEmpty)
-    }
-
-    func test_supportedNetworks_filtersToMatchingBrands() throws {
-        // GIVEN
-        let dict: NSDictionary = ["type": "applepay", "name": "Apple Pay", "brands": ["visa"]]
-        let method: ApplePayPaymentMethod = try dict.decode()
-
-        // WHEN
-        let networks = method.supportedNetworks
-
-        // THEN
-        XCTAssertTrue(networks.contains(.visa))
-        XCTAssertFalse(networks.contains(.masterCard))
-    }
+    // Removed: two tests exercised `ApplePayPaymentMethod.supportedNetworks`, which belongs to
+    // the Adyen SDK rather than this bridge. In 6.0.0-alpha.1 it is an `internal func
+    // supportedNetworks(provider:)` — neither a property nor `@_spi(AdyenInternal)` exposed — so
+    // it is unreachable from this target. Upstream covers it in `ApplePayPaymentMethodTests`.
 }

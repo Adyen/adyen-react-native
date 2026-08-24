@@ -6,7 +6,7 @@
 
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.core.Environment
+import com.adyen.checkout.core.common.Environment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -60,7 +60,7 @@ class RootConfigurationParserTest {
   }
 
   @Test
-  fun test_amount_returns_whenCurrencyIsMissing() {
+  fun test_amount_returnsNull_whenCurrencyIsMissing() {
     // GIVEN
     val map = WritableMapMock()
     val amountmap = WritableMapMock()
@@ -71,12 +71,11 @@ class RootConfigurationParserTest {
     val sut = RootConfigurationParser(map)
 
     // THEN
-    assertNotNull(sut.amount)
-    assertEquals(sut.amount?.value, 123456L)
+    assertNull(sut.amount)
   }
 
   @Test
-  fun test_amount_returns_whenValueIsMissing() {
+  fun test_amount_returnsNull_whenValueIsMissing() {
     // GIVEN
     val map = WritableMapMock()
     val amountmap = WritableMapMock()
@@ -87,8 +86,7 @@ class RootConfigurationParserTest {
     val sut = RootConfigurationParser(map)
 
     // THEN
-    assertNotNull(sut.amount)
-    assertEquals(sut.amount?.value, -1L)
+    assertNull(sut.amount)
   }
 
   @Test
@@ -101,7 +99,7 @@ class RootConfigurationParserTest {
     val sut = RootConfigurationParser(map)
 
     // THEN
-    assertEquals(Environment.EUROPE, sut.environment)
+    assertEquals(Environment.LIVE_EUROPE, sut.environment)
   }
 
   @Test
@@ -114,7 +112,7 @@ class RootConfigurationParserTest {
     val sut = RootConfigurationParser(map)
 
     // THEN
-    assertEquals(Environment.UNITED_STATES, sut.environment)
+    assertEquals(Environment.LIVE_UNITED_STATES, sut.environment)
   }
 
   @Test
@@ -127,7 +125,7 @@ class RootConfigurationParserTest {
     val sut = RootConfigurationParser(map)
 
     // THEN
-    assertEquals(Environment.AUSTRALIA, sut.environment)
+    assertEquals(Environment.LIVE_AUSTRALIA, sut.environment)
   }
 
   @Test
@@ -140,7 +138,7 @@ class RootConfigurationParserTest {
     val sut = RootConfigurationParser(map)
 
     // THEN
-    assertEquals(Environment.NEA, sut.environment)
+    assertEquals(Environment.LIVE_NEA, sut.environment)
   }
 
   @Test

@@ -17,8 +17,6 @@ export interface ApplePayConfiguration {
   shippingContact?: ApplePayPaymentContact;
   /** An optional value that indicates how to ship purchased items. The default value is shipping. */
   shippingType?: ApplePayShippingType;
-  /** A list of supported merchant capabilities. `threeDSecure` is always included regardless of this value. The default is `undefined`, which allows both debit and credit cards. Use `['debit']` to allow debit cards only, greying out credit cards in the Apple Pay sheet. */
-  merchantCapabilities?: ApplePayMerchantCapability[];
   /** A list of two-letter country codes for limiting payment to cards from specific countries or regions. */
   supportedCountries?: string[];
   /** The list of shipping methods available for a payment request. */
@@ -65,21 +63,11 @@ export interface ApplePayConfiguration {
 
 /** Collection of values for address field visibility. */
 export type ApplePayShippingType =
-  | 'shipping'
-  | 'delivery'
-  | 'storePickup'
-  | 'servicePickup';
-
-/** Supported Apple Pay merchant capabilities. `threeDSecure` is always included by the SDK. */
-export type ApplePayMerchantCapability = 'debit' | 'credit';
+  'shipping' | 'delivery' | 'storePickup' | 'servicePickup';
 
 /** Collection of values for address field visibility. */
 export type ApplePayAddressFields =
-  | 'postalAddress'
-  | 'name'
-  | 'phoneticName'
-  | 'phone'
-  | 'email';
+  'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email';
 
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
 export interface ApplePaySummaryItem {
@@ -235,8 +223,10 @@ export interface ApplePayPaymentAuthorization {
   shippingMethod?: ApplePayShippingMethod;
 }
 
-/** Result passed to the native `provideAuthorizationResult` bridge method. */
+/** Result forwarded to the native `provideAuthorizationResult` bridge method. */
 export interface ApplePayAuthorizationResult {
+  /** Whether the shopper's payment was approved (`success`) or rejected (`failure`). */
   status: 'success' | 'failure';
+  /** Field-level errors to display in the sheet when `status` is `failure`. */
   errors?: ApplePayError[];
 }

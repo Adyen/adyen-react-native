@@ -13,7 +13,6 @@ import UIKit
 enum ModuleException: LocalizedError, KnownError {
     case canceled
     case noClientKey
-    case noPayment
     case notSupported
     case invalidPaymentMethods
     case invalidAction
@@ -33,8 +32,6 @@ enum ModuleException: LocalizedError, KnownError {
             return "notSupported"
         case .noClientKey:
             return "noClientKey"
-        case .noPayment:
-            return "noPayment"
         case .invalidPaymentMethods:
             return "invalidPaymentMethods"
         case .invalidAction:
@@ -66,8 +63,6 @@ enum ModuleException: LocalizedError, KnownError {
             return "No clientKey in configuration"
         case .invalidClientKey:
             return "Invalid clientKey"
-        case .noPayment:
-            return "No payment in configuration"
         case .invalidPaymentMethods:
             return "Can not parse paymentMethods or the list is empty"
         case .invalidAction:
@@ -101,7 +96,7 @@ enum ModuleException: LocalizedError, KnownError {
 extension Error {
 
     var isComponentCanceled: Bool {
-        (self as? ComponentError) == ComponentError.cancelled
+        (self as? CheckoutError)?.code == .cancelled
     }
 
     var is3DSCanceled: Bool {
