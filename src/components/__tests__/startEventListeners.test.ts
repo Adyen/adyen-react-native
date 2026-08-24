@@ -1,5 +1,6 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { Event } from '../../core';
+import { SubmitResult } from '../../core';
 import { startEventListeners } from '../utils/startEventListeners';
 
 // --------------------------------------------------------------------------
@@ -34,8 +35,9 @@ function createComponent(supported: Event[] = []) {
   return {
     isSupported: jest.fn((e: Event) => supported.includes(e)),
     eventEmitterTarget: {},
-    hide: jest.fn(),
-    handle: jest.fn(),
+    action: jest.fn(),
+    completion: jest.fn(),
+    retry: jest.fn(),
     provideShippingContactUpdate: jest.fn(),
     provideShippingMethodUpdate: jest.fn(),
     provideCouponCodeUpdate: jest.fn(),
@@ -95,12 +97,19 @@ describe('startEventListeners', () => {
   });
 
   // -------------------------------------------------------------------------
-  // Core events
+  // Core events — return-based dispatch
   // -------------------------------------------------------------------------
 
-  test('onSubmit — calls onSubmit ref with payload and component', () => {
+  test('onSubmit — calls onSubmit ref and dispatches action result to component', async () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onSubmit]), refs);
+    const component = createComponent([Event.onSubmit]);
+    const actionResult = SubmitResult.action({
+      type: 'redirect',
+      paymentMethodType: 'ideal',
+    });
+    refs.onSubmit.current.mockResolvedValue(actionResult);
+
+    startEventListeners(component, refs);
     fire(Event.onSubmit, {
       paymentData: {
         returnUrl: 'app://checkout',
@@ -108,24 +117,70 @@ describe('startEventListeners', () => {
       },
       extra: { network: 'visa' },
     });
+
+    // Allow async dispatch to complete
+    await new Promise((r) => setTimeout(r, 0));
+
     expect(refs.onSubmit.current).toHaveBeenCalledWith(
-      expect.objectContaining({ paymentMethod: { type: 'scheme' } }),
-      expect.anything(),
-      { network: 'visa' }
+      expect.objectContaining({ paymentMethod: { type: 'scheme' } })
     );
+    expect(component.action).toHaveBeenCalledWith({
+      type: 'redirect',
+      paymentMethodType: 'ideal',
+    });
   });
 
-  test('onSubmit — injects returnUrl from config when missing in payload', () => {
+  test('onSubmit — dispatches completed result to component', async () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onSubmit]), refs);
+    const component = createComponent([Event.onSubmit]);
+    refs.onSubmit.current.mockResolvedValue(
+      SubmitResult.completed('Authorised')
+    );
+
+    startEventListeners(component, refs);
     fire(Event.onSubmit, {
       paymentData: { paymentMethod: { type: 'scheme' } },
       extra: null,
     });
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(component.completion).toHaveBeenCalledWith('Authorised');
+  });
+
+  test('onSubmit — dispatches retry result to component', async () => {
+    const refs = createRefs();
+    const component = createComponent([Event.onSubmit]);
+    refs.onSubmit.current.mockResolvedValue(SubmitResult.retry('Try again'));
+
+    startEventListeners(component, refs);
+    fire(Event.onSubmit, {
+      paymentData: { paymentMethod: { type: 'scheme' } },
+      extra: null,
+    });
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(component.retry).toHaveBeenCalledWith('Try again');
+  });
+
+  test('onSubmit — injects returnUrl from config when missing in payload', async () => {
+    const refs = createRefs();
+    const component = createComponent([Event.onSubmit]);
+    refs.onSubmit.current.mockResolvedValue(
+      SubmitResult.completed('Authorised')
+    );
+
+    startEventListeners(component, refs);
+    fire(Event.onSubmit, {
+      paymentData: { paymentMethod: { type: 'scheme' } },
+      extra: null,
+    });
+
+    await new Promise((r) => setTimeout(r, 0));
+
     expect(refs.onSubmit.current).toHaveBeenCalledWith(
-      expect.objectContaining({ returnUrl: 'app://checkout' }),
-      expect.anything(),
-      null
+      expect.objectContaining({ returnUrl: 'app://checkout' })
     );
   });
 
@@ -134,7 +189,7 @@ describe('startEventListeners', () => {
     startEventListeners(createComponent([Event.onError]), refs);
     const error = { message: 'fail', errorCode: 'canceledByShopper' };
     fire(Event.onError, error);
-    expect(refs.onError.current).toHaveBeenCalledWith(error, expect.anything());
+    expect(refs.onError.current).toHaveBeenCalledWith(error);
   });
 
   test('onComplete — calls onComplete ref', () => {
@@ -147,21 +202,24 @@ describe('startEventListeners', () => {
       sessionData: 'sd',
     };
     fire(Event.onComplete, result);
-    expect(refs.onComplete.current).toHaveBeenCalledWith(
-      result,
-      expect.anything()
-    );
+    expect(refs.onComplete.current).toHaveBeenCalledWith(result);
   });
 
-  test('onAdditionalDetails — calls onAdditionalDetails ref', () => {
+  test('onAdditionalDetails — calls ref and dispatches result to component', async () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onAdditionalDetails]), refs);
+    const component = createComponent([Event.onAdditionalDetails]);
+    refs.onAdditionalDetails.current.mockResolvedValue({
+      resultCode: 'Authorised',
+    });
+
+    startEventListeners(component, refs);
     const data = { details: {}, paymentData: 'pd' };
     fire(Event.onAdditionalDetails, data);
-    expect(refs.onAdditionalDetails.current).toHaveBeenCalledWith(
-      data,
-      expect.anything()
-    );
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(refs.onAdditionalDetails.current).toHaveBeenCalledWith(data);
+    expect(component.completion).toHaveBeenCalledWith('Authorised');
   });
 
   // -------------------------------------------------------------------------

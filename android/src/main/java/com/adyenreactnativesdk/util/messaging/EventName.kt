@@ -8,6 +8,7 @@ enum class EventName(
   ADDITIONAL_DETAILS("didProvideCallback"),
   ERROR("didFailCallback"),
   SESSION_ERROR("didSessionErrorCallback"),
+  BEFORE_SUBMIT("didBeforeSubmitCallback"),
   SUBMIT("didSubmitCallback"),
   UPDATE_ADDRESS("didUpdateAddressCallback"),
   CONFIRM_ADDRESS("didConfirmAddressCallback"),
@@ -33,6 +34,7 @@ fun EventName.Companion.sessionEvents() =
   listOf(
     EventName.SESSION_ERROR.value,
     EventName.COMPLETE_SESSION.value,
+    EventName.BEFORE_SUBMIT.value,
   )
 
 fun EventName.Companion.addressLookupEvents() =

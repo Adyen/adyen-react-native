@@ -2,7 +2,7 @@ import { type EmitterSubscription, NativeEventEmitter } from 'react-native';
 import type {
   AddressLookup,
   AddressLookupItem,
-  AdyenActionComponent,
+  AdditionalDetailsResult,
   AdyenError,
   ApplePayAuthorizationActions,
   ApplePayAuthorizationResult,
@@ -18,37 +18,54 @@ import type {
   PartialPaymentComponent,
   PaymentDetailsData,
   PaymentMethodData,
-  SessionsResult,
   StoredPaymentMethod,
   SubmitModel,
+  SubmitResult,
 } from '../../core';
 import { Event } from '../../core';
-import type { ApplePayModule } from '../../modules/applepay/AdyenApplePay';
 import type { RemovesStoredPayment } from '../../modules/dropin/DropInWrapper';
 import type { AdyenEventListener } from '../../modules/base/EventListenerWrapper';
 
+/** Apple Pay delegate callbacks the native component exposes for JS to resolve. */
+interface ApplePayCallbackHandler {
+  provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void;
+  provideShippingContactUpdate(
+    update: ApplePayShippingContactUpdateRequest
+  ): void;
+  provideShippingMethodUpdate(
+    update: ApplePayShippingMethodUpdateRequest
+  ): void;
+  provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
+}
+
 export type EventHandlerRefs = {
-  onSubmit: React.RefObject<
-    | ((
-        data: PaymentMethodData,
-        component: AdyenActionComponent,
-        extra?: any
-      ) => void)
-    | undefined
-  >;
-  onError: React.RefObject<
-    (error: AdyenError, component: AdyenActionComponent) => void
-  >;
-  onComplete: React.RefObject<
-    | ((result: SessionsResult, component: AdyenActionComponent) => void)
-    | undefined
-  >;
-  onAdditionalDetails: React.RefObject<
-    | ((data: PaymentDetailsData, component: AdyenActionComponent) => void)
-    | undefined
-  >;
-  config: React.RefObject<Configuration>;
+  onSubmit: {
+    current:
+      | ((data: PaymentMethodData) => Promise<SubmitResult> | undefined)
+      | undefined;
+  };
+  onError: {
+    current: ((error: AdyenError) => void) | undefined;
+  };
+  onComplete: {
+    current: ((result: any) => void) | undefined;
+  };
+  onAdditionalDetails: {
+    current:
+      | ((
+          data: PaymentDetailsData
+        ) => Promise<AdditionalDetailsResult> | undefined)
+      | undefined;
+  };
+  config: { current: Configuration | null };
 };
+
+/** Methods the native component exposes for dispatching submit/details results. */
+interface NativeResultDispatcher {
+  action(action: any): void;
+  completion(resultCode: string): void;
+  retry(message?: string): void;
+}
 
 /**
  * Start event listeners on a native component.
@@ -58,7 +75,7 @@ export type EventHandlerRefs = {
  * @param viewId - When set, events are filtered by `data.viewId` (embedded component mode).
  */
 export function startEventListeners(
-  nativeComponent: AdyenEventListener & AdyenActionComponent,
+  nativeComponent: AdyenEventListener & NativeResultDispatcher,
   refs: EventHandlerRefs,
   viewId?: string
 ): EmitterSubscription[] {
@@ -83,36 +100,55 @@ export function startEventListeners(
     }
   }
 
-  function submitPayment(data: PaymentMethodData, extra: any) {
+  async function submitPayment(data: PaymentMethodData) {
     const payload = {
       ...data,
-      returnUrl: data.returnUrl ?? refs.config.current.returnUrl,
+      returnUrl: data.returnUrl ?? refs.config.current?.returnUrl,
     };
-    refs.onSubmit.current?.(payload, nativeComponent, extra);
+    const result = await refs.onSubmit.current?.(payload);
+    if (result) {
+      switch (result.type) {
+        case 'action':
+          nativeComponent.action(result.action);
+          break;
+        case 'completed':
+          nativeComponent.completion(result.resultCode);
+          break;
+        case 'retry':
+          nativeComponent.retry(result.message);
+          break;
+      }
+    }
   }
 
   // Core events
   subscribeIfSupported<SubmitModel>(Event.onSubmit, (response) =>
-    submitPayment(response.paymentData, response.extra)
+    submitPayment(response.paymentData)
   );
   subscribeIfSupported<AdyenError>(Event.onError, (error) =>
-    refs.onError.current?.(error, nativeComponent)
+    refs.onError.current?.(error)
   );
-  subscribeIfSupported<SessionsResult>(Event.onComplete, (data) =>
-    refs.onComplete.current?.(data, nativeComponent)
+  subscribeIfSupported(Event.onComplete, (data) =>
+    refs.onComplete.current?.(data)
   );
-  subscribeIfSupported<PaymentDetailsData>(Event.onAdditionalDetails, (data) =>
-    refs.onAdditionalDetails.current?.(data, nativeComponent)
+  subscribeIfSupported<PaymentDetailsData>(
+    Event.onAdditionalDetails,
+    async (data) => {
+      const result = await refs.onAdditionalDetails.current?.(data);
+      if (result) {
+        nativeComponent.completion(result.resultCode);
+      }
+    }
   );
 
   // Address lookup
   const lookupModule = nativeComponent as unknown as AddressLookup;
   subscribeIfSupported(Event.onAddressUpdate, async (data: any) => {
     const prompt = viewId && typeof data === 'object' ? data.value : data;
-    refs.config.current.card?.onUpdateAddress?.(prompt, lookupModule);
+    refs.config.current?.card?.onUpdateAddress?.(prompt, lookupModule);
   });
   subscribeIfSupported(Event.onAddressConfirm, (address: AddressLookupItem) =>
-    refs.config.current.card?.onConfirmAddress?.(address, lookupModule)
+    refs.config.current?.card?.onConfirmAddress?.(address, lookupModule)
   );
 
   // BIN lookup and value
@@ -121,12 +157,12 @@ export function startEventListeners(
       viewId && !Array.isArray(data) && typeof data === 'object'
         ? data.data
         : data;
-    refs.config.current.card?.onBinLookup?.(lookupData);
+    refs.config.current?.card?.onBinLookup?.(lookupData);
   });
 
   subscribeIfSupported(Event.onBinValue, (data: any) => {
     const value = viewId && typeof data === 'object' ? data.value : data;
-    refs.config.current.card?.onBinValue?.(value);
+    refs.config.current?.card?.onBinValue?.(value);
   });
 
   // Stored payment method removal (Drop-in only)
@@ -134,7 +170,7 @@ export function startEventListeners(
   subscribeIfSupported<StoredPaymentMethod>(
     Event.onDisableStoredPaymentMethod,
     (data) =>
-      refs.config.current.dropin?.onDisableStoredPaymentMethod?.(
+      refs.config.current?.dropin?.onDisableStoredPaymentMethod?.(
         data,
         () => nativeModule.removeStored(true),
         () => nativeModule.removeStored(false)
@@ -147,14 +183,14 @@ export function startEventListeners(
   subscribeIfSupported(
     Event.onCheckBalance,
     async (paymentData: PaymentMethodData) =>
-      refs.config.current.partialPayment?.onBalanceCheck?.(
+      refs.config.current?.partialPayment?.onBalanceCheck?.(
         paymentData,
         (balance) => partialComponent.provideBalance(true, balance, undefined),
         (error) => partialComponent.provideBalance(false, undefined, error)
       )
   );
   subscribeIfSupported(Event.onRequestOrder, () => {
-    refs.config.current.partialPayment?.onOrderRequest?.(
+    refs.config.current?.partialPayment?.onOrderRequest?.(
       (order: Order) => partialComponent.provideOrder(true, order, undefined),
       (error: Error) => partialComponent.provideOrder(false, undefined, error)
     );
@@ -162,7 +198,7 @@ export function startEventListeners(
   subscribeIfSupported(
     Event.onCancelOrder,
     ({ order, shouldUpdatePaymentMethods }: any) =>
-      refs.config.current.partialPayment?.onOrderCancel?.(
+      refs.config.current?.partialPayment?.onOrderCancel?.(
         order,
         shouldUpdatePaymentMethods,
         partialComponent
@@ -170,14 +206,14 @@ export function startEventListeners(
   );
 
   // Apple Pay delegate callbacks
-  const applePayModule = nativeComponent as unknown as ApplePayModule;
+  const applePayModule = nativeComponent as unknown as ApplePayCallbackHandler;
 
   subscribeIfSupported<ApplePayCouponCodeEvent>(
     Event.onApplePayCouponCodeChange,
     (data) => {
       const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
         applePayModule.provideCouponCodeUpdate(update);
-      const callback = refs.config.current.applepay?.onCouponCodeChange;
+      const callback = refs.config.current?.applepay?.onCouponCodeChange;
       if (callback) {
         callback(data.couponCode, resolve);
       } else {
@@ -191,7 +227,7 @@ export function startEventListeners(
     (contact) => {
       const resolve = (update: ApplePayShippingContactUpdateRequest) =>
         applePayModule.provideShippingContactUpdate(update);
-      const callback = refs.config.current.applepay?.onShippingContactChange;
+      const callback = refs.config.current?.applepay?.onShippingContactChange;
       if (callback) {
         callback(contact, resolve);
       } else {
@@ -205,7 +241,7 @@ export function startEventListeners(
     (shippingMethod) => {
       const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
         applePayModule.provideShippingMethodUpdate(update);
-      const callback = refs.config.current.applepay?.onShippingMethodChange;
+      const callback = refs.config.current?.applepay?.onShippingMethodChange;
       if (callback) {
         callback(shippingMethod, resolve);
       } else {
@@ -224,7 +260,7 @@ export function startEventListeners(
         resolve: () => provide({ status: 'success' }),
         reject: (errors?) => provide({ status: 'failure', errors }),
       };
-      const callback = refs.config.current.applepay?.onAuthorize;
+      const callback = refs.config.current?.applepay?.onAuthorize;
       if (callback) {
         callback(payment, actions);
       } else {

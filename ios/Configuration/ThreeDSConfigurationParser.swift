@@ -4,6 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
+import Adyen
 import Foundation
 
 public struct ThreeDS2ConfigurationParser {
@@ -20,5 +21,13 @@ public struct ThreeDS2ConfigurationParser {
 
     var requestorAppUrl: String? {
         dict[ThreeDSKey.requestorAppUrl] as? String
+    }
+
+    public var configuration: AuthenticationConfiguration {
+        var configuration = AuthenticationConfiguration()
+        if let requestorAppUrl, let url = URL(string: requestorAppUrl) {
+            configuration = configuration.requestorAppURL(url)
+        }
+        return configuration
     }
 }

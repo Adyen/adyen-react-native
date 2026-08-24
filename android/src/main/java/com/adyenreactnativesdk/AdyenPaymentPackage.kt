@@ -6,16 +6,15 @@
 
 package com.adyenreactnativesdk
 
-import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
-import com.adyenreactnativesdk.component.SessionHelperModule
-import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
+import android.annotation.SuppressLint
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatform
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatformParams
+import com.adyenreactnativesdk.component.ComponentModule
+import com.adyenreactnativesdk.component.ContextModule
 import com.adyenreactnativesdk.component.dropin.DropInModule
-import com.adyenreactnativesdk.component.googlepay.GooglePayModule
-import com.adyenreactnativesdk.component.instant.InstantModule
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
-import com.adyenreactnativesdk.react.CardViewManager
-import com.adyenreactnativesdk.react.PlatformPayViewManager
+import com.adyenreactnativesdk.react.AdyenComponentViewManager
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
 import com.facebook.react.ReactPackage
@@ -26,26 +25,22 @@ import com.facebook.react.uimanager.ViewManager
 class AdyenPaymentPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
     ensureInitialized(reactContext)
-    val cardView = CardViewManager(emitter)
 
     return listOf(
-      PlatformPayViewManager(),
-      cardView,
+      AdyenComponentViewManager(emitter),
     )
   }
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     ensureInitialized(reactContext)
     val sharedBus = messageBus
+    configureAnalytics()
     return listOf(
       DropInModule(reactContext, sharedBus),
-      InstantModule(reactContext, sharedBus),
-      GooglePayModule(reactContext, sharedBus),
-      ApplePayModuleMock(reactContext, sharedBus),
+      ComponentModule(reactContext, sharedBus),
       AdyenCSEModule(reactContext),
-      SessionHelperModule(reactContext, sharedBus),
+      ContextModule(reactContext, sharedBus),
       ActionModule(reactContext),
-      EmbeddedComponentBusModule(reactContext, sharedBus),
     )
   }
 

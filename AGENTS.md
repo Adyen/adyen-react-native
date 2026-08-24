@@ -24,6 +24,26 @@ This is a React Native SDK with three platform targets:
 - **Android build**: CI runs via Gradle (see `.github/workflows/`)
 - **If `swiftformat` and `ktlint`** are not installed, inform the user.
 
+### Android Build
+
+The `android/` module has no standalone Gradle wrapper. All Android compilation must go through the example app:
+
+```bash
+# Bridge module only
+cd example/android && ./gradlew :adyen_react-native:compileDebugKotlin
+
+# Full example APK
+cd example/android && ./gradlew assembleDebug
+```
+
+**Kotlin version**: The Adyen Android SDK v6 artifacts require a compatible Kotlin compiler. If you see `Module was compiled with an incompatible version of Kotlin. The binary version of its metadata is X.X.X, expected version is Y.Y.Y`, bump `kotlinVersion` in `example/android/build.gradle` AND pin the root buildscript classpath:
+```groovy
+dependencies {
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+}
+```
+Simply setting `ext.kotlinVersion` is insufficient if the root classpath is unpinned.
+
 ## Git & GitHub
 
 - **Working directory**: At the start of every new session, ask the user whether to work in the current directory or a separate worktree. For parallel feature work, use `git worktree add`.
@@ -37,6 +57,7 @@ This is a React Native SDK with three platform targets:
 - **PR description**: Include a short summary of what changed and why, the ticket number, and any testing notes.
 - **PR review responses**: When addressing review comments, reply to each individual comment with the specific commit hash that fixes it (e.g. "Fixed in commit abc1234 — description of change"). Mark invalid comments as such with an explanation.
 - **Comment threads**: Before posting a reply to a PR comment thread, check how many distinct users have commented. If more than one user is in the thread (an ongoing conversation), **ask the user before replying**. Only reply directly if it's a single comment or multiple follow-up comments from the same reviewer.
+- **Worktree verification**: When working in a git worktree, always verify you are in the correct worktree before making edits or commits. Run `git rev-parse --show-toplevel` and confirm it matches the intended path. Never assume `cd` landed you in the right repo when multiple checkouts of the same repository exist (e.g., `sdks/adyen-react-native` vs `sdks/adyen-react-native-v6-alpha`).
 
 ## Refactoring Conventions
 
@@ -49,6 +70,11 @@ This is a React Native SDK with three platform targets:
   - **JS**: `src/**/__tests__/`
   - **iOS**: `example/ios/AdyenExampleTests/`
   - **Android**: `android/src/test/java/com/adyenreactnativesdk/`
+
+## Migration & Refactoring
+
+### Feature description accuracy
+Feature descriptions should reference correct file paths. Before implementing, verify that referenced files actually exist in the codebase. If a feature description references a non-existent file, note the discrepancy in the handoff rather than silently skipping.
 
 ## Public API snapshots
 
@@ -94,4 +120,6 @@ Before considering work complete:
 7. Public API snapshot validated (`yarn prepare`, `yarn api-extractor`)
 8. If public API changed: reviewed for breaking changes and discussed with user
 9. If the public API changed intentionally, the API report was regenerated and reviewed
+
+**Native-only changes**: When a feature modifies only Swift or Kotlin files (zero TypeScript changes), steps 1-2 add no signal. If `npm start` hangs on yarn resolution, these JS checks can be skipped. Native correctness is verified via `xcodebuild` (iOS) or `./gradlew :adyen_react-native:compileDebugKotlin` (Android) when the full dependency chain is available.
 

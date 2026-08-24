@@ -7,8 +7,8 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.adyen.checkout.components.core.Amount
-import com.adyen.checkout.core.Environment
+import com.adyen.checkout.core.common.Environment
+import com.adyen.checkout.core.components.data.model.Amount
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReadableMap
 import java.util.Locale
@@ -70,12 +70,12 @@ class RootConfigurationParser(
       if (config.hasKey(ENVIRONMENT_KEY)) {
         val environment = config.getString(ENVIRONMENT_KEY)!!
         when (environment.lowercase(Locale.ROOT)) {
-          "live-au" -> Environment.AUSTRALIA
-          "live", "live-eu" -> Environment.EUROPE
-          "live-us" -> Environment.UNITED_STATES
-          "live-apse" -> Environment.APSE
-          "live-in" -> Environment.INDIA
-          "live-nea" -> Environment.NEA
+          "live-au" -> Environment.LIVE_AUSTRALIA
+          "live", "live-eu" -> Environment.LIVE_EUROPE
+          "live-us" -> Environment.LIVE_UNITED_STATES
+          "live-apse" -> Environment.LIVE_APSE
+          "live-in" -> Environment.LIVE_INDIA
+          "live-nea" -> Environment.LIVE_NEA
           else -> Environment.TEST
         }
       } else {

@@ -7,12 +7,10 @@
 package com.adyenreactnativesdk.component.base
 
 import android.annotation.SuppressLint
-import com.adyen.checkout.components.core.PaymentMethod
-import com.adyen.checkout.components.core.PaymentMethodsApiResponse
-import com.adyen.checkout.components.core.internal.util.CheckoutPlatform
-import com.adyen.checkout.components.core.internal.util.CheckoutPlatformParams
-import com.adyen.checkout.sessions.core.CheckoutSession
-import com.adyenreactnativesdk.AdyenCheckout
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatform
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatformParams
+import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethod
+import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.ReactApplicationContext
@@ -28,32 +26,25 @@ abstract class BaseModule(
 
   override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
 
-  abstract fun hide(
-    success: Boolean,
-    message: ReadableMap?,
-  )
-
-  protected fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse =
+  protected fun getPaymentMethods(paymentMethods: ReadableMap?): PaymentMethods =
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
-      PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
+      PaymentMethods.SERIALIZER.deserialize(jsonObject)
     } catch (e: JSONException) {
       throw ModuleException.InvalidPaymentMethods(e)
     }
 
   protected fun getPaymentMethod(
-    paymentMethodsResponse: PaymentMethodsApiResponse,
+    paymentMethods: PaymentMethods,
     paymentMethodNames: Set<String>,
-  ): PaymentMethod? = paymentMethodsResponse.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
+  ): PaymentMethod? = paymentMethods.paymentMethods?.firstOrNull { paymentMethodNames.contains(it.type) }
 
-  protected fun cleanup() {
-    session = null
-    currentModule = null
-    AdyenCheckout.removeComponent()
+  protected open fun cleanup() {
+    checkoutState = null
   }
 
   protected fun sendError(exception: Exception) {
-    if (session == null) {
+    if (checkoutState?.isSession != true) {
       messageBus.onException(exception)
     } else {
       messageBus.onSessionException(exception)
@@ -61,11 +52,8 @@ abstract class BaseModule(
   }
 
   companion object {
-    var session: CheckoutSession? = null
-      internal set
-
-    var currentModule: BaseModule? = null
-      internal set
+    @Volatile
+    internal var checkoutState: CheckoutState? = null
 
     @Volatile
     var sdkVersion: String? = null

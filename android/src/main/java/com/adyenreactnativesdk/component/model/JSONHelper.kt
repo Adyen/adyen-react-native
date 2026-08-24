@@ -19,7 +19,10 @@ fun SessionPaymentResult.toJSONObject(): JSONObject =
   }
 
 fun List<BinLookupData>.toJSONObject(): JSONArray {
-  val jsonList = this.map { JSONObject().apply { put("brand", it.brand) } }
+  val jsonList =
+    this
+      .flatMap { it.brands }
+      .map { JSONObject().apply { put("brand", it.brand) } }
   return JSONArray().apply {
     jsonList.forEach { put(it) }
   }

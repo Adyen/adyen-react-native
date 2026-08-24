@@ -1,12 +1,10 @@
-import type { AdyenActionComponent, PaymentAction } from '../../core';
-import {
-  PaymentComponentWrapper,
-  type PaymentModule,
-} from './PaymentComponentWrapper';
+import type { PaymentAction } from '../../core';
+import { ModuleWrapper, type BaseNativeModule } from './ModuleWrapper';
 
 /** Native module interface for action-handling components */
-export interface ActionHandlingNativeModule
-  extends PaymentModule, AdyenActionComponent {}
+export interface ActionHandlingNativeModule extends BaseNativeModule {
+  handle(action: PaymentAction): void;
+}
 
 /**
  * Wrapper for Native Modules that support Action handling.
@@ -14,10 +12,7 @@ export interface ActionHandlingNativeModule
  */
 export abstract class ActionHandlingComponentWrapper<
   T extends ActionHandlingNativeModule = ActionHandlingNativeModule,
->
-  extends PaymentComponentWrapper<T>
-  implements AdyenActionComponent
-{
+> extends ModuleWrapper<T> {
   handle(action: PaymentAction) {
     this.nativeModule.handle(action);
   }

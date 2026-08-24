@@ -12,7 +12,9 @@ import React
 @objc(AdyenAction)
 internal final class ActionModule: BaseModule {
 
-    private var actionHandler: AdyenActionComponent?
+    /// The v6 action-only checkout that handles the standalone action. Retained so the SDK can
+    /// present and complete the action after ``handle(_:configuration:resolver:rejecter:)`` returns.
+    private var actionCheckout: ActionOnlyCheckout?
 
     @objc override func constantsToExport() -> [AnyHashable: Any]! {
         [Constant.threeDS2SdkVersionName: threeDS2SdkVersion]
@@ -28,28 +30,32 @@ internal final class ActionModule: BaseModule {
                 rejecter: @escaping RCTPromiseRejectBlock) {
         self.resolver = resolver
         self.rejecter = rejecter
+
         let action: Action
         let parser = RootConfigurationParser(configuration: configuration)
-        let context: AdyenContext
         do {
             action = try parseAction(from: actionJson)
-            context = try parser.fetchContext(session: BaseModule.session)
         } catch {
             return reject(with: error)
         }
 
-        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        var config = AdyenActionComponent.Configuration(style: style)
-        if let locale = BaseModule.session?.sessionContext.shopperLocale ?? parser.shopperLocale {
-            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
-        }
-        actionHandler = AdyenActionComponent(context: context, configuration: config)
-        actionHandler?.delegate = self
-        actionHandler?.presentationDelegate = self
-        currentComponent = actionHandler
-
-        ensureMainThread { [weak self] in
-            self?.actionHandler?.handle(action)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let authenticationConfiguration = ThreeDS2ConfigurationParser(configuration: configuration).configuration
+                let checkoutConfiguration = try parser.checkoutConfiguration {
+                    authenticationConfiguration
+                }
+                let checkout = try await Checkout.setup(
+                    configuration: checkoutConfiguration,
+                    presentationDelegate: self
+                )
+                self.setupCallbacks(on: checkout)
+                self.actionCheckout = checkout
+                checkout.handle(action: action)
+            } catch {
+                self.reject(with: error)
+            }
         }
     }
 
@@ -60,13 +66,40 @@ internal final class ActionModule: BaseModule {
         dismiss(success.boolValue)
     }
 
+    /// Wires the v6 action-only closures to the JS promise. Replaces the v5
+    /// `ActionComponentDelegate` conformance: additional details resolve the promise with the data
+    /// for the merchant's `/payments/details` call, completion resolves with the result code, and
+    /// failures reject the promise.
+    @MainActor
+    private func setupCallbacks(on checkout: ActionOnlyCheckout) {
+        _ = checkout
+            .onAdditionalDetails { [weak self] data in
+                self?.resolve(with: data.jsonObject)
+                return .completion(resultCode: "")
+            }
+            .onComplete { [weak self] result in
+                self?.resolve(with: ResultDTO(result: result.resultCode).jsonObject)
+            }
+            .onFailure { [weak self] error in
+                self?.reject(with: error)
+            }
+    }
+
     private enum Constant {
         static var threeDS2SdkVersionName = "threeDS2SdkVersion"
         static var componentError = "actionError"
     }
 
+    private func resolve(with value: Any) {
+        resolver?(value)
+        resolver = nil
+        rejecter = nil
+    }
+
     func reject(with error: ModuleException) {
         rejecter?(error.errorCode, error.errorDescription, error)
+        resolver = nil
+        rejecter = nil
     }
 
     func reject(with error: any Error) {
@@ -74,23 +107,20 @@ internal final class ActionModule: BaseModule {
             return reject(with: nativeError)
         }
         rejecter?(Constant.componentError, error.localizedDescription, error)
+        resolver = nil
+        rejecter = nil
     }
 
     override func sendError(error: any Error) {
-        rejecter?("ActionModule", error.localizedDescription, error)
-    }
-}
-
-extension ActionModule: ActionComponentDelegate {
-    func didProvide(_ data: Adyen.ActionComponentData, from _: Adyen.ActionComponent) {
-        resolver?(data.jsonObject)
+        ensureMainThread { [weak self] in
+            self?.reject(with: error)
+        }
     }
 
-    func didComplete(from _: Adyen.ActionComponent) {
-        resolver?(ResultDTO(result: .presentToShopper).jsonObject)
-    }
-
-    func didFail(with error: Error, from _: Adyen.ActionComponent) {
-        reject(with: error)
+    override func cleanUp() {
+        ensureMainThread { [weak self] in
+            self?.actionCheckout = nil
+        }
+        super.cleanUp()
     }
 }

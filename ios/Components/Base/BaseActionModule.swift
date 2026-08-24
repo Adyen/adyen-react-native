@@ -8,14 +8,12 @@ import Adyen
 
 internal class BaseActionModule: BaseModuleSender {
 
-    private var actionHandler: AdyenActionComponent?
-
     override func supportedEvents() -> [String]! {
         super.supportedEvents() + [EventName.additionalDetails, EventName.complete].map(\.rawValue)
     }
 
     @objc
-    func handle(_ dictionary: NSDictionary) {
+    func action(_ dictionary: NSDictionary) {
         let action: Action
         do {
             action = try parseAction(from: dictionary)
@@ -24,27 +22,24 @@ internal class BaseActionModule: BaseModuleSender {
         }
 
         ensureMainThread { [weak self] in
-            self?.actionHandler?.handle(action)
+            self?.checkout?.handle(action: action)
         }
     }
 
-    @objc
-    override func hide(_ success: NSNumber, event: NSDictionary) {
-        actionHandler?.cancelIfNeeded()
-        actionHandler = nil
-        super.hide(success, event: event)
-    }
-
-    internal func createActionHandlerIfNeeded(context: AdyenContext, locale: String?) {
-        guard BaseModule.session == nil else { return }
-
-        let style = AdyenAppearanceLoader.findStyle()?.actionComponent ?? .init()
-        var config = AdyenActionComponent.Configuration(style: style)
-        if let locale {
-            config.localizationParameters = LocalizationParameters(enforcedLocale: locale)
-        }
-        actionHandler = AdyenActionComponent(context: context, configuration: config)
-        actionHandler?.delegate = self
-        actionHandler?.presentationDelegate = self
+    /// Wires the action-only-flow closures on the checkout object to React Native event emission.
+    /// Replaces the v5 action-component delegate conformance with v6 closure callbacks.
+    @MainActor
+    internal func setupActionCallbacks(on checkout: ActionOnlyCheckout) {
+        self.checkout = checkout
+        _ = checkout
+            .onAdditionalDetails { [weak self] data in
+                await self?.awaitAdditionalDetailsResult(for: data) ?? .completion(resultCode: "")
+            }
+            .onComplete { [weak self] result in
+                self?.sendCompleteEvent(resultCode: result.resultCode)
+            }
+            .onFailure { [weak self] error in
+                self?.sendError(error: error)
+            }
     }
 }

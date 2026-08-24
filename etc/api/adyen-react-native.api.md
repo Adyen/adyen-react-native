@@ -4,11 +4,8 @@
 
 ```ts
 
-import { JSX } from 'react';
 import { default as React_2 } from 'react';
-import { ReactNode } from 'react';
-import { StyleProp } from 'react-native';
-import { ViewStyle } from 'react-native';
+import type { TurboModule } from 'react-native';
 
 // @public
 export interface ActionModule {
@@ -16,6 +13,17 @@ export interface ActionModule {
     hide: (success: boolean) => void;
     threeDS2SdkVersion: string;
 }
+
+// @public
+export interface AdditionalDetailsResult {
+    // (undocumented)
+    readonly resultCode: string;
+}
+
+// @public
+export const AdditionalDetailsResult: {
+    readonly completed: (resultCode: string) => AdditionalDetailsResult;
+};
 
 // @public (undocumented)
 export const ADDRESS_COMPONENTS: string[];
@@ -39,42 +47,36 @@ export interface AddressLookupItem {
 export type AddressMode = 'full' | 'postalCode' | 'none' | 'lookup';
 
 // @public
+export interface AdvancedCallbacks {
+    onAdditionalDetails(data: PaymentDetailsData): Promise<AdditionalDetailsResult>;
+    onComplete(result: PaymentResult): void;
+    onError(error: AdyenError): void;
+    onSubmit(data: PaymentMethodData_2): Promise<SubmitResult>;
+}
+
+// @public
+export interface AdvancedPayment {
+    action(action: PaymentAction): void;
+    completion(resultCode: string): void;
+    retry(message?: string): void;
+}
+
+// @public
 export const AdyenAction: ActionModule;
 
 // @public
-export interface AdyenActionComponent extends AdyenComponent {
-    handle(action: PaymentAction): void;
+export class AdyenCheckout {
+    static setup(session: SessionConfiguration, configuration: Configuration, callbacks: SessionCallbacks): Promise<Checkout>;
+    static setupAdvanced(paymentMethods: PaymentMethodsResponse, configuration: Configuration, callbacks: AdvancedCallbacks): Promise<Checkout>;
 }
 
 // @public
-export const AdyenApplePay: ApplePayModule;
-
-// @public (undocumented)
-export const AdyenCheckout: React_2.FC<AdyenCheckoutProps>;
+export const AdyenComponent: React_2.FC<AdyenComponentProps>;
 
 // @public
-export interface AdyenCheckoutContextType {
-    config: Configuration;
-    isReady: boolean;
-    paymentMethods?: PaymentMethodsResponse;
-    start: (typeName: string) => void;
-}
-
-// @public
-export type AdyenCheckoutProps = {
-    config: Configuration;
-    paymentMethods?: PaymentMethodsResponse;
-    session?: SessionConfiguration;
-    onSubmit?: (data: PaymentMethodData_2, component: AdyenActionComponent, extra?: any) => void;
-    onError: (error: AdyenError, component: AdyenComponent) => void;
-    onAdditionalDetails?: (data: PaymentDetailsData, component: AdyenActionComponent) => void;
-    onComplete?: (result: SessionsResult, component: AdyenComponent) => void;
-    children: ReactNode;
-};
-
-// @public
-export interface AdyenComponent {
-    hide(success: boolean, option?: HideOption): void;
+export interface AdyenComponentProps {
+    checkout: Checkout;
+    type: string;
 }
 
 // @public
@@ -101,12 +103,6 @@ export interface AdyenError {
 }
 
 // @public
-export const AdyenGooglePay: GooglePayModule;
-
-// @public
-export const AdyenInstant: InstantModule;
-
-// @public
 export interface AnalyticsOptions {
     enabled?: boolean;
     verboseLogs?: boolean;
@@ -123,57 +119,9 @@ export interface ApplePayAuthorizationActions {
 
 // @public
 export interface ApplePayAuthorizationResult {
-    // (undocumented)
     errors?: ApplePayError[];
-    // (undocumented)
     status: 'success' | 'failure';
 }
-
-// @public (undocumented)
-export const ApplePayButton: (input: ApplePayButtonProps) => JSX.Element;
-
-// @public (undocumented)
-export interface ApplePayButtonProps {
-    // (undocumented)
-    onPress?: () => void;
-    // (undocumented)
-    radius?: number;
-    // (undocumented)
-    style?: StyleProp<ViewStyle>;
-    // (undocumented)
-    theme?: keyof typeof ApplePayButtonTheme;
-    // (undocumented)
-    type?: keyof typeof ApplePayButtonType;
-}
-
-// @public (undocumented)
-export const ApplePayButtonTheme: {
-    readonly WHITE: 1;
-    readonly WHITE_OUTLINE: 2;
-    readonly AUTOMATIC: 3;
-    readonly BLACK: 4;
-};
-
-// @public (undocumented)
-export const ApplePayButtonType: {
-    readonly BUY: 1;
-    readonly SETUP: 2;
-    readonly INSTORE: 3;
-    readonly DONATE: 4;
-    readonly CHECKOUT: 5;
-    readonly BOOK: 6;
-    readonly SUBSCRIBE: 7;
-    readonly RELOAD: 8;
-    readonly ADDMONEY: 9;
-    readonly TOPUP: 10;
-    readonly ORDER: 11;
-    readonly RENT: 12;
-    readonly SUPPORT: 13;
-    readonly CONTRIBUTE: 14;
-    readonly TIP: 15;
-    readonly CONTINUE: 16;
-    readonly PLAIN: 0;
-};
 
 // @public
 export type ApplePayCalendarUnit = `year` | `month` | `day` | `hour` | `minute`;
@@ -183,7 +131,6 @@ export interface ApplePayConfiguration {
     allowOnboarding?: boolean;
     billingContact?: ApplePayPaymentContact;
     couponCode?: string;
-    merchantCapabilities?: ApplePayMerchantCapability[];
     merchantID: string;
     merchantName?: string;
     onAuthorize?: (payment: ApplePayPaymentAuthorization, actions: ApplePayAuthorizationActions) => void;
@@ -219,21 +166,6 @@ export interface ApplePayError {
     field?: string;
     message: string;
     type: 'shippingAddress' | 'billingAddress' | 'contactField' | 'couponCode';
-}
-
-// @public
-export type ApplePayMerchantCapability = 'debit' | 'credit';
-
-// @public (undocumented)
-export interface ApplePayModule extends AdyenComponent, ConditionalPaymentComponent {
-    // (undocumented)
-    provideAuthorizationResult(result: ApplePayAuthorizationResult): void;
-    // (undocumented)
-    provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void;
-    // (undocumented)
-    provideShippingContactUpdate(update: ApplePayShippingContactUpdateRequest): void;
-    // (undocumented)
-    provideShippingMethodUpdate(update: ApplePayShippingMethodUpdateRequest): void;
 }
 
 // @public
@@ -328,6 +260,36 @@ export interface BaseConfiguration extends EnvironmentConfiguration {
     locale?: string;
 }
 
+// @public
+export interface BeforeSubmitData {
+    // (undocumented)
+    billingAddress?: object;
+    // (undocumented)
+    deliveryAddress?: object;
+    // (undocumented)
+    shopperEmail?: string;
+    // (undocumented)
+    shopperName?: {
+        firstName?: string;
+        lastName?: string;
+    };
+}
+
+// @public
+export type BeforeSubmitResult = {
+    readonly type: 'proceed';
+    readonly data: BeforeSubmitData;
+    readonly sessionData?: string;
+} | {
+    readonly type: 'abort';
+};
+
+// @public
+export const BeforeSubmitResult: {
+    readonly proceed: (data: BeforeSubmitData, sessionData?: string) => BeforeSubmitResult;
+    readonly abort: () => BeforeSubmitResult;
+};
+
 // @public (undocumented)
 export interface BinLookupData {
     // (undocumented)
@@ -365,11 +327,38 @@ export interface CardsConfiguration {
 }
 
 // @public
-export const CardView: React_2.FC<CardViewProps>;
+export interface Checkout {
+    readonly configuration: Configuration;
+    isAvailable(type: string): Promise<boolean>;
+    readonly paymentMethods: PaymentMethodsResponse;
+    requiresUserInteraction(type: string): Promise<boolean>;
+    submit(type: string): void;
+    // @internal
+    subscribe(viewId: string): void;
+    // @internal
+    unsubscribe(viewId: string): void;
+}
 
+// Warning: (ae-forgotten-export) The symbol "NativeModuleWithConstants" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export interface CardViewProps {
-    paymentMethod?: PaymentMethod;
+export interface ComponentNativeModule extends NativeModuleWithConstants {
+    // (undocumented)
+    action(viewId: string, action: PaymentAction): void;
+    // (undocumented)
+    completion(viewId: string, resultCode: string): void;
+    // (undocumented)
+    confirm(viewId: string, success: boolean, body?: AddressLookupItem | {
+        message?: string;
+    }): void;
+    // (undocumented)
+    retry(viewId: string, message?: string): void;
+    // (undocumented)
+    subscribe(viewId: string): void;
+    // (undocumented)
+    unsubscribe(viewId: string): void;
+    // (undocumented)
+    update(viewId: string, results: AddressLookupItem[]): void;
 }
 
 // @public
@@ -401,9 +390,10 @@ export interface DropInConfiguration {
 }
 
 // @public
-export interface DropInModule extends AdyenActionComponent {
+export interface DropInModule extends AdvancedPayment {
     getReturnURL: () => Promise<string>;
     providePaymentMethods(paymentMethods: PaymentMethodsResponse, order: Order | undefined): void;
+    start(checkout: Checkout): void;
 }
 
 // @public
@@ -437,6 +427,7 @@ enum Event_2 {
     onApplePayCouponCodeChange = "didUpdateCouponCodeCallback",
     onApplePayShippingContactChange = "didUpdateShippingContactCallback",
     onApplePayShippingMethodChange = "didUpdateShippingMethodCallback",
+    onBeforeSubmit = "didBeforeSubmitCallback",
     onBinLookup = "didBinLookupCallback",
     onBinValue = "didChangeBinValueCallback",
     onCancelOrder = "didCancelOrderCallback",
@@ -464,41 +455,6 @@ export interface GooglePayBillingAddressParameters {
 }
 
 // @public (undocumented)
-export const GooglePayButton: (input: GooglePayButtonProps) => JSX.Element;
-
-// @public (undocumented)
-export interface GooglePayButtonProps {
-    // (undocumented)
-    onPress?: () => void;
-    // (undocumented)
-    radius?: number;
-    // (undocumented)
-    style?: StyleProp<ViewStyle>;
-    // (undocumented)
-    theme?: keyof typeof GooglePayButtonTheme;
-    // (undocumented)
-    type?: keyof typeof GooglePayButtonType;
-}
-
-// @public (undocumented)
-export const GooglePayButtonTheme: {
-    readonly DARK: 1;
-    readonly LIGHT: 2;
-};
-
-// @public (undocumented)
-export const GooglePayButtonType: {
-    readonly BUY: 1;
-    readonly BOOK: 2;
-    readonly CHECKOUT: 3;
-    readonly DONATE: 4;
-    readonly ORDER: 5;
-    readonly PAY: 6;
-    readonly SUBSCRIBE: 7;
-    readonly PLAIN: 8;
-};
-
-// @public (undocumented)
 export interface GooglePayConfiguration {
     allowCreditCards?: boolean;
     allowedAuthMethods?: CardAuthMethod[];
@@ -523,19 +479,10 @@ export enum GooglePayEnvironment {
     Test = 3
 }
 
-// @public (undocumented)
-export interface GooglePayModule extends ConditionalPaymentComponent, AdyenActionComponent {
-}
-
 // @public
 export interface GooglePayShippingAddressParameters {
     allowedCountryCodes?: string[];
     phoneNumberRequired?: boolean;
-}
-
-// @public
-export interface HideOption {
-    message?: string;
 }
 
 // @public (undocumented)
@@ -556,10 +503,6 @@ export interface InstallmentOptions {
 export type InstallmentPlan = 'regular' | 'revolving';
 
 // @public (undocumented)
-export interface InstantModule extends AdyenActionComponent {
-}
-
-// @public (undocumented)
 export const NATIVE_COMPONENTS: string[];
 
 // @public (undocumented)
@@ -570,7 +513,7 @@ export interface Order {
 }
 
 // @public (undocumented)
-export interface PartialPaymentComponent extends AdyenComponent {
+export interface PartialPaymentComponent extends AdvancedPayment {
     // (undocumented)
     provideBalance(success: boolean, balance: Balance | undefined, error: Error | undefined): void;
     // (undocumented)
@@ -685,6 +628,15 @@ export interface PaymentMethodsResponse {
     storedPaymentMethods?: StoredPaymentMethod[];
 }
 
+// @public
+export interface PaymentResult {
+    // (undocumented)
+    [key: string]: unknown;
+    action?: PaymentAction;
+    refusalReason?: string;
+    resultCode?: ResultCode;
+}
+
 // @public (undocumented)
 export interface PostalAddress {
     city?: string;
@@ -709,6 +661,13 @@ export enum ResultCode {
     received = "Received",
     redirectShopper = "RedirectShopper",
     refused = "Refused"
+}
+
+// @public
+export interface SessionCallbacks {
+    onBeforeSubmit?(data: BeforeSubmitData): Promise<BeforeSubmitResult>;
+    onComplete(result: SessionsResult): void;
+    onError(error: AdyenError): void;
 }
 
 // @public
@@ -741,6 +700,25 @@ export interface SubmitModel {
     paymentData: PaymentMethodData_2;
 }
 
+// @public
+export type SubmitResult = {
+    readonly type: 'action';
+    readonly action: PaymentAction;
+} | {
+    readonly type: 'completed';
+    readonly resultCode: string;
+} | {
+    readonly type: 'retry';
+    readonly message?: string;
+};
+
+// @public
+export const SubmitResult: {
+    readonly action: (action: PaymentAction) => SubmitResult;
+    readonly completed: (resultCode: string) => SubmitResult;
+    readonly retry: (message?: string) => SubmitResult;
+};
+
 // @public (undocumented)
 export interface ThreeDSConfiguration {
     requestorAppUrl?: string;
@@ -751,9 +729,6 @@ export type TotalPriceStatus = 'NOT_CURRENTLY_KNOWN' | 'ESTIMATED' | 'FINAL';
 
 // @public (undocumented)
 export const UNSUPPORTED_PAYMENT_METHODS: string[];
-
-// @public
-export const useAdyenCheckout: () => AdyenCheckoutContextType;
 
 // (No @packageDocumentation comment for this package)
 

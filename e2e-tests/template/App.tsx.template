@@ -1,12 +1,11 @@
 import {
-  AdyenActionComponent,
+  SubmitResult,
   AdyenCSE,
   AdyenCheckout,
-  AdyenComponent,
-  AdyenError,
-  Configuration,
-  PaymentMethodData,
-  PaymentMethodsResponse,
+  type AdyenError,
+  type Configuration,
+  type PaymentMethodData,
+  type PaymentMethodsResponse,
   useAdyenCheckout,
 } from '@adyen/react-native';
 import React, { useCallback } from 'react';
@@ -46,22 +45,21 @@ function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   const onError = useCallback(
-    (error: AdyenError, component: AdyenComponent) => {
+    (error: AdyenError) => {
       console.debug(error);
-      component.hide(false);
     },
     [],
   );
 
   const onSubmit = useCallback(
-    async (data: PaymentMethodData, dropIn: AdyenActionComponent) => {
+    async (data: PaymentMethodData): Promise<SubmitResult> => {
       try {
         console.log('In');
         console.log('Out');
-        dropIn.hide(true);
+        return SubmitResult.completed('Authorised');
       } catch (error) {
         console.error(error);
-        dropIn.hide(false);
+        return SubmitResult.completed('Error');
       }
     },
     [],

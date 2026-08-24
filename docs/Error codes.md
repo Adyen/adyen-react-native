@@ -5,7 +5,6 @@
 | canceledByShopper | Payment canceled by shopper |
 | notSupported | Not supported on current platform. |
 | noClientKey | No clientKey in configuration |
-| noPayment | No payment in configuration |
 | invalidPaymentMethods | Cannot parse paymentMethods or the list is empty |
 | invalidAction | Cannot parse action |
 | noPaymentMethod | Cannot find payment method of selected type in provided list  |

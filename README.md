@@ -1,32 +1,44 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
-[![Adyen iOS](https://img.shields.io/badge/ios-v5.25.1-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/5.25.1)
-[![Adyen Android](https://img.shields.io/badge/android-v5.20.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.20.0)
+[![Adyen iOS](https://img.shields.io/badge/ios-v6.0.0--alpha.1-orange.svg)](https://github.com/Adyen/adyen-ios/releases/tag/6.0.0-alpha.1)
+[![Adyen Android](https://img.shields.io/badge/android-v6.0.0--alpha.1-orange.svg)](https://github.com/Adyen/adyen-android/releases/tag/6.0.0-alpha.1)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
-> [!Important]
-> **React Native New Architecture Support** </br>
+> [!CAUTION]
+> **This is the v6 alpha of the Adyen React Native SDK.**
 >
-> The **New Architecture** for React Native is exclusively supported on versions **0.76.0 and above**.
+> This release migrates the React Native SDK to the Adyen v6 native SDKs with a redesigned TypeScript API. It is not yet suitable for production use.
 >
-> For projects using versions lower than 0.76.0, please:
+> **Key changes from v5:**
+> - `AdyenCheckout` is a static class (no provider component or hooks)
+> - `AdyenCheckout.setup()` / `AdyenCheckout.setupAdvanced()` return a `Checkout` object with headless APIs
+> - Generic `<AdyenComponent>` replaces per-method views (`<CardView>`, `<GooglePayButton>`, `<ApplePayButton>`)
+> - `AdyenDropIn.start(checkout)` replaces `open()`
+> - Return-based callbacks: `onSubmit` returns `SubmitResult`, `onAdditionalDetails` returns `AdditionalDetailsResult`
+> - Auto-cleanup on terminal callbacks; explicit cleanup via `checkout.cleanup()` or `AdyenCheckout.cleanup()`
+> - Cross-platform aligned with iOS, Android, and Flutter SDK setup pattern
 >
-> - Continue utilizing the **Old Architecture**.
-> - Alternatively, disable bridgeless mode by setting `load(bridgelessEnabled=false)`.
-
-> [!Note]
+> **Known alpha limitations:**
+> - Partial payments are not yet supported
+> - Stored payment method removal is not yet supported
 >
-> For compatibility with officially unsupported versions below v0.74 check [this document](docs/Compatibility.md).
+> **Platform requirements:**
+> - React Native 0.85+
+> - iOS 16.0+
+> - Adyen iOS SDK 6.0.0-alpha.1
+> - Adyen Android SDK 6.0.0-alpha.1
+> - Kotlin 2.3.21+
+> - TypeScript ^6.0.3
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
-# Adyen React Native
+# Adyen React Native (v6 Alpha)
 
 Adyen React Native provides you with the building blocks to create a checkout experience for your shoppers, allowing them to pay using the payment method of their choice.
 
 You can integrate with Adyen React Native in two ways:
 
-- [Drop-in][adyen-docs-dropin]: React Native wrapper for native iOS and Android Adyen Drop-in - an all-in-one solution, the quickest way to accept payments on your React Native app.
-- [Components][adyen-docs-components]: React Native wrapper for native iOS and Android Adyen Components - one Component per payment method that can be combined with your own payments flow.
+- **[Drop-in][adyen-docs-dropin]**: An all-in-one payment modal — the quickest way to accept payments on your React Native app.
+- **[Components][adyen-docs-components]**: Embedded payment views rendered inline via the generic `<AdyenComponent>` — one component per payment method that can be combined with your own payments flow.
 
 ## Table of Contents
 
@@ -38,7 +50,10 @@ You can integrate with Adyen React Native in two ways:
   - [Configuration](#configuration)
   - [Sessions Flow](#sessions-flow)
   - [Advanced Flow](#advanced-flow)
-  - [Handling Actions](#handling-actions)
+  - [Drop-in](#drop-in)
+  - [Embedded Components](#embedded-components)
+  - [Headless APIs](#headless-apis)
+- [Build & Test](#build--test)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Support](#support)
@@ -49,6 +64,8 @@ You can integrate with Adyen React Native in two ways:
 - [Adyen test account](https://www.adyen.com/signup)
 - [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key)
 - [Client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key)
+- React Native >= 0.85
+- TypeScript ^6.0.3
 
 # Installation
 
@@ -62,7 +79,7 @@ yarn add @adyen/react-native
 
 > [!IMPORTANT]
 >
-> This library is not compatible with Expo Go. It is designed exclusively for use with the [Continuous Native Generation](https://docs.expo.dev/workflow/overview/#continuous-native-generation-cng).
+> This library is not compatible with Expo Go. It is designed exclusively for use with [Continuous Native Generation](https://docs.expo.dev/workflow/overview/#continuous-native-generation-cng).
 
 Add `@adyen/react-native` plugin to your `app.json`:
 
@@ -112,10 +129,6 @@ Add `@adyen/react-native` plugin to your `app.json`:
 
 ## Manual Integration
 
-> [!NOTE]
->
-> For Objective-C and Java integration, see the [legacy documentation](https://github.com/Adyen/adyen-react-native/tree/2.9.0?tab=readme-ov-file#ios-integration).
-
 <details>
 <summary><strong>iOS Setup</strong></summary>
 
@@ -124,12 +137,12 @@ Add `@adyen/react-native` plugin to your `app.json`:
 2. Add `returnURL` handler to your `AppDelegate.swift`:
 
 ```swift
-import Adyen
+import adyen_react_native
 
 // ...
 
 func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-    return RedirectComponent.applicationDidOpen(from: url)
+    return ADYRedirectComponent.applicationDidOpen(url)
 }
 ```
 
@@ -137,7 +150,7 @@ If using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirec
 
 ```swift
 func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-    return RedirectComponent.applicationDidOpen(from: url) || RCTLinkingManager.application(app, open: url, options: options)
+    return ADYRedirectComponent.applicationDidOpen(url) || RCTLinkingManager.application(app, open: url, options: options)
 }
 ```
 
@@ -147,7 +160,7 @@ For Universal Link support:
 func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
     if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
        let url = userActivity.webpageURL,
-       RedirectComponent.applicationDidOpen(from: url) {
+       ADYRedirectComponent.applicationDidOpen(url) {
         return true
     }
     return RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
@@ -217,45 +230,52 @@ For general understanding of how prebuilt UI components of Adyen work you can fo
 
 ## Configuration
 
-To read more about other configuration, see the [full list][configuration].
-Example of required configuration:
+All payment flows start by creating a configuration object and passing it to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`:
 
 ```typescript
-import { Configuration } from '@adyen/react-native';
+import { AdyenCheckout, type Configuration } from '@adyen/react-native';
 
 const configuration: Configuration = {
-  environment: 'test', // When you're ready to accept real payments, change the value to a suitable live environment.
+  environment: 'test', // Change to a live environment when ready for production
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 1000 }, // Value in minor units
-  returnUrl: 'myapp://payment', // See description below.
+  returnUrl: 'myapp://payment',
 };
+
+// Session flow:
+const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
+
+// Advanced flow:
+const checkout = await AdyenCheckout.setupAdvanced(paymentMethods, configuration, callbacks);
 ```
+
+To read more about other configuration options, see the [full list][configuration].
 
 ### Return URL
 
 > [!IMPORTANT]
 >
-> On `config` use a custom URL scheme or App/Universal link of your app(s).
+> Use a custom URL scheme or App/Universal link of your app(s) for the `returnUrl`.
 
 <table>
 <tr>
-  <th> Scenario </th> 
+  <th> Scenario </th>
   <th> How to use </th>
 </tr>
 <tr>
-  <td> Advanced flow </td> 
-  <td> 
-    
-  During `onSubmit(data, component, extras)` pass `"returnUrl": data.returnUrl` to make `\payments` API call. 
-    
+  <td> Advanced flow </td>
+  <td>
+
+  During `onSubmit(data, component)` pass `"returnUrl": data.returnUrl` to make the `/payments` API call.
+
   </td>
 </tr>
 <tr>
-  <td> Sessions flow </td> 
+  <td> Sessions flow </td>
   <td>
 
-To make `\sessions` API call use `AdyenDropIn.getReturnURL()` to fetch `returnUrl`.
+To make the `/sessions` API call use `AdyenDropIn.getReturnURL()` to fetch `returnUrl`.
 
 ```js
 const returnUrl = Platform.select({
@@ -265,130 +285,169 @@ const returnUrl = Platform.select({
 ```
 
   </td>
-</tr> 
+</tr>
 </table>
 
-## Opening Payment component
+## Sessions Flow
 
-To use `@adyen/react-native` you can use our helper component `AdyenCheckout` and helper functions from `useAdyenCheckout` with standalone component:
+The sessions flow lets the Adyen backend manage the payment lifecycle. Call `AdyenCheckout.setup()` with your session credentials, configuration, and callbacks:
 
-```javascript
-import { useAdyenCheckout } from '@adyen/react-native';
+```typescript
+import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
 
-const MyCheckoutView = () => {
-  const { start } = useAdyenCheckout();
+const checkout = await AdyenCheckout.setup(
+  { id: '{SESSION_ID}', sessionData: '{SESSION_DATA}' },
+  configuration,
+  {
+    onComplete: (result) => {
+      // The session reached a final result.
+      // Call /sessions/{sessionId}?sessionResult={result.sessionResult}
+      // to get more information about the payment outcome.
+    },
+    onError: (error) => {
+      // The payment was terminated by the shopper or encountered an error.
+    },
+  }
+);
 
-  return (
-    <Button
-      title="Open DropIn"
-      onPress={() => {
-        start('dropIn');
-      }}
-    />
-  );
-};
+// Launch Drop-in with the checkout object
+AdyenDropIn.start(checkout);
 ```
 
-### Sessions Flow
+## Advanced Flow
 
-> [!IMPORTANT]
->
-> **Memoize your callbacks** with `useCallback` to prevent unnecessary re-renders and event listener re-registration. Inline functions will cause performance issues.
+The advanced flow gives you full control over the `/payments` and `/payments/details` calls. Call `AdyenCheckout.setupAdvanced()` with your payment methods response, configuration, and callbacks:
 
-```javascript
-import { AdyenCheckout } from '@adyen/react-native';
-import { useCallback } from 'react';
+```typescript
+import { AdyenCheckout, AdyenDropIn, SubmitResult } from '@adyen/react-native';
 
-const onComplete = useCallback((result, component) => {
-  // Payment was completed - call `component.hide(true)` to dismiss the payment UI.
-  // Call /sessions/(sessionId)?sessionResult={result} API to get more information about the payment outcome.
-}, []);
-
-const onError = useCallback((error, component) => {
-  // Payment was terminated by shopper or encountered an error
-  // Call `component.hide(false)` to dismiss the payment UI.
-}, []);
-
-<AdyenCheckout
-  config={configuration}
-  session={session}
-  onComplete={onComplete}
-  onError={onError}
->
-  <MyCheckoutView />
-</AdyenCheckout>;
-```
-
-### Advanced Flow
-
-```javascript
-import { AdyenCheckout } from '@adyen/react-native';
-import { useCallback } from 'react';
-
-const onSubmit = useCallback((data, component) => {
-  // Call your server to make the `/payments` request
-  // Pass `returnUrl: data.returnUrl` for cross-platform redirect flow
-  // If response contains `action`, call `component.handle(response.action)`
-  // Otherwise, call `component.hide(true | false)` to dismiss the payment UI
-}, []);
-
-const onAdditionalDetails = useCallback((paymentData, component) => {
-  // Call your server to make the `/payments/details` request
-  // Call `component.hide(true | false)` to dismiss the payment UI
-}, []);
-
-const onError = useCallback((error, component) => {
-  // Payment was terminated by shopper or encountered an error
-  // Call `component.hide(false)` to dismiss the payment UI
-}, []);
-
-<AdyenCheckout
-  config={configuration}
-  paymentMethods={paymentMethods}
-  onSubmit={onSubmit}
-  onAdditionalDetails={onAdditionalDetails}
-  onError={onError}
->
-  <MyCheckoutView />
-</AdyenCheckout>;
-```
-
-## Handling Actions
-
-Some payment methods require additional action from the shopper such as: to scan a QR code, to authenticate a payment with 3D Secure, or to log in to their bank's website to complete the payment. To handle these additional front-end challenges, use `nativeComponent.handle(action)` from `onSubmit` callback.
-
-```javascript
-const handleSubmit = (paymentData, nativeComponent) => {
-  server.makePayment(paymentData)
-    .then((response) => {
+const checkout = await AdyenCheckout.setupAdvanced(
+  paymentMethodsResponse,
+  configuration,
+  {
+    onSubmit: async (data) => {
+      // Call your server to make the /payments request.
+      // Pass returnUrl: data.returnUrl for redirect flows.
+      const response = await server.makePayment(data);
       if (response.action) {
-        nativeComponent.handle(response.action);
+        return SubmitResult.action(response.action);
+      } else if (response.resultCode === 'Refused') {
+        return SubmitResult.retry(response.refusalReason);
       } else {
-        nativeComponent.hide(response.result);
+        return SubmitResult.completed(response.resultCode);
       }
-    });
-};
+    },
+    onAdditionalDetails: async (data) => {
+      // Call your server to make the /payments/details request.
+      const response = await server.paymentDetails(data);
+      return { resultCode: response.resultCode };
+    },
+    onComplete: (result) => {
+      // The payment flow completed.
+    },
+    onError: (error) => {
+      // The payment was terminated by the shopper or encountered an error.
+    },
+  }
+);
 
-<AdyenCheckout
-  ...
-  onSubmit={handleSubmit}
-  >
-    ...
-</AdyenCheckout>
+// Launch Drop-in with the checkout object
+AdyenDropIn.start(checkout);
 ```
 
-### Standalone Action handling
+### Callback Return Types
 
-In case of API-only integration `AdyenAction.handle` could be used.
-Before you begin, make sure you follow all [iOS integration](#ios-integration) and [Android integration](#android-integration) steps.
+The v6 API uses return-based callbacks instead of handler objects:
 
-Example:
+| Callback | Return type | Description |
+| --- | --- | --- |
+| `onSubmit` | `Promise<SubmitResult>` | Return `SubmitResult.action()`, `.completed()`, or `.retry()` |
+| `onAdditionalDetails` | `Promise<AdditionalDetailsResult>` | Return `{ resultCode: string }` |
+| `onComplete` | `void` | Terminal — no return needed |
+| `onError` | `void` | Terminal — no return needed |
 
-```js
+## Drop-in
+
+Drop-in shows all available payment methods in a modal and handles the full payment lifecycle. After obtaining a `checkout` from `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`, launch it with:
+
+```typescript
+import { AdyenDropIn } from '@adyen/react-native';
+
+// After setup resolves:
+AdyenDropIn.start(checkout);
+```
+
+## Embedded Components
+
+For rendering individual payment methods inline, use the generic `<AdyenComponent>`. It replaces the former per-method views (`<CardView>`, `<GooglePayButton>`, `<ApplePayButton>`):
+
+```tsx
+import { AdyenComponent } from '@adyen/react-native';
+
+function CardPayment({ checkout }) {
+  return <AdyenComponent checkout={checkout} type="scheme" />;
+}
+
+function GooglePayPayment({ checkout }) {
+  return <AdyenComponent checkout={checkout} type="googlepay" />;
+}
+
+function ApplePayPayment({ checkout }) {
+  return <AdyenComponent checkout={checkout} type="applepay" />;
+}
+```
+
+> [!NOTE]
+>
+> Only one `<AdyenComponent>` per payment method `type` may be mounted at a time.
+
+## Headless APIs
+
+The `Checkout` object returned by `AdyenCheckout.setup()` / `AdyenCheckout.setupAdvanced()` exposes headless APIs for programmatic payment flows:
+
+```typescript
+const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
+
+// List available payment methods
+console.log(checkout.paymentMethods);
+
+// Check if a payment method is available for the shopper
+const available = await checkout.isAvailable('googlepay');
+
+// Check if the payment method needs UI before submission
+const needsUI = await checkout.requiresUserInteraction('googlepay');
+
+// Submit a payment method without displaying UI
+if (!needsUI) {
+  checkout.submit('googlepay');
+}
+```
+
+## Standalone Action Handling
+
+For API-only integrations, `AdyenAction.handle` can process payment actions without a full checkout context:
+
+```typescript
 import { AdyenAction } from '@adyen/react-native';
 
-const data = await AdyenAction.handle(apiResponse.action, { environment: 'test', clientKey: '{YOUR_CLIENT_KEY}');
-result = await ApiClient.paymentDetails(data);
+const data = await AdyenAction.handle(apiResponse.action, {
+  environment: 'test',
+  clientKey: '{YOUR_CLIENT_KEY}',
+});
+const result = await ApiClient.paymentDetails(data);
+```
+
+# Build & Test
+
+```bash
+# Run unit tests (331 tests)
+yarn test
+
+# Type-check TypeScript
+yarn typecheck
+
+# Lint
+yarn lint
 ```
 
 # Documentation

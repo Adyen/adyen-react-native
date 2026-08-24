@@ -1,4 +1,2 @@
-export * from './GooglePayButton';
-export * from './ApplePayButton';
-export * from './AdyenCheckout';
-export * from './CardView';
+export { AdyenCheckout } from '../AdyenCheckout';
+export * from './AdyenComponent';

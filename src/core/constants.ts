@@ -26,6 +26,8 @@ export enum Event {
   onBinValue = `didChangeBinValueCallback`,
   /** Event handler, called when a shopper finishes the session flow. */
   onSessionComplete = 'didSessionCompleteCallback',
+  /** Event handler, called after session component validation and before the SDK submits payment data. */
+  onBeforeSubmit = 'didBeforeSubmitCallback',
   /** Event handler, called when a session flow about to be terminate. */
   onSessionError = 'didSessionErrorCallback',
   /** Apple Pay: called when the shopper authorizes the payment (before submission). */

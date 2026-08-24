@@ -6,7 +6,6 @@
 
 import Adyen
 import Adyen3DS2
-import Foundation
 import React
 import UIKit
 
@@ -15,9 +14,11 @@ import UIKit
 ///   while another is in progress will replace the current session and presenter.
 internal class BaseModule: RCTEventEmitter {
 
-    internal static var session: AdyenSession?
-    internal weak static var sessionDelegate: SessionErrorDelegate?
-    internal weak static var currentModule: BaseModule?
+    /// The pre-created checkout state set by ``ContextModule.setup()`` or ``ContextModule.setupAdvanced()``.
+    /// Downstream modules (``ComponentModule``, ``DropInModule``) can reuse this instead of
+    /// creating their own checkout inline.
+    internal static var checkoutState: CheckoutState?
+
     private static let sdkVersionLock = NSLock()
     private static var sdkVersionStorage: String?
     internal static var sdkVersion: String? {
@@ -47,8 +48,6 @@ internal class BaseModule: RCTEventEmitter {
     /// Defaults to `UIViewController.topPresenter`; override in tests to inject a mock.
     internal static var topPresenterProvider: @MainActor () -> UIViewController? = { UIViewController.topPresenter }
 
-    internal var currentComponent: Component?
-
     #if DEBUG
         override func invalidate() {
             super.invalidate()
@@ -64,8 +63,14 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     @objc
-    func hide(_ success: NSNumber, event _: NSDictionary) {
-        dismiss(success.boolValue)
+    func completion(_ resultCode: NSString) {
+        dismiss(true)
+    }
+
+    @objc
+    func retry(_ message: NSString) {
+        // No-op: subclasses handle retry (e.g. resolving the submit continuation).
+        // The checkout context and UI remain alive on retry.
     }
 
     // MARK: - Internal methods
@@ -99,13 +104,6 @@ internal class BaseModule: RCTEventEmitter {
         return clientKey
     }
 
-    internal func fetchPayment(from parser: RootConfigurationParser) throws -> Payment {
-        guard let payment = parser.payment else {
-            throw ModuleException.noPayment
-        }
-        return payment
-    }
-
     internal func parsePaymentMethod<T: PaymentMethod>(from dictionary: NSDictionary, for type: T.Type) throws -> T {
         let paymentMethods = try parsePaymentMethods(from: dictionary)
 
@@ -128,20 +126,13 @@ internal class BaseModule: RCTEventEmitter {
 
     internal func cleanUp() {
         ensureMainThread { [weak self] in
-            self?.performCleanUp()
+            self?.cleanUpOnMainThread()
         }
     }
 
-    internal func dismiss(_ result: Bool) {
+    internal func dismiss(_: Bool) {
         ensureMainThread { [weak self] in
-            guard let self else { return }
-            if let component = self.currentComponent {
-                component.finalizeIfNeeded(with: result) {
-                    self.cleanUp()
-                }
-            } else {
-                self.cleanUp()
-            }
+            self?.cleanUp()
         }
     }
 
@@ -154,10 +145,8 @@ internal class BaseModule: RCTEventEmitter {
         return error
     }
 
-    private func performCleanUp() {
-        BaseModule.session = nil
-        BaseModule.currentModule = nil
-        currentComponent = nil
+    private func cleanUpOnMainThread() {
+        BaseModule.checkoutState = nil
 
         let root = BaseModule.presenterStack.first
         BaseModule.presenterStack.removeAll()
@@ -170,7 +159,7 @@ internal class BaseModule: RCTEventEmitter {
 extension BaseModule: PresentationDelegate {
 
     internal func present(component: PresentableComponent) {
-        ensureMainThread { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
             let presenter: UIViewController
@@ -183,20 +172,11 @@ extension BaseModule: PresentationDelegate {
                 return self.sendError(error: ModuleException.notKeyWindow)
             }
 
-            defer {
-                BaseModule.currentModule = self
-            }
-
-            let viewController: UIViewController
-            if component.requiresModalPresentation {
-                viewController = UINavigationController(rootViewController: component.viewController)
-                viewController.presentationController?.delegate = self
-                component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
-                                                                                   target: self,
-                                                                                   action: #selector(self.cancelDidPress))
-            } else {
-                viewController = component.viewController
-            }
+            let viewController = UINavigationController(rootViewController: component.viewController)
+            viewController.presentationController?.delegate = self
+            component.viewController.navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .cancel,
+                                                                               target: self,
+                                                                               action: #selector(self.cancelDidPress))
 
             presenter.present(viewController, animated: true)
             BaseModule.presenterStack.append(viewController)
@@ -204,7 +184,6 @@ extension BaseModule: PresentationDelegate {
     }
 
     @objc private func cancelDidPress() {
-        currentComponent?.cancelIfNeeded()
         sendError(error: ModuleException.canceled)
     }
 

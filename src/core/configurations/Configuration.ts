@@ -66,5 +66,6 @@ export interface Configuration extends BaseConfiguration {
   /** 3D Secure 2 authentication configuration. */
   threeDS2?: ThreeDSConfiguration;
   /** Partial payment flow configuration. */
+  // TODO: v6 alpha - not yet supported
   partialPayment?: PartialPaymentConfiguration;
 }

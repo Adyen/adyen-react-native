@@ -1,10 +1,12 @@
-import type { AdyenComponent, HideOption } from '../../core';
+import type { AdvancedPayment, PaymentAction } from '../../core';
 import { EventListenerWrapper } from './EventListenerWrapper';
 import type { NativeModuleWithConstants } from './EventListenerWrapper';
 
 /** Base native module interface for ModuleWrapper */
 export interface BaseNativeModule extends NativeModuleWithConstants {
-  hide(success: boolean, option?: { message?: string }): void;
+  action(action: PaymentAction): void;
+  completion(resultCode: string): void;
+  retry(message?: string): void;
 }
 
 /**
@@ -13,9 +15,17 @@ export interface BaseNativeModule extends NativeModuleWithConstants {
  */
 export abstract class ModuleWrapper<T extends BaseNativeModule>
   extends EventListenerWrapper<T>
-  implements AdyenComponent
+  implements AdvancedPayment
 {
-  hide(success: boolean, option?: HideOption): void {
-    this.nativeModule.hide(success, { message: option?.message ?? '' });
+  action(action: PaymentAction): void {
+    this.nativeModule.action(action);
+  }
+
+  completion(resultCode: string): void {
+    this.nativeModule.completion(resultCode);
+  }
+
+  retry(message?: string): void {
+    this.nativeModule.retry(message);
   }
 }
