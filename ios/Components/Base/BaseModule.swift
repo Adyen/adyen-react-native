@@ -9,6 +9,10 @@ import Adyen3DS2
 import React
 import UIKit
 
+internal let errorResultCode = CheckoutResultCode.error.rawValue
+internal let errorSubmitResult = SubmitResult.completion(resultCode: errorResultCode)
+internal let errorAdditionalDetailsResult = AdditionalDetailsResult.completion(resultCode: errorResultCode)
+
 /// Base class for all Adyen React Native modules.
 /// - Important: Only one payment flow is supported at a time. Starting a new payment flow
 ///   while another is in progress will replace the current session and presenter.

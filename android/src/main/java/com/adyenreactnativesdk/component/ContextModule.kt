@@ -80,6 +80,7 @@ class ContextModule(
     BaseModule.checkoutState?.sessionBeforeSubmitBridge?.cancel()
     componentManagers.values.forEach { it.dispose() }
     componentManagers.clear()
+    ComponentModule.clearConsumers()
     super.cleanup()
   }
 

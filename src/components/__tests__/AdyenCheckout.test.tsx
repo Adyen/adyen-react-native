@@ -1,26 +1,28 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 
+type MockFunction = (...args: any[]) => any;
+
 // Mock functions must be defined before jest.mock calls due to hoisting
-const mockCreateSession = jest.fn();
-const mockSetup = jest.fn();
-const mockCleanup = jest.fn();
-const mockRemoveAllListeners = jest.fn();
-const mockAssignBeforeSubmitHandler = jest.fn();
-const mockProvideBeforeSubmitResult = jest.fn();
-const mockAssignCompletionHandler = jest.fn();
-const mockAssignErrorHandler = jest.fn();
-const mockAssignSubmitHandler = jest.fn();
-const mockAssignAdditionalDetailsHandler = jest.fn();
-const mockAssignAdvancedCompleteHandler = jest.fn();
-const mockAssignAdvancedErrorHandler = jest.fn();
-const mockAssignApplePayAuthorizationHandler = jest.fn();
-const mockAssignApplePayShippingContactHandler = jest.fn();
-const mockAssignApplePayShippingMethodHandler = jest.fn();
-const mockAssignApplePayCouponCodeHandler = jest.fn();
-const mockProvideAuthorizationResult = jest.fn();
-const mockProvideShippingContactUpdate = jest.fn();
-const mockProvideShippingMethodUpdate = jest.fn();
-const mockProvideCouponCodeUpdate = jest.fn();
+const mockCreateSession = jest.fn<MockFunction>();
+const mockSetup = jest.fn<MockFunction>();
+const mockCleanup = jest.fn<MockFunction>();
+const mockRemoveAllListeners = jest.fn<MockFunction>();
+const mockAssignBeforeSubmitHandler = jest.fn<MockFunction>();
+const mockProvideBeforeSubmitResult = jest.fn<MockFunction>();
+const mockAssignCompletionHandler = jest.fn<MockFunction>();
+const mockAssignErrorHandler = jest.fn<MockFunction>();
+const mockAssignSubmitHandler = jest.fn<MockFunction>();
+const mockAssignAdditionalDetailsHandler = jest.fn<MockFunction>();
+const mockAssignAdvancedCompleteHandler = jest.fn<MockFunction>();
+const mockAssignAdvancedErrorHandler = jest.fn<MockFunction>();
+const mockAssignApplePayAuthorizationHandler = jest.fn<MockFunction>();
+const mockAssignApplePayShippingContactHandler = jest.fn<MockFunction>();
+const mockAssignApplePayShippingMethodHandler = jest.fn<MockFunction>();
+const mockAssignApplePayCouponCodeHandler = jest.fn<MockFunction>();
+const mockProvideAuthorizationResult = jest.fn<MockFunction>();
+const mockProvideShippingContactUpdate = jest.fn<MockFunction>();
+const mockProvideShippingMethodUpdate = jest.fn<MockFunction>();
+const mockProvideCouponCodeUpdate = jest.fn<MockFunction>();
 
 // The ComponentModule wrapper is constructed at import time; its ModuleMock
 // backing throws on any property access, so it is stubbed here.
@@ -50,28 +52,30 @@ jest.mock('../../modules/context/ContextModule', () => ({
     setup: (...args: any[]) => mockSetup(...args),
     cleanup: (...args: any[]) => mockCleanup(...args),
     removeAllListeners: (...args: any[]) => mockRemoveAllListeners(...args),
-    assignBeforeSubmitHandler: (...args: any[]) =>
-      mockAssignBeforeSubmitHandler(...args),
+    assignBeforeSubmitHandler: (handler: (data: any) => Promise<void>) =>
+      mockAssignBeforeSubmitHandler(handler),
     provideBeforeSubmitResult: (...args: any[]) =>
       mockProvideBeforeSubmitResult(...args),
-    assignCompletionHandler: (...args: any[]) =>
-      mockAssignCompletionHandler(...args),
-    assignErrorHandler: (...args: any[]) => mockAssignErrorHandler(...args),
-    assignSubmitHandler: (...args: any[]) => mockAssignSubmitHandler(...args),
-    assignAdditionalDetailsHandler: (...args: any[]) =>
-      mockAssignAdditionalDetailsHandler(...args),
-    assignAdvancedCompleteHandler: (...args: any[]) =>
-      mockAssignAdvancedCompleteHandler(...args),
-    assignAdvancedErrorHandler: (...args: any[]) =>
-      mockAssignAdvancedErrorHandler(...args),
-    assignApplePayAuthorizationHandler: (...args: any[]) =>
-      mockAssignApplePayAuthorizationHandler(...args),
-    assignApplePayShippingContactHandler: (...args: any[]) =>
-      mockAssignApplePayShippingContactHandler(...args),
-    assignApplePayShippingMethodHandler: (...args: any[]) =>
-      mockAssignApplePayShippingMethodHandler(...args),
-    assignApplePayCouponCodeHandler: (...args: any[]) =>
-      mockAssignApplePayCouponCodeHandler(...args),
+    assignCompletionHandler: (handler: (result: any) => void) =>
+      mockAssignCompletionHandler(handler),
+    assignErrorHandler: (handler: (error: any) => void) =>
+      mockAssignErrorHandler(handler),
+    assignSubmitHandler: (handler: (data: any) => Promise<void>) =>
+      mockAssignSubmitHandler(handler),
+    assignAdditionalDetailsHandler: (handler: (data: any) => Promise<void>) =>
+      mockAssignAdditionalDetailsHandler(handler),
+    assignAdvancedCompleteHandler: (handler: (result: any) => void) =>
+      mockAssignAdvancedCompleteHandler(handler),
+    assignAdvancedErrorHandler: (handler: (error: any) => void) =>
+      mockAssignAdvancedErrorHandler(handler),
+    assignApplePayAuthorizationHandler: (handler: (data: any) => void) =>
+      mockAssignApplePayAuthorizationHandler(handler),
+    assignApplePayShippingContactHandler: (handler: (data: any) => void) =>
+      mockAssignApplePayShippingContactHandler(handler),
+    assignApplePayShippingMethodHandler: (handler: (data: any) => void) =>
+      mockAssignApplePayShippingMethodHandler(handler),
+    assignApplePayCouponCodeHandler: (handler: (data: any) => void) =>
+      mockAssignApplePayCouponCodeHandler(handler),
     provideAuthorizationResult: (...args: any[]) =>
       mockProvideAuthorizationResult(...args),
     provideShippingContactUpdate: (...args: any[]) =>
@@ -108,15 +112,15 @@ const mockPaymentMethods = {
 };
 
 const sessionCallbacks = {
-  onComplete: jest.fn(),
-  onError: jest.fn(),
+  onComplete: jest.fn<MockFunction>(),
+  onError: jest.fn<MockFunction>(),
 };
 
 const advancedCallbacks = {
-  onSubmit: jest.fn<any>(),
-  onAdditionalDetails: jest.fn<any>(),
-  onComplete: jest.fn(),
-  onError: jest.fn(),
+  onSubmit: jest.fn<MockFunction>(),
+  onAdditionalDetails: jest.fn<MockFunction>(),
+  onComplete: jest.fn<MockFunction>(),
+  onError: jest.fn<MockFunction>(),
 };
 
 describe('AdyenCheckout', () => {
@@ -474,7 +478,7 @@ describe('AdyenCheckout', () => {
       );
       const applePayConfig = {
         ...mockConfig,
-        applepay: { onAuthorize },
+        applepay: { merchantID: 'merchant.com.test', onAuthorize },
       };
 
       await AdyenCheckout.setup(
@@ -519,7 +523,7 @@ describe('AdyenCheckout', () => {
       );
       const couponConfig = {
         ...mockConfig,
-        applepay: { onCouponCodeChange },
+        applepay: { merchantID: 'merchant.com.test', onCouponCodeChange },
       };
 
       await AdyenCheckout.setup(
@@ -620,6 +624,24 @@ describe('AdyenCheckout', () => {
 
       // After auto-cleanup, native cleanup should have been called
       expect(mockCleanup).toHaveBeenCalled();
+    });
+
+    test('notifies the merchant and cleans up only once for duplicate terminal events', async () => {
+      await AdyenCheckout.setup(
+        { id: 'session_123', sessionData: 'session_data' },
+        mockConfig,
+        sessionCallbacks
+      );
+
+      const nativeCompletionHandler =
+        mockAssignCompletionHandler.mock.calls[0][0];
+      const nativeErrorHandler = mockAssignErrorHandler.mock.calls[0][0];
+      nativeCompletionHandler({ resultCode: 'Authorised' });
+      nativeErrorHandler({ message: 'err', errorCode: 'unknown' });
+
+      expect(sessionCallbacks.onComplete).toHaveBeenCalledTimes(1);
+      expect(sessionCallbacks.onError).not.toHaveBeenCalled();
+      expect(mockCleanup).toHaveBeenCalledTimes(1);
     });
 
     test('auto-cleans up after session onError', async () => {

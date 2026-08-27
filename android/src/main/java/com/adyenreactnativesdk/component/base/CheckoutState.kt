@@ -18,7 +18,7 @@ import com.facebook.react.bridge.ReadableMap
  * @property configurationJSON Raw JS configuration kept for DropIn, which still relies
  *           on the v5 `CheckoutConfiguration` builder. Remove once DropIn is migrated to v6.
  */
-data class CheckoutState(
+internal data class CheckoutState(
   val checkoutContext: CheckoutContext,
   val configurationJSON: ReadableMap,
   val sessionBeforeSubmitBridge: SessionBeforeSubmitBridge? = null,

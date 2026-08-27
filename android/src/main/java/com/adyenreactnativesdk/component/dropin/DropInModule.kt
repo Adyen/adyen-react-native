@@ -29,6 +29,7 @@ import com.adyen.checkout.dropin.old.internal.ui.model.SessionDropInResultContra
 import com.adyen.checkout.redirect.old.RedirectComponent
 import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.BaseAddressModule
+import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson

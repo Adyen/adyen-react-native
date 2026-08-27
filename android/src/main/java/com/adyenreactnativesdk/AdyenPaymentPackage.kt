@@ -11,6 +11,7 @@ import com.adyen.checkout.core.common.internal.helper.CheckoutPlatform
 import com.adyen.checkout.core.common.internal.helper.CheckoutPlatformParams
 import com.adyenreactnativesdk.component.ComponentModule
 import com.adyenreactnativesdk.component.ContextModule
+import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.dropin.DropInModule
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
@@ -34,7 +35,7 @@ class AdyenPaymentPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     ensureInitialized(reactContext)
     val sharedBus = messageBus
-    configureAnalytics()
+    BaseModule.configureAnalytics()
     return listOf(
       DropInModule(reactContext, sharedBus),
       ComponentModule(reactContext, sharedBus),

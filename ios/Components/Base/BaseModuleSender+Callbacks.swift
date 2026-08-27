@@ -21,10 +21,10 @@ extension BaseModuleSender {
         self.checkout = checkout
         _ = checkout
             .onSubmit { [weak self] data in
-                await self?.awaitSubmitResult(for: data) ?? .retry()
+                await self?.awaitSubmitResult(for: data) ?? errorSubmitResult
             }
             .onAdditionalDetails { [weak self] data in
-                await self?.awaitAdditionalDetailsResult(for: data) ?? .completion(resultCode: "")
+                await self?.awaitAdditionalDetailsResult(for: data) ?? errorAdditionalDetailsResult
             }
             .onComplete { [weak self] result in
                 self?.sendCompleteEvent(resultCode: result.resultCode)

@@ -27,8 +27,7 @@ public struct AnalyticsParser {
     }
 
     public var configuration: AnalyticsConfiguration {
-        var analytics = AnalyticsConfiguration()
-        analytics.isEnabled = analyticsOn
+        let analytics = AnalyticsConfiguration(isEnabled: analyticsOn)
         if let sdkVersion = BaseModule.sdkVersion {
             CheckoutPlatformParams.shared.overrideForCrossPlatform(
                 platform: .reactNative,

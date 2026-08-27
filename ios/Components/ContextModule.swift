@@ -131,13 +131,7 @@ internal final class ContextModule: BaseModule {
             guard let self else { return }
             // Re-setup: clear stale components and continuations without calling cleanUp().
             // The native side replaces its own state when the new setup completes.
-            self.components.removeAll()
-            self.submitContinuation?.resume(returning: .retry())
-            self.submitContinuation = nil
-            self.additionalDetailsContinuation?.resume(returning: .completion(resultCode: ""))
-            self.additionalDetailsContinuation = nil
-            self.beforeSubmitContinuation?.resume(returning: .abort)
-            self.beforeSubmitContinuation = nil
+            self.cancelPendingOperations()
             do {
                 let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                 let sessionResponse = SessionResponse(id: id, sessionData: sessionData)
@@ -183,13 +177,7 @@ internal final class ContextModule: BaseModule {
             guard let self else { return }
             // Re-setup: clear stale components and continuations without calling cleanUp().
             // The native side replaces its own state when the new setup completes.
-            self.components.removeAll()
-            self.submitContinuation?.resume(returning: .retry())
-            self.submitContinuation = nil
-            self.additionalDetailsContinuation?.resume(returning: .completion(resultCode: ""))
-            self.additionalDetailsContinuation = nil
-            self.beforeSubmitContinuation?.resume(returning: .abort)
-            self.beforeSubmitContinuation = nil
+            self.cancelPendingOperations()
             do {
                 let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                 let checkout = try await Checkout.setup(
@@ -290,14 +278,20 @@ internal final class ContextModule: BaseModule {
     /// so a re-setup never reuses stale controllers or a dangling continuation.
     @MainActor
     private func performCleanup() {
+        cancelPendingOperations()
+        cleanUp()
+    }
+
+    @MainActor
+    private func cancelPendingOperations() {
         components.removeAll()
-        submitContinuation?.resume(returning: .retry())
+        submitContinuation?.resume(returning: errorSubmitResult)
         submitContinuation = nil
-        additionalDetailsContinuation?.resume(returning: .completion(resultCode: ""))
+        additionalDetailsContinuation?.resume(returning: errorAdditionalDetailsResult)
         additionalDetailsContinuation = nil
         beforeSubmitContinuation?.resume(returning: .abort)
         beforeSubmitContinuation = nil
-        cleanUp()
+        cancelApplePayCallbacks()
     }
 
     /// Returns (building and caching if needed) the payment component for [type] within [checkout].

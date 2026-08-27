@@ -26,6 +26,7 @@ internal class BaseModuleSender: BaseModule {
     /// Continuation that suspends the `onAdditionalDetails` closure until JS returns an
     /// ``AdditionalDetailsResult``.
     internal var additionalDetailsContinuation: CheckedContinuation<AdditionalDetailsResult, Never>?
+    internal var checkout: BaseCheckout?
 
     override func stopObserving() { /* No JS events expected */ }
     override func startObserving() { /* No JS events expected */ }
@@ -86,10 +87,11 @@ internal class BaseModuleSender: BaseModule {
 
     override func cleanUp() {
         ensureMainThread { [weak self] in
-            self?.submitContinuation?.resume(returning: .retry())
+            self?.submitContinuation?.resume(returning: errorSubmitResult)
             self?.submitContinuation = nil
-            self?.additionalDetailsContinuation?.resume(returning: .completion(resultCode: ""))
+            self?.additionalDetailsContinuation?.resume(returning: errorAdditionalDetailsResult)
             self?.additionalDetailsContinuation = nil
+            self?.checkout = nil
         }
         super.cleanUp()
     }

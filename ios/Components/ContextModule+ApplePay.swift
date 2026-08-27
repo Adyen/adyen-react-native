@@ -112,6 +112,27 @@ extension ContextModule {
 
 extension ContextModule {
 
+    @MainActor
+    internal func cancelApplePayCallbacks() {
+        let pendingAuthorizationHandler = authorizationHandler
+        self.authorizationHandler = nil
+        pendingAuthorizationHandler?(PKPaymentAuthorizationResult(status: .failure, errors: nil))
+
+        let pendingShippingContactHandler = shippingContactHandler
+        self.shippingContactHandler = nil
+        pendingShippingContactHandler?(PKPaymentRequestShippingContactUpdate(paymentSummaryItems: currentSummaryItems))
+
+        let pendingShippingMethodHandler = shippingMethodHandler
+        self.shippingMethodHandler = nil
+        pendingShippingMethodHandler?(PKPaymentRequestShippingMethodUpdate(paymentSummaryItems: currentSummaryItems))
+
+        if #available(iOS 15.0, *) {
+            let pendingCouponCodeHandler = couponCodeHandler
+            self.couponCodeHandler = nil
+            pendingCouponCodeHandler?(PKPaymentRequestCouponCodeUpdate(paymentSummaryItems: currentSummaryItems))
+        }
+    }
+
     @objc
     func provideAuthorizationResult(_ result: NSDictionary) {
         guard let handler = authorizationHandler else { return }

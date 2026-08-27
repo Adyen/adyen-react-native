@@ -81,10 +81,10 @@ internal final class ComponentProxy {
     private func setupAdvancedCallbacks(on checkout: AdvancedCheckout) {
         _ = checkout
             .onSubmit { [weak self] data in
-                await self?.awaitSubmitResult(for: data) ?? .retry()
+                await self?.awaitSubmitResult(for: data) ?? errorSubmitResult
             }
             .onAdditionalDetails { [weak self] data in
-                await self?.awaitAdditionalDetailsResult(for: data) ?? .completion(resultCode: "")
+                await self?.awaitAdditionalDetailsResult(for: data) ?? errorAdditionalDetailsResult
             }
             .onComplete { [weak self] result in
                 self?.sendCompleteEvent(resultCode: result.resultCode)
@@ -193,8 +193,8 @@ internal final class ComponentProxy {
     // MARK: - Teardown
 
     func dispose() {
-        resolveSubmit(.retry())
-        resolveAdditionalDetails(.completion(resultCode: ""))
+        resolveSubmit(errorSubmitResult)
+        resolveAdditionalDetails(errorAdditionalDetailsResult)
         paymentComponent = nil
         checkout = nil
     }

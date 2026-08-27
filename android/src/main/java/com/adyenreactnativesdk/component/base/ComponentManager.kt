@@ -31,7 +31,7 @@ import kotlin.coroutines.resume
  * Instant). Optional [additionalCallbacks] / [additionalSessionCallbacks] builder lambdas let
  * callers inject payment-method-specific callback extensions (e.g. card BIN events).
  */
-class ComponentManager(
+internal class ComponentManager(
   private val activity: FragmentActivity,
   private val messageBus: MessageBus,
   private val additionalCallbacks: (CheckoutCallbacks.() -> Unit)? = null,

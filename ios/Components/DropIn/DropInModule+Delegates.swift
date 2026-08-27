@@ -99,21 +99,8 @@ extension DropInModule: PartialPaymentDelegate {
     }
 
     @objc(providePaymentMethods:order:)
-    func providePaymentMethods(_ paymentMethodsJson: NSDictionary, orderJson: NSDictionary) {
-        let paymentMethods: PaymentMethods
-        let order: PartialPaymentOrder
-        do {
-            paymentMethods = try paymentMethodsJson.decode()
-            order = try orderJson.decode()
-
-            guard let dropIn = currentComponent as? DropInComponent else {
-                throw ModuleException.notSupported
-            }
-
-            try dropIn.reload(with: order, paymentMethods)
-        } catch {
-            return sendError(error: error)
-        }
+    func providePaymentMethods(_: NSDictionary, orderJson _: NSDictionary) {
+        sendError(error: ModuleException.notSupported)
     }
 
 }

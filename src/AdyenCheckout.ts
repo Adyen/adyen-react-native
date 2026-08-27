@@ -73,6 +73,7 @@ export class AdyenCheckout {
   private static activeCheckout: Checkout | null = null;
   private static subscriptions: Map<string, EmitterSubscription[]> = new Map();
   private static isCleanedUp = true;
+  private static hasHandledTerminalEvent = false;
 
   // Event handler refs (using .current for compatibility with startEventListeners)
   private static eventHandlerRefs: EventHandlerRefs = {
@@ -96,6 +97,7 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: SessionCallbacks
   ): Promise<Checkout> {
+    AdyenCheckout.hasHandledTerminalEvent = false;
     // Before re-setup, clear JS-side state without calling native cleanup.
     // The native side will handle its own state when it receives the new setup call.
     if (!AdyenCheckout.isCleanedUp) {
@@ -123,12 +125,10 @@ export class AdyenCheckout {
     // Terminal callbacks — no handler parameter
     AdyenContext.removeAllListeners();
     AdyenContext.assignCompletionHandler((result) => {
-      AdyenCheckout.sessionCallbacks?.onComplete(result);
-      AdyenCheckout.performAutoCleanup();
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
     });
     AdyenContext.assignErrorHandler((error) => {
-      AdyenCheckout.sessionCallbacks?.onError(error);
-      AdyenCheckout.performAutoCleanup();
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
     });
     AdyenContext.assignBeforeSubmitHandler(async (data) => {
       const result =
@@ -166,6 +166,7 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: AdvancedCallbacks
   ): Promise<Checkout> {
+    AdyenCheckout.hasHandledTerminalEvent = false;
     // Before re-setup, clear JS-side state without calling native cleanup.
     // The native side will handle its own state when it receives the new setup call.
     if (!AdyenCheckout.isCleanedUp) {
@@ -213,12 +214,10 @@ export class AdyenCheckout {
     });
     // Terminal callbacks — no handler
     AdyenContext.assignAdvancedCompleteHandler((result) => {
-      AdyenCheckout.advancedCallbacks?.onComplete(result);
-      AdyenCheckout.performAutoCleanup();
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
     });
     AdyenContext.assignAdvancedErrorHandler((error) => {
-      AdyenCheckout.advancedCallbacks?.onError(error);
-      AdyenCheckout.performAutoCleanup();
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
     });
     AdyenCheckout.subscribeApplePayHandlers();
 
@@ -231,6 +230,18 @@ export class AdyenCheckout {
     );
     AdyenCheckout.activeCheckout = checkout;
     return checkout;
+  }
+
+  private static handleTerminalEvent(callback: () => void): void {
+    if (AdyenCheckout.hasHandledTerminalEvent) {
+      return;
+    }
+    AdyenCheckout.hasHandledTerminalEvent = true;
+    try {
+      callback();
+    } finally {
+      AdyenCheckout.performAutoCleanup();
+    }
   }
 
   /**

@@ -33,7 +33,7 @@ internal class BaseActionModule: BaseModuleSender {
         self.checkout = checkout
         _ = checkout
             .onAdditionalDetails { [weak self] data in
-                await self?.awaitAdditionalDetailsResult(for: data) ?? .completion(resultCode: "")
+                await self?.awaitAdditionalDetailsResult(for: data) ?? errorAdditionalDetailsResult
             }
             .onComplete { [weak self] result in
                 self?.sendCompleteEvent(resultCode: result.resultCode)

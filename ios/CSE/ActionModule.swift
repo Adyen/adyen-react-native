@@ -75,7 +75,7 @@ internal final class ActionModule: BaseModule {
         _ = checkout
             .onAdditionalDetails { [weak self] data in
                 self?.resolve(with: data.jsonObject)
-                return .completion(resultCode: "")
+                return errorAdditionalDetailsResult
             }
             .onComplete { [weak self] result in
                 self?.resolve(with: ResultDTO(result: result.resultCode).jsonObject)

@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import AdyenCheckout
+import Adyen
 
 /// Holds per-checkout shared state.
 ///
