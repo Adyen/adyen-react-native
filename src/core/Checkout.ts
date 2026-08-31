@@ -42,12 +42,42 @@ export interface Checkout {
    */
   submit(type: string): void;
 
+  /**
+   * Abandons this checkout and releases all native resources.
+   *
+   * Call this when the shopper leaves the payment flow without it reaching a
+   * terminal callback (`onComplete` / `onError`) — for example when navigating
+   * away from a checkout screen. Terminal callbacks already clean up
+   * automatically, so `invalidate()` is only needed for abandoned flows.
+   *
+   * Idempotent: calling it more than once, or after the checkout has already
+   * been torn down, does nothing. After invalidation this `Checkout` is no
+   * longer active and its other methods are ignored.
+   */
+  invalidate(): void;
+
   /** @internal Used by AdyenComponent to subscribe a native view to the event bus. */
   subscribe(viewId: string): void;
 
   /** @internal Used by AdyenComponent to unsubscribe a native view from the event bus. */
   unsubscribe(viewId: string): void;
 }
+
+/**
+ * @internal
+ * Lifecycle operations a {@link Checkout} delegates to its owning `AdyenCheckout`.
+ */
+export interface CheckoutHost {
+  /** Whether the checkout this handle belongs to is still the active one. */
+  isActive(): boolean;
+  subscribe(viewId: string): void;
+  unsubscribe(viewId: string): void;
+  invalidate(): void;
+}
+
+const inactiveWarning = (method: string): string =>
+  `AdyenCheckout: \`checkout.${method}()\` was ignored because this checkout is no longer active. ` +
+  `Call AdyenCheckout.setup() or AdyenCheckout.setupAdvanced() to start a new checkout.`;
 
 /**
  * @internal
@@ -59,17 +89,40 @@ export interface Checkout {
 export function createCheckout(
   paymentMethods: PaymentMethodsResponse,
   configuration: Configuration,
-  subscribeFn: (viewId: string) => void,
-  unsubscribeFn: (viewId: string) => void
+  host: CheckoutHost
 ): Checkout {
+  /** Warns and reports `false` when the checkout has already been torn down. */
+  const isActive = (method: string): boolean => {
+    if (host.isActive()) {
+      return true;
+    }
+    console.warn(inactiveWarning(method));
+    return false;
+  };
+
   return {
     paymentMethods,
     configuration,
-    isAvailable: (type: string) => AdyenContext.isAvailable(type),
-    requiresUserInteraction: (type: string) =>
-      AdyenContext.requiresUserInteraction(type),
-    submit: (type: string) => AdyenContext.submit(type),
-    subscribe: subscribeFn,
-    unsubscribe: unsubscribeFn,
+    isAvailable: async (type: string) =>
+      isActive('isAvailable') ? AdyenContext.isAvailable(type) : false,
+    requiresUserInteraction: async (type: string) =>
+      isActive('requiresUserInteraction')
+        ? AdyenContext.requiresUserInteraction(type)
+        : false,
+    submit: (type: string) => {
+      if (isActive('submit')) {
+        AdyenContext.submit(type);
+      }
+    },
+    // Idempotent by design — a repeated or late call is a silent no-op.
+    invalidate: () => host.invalidate(),
+    subscribe: (viewId: string) => {
+      if (isActive('subscribe')) {
+        host.subscribe(viewId);
+      }
+    },
+    // Never guarded: views unsubscribe while tearing down, after the checkout
+    // has already been cleaned up.
+    unsubscribe: (viewId: string) => host.unsubscribe(viewId),
   };
 }

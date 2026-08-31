@@ -610,6 +610,76 @@ describe('AdyenCheckout', () => {
     });
   });
 
+  describe('checkout.invalidate()', () => {
+    test('tears down native resources for an abandoned flow', async () => {
+      const checkout = await AdyenCheckout.setup(
+        { id: 'session_123', sessionData: 'session_data' },
+        mockConfig,
+        sessionCallbacks
+      );
+
+      checkout.invalidate();
+
+      expect(mockRemoveAllListeners).toHaveBeenCalled();
+      expect(mockCleanup).toHaveBeenCalledTimes(1);
+    });
+
+    test('is idempotent', async () => {
+      const checkout = await AdyenCheckout.setup(
+        { id: 'session_123', sessionData: 'session_data' },
+        mockConfig,
+        sessionCallbacks
+      );
+
+      checkout.invalidate();
+      checkout.invalidate();
+
+      expect(mockCleanup).toHaveBeenCalledTimes(1);
+    });
+
+    test('suppresses terminal events that arrive after invalidation', async () => {
+      await AdyenCheckout.setup(
+        { id: 'session_123', sessionData: 'session_data' },
+        mockConfig,
+        sessionCallbacks
+      );
+      const nativeCompletionHandler =
+        mockAssignCompletionHandler.mock.calls[0][0];
+
+      const checkout = await AdyenCheckout.setupAdvanced(
+        mockPaymentMethods,
+        mockConfig,
+        advancedCallbacks
+      );
+      checkout.invalidate();
+      nativeCompletionHandler({ resultCode: 'Authorised' });
+
+      expect(sessionCallbacks.onComplete).not.toHaveBeenCalled();
+      expect(advancedCallbacks.onComplete).not.toHaveBeenCalled();
+    });
+
+    test('does not block a subsequent setup', async () => {
+      const first = await AdyenCheckout.setup(
+        { id: 'session_123', sessionData: 'session_data' },
+        mockConfig,
+        sessionCallbacks
+      );
+      first.invalidate();
+
+      const second = await AdyenCheckout.setup(
+        { id: 'session_456', sessionData: 'session_data' },
+        mockConfig,
+        sessionCallbacks
+      );
+      const nativeCompletionHandler =
+        mockAssignCompletionHandler.mock.calls.at(-1)![0];
+      nativeCompletionHandler({ resultCode: 'Authorised' });
+
+      expect(second).toBeDefined();
+      expect(sessionCallbacks.onComplete).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('auto-cleanup on terminal callbacks', () => {
     test('auto-cleans up after session onComplete', async () => {
       await AdyenCheckout.setup(

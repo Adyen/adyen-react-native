@@ -4,7 +4,14 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  jest,
+  test,
+} from '@jest/globals';
 
 const mockIsAvailable = jest.fn<(type: string) => Promise<boolean>>();
 const mockRequiresUserInteraction =
@@ -29,8 +36,20 @@ const configuration = {
   returnUrl: 'myapp://checkout',
 };
 
-const mockSubscribeFn = jest.fn();
-const mockUnsubscribeFn = jest.fn();
+const mockSubscribeFn = jest.fn<(viewId: string) => void>();
+const mockUnsubscribeFn = jest.fn<(viewId: string) => void>();
+const mockInvalidateFn = jest.fn<() => void>();
+
+/** Builds a checkout whose host reports the given active state. */
+function createTestCheckout(isActive = true) {
+  const { createCheckout } = require('../Checkout');
+  return createCheckout(paymentMethods, configuration, {
+    isActive: () => isActive,
+    subscribe: mockSubscribeFn,
+    unsubscribe: mockUnsubscribeFn,
+    invalidate: mockInvalidateFn,
+  });
+}
 
 describe('createCheckout', () => {
   beforeEach(() => {
@@ -39,105 +58,124 @@ describe('createCheckout', () => {
     mockSubmit.mockReset();
     mockSubscribeFn.mockReset();
     mockUnsubscribeFn.mockReset();
+    mockInvalidateFn.mockReset();
   });
 
   test('exposes the provided paymentMethods', () => {
-    const { createCheckout } = require('../Checkout');
-
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn
-    );
-
-    expect(checkout.paymentMethods).toBe(paymentMethods);
+    expect(createTestCheckout().paymentMethods).toBe(paymentMethods);
   });
 
   test('exposes the provided configuration', () => {
-    const { createCheckout } = require('../Checkout');
-
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn
-    );
-
-    expect(checkout.configuration).toBe(configuration);
+    expect(createTestCheckout().configuration).toBe(configuration);
   });
 
   test('isAvailable delegates to ContextModule', async () => {
     mockIsAvailable.mockResolvedValue(true);
-    const { createCheckout } = require('../Checkout');
 
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn
+    await expect(createTestCheckout().isAvailable('scheme')).resolves.toBe(
+      true
     );
-
-    await expect(checkout.isAvailable('scheme')).resolves.toBe(true);
     expect(mockIsAvailable).toHaveBeenCalledWith('scheme');
   });
 
   test('requiresUserInteraction delegates to ContextModule', async () => {
     mockRequiresUserInteraction.mockResolvedValue(false);
-    const { createCheckout } = require('../Checkout');
 
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn
-    );
-
-    await expect(checkout.requiresUserInteraction('googlepay')).resolves.toBe(
-      false
-    );
+    await expect(
+      createTestCheckout().requiresUserInteraction('googlepay')
+    ).resolves.toBe(false);
     expect(mockRequiresUserInteraction).toHaveBeenCalledWith('googlepay');
   });
 
   test('submit delegates to ContextModule', () => {
-    const { createCheckout } = require('../Checkout');
-
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn
-    );
-    checkout.submit('applepay');
+    createTestCheckout().submit('applepay');
 
     expect(mockSubmit).toHaveBeenCalledWith('applepay');
   });
 
-  test('subscribe delegates to provided subscribeFn', () => {
-    const { createCheckout } = require('../Checkout');
-
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn
-    );
-    checkout.subscribe('view-1');
+  test('subscribe delegates to the host', () => {
+    createTestCheckout().subscribe('view-1');
 
     expect(mockSubscribeFn).toHaveBeenCalledWith('view-1');
   });
 
-  test('unsubscribe delegates to provided unsubscribeFn', () => {
-    const { createCheckout } = require('../Checkout');
-
-    const checkout = createCheckout(
-      paymentMethods,
-      configuration,
-      mockSubscribeFn,
-      mockUnsubscribeFn
-    );
-    checkout.unsubscribe('view-1');
+  test('unsubscribe delegates to the host', () => {
+    createTestCheckout().unsubscribe('view-1');
 
     expect(mockUnsubscribeFn).toHaveBeenCalledWith('view-1');
+  });
+
+  test('invalidate delegates to the host', () => {
+    createTestCheckout().invalidate();
+
+    expect(mockInvalidateFn).toHaveBeenCalledTimes(1);
+  });
+
+  describe('when the checkout is no longer active', () => {
+    const originalWarn = console.warn;
+    const warn = jest.fn();
+
+    beforeEach(() => {
+      warn.mockReset();
+      console.warn = warn;
+    });
+
+    afterEach(() => {
+      console.warn = originalWarn;
+    });
+
+    test('submit is ignored with a warning', () => {
+      createTestCheckout(false).submit('scheme');
+
+      expect(mockSubmit).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('checkout.submit()')
+      );
+    });
+
+    test('isAvailable resolves false with a warning', async () => {
+      await expect(
+        createTestCheckout(false).isAvailable('scheme')
+      ).resolves.toBe(false);
+
+      expect(mockIsAvailable).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('checkout.isAvailable()')
+      );
+    });
+
+    test('requiresUserInteraction resolves false with a warning', async () => {
+      await expect(
+        createTestCheckout(false).requiresUserInteraction('scheme')
+      ).resolves.toBe(false);
+
+      expect(mockRequiresUserInteraction).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('checkout.requiresUserInteraction()')
+      );
+    });
+
+    test('subscribe is ignored with a warning', () => {
+      createTestCheckout(false).subscribe('view-1');
+
+      expect(mockSubscribeFn).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('checkout.subscribe()')
+      );
+    });
+
+    test('unsubscribe still runs so views can tear down', () => {
+      createTestCheckout(false).unsubscribe('view-1');
+
+      expect(mockUnsubscribeFn).toHaveBeenCalledWith('view-1');
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    test('invalidate stays a silent no-op', () => {
+      createTestCheckout(false).invalidate();
+
+      expect(mockInvalidateFn).toHaveBeenCalledTimes(1);
+      expect(warn).not.toHaveBeenCalled();
+    });
   });
 });

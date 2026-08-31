@@ -20,7 +20,7 @@ import type {
   SubmitResult,
 } from './core';
 import { BeforeSubmitResult } from './core';
-import { createCheckout } from './core/Checkout';
+import { createCheckout, type CheckoutHost } from './core/Checkout';
 import { AdyenContext } from './modules/context/ContextModule';
 import { AdyenDropIn } from './modules/dropin/AdyenDropIn';
 import { AdyenComponent as AdyenComponentModule } from './modules/component/AdyenComponentModule';
@@ -61,7 +61,8 @@ function dispatchSubmitResult(result: SubmitResult): void {
  * AdyenDropIn.start(checkout);
  * // or
  * <AdyenComponent checkout={checkout} type="scheme" />
- * // Auto-cleanup on terminal callbacks. Manual: checkout.cleanup()
+ * // Auto-cleanup on terminal callbacks.
+ * // Abandoning the flow without a terminal callback: checkout.invalidate()
  * ```
  */
 export class AdyenCheckout {
@@ -102,7 +103,6 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: SessionCallbacks
   ): Promise<Checkout> {
-    AdyenCheckout.runtime.hasHandledTerminalEvent = false;
     // Before re-setup, clear JS-side state without calling native cleanup.
     // The native side will handle its own state when it receives the new setup call.
     if (!AdyenCheckout.runtime.isCleanedUp) {
@@ -114,6 +114,7 @@ export class AdyenCheckout {
     AdyenCheckout.runtime.sessionCallbacks = callbacks;
     AdyenCheckout.runtime.advancedCallbacks = null;
     AdyenCheckout.runtime.isCleanedUp = false;
+    AdyenCheckout.runtime.hasHandledTerminalEvent = false;
     AdyenCheckout.runtime.eventHandlerRefs.config.current = configuration;
 
     // Wire event handler refs for per-view routing
@@ -147,8 +148,7 @@ export class AdyenCheckout {
     const checkout = createCheckout(
       context.paymentMethods,
       configuration,
-      (viewId) => AdyenCheckout.subscribe(viewId),
-      (viewId) => AdyenCheckout.unsubscribe(viewId)
+      AdyenCheckout.checkoutHost()
     );
     return checkout;
   }
@@ -166,7 +166,6 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: AdvancedCallbacks
   ): Promise<Checkout> {
-    AdyenCheckout.runtime.hasHandledTerminalEvent = false;
     // Before re-setup, clear JS-side state without calling native cleanup.
     // The native side will handle its own state when it receives the new setup call.
     if (!AdyenCheckout.runtime.isCleanedUp) {
@@ -178,6 +177,7 @@ export class AdyenCheckout {
     AdyenCheckout.runtime.advancedCallbacks = callbacks;
     AdyenCheckout.runtime.sessionCallbacks = null;
     AdyenCheckout.runtime.isCleanedUp = false;
+    AdyenCheckout.runtime.hasHandledTerminalEvent = false;
     AdyenCheckout.runtime.eventHandlerRefs.config.current = configuration;
 
     // Wire event handler refs for per-view routing
@@ -224,10 +224,23 @@ export class AdyenCheckout {
     const checkout = createCheckout(
       paymentMethods,
       configuration,
-      (viewId) => AdyenCheckout.subscribe(viewId),
-      (viewId) => AdyenCheckout.unsubscribe(viewId)
+      AdyenCheckout.checkoutHost()
     );
     return checkout;
+  }
+
+  /**
+   * Lifecycle operations handed to every {@link Checkout} produced by setup.
+   * A handle is "active" until the checkout is torn down by a terminal event or
+   * by `checkout.invalidate()`.
+   */
+  private static checkoutHost(): CheckoutHost {
+    return {
+      isActive: () => !AdyenCheckout.runtime.isCleanedUp,
+      subscribe: (viewId) => AdyenCheckout.subscribe(viewId),
+      unsubscribe: (viewId) => AdyenCheckout.unsubscribe(viewId),
+      invalidate: () => AdyenCheckout.cleanup(),
+    };
   }
 
   private static subscribeSessionTerminalHandlers(
@@ -299,6 +312,8 @@ export class AdyenCheckout {
     AdyenCheckout.runtime.sessionCallbacks = null;
     AdyenCheckout.runtime.advancedCallbacks = null;
     AdyenCheckout.runtime.isCleanedUp = true;
+    // Suppress any terminal event still queued for the checkout being torn down.
+    AdyenCheckout.runtime.hasHandledTerminalEvent = true;
     AdyenCheckout.runtime.eventHandlerRefs.config.current = null;
     AdyenCheckout.runtime.eventHandlerRefs.onSubmit.current = undefined;
     AdyenCheckout.runtime.eventHandlerRefs.onError.current = undefined;

@@ -329,6 +329,7 @@ export interface CardsConfiguration {
 // @public
 export interface Checkout {
     readonly configuration: Configuration;
+    invalidate(): void;
     isAvailable(type: string): Promise<boolean>;
     readonly paymentMethods: PaymentMethodsResponse;
     requiresUserInteraction(type: string): Promise<boolean>;
