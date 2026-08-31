@@ -8,6 +8,24 @@
 
 ![Data Flow](./assets/Architecture.png)
 
+## Checkout Lifecycle Contract
+
+The SDK exposes a **single active checkout** at a time, mirroring the native iOS/Android SDKs, which
+keep one checkout context in static/companion state. The rules below are enforced (or deliberately
+not enforced) by `src/AdyenCheckout.ts`:
+
+| Rule | Behaviour |
+| ---- | --------- |
+| **Setup is required** | A `Checkout` is only obtainable by awaiting `AdyenCheckout.setup()` / `setupAdvanced()`. It has no public constructor, so its methods cannot be called before the native context exists. |
+| **One active checkout** | Each setup replaces the previous checkout. There is no support for two independent checkouts (e.g. on two screens) at the same time. |
+| **Setup calls must not overlap** | `setup()` / `setupAdvanced()` are `async` and are **not** serialized or rejected by the SDK. Calling them concurrently is an integration error: the last native setup to resolve wins, and earlier listeners are already replaced. Always `await` one setup before starting another. |
+| **Re-setup clears JS state only** | On re-setup the JS side unsubscribes embedded views, removes context listeners and resets callbacks; it does **not** call native `cleanup()`. The native side replaces its own state when it receives the new setup call. |
+| **Terminal events fire once** | The first `onComplete` / `onError` per checkout invokes the merchant callback and then triggers auto-cleanup. Later or duplicate terminal events for the same checkout are ignored. |
+| **Cleanup is terminal-only** | Native `cleanup()` is called from the terminal-event path. `cleanup()` is idempotent and a no-op once the checkout has been torn down. |
+
+Because a checkout is global, a terminal event tears down **all** embedded `<AdyenComponent>`
+views attached to it, not only the view that produced the event.
+
 ## Directory Structure
 
 ```
@@ -192,12 +210,13 @@ RCTEventEmitter (React Native)
     │
     ▼
 BaseModule                                           # Base class for all iOS modules
-    │   - checkoutContext (static) — owns checkout lifecycle
-    │   - session: SessionCheckout? (static, computed from checkoutContext)
-    │   - currentModule: BaseModule? (static)
-    │   - currentPresenter: UIViewController? (static)
-    │   - completion(_ resultCode:)
-    │   - retry(_ message:)
+    │   - checkoutState: CheckoutState? (static) — owns checkout lifecycle
+    │   - sdkVersion: String? (static, lock-guarded)
+    │   - presenterStack: [UIViewController] (static)
+    │   - currentPresenter: UIViewController? (static, computed — presenterStack.last)
+    │   - topPresenterProvider (static, overridable in tests)
+    │   - completion(_ resultCode:) — dismisses; subclasses resume continuations
+    │   - retry(_ message:) — no-op; subclasses resume continuations
     │   - present(component)
     │   - cleanUp()
     │   - sendError(error)
@@ -230,7 +249,7 @@ BaseModule                                           # Base class for all iOS mo
                     │       - Caches CheckoutPaymentComponent per type
                     │
                     ├──► DropInModule                # Drop-in component
-                    │       - open(paymentMethods) — uses BaseModule.checkoutContext
+                    │       - open(paymentMethods) — uses BaseModule.checkoutState
                     │       - action(action), completion(resultCode), retry(message)
                     │       - removeStored(success) (TODO: not yet supported)
                     │       - getReturnURL()
@@ -259,15 +278,13 @@ AppCompatModule                                      # Provides AppCompatActivit
     │
     ▼
 BaseModule                                           # Base class for payment modules
-    │   - checkoutContext: CheckoutContext? (companion) — owns checkout lifecycle
-    │   - session (computed, casts to CheckoutContext.Sessions)
-    │   - currentModule: BaseModule? (companion)
+    │   - checkoutState: CheckoutState? (companion, @Volatile) — owns checkout lifecycle
+    │   - sdkVersion: String? (companion, @Volatile)
+    │   - configureAnalytics() (companion)
     │   - messageBus: MessageBus
     │   - supportedEvents(): List<String> (abstract)
-    │   - completion(resultCode) (abstract)
-    │   - retry(message) (abstract)
     │   - getConstants() → ["supportedEvents": ...]
-    │   - cleanup()
+    │   - cleanup() (open — subclasses extend teardown)
     │   - sendError(exception)
     │
     └──► BaseActionModule                            # Adds parseActionFromMap() + mainEvents()
@@ -283,7 +300,7 @@ BaseModule                                           # Base class for payment mo
                     │       - controllers: Map<type, ComponentManager>
                     │
                     ├──► DropInModule                # Drop-in component
-                    │       - open(paymentMethods) — uses BaseModule.checkoutContext
+                    │       - open(paymentMethods) — uses BaseModule.checkoutState
                     │       - action(action), completion(resultCode), retry(message)
                     │       - removeStored(success) (TODO: not yet supported)
                     │       - getReturnURL()
@@ -480,8 +497,8 @@ Both platforms use a centralized event emission layer that translates native SDK
 
 Both platforms follow a consistent lifecycle for payment components:
 
-1. **Context Setup** - `ContextModule.createSession()` or `ContextModule.setup()` stores checkout context in static/companion property
-2. **Open/Start** - Module uses `BaseModule.checkoutContext` to create and present components
+1. **Context Setup** - `ContextModule.createSession()` or `ContextModule.setup()` stores checkout state in the static/companion property
+2. **Open/Start** - Module uses `BaseModule.checkoutState` to create and present components
 3. **Events** - Native SDK callbacks are translated to JS events via emitter (or via closure-based callbacks on iOS)
 4. **Complete/Retry** - Resume suspended continuations, cleanup resources, dismiss UI
 
@@ -492,20 +509,25 @@ Both platforms follow a consistent lifecycle for payment components:
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────────┘
       │                   │                   │                       │
       ▼                   ▼                   ▼                       ▼
- Store context      Uses checkoutContext Emit to JS             Resume continuation
- in static prop     Present UI           via emitter            Dismiss UI
+ Store checkout     Uses checkoutState   Emit to JS             Resume continuation
+ state in static    Present UI           via emitter            Dismiss UI
 ```
 
 ### Static State Management
 
 Both platforms use static/companion properties for cross-module coordination:
 
-| Property           | iOS               | Android            | Purpose                         |
-| ------------------ | ----------------- | ------------------ | ------------------------------- |
-| `checkoutContext`  | `static var`      | `companion object` | Shared checkout context         |
-| `session`          | computed property  | computed property  | Casts checkoutContext to session |
-| `currentModule`    | `static weak var` | `companion object` | Active module for delegation    |
-| `currentPresenter` | `static var`      | N/A                | iOS presenter view controller   |
+| Property           | iOS                        | Android                       | Purpose                                          |
+| ------------------ | -------------------------- | ----------------------------- | ------------------------------------------------ |
+| `checkoutState`    | `static var`               | `companion object` `@Volatile` | Shared checkout state (context + `isSession`)    |
+| `sdkVersion`       | `static var` (lock-guarded) | `companion object` `@Volatile` | Cross-platform analytics version                 |
+| `presenterStack`   | `static var`               | N/A                            | iOS presented view controller chain              |
+| `currentPresenter` | computed (`presenterStack.last`) | N/A                      | iOS presenter view controller                    |
+
+> [!NOTE]
+> The v5 `currentModule` delegation property was removed. Drop-in `action` / `completion` / `retry`
+> now route directly from TypeScript to the `AdyenDropIn` native module, and embedded components
+> route by `viewId` through `ComponentModule`.
 
 ### Error Routing Pattern
 
@@ -517,8 +539,8 @@ Errors are routed differently based on integration type:
                     └────────┬────────┘
                              │
                     ┌────────▼────────┐
-                    │ checkoutContext  │
-                    │ is Sessions?    │
+                    │ checkoutState    │
+                    │ isSession?      │
                     └────────┬────────┘
                              │
               ┌──────────────┴──────────────┐
@@ -532,28 +554,43 @@ Errors are routed differently based on integration type:
 
 ### Completion/Retry Pattern
 
-`ContextModule.completion()` and `retry()` resume suspended continuations from JS and delegate to the active module:
+Each module resolves its **own** pending work — there is no cross-module delegation. Which module
+receives a JS result depends on how the payment was started (context/headless, Drop-in, or an
+embedded view).
 
-**iOS** — Resumes `CheckedContinuation` from `onSubmit`/`onAdditionalDetails`:
+#### Continuation-based flows (headless / embedded)
 
-```swift
-// action() — resumes submitContinuation with .action(action)
-// completion() — resumes submitContinuation or additionalDetailsContinuation with .completion(resultCode:)
-// retry() — resumes submitContinuation with .retry(errorMessage:)
+`ContextModule` (iOS) and `ComponentManager` (Android) suspend the SDK's `onSubmit` /
+`onAdditionalDetails` closures on a continuation and resume it with the result forwarded from JS.
+When no continuation is pending, the call is a no-op.
 
-// Falls through to active module for session/UI flows:
-if let activeModule = BaseModule.currentModule {
-    activeModule.completion(resultCode)
-}
-```
+| JS call                  | iOS `ContextModule` resumes with          | Android `ComponentManager` resumes with               |
+| ------------------------ | ----------------------------------------- | ----------------------------------------------------- |
+| `action(action)`         | `.action(action)`                         | `SubmitResult.Action(action)`                         |
+| `completion(resultCode)` | `.completion(resultCode:)` — submit *or* additional-details continuation | `SubmitResult.Completion` *or* `AdditionalDetailsResult.Completion` |
+| `retry(message)`         | `.retry(errorMessage:)`                   | `SubmitResult.Retry(message)`                         |
 
-**Android** — Resumes `CancellableContinuation` via AdvancedCheckoutService:
+On teardown (`cleanup()` / re-`setup` on iOS, `dispose()` on Android) any still-suspended
+continuation is settled with the SDK's error result code — iOS uses the shared
+`errorSubmitResult` / `errorAdditionalDetailsResult` constants — so a cancelled flow ends
+terminally instead of looking like a shopper-initiated retry.
 
-```kotlin
-// action() → advancedService.provideSubmitResult(SubmitResult.Action(action))
-// completion() → advancedService.finish(resultCode) → SubmitResult.Completion
-// retry() → advancedService.finish(errorMessage) → SubmitResult.Retry
-```
+iOS `ComponentProxy` uses the same pattern per `viewId`, so a result only affects the embedded view
+it was routed to. Android `ContextModule.completion()` tears the checkout context down, and its
+`retry()` only guards against a missing checkout state.
+
+#### Drop-in flow (Android)
+
+Advanced Drop-in results are forwarded to the Drop-in service rather than a continuation:
+
+| JS call                  | Result sent to the service              |
+| ------------------------ | --------------------------------------- |
+| `action(action)`         | `DropInServiceResult.Action(action)`    |
+| `completion(resultCode)` | `DropInServiceResult.Finished(resultCode)` |
+| `retry(message)`         | `DropInServiceResult.Error(null, message, true)` |
+
+> [!NOTE]
+> Session-flow Drop-in is not supported in the v6 alpha; `start()` reports a `notSupported` error.
 
 ### Event Emission Differences
 
@@ -573,7 +610,7 @@ Both platforms translate native SDK callbacks to JS events. The JS-facing API us
 ```swift
 // BaseModuleSender+Callbacks.swift
 checkout.onSubmit { [weak self] data in
-    await self?.awaitSubmitResult(for: data) ?? .retry()
+    await self?.awaitSubmitResult(for: data) ?? errorSubmitResult
 }
 // awaitSubmitResult sends the event to JS and suspends on a CheckedContinuation
 // until JS calls action(), completion(), or retry()
@@ -581,10 +618,17 @@ checkout.onSubmit { [weak self] data in
 
 **Android** — MessageBus delegation:
 
+The SDK callback is forwarded to `MessageBus`, which serializes the payload and emits it through
+`Emitter` to JS. The advanced flow suspends on `suspendCancellableCoroutine` in `ComponentManager`
+until JS calls `action()`, `completion()`, or `retry()`.
+
 ```kotlin
-// SDK callback → MessageBus → Emitter → JS
-// Advanced flow uses suspendCancellableCoroutine in AdvancedCheckoutService
-messageBus.onSubmit(state, returnUrl)  // internally calls emitter.sendEvent()
+// AdvancedMessengerImpl — serializes and emits the submit event
+override fun onSubmit(data: PaymentComponentData<*>) {
+  val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
+  val submitData = SubmitData(jsonObject, null)
+  // → emitter.sendEvent(...)
+}
 ```
 
 ## Event System
