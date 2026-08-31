@@ -136,16 +136,17 @@ checkout.submit('klarna');
 // Access payment methods
 const methods = checkout.paymentMethods;
 
-// Access configuration and manage subscriptions
+// Access configuration
 checkout.configuration;
-checkout.subscribe(...);
-checkout.unsubscribe(...);
 
-// Explicit cleanup (automatic on terminal callbacks)
-checkout.cleanup();
-// Or clean up all checkouts:
-AdyenCheckout.cleanup();
+// Abandon the flow without a terminal callback (e.g. the shopper navigates away).
+// Teardown is automatic on onComplete / onError, so this is only for abandoned flows.
+checkout.invalidate();
 ```
+
+> [!NOTE]
+> `subscribe()` / `unsubscribe()` are internal — `<AdyenComponent>` calls them for you.
+> There is no `AdyenCheckout.cleanup()`; use `checkout.invalidate()`.
 
 ### Drop-In
 
@@ -204,7 +205,7 @@ All `Configuration` properties remain unchanged — the same object shape is use
 
 - All component-specific configs (`card`, `dropin`, `applepay`, `googlepay`, `threeDS2`, etc.)
 - All callback configs (`onUpdateAddress`, `onConfirmAddress`, `onBinValue`, `onBinLookup`, etc.)
-- Root configs (`environment`, `clientKey`, `amount`, `countryCode`, `locale`, `returnUrl`)
+- Root configs (`environment`, `clientKey`, `amount`, `countryCode`, `locale`)
 
 ### Currently Unsupported Features (Alpha Limitations)
 
@@ -314,8 +315,6 @@ const config: Configuration = {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
-  amount: { currency: 'EUR', value: 9800 },
-  returnUrl: 'myapp://adyencheckout',
 };
 
 const callbacks: SessionCallbacks = {
@@ -351,7 +350,6 @@ const config: Configuration = {
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
   amount: { currency: 'EUR', value: 9800 },
-  returnUrl: 'myapp://adyencheckout',
 };
 
 const callbacks: AdvancedCallbacks = {

@@ -21,10 +21,31 @@ not enforced) by `src/AdyenCheckout.ts`:
 | **Setup calls must not overlap** | `setup()` / `setupAdvanced()` are `async` and are **not** serialized or rejected by the SDK. Calling them concurrently is an integration error: the last native setup to resolve wins, and earlier listeners are already replaced. Always `await` one setup before starting another. |
 | **Re-setup clears JS state only** | On re-setup the JS side unsubscribes embedded views, removes context listeners and resets callbacks; it does **not** call native `cleanup()`. The native side replaces its own state when it receives the new setup call. |
 | **Terminal events fire once** | The first `onComplete` / `onError` per checkout invokes the merchant callback and then triggers auto-cleanup. Later or duplicate terminal events for the same checkout are ignored. |
-| **Cleanup is terminal-only** | Native `cleanup()` is called from the terminal-event path. `cleanup()` is idempotent and a no-op once the checkout has been torn down. |
+| **Abandoned flows need `invalidate()`** | `checkout.invalidate()` tears the checkout down when the shopper leaves without a terminal callback (e.g. navigating away). It is idempotent, suppresses any terminal event still queued for that checkout, and is the only consumer-facing teardown API. |
+| **Teardown is once per checkout** | Native `cleanup()` runs from the terminal-event path or from `invalidate()`, whichever happens first, and is a no-op afterwards. |
+| **A stale handle is inert** | After teardown, `submit()` / `isAvailable()` / `requiresUserInteraction()` / `subscribe()` on that `Checkout` are ignored and log a warning; `isAvailable` and `requiresUserInteraction` report `false`. `unsubscribe()` still runs so unmounting views can detach, and `invalidate()` stays a silent no-op. |
 
 Because a checkout is global, a terminal event tears down **all** embedded `<AdyenComponent>`
 views attached to it, not only the view that produced the event.
+
+### Presenters within one checkout
+
+Drop-in and embedded `<AdyenComponent>` views share the single checkout, and both can drive the
+full event set (session or advanced, per the configuration used at setup). They are expected to be
+used **sequentially, not in parallel**:
+
+- Embedded component events are tagged with the view's `viewId` and filtered per view, so a
+  component never reacts to Drop-in's events.
+- Drop-in and headless/context events are untagged and arrive on the shared context listeners.
+  When Drop-in is presented it is treated as the **dominant emitter** for those events.
+
+> [!WARNING]
+> Because Drop-in and context events are indistinguishable on the JS side, advanced-flow results
+> from the context listeners are currently dispatched to the Drop-in module. A headless
+> `checkout.submit(type)` in the **advanced** flow therefore does not yet resolve correctly
+> (Android also lacks a context-level `action` bridge, and its `ContextModule.completion()` tears
+> the context down instead of resuming the pending `ComponentManager` continuation). Use Drop-in or
+> embedded components for the advanced flow until this is addressed.
 
 ## Directory Structure
 
