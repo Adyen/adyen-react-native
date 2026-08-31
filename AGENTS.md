@@ -50,6 +50,7 @@ Simply setting `ext.kotlinVersion` is insufficient if the root classpath is unpi
 - **Default branch**: `develop`, not `main`.
 - **Branch hygiene**: Start new work from latest `origin/develop` on a dedicated branch.
 - **Staging**: **NEVER use `git add -A` or `git add .`** — only stage the specific files relevant to the commit.
+- **Lockfiles**: Leave `yarn.lock` and `example/ios/Podfile.lock` out of commits unless a dependency change is the point of the task. `npm start` deletes and regenerates `yarn.lock`, and `yarn app pod` rewrites `Podfile.lock`, so both routinely show as modified after bootstrapping. Do **not** restore them to the committed version either - ask the user before touching either file.
 - **Commit message format**: `<type>: <imperative description>` — types: `feat`, `fix`, `chore`, `refactor`, `test`, `docs`, `deprecate`, `remove`. Do **not** add a `Co-authored-by` trailer.
 - **Ticket number**: Always ask the user for the ticket number before creating a PR.
 - **PR strategy**: Prefer small, focused PRs. If a task involves large changes, suggest splitting into a chain of dependent PRs — each buildable and reviewable on its own.
