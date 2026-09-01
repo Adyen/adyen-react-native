@@ -44,7 +44,7 @@ __metadata:
     "@react-native-community/cli": "npm:15.0.1"
     "@react-native/babel-preset": "npm:0.85.0"
     "@react-native/eslint-config": "npm:0.85.0"
-    "@react-native/jest-preset": "npm:0.85.0"
+    "@react-native/jest-preset": "npm:0.87.0"
     "@types/jest": "npm:^29.5.5"
     "@types/react": "npm:^19.0.0"
     eslint: "npm:^9.39.2"
@@ -3077,21 +3077,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native/jest-preset@npm:0.85.0":
-  version: 0.85.0
-  resolution: "@react-native/jest-preset@npm:0.85.0"
-  dependencies:
-    "@jest/create-cache-key-function": "npm:^29.7.0"
-    "@react-native/js-polyfills": "npm:0.85.0"
-    babel-jest: "npm:^29.7.0"
-    jest-environment-node: "npm:^29.7.0"
-    regenerator-runtime: "npm:^0.13.2"
-  peerDependencies:
-    react: ^19.2.3
-  checksum: 10c0/a4ad5159d955a3f2c7af9cd04390203b3e08d8838c55af8ec9bed6d024df61b35313314be2476b25e9fb0b61e64de1e97b1675a271b2cc2012197e99ec217637
-  languageName: node
-  linkType: hard
-
 "@react-native/jest-preset@npm:0.85.3":
   version: 0.85.3
   resolution: "@react-native/jest-preset@npm:0.85.3"
@@ -3107,6 +3092,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native/jest-preset@npm:0.87.0":
+  version: 0.87.0
+  resolution: "@react-native/jest-preset@npm:0.87.0"
+  dependencies:
+    "@jest/create-cache-key-function": "npm:^29.7.0"
+    "@react-native/js-polyfills": "npm:0.87.0"
+    babel-jest: "npm:^29.7.0"
+    jest-environment-node: "npm:^29.7.0"
+    regenerator-runtime: "npm:^0.13.2"
+  peerDependencies:
+    react: ^19.2.3
+  checksum: 10c0/22e86f6c415247d982302295a350e40e9b1c2c53cf72519afa98c94bd989632eff2cf6b98d0e87024fec4ccefcc7194c937510bfe271fafc15ca58d84aed0d7b
+  languageName: node
+  linkType: hard
+
 "@react-native/js-polyfills@npm:0.85.0":
   version: 0.85.0
   resolution: "@react-native/js-polyfills@npm:0.85.0"
@@ -3118,6 +3118,13 @@ __metadata:
   version: 0.85.3
   resolution: "@react-native/js-polyfills@npm:0.85.3"
   checksum: 10c0/67c4ed8234cbeb6d5250b06901f352ddd5348f9aad88aac8a06dc884f42e0da22ff2e1ca8e06c7d03e1e659486bdb9d7682f34858ebf9398d7ae199ce02b3749
+  languageName: node
+  linkType: hard
+
+"@react-native/js-polyfills@npm:0.87.0":
+  version: 0.87.0
+  resolution: "@react-native/js-polyfills@npm:0.87.0"
+  checksum: 10c0/aed86f4975323f9622154a79e113d7f722322124d366739b62db0dd6589b45d8c8601384cf0ad29bd775524a67b1c179305aa015184d1fc2f7e8bf5e36b4014d
   languageName: node
   linkType: hard
 
