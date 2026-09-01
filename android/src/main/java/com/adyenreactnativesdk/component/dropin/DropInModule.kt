@@ -13,24 +13,24 @@ import com.adyen.checkout.components.core.BalanceResult
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.OrderResponse
 import com.adyen.checkout.components.core.PaymentMethodsApiResponse
-import com.adyen.checkout.dropin.AddressLookupDropInServiceResult
-import com.adyen.checkout.dropin.BalanceDropInServiceResult
-import com.adyen.checkout.dropin.BaseDropInServiceContract
-import com.adyen.checkout.dropin.DropIn
-import com.adyen.checkout.dropin.DropIn.startPayment
-import com.adyen.checkout.dropin.DropInCallback
-import com.adyen.checkout.dropin.DropInServiceResult
-import com.adyen.checkout.dropin.ErrorDialog
-import com.adyen.checkout.dropin.OrderDropInServiceResult
-import com.adyen.checkout.dropin.RecurringDropInServiceResult
-import com.adyen.checkout.dropin.SessionDropInCallback
-import com.adyen.checkout.dropin.internal.ui.model.DropInResultContractParams
-import com.adyen.checkout.dropin.internal.ui.model.SessionDropInResultContractParams
-import com.adyen.checkout.redirect.RedirectComponent
+import com.adyen.checkout.dropin.old.AddressLookupDropInServiceResult
+import com.adyen.checkout.dropin.old.BalanceDropInServiceResult
+import com.adyen.checkout.dropin.old.BaseDropInServiceContract
+import com.adyen.checkout.dropin.old.DropIn
+import com.adyen.checkout.dropin.old.DropIn.startPayment
+import com.adyen.checkout.dropin.old.DropInCallback
+import com.adyen.checkout.dropin.old.DropInServiceResult
+import com.adyen.checkout.dropin.old.ErrorDialog
+import com.adyen.checkout.dropin.old.OrderDropInServiceResult
+import com.adyen.checkout.dropin.old.RecurringDropInServiceResult
+import com.adyen.checkout.dropin.old.SessionDropInCallback
+import com.adyen.checkout.dropin.old.internal.ui.model.DropInResultContractParams
+import com.adyen.checkout.dropin.old.internal.ui.model.SessionDropInResultContractParams
+import com.adyen.checkout.redirect.old.RedirectComponent
 import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.BaseAddressModule
+import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ModuleException
-import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
@@ -45,6 +45,7 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import com.facebook.react.jstasks.HeadlessJsTaskContext
+import org.json.JSONException
 
 class DropInModule(
   reactContext: ReactApplicationContext?,
@@ -53,12 +54,12 @@ class DropInModule(
   private var taskId: Int? = null
 
   private val integration: String
-    get() = if (session != null) "session" else "advanced"
+    get() = if (BaseModule.checkoutState?.isSession == true) "session" else "advanced"
 
   private val service: BaseDropInServiceContract
-    get() = (if (session != null) sessionService else advancedService) ?: throw ModuleException.NoModuleListener(integration)
-
-  override fun getConstants(): MutableMap<String, Any> = mutableMapOf("supportedEvents" to supportedEvents())
+    get() =
+      (if (BaseModule.checkoutState?.isSession == true) sessionService else advancedService)
+        ?: throw ModuleException.NoModuleListener(integration)
 
   @ReactMethod
   fun addListener(eventName: String?) { // No JS events expected
@@ -78,33 +79,35 @@ class DropInModule(
   override fun supportedEvents(): List<String> = super.supportedEvents() + EventName.cardEvents() + EventName.dropInEvents()
 
   @ReactMethod
-  fun open(
-    paymentMethodsData: ReadableMap?,
-    configuration: ReadableMap,
-  ) {
+  fun start(paymentMethodsData: ReadableMap?) {
     if (!isInitialized) {
       return sendError(ModuleException.NoActivity())
     }
+
+    val storedConfig = BaseModule.checkoutState?.configurationJSON
+    if (storedConfig == null) {
+      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
+      return sendError(ModuleException.Unknown("Checkout context is not initialized. Call setup() or setupAdvanced() first."))
+    }
+
+    // TODO: v6 migration - CheckoutConfigurationFactory now returns the new v6 CheckoutConfiguration type.
+    //  The old DropIn.startPayment() expects com.adyen.checkout.components.core.CheckoutConfiguration.
+    //  For now, create the old CheckoutConfiguration inline from the parsed values.
     val checkoutConfiguration: CheckoutConfiguration
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
       paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
+      checkoutConfiguration = buildOldCheckoutConfiguration(storedConfig)
     } catch (e: java.lang.Exception) {
       return sendError(e)
     }
 
-    val session = session
-    currentModule = this
     startBackgroundService()
-    if (session != null) {
-      startPayment(
-        reactApplicationContext,
-        dropInSessionLauncher,
-        session,
-        checkoutConfiguration,
-        SessionCheckoutService::class.java,
-      )
+    if (BaseModule.checkoutState?.isSession == true) {
+      // TODO: v6 migration - session is now CheckoutContext.Sessions, not CheckoutSession.
+      //  The old DropIn.startPayment() expects CheckoutSession. Session-flow Drop-in needs
+      //  proper v6 migration.
+      sendError(ModuleException.Unknown("Drop-in session flow not yet supported in v6 alpha"))
     } else {
       startPayment(
         reactApplicationContext,
@@ -117,9 +120,15 @@ class DropInModule(
   }
 
   @ReactMethod
-  fun handle(actionMap: ReadableMap?) {
+  fun action(actionMap: ReadableMap?) {
     try {
-      val action = parseActionFromMap(actionMap)
+      // TODO: v6 migration - old DropInServiceResult.Action expects old Action type
+      //  (com.adyen.checkout.components.core.action.Action), so deserialize using the old
+      //  serializer instead of the v6 one from BaseActionModule.parseActionFromMap.
+      val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
+      val action =
+        com.adyen.checkout.components.core.action.Action.SERIALIZER
+          .deserialize(jsonObject)
       service.sendResult(DropInServiceResult.Action(action))
     } catch (e: Exception) {
       sendError(e)
@@ -127,12 +136,21 @@ class DropInModule(
   }
 
   @ReactMethod
-  override fun hide(
-    success: Boolean,
-    message: ReadableMap?,
-  ) {
-    if (session == null) {
-      proxyHideDropInCommand(success, message)
+  fun completion(resultCode: String) {
+    if (BaseModule.checkoutState?.isSession != true) {
+      val result = DropInServiceResult.Finished(resultCode)
+      service.sendResult(result)
+    }
+
+    cleanup()
+    stopBackgroundService()
+  }
+
+  @ReactMethod
+  fun retry(message: String?) {
+    if (BaseModule.checkoutState?.isSession != true) {
+      val result = DropInServiceResult.Error(null, message, true)
+      service.sendResult(result)
     }
 
     cleanup()
@@ -237,18 +255,58 @@ class DropInModule(
     service.sendResult(DropInServiceResult.Update(paymentMethods, order))
   }
 
-  private fun proxyHideDropInCommand(
-    success: Boolean,
-    message: ReadableMap?,
-  ) {
-    val messageString = message?.getString(AdyenConstants.PARAMETER_MESSAGE)
-    val result =
-      if (success && messageString != null) {
-        DropInServiceResult.Finished(messageString)
-      } else {
-        DropInServiceResult.Error(null, messageString, true)
-      }
-    service.sendResult(result)
+  /**
+   * Parses the payment methods JSON into the v5-era [PaymentMethodsApiResponse] type,
+   * which the old DropIn API still requires.
+   */
+  private fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse =
+    try {
+      val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
+      PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
+    } catch (e: JSONException) {
+      throw ModuleException.InvalidPaymentMethods(e)
+    }
+
+  /**
+   * Creates the old [CheckoutConfiguration] (from components-core) required by the old DropIn API.
+   * TODO: v6 migration - This should be replaced with the new CheckoutConfiguration once
+   *  Drop-in is migrated to the v6 API.
+   */
+  private fun buildOldCheckoutConfiguration(configuration: ReadableMap): CheckoutConfiguration {
+    val rootParser = com.adyenreactnativesdk.configuration.RootConfigurationParser(configuration)
+    val clientKey = rootParser.clientKey ?: throw ModuleException.NoClientKey()
+
+    // Map v6 Environment → old Environment by matching the shopper base URL.
+    val newEnv = rootParser.environment
+    val oldEnvironment = mapToOldEnvironment(newEnv)
+
+    return CheckoutConfiguration(
+      environment = oldEnvironment,
+      clientKey = clientKey,
+      shopperLocale = rootParser.locale,
+      amount =
+        rootParser.amount?.let {
+          com.adyen.checkout.components.core
+            .Amount(it.currency, it.value)
+        },
+    )
+  }
+
+  /**
+   * Maps the new v6 [com.adyen.checkout.core.common.Environment] to the old
+   * [com.adyen.checkout.core.old.Environment] by matching the checkout base URL.
+   */
+  private fun mapToOldEnvironment(newEnv: com.adyen.checkout.core.common.Environment): com.adyen.checkout.core.old.Environment {
+    val url = newEnv.checkoutShopperBaseUrl.toString()
+    return when {
+      url.contains("-test.") -> com.adyen.checkout.core.old.Environment.TEST
+      url.contains("-live-us.") -> com.adyen.checkout.core.old.Environment.UNITED_STATES
+      url.contains("-live-au.") -> com.adyen.checkout.core.old.Environment.AUSTRALIA
+      url.contains("-live-apse.") -> com.adyen.checkout.core.old.Environment.APSE
+      url.contains("-live-in.") -> com.adyen.checkout.core.old.Environment.INDIA
+      url.contains("-live.") -> com.adyen.checkout.core.old.Environment.EUROPE
+      else -> com.adyen.checkout.core.old.Environment.TEST
+    }
   }
 
   private fun startBackgroundService() {
@@ -280,7 +338,7 @@ class DropInModule(
     var isInitialized = false
 
     fun register(activity: ActivityResultCaller) {
-      val callbackHandler = DropInCallbackHandler { AdyenPaymentPackage.messageBusOrNull() }
+      val callbackHandler = DropInCallbackHandler { AdyenPaymentPackage.dropInMessageBusOrNull() }
       dropInSessionLauncher =
         DropIn.registerForDropInResult(
           activity,

@@ -10,13 +10,13 @@
 
 @interface RCT_EXTERN_MODULE(AdyenDropIn, NSObject)
 
-RCT_EXTERN_METHOD(open:(nonnull NSDictionary *)paymentMethods
-                  configuration:(nonnull NSDictionary *)configuration)
+RCT_EXTERN_METHOD(start:(nonnull NSDictionary *)paymentMethods)
 
-RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
-                  event:(nullable NSDictionary *)event)
+RCT_EXTERN_METHOD(action:(nonnull NSDictionary *)actionJson)
 
-RCT_EXTERN_METHOD(handle:(nonnull NSDictionary *)action)
+RCT_EXTERN_METHOD(completion:(nonnull NSString *)resultCode)
+
+RCT_EXTERN_METHOD(retry:(nonnull NSString *)message)
 
 RCT_EXTERN_METHOD(getReturnURL:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
@@ -26,66 +26,29 @@ RCT_EXTERN_METHOD(update:(nullable NSArray *)results)
 RCT_EXTERN_METHOD(confirm:(nonnull NSNumber *)success
                   address:(nullable NSDictionary *)address)
 
-RCT_EXTERN_METHOD(removeStored:(nonnull NSNumber *)success)
-
-RCT_EXTERN_METHOD(provideBalance:(nonnull NSNumber *)success
-                  balance:(nullable NSDictionary *)balance
-                  error:(nullable NSDictionary *)error)
-
-RCT_EXTERN_METHOD(provideOrder:(nonnull NSNumber *)success
-                  order:(nullable NSDictionary *)order
-                  error:(nullable NSDictionary *)error)
-
-RCT_EXTERN_METHOD(providePaymentMethods:(nonnull NSDictionary *)paymentMethods
-                  order:(nullable NSDictionary *)order)
-
 @end
 
-@interface RCT_EXTERN_MODULE(AdyenInstant, NSObject)
+@interface RCT_EXTERN_MODULE(AdyenComponent, NSObject)
 
-RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
-                  configuration:(NSDictionary *)configuration)
+RCT_EXTERN_METHOD(subscribe:(nonnull NSString *)viewId)
 
-RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
-                  event:(NSDictionary *)event)
+RCT_EXTERN_METHOD(unsubscribe:(nonnull NSString *)viewId)
 
-RCT_EXTERN_METHOD(handle:(NSDictionary *)action)
+RCT_EXTERN_METHOD(action:(nonnull NSString *)viewId
+                  actionDict:(nullable NSDictionary *)actionDict)
 
-@end
+RCT_EXTERN_METHOD(completion:(nonnull NSString *)viewId
+                  resultCode:(nonnull NSString *)resultCode)
 
-@interface RCT_EXTERN_MODULE(AdyenApplePay, NSObject)
+RCT_EXTERN_METHOD(retry:(nonnull NSString *)viewId
+                  message:(nullable NSString *)message)
 
-RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
-                  configuration:(NSDictionary *)configuration)
+RCT_EXTERN_METHOD(update:(nonnull NSString *)viewId
+                  results:(nullable NSArray *)results)
 
-RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
-                  event:(NSDictionary *)event)
-
-RCT_EXTERN_METHOD(isAvailable:(nonnull NSDictionary *)paymentMethod
-                  configuration:(nonnull NSDictionary *)configuration
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(provideCouponCodeUpdate:(nonnull NSDictionary *)update)
-
-RCT_EXTERN_METHOD(provideShippingContactUpdate:(nonnull NSDictionary *)update)
-
-RCT_EXTERN_METHOD(provideShippingMethodUpdate:(nonnull NSDictionary *)update)
-
-RCT_EXTERN_METHOD(provideAuthorizationResult:(nonnull NSDictionary *)result)
-
-@end
-
-// Mock to prevent NativeModule check failure
-@interface RCT_EXTERN_MODULE(AdyenGooglePay, NSObject)
-
-RCT_EXTERN_METHOD(open:(NSDictionary *)paymentMethods
-                  configuration:(NSDictionary *)configuration)
-
-RCT_EXTERN_METHOD(isAvailable:(nonnull NSDictionary *)paymentMethod
-                  configuration:(nonnull NSDictionary *)configuration
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(confirm:(nonnull NSString *)viewId
+                  success:(nonnull NSNumber *)success
+                  address:(nullable NSDictionary *)address)
 
 @end
 
@@ -118,17 +81,47 @@ RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
 
 @end
 
-@interface RCT_EXTERN_MODULE(SessionHelper, NSObject)
+@interface RCT_EXTERN_MODULE(AdyenContext, NSObject)
 
-RCT_EXTERN_METHOD(setSdkVersion:(NSString *)sdkVersion)
-
-RCT_EXTERN_METHOD(createSession:(NSDictionary *)sessionModelJSON
+RCT_EXTERN_METHOD(setup:(NSDictionary *)sessionModelJSON
                   configuration:(NSDictionary *)configurationJSON
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success
-                  event:(NSDictionary *)event)
+RCT_EXTERN_METHOD(setupAdvanced:(NSDictionary *)paymentMethodsDict
+                  configuration:(NSDictionary *)configurationJSON
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(setSdkVersion:(NSString *)sdkVersion)
+
+RCT_EXTERN_METHOD(isAvailable:(nonnull NSString *)type
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(requiresUserInteraction:(nonnull NSString *)type
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(submit:(nonnull NSString *)type)
+
+RCT_EXTERN_METHOD(cleanup)
+
+RCT_EXTERN_METHOD(provideBeforeSubmitResult:(nonnull NSDictionary *)result)
+
+RCT_EXTERN_METHOD(action:(nonnull NSDictionary *)actionJson)
+
+RCT_EXTERN_METHOD(completion:(NSString *)resultCode)
+
+RCT_EXTERN_METHOD(retry:(NSString *)message)
+
+RCT_EXTERN_METHOD(provideCouponCodeUpdate:(nonnull NSDictionary *)update)
+
+RCT_EXTERN_METHOD(provideShippingContactUpdate:(nonnull NSDictionary *)update)
+
+RCT_EXTERN_METHOD(provideShippingMethodUpdate:(nonnull NSDictionary *)update)
+
+RCT_EXTERN_METHOD(provideAuthorizationResult:(nonnull NSDictionary *)result)
 
 @end
 
@@ -143,26 +136,6 @@ RCT_EXTERN_METHOD(handle:(NSDictionary *)action
 
 @end
 
-@interface RCT_EXTERN_MODULE(AdyenComponentBus, NSObject)
 
-RCT_EXTERN_METHOD(subscribe:(nonnull NSString *)viewId)
-
-RCT_EXTERN_METHOD(unsubscribe:(nonnull NSString *)viewId)
-
-RCT_EXTERN_METHOD(hide:(nonnull NSString *)viewId
-                  success:(nonnull NSNumber *)success
-                  event:(NSDictionary *)event)
-
-RCT_EXTERN_METHOD(handle:(nonnull NSString *)viewId
-                  action:(nullable NSDictionary *)actionMap)
-
-RCT_EXTERN_METHOD(update:(nonnull NSString *)viewId
-                  results:(nullable NSArray *)results)
-
-RCT_EXTERN_METHOD(confirm:(nonnull NSString *)viewId
-                  success:(nonnull NSNumber *)success
-                  address:(nullable NSDictionary *)address)
-
-@end
 
 

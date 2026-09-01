@@ -20,7 +20,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
     let appDelegate = newConfig.modResults.contents;
     if (
       appDelegate.includes('ADYRedirectComponent') ||
-      appDelegate.includes('import Adyen')
+      appDelegate.includes('import adyen_react_native')
     ) {
       return newConfig;
     }

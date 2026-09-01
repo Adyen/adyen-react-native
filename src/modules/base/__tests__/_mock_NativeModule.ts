@@ -5,7 +5,6 @@ import type {
   PaymentAction,
 } from '../../../core';
 import type { BaseNativeModule } from '../ModuleWrapper';
-import type { PaymentModule } from '../PaymentComponentWrapper';
 import type { ActionHandlingNativeModule } from '../ActionHandlingComponentWrapper';
 
 /**
@@ -34,24 +33,9 @@ export function createMockBaseNativeModule(
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
-    hide: jest.fn(),
-    getConstants: jest.fn(() => ({ supportedEvents })),
-  };
-}
-
-/**
- * Creates a mock PaymentModule for testing PaymentComponentWrapper
- */
-export function createMockPaymentModule(
-  supportedEvents: string[] = []
-): jest.Mocked<
-  PaymentModule & { getConstants: () => { supportedEvents: string[] } }
-> {
-  return {
-    addListener: jest.fn(),
-    removeListeners: jest.fn(),
-    hide: jest.fn(),
-    open: jest.fn(),
+    action: jest.fn(),
+    completion: jest.fn(),
+    retry: jest.fn(),
     getConstants: jest.fn(() => ({ supportedEvents })),
   };
 }
@@ -69,8 +53,9 @@ export function createMockActionHandlingModule(
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
-    hide: jest.fn(),
-    open: jest.fn(),
+    action: jest.fn(),
+    completion: jest.fn(),
+    retry: jest.fn(),
     handle: jest.fn(),
     getConstants: jest.fn(() => ({ supportedEvents })),
   };

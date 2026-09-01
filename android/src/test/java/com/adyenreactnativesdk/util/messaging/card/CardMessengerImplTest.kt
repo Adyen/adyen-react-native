@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.util.messaging.card
 
+import com.adyen.checkout.card.BinLookupBrand
 import com.adyen.checkout.card.BinLookupData
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MockEmitter
@@ -43,8 +44,14 @@ class CardMessengerImplTest {
     // GIVEN
     val binLookupData =
       listOf(
-        BinLookupData(brand = "visa", paymentMethodVariant = "visa", isReliable = true),
-        BinLookupData(brand = "mc", paymentMethodVariant = "mc", isReliable = true),
+        BinLookupData(
+          issuingCountryCode = "NL",
+          brands =
+            listOf(
+              BinLookupBrand(brand = "visa", supported = true, paymentMethodVariant = "visa"),
+              BinLookupBrand(brand = "mc", supported = true, paymentMethodVariant = "mc"),
+            ),
+        ),
       )
 
     // WHEN

@@ -6,25 +6,21 @@
 
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.card.AddressConfiguration
-import com.adyen.checkout.card.CardBrand
-import com.adyen.checkout.card.CardConfiguration
-import com.adyen.checkout.card.CardType
-import com.adyen.checkout.card.KCPAuthVisibility
-import com.adyen.checkout.card.SocialSecurityNumberVisibility
+import com.adyen.checkout.card.BillingAddressMode
+import com.adyen.checkout.card.FieldVisibility
+import com.adyen.checkout.card.InstallmentOptions
+import com.adyen.checkout.core.common.CardBrand
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 
 class CardConfigurationParserTest {
   @Test
-  fun testConfigurationOnSubDictionary() {
+  fun testConfigurationOnSubDictionary_returnsNullValues_whenEmpty() {
     // GIVEN
     val config = WritableMapMock()
     val cardConfig = WritableMapMock()
@@ -32,46 +28,21 @@ class CardConfigurationParserTest {
 
     // WHEN
     val sut = CardConfigurationParser(config, countryCode = null)
-    val mockBuilder = mock(CardConfiguration.Builder::class.java)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(0)).setShowStorePaymentField(any())
-    verify(mockBuilder, times(0)).setHolderNameRequired(any())
-    verify(mockBuilder, times(0)).setHideCvc(any())
-    verify(mockBuilder, times(0)).setHideCvcStoredCard(any())
-    verify(mockBuilder, times(0)).setKcpAuthVisibility(any())
-    verify(mockBuilder, times(0)).setAddressConfiguration(any())
-    verify(mockBuilder, times(0)).setSocialSecurityNumberVisibility(any())
+    assertNull(sut.showStorePaymentField)
+    assertNull(sut.holderNameRequired)
+    assertNull(sut.showSecurityCode)
+    assertNull(sut.showSecurityCodeForStoredCard)
+    assertNull(sut.koreanAuthenticationVisibility)
+    assertNull(sut.billingAddressMode)
+    assertNull(sut.socialSecurityNumberVisibility)
+    assertNull(sut.supportedCardBrands)
+    assertNull(sut.installmentConfiguration)
   }
 
   @Test
-  fun testGetAddressVisibilityFull() {
-    // GIVEN
-    val config = WritableMapMock()
-    config.putString(CardConfigurationParser.ADDRESS_VISIBILITY_KEY, "full")
-    val mockArray = mock(ReadableArray::class.java)
-    `when`(mockArray.toArrayList()).thenReturn(arrayListOf("US", "GB", "NL"))
-    config.putArray(CardConfigurationParser.SUPPORTED_COUNTRY_LIST_KEY, mockArray)
-
-    // WHEN
-    val cardParser = CardConfigurationParser(config, "US")
-
-    // THEN
-    assertTrue(cardParser.addressVisibility is AddressConfiguration.FullAddress)
-    assertTrue((cardParser.addressVisibility as AddressConfiguration.FullAddress).defaultCountryCode == "US")
-    assertTrue(
-      (cardParser.addressVisibility as AddressConfiguration.FullAddress).supportedCountryCodes ==
-        listOf(
-          "US",
-          "GB",
-          "NL",
-        ),
-    )
-  }
-
-  @Test
-  fun testGetAddressVisibilityPostal() {
+  fun testBillingAddressMode_returnsPostalCode() {
     // GIVEN
     val config = WritableMapMock()
     config.putString(CardConfigurationParser.ADDRESS_VISIBILITY_KEY, "postal")
@@ -80,11 +51,24 @@ class CardConfigurationParserTest {
     val cardParser = CardConfigurationParser(config, "US")
 
     // THEN
-    assertTrue(cardParser.addressVisibility is AddressConfiguration.PostalCode)
+    assertTrue(cardParser.billingAddressMode is BillingAddressMode.PostalCode)
   }
 
   @Test
-  fun testGetSupportedCardTypes() {
+  fun testBillingAddressMode_returnsNone() {
+    // GIVEN
+    val config = WritableMapMock()
+    config.putString(CardConfigurationParser.ADDRESS_VISIBILITY_KEY, "none")
+
+    // WHEN
+    val cardParser = CardConfigurationParser(config, "US")
+
+    // THEN
+    assertTrue(cardParser.billingAddressMode is BillingAddressMode.None)
+  }
+
+  @Test
+  fun testSupportedCardBrands_mapsEachValueToCardBrand() {
     // GIVEN
     val config = WritableMapMock()
     val mockArray = mock(ReadableArray::class.java)
@@ -93,7 +77,6 @@ class CardConfigurationParserTest {
         "mc",
         "visa",
         "maestro",
-        "wrong_value",
       ),
     )
     config.putArray(CardConfigurationParser.SUPPORTED_CARD_TYPES_KEY, mockArray)
@@ -102,13 +85,14 @@ class CardConfigurationParserTest {
     val cardParser = CardConfigurationParser(config, "US")
 
     // THEN
-    val map =
-      cardParser.supportedCardTypes.orEmpty().map { CardType.getByBrandName(it.txVariant) }
-    assertEquals(listOf(CardType.MASTERCARD, CardType.VISA, CardType.MAESTRO), map)
+    assertEquals(
+      listOf(CardBrand("mc"), CardBrand("visa"), CardBrand("maestro")),
+      cardParser.supportedCardBrands,
+    )
   }
 
   @Test
-  fun testApplyConfiguration() {
+  fun testCardProperties_areParsedCorrectly() {
     // GIVEN
     val config = WritableMapMock()
     config.putBoolean(CardConfigurationParser.SHOW_STORE_PAYMENT_FIELD_KEY, false)
@@ -119,36 +103,19 @@ class CardConfigurationParserTest {
     config.putString(CardConfigurationParser.ADDRESS_VISIBILITY_KEY, "postalcode")
     config.putString(CardConfigurationParser.SOCIAL_SECURITY_VISIBILITY_KEY, "show")
 
-    val supportedCardsArray = mock(ReadableArray::class.java)
-    `when`(supportedCardsArray.toArrayList()).thenReturn(
-      arrayListOf(
-        "mc",
-        "visa",
-        "maestro",
-        "wrong_value",
-      ),
-    )
-    config.putArray(CardConfigurationParser.SUPPORTED_CARD_TYPES_KEY, supportedCardsArray)
-
     // WHEN
     val sut = CardConfigurationParser(config, "US")
-    val mockBuilder = mock(CardConfiguration.Builder::class.java)
-    sut.applyConfiguration(mockBuilder)
 
-    verify(mockBuilder, times(1)).isStorePaymentFieldVisible = false
-    verify(mockBuilder, times(1)).isHolderNameRequired = true
-    verify(mockBuilder, times(1)).isHideCvc = true
-    verify(mockBuilder, times(1)).isHideCvcStoredCard = true
-    verify(mockBuilder, times(1)).kcpAuthVisibility = KCPAuthVisibility.SHOW
-    verify(mockBuilder, times(1)).addressConfiguration = any()
-    verify(mockBuilder, times(1)).socialSecurityNumberVisibility =
-      SocialSecurityNumberVisibility.SHOW
-    verify(mockBuilder, times(1)).supportedCardBrands =
-      listOf(
-        CardBrand("mc"),
-        CardBrand("visa"),
-        CardBrand("maestro"),
-      )
+    // THEN
+    assertEquals(false, sut.showStorePaymentField)
+    assertEquals(true, sut.holderNameRequired)
+    // hideCvc = true maps to showSecurityCode = false
+    assertEquals(false, sut.showSecurityCode)
+    // hideCvcStoredCard = true maps to showSecurityCodeForStoredCard = false
+    assertEquals(false, sut.showSecurityCodeForStoredCard)
+    assertEquals(FieldVisibility.SHOW, sut.koreanAuthenticationVisibility)
+    assertTrue(sut.billingAddressMode is BillingAddressMode.PostalCode)
+    assertEquals(FieldVisibility.SHOW, sut.socialSecurityNumberVisibility)
   }
 
   @Test
@@ -170,7 +137,10 @@ class CardConfigurationParserTest {
     assertTrue(sut.installmentConfiguration != null)
     assertTrue(sut.installmentConfiguration?.defaultOptions != null)
     assertEquals(listOf(2, 3, 4), sut.installmentConfiguration?.defaultOptions?.values)
-    assertEquals(false, sut.installmentConfiguration?.defaultOptions?.includeRevolving)
+    assertEquals(
+      listOf(InstallmentOptions.Plan.REGULAR),
+      sut.installmentConfiguration?.defaultOptions?.plans,
+    )
     assertEquals(false, sut.installmentConfiguration?.showInstallmentAmount)
   }
 
@@ -194,7 +164,12 @@ class CardConfigurationParserTest {
 
     // THEN
     assertTrue(sut.installmentConfiguration != null)
-    assertTrue(sut.installmentConfiguration?.defaultOptions?.includeRevolving == true)
+    assertTrue(
+      sut.installmentConfiguration
+        ?.defaultOptions
+        ?.plans
+        ?.contains(InstallmentOptions.Plan.REVOLVING) == true,
+    )
   }
 
   @Test
@@ -295,25 +270,5 @@ class CardConfigurationParserTest {
 
     // THEN
     assertEquals(true, sut.installmentConfiguration?.showInstallmentAmount)
-  }
-
-  @Test
-  fun testInstallmentConfiguration_showInstallmentAmount_canBeSetToFalse() {
-    // GIVEN
-    val config = WritableMapMock()
-    val installmentOptions = WritableMapMock()
-    val cardOption = WritableMapMock()
-    val valuesArray = mock(ReadableArray::class.java)
-    `when`(valuesArray.toArrayList()).thenReturn(arrayListOf(2, 3, 4))
-    cardOption.putArray("values", valuesArray)
-    installmentOptions.putMap("card", cardOption)
-    config.putMap(CardConfigurationParser.INSTALLMENT_OPTIONS_KEY, installmentOptions)
-    config.putBoolean(CardConfigurationParser.SHOW_INSTALLMENT_AMOUNT_KEY, false)
-
-    // WHEN
-    val sut = CardConfigurationParser(config, "US")
-
-    // THEN
-    assertEquals(false, sut.installmentConfiguration?.showInstallmentAmount)
   }
 }

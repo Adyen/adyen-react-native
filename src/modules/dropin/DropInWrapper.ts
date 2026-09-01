@@ -1,13 +1,13 @@
 import type {
+  AddressLookup,
+  AddressLookupItem,
   Balance,
+  Checkout,
   Order,
   PartialPaymentComponent,
   PaymentMethodsResponse,
 } from '../../core';
-import {
-  AddressLookupModule,
-  type AddressLookupNativeModule,
-} from '../base/AddressLookupModule';
+import { ModuleWrapper, type BaseNativeModule } from '../base/ModuleWrapper';
 import type { DropInModule } from './AdyenDropIn';
 
 /**
@@ -18,29 +18,62 @@ export interface RemovesStoredPayment {
   removeStored(success: boolean): void;
 }
 
-/** Native module interface specific to DropIn */
+/**
+ * @internal
+ * Native module interface specific to DropIn.
+ */
 interface DropInNativeModule
-  extends
-    AddressLookupNativeModule,
-    PartialPaymentComponent,
-    DropInModule,
-    RemovesStoredPayment {}
+  extends BaseNativeModule, PartialPaymentComponent, RemovesStoredPayment {
+  start(paymentMethods: PaymentMethodsResponse): void;
+  getReturnURL(): Promise<string>;
+  providePaymentMethods(
+    paymentMethods: PaymentMethodsResponse,
+    order: Order | undefined
+  ): void;
+  update(results: AddressLookupItem[]): void;
+  confirm(
+    success: boolean,
+    body?: AddressLookupItem | { message?: string }
+  ): void;
+}
 
 /**
  * Drop-in wrapper with full feature support.
  */
 export class DropInWrapper
-  extends AddressLookupModule<DropInNativeModule>
-  implements DropInModule, RemovesStoredPayment, PartialPaymentComponent
+  extends ModuleWrapper<DropInNativeModule>
+  implements
+    DropInModule,
+    RemovesStoredPayment,
+    PartialPaymentComponent,
+    AddressLookup
 {
   name: string = 'DropIn';
+
+  start(checkout: Checkout): void {
+    this.nativeModule.start(checkout.paymentMethods);
+  }
 
   getReturnURL(): Promise<string> {
     return this.nativeModule.getReturnURL();
   }
+
+  // Address lookup methods (absorbed from AddressLookupModule)
+  update(results: AddressLookupItem[]) {
+    this.nativeModule.update(results);
+  }
+  confirm(address: AddressLookupItem) {
+    this.nativeModule.confirm(true, address);
+  }
+  reject(error?: { message: string }) {
+    this.nativeModule.confirm(false, error);
+  }
+
+  // TODO: v6 alpha - not yet supported
   removeStored(success: boolean): void {
     this.nativeModule.removeStored(success);
   }
+  // TODO: v6 alpha - not yet supported
   provideBalance(
     success: boolean,
     balance: Balance | undefined,
@@ -48,6 +81,7 @@ export class DropInWrapper
   ): void {
     this.nativeModule.provideBalance(success, balance, error);
   }
+  // TODO: v6 alpha - not yet supported
   provideOrder(
     success: boolean,
     order: Order | undefined,
@@ -55,6 +89,7 @@ export class DropInWrapper
   ): void {
     this.nativeModule.provideOrder(success, order, error);
   }
+  // TODO: v6 alpha - not yet supported
   providePaymentMethods(
     paymentMethods: PaymentMethodsResponse,
     order: Order | undefined

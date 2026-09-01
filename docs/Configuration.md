@@ -1,5 +1,18 @@
 # Configuration
 
+> [!IMPORTANT]
+> **v6 API change:** Configuration is passed to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`:
+>
+> ```tsx
+> import { AdyenCheckout } from '@adyen/react-native';
+>
+> // Session flow:
+> const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
+>
+> // Advanced flow:
+> const checkout = await AdyenCheckout.setupAdvanced(paymentMethods, configuration, callbacks);
+> ```
+
 ## Root configurations
 
 | Parameter     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Required                                                                 |

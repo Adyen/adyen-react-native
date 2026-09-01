@@ -8,11 +8,28 @@ import Adyen
 
 public struct CardConfigurationParser {
 
-    private var dict: NSDictionary
-    private unowned var delegate: AddressLookupProvider
+    public typealias AddressLookupHandler = (String) async -> [AddressLookupResult]
+    public typealias AddressCompletionHandler = (AddressLookupResult) async throws -> PostalAddress
+    public typealias BinChangeHandler = (String) -> Void
+    public typealias BinLookupHandler = (BinLookupData) -> Void
 
-    public init(configuration: NSDictionary, delegate: AddressLookupProvider) {
-        self.delegate = delegate
+    private var dict: NSDictionary
+    private let onAddressLookup: AddressLookupHandler?
+    private let onAddressSelected: AddressCompletionHandler?
+    private let onBinChange: BinChangeHandler?
+    private let onBinLookup: BinLookupHandler?
+
+    public init(
+        configuration: NSDictionary,
+        onAddressLookup: AddressLookupHandler? = nil,
+        onAddressSelected: AddressCompletionHandler? = nil,
+        onBinChange: BinChangeHandler? = nil,
+        onBinLookup: BinLookupHandler? = nil
+    ) {
+        self.onAddressLookup = onAddressLookup
+        self.onAddressSelected = onAddressSelected
+        self.onBinChange = onBinChange
+        self.onBinLookup = onBinLookup
         if let configurationNode = configuration[CardKeys.rootKey] as? NSDictionary {
             self.dict = configurationNode
         } else {
@@ -42,28 +59,40 @@ public struct CardConfigurationParser {
         return !value
     }
 
-    var addressVisibility: CardComponent.AddressFormType {
-        guard let value = dict[CardKeys.addressVisibility] as? String else {
+    var billingAddressMode: BillingAddressMode {
+        guard let value = (dict[CardKeys.addressVisibility] as? String)?.lowercased() else {
             return .none
         }
 
-        return .init(rawValue: value, delegate: delegate)
+        switch value {
+        case "postalcode", "postal_code", "postal":
+            return .postalCode()
+        case "full":
+            return .full(supportedCountryCodes: billingAddressCountryCodes ?? [])
+        case "lookup":
+            guard let onAddressLookup else {
+                return .full(supportedCountryCodes: billingAddressCountryCodes ?? [])
+            }
+            return .lookup(onAddressLookup: onAddressLookup, onAddressSelected: onAddressSelected)
+        default:
+            return .none
+        }
     }
 
-    var kcpVisibility: CardComponent.FieldVisibility {
+    var kcpVisibility: CardConfiguration.FieldVisibility {
         parseVisibility(CardKeys.kcpVisibility)
     }
 
-    var socialSecurityVisibility: CardComponent.FieldVisibility {
+    var socialSecurityVisibility: CardConfiguration.FieldVisibility {
         parseVisibility(CardKeys.socialSecurity)
     }
 
-    var allowedCardTypes: [CardType]? {
+    var supportedCardBrands: [CardBrand]? {
         guard let strings = dict[CardKeys.allowedCardTypes] as? [String], !strings.isEmpty else {
             return nil
         }
 
-        return strings.map { CardType(rawValue: $0) }
+        return strings.map { CardBrand(rawValue: $0) }
     }
 
     var billingAddressCountryCodes: [String]? {
@@ -71,19 +100,6 @@ public struct CardConfigurationParser {
             return nil
         }
         return strings
-    }
-
-    var storedCardConfiguration: StoredCardConfiguration {
-        var storedCardConfiguration = StoredCardConfiguration()
-        storedCardConfiguration.showsSecurityCodeField = showsStoredSecurityCodeField
-        return storedCardConfiguration
-    }
-
-    var billingAddressConfiguration: BillingAddressConfiguration {
-        var billingAddressConfiguration = BillingAddressConfiguration()
-        billingAddressConfiguration.countryCodes = billingAddressCountryCodes
-        billingAddressConfiguration.mode = addressVisibility
-        return billingAddressConfiguration
     }
 
     var installmentConfiguration: InstallmentConfiguration? {
@@ -98,56 +114,41 @@ public struct CardConfigurationParser {
         ).installmentConfiguration
     }
 
-    public var configuration: CardComponent.Configuration {
-        .init(style: FormComponentStyle(),
-              shopperInformation: nil,
-              localizationParameters: nil,
-              showsHolderNameField: showsHolderNameField,
-              showsStorePaymentMethodField: showsStorePaymentMethodField,
-              showsSecurityCodeField: showsSecurityCodeField,
-              koreanAuthenticationMode: kcpVisibility,
-              socialSecurityNumberMode: socialSecurityVisibility,
-              storedCardConfiguration: storedCardConfiguration,
-              allowedCardTypes: allowedCardTypes,
-              installmentConfiguration: installmentConfiguration,
-              billingAddress: billingAddressConfiguration)
+    public var configuration: CardConfiguration {
+        var configuration = CardConfiguration()
+            .showCardholderName(showsHolderNameField)
+            .showStorePaymentMethod(showsStorePaymentMethodField)
+            .showSecurityCode(showsSecurityCodeField)
+            .showSecurityCodeForStoredCard(showsStoredSecurityCodeField)
+            .koreanAuthenticationVisibility(kcpVisibility)
+            .socialSecurityNumberVisibility(socialSecurityVisibility)
+            .billingAddressMode(billingAddressMode)
+
+        if let supportedCardBrands {
+            configuration = configuration.supportedCardBrands(supportedCardBrands)
+        }
+
+        if let installmentConfiguration {
+            configuration = configuration.installmentConfiguration(installmentConfiguration)
+        }
+
+        if let onBinChange {
+            configuration = configuration.onBinChange(onBinChange)
+        }
+
+        if let onBinLookup {
+            configuration = configuration.onBinLookup(onBinLookup)
+        }
+
+        return configuration
     }
 
-    public var dropinConfiguration: DropInComponent.Card {
-        .init(showsHolderNameField: showsHolderNameField,
-              showsStorePaymentMethodField: showsStorePaymentMethodField,
-              showsSecurityCodeField: showsSecurityCodeField,
-              koreanAuthenticationMode: kcpVisibility,
-              socialSecurityNumberMode: socialSecurityVisibility,
-              storedCardConfiguration: storedCardConfiguration,
-              allowedCardTypes: allowedCardTypes,
-              installmentConfiguration: installmentConfiguration,
-              billingAddress: billingAddressConfiguration)
-    }
-
-    private func parseVisibility(_ key: String) -> CardComponent.FieldVisibility {
+    private func parseVisibility(_ key: String) -> CardConfiguration.FieldVisibility {
         guard let value = dict[key] as? String else {
             return .hide
         }
 
         return value == "show" ? .show : .hide
-    }
-
-}
-
-extension CardComponent.AddressFormType {
-
-    internal init(rawValue: String, delegate: AddressLookupProvider) {
-        switch rawValue.lowercased() {
-        case "postalcode", "postal_code", "postal":
-            self = .postalCode
-        case "full":
-            self = .full
-        case "lookup":
-            self = .lookup(provider: delegate)
-        default:
-            self = .none
-        }
     }
 
 }

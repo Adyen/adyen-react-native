@@ -6,18 +6,20 @@
 
 package com.adyenreactnativesdk
 
-import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
-import com.adyenreactnativesdk.component.SessionHelperModule
-import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
+import android.annotation.SuppressLint
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatform
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatformParams
+import com.adyenreactnativesdk.component.ComponentModule
+import com.adyenreactnativesdk.component.ContextModule
+import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.dropin.DropInModule
-import com.adyenreactnativesdk.component.googlepay.GooglePayModule
-import com.adyenreactnativesdk.component.instant.InstantModule
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
-import com.adyenreactnativesdk.react.CardViewManager
-import com.adyenreactnativesdk.react.PlatformPayViewManager
+import com.adyenreactnativesdk.react.AdyenComponentViewManager
+import com.adyenreactnativesdk.util.messaging.EventSource
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
+import com.adyenreactnativesdk.util.messaging.TaggedEmitter
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
@@ -26,26 +28,22 @@ import com.facebook.react.uimanager.ViewManager
 class AdyenPaymentPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
     ensureInitialized(reactContext)
-    val cardView = CardViewManager(emitter)
 
     return listOf(
-      PlatformPayViewManager(),
-      cardView,
+      AdyenComponentViewManager(emitter),
     )
   }
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     ensureInitialized(reactContext)
     val sharedBus = messageBus
+    BaseModule.configureAnalytics()
     return listOf(
       DropInModule(reactContext, sharedBus),
-      InstantModule(reactContext, sharedBus),
-      GooglePayModule(reactContext, sharedBus),
-      ApplePayModuleMock(reactContext, sharedBus),
+      ComponentModule(reactContext, sharedBus),
       AdyenCSEModule(reactContext),
-      SessionHelperModule(reactContext, sharedBus),
+      ContextModule(reactContext, sharedBus),
       ActionModule(reactContext),
-      EmbeddedComponentBusModule(reactContext, sharedBus),
     )
   }
 
@@ -53,16 +51,30 @@ class AdyenPaymentPackage : ReactPackage {
     val messageBus: MessageBus
       get() = _messageBus ?: throw IllegalStateException("AdyenCheckout MessageBus is not initialized")
 
+    /**
+     * Bus for events produced by Drop-in, tagged so JS can route results back to it.
+     *
+     * Drop-in is the primary presenter, so it states its identity explicitly rather than relying
+     * on JS treating an absent tag as Drop-in. That fallback stays only for compatibility.
+     */
+    val dropInMessageBus: MessageBus
+      get() = _dropInMessageBus ?: throw IllegalStateException("AdyenCheckout Drop-in MessageBus is not initialized")
+
     val emitter: MessageBusEmitter
       get() = _emitter ?: throw IllegalStateException("AdyenCheckout MessageBusEmitter is not initialized")
 
     internal fun messageBusOrNull(): MessageBus? = _messageBus
+
+    internal fun dropInMessageBusOrNull(): MessageBus? = _dropInMessageBus
 
     @Volatile
     private var _emitter: MessageBusEmitter? = null
 
     @Volatile
     private var _messageBus: MessageBus? = null
+
+    @Volatile
+    private var _dropInMessageBus: MessageBus? = null
 
     @Volatile
     private var currentContextHashCode: Int = 0
@@ -80,6 +92,7 @@ class AdyenPaymentPackage : ReactPackage {
         val newEmitter = MessageBusEmitter(context)
         _emitter = newEmitter
         _messageBus = MessageBus(newEmitter)
+        _dropInMessageBus = MessageBus(TaggedEmitter.forSource(newEmitter, EventSource.DROPIN))
         currentContextHashCode = contextHash
       }
     }

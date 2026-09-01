@@ -20,9 +20,14 @@ internal class BaseModuleSender: BaseModule {
         emitterOverride ?? self
     }
 
+    /// Suspended advanced-flow closures for this module, resumed once JS returns a result.
+    internal let resultSink = AdvancedResultSink()
+
+    internal var checkout: BaseCheckout?
+
     override func stopObserving() { /* No JS events expected */ }
     override func startObserving() { /* No JS events expected */ }
-    
+
     override open func supportedEvents() -> [String]! {
         [EventName.fail, EventName.submit].map(\.rawValue)
     }
@@ -48,22 +53,44 @@ internal class BaseModuleSender: BaseModule {
         emitter.send(event: EventName.submit, body: response.jsonObject)
     }
 
-    internal func sendCompleteEvent() {
-        let result = ResultDTO(result: .presentToShopper)
-        emitter.send(event: EventName.complete, body: result.jsonObject)
+    internal func sendCompleteEvent(resultCode: CheckoutResultCode) {
+        emitter.send(event: EventName.complete, body: [Key.resultCode: resultCode.rawValue])
     }
 
     internal func sendProvideEvent(actionData: ActionComponentData) {
         emitter.send(event: EventName.additionalDetails, body: actionData.jsonObject)
     }
 
+    // MARK: - JS payment result bridging
+
+    // TODO: providePaymentResult and provideAdditionalDetailsResult removed —
+    // continuation resolution is now handled by completion() and retry() in subclasses.
+
     override internal func sendError(error: Error) {
         let errorToSend = checkErrorType(error)
-        if let _ = BaseModule.session {
-            BaseModule.sessionDelegate?.sendError(error: error)
+        if BaseModule.checkoutState?.isSession == true {
+            let eventName: EventName = .failSession
+            ensureMainThread { [weak self] in
+                self?.emitter.send(event: eventName, body: errorToSend.jsonObject)
+            }
             return
         }
-        emitter.send(event: EventName.fail, body: errorToSend.jsonObject)
+        ensureMainThread { [weak self] in
+            self?.emitter.send(event: EventName.fail, body: errorToSend.jsonObject)
+        }
     }
 
+    // MARK: - Cleanup
+
+    override func cleanUp() {
+        ensureMainThread { [weak self] in
+            self?.resultSink.cancelPending()
+            self?.checkout = nil
+        }
+        super.cleanUp()
+    }
+
+    private enum Key {
+        static let resultCode = "resultCode"
+    }
 }
