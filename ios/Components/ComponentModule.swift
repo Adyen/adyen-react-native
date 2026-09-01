@@ -48,6 +48,13 @@ internal final class ComponentModule: BaseAddressModule {
         delegates.removeValue(forKey: viewId)?.dispose()
         lookupHandlers.removeValue(forKey: viewId)
         lookupCompletionHandlers.removeValue(forKey: viewId)
+        // A proxy re-points the shared checkout's advanced closures at itself while it is mounted.
+        // Once the last one is gone, hand ownership back so a headless submit is not emitted at a
+        // disposed proxy. Only when no proxies remain — otherwise this would steal the closures
+        // from a view that is still mounted.
+        if delegates.isEmpty {
+            ContextModule.shared?.reattachAdvancedCallbacks()
+        }
     }
 
     // MARK: - Lookup handler storage (called by ComponentProxy)
@@ -125,10 +132,11 @@ internal final class ComponentModule: BaseAddressModule {
 
     private func unsubscribeOnMainThread(_ viewId: String) {
         subscribedViews.remove(viewId)
+        // Deliberately does not tear the checkout down when the last view unsubscribes. Per the
+        // lifecycle contract, native teardown happens only on a terminal event or `invalidate()`;
+        // nilling `checkoutState` here also broke a headless `submit()` after an embedded view
+        // unmounted, and left JS believing the checkout was still active.
         unregister(viewId: viewId)
-        if subscribedViews.isEmpty {
-            cleanUpOnMainThread()
-        }
     }
 
     private func actionOnMainThread(_ viewId: String, actionDict: NSDictionary?) {

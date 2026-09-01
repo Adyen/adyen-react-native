@@ -1,5 +1,23 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { ContextModuleWrapper } from '../ContextModuleWrapper';
+import { Event } from '../../../core';
+
+// Captures the handlers registered on the emitter so events can be fired manually.
+const mockListeners = new Map<string, ((data: any) => void)[]>();
+
+jest.mock('react-native', () => ({
+  NativeEventEmitter: jest.fn().mockImplementation(() => ({
+    addListener: (event: string, handler: (data: any) => void) => {
+      if (!mockListeners.has(event)) mockListeners.set(event, []);
+      mockListeners.get(event)!.push(handler);
+      return { remove: jest.fn() };
+    },
+  })),
+}));
+
+function fire(event: Event, data: any) {
+  (mockListeners.get(event) ?? []).forEach((handler) => handler(data));
+}
 
 /** Mock ContextNativeModule */
 function createMockContextModule() {
@@ -34,6 +52,44 @@ describe('ContextModuleWrapper', () => {
 
   beforeEach(() => {
     mockNativeModule = createMockContextModule();
+    mockListeners.clear();
+  });
+
+  describe('view-tagged event filtering', () => {
+    test('ignores events produced by an embedded view', () => {
+      const wrapper = new ContextModuleWrapper(mockNativeModule);
+      const callback = jest.fn();
+      wrapper.assignSubmitHandler(callback);
+
+      fire(Event.onSubmit, { viewId: 'view-1', paymentData: {} });
+
+      // The view has its own listener. Handling it here as well would run the merchant
+      // callback twice and dispatch two results for one payment.
+      expect(callback).not.toHaveBeenCalled();
+    });
+
+    test('receives events that no view produced', () => {
+      const wrapper = new ContextModuleWrapper(mockNativeModule);
+      const callback = jest.fn();
+      wrapper.assignSubmitHandler(callback);
+
+      fire(Event.onSubmit, { source: 'context', paymentData: {} });
+
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    test('before-submit is never view-tagged, so it still reaches the handler', () => {
+      // Load-bearing invariant. The session before-submit bridge is context-owned and emits on
+      // the untagged bus even for embedded views. If it ever became view-tagged the filter above
+      // would swallow it and the session flow would deadlock on a suspended continuation.
+      const wrapper = new ContextModuleWrapper(mockNativeModule);
+      const callback = jest.fn();
+      wrapper.assignBeforeSubmitHandler(callback);
+
+      fire(Event.onBeforeSubmit, { shopperEmail: 'shopper@example.com' });
+
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('setup', () => {

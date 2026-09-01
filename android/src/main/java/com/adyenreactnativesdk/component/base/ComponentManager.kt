@@ -44,6 +44,16 @@ internal class ComponentManager(
   private var submitContinuation: CancellableContinuation<SubmitResult>? = null
   private var additionalDetailsContinuation: CancellableContinuation<AdditionalDetailsResult>? = null
 
+  /**
+   * Whether this manager has a suspended SDK closure waiting on a result from JS.
+   *
+   * Lets a caller holding several managers (e.g. [com.adyenreactnativesdk.component.ContextModule],
+   * which caches one per payment method type) route an incoming `action` / `completion` / `retry`
+   * to the one that is actually awaiting it.
+   */
+  val isAwaitingResult: Boolean
+    get() = submitContinuation != null || additionalDetailsContinuation != null
+
   suspend fun createController(
     context: CheckoutContext,
     paymentMethodType: String,

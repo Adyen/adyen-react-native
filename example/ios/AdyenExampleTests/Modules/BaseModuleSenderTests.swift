@@ -8,6 +8,7 @@ import XCTest
 @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
 
+@MainActor
 final class BaseModuleSenderTests: XCTestCase {
 
     var sut: TestableBaseModuleSender!

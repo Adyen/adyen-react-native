@@ -14,10 +14,12 @@ This is a React Native SDK with three platform targets:
 
 > **Before anything else in a fresh clone, run `npm start`.** This bootstraps the project and installs Husky git hooks (linters + JS tests run on every commit). Skipping this will cause commit hooks to fail. If packages fail to resolve, do not attempt to override the registry (e.g. do not add `--registry https://registry.npmjs.org`). Inform the user instead — the environment may use a private registry.
 
-- **JS tests**: `yarn test`
 - **Typecheck**: `yarn typecheck`
 - **Lint**: `yarn lint`
 - **Build declarations**: `yarn prepare`
+- **iOS pods**: `yarn app pod` - run before running tests on iOS
+- **JS tests**: `yarn test`
+- **Native tests**: `yarn test:android`, `yarn test:ios` (or `yarn test:native` for both).
 - **Check the committed Public API snapshot**: `yarn api-extractor`
 - **Update the Public API snapshot intentionally**: `yarn api-extractor:update`
 - **iOS build**: CI runs via Xcode (see `.github/workflows/`)

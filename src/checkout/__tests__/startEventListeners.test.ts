@@ -1,7 +1,10 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { Event } from '../../core';
 import { SubmitResult } from '../../core';
-import { startEventListeners } from '../utils/startEventListeners';
+import {
+  startDropInEventListeners,
+  startEventListeners,
+} from '../utils/startEventListeners';
 
 // --------------------------------------------------------------------------
 // NativeEventEmitter mock — captures handlers so we can fire them manually
@@ -238,6 +241,52 @@ describe('startEventListeners', () => {
     startEventListeners(createComponent([Event.onError]), refs, 'view-1');
     fire(Event.onError, { viewId: 'view-1', message: 'err', errorCode: 'x' });
     expect(refs.onError.current).toHaveBeenCalled();
+  });
+
+  test('a listener with no viewId ignores events produced by a view', () => {
+    // The other half of the attribution rule. Event names are global, so without this a
+    // non-view listener would also receive every embedded view's events and fire twice.
+    const refs = createRefs();
+    startEventListeners(createComponent([Event.onError]), refs);
+    fire(Event.onError, { viewId: 'view-1', message: 'err', errorCode: 'x' });
+    expect(refs.onError.current).not.toHaveBeenCalled();
+  });
+
+  test('a listener with no viewId receives untagged events', () => {
+    const refs = createRefs();
+    startEventListeners(createComponent([Event.onError]), refs);
+    fire(Event.onError, { message: 'err', errorCode: 'x' });
+    expect(refs.onError.current).toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Drop-in families
+  // -------------------------------------------------------------------------
+
+  test('startDropInEventListeners wires the families Drop-in owns', () => {
+    const onDisableStoredPaymentMethod = jest.fn();
+    const refs = createRefs({}, { onDisableStoredPaymentMethod });
+    const component = createComponent([Event.onDisableStoredPaymentMethod]);
+
+    startDropInEventListeners(component, refs);
+    fire(Event.onDisableStoredPaymentMethod, { id: 'stored-1' });
+
+    // Previously subscribed nowhere: startEventListeners was only ever called per viewId.
+    expect(onDisableStoredPaymentMethod).toHaveBeenCalled();
+  });
+
+  test('startDropInEventListeners does not subscribe core events', () => {
+    const refs = createRefs();
+    const component = createComponent([Event.onSubmit, Event.onError]);
+
+    startDropInEventListeners(component, refs);
+    fire(Event.onSubmit, { paymentData: {} });
+    fire(Event.onError, { message: 'err', errorCode: 'x' });
+
+    // Core events arrive on the context listeners and are routed by presenter tag. Subscribing
+    // them here too would invoke the merchant callbacks a second time.
+    expect(refs.onSubmit.current).not.toHaveBeenCalled();
+    expect(refs.onError.current).not.toHaveBeenCalled();
   });
 
   // -------------------------------------------------------------------------

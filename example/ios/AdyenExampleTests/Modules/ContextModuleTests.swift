@@ -8,6 +8,9 @@
 import PassKit
 import XCTest
 
+/// The Apple Pay handlers and `cancelApplePayCallbacks()` are main-actor isolated on
+/// ContextModule, so the whole test case runs on the main actor.
+@MainActor
 final class ContextModuleTests: XCTestCase {
 
     private var sut: ContextModule!

@@ -15,6 +15,8 @@ import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethod
 import com.adyen.checkout.core.components.paymentmethod.PaymentMethodTypes
 import com.adyen.checkout.core.sessions.SessionResponse
 import com.adyen.checkout.core.sessions.internal.data.model.SessionSetupResponse
+import com.adyenreactnativesdk.AdyenPaymentPackage
+import com.adyenreactnativesdk.component.base.BaseActionModule
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentManager
@@ -24,7 +26,9 @@ import com.adyenreactnativesdk.component.googlepay.GooglePayAvailability
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
+import com.adyenreactnativesdk.util.messaging.EventSource
 import com.adyenreactnativesdk.util.messaging.MessageBus
+import com.adyenreactnativesdk.util.messaging.TaggedEmitter
 import com.adyenreactnativesdk.util.messaging.sessionEvents
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -35,9 +39,17 @@ import kotlinx.coroutines.launch
 class ContextModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
-) : BaseModule(reactContext, messageBus) {
+) : BaseActionModule(reactContext, messageBus) {
   /** Pre-built controllers keyed by payment method type, populated by [requiresUserInteraction]. */
   private val componentManagers: MutableMap<String, ComponentManager> = mutableMapOf()
+
+  /**
+   * The manager whose SDK closure is suspended waiting on JS, if any.
+   *
+   * Headless payments can build a manager per payment method type, but only one can be mid-flight,
+   * so the awaiting manager is the unambiguous target for `action` / `completion` / `retry`.
+   */
+  private fun awaitingManager(): ComponentManager? = componentManagers.values.firstOrNull { it.isAwaitingResult }
 
   override fun supportedEvents(): List<String> = EventName.sessionEvents()
 
@@ -59,10 +71,35 @@ class ContextModule(
     BaseModule.checkoutState?.sessionBeforeSubmitBridge?.provide(result)
   }
 
+  /**
+   * Forwards a JS-provided action into the suspended `onSubmit` closure so the SDK can present it
+   * (e.g. 3DS). No-op when nothing is pending.
+   */
+  @ReactMethod
+  fun action(actionMap: ReadableMap?) {
+    val manager = awaitingManager()
+    if (manager == null) {
+      Log.w(TAG, "No pending payment is awaiting an action")
+      return
+    }
+    try {
+      manager.handleAction(parseActionFromMap(actionMap))
+    } catch (e: Exception) {
+      sendError(e)
+    }
+  }
+
   @ReactMethod
   fun completion(resultCode: String) {
     if (BaseModule.checkoutState == null) {
       Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
+    }
+    // Advanced flow: resolve the suspended SDK closure instead of tearing the context down.
+    // Only fall back to cleanup() when nothing is pending, which preserves session behaviour.
+    val manager = awaitingManager()
+    if (manager != null) {
+      manager.completion(resultCode)
+      return
     }
     cleanup()
   }
@@ -72,6 +109,7 @@ class ContextModule(
     if (BaseModule.checkoutState == null) {
       Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
     }
+    awaitingManager()?.retry(message)
   }
 
   /** Called from JS terminal callbacks (onComplete / onError) via performAutoCleanup(). */
@@ -181,7 +219,12 @@ class ContextModule(
     .getOrPut(type) {
       ComponentManager(
         activity = appCompatActivity,
-        messageBus = messageBus,
+        // Must be the context-tagged bus, not the shared `messageBus`. ComponentManager is also
+        // used by embedded views, which inject a viewId-tagged bus; anything built on the untagged
+        // shared bus is read by JS as Drop-in and its result would be routed to the wrong module.
+        messageBus = MessageBus(TaggedEmitter.forSource(AdyenPaymentPackage.emitter, EventSource.CONTEXT)),
+        // Deliberately the context-owned bridge on the *untagged* bus: before-submit must never
+        // carry a tag, or the JS router would filter it out and deadlock the session flow.
         sessionBeforeSubmitBridge = BaseModule.checkoutState?.sessionBeforeSubmitBridge,
       )
     }.let { it.checkoutController ?: it.createController(context, type) }

@@ -46,6 +46,9 @@ android {
   testOptions {
     unitTests {
       includeAndroidResources = true
+      // Stub android.util.Log and friends instead of throwing "not mocked". Parsers log
+      // warnings on invalid input, so tests covering those branches need this.
+      returnDefaultValues = true
     }
   }
 

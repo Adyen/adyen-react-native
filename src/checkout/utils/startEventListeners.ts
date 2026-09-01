@@ -60,6 +60,9 @@ export type EventHandlerRefs = {
   config: { current: Configuration | null };
 };
 
+/** A native wrapper that can be subscribed to and can dispatch results back. */
+export type EventListenerTarget = AdyenEventListener & NativeResultDispatcher;
+
 /** Methods the native component exposes for dispatching submit/details results. */
 interface NativeResultDispatcher {
   action(action: any): void;
@@ -68,16 +71,65 @@ interface NativeResultDispatcher {
 }
 
 /**
+ * Groups of related events a caller can subscribe to independently.
+ *
+ * Which presenter owns which family differs. An embedded view owns everything it can emit, while
+ * Drop-in owns its own families but shares `core` with the context listeners, which route by
+ * presenter tag. Subscribing `core` from both would run merchant callbacks twice.
+ */
+export type ListenerFamily =
+  'core' | 'card' | 'addressLookup' | 'dropIn' | 'applePay';
+
+const ALL_FAMILIES: readonly ListenerFamily[] = [
+  'core',
+  'card',
+  'addressLookup',
+  'dropIn',
+  'applePay',
+];
+
+/** Families Drop-in owns exclusively. `core` is deliberately absent - see {@link ListenerFamily}. */
+const DROP_IN_FAMILIES: readonly ListenerFamily[] = [
+  'card',
+  'addressLookup',
+  'dropIn',
+];
+
+/**
+ * Subscribes the event families Drop-in owns.
+ *
+ * Stored-payment removal, partial payments and address lookup previously had no listener at all
+ * outside embedded views, because `startEventListeners` was only ever called per `viewId`. Without
+ * these the matching Drop-in configuration callbacks never fire.
+ *
+ * @param nativeComponent - The Drop-in wrapper.
+ * @param refs - Callback refs for event handlers.
+ */
+export function startDropInEventListeners(
+  nativeComponent: EventListenerTarget,
+  refs: EventHandlerRefs
+): EmitterSubscription[] {
+  return startEventListeners(
+    nativeComponent,
+    refs,
+    undefined,
+    DROP_IN_FAMILIES
+  );
+}
+
+/**
  * Start event listeners on a native component.
  *
  * @param nativeComponent - The native wrapper used for event subscription.
  * @param refs - Callback refs for event handlers.
  * @param viewId - When set, events are filtered by `data.viewId` (embedded component mode).
+ * @param families - Which event families to subscribe. Defaults to all of them.
  */
 export function startEventListeners(
-  nativeComponent: AdyenEventListener & NativeResultDispatcher,
+  nativeComponent: EventListenerTarget,
   refs: EventHandlerRefs,
-  viewId?: string
+  viewId?: string,
+  families: readonly ListenerFamily[] = ALL_FAMILIES
 ): EmitterSubscription[] {
   const eventEmitter = new NativeEventEmitter(
     nativeComponent.eventEmitterTarget
@@ -85,14 +137,22 @@ export function startEventListeners(
   const eventSubscriptions: EmitterSubscription[] = [];
 
   function subscribeIfSupported<T>(
+    family: ListenerFamily,
     event: Event,
     handler: (data: T) => void
   ): void {
+    if (!families.includes(family)) return;
     if (nativeComponent.isSupported(event)) {
       eventSubscriptions.push(
         eventEmitter.addListener(event, (rawData: any) => {
+          // Attribution rule, both halves: a listener bound to a view takes only that view's
+          // events, and a listener not bound to a view takes only events no view produced.
+          // Without the second half a non-view listener would also see every embedded view's
+          // events, because event names are global on both platforms.
           if (viewId) {
             if (rawData?.viewId !== viewId) return;
+          } else if (rawData?.viewId !== undefined) {
+            return;
           }
           handler(rawData as T);
         })
@@ -122,16 +182,17 @@ export function startEventListeners(
   }
 
   // Core events
-  subscribeIfSupported<SubmitModel>(Event.onSubmit, (response) =>
+  subscribeIfSupported<SubmitModel>('core', Event.onSubmit, (response) =>
     submitPayment(response.paymentData)
   );
-  subscribeIfSupported<AdyenError>(Event.onError, (error) =>
+  subscribeIfSupported<AdyenError>('core', Event.onError, (error) =>
     refs.onError.current?.(error)
   );
-  subscribeIfSupported(Event.onComplete, (data) =>
+  subscribeIfSupported('core', Event.onComplete, (data) =>
     refs.onComplete.current?.(data)
   );
   subscribeIfSupported<PaymentDetailsData>(
+    'core',
     Event.onAdditionalDetails,
     async (data) => {
       const result = await refs.onAdditionalDetails.current?.(data);
@@ -143,16 +204,23 @@ export function startEventListeners(
 
   // Address lookup
   const lookupModule = nativeComponent as unknown as AddressLookup;
-  subscribeIfSupported(Event.onAddressUpdate, async (data: any) => {
-    const prompt = viewId && typeof data === 'object' ? data.value : data;
-    refs.config.current?.card?.onUpdateAddress?.(prompt, lookupModule);
-  });
-  subscribeIfSupported(Event.onAddressConfirm, (address: AddressLookupItem) =>
-    refs.config.current?.card?.onConfirmAddress?.(address, lookupModule)
+  subscribeIfSupported(
+    'addressLookup',
+    Event.onAddressUpdate,
+    async (data: any) => {
+      const prompt = viewId && typeof data === 'object' ? data.value : data;
+      refs.config.current?.card?.onUpdateAddress?.(prompt, lookupModule);
+    }
+  );
+  subscribeIfSupported(
+    'addressLookup',
+    Event.onAddressConfirm,
+    (address: AddressLookupItem) =>
+      refs.config.current?.card?.onConfirmAddress?.(address, lookupModule)
   );
 
   // BIN lookup and value
-  subscribeIfSupported(Event.onBinLookup, (data: any) => {
+  subscribeIfSupported('card', Event.onBinLookup, (data: any) => {
     const lookupData =
       viewId && !Array.isArray(data) && typeof data === 'object'
         ? data.data
@@ -160,7 +228,7 @@ export function startEventListeners(
     refs.config.current?.card?.onBinLookup?.(lookupData);
   });
 
-  subscribeIfSupported(Event.onBinValue, (data: any) => {
+  subscribeIfSupported('card', Event.onBinValue, (data: any) => {
     const value = viewId && typeof data === 'object' ? data.value : data;
     refs.config.current?.card?.onBinValue?.(value);
   });
@@ -168,6 +236,7 @@ export function startEventListeners(
   // Stored payment method removal (Drop-in only)
   const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
   subscribeIfSupported<StoredPaymentMethod>(
+    'dropIn',
     Event.onDisableStoredPaymentMethod,
     (data) =>
       refs.config.current?.dropin?.onDisableStoredPaymentMethod?.(
@@ -181,6 +250,7 @@ export function startEventListeners(
   const partialComponent =
     nativeComponent as unknown as PartialPaymentComponent;
   subscribeIfSupported(
+    'dropIn',
     Event.onCheckBalance,
     async (paymentData: PaymentMethodData) =>
       refs.config.current?.partialPayment?.onBalanceCheck?.(
@@ -189,13 +259,14 @@ export function startEventListeners(
         (error) => partialComponent.provideBalance(false, undefined, error)
       )
   );
-  subscribeIfSupported(Event.onRequestOrder, () => {
+  subscribeIfSupported('dropIn', Event.onRequestOrder, () => {
     refs.config.current?.partialPayment?.onOrderRequest?.(
       (order: Order) => partialComponent.provideOrder(true, order, undefined),
       (error: Error) => partialComponent.provideOrder(false, undefined, error)
     );
   });
   subscribeIfSupported(
+    'dropIn',
     Event.onCancelOrder,
     ({ order, shouldUpdatePaymentMethods }: any) =>
       refs.config.current?.partialPayment?.onOrderCancel?.(
@@ -209,6 +280,7 @@ export function startEventListeners(
   const applePayModule = nativeComponent as unknown as ApplePayCallbackHandler;
 
   subscribeIfSupported<ApplePayCouponCodeEvent>(
+    'applePay',
     Event.onApplePayCouponCodeChange,
     (data) => {
       const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
@@ -223,6 +295,7 @@ export function startEventListeners(
   );
 
   subscribeIfSupported<ApplePayPaymentContact>(
+    'applePay',
     Event.onApplePayShippingContactChange,
     (contact) => {
       const resolve = (update: ApplePayShippingContactUpdateRequest) =>
@@ -237,6 +310,7 @@ export function startEventListeners(
   );
 
   subscribeIfSupported<ApplePayShippingMethod>(
+    'applePay',
     Event.onApplePayShippingMethodChange,
     (shippingMethod) => {
       const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
@@ -252,6 +326,7 @@ export function startEventListeners(
 
   // Apple Pay — authorization callback
   subscribeIfSupported<ApplePayPaymentAuthorization>(
+    'applePay',
     Event.onApplePayAuthorization,
     (payment) => {
       const provide = (result: ApplePayAuthorizationResult) =>

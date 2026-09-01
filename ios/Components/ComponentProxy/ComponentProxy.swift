@@ -28,8 +28,9 @@ internal final class ComponentProxy {
 
     private var checkout: PaymentCheckout?
     private var paymentComponent: CheckoutPaymentComponent?
-    private var submitContinuation: CheckedContinuation<SubmitResult, Never>?
-    private var additionalDetailsContinuation: CheckedContinuation<AdditionalDetailsResult, Never>?
+    /// Suspended advanced-flow closures for this view. Each proxy owns its own sink so a result
+    /// resumes the view that opened the request.
+    private let resultSink = AdvancedResultSink()
 
     init(viewId: String, bus: ComponentModule) {
         self.viewId = viewId
@@ -97,17 +98,13 @@ internal final class ComponentProxy {
     @MainActor
     private func awaitSubmitResult(for data: PaymentComponentData) async -> SubmitResult {
         sendSubmitEvent(data: data)
-        return await withCheckedContinuation { continuation in
-            self.submitContinuation = continuation
-        }
+        return await resultSink.awaitSubmit()
     }
 
     @MainActor
     private func awaitAdditionalDetailsResult(for data: ActionComponentData) async -> AdditionalDetailsResult {
         sendProvideEvent(actionData: data)
-        return await withCheckedContinuation { continuation in
-            self.additionalDetailsContinuation = continuation
-        }
+        return await resultSink.awaitAdditionalDetails()
     }
 
     // MARK: - JS-routed commands
@@ -115,8 +112,8 @@ internal final class ComponentProxy {
     /// Forwards a JS-provided action. In the advanced flow a pending submit is resumed with the
     /// action so the SDK presents it (e.g. 3DS); otherwise the action is handled by the checkout.
     func handle(action: Action) {
-        if submitContinuation != nil {
-            resolveSubmit(.action(action))
+        if resultSink.isAwaitingSubmit {
+            resultSink.resolveSubmit(.action(action))
         } else {
             ensureMainThread { [weak self] in
                 self?.checkout?.handle(action: action)
@@ -126,32 +123,16 @@ internal final class ComponentProxy {
 
     /// Resumes a pending submit / additional-details closure with a completion result code.
     func resolveCompletion(resultCode: String) {
-        if submitContinuation != nil {
-            resolveSubmit(.completion(resultCode: resultCode))
-        } else if additionalDetailsContinuation != nil {
-            resolveAdditionalDetails(.completion(resultCode: resultCode))
+        if resultSink.isAwaitingSubmit {
+            resultSink.resolveSubmit(.completion(resultCode: resultCode))
+        } else if resultSink.isAwaitingAdditionalDetails {
+            resultSink.resolveAdditionalDetails(.completion(resultCode: resultCode))
         }
     }
 
     /// Resumes a pending submit closure to let the shopper retry.
     func resolveRetry(message: String?) {
-        resolveSubmit(.retry(errorMessage: message))
-    }
-
-    // MARK: - Continuations
-
-    private func resolveSubmit(_ result: SubmitResult) {
-        ensureMainThread { [weak self] in
-            self?.submitContinuation?.resume(returning: result)
-            self?.submitContinuation = nil
-        }
-    }
-
-    private func resolveAdditionalDetails(_ result: AdditionalDetailsResult) {
-        ensureMainThread { [weak self] in
-            self?.additionalDetailsContinuation?.resume(returning: result)
-            self?.additionalDetailsContinuation = nil
-        }
+        resultSink.resolveSubmit(.retry(errorMessage: message))
     }
 
     // MARK: - Event emission (viewId-tagged)
@@ -193,8 +174,7 @@ internal final class ComponentProxy {
     // MARK: - Teardown
 
     func dispose() {
-        resolveSubmit(errorSubmitResult)
-        resolveAdditionalDetails(errorAdditionalDetailsResult)
+        resultSink.cancelPending()
         paymentComponent = nil
         checkout = nil
     }

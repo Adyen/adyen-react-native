@@ -4,11 +4,12 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-@_spi(AdyenInternal) import Adyen
+@testable @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
 import UIKit
 import XCTest
 
+@MainActor
 final class ThreadingSafetyTests: XCTestCase {
 
     override func tearDown() {
@@ -39,14 +40,11 @@ final class ThreadingSafetyTests: XCTestCase {
         XCTAssertNil(BaseModule.currentPresenter)
     }
 
-    func test_embeddedComponentBusUnsubscribe_fromBackgroundThread_dismissesPresenterOnMainThread() {
-        // GIVEN an ComponentModule with a subscribed, presented view
-        let expectation = expectation(description: "Presenter should be dismissed")
+    func test_embeddedComponentBusUnsubscribe_fromBackgroundThread_doesNotTearDownCheckout() {
+        // GIVEN a ComponentModule with a subscribed, presented view
+        let expectation = expectation(description: "unsubscribe processed on the main thread")
         let sut = ComponentModule()
         let presenter = MockPresenterViewController()
-        presenter.onDismiss = {
-            expectation.fulfill()
-        }
         BaseModule.presenterStack = [presenter]
 
         sut.subscribe("card-view")
@@ -54,13 +52,17 @@ final class ThreadingSafetyTests: XCTestCase {
         // WHEN unsubscribe() is called from a background thread
         DispatchQueue.global().async {
             sut.unsubscribe("card-view")
+            // unsubscribe hops to the main queue, so this later hop is drained after it.
+            DispatchQueue.main.async { expectation.fulfill() }
         }
 
-        // THEN the presenter is dismissed on the main thread
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(presenter.dismissCalled)
-        XCTAssertTrue(presenter.dismissCalledOnMainThread)
-        XCTAssertNil(BaseModule.currentPresenter)
+
+        // THEN the checkout is left intact. Per the lifecycle contract teardown happens only on a
+        // terminal event or `invalidate()` — a view unmounting must not end the checkout, or a
+        // headless submit afterwards would have no context to run in.
+        XCTAssertFalse(presenter.dismissCalled)
+        XCTAssertNotNil(BaseModule.currentPresenter)
     }
 
     func test_ensureMainThread_runsImmediately_whenAlreadyOnMainThread() {
@@ -190,172 +192,11 @@ final class ThreadingSafetyTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
-    func test_cardComponentViewProxyDispose_fromBackgroundThread_doesNotCrash() {
-        // GIVEN a CardComponentViewProxy registered with the component bus
-        let bus = ComponentModule()
-        ComponentModule.shared = bus
-        bus.createActionHandlerIfNeeded(context: Self.context, locale: nil)
-        _ = bus.register(viewId: "card-view")
-
-        let proxy = CardComponentViewProxy(frame: .zero)
-        proxy.viewId = "card-view"
-
-        // WHEN dispose() is called from a background thread
-        let disposeExpectation = expectation(description: "Dispose should complete")
-        DispatchQueue.global().async {
-            proxy.dispose()
-            DispatchQueue.main.async {
-                disposeExpectation.fulfill()
-            }
-        }
-
-        // THEN dispose completes without crashing and the bus state is not corrupted
-        wait(for: [disposeExpectation], timeout: 1.0)
-
-        let newProxy = bus.register(viewId: "card-view-2")
-        XCTAssertNotNil(newProxy)
-    }
-
-    func test_cardComponentViewProxyInitialize_fromBackgroundThread_reportsErrorOnMainThread() {
-        // GIVEN a CardComponentViewProxy that will fail to decode its payment method
-        let bus = ComponentModule()
-        ComponentModule.shared = bus
-        let emitter = ThreadTrackingEmitter()
-        bus.emitterOverride = emitter
-
-        let proxy = CardComponentViewProxy(frame: .zero)
-        proxy.viewId = "card-view"
-
-        let expectation = expectation(description: "Error should be reported on main thread")
-        // Each failed attempt resets `hasComponent`, so both setters can independently
-        // re-trigger initialization; both emissions call fulfill(), so over-fulfillment is expected.
-        expectation.assertForOverFulfill = false
-        emitter.onSend = {
-            expectation.fulfill()
-        }
-
-        // WHEN the payment method and configuration are set from a background thread
-        DispatchQueue.global().async {
-            proxy.setPaymentMethod(Self.invalidCardPaymentMethodJSON)
-            proxy.setConfiguration("{}")
-        }
-
-        // THEN the resulting error is emitted on the main thread
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertGreaterThanOrEqual(emitter.eventCount, 1)
-        XCTAssertTrue(emitter.sentOnMainThread)
-    }
-
-    func test_embeddedComponentBusHide_fromBackgroundThread_dismissesPresenterOnMainThread() {
-        // GIVEN an ComponentModule with a registered, presented view
-        let expectation = expectation(description: "Presenter should be dismissed")
-        let sut = ComponentModule()
-        let presenter = MockPresenterViewController()
-        presenter.onDismiss = {
-            expectation.fulfill()
-        }
-        BaseModule.presenterStack = [presenter]
-
-        _ = sut.register(viewId: "card-view")
-
-        // WHEN hide() is called from a background thread
-        DispatchQueue.global().async {
-            sut.hide("card-view", success: NSNumber(value: true), event: [:])
-        }
-
-        // THEN the presenter is dismissed on the main thread
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(presenter.dismissCalled)
-        XCTAssertTrue(presenter.dismissCalledOnMainThread)
-        XCTAssertNil(BaseModule.currentPresenter)
-    }
-
-    func test_embeddedComponentBusHandle_withNilAction_doesNotEmitError() {
-        // GIVEN an ComponentModule with a mock emitter
-        let expectation = expectation(description: "No error should be emitted")
-        let sut = ComponentModule()
-        let emitter = MockEmitter()
-        sut.emitterOverride = emitter
-
-        // WHEN handle() is called with a nil action from a background thread
-        DispatchQueue.global().async {
-            sut.handle("card-view", action: nil)
-        }
-
-        // THEN no error event is emitted
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertEqual(emitter.events.count, 0)
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
-    func test_embeddedComponentBusHandle_withoutActionHandler_emitsError() {
-        // GIVEN an ComponentModule without an action handler set up
-        let expectation = expectation(description: "Error should be emitted")
-        let sut = ComponentModule()
-        let emitter = MockEmitter()
-        sut.emitterOverride = emitter
-
-        // WHEN handle() is called from a background thread
-        DispatchQueue.global().async {
-            sut.handle("card-view", action: [:])
-        }
-
-        // THEN a failure event is emitted
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertEqual(emitter.eventCount(named: EventName.fail.rawValue), 1)
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
-    func test_embeddedComponentBusHandle_withoutRegisteredProxy_emitsError() {
-        // GIVEN an ComponentModule with an action handler but no registered proxy
-        let expectation = expectation(description: "Error should be emitted")
-        let sut = ComponentModule()
-        let emitter = MockEmitter()
-        sut.emitterOverride = emitter
-        sut.createActionHandlerIfNeeded(context: Self.context, locale: nil)
-
-        // WHEN handle() is called from a background thread
-        DispatchQueue.global().async {
-            sut.handle("card-view", action: [:])
-        }
-
-        // THEN a failure event is emitted
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertEqual(emitter.eventCount(named: EventName.fail.rawValue), 1)
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
-    func test_embeddedComponentBusHandle_withInvalidAction_emitsError() {
-        // GIVEN an ComponentModule with a registered proxy and an invalid action
-        let expectation = expectation(description: "Invalid action error should be emitted")
-        let sut = ComponentModule()
-        let emitter = MockEmitter()
-        sut.emitterOverride = emitter
-        sut.createActionHandlerIfNeeded(context: Self.context, locale: nil)
-        _ = sut.register(viewId: "card-view")
-
-        // WHEN handle() is called from a background thread
-        DispatchQueue.global().async {
-            sut.handle("card-view", action: [:])
-        }
-
-        // THEN a failure event is emitted
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertEqual(emitter.eventCount(named: EventName.fail.rawValue), 1)
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
+    // Removed: eight tests covering `CardComponentViewProxy` and the v5 embedded-component bus
+    // entry points (`createActionHandlerIfNeeded`, `hide`, `handle`). None of those symbols exist
+    // in v6 — action routing now goes through `ComponentModule.action(_:actionDict:)` and
+    // `ComponentProxy`. Re-add equivalent coverage against the v6 surface when the presenter
+    // refactor lands.
 
     private static let lookupAddress: NSDictionary = [
         "id": "addr1",
@@ -370,7 +211,9 @@ final class ThreadingSafetyTests: XCTestCase {
 
     private static let context = AdyenContext(
         apiContext: try! APIContext(environment: Environment.test, clientKey: "local_DUMMYKEYFORTESTING"),
-        payment: nil
+        amount: nil,
+        publicKey: "DUMMY_PUBLIC_KEY",
+        analyticsProvider: nil
     )
 
     /// "type" has the wrong JSON type (number instead of string), guaranteeing

@@ -1,10 +1,4 @@
-export type * from './types';
-export {
-  SubmitResult,
-  AdditionalDetailsResult,
-  BeforeSubmitResult,
-} from './types';
-export type { Checkout } from './Checkout';
+export * from './types';
 export * from './constants';
 export * from './configurations';
 export * from './components';

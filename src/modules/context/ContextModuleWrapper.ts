@@ -121,9 +121,13 @@ export class ContextModuleWrapper implements AdyenContextModule {
     callback: (data: T) => void
   ): EventSubscription {
     this.subscriptions.get(event)?.remove();
-    const subscription = this.eventEmitter.addListener(event, (data) =>
-      callback(data)
-    );
+    const subscription = this.eventEmitter.addListener(event, (data) => {
+      // Event names are global on both platforms, so an embedded <AdyenComponent>'s events also
+      // arrive here. They carry a viewId and are already delivered to that view's own listener;
+      // handling them again would invoke the merchant callback twice and dispatch two results.
+      if (data?.viewId !== undefined) return;
+      callback(data);
+    });
     this.subscriptions.set(event, subscription);
     return subscription;
   }

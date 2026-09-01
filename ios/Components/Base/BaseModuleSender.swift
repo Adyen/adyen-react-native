@@ -20,12 +20,9 @@ internal class BaseModuleSender: BaseModule {
         emitterOverride ?? self
     }
 
-    /// Continuation that suspends the `onSubmit` closure until JS returns a ``SubmitResult``.
-    internal var submitContinuation: CheckedContinuation<SubmitResult, Never>?
+    /// Suspended advanced-flow closures for this module, resumed once JS returns a result.
+    internal let resultSink = AdvancedResultSink()
 
-    /// Continuation that suspends the `onAdditionalDetails` closure until JS returns an
-    /// ``AdditionalDetailsResult``.
-    internal var additionalDetailsContinuation: CheckedContinuation<AdditionalDetailsResult, Never>?
     internal var checkout: BaseCheckout?
 
     override func stopObserving() { /* No JS events expected */ }
@@ -87,10 +84,7 @@ internal class BaseModuleSender: BaseModule {
 
     override func cleanUp() {
         ensureMainThread { [weak self] in
-            self?.submitContinuation?.resume(returning: errorSubmitResult)
-            self?.submitContinuation = nil
-            self?.additionalDetailsContinuation?.resume(returning: errorAdditionalDetailsResult)
-            self?.additionalDetailsContinuation = nil
+            self?.resultSink.cancelPending()
             self?.checkout = nil
         }
         super.cleanUp()

@@ -32,56 +32,55 @@ extension ContextModule {
             }
     }
 
+    /// Re-points the shared checkout's advanced closures back at this module.
+    ///
+    /// ``ComponentProxy`` takes ownership of `onSubmit` / `onAdditionalDetails` on the shared
+    /// ``AdvancedCheckout`` while an embedded view is mounted — the closures live on the one
+    /// checkout object, so the last writer wins. When the final proxy is disposed the context has
+    /// to own them again, otherwise a headless ``submit(_:)`` suspends on a disposed proxy and
+    /// never resumes. No-op outside the advanced flow.
+    @MainActor
+    internal func reattachAdvancedCallbacks() {
+        guard let advanced = BaseModule.checkoutState?.checkoutContext as? AdvancedCheckout else { return }
+        setupAdvancedCallbacks(on: advanced)
+    }
+
     // MARK: - Suspension helpers
 
     @MainActor
     internal func awaitSubmitResult(for data: PaymentComponentData) async -> SubmitResult {
         sendSubmitEvent(data: data)
-        return await withCheckedContinuation { continuation in
-            self.submitContinuation = continuation
-        }
+        return await resultSink.awaitSubmit()
     }
 
     @MainActor
     internal func awaitAdditionalDetailsResult(for data: ActionComponentData) async -> AdditionalDetailsResult {
         sendProvideEvent(actionData: data)
-        return await withCheckedContinuation { continuation in
-            self.additionalDetailsContinuation = continuation
-        }
-    }
-
-    // MARK: - JS response bridging
-
-    /// Resumes the pending `onSubmit` closure with the result produced by JS.
-    internal func resolveSubmit(_ result: SubmitResult) {
-        ensureMainThread { [weak self] in
-            self?.submitContinuation?.resume(returning: result)
-            self?.submitContinuation = nil
-        }
-    }
-
-    /// Resumes the pending `onAdditionalDetails` closure with the result produced by JS.
-    internal func resolveAdditionalDetails(_ result: AdditionalDetailsResult) {
-        ensureMainThread { [weak self] in
-            self?.additionalDetailsContinuation?.resume(returning: result)
-            self?.additionalDetailsContinuation = nil
-        }
+        return await resultSink.awaitAdditionalDetails()
     }
 
     // MARK: - Event emission
 
+    /// Stamps a payload with the presenter identity so JS routes the result back to this module
+    /// rather than to Drop-in. Drop-in emits untagged for now, which JS reads as Drop-in.
+    private func taggedBody(_ body: [String: Any]) -> [String: Any] {
+        var tagged = body
+        tagged[EventSource.key] = EventSource.context
+        return tagged
+    }
+
     private func sendSubmitEvent(data: PaymentComponentData) {
         let extra = (data.paymentMethod as? ApplePayDetails)?.extraData
         let response = SubmitData(paymentData: data.jsonObject, extra: extra)
-        sendEvent(withName: EventName.submit.rawValue, body: response.jsonObject)
+        sendEvent(withName: EventName.submit.rawValue, body: taggedBody(response.jsonObject))
     }
 
     private func sendProvideEvent(actionData: ActionComponentData) {
-        sendEvent(withName: EventName.additionalDetails.rawValue, body: actionData.jsonObject)
+        sendEvent(withName: EventName.additionalDetails.rawValue, body: taggedBody(actionData.jsonObject))
     }
 
     private func sendCompleteEvent(resultCode: CheckoutResultCode) {
-        sendEvent(withName: EventName.complete.rawValue, body: [Key.resultCode: resultCode.rawValue])
+        sendEvent(withName: EventName.complete.rawValue, body: taggedBody([Key.resultCode: resultCode.rawValue]))
     }
 
     private enum Key {

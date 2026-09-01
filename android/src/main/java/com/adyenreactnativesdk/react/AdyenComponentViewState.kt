@@ -61,7 +61,7 @@ class AdyenComponentViewState(
     val checkoutContext = state.checkoutContext
 
     val viewId = dynamicComponentView.id.toString()
-    val bus = MessageBus(TaggedEmitter(emitter, viewId))
+    val bus = MessageBus(TaggedEmitter.forView(emitter, viewId))
     // BIN callbacks only exist on the card configuration; wire them exclusively for card views.
     val cardCallbackBlock: (CheckoutCallbacks.() -> Unit)? =
       if (paymentMethodType == SCHEME) {

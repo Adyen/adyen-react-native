@@ -11,8 +11,7 @@ import Adyen
 /// Replaces the v5 payment / action / card delegate conformances.
 /// Instead of delegate methods, the checkout object exposes closures that emit the
 /// same React Native events. The `onSubmit` and `onAdditionalDetails` closures are asynchronous and
-/// must return a result; the bridge suspends them on a continuation until JS responds via
-/// ``resolveSubmit(_:)`` / ``resolveAdditionalDetails(_:)``.
+/// must return a result; the bridge suspends them on ``AdvancedResultSink`` until JS responds.
 extension BaseModuleSender {
 
     /// Wires the advanced-flow closures on the checkout object to React Native event emission.
@@ -34,39 +33,17 @@ extension BaseModuleSender {
             }
     }
 
-    // MARK: - JS response bridging
-
-    /// Resumes the pending `onSubmit` closure with the result produced by JS.
-    internal func resolveSubmit(_ result: SubmitResult) {
-        ensureMainThread { [weak self] in
-            self?.submitContinuation?.resume(returning: result)
-            self?.submitContinuation = nil
-        }
-    }
-
-    /// Resumes the pending `onAdditionalDetails` closure with the result produced by JS.
-    internal func resolveAdditionalDetails(_ result: AdditionalDetailsResult) {
-        ensureMainThread { [weak self] in
-            self?.additionalDetailsContinuation?.resume(returning: result)
-            self?.additionalDetailsContinuation = nil
-        }
-    }
-
     // MARK: - Suspension helpers
 
     @MainActor
     internal func awaitSubmitResult(for data: PaymentComponentData) async -> SubmitResult {
         sendSubmitEvent(data: data)
-        return await withCheckedContinuation { continuation in
-            self.submitContinuation = continuation
-        }
+        return await resultSink.awaitSubmit()
     }
 
     @MainActor
     internal func awaitAdditionalDetailsResult(for data: ActionComponentData) async -> AdditionalDetailsResult {
         sendProvideEvent(actionData: data)
-        return await withCheckedContinuation { continuation in
-            self.additionalDetailsContinuation = continuation
-        }
+        return await resultSink.awaitAdditionalDetails()
     }
 }

@@ -149,16 +149,18 @@ class RootParserTests: XCTestCase {
         XCTAssertEqual(sut.countryCode, "US")
     }
 
-    func test_payment_createsPaymentObject_whenAmountAndCountryProvided() {
+    func test_amount_isParsed_whenAmountAndCountryProvided() {
         // GIVEN
         let configDict: NSDictionary = ["amount": ["value": 100, "currency": "EUR"], "countryCode": "US"]
 
         // WHEN
         let sut = RootConfigurationParser(configuration: configDict)
-        
+
         // THEN
-        XCTAssertEqual(sut.payment?.amount.value, 100)
-        XCTAssertEqual(sut.payment?.amount.currencyCode, "EUR")
+        // v6 replaced the composed `payment` object with separate `amount` / `countryCode`.
+        XCTAssertEqual(sut.amount?.value, 100)
+        XCTAssertEqual(sut.amount?.currencyCode, "EUR")
+        XCTAssertEqual(sut.countryCode, "US")
     }
 
     func test_shopperLocale_returnsConfiguredValue_whenProvided() {

@@ -42,7 +42,7 @@ const mockInvalidateFn = jest.fn<() => void>();
 
 /** Builds a checkout whose host reports the given active state. */
 function createTestCheckout(isActive = true) {
-  const { createCheckout } = require('../Checkout');
+  const { createCheckout } = require('../createCheckout');
   return createCheckout(paymentMethods, configuration, {
     isActive: () => isActive,
     subscribe: mockSubscribeFn,

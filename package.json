@@ -46,6 +46,9 @@
   "scripts": {
     "app": "yarn workspace @adyen/react-native-example",
     "test": "jest",
+    "test:android": "cd example/android && ./gradlew :adyen_react-native:testDebugUnitTest",
+    "test:ios": "xcodebuild test -workspace example/ios/AdyenExample.xcworkspace -scheme AdyenExample -destination \"platform=iOS Simulator,id=$(bash ./e2e-tests/scripts/resolve_ios_simulator.sh)\"",
+    "test:native": "yarn test:android && yarn test:ios",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "git clean -fxd",

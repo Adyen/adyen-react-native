@@ -12,19 +12,27 @@ import React
 @objc(AdyenContext)
 internal final class ContextModule: BaseModule {
 
+    /// The live instance, so ``ComponentModule`` can hand advanced-flow callback ownership back
+    /// when the last embedded view unmounts. Weak: the React Native bridge owns the module.
+    internal private(set) weak static var shared: ContextModule?
+
     /// Pre-built payment components keyed by payment method type, populated by
     /// ``requiresUserInteraction(_:resolver:rejecter:)`` and reused by ``submit(_:)``.
     private var components: [String: CheckoutPaymentComponent] = [:]
 
+    override init() {
+        super.init()
+        MainActor.assumeIsolated {
+            Self.shared = self
+        }
+    }
+
     // MARK: - Advanced-flow callback state
 
-    /// Suspends the advanced-flow `onSubmit` closure until JS forwards a result via
-    /// ``action(_:)`` / ``completion(_:)`` / ``retry(_:)``.
-    internal var submitContinuation: CheckedContinuation<SubmitResult, Never>?
-
-    /// Suspends the advanced-flow `onAdditionalDetails` closure until JS forwards a result via
-    /// ``completion(_:)``.
-    internal var additionalDetailsContinuation: CheckedContinuation<AdditionalDetailsResult, Never>?
+    /// Suspended advanced-flow closures for the headless presenter, resumed when JS calls
+    /// ``action(_:)`` / ``completion(_:)`` / ``retry(_:)``. Composed rather than inherited: this
+    /// module cannot extend ``BaseModuleSender`` without its continuations colliding.
+    internal let resultSink = AdvancedResultSink()
 
     private var beforeSubmitContinuation: CheckedContinuation<BeforeSubmitResult, Never>?
 
@@ -58,10 +66,10 @@ internal final class ContextModule: BaseModule {
     @objc
     func action(_ actionJson: NSDictionary) {
         ensureMainThread { [weak self] in
-            guard let self, self.submitContinuation != nil else { return }
+            guard let self, self.resultSink.isAwaitingSubmit else { return }
             do {
                 let action = try self.parseAction(from: actionJson)
-                self.resolveSubmit(.action(action))
+                self.resultSink.resolveSubmit(.action(action))
             } catch {
                 self.sendError(error: error)
             }
@@ -73,12 +81,12 @@ internal final class ContextModule: BaseModule {
         ensureMainThread { [weak self] in
             guard let self else { return }
             // Advanced flow: resolve the suspended SDK closure instead of tearing the context down.
-            if self.submitContinuation != nil {
-                self.resolveSubmit(.completion(resultCode: resultCode as String))
+            if self.resultSink.isAwaitingSubmit {
+                self.resultSink.resolveSubmit(.completion(resultCode: resultCode as String))
                 return
             }
-            if self.additionalDetailsContinuation != nil {
-                self.resolveAdditionalDetails(.completion(resultCode: resultCode as String))
+            if self.resultSink.isAwaitingAdditionalDetails {
+                self.resultSink.resolveAdditionalDetails(.completion(resultCode: resultCode as String))
                 return
             }
         }
@@ -88,9 +96,9 @@ internal final class ContextModule: BaseModule {
     override func retry(_ message: NSString) {
         ensureMainThread { [weak self] in
             guard let self else { return }
-            if self.submitContinuation != nil {
+            if self.resultSink.isAwaitingSubmit {
                 let msg = message as String
-                self.resolveSubmit(.retry(errorMessage: msg.isEmpty ? nil : msg))
+                self.resultSink.resolveSubmit(.retry(errorMessage: msg.isEmpty ? nil : msg))
                 return
             }
         }
@@ -285,10 +293,7 @@ internal final class ContextModule: BaseModule {
     @MainActor
     private func cancelPendingOperations() {
         components.removeAll()
-        submitContinuation?.resume(returning: errorSubmitResult)
-        submitContinuation = nil
-        additionalDetailsContinuation?.resume(returning: errorAdditionalDetailsResult)
-        additionalDetailsContinuation = nil
+        resultSink.cancelPending()
         beforeSubmitContinuation?.resume(returning: .abort)
         beforeSubmitContinuation = nil
         cancelApplePayCallbacks()

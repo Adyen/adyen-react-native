@@ -29,7 +29,7 @@ open class AdvancedCheckoutService : DropInService() {
     val v6Data =
       com.adyen.checkout.core.components.data.PaymentComponentData.SERIALIZER
         .deserialize(json)
-    AdyenPaymentPackage.messageBus.onSubmit(v6Data)
+    AdyenPaymentPackage.dropInMessageBus.onSubmit(v6Data)
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
@@ -38,29 +38,29 @@ open class AdvancedCheckoutService : DropInService() {
     val v6Data =
       com.adyen.checkout.core.action.data.ActionComponentData.SERIALIZER
         .deserialize(json)
-    AdyenPaymentPackage.messageBus.onAdditionalDetails(v6Data)
+    AdyenPaymentPackage.dropInMessageBus.onAdditionalDetails(v6Data)
   }
 
   override fun onAddressLookupQueryChanged(query: String) {
-    AdyenPaymentPackage.messageBus.onQueryChanged(query)
+    AdyenPaymentPackage.dropInMessageBus.onQueryChanged(query)
   }
 
   override fun onAddressLookupCompletion(lookupAddress: LookupAddress): Boolean =
-    AdyenPaymentPackage.messageBus.onLookupCompletion(lookupAddress)
+    AdyenPaymentPackage.dropInMessageBus.onLookupCompletion(lookupAddress)
 
   override fun onBalanceCheck(paymentComponentState: PaymentComponentState<*>) {
-    AdyenPaymentPackage.messageBus.onBalanceCheck(paymentComponentState)
+    AdyenPaymentPackage.dropInMessageBus.onBalanceCheck(paymentComponentState)
   }
 
   override fun onOrderRequest() {
-    AdyenPaymentPackage.messageBus.onOrderRequest()
+    AdyenPaymentPackage.dropInMessageBus.onOrderRequest()
   }
 
   override fun onOrderCancel(
     order: Order,
     shouldUpdatePaymentMethods: Boolean,
   ) {
-    AdyenPaymentPackage.messageBus.onOrderCancel(order, shouldUpdatePaymentMethods)
+    AdyenPaymentPackage.dropInMessageBus.onOrderCancel(order, shouldUpdatePaymentMethods)
   }
 
   override fun onBinLookup(data: List<BinLookupData>) {
@@ -68,11 +68,11 @@ open class AdvancedCheckoutService : DropInService() {
   }
 
   override fun onBinValue(binValue: String) {
-    AdyenPaymentPackage.messageBus.onBinValue(binValue)
+    AdyenPaymentPackage.dropInMessageBus.onBinValue(binValue)
   }
 
   override fun onRemoveStoredPaymentMethod(storedPaymentMethod: StoredPaymentMethod) {
     DropInModule.storedPaymentMethodID = storedPaymentMethod.id
-    AdyenPaymentPackage.messageBus.onRemove(storedPaymentMethod)
+    AdyenPaymentPackage.dropInMessageBus.onRemove(storedPaymentMethod)
   }
 }

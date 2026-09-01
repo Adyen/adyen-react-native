@@ -8,6 +8,9 @@ import XCTest
 @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
 
+/// The lookup handlers and the address entry points are main-actor isolated on
+/// BaseAddressModule, so the whole test case runs on the main actor.
+@MainActor
 final class BaseAddressModuleTests: XCTestCase {
 
     var sut: TestableBaseAddressModule!

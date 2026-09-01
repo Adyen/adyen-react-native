@@ -71,27 +71,13 @@ class AdvancedMessengerImplTest {
     val data = PaymentComponentData<PaymentMethodDetails>(paymentMethod = null, order = null)
 
     // WHEN
-    sut.onSubmit(data, returnUrl = "myapp://return")
+    sut.onSubmit(data)
 
     // THEN
     assertEquals(1, mockEmitter.events.size)
     assertEquals(EventName.SUBMIT, mockEmitter.events[0].eventName)
     val payload = mockEmitter.events[0].payload as JSONObject
     assertTrue(payload.has("paymentData"))
-  }
-
-  @Test
-  fun `onSubmit includes returnUrl in payload when provided`() {
-    // GIVEN
-    val data = PaymentComponentData<PaymentMethodDetails>(paymentMethod = null, order = null)
-
-    // WHEN
-    sut.onSubmit(data, returnUrl = "myapp://return")
-
-    // THEN
-    val payload = mockEmitter.events[0].payload as JSONObject
-    val paymentData = payload.getJSONObject("paymentData")
-    assertEquals("myapp://return", paymentData.getString("returnUrl"))
   }
 
   @Test

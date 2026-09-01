@@ -38,11 +38,19 @@ const mockDropInAction = jest.fn();
 const mockDropInCompletion = jest.fn();
 const mockDropInRetry = jest.fn();
 
+const mockContextAction = jest.fn();
+const mockContextCompletion = jest.fn();
+const mockContextRetry = jest.fn();
+
 jest.mock('../../modules/dropin/AdyenDropIn', () => ({
   AdyenDropIn: {
     action: (...args: any[]) => mockDropInAction(...args),
     completion: (...args: any[]) => mockDropInCompletion(...args),
     retry: (...args: any[]) => mockDropInRetry(...args),
+    // Drop-in's own event families (stored payment, partial payments, address lookup) are
+    // subscribed through this module, so it has to look like an event listener target.
+    isSupported: () => false,
+    eventEmitterTarget: {},
   },
 }));
 
@@ -87,13 +95,13 @@ jest.mock('../../modules/context/ContextModule', () => ({
     isAvailable: jest.fn(),
     requiresUserInteraction: jest.fn(),
     submit: jest.fn(),
-    completion: jest.fn(),
-    action: jest.fn(),
-    retry: jest.fn(),
+    completion: (...args: any[]) => mockContextCompletion(...args),
+    action: (...args: any[]) => mockContextAction(...args),
+    retry: (...args: any[]) => mockContextRetry(...args),
   },
 }));
 
-import { AdyenCheckout } from '../../AdyenCheckout';
+import { AdyenCheckout } from '..';
 import { SubmitResult } from '../../core';
 
 // Test data
@@ -232,6 +240,24 @@ describe('AdyenCheckout', () => {
   });
 
   describe('setupAdvanced (advanced flow)', () => {
+    // The advanced flow is the only entry point handed a payment methods response by the
+    // merchant, so it is the only one that can be given the wrong thing. Failing here beats
+    // failing later in native with a less obvious message.
+    test.each([
+      ['undefined', undefined],
+      ['a JSON string that was never parsed', '{"paymentMethods":[]}'],
+      ['an array instead of the whole response', [{ type: 'scheme' }]],
+    ])('rejects %s', async (_label, badResponse) => {
+      await expect(
+        AdyenCheckout.setupAdvanced(
+          badResponse as any,
+          mockConfig,
+          advancedCallbacks
+        )
+      ).rejects.toThrow();
+      expect(mockSetup).not.toHaveBeenCalled();
+    });
+
     test('sets up the context, registers listeners and resolves checkout', async () => {
       const checkout = await AdyenCheckout.setupAdvanced(
         mockPaymentMethods,
@@ -381,9 +407,105 @@ describe('AdyenCheckout', () => {
 
       expect(advancedCallbacks.onAdditionalDetails).toHaveBeenCalledTimes(1);
       const [dataArg] = advancedCallbacks.onAdditionalDetails.mock.calls[0];
-      expect(dataArg).toBe(detailsData);
-      // The completion is dispatched to DropIn
+      // Not `toBe`: the payload is copied so the transport tag can be stripped off it.
+      expect(dataArg).toEqual(detailsData);
+      // Untagged means Drop-in
       expect(mockDropInCompletion).toHaveBeenCalledWith('Authorised');
+    });
+
+    test('context-tagged submit dispatches to AdyenContext, not DropIn', async () => {
+      advancedCallbacks.onSubmit.mockResolvedValue(
+        SubmitResult.action({ type: 'threeDS2', paymentMethodType: 'scheme' })
+      );
+
+      await AdyenCheckout.setupAdvanced(
+        mockPaymentMethods,
+        mockConfig,
+        advancedCallbacks
+      );
+
+      const nativeSubmitHandler = mockAssignSubmitHandler.mock.calls[0][0];
+      await nativeSubmitHandler({
+        source: 'context',
+        paymentData: { paymentMethod: { type: 'scheme' } },
+      });
+
+      // A headless submit must resume the context continuation; sending it to Drop-in is what
+      // previously left checkout.submit() hanging forever.
+      expect(mockContextAction).toHaveBeenCalledWith({
+        type: 'threeDS2',
+        paymentMethodType: 'scheme',
+      });
+      expect(mockDropInAction).not.toHaveBeenCalled();
+    });
+
+    test('dropin-tagged submit dispatches to DropIn', async () => {
+      advancedCallbacks.onSubmit.mockResolvedValue(
+        SubmitResult.completed('Authorised')
+      );
+
+      await AdyenCheckout.setupAdvanced(
+        mockPaymentMethods,
+        mockConfig,
+        advancedCallbacks
+      );
+
+      const nativeSubmitHandler = mockAssignSubmitHandler.mock.calls[0][0];
+      await nativeSubmitHandler({
+        source: 'dropin',
+        paymentData: { paymentMethod: { type: 'scheme' } },
+      });
+
+      expect(mockDropInCompletion).toHaveBeenCalledWith('Authorised');
+      expect(mockContextCompletion).not.toHaveBeenCalled();
+    });
+
+    test('context-tagged additional details dispatch to AdyenContext', async () => {
+      advancedCallbacks.onAdditionalDetails.mockResolvedValue({
+        resultCode: 'Authorised',
+      });
+
+      await AdyenCheckout.setupAdvanced(
+        mockPaymentMethods,
+        mockConfig,
+        advancedCallbacks
+      );
+
+      const handler = mockAssignAdditionalDetailsHandler.mock.calls[0][0];
+      await handler({ source: 'context', details: {} });
+
+      expect(mockContextCompletion).toHaveBeenCalledWith('Authorised');
+      expect(mockDropInCompletion).not.toHaveBeenCalled();
+    });
+
+    test('the source tag never reaches a merchant callback', async () => {
+      advancedCallbacks.onAdditionalDetails.mockResolvedValue({
+        resultCode: 'Authorised',
+      });
+
+      await AdyenCheckout.setupAdvanced(
+        mockPaymentMethods,
+        mockConfig,
+        advancedCallbacks
+      );
+
+      const detailsHandler =
+        mockAssignAdditionalDetailsHandler.mock.calls[0][0];
+      await detailsHandler({ source: 'context', details: { foo: 'bar' } });
+
+      // This payload is posted verbatim to /payments/details, so a stray `source` would be
+      // sent to the API.
+      const [detailsArg] = advancedCallbacks.onAdditionalDetails.mock
+        .calls[0] as any[];
+      expect(detailsArg).toEqual({ details: { foo: 'bar' } });
+      expect(detailsArg).not.toHaveProperty('source');
+
+      const completeHandler =
+        mockAssignAdvancedCompleteHandler.mock.calls[0][0];
+      completeHandler({ source: 'dropin', resultCode: 'Authorised' });
+
+      const [completeArg] = advancedCallbacks.onComplete.mock.calls[0] as any[];
+      expect(completeArg).not.toHaveProperty('source');
     });
 
     test('advanced onComplete is called with result only (no handler)', async () => {

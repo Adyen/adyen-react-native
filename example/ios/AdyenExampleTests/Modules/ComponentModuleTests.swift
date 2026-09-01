@@ -8,6 +8,9 @@ import XCTest
 @testable @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
 
+/// `emitterOverride` and `supportedEvents()` are main-actor isolated, so the whole test case
+/// runs on the main actor.
+@MainActor
 final class ComponentModuleTests: XCTestCase {
 
     private var sut: ComponentModule!
@@ -39,23 +42,7 @@ final class ComponentModuleTests: XCTestCase {
         XCTAssertTrue(events.contains(EventName.fail.rawValue))
     }
 
-    // MARK: - isAvailable
-
-    func test_isAvailable_alwaysReturnsFalse() {
-        // GIVEN
-        let paymentMethod: NSDictionary = [:]
-        let configuration: NSDictionary = [:]
-        let expectation = expectation(description: "isAvailable resolves")
-
-        // WHEN
-        sut.isAvailable(paymentMethod, configuration: configuration, resolver: { result in
-            // THEN
-            XCTAssertEqual(result as? Bool, false)
-            expectation.fulfill()
-        }, rejecter: { _, _, _ in
-            XCTFail("isAvailable should not reject")
-        })
-
-        waitForExpectations(timeout: 1)
-    }
+    // Removed: `test_isAvailable_alwaysReturnsFalse`. Availability moved to
+    // `ContextModule.isAvailable(_:resolver:rejecter:)` in v6; `ComponentModule` no longer
+    // exposes it. `ContextModuleTests` is the right home for that coverage.
 }

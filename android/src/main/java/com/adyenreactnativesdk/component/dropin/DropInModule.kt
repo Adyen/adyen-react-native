@@ -338,7 +338,7 @@ class DropInModule(
     var isInitialized = false
 
     fun register(activity: ActivityResultCaller) {
-      val callbackHandler = DropInCallbackHandler { AdyenPaymentPackage.messageBusOrNull() }
+      val callbackHandler = DropInCallbackHandler { AdyenPaymentPackage.dropInMessageBusOrNull() }
       dropInSessionLauncher =
         DropIn.registerForDropInResult(
           activity,
