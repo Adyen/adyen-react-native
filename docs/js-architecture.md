@@ -115,8 +115,28 @@ cleanup has already run.
 
 ## Native module wrappers
 
+Two things are going on: a small **inheritance** ladder for event plumbing, and an **interface**
+that is what routing actually depends on. The interface is the important one.
+
 ```mermaid
 classDiagram
+  class AdvancedPayment {
+    <<interface>>
+    +action(action)
+    +completion(resultCode)
+    +retry(message)
+  }
+  class AdyenContextModule {
+    <<interface>>
+    +setup() / createSession()
+    +isAvailable() / requiresUserInteraction() / submit()
+  }
+  class DropInModule {
+    <<interface>>
+    +start(checkout)
+    +getReturnURL()
+  }
+
   class EventListenerWrapper~T~ {
     <<abstract>>
     #nativeModule: T
@@ -124,41 +144,48 @@ classDiagram
     +isSupported(event) boolean
     +eventEmitterTarget
   }
+  class ContextModuleWrapper {
+    -eventEmitter: NativeEventEmitter
+    -subscriptions: Map
+    +assignSubmitHandler() etc.
+  }
   class DropInWrapper {
-    +action() / completion() / retry()
-    +start(checkout)
     +removeStored() / provideBalance() / provideOrder()
     +update() / confirm()
   }
   class ComponentModuleWrapper {
     +subscribe(viewId) / unsubscribe(viewId)
   }
-  class ContextModuleWrapper {
-    +setup() / createSession()
-    +isAvailable() / requiresUserInteraction() / submit()
-    +action() / completion() / retry()
-    +assignSubmitHandler() etc.
-  }
-  class ComponentProxy {
-    +viewId
-  }
+
+  AdvancedPayment <|-- AdyenContextModule
+  AdvancedPayment <|-- DropInModule
+  AdyenContextModule <|.. ContextModuleWrapper
+  DropInModule <|.. DropInWrapper
 
   EventListenerWrapper <|-- DropInWrapper
   EventListenerWrapper <|-- ComponentModuleWrapper
-  ComponentProxy o-- ComponentModuleWrapper : composes
 
-  note for ContextModuleWrapper "implements AdyenContextModule directly —\nnot in the wrapper ladder, and never\nconsults supportedEvents"
-  note for ComponentProxy "one per embedded view;\nscopes calls to a viewId"
+  note for AdvancedPayment "the shared contract.\nresolveTarget() returns this, so\ndispatchSubmitResult() can send a result\nto Drop-in or the context flow\nwithout knowing which."
 ```
 
-One abstract class, two concretes. `supportedEvents` is read once from the native module's
-`getConstants()`, so `isSupported()` answers locally without crossing the bridge per event.
+**There is deliberately no shared base *class* between Drop-in and the context flow.** They share
+the `AdvancedPayment` interface, and the only duplicated implementation is three one-line
+delegations to the native module. Their event models genuinely differ:
+
+| | `ContextModuleWrapper` | `DropInWrapper` |
+| --- | --- | --- |
+| Emitter | owns its own `NativeEventEmitter` | none — exposes `eventEmitterTarget` |
+| Subscriptions | private map, one listener per event, replaced on re-setup | built externally by `startEventListeners` |
+| Consumer API | `assign*Handler(cb)` | `isSupported(event)` |
+
+A common base would have to bridge those two models, or exist purely to hold nine lines of
+delegation — which is what the former `ModuleWrapper` did, and why it was removed.
 
 > [!NOTE]
-> `ContextModuleWrapper` — the busiest module — is deliberately outside the ladder and subscribes
+> `ContextModuleWrapper` — the busiest module — is outside the ladder and subscribes
 > unconditionally, so the `isSupported` gate only affects the Drop-in and embedded-view paths.
-> `ActionModuleWrapper` and `AdyenCSEWrapper` are likewise standalone: they are promise-based and
-> emit no events.
+> `ActionModuleWrapper` and `AdyenCSEWrapper` are standalone too: promise-based, no events.
+> `ComponentProxy` composes `ComponentModuleWrapper` and scopes every call to one `viewId`.
 
 ## Presenter attribution
 
