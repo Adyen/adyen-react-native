@@ -1,5 +1,4 @@
 import type { TurboModule } from 'react-native';
-import { Event } from '../../core';
 
 /**
  * Minimal interface for native modules used as NativeEventEmitter sources.
@@ -10,40 +9,30 @@ export interface NativeModule extends TurboModule {
   removeListeners: (count: number) => void;
 }
 
-/** Extended NativeModule interface with optional getConstants */
-export interface NativeModuleWithConstants extends NativeModule {
-  getConstants?: () => { supportedEvents?: string[] };
-}
-
 export interface AdyenEventListener {
-  isSupported(event: Event): boolean;
   get eventEmitterTarget(): NativeModule;
 }
 
 /**
- * Generic wrapper for all Native Modules. Controls subscriptions and supported events.
- * Supported events are read from native module's getConstants().
- * @typeParam T - The specific native module interface for the concrete wrapper
+ * Base for native modules that JS subscribes to. Holds the module and exposes it as a
+ * `NativeEventEmitter` source.
+ *
+ * Which events a module can emit is deliberately not mirrored here. Native `supportedEvents()`
+ * and the JS `Event` enum are kept in sync by hand, so a second runtime copy of that list added
+ * no safety - and subscribing to an event a module never emits is harmless, because the listener
+ * simply never fires.
  */
 export abstract class EventListenerWrapper<
-  T extends NativeModuleWithConstants,
+  T extends NativeModule,
 > implements AdyenEventListener {
   protected nativeModule: T;
-  protected supportedEvents: readonly string[];
 
   constructor(nativeModule: T) {
     this.nativeModule = nativeModule;
-    const constants = nativeModule.getConstants?.();
-    this.supportedEvents = constants?.supportedEvents ?? [];
   }
 
   /** Returns the native module for use with NativeEventEmitter */
   get eventEmitterTarget(): T {
     return this.nativeModule;
-  }
-
-  /** Checks if the event is supported by the native module */
-  isSupported(event: Event): boolean {
-    return this.supportedEvents.includes(event);
   }
 }

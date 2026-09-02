@@ -1,12 +1,10 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { ComponentModuleWrapper } from '../ComponentModuleWrapper';
-import { Event } from '../../../core';
 
-function createMockComponentModule(supportedEvents: string[] = []) {
+function createMockComponentModule() {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
-    getConstants: jest.fn(() => ({ supportedEvents })),
     subscribe: jest.fn(),
     unsubscribe: jest.fn(),
     action: jest.fn(),
@@ -28,26 +26,6 @@ describe('ComponentModuleWrapper', () => {
     test('should return the native module', () => {
       const wrapper = new ComponentModuleWrapper(mockNativeModule);
       expect(wrapper.eventEmitterTarget).toBe(mockNativeModule);
-    });
-  });
-
-  describe('isSupported', () => {
-    test('should return true for events listed in getConstants', () => {
-      const module = createMockComponentModule([Event.onError, Event.onSubmit]);
-      const wrapper = new ComponentModuleWrapper(module);
-      expect(wrapper.isSupported(Event.onError)).toBe(true);
-      expect(wrapper.isSupported(Event.onSubmit)).toBe(true);
-    });
-
-    test('should return false for events not listed in getConstants', () => {
-      const module = createMockComponentModule([Event.onError]);
-      const wrapper = new ComponentModuleWrapper(module);
-      expect(wrapper.isSupported(Event.onComplete)).toBe(false);
-    });
-
-    test('should return false when no supported events', () => {
-      const wrapper = new ComponentModuleWrapper(mockNativeModule);
-      expect(wrapper.isSupported(Event.onError)).toBe(false);
     });
   });
 

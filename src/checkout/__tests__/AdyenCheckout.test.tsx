@@ -49,7 +49,6 @@ jest.mock('../../modules/dropin/AdyenDropIn', () => ({
     retry: (...args: any[]) => mockDropInRetry(...args),
     // Drop-in's own event families (stored payment, partial payments, address lookup) are
     // subscribed through this module, so it has to look like an event listener target.
-    isSupported: () => false,
     eventEmitterTarget: {},
   },
 }));

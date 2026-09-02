@@ -11,7 +11,7 @@ import type {
 } from '../../core';
 import {
   EventListenerWrapper,
-  type NativeModuleWithConstants,
+  type NativeModule,
 } from '../base/EventListenerWrapper';
 import type { DropInModule } from './AdyenDropIn';
 
@@ -28,10 +28,7 @@ export interface RemovesStoredPayment {
  * Native module interface specific to DropIn.
  */
 interface DropInNativeModule
-  extends
-    NativeModuleWithConstants,
-    PartialPaymentComponent,
-    RemovesStoredPayment {
+  extends NativeModule, PartialPaymentComponent, RemovesStoredPayment {
   action(action: PaymentAction): void;
   completion(resultCode: string): void;
   retry(message?: string): void;

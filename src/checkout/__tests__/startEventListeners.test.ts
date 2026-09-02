@@ -34,9 +34,8 @@ function fire(event: Event, data: any = {}) {
 // Helpers
 // --------------------------------------------------------------------------
 
-function createComponent(supported: Event[] = []) {
+function createComponent() {
   return {
-    isSupported: jest.fn((e: Event) => supported.includes(e)),
     eventEmitterTarget: {},
     action: jest.fn(),
     completion: jest.fn(),
@@ -78,25 +77,35 @@ describe('startEventListeners', () => {
   });
 
   // -------------------------------------------------------------------------
-  // subscribeIfSupported
+  // family scoping — the only gate, now that supportedEvents is gone
   // -------------------------------------------------------------------------
 
-  test('does not subscribe to unsupported events', () => {
-    const component = createComponent([]);
-    startEventListeners(component, createRefs());
+  test('subscribes every family by default', () => {
+    const subs = startEventListeners(createComponent(), createRefs());
+    expect(mockAddListener).toHaveBeenCalledTimes(subs.length);
+    expect(subs.length).toBeGreaterThan(0);
+  });
+
+  test('subscribes nothing when no family is enabled', () => {
+    const subs = startEventListeners(
+      createComponent(),
+      createRefs(),
+      undefined,
+      []
+    );
     expect(mockAddListener).not.toHaveBeenCalled();
+    expect(subs).toHaveLength(0);
   });
 
-  test('subscribes only to supported events', () => {
-    const component = createComponent([Event.onSubmit, Event.onError]);
-    startEventListeners(component, createRefs());
-    expect(mockAddListener).toHaveBeenCalledTimes(2);
-  });
-
-  test('returns one subscription per supported event', () => {
-    const component = createComponent([Event.onSubmit]);
-    const subs = startEventListeners(component, createRefs());
-    expect(subs).toHaveLength(1);
+  test('returns one subscription per subscribed event', () => {
+    const subs = startEventListeners(
+      createComponent(),
+      createRefs(),
+      undefined,
+      ['core']
+    );
+    // core = submit, additionalDetails, complete, error
+    expect(subs).toHaveLength(4);
   });
 
   // -------------------------------------------------------------------------
@@ -105,7 +114,7 @@ describe('startEventListeners', () => {
 
   test('onSubmit — calls onSubmit ref and dispatches action result to component', async () => {
     const refs = createRefs();
-    const component = createComponent([Event.onSubmit]);
+    const component = createComponent();
     const actionResult = SubmitResult.action({
       type: 'redirect',
       paymentMethodType: 'ideal',
@@ -135,7 +144,7 @@ describe('startEventListeners', () => {
 
   test('onSubmit — dispatches completed result to component', async () => {
     const refs = createRefs();
-    const component = createComponent([Event.onSubmit]);
+    const component = createComponent();
     refs.onSubmit.current.mockResolvedValue(
       SubmitResult.completed('Authorised')
     );
@@ -153,7 +162,7 @@ describe('startEventListeners', () => {
 
   test('onSubmit — dispatches retry result to component', async () => {
     const refs = createRefs();
-    const component = createComponent([Event.onSubmit]);
+    const component = createComponent();
     refs.onSubmit.current.mockResolvedValue(SubmitResult.retry('Try again'));
 
     startEventListeners(component, refs);
@@ -169,7 +178,7 @@ describe('startEventListeners', () => {
 
   test('onSubmit — injects returnUrl from config when missing in payload', async () => {
     const refs = createRefs();
-    const component = createComponent([Event.onSubmit]);
+    const component = createComponent();
     refs.onSubmit.current.mockResolvedValue(
       SubmitResult.completed('Authorised')
     );
@@ -189,7 +198,7 @@ describe('startEventListeners', () => {
 
   test('onError — calls onError ref', () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onError]), refs);
+    startEventListeners(createComponent(), refs);
     const error = { message: 'fail', errorCode: 'canceledByShopper' };
     fire(Event.onError, error);
     expect(refs.onError.current).toHaveBeenCalledWith(error);
@@ -197,7 +206,7 @@ describe('startEventListeners', () => {
 
   test('onComplete — calls onComplete ref', () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onComplete]), refs);
+    startEventListeners(createComponent(), refs);
     const result = {
       sessionId: 'sid',
       sessionResult: 'sr',
@@ -210,7 +219,7 @@ describe('startEventListeners', () => {
 
   test('onAdditionalDetails — calls ref and dispatches result to component', async () => {
     const refs = createRefs();
-    const component = createComponent([Event.onAdditionalDetails]);
+    const component = createComponent();
     refs.onAdditionalDetails.current.mockResolvedValue({
       resultCode: 'Authorised',
     });
@@ -231,14 +240,14 @@ describe('startEventListeners', () => {
 
   test('filters out events whose viewId does not match', () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onError]), refs, 'view-1');
+    startEventListeners(createComponent(), refs, 'view-1');
     fire(Event.onError, { viewId: 'view-2', message: 'err', errorCode: 'x' });
     expect(refs.onError.current).not.toHaveBeenCalled();
   });
 
   test('passes through events whose viewId matches', () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onError]), refs, 'view-1');
+    startEventListeners(createComponent(), refs, 'view-1');
     fire(Event.onError, { viewId: 'view-1', message: 'err', errorCode: 'x' });
     expect(refs.onError.current).toHaveBeenCalled();
   });
@@ -247,14 +256,14 @@ describe('startEventListeners', () => {
     // The other half of the attribution rule. Event names are global, so without this a
     // non-view listener would also receive every embedded view's events and fire twice.
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onError]), refs);
+    startEventListeners(createComponent(), refs);
     fire(Event.onError, { viewId: 'view-1', message: 'err', errorCode: 'x' });
     expect(refs.onError.current).not.toHaveBeenCalled();
   });
 
   test('a listener with no viewId receives untagged events', () => {
     const refs = createRefs();
-    startEventListeners(createComponent([Event.onError]), refs);
+    startEventListeners(createComponent(), refs);
     fire(Event.onError, { message: 'err', errorCode: 'x' });
     expect(refs.onError.current).toHaveBeenCalled();
   });
@@ -266,7 +275,7 @@ describe('startEventListeners', () => {
   test('startDropInEventListeners wires the families Drop-in owns', () => {
     const onDisableStoredPaymentMethod = jest.fn();
     const refs = createRefs({}, { onDisableStoredPaymentMethod });
-    const component = createComponent([Event.onDisableStoredPaymentMethod]);
+    const component = createComponent();
 
     startDropInEventListeners(component, refs);
     fire(Event.onDisableStoredPaymentMethod, { id: 'stored-1' });
@@ -277,7 +286,7 @@ describe('startEventListeners', () => {
 
   test('startDropInEventListeners does not subscribe core events', () => {
     const refs = createRefs();
-    const component = createComponent([Event.onSubmit, Event.onError]);
+    const component = createComponent();
 
     startDropInEventListeners(component, refs);
     fire(Event.onSubmit, { paymentData: {} });
@@ -295,7 +304,7 @@ describe('startEventListeners', () => {
 
   test('onApplePayShippingContactChange — calls user callback when configured', () => {
     const onShippingContactChange = jest.fn();
-    const component = createComponent([Event.onApplePayShippingContactChange]);
+    const component = createComponent();
     startEventListeners(component, createRefs({ onShippingContactChange }));
 
     const contact = { emailAddress: 'a@b.com' };
@@ -308,7 +317,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayShippingContactChange — resolve calls provideShippingContactUpdate', () => {
-    const component = createComponent([Event.onApplePayShippingContactChange]);
+    const component = createComponent();
     const onShippingContactChange = jest.fn((_contact: any, resolve: any) =>
       resolve({ paymentSummaryItems: [] })
     );
@@ -322,7 +331,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayShippingContactChange — auto-resolves with {} when no callback', () => {
-    const component = createComponent([Event.onApplePayShippingContactChange]);
+    const component = createComponent();
     startEventListeners(component, createRefs({}));
 
     fire(Event.onApplePayShippingContactChange, {});
@@ -336,7 +345,7 @@ describe('startEventListeners', () => {
 
   test('onApplePayShippingMethodChange — calls user callback when configured', () => {
     const onShippingMethodChange = jest.fn();
-    const component = createComponent([Event.onApplePayShippingMethodChange]);
+    const component = createComponent();
     startEventListeners(component, createRefs({ onShippingMethodChange }));
 
     const method = { label: 'Express', amount: '15', identifier: 'express' };
@@ -349,7 +358,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayShippingMethodChange — resolve calls provideShippingMethodUpdate', () => {
-    const component = createComponent([Event.onApplePayShippingMethodChange]);
+    const component = createComponent();
     const onShippingMethodChange = jest.fn((_method: any, resolve: any) =>
       resolve({ paymentSummaryItems: [] })
     );
@@ -363,7 +372,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayShippingMethodChange — auto-resolves with {} when no callback', () => {
-    const component = createComponent([Event.onApplePayShippingMethodChange]);
+    const component = createComponent();
     startEventListeners(component, createRefs({}));
 
     fire(Event.onApplePayShippingMethodChange, {});
@@ -377,7 +386,7 @@ describe('startEventListeners', () => {
 
   test('onApplePayCouponCodeChange — calls user callback with coupon code string', () => {
     const onCouponCodeChange = jest.fn();
-    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    const component = createComponent();
     startEventListeners(component, createRefs({ onCouponCodeChange }));
 
     fire(Event.onApplePayCouponCodeChange, { couponCode: 'SAVE10' });
@@ -389,7 +398,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayCouponCodeChange — resolve calls provideCouponCodeUpdate', () => {
-    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    const component = createComponent();
     const onCouponCodeChange = jest.fn((_code: any, resolve: any) =>
       resolve({ errors: [{ type: 'couponCode', message: 'Invalid' }] })
     );
@@ -403,7 +412,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayCouponCodeChange — auto-resolves with {} when no callback', () => {
-    const component = createComponent([Event.onApplePayCouponCodeChange]);
+    const component = createComponent();
     startEventListeners(component, createRefs({}));
 
     fire(Event.onApplePayCouponCodeChange, { couponCode: 'CODE' });
@@ -417,7 +426,7 @@ describe('startEventListeners', () => {
 
   test('onApplePayAuthorization — calls user callback with payment and actions', () => {
     const onAuthorize = jest.fn();
-    const component = createComponent([Event.onApplePayAuthorization]);
+    const component = createComponent();
     startEventListeners(component, createRefs({ onAuthorize }));
 
     const payment = { billingContact: { emailAddress: 'a@b.com' } };
@@ -433,7 +442,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayAuthorization — actions.resolve() calls provideAuthorizationResult with success', () => {
-    const component = createComponent([Event.onApplePayAuthorization]);
+    const component = createComponent();
     const onAuthorize = jest.fn((_payment: any, actions: any) =>
       actions.resolve()
     );
@@ -447,7 +456,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayAuthorization — actions.reject(errors) calls provideAuthorizationResult with failure', () => {
-    const component = createComponent([Event.onApplePayAuthorization]);
+    const component = createComponent();
     const errors = [{ type: 'billingAddress', message: 'Bad address' }];
     const onAuthorize = jest.fn((_payment: any, actions: any) =>
       actions.reject(errors)
@@ -463,7 +472,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayAuthorization — actions.reject() without errors passes undefined', () => {
-    const component = createComponent([Event.onApplePayAuthorization]);
+    const component = createComponent();
     const onAuthorize = jest.fn((_payment: any, actions: any) =>
       actions.reject()
     );
@@ -478,7 +487,7 @@ describe('startEventListeners', () => {
   });
 
   test('onApplePayAuthorization — auto-resolves with success when no callback', () => {
-    const component = createComponent([Event.onApplePayAuthorization]);
+    const component = createComponent();
     startEventListeners(component, createRefs({}));
 
     fire(Event.onApplePayAuthorization, {});

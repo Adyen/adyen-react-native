@@ -136,28 +136,26 @@ export function startEventListeners(
   );
   const eventSubscriptions: EmitterSubscription[] = [];
 
-  function subscribeIfSupported<T>(
+  function subscribe<T>(
     family: ListenerFamily,
     event: Event,
     handler: (data: T) => void
   ): void {
     if (!families.includes(family)) return;
-    if (nativeComponent.isSupported(event)) {
-      eventSubscriptions.push(
-        eventEmitter.addListener(event, (rawData: any) => {
-          // Attribution rule, both halves: a listener bound to a view takes only that view's
-          // events, and a listener not bound to a view takes only events no view produced.
-          // Without the second half a non-view listener would also see every embedded view's
-          // events, because event names are global on both platforms.
-          if (viewId) {
-            if (rawData?.viewId !== viewId) return;
-          } else if (rawData?.viewId !== undefined) {
-            return;
-          }
-          handler(rawData as T);
-        })
-      );
-    }
+    eventSubscriptions.push(
+      eventEmitter.addListener(event, (rawData: any) => {
+        // Attribution rule, both halves: a listener bound to a view takes only that view's
+        // events, and a listener not bound to a view takes only events no view produced.
+        // Without the second half a non-view listener would also see every embedded view's
+        // events, because event names are global on both platforms.
+        if (viewId) {
+          if (rawData?.viewId !== viewId) return;
+        } else if (rawData?.viewId !== undefined) {
+          return;
+        }
+        handler(rawData as T);
+      })
+    );
   }
 
   async function submitPayment(data: PaymentMethodData) {
@@ -182,16 +180,16 @@ export function startEventListeners(
   }
 
   // Core events
-  subscribeIfSupported<SubmitModel>('core', Event.onSubmit, (response) =>
+  subscribe<SubmitModel>('core', Event.onSubmit, (response) =>
     submitPayment(response.paymentData)
   );
-  subscribeIfSupported<AdyenError>('core', Event.onError, (error) =>
+  subscribe<AdyenError>('core', Event.onError, (error) =>
     refs.onError.current?.(error)
   );
-  subscribeIfSupported('core', Event.onComplete, (data) =>
+  subscribe('core', Event.onComplete, (data) =>
     refs.onComplete.current?.(data)
   );
-  subscribeIfSupported<PaymentDetailsData>(
+  subscribe<PaymentDetailsData>(
     'core',
     Event.onAdditionalDetails,
     async (data) => {
@@ -204,15 +202,11 @@ export function startEventListeners(
 
   // Address lookup
   const lookupModule = nativeComponent as unknown as AddressLookup;
-  subscribeIfSupported(
-    'addressLookup',
-    Event.onAddressUpdate,
-    async (data: any) => {
-      const prompt = viewId && typeof data === 'object' ? data.value : data;
-      refs.config.current?.card?.onUpdateAddress?.(prompt, lookupModule);
-    }
-  );
-  subscribeIfSupported(
+  subscribe('addressLookup', Event.onAddressUpdate, async (data: any) => {
+    const prompt = viewId && typeof data === 'object' ? data.value : data;
+    refs.config.current?.card?.onUpdateAddress?.(prompt, lookupModule);
+  });
+  subscribe(
     'addressLookup',
     Event.onAddressConfirm,
     (address: AddressLookupItem) =>
@@ -220,7 +214,7 @@ export function startEventListeners(
   );
 
   // BIN lookup and value
-  subscribeIfSupported('card', Event.onBinLookup, (data: any) => {
+  subscribe('card', Event.onBinLookup, (data: any) => {
     const lookupData =
       viewId && !Array.isArray(data) && typeof data === 'object'
         ? data.data
@@ -228,14 +222,14 @@ export function startEventListeners(
     refs.config.current?.card?.onBinLookup?.(lookupData);
   });
 
-  subscribeIfSupported('card', Event.onBinValue, (data: any) => {
+  subscribe('card', Event.onBinValue, (data: any) => {
     const value = viewId && typeof data === 'object' ? data.value : data;
     refs.config.current?.card?.onBinValue?.(value);
   });
 
   // Stored payment method removal (Drop-in only)
   const nativeModule = nativeComponent as unknown as RemovesStoredPayment;
-  subscribeIfSupported<StoredPaymentMethod>(
+  subscribe<StoredPaymentMethod>(
     'dropIn',
     Event.onDisableStoredPaymentMethod,
     (data) =>
@@ -249,7 +243,7 @@ export function startEventListeners(
   // Partial payments (Drop-in only)
   const partialComponent =
     nativeComponent as unknown as PartialPaymentComponent;
-  subscribeIfSupported(
+  subscribe(
     'dropIn',
     Event.onCheckBalance,
     async (paymentData: PaymentMethodData) =>
@@ -259,13 +253,13 @@ export function startEventListeners(
         (error) => partialComponent.provideBalance(false, undefined, error)
       )
   );
-  subscribeIfSupported('dropIn', Event.onRequestOrder, () => {
+  subscribe('dropIn', Event.onRequestOrder, () => {
     refs.config.current?.partialPayment?.onOrderRequest?.(
       (order: Order) => partialComponent.provideOrder(true, order, undefined),
       (error: Error) => partialComponent.provideOrder(false, undefined, error)
     );
   });
-  subscribeIfSupported(
+  subscribe(
     'dropIn',
     Event.onCancelOrder,
     ({ order, shouldUpdatePaymentMethods }: any) =>
@@ -279,7 +273,7 @@ export function startEventListeners(
   // Apple Pay delegate callbacks
   const applePayModule = nativeComponent as unknown as ApplePayCallbackHandler;
 
-  subscribeIfSupported<ApplePayCouponCodeEvent>(
+  subscribe<ApplePayCouponCodeEvent>(
     'applePay',
     Event.onApplePayCouponCodeChange,
     (data) => {
@@ -294,7 +288,7 @@ export function startEventListeners(
     }
   );
 
-  subscribeIfSupported<ApplePayPaymentContact>(
+  subscribe<ApplePayPaymentContact>(
     'applePay',
     Event.onApplePayShippingContactChange,
     (contact) => {
@@ -309,7 +303,7 @@ export function startEventListeners(
     }
   );
 
-  subscribeIfSupported<ApplePayShippingMethod>(
+  subscribe<ApplePayShippingMethod>(
     'applePay',
     Event.onApplePayShippingMethodChange,
     (shippingMethod) => {
@@ -325,7 +319,7 @@ export function startEventListeners(
   );
 
   // Apple Pay — authorization callback
-  subscribeIfSupported<ApplePayPaymentAuthorization>(
+  subscribe<ApplePayPaymentAuthorization>(
     'applePay',
     Event.onApplePayAuthorization,
     (payment) => {

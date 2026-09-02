@@ -1,10 +1,10 @@
 import { NativeModules } from 'react-native';
 import type { AddressLookupItem, PaymentAction } from '../../core';
-import type { NativeModuleWithConstants } from '../base/EventListenerWrapper';
+import type { NativeModule } from '../base/EventListenerWrapper';
 import { ModuleMock } from '../base/ModuleMock';
 import { ComponentModuleWrapper } from './ComponentModuleWrapper';
 
-export interface ComponentNativeModule extends NativeModuleWithConstants {
+export interface ComponentNativeModule extends NativeModule {
   subscribe(viewId: string): void;
   unsubscribe(viewId: string): void;
   action(viewId: string, action: PaymentAction): void;

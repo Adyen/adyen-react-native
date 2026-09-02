@@ -340,10 +340,10 @@ export interface Checkout {
     unsubscribe(viewId: string): void;
 }
 
-// Warning: (ae-forgotten-export) The symbol "NativeModuleWithConstants" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "NativeModule" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export interface ComponentNativeModule extends NativeModuleWithConstants {
+export interface ComponentNativeModule extends NativeModule {
     // (undocumented)
     action(viewId: string, action: PaymentAction): void;
     // (undocumented)

@@ -6,7 +6,6 @@ function createMockDropInModule() {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
-    getConstants: jest.fn(() => ({ supportedEvents: [] })),
     action: jest.fn(),
     completion: jest.fn(),
     retry: jest.fn(),

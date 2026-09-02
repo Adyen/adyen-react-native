@@ -3,7 +3,6 @@ import type {
   AddressLookupItem,
   AdvancedPayment,
   PaymentAction,
-  Event,
 } from '../../core';
 import type {
   AdyenEventListener,
@@ -24,9 +23,6 @@ export class ComponentProxy
     readonly viewId: string
   ) {}
 
-  isSupported(event: Event): boolean {
-    return this.wrapper.isSupported(event);
-  }
   get eventEmitterTarget(): NativeModule {
     return this.wrapper.eventEmitterTarget;
   }

@@ -8,15 +8,10 @@ import type {
 /**
  * Creates a mock NativeModule for testing
  */
-export function createMockNativeModule(
-  supportedEvents: string[] = []
-): jest.Mocked<
-  NativeModule & { getConstants: () => { supportedEvents: string[] } }
-> {
+export function createMockNativeModule(): jest.Mocked<NativeModule> {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
-    getConstants: jest.fn(() => ({ supportedEvents })),
   };
 }
 
