@@ -4,9 +4,8 @@
 > This document reflects the v6 alpha architecture. For migration details from v5, see
 > `docs/ios-bridge-migration-guide.md` and `docs/android-bridge-migration-guide.md`.
 
-## Data Flow
-
-![Data Flow](./assets/Architecture.png)
+For UML and flow diagrams of the same structure, see
+[js-architecture.md](./js-architecture.md) and [native-architecture.md](./native-architecture.md).
 
 ## Checkout Lifecycle Contract
 

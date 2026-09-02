@@ -1,13 +1,18 @@
 import type {
   AddressLookup,
   AddressLookupItem,
+  AdvancedPayment,
   Balance,
   Checkout,
   Order,
   PartialPaymentComponent,
+  PaymentAction,
   PaymentMethodsResponse,
 } from '../../core';
-import { ModuleWrapper, type BaseNativeModule } from '../base/ModuleWrapper';
+import {
+  EventListenerWrapper,
+  type NativeModuleWithConstants,
+} from '../base/EventListenerWrapper';
 import type { DropInModule } from './AdyenDropIn';
 
 /**
@@ -23,7 +28,13 @@ export interface RemovesStoredPayment {
  * Native module interface specific to DropIn.
  */
 interface DropInNativeModule
-  extends BaseNativeModule, PartialPaymentComponent, RemovesStoredPayment {
+  extends
+    NativeModuleWithConstants,
+    PartialPaymentComponent,
+    RemovesStoredPayment {
+  action(action: PaymentAction): void;
+  completion(resultCode: string): void;
+  retry(message?: string): void;
   start(paymentMethods: PaymentMethodsResponse): void;
   getReturnURL(): Promise<string>;
   providePaymentMethods(
@@ -41,14 +52,25 @@ interface DropInNativeModule
  * Drop-in wrapper with full feature support.
  */
 export class DropInWrapper
-  extends ModuleWrapper<DropInNativeModule>
+  extends EventListenerWrapper<DropInNativeModule>
   implements
     DropInModule,
+    AdvancedPayment,
     RemovesStoredPayment,
     PartialPaymentComponent,
     AddressLookup
 {
-  name: string = 'DropIn';
+  action(action: PaymentAction): void {
+    this.nativeModule.action(action);
+  }
+
+  completion(resultCode: string): void {
+    this.nativeModule.completion(resultCode);
+  }
+
+  retry(message?: string): void {
+    this.nativeModule.retry(message);
+  }
 
   start(checkout: Checkout): void {
     this.nativeModule.start(checkout.paymentMethods);

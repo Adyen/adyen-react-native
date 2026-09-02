@@ -30,7 +30,6 @@ export abstract class EventListenerWrapper<
 > implements AdyenEventListener {
   protected nativeModule: T;
   protected supportedEvents: readonly string[];
-  abstract get name(): string;
 
   constructor(nativeModule: T) {
     this.nativeModule = nativeModule;

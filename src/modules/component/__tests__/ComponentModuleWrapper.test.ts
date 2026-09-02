@@ -24,13 +24,6 @@ describe('ComponentModuleWrapper', () => {
     mockNativeModule = createMockComponentModule();
   });
 
-  describe('name', () => {
-    test('should return "AdyenComponent"', () => {
-      const wrapper = new ComponentModuleWrapper(mockNativeModule);
-      expect(wrapper.name).toBe('AdyenComponent');
-    });
-  });
-
   describe('eventEmitterTarget', () => {
     test('should return the native module', () => {
       const wrapper = new ComponentModuleWrapper(mockNativeModule);

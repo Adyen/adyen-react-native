@@ -30,13 +30,6 @@ describe('DropInWrapper', () => {
     mockNativeModule = createMockDropInModule();
   });
 
-  describe('name', () => {
-    test('should return "DropIn"', () => {
-      const wrapper = new DropInWrapper(mockNativeModule);
-      expect(wrapper.name).toBe('DropIn');
-    });
-  });
-
   describe('getReturnURL', () => {
     test('should call native module getReturnURL', async () => {
       const wrapper = new DropInWrapper(mockNativeModule);

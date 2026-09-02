@@ -7,8 +7,6 @@ import type { ComponentNativeModule } from './AdyenComponentModule';
  * Routes JS commands to the correct native view controller by `viewId`.
  */
 export class ComponentModuleWrapper extends EventListenerWrapper<ComponentNativeModule> {
-  name: string = 'AdyenComponent';
-
   subscribe(viewId: string): void {
     this.nativeModule.subscribe(viewId);
   }
