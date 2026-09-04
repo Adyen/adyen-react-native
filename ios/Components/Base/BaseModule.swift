@@ -16,7 +16,35 @@ internal let errorAdditionalDetailsResult = AdditionalDetailsResult.completion(r
 /// Base class for all Adyen React Native modules.
 /// - Important: Only one payment flow is supported at a time. Starting a new payment flow
 ///   while another is in progress will replace the current session and presenter.
+extension BaseModule: EventEmitter {
+    func send(event: EventName, body: Any?) {
+        sendEvent(withName: event.rawValue, body: body)
+    }
+}
+
 internal class BaseModule: RCTEventEmitter {
+
+    /// Override for testing. When nil, uses self (RCTEventEmitter).
+    internal var emitterOverride: EventEmitter?
+    internal var emitter: EventEmitter {
+        emitterOverride ?? self
+    }
+
+    override func stopObserving() { /* No JS events expected */ }
+    override func startObserving() { /* No JS events expected */ }
+
+    @objc
+    override func constantsToExport() -> [AnyHashable: Any]! {
+        ["supportedEvents": supportedEvents() ?? []]
+    }
+
+    internal func sendEvent(event: EventName) {
+        emitter.send(event: event, body: [:])
+    }
+
+    internal func sendEvent(event: EventName, body: Any?) {
+        emitter.send(event: event, body: body)
+    }
 
     /// The pre-created checkout state set by ``ContextModule.setup()`` or ``ContextModule.setupAdvanced()``.
     /// Downstream modules (``ComponentModule``, ``DropInModule``) can reuse this instead of

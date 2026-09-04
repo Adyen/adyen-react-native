@@ -25,21 +25,4 @@ internal class BaseActionModule: BaseModuleSender {
             self?.checkout?.handle(action: action)
         }
     }
-
-    /// Wires the action-only-flow closures on the checkout object to React Native event emission.
-    /// Replaces the v5 action-component delegate conformance with v6 closure callbacks.
-    @MainActor
-    internal func setupActionCallbacks(on checkout: ActionOnlyCheckout) {
-        self.checkout = checkout
-        _ = checkout
-            .onAdditionalDetails { [weak self] data in
-                await self?.awaitAdditionalDetailsResult(for: data) ?? errorAdditionalDetailsResult
-            }
-            .onComplete { [weak self] result in
-                self?.sendCompleteEvent(resultCode: result.resultCode)
-            }
-            .onFailure { [weak self] error in
-                self?.sendError(error: error)
-            }
-    }
 }

@@ -4,7 +4,7 @@ export enum Event {
   onSubmit = 'didSubmitCallback',
   /** Event handler, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods. */
   onAdditionalDetails = 'didProvideCallback',
-  /** Event handler, called when a shopper finishes the flow (Voucher payments only). */
+  /** Event handler, called when the payment reaches a final result in the advanced flow. */
   onComplete = 'didCompleteCallback',
   /** Event handler, called when payment about to be terminate. */
   onError = 'didFailCallback',

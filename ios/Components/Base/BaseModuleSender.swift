@@ -6,46 +6,18 @@
 
 import Adyen
 
-extension BaseModuleSender: EventEmitter {
-    func send(event: EventName, body: Any?) {
-        sendEvent(withName: event.rawValue, body: body)
-    }
-}
-
 internal class BaseModuleSender: BaseModule {
-
-    /// Override for testing. When nil, uses self (RCTEventEmitter).
-    internal var emitterOverride: EventEmitter?
-    private var emitter: EventEmitter {
-        emitterOverride ?? self
-    }
 
     /// Suspended advanced-flow closures for this module, resumed once JS returns a result.
     internal let resultSink = AdvancedResultSink()
 
     internal var checkout: BaseCheckout?
 
-    override func stopObserving() { /* No JS events expected */ }
-    override func startObserving() { /* No JS events expected */ }
-
     override open func supportedEvents() -> [String]! {
         [EventName.fail, EventName.submit].map(\.rawValue)
     }
 
-    @objc
-    override func constantsToExport() -> [AnyHashable: Any]! {
-        ["supportedEvents": supportedEvents() ?? []]
-    }
-
     // MARK: - Event emmiter helpers
-
-    internal func sendEvent(event: EventName) {
-        emitter.send(event: event, body: [:])
-    }
-
-    internal func sendEvent(event: EventName, body: Any?) {
-        emitter.send(event: event, body: body)
-    }
 
     internal func sendSubmitEvent(data: PaymentComponentData) {
         let extra = (data.paymentMethod as? ApplePayDetails)?.extraData

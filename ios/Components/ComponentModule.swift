@@ -8,7 +8,7 @@ import Adyen
 import React
 
 @objc(AdyenComponent)
-internal final class ComponentModule: BaseAddressModule {
+internal final class ComponentModule: BaseModule {
 
     static var shared: ComponentModule?
 
@@ -26,7 +26,11 @@ internal final class ComponentModule: BaseAddressModule {
     private var lookupCompletionHandlers: [String: (Result<PostalAddress, Error>) -> Void] = [:]
 
     override func supportedEvents() -> [String]! {
-        super.supportedEvents() + EventName.cardEvents.map(\.rawValue)
+        // Stated in full rather than chained: this module extends BaseModule directly, because it
+        // uses nothing from the BaseModuleSender -> BaseActionModule -> BaseAddressModule ladder.
+        // Each ComponentProxy owns its own flow; the module is only a bus and a registry.
+        (EventName.coreEvents + EventName.addressLookupEvents + EventName.cardEvents)
+            .map(\.rawValue)
     }
 
     override init() {
