@@ -26,9 +26,7 @@ import com.adyenreactnativesdk.component.googlepay.GooglePayAvailability
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
-import com.adyenreactnativesdk.util.messaging.EventSource
 import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.messaging.TaggedEmitter
 import com.adyenreactnativesdk.util.messaging.sessionEvents
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext

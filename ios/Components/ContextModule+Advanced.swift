@@ -46,26 +46,18 @@ extension ContextModule {
 
     // MARK: - Event emission
 
-    /// Stamps a payload with the presenter identity so JS routes the result back to this module
-    /// rather than to Drop-in. Drop-in emits untagged for now, which JS reads as Drop-in.
-    private func taggedBody(_ body: [String: Any]) -> [String: Any] {
-        var tagged = body
-        tagged[EventSource.key] = EventSource.context
-        return tagged
-    }
-
     private func sendSubmitEvent(data: PaymentComponentData) {
         let extra = (data.paymentMethod as? ApplePayDetails)?.extraData
         let response = SubmitData(paymentData: data.jsonObject, extra: extra)
-        sendEvent(withName: EventName.submit.rawValue, body: taggedBody(response.jsonObject))
+        sendEvent(withName: EventName.submit.rawValue, body: response.jsonObject)
     }
 
     private func sendProvideEvent(actionData: ActionComponentData) {
-        sendEvent(withName: EventName.additionalDetails.rawValue, body: taggedBody(actionData.jsonObject))
+        sendEvent(withName: EventName.additionalDetails.rawValue, body: actionData.jsonObject)
     }
 
     private func sendCompleteEvent(resultCode: CheckoutResultCode) {
-        sendEvent(withName: EventName.complete.rawValue, body: taggedBody([Key.resultCode: resultCode.rawValue]))
+        sendEvent(withName: EventName.complete.rawValue, body: [Key.resultCode: resultCode.rawValue])
     }
 
     private enum Key {

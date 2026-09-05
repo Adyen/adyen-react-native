@@ -12,17 +12,17 @@ class SessionCheckoutService : SessionDropInService() {
   }
 
   override fun onAddressLookupQueryChanged(query: String) {
-    AdyenPaymentPackage.dropInMessageBus.onQueryChanged(query)
+    AdyenPaymentPackage.messageBus.onQueryChanged(query)
   }
 
   override fun onAddressLookupCompletion(lookupAddress: LookupAddress): Boolean =
-    AdyenPaymentPackage.dropInMessageBus.onLookupCompletion(lookupAddress)
+    AdyenPaymentPackage.messageBus.onLookupCompletion(lookupAddress)
 
   override fun onBinLookup(data: List<BinLookupData>) {
     // TODO: v6 migration - map old BinLookupData to v6 BinLookupData
   }
 
   override fun onBinValue(binValue: String) {
-    AdyenPaymentPackage.dropInMessageBus.onBinValue(binValue)
+    AdyenPaymentPackage.messageBus.onBinValue(binValue)
   }
 }
