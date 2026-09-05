@@ -36,8 +36,6 @@ const configuration = {
   returnUrl: 'myapp://checkout',
 };
 
-const mockSubscribeFn = jest.fn<(viewId: string) => void>();
-const mockUnsubscribeFn = jest.fn<(viewId: string) => void>();
 const mockInvalidateFn = jest.fn<() => void>();
 
 /** Builds a checkout whose host reports the given active state. */
@@ -45,8 +43,6 @@ function createTestCheckout(isActive = true) {
   const { createCheckout } = require('../createCheckout');
   return createCheckout(paymentMethods, configuration, {
     isActive: () => isActive,
-    subscribe: mockSubscribeFn,
-    unsubscribe: mockUnsubscribeFn,
     invalidate: mockInvalidateFn,
   });
 }
@@ -56,8 +52,6 @@ describe('createCheckout', () => {
     mockIsAvailable.mockReset();
     mockRequiresUserInteraction.mockReset();
     mockSubmit.mockReset();
-    mockSubscribeFn.mockReset();
-    mockUnsubscribeFn.mockReset();
     mockInvalidateFn.mockReset();
   });
 
@@ -91,18 +85,6 @@ describe('createCheckout', () => {
     createTestCheckout().submit('applepay');
 
     expect(mockSubmit).toHaveBeenCalledWith('applepay');
-  });
-
-  test('subscribe delegates to the host', () => {
-    createTestCheckout().subscribe('view-1');
-
-    expect(mockSubscribeFn).toHaveBeenCalledWith('view-1');
-  });
-
-  test('unsubscribe delegates to the host', () => {
-    createTestCheckout().unsubscribe('view-1');
-
-    expect(mockUnsubscribeFn).toHaveBeenCalledWith('view-1');
   });
 
   test('invalidate delegates to the host', () => {
@@ -153,22 +135,6 @@ describe('createCheckout', () => {
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('checkout.requiresUserInteraction()')
       );
-    });
-
-    test('subscribe is ignored with a warning', () => {
-      createTestCheckout(false).subscribe('view-1');
-
-      expect(mockSubscribeFn).not.toHaveBeenCalled();
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('checkout.subscribe()')
-      );
-    });
-
-    test('unsubscribe still runs so views can tear down', () => {
-      createTestCheckout(false).unsubscribe('view-1');
-
-      expect(mockUnsubscribeFn).toHaveBeenCalledWith('view-1');
-      expect(warn).not.toHaveBeenCalled();
     });
 
     test('invalidate stays a silent no-op', () => {

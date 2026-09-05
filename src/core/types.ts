@@ -489,10 +489,4 @@ export interface Checkout {
    * longer active and its other methods are ignored.
    */
   invalidate(): void;
-
-  /** @internal Used by AdyenComponent to subscribe a native view to the event bus. */
-  subscribe(viewId: string): void;
-
-  /** @internal Used by AdyenComponent to unsubscribe a native view from the event bus. */
-  unsubscribe(viewId: string): void;
 }

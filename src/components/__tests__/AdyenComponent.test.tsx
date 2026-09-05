@@ -8,21 +8,11 @@ import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { render } from '@testing-library/react-native';
 import type { Checkout } from '../../core';
 
-const mockSubscribe = jest.fn();
-const mockUnsubscribe = jest.fn();
-
 const mockConfiguration = {
   environment: 'test' as const,
   clientKey: 'test_ABCDEFGH',
   returnUrl: 'myapp://checkout',
 };
-
-// findNodeHandle drives the viewId used for subscribe/unsubscribe. It is re-exported
-// by the react-native index from RendererProxy, so stub it there to yield a stable tag.
-jest.mock('react-native/Libraries/ReactNative/RendererProxy', () => ({
-  ...jest.requireActual('react-native/Libraries/ReactNative/RendererProxy'),
-  findNodeHandle: jest.fn(() => 101),
-}));
 
 // Capture the props handed to the native Fabric view so we can assert on them.
 const capturedProps: Record<string, any> = {};
@@ -41,8 +31,6 @@ import { AdyenComponent } from '../AdyenComponent';
 const fakeCheckout = {
   paymentMethods: { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
   configuration: mockConfiguration,
-  subscribe: (...args: any[]) => mockSubscribe(...args),
-  unsubscribe: (...args: any[]) => mockUnsubscribe(...args),
   isAvailable: jest.fn(),
   requiresUserInteraction: jest.fn(),
   submit: jest.fn(),
@@ -51,8 +39,6 @@ const fakeCheckout = {
 
 describe('AdyenComponent', () => {
   beforeEach(() => {
-    mockSubscribe.mockClear();
-    mockUnsubscribe.mockClear();
     for (const key of Object.keys(capturedProps)) delete capturedProps[key];
   });
 
@@ -66,16 +52,16 @@ describe('AdyenComponent', () => {
     expect(capturedProps.configuration).toBe(JSON.stringify(mockConfiguration));
   });
 
-  test('subscribes on mount and unsubscribes on unmount by reactTag', () => {
+  test('mounts and unmounts without announcing itself to the checkout', () => {
+    // The merchant's callbacks are global, so a view has nothing to subscribe to. Native
+    // registration happens inside the view itself, purely so teardown can dispose it.
     const { unmount } = render(
       <AdyenComponent checkout={fakeCheckout} type="ideal" />
     );
 
-    expect(mockSubscribe).toHaveBeenCalledWith('101');
+    expect(Object.keys(fakeCheckout)).not.toContain('subscribe');
 
-    unmount();
-
-    expect(mockUnsubscribe).toHaveBeenCalledWith('101');
+    expect(() => unmount()).not.toThrow();
   });
 
   test('throws when a second component of the same type is mounted', () => {

@@ -40,14 +40,11 @@ class ContextModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseActionModule(reactContext, messageBus) {
-  /** Pre-built controllers keyed by payment method type, populated by [requiresUserInteraction]. */
-  private val componentManagers: MutableMap<String, ComponentManager> = mutableMapOf()
-
   /**
    * The manager whose SDK closure is suspended waiting on JS, if any.
    *
-   * Headless payments can build a manager per payment method type, but only one can be mid-flight,
-   * so the awaiting manager is the unambiguous target for `action` / `completion` / `retry`.
+   * Only one payment can be mid-flight, so the awaiting manager is the unambiguous target for
+   * `action` / `completion` / `retry`.
    */
   private fun awaitingManager(): ComponentManager? = componentManagers.values.firstOrNull { it.isAwaitingResult }
 
@@ -219,12 +216,7 @@ class ContextModule(
     .getOrPut(type) {
       ComponentManager(
         activity = appCompatActivity,
-        // Must be the context-tagged bus, not the shared `messageBus`. ComponentManager is also
-        // used by embedded views, which inject a viewId-tagged bus; anything built on the untagged
-        // shared bus is read by JS as Drop-in and its result would be routed to the wrong module.
-        messageBus = MessageBus(TaggedEmitter.forSource(AdyenPaymentPackage.emitter, EventSource.CONTEXT)),
-        // Deliberately the context-owned bridge on the *untagged* bus: before-submit must never
-        // carry a tag, or the JS router would filter it out and deadlock the session flow.
+        messageBus = messageBus,
         sessionBeforeSubmitBridge = BaseModule.checkoutState?.sessionBeforeSubmitBridge,
       )
     }.let { it.checkoutController ?: it.createController(context, type) }
@@ -352,6 +344,27 @@ class ContextModule(
   }
 
   companion object {
+    /**
+     * Every manager that can have a suspended SDK closure, keyed by payment method type.
+     *
+     * Holds both the headless managers built by [requiresUserInteraction] / [submit] and the ones
+     * built by mounted embedded views. A result arriving from JS carries no routing information,
+     * so this table is what makes the suspended closure findable.
+     */
+    private val componentManagers: MutableMap<String, ComponentManager> = mutableMapOf()
+
+    /** Adds a mounted view's manager to the routing table. */
+    internal fun registerManager(
+      type: String,
+      manager: ComponentManager,
+    ) {
+      componentManagers[type] = manager
+    }
+
+    internal fun unregisterManager(type: String) {
+      componentManagers.remove(type)?.dispose()
+    }
+
     private const val TAG = "ContextModule"
     private const val COMPONENT_NAME = "AdyenContext"
     private const val ID = "id"

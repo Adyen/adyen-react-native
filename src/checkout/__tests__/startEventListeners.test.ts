@@ -87,23 +87,13 @@ describe('startEventListeners', () => {
   });
 
   test('subscribes nothing when no family is enabled', () => {
-    const subs = startEventListeners(
-      createComponent(),
-      createRefs(),
-      undefined,
-      []
-    );
+    const subs = startEventListeners(createComponent(), createRefs(), []);
     expect(mockAddListener).not.toHaveBeenCalled();
     expect(subs).toHaveLength(0);
   });
 
   test('returns one subscription per subscribed event', () => {
-    const subs = startEventListeners(
-      createComponent(),
-      createRefs(),
-      undefined,
-      ['core']
-    );
+    const subs = startEventListeners(createComponent(), createRefs(), ['core']);
     // core = submit, additionalDetails, complete, error
     expect(subs).toHaveLength(4);
   });
@@ -235,33 +225,13 @@ describe('startEventListeners', () => {
   });
 
   // -------------------------------------------------------------------------
-  // viewId filtering
+  // delivery — no attribution to apply
   // -------------------------------------------------------------------------
 
-  test('filters out events whose viewId does not match', () => {
-    const refs = createRefs();
-    startEventListeners(createComponent(), refs, 'view-1');
-    fire(Event.onError, { viewId: 'view-2', message: 'err', errorCode: 'x' });
-    expect(refs.onError.current).not.toHaveBeenCalled();
-  });
-
-  test('passes through events whose viewId matches', () => {
-    const refs = createRefs();
-    startEventListeners(createComponent(), refs, 'view-1');
-    fire(Event.onError, { viewId: 'view-1', message: 'err', errorCode: 'x' });
-    expect(refs.onError.current).toHaveBeenCalled();
-  });
-
-  test('a listener with no viewId ignores events produced by a view', () => {
-    // The other half of the attribution rule. Event names are global, so without this a
-    // non-view listener would also receive every embedded view's events and fire twice.
-    const refs = createRefs();
-    startEventListeners(createComponent(), refs);
-    fire(Event.onError, { viewId: 'view-1', message: 'err', errorCode: 'x' });
-    expect(refs.onError.current).not.toHaveBeenCalled();
-  });
-
-  test('a listener with no viewId receives untagged events', () => {
+  test('delivers every event to the listener', () => {
+    // There is one listener set and one set of merchant callbacks, so nothing needs
+    // filtering. Events used to carry a viewId and be routed by it, which existed only
+    // because each embedded view had its own listeners.
     const refs = createRefs();
     startEventListeners(createComponent(), refs);
     fire(Event.onError, { message: 'err', errorCode: 'x' });

@@ -32,19 +32,6 @@ extension ContextModule {
             }
     }
 
-    /// Re-points the shared checkout's advanced closures back at this module.
-    ///
-    /// ``ComponentProxy`` takes ownership of `onSubmit` / `onAdditionalDetails` on the shared
-    /// ``AdvancedCheckout`` while an embedded view is mounted — the closures live on the one
-    /// checkout object, so the last writer wins. When the final proxy is disposed the context has
-    /// to own them again, otherwise a headless ``submit(_:)`` suspends on a disposed proxy and
-    /// never resumes. No-op outside the advanced flow.
-    @MainActor
-    internal func reattachAdvancedCallbacks() {
-        guard let advanced = BaseModule.checkoutState?.checkoutContext as? AdvancedCheckout else { return }
-        setupAdvancedCallbacks(on: advanced)
-    }
-
     // MARK: - Suspension helpers
 
     @MainActor

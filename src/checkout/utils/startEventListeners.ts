@@ -73,9 +73,8 @@ interface NativeResultDispatcher {
 /**
  * Groups of related events a caller can subscribe to independently.
  *
- * Which presenter owns which family differs. An embedded view owns everything it can emit, while
- * Drop-in owns its own families but shares `core` with the context listeners, which route by
- * presenter tag. Subscribing `core` from both would run merchant callbacks twice.
+ * Drop-in owns its own families but not `core`: those events arrive on the context listeners, so
+ * subscribing them here too would run merchant callbacks twice.
  */
 export type ListenerFamily =
   'core' | 'card' | 'addressLookup' | 'dropIn' | 'applePay';
@@ -88,7 +87,7 @@ const ALL_FAMILIES: readonly ListenerFamily[] = [
   'applePay',
 ];
 
-/** Families Drop-in owns exclusively. `core` is deliberately absent - see {@link ListenerFamily}. */
+/** Families Drop-in owns exclusively. `core` is deliberately absent — see {@link ListenerFamily}. */
 const DROP_IN_FAMILIES: readonly ListenerFamily[] = [
   'card',
   'addressLookup',
@@ -98,10 +97,6 @@ const DROP_IN_FAMILIES: readonly ListenerFamily[] = [
 /**
  * Subscribes the event families Drop-in owns.
  *
- * Stored-payment removal, partial payments and address lookup previously had no listener at all
- * outside embedded views, because `startEventListeners` was only ever called per `viewId`. Without
- * these the matching Drop-in configuration callbacks never fire.
- *
  * @param nativeComponent - The Drop-in wrapper.
  * @param refs - Callback refs for event handlers.
  */
@@ -109,12 +104,7 @@ export function startDropInEventListeners(
   nativeComponent: EventListenerTarget,
   refs: EventHandlerRefs
 ): EmitterSubscription[] {
-  return startEventListeners(
-    nativeComponent,
-    refs,
-    undefined,
-    DROP_IN_FAMILIES
-  );
+  return startEventListeners(nativeComponent, refs, DROP_IN_FAMILIES);
 }
 
 /**
@@ -122,13 +112,11 @@ export function startDropInEventListeners(
  *
  * @param nativeComponent - The native wrapper used for event subscription.
  * @param refs - Callback refs for event handlers.
- * @param viewId - When set, events are filtered by `data.viewId` (embedded component mode).
  * @param families - Which event families to subscribe. Defaults to all of them.
  */
 export function startEventListeners(
   nativeComponent: EventListenerTarget,
   refs: EventHandlerRefs,
-  viewId?: string,
   families: readonly ListenerFamily[] = ALL_FAMILIES
 ): EmitterSubscription[] {
   const eventEmitter = new NativeEventEmitter(
@@ -143,18 +131,7 @@ export function startEventListeners(
   ): void {
     if (!families.includes(family)) return;
     eventSubscriptions.push(
-      eventEmitter.addListener(event, (rawData: any) => {
-        // Attribution rule, both halves: a listener bound to a view takes only that view's
-        // events, and a listener not bound to a view takes only events no view produced.
-        // Without the second half a non-view listener would also see every embedded view's
-        // events, because event names are global on both platforms.
-        if (viewId) {
-          if (rawData?.viewId !== viewId) return;
-        } else if (rawData?.viewId !== undefined) {
-          return;
-        }
-        handler(rawData as T);
-      })
+      eventEmitter.addListener(event, (rawData: any) => handler(rawData as T))
     );
   }
 
@@ -202,8 +179,7 @@ export function startEventListeners(
 
   // Address lookup
   const lookupModule = nativeComponent as unknown as AddressLookup;
-  subscribe('addressLookup', Event.onAddressUpdate, async (data: any) => {
-    const prompt = viewId && typeof data === 'object' ? data.value : data;
+  subscribe('addressLookup', Event.onAddressUpdate, async (prompt: any) => {
     refs.config.current?.card?.onUpdateAddress?.(prompt, lookupModule);
   });
   subscribe(
@@ -214,18 +190,13 @@ export function startEventListeners(
   );
 
   // BIN lookup and value
-  subscribe('card', Event.onBinLookup, (data: any) => {
-    const lookupData =
-      viewId && !Array.isArray(data) && typeof data === 'object'
-        ? data.data
-        : data;
-    refs.config.current?.card?.onBinLookup?.(lookupData);
-  });
+  subscribe('card', Event.onBinLookup, (data: any) =>
+    refs.config.current?.card?.onBinLookup?.(data)
+  );
 
-  subscribe('card', Event.onBinValue, (data: any) => {
-    const value = viewId && typeof data === 'object' ? data.value : data;
-    refs.config.current?.card?.onBinValue?.(value);
-  });
+  subscribe('card', Event.onBinValue, (value: any) =>
+    refs.config.current?.card?.onBinValue?.(value)
+  );
 
   // Stored payment method removal (Drop-in only)
   const nativeModule = nativeComponent as unknown as RemovesStoredPayment;

@@ -21,27 +21,8 @@ import type { EventHandlerRefs } from './utils/startEventListeners';
 export interface CheckoutHost {
   /** Whether the checkout this handle belongs to is still the active one. */
   isActive(): boolean;
-  subscribe(viewId: string): void;
-  unsubscribe(viewId: string): void;
   invalidate(): void;
 }
-
-/**
- * Transport tags native adds to an event payload to identify the presenter that produced it.
- *
- * Internal on purpose: these are a routing detail of the bridge, not something merchants should
- * read or depend on, so they are never added to the exported payload types.
- *
- * - `viewId` — an embedded `<AdyenComponent>`; present only for view-produced events.
- * - `source` — the presenter id (see `PRESENTER_CONTEXT`); absent means Drop-in.
- */
-export interface EventTags {
-  source?: string;
-  viewId?: string;
-}
-
-/** A native payload carrying its {@link EventTags}. */
-export type Tagged<T> = T & EventTags;
 
 /**
  * Handlers to point the per-view event handler refs at.
@@ -66,7 +47,7 @@ export interface CheckoutRuntime {
   configuration: Configuration | null;
   sessionCallbacks: SessionCallbacks | null;
   advancedCallbacks: AdvancedCallbacks | null;
-  /** Listener bags per presenter, keyed by `viewKey()` or `DROP_IN_KEY`. */
+  /** Listener bags, keyed by `DROP_IN_KEY`. */
   subscriptions: Map<string, EmitterSubscription[]>;
   isCleanedUp: boolean;
   /** Set once a terminal event has been handled, so duplicates are ignored. */

@@ -18,6 +18,7 @@ import com.adyen.checkout.core.common.CheckoutResultCode
 import com.adyen.checkout.core.components.CheckoutCallbacks
 import com.adyen.checkout.core.components.CheckoutPaymentFlow
 import com.adyenreactnativesdk.component.ComponentModule
+import com.adyenreactnativesdk.component.ContextModule
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ComponentManager
 import com.adyenreactnativesdk.react.base.DynamicComponentView
@@ -25,7 +26,6 @@ import com.adyenreactnativesdk.react.base.LayoutChangeEvent
 import com.adyenreactnativesdk.react.base.LayoutListener
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
-import com.adyenreactnativesdk.util.messaging.TaggedEmitter
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import kotlinx.coroutines.launch
@@ -61,7 +61,10 @@ class AdyenComponentViewState(
     val checkoutContext = state.checkoutContext
 
     val viewId = dynamicComponentView.id.toString()
-    val bus = MessageBus(TaggedEmitter.forView(emitter, viewId))
+    // The untagged shared bus. Events used to carry this view's id so JS could route a result
+    // back to it, but the merchant's callbacks are global and there is one suspended closure at
+    // a time, so there is nothing to route.
+    val bus = MessageBus(emitter)
     // BIN callbacks only exist on the card configuration; wire them exclusively for card views.
     val cardCallbackBlock: (CheckoutCallbacks.() -> Unit)? =
       if (paymentMethodType == SCHEME) {
@@ -84,6 +87,8 @@ class AdyenComponentViewState(
       )
     componentManager = manager
     ComponentModule.register(viewId, this)
+    // Join the routing table so a result from JS can find this view's suspended closure.
+    ContextModule.registerManager(paymentMethodType, manager)
 
     val composeView =
       ComposeView(activity).apply {
@@ -138,6 +143,7 @@ class AdyenComponentViewState(
 
   fun dispose(dynamicComponentView: DynamicComponentView) {
     dynamicComponentView.onDispose()
+    type?.let { ContextModule.unregisterManager(it) }
     configuration = null
     type = null
     ComponentModule.unregister(dynamicComponentView.id.toString())

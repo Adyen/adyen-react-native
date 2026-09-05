@@ -40,29 +40,41 @@ final class ThreadingSafetyTests: XCTestCase {
         XCTAssertNil(BaseModule.currentPresenter)
     }
 
-    func test_embeddedComponentBusUnsubscribe_fromBackgroundThread_doesNotTearDownCheckout() {
-        // GIVEN a ComponentModule with a subscribed, presented view
-        let expectation = expectation(description: "unsubscribe processed on the main thread")
+    func test_unregisteringAView_doesNotTearDownCheckout() {
+        // GIVEN a registered view within a presented checkout
         let sut = ComponentModule()
         let presenter = MockPresenterViewController()
         BaseModule.presenterStack = [presenter]
+        _ = sut.register(viewId: "card-view")
 
-        sut.subscribe("card-view")
-
-        // WHEN unsubscribe() is called from a background thread
-        DispatchQueue.global().async {
-            sut.unsubscribe("card-view")
-            // unsubscribe hops to the main queue, so this later hop is drained after it.
-            DispatchQueue.main.async { expectation.fulfill() }
-        }
-
-        wait(for: [expectation], timeout: 1.0)
+        // WHEN the view goes away
+        sut.unregister(viewId: "card-view")
 
         // THEN the checkout is left intact. Per the lifecycle contract teardown happens only on a
         // terminal event or `invalidate()` — a view unmounting must not end the checkout, or a
         // headless submit afterwards would have no context to run in.
         XCTAssertFalse(presenter.dismissCalled)
         XCTAssertNotNil(BaseModule.currentPresenter)
+    }
+
+    func test_cleanUp_fromBackgroundThread_disposesRegisteredViews() {
+        // GIVEN two registered views
+        let expectation = expectation(description: "cleanUp processed on the main thread")
+        let sut = ComponentModule()
+        _ = sut.register(viewId: "card-view")
+        _ = sut.register(viewId: "boleto-view")
+
+        // WHEN the checkout is torn down from a background thread
+        DispatchQueue.global().async {
+            sut.cleanUp()
+            // cleanUp hops to the main queue, so this later hop is drained after it.
+            DispatchQueue.main.async { expectation.fulfill() }
+        }
+
+        // THEN it completes on the main thread. Disposing mounted views is the only reason this
+        // registry exists: JS cannot do it, because the merchant owns the JSX and can keep a view
+        // mounted across a checkout being replaced.
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func test_ensureMainThread_runsImmediately_whenAlreadyOnMainThread() {
@@ -121,76 +133,10 @@ final class ThreadingSafetyTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
-    func test_embeddedComponentBusUpdate_fromBackgroundThread_callsLookupHandlerOnMainThread() {
-        // GIVEN an ComponentModule with a registered lookup handler
-        let expectation = expectation(description: "Lookup handler should be called")
-        let sut = ComponentModule()
-
-        sut.storeLookupHandler(for: "card-view") { addresses in
-            // THEN the handler is invoked on the main thread with the decoded addresses
-            XCTAssertTrue(Thread.isMainThread)
-            XCTAssertEqual(addresses.count, 1)
-            XCTAssertEqual(addresses.first?.postalAddress.street, "Main St")
-            expectation.fulfill()
-        }
-
-        // WHEN update() is called from a background thread
-        DispatchQueue.global().async {
-            sut.update("card-view", results: [Self.lookupAddress] as NSArray)
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
-    func test_embeddedComponentBusConfirmSuccess_fromBackgroundThread_callsCompletionOnMainThread() {
-        // GIVEN an ComponentModule with a registered completion handler
-        let expectation = expectation(description: "Completion handler should receive success")
-        let sut = ComponentModule()
-
-        sut.storeLookupCompletionHandler(for: "card-view") { result in
-            // THEN the handler is invoked on the main thread with a success result
-            XCTAssertTrue(Thread.isMainThread)
-            guard case let .success(address) = result else {
-                return XCTFail("Expected success result")
-            }
-            XCTAssertEqual(address.street, "Main St")
-            expectation.fulfill()
-        }
-
-        // WHEN confirm() is called with a successful address from a background thread
-        DispatchQueue.global().async {
-            sut.confirm("card-view", success: NSNumber(value: true), address: Self.lookupAddress)
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
-    func test_embeddedComponentBusConfirmFailure_fromBackgroundThread_callsCompletionOnMainThread() {
-        // GIVEN an ComponentModule with a registered completion handler
-        let expectation = expectation(description: "Completion handler should receive failure")
-        let sut = ComponentModule()
-
-        sut.storeLookupCompletionHandler(for: "card-view") { result in
-            // THEN the handler is invoked on the main thread with a failure result
-            XCTAssertTrue(Thread.isMainThread)
-            guard case let .failure(error) = result else {
-                return XCTFail("Expected failure result")
-            }
-            XCTAssertEqual(error.localizedDescription, "Address not found")
-            expectation.fulfill()
-        }
-
-        // WHEN confirm() is called with a failed address from a background thread
-        DispatchQueue.global().async {
-            sut.confirm(
-                "card-view",
-                success: NSNumber(value: false),
-                address: ["message": "Address not found"]
-            )
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-    }
+    // Removed: three tests covering the per-view address-lookup handlers
+    // (`storeLookupHandler`, `storeLookupCompletionHandler`, `update`, `confirm`). They exercised
+    // plumbing that no call site ever populated, and v6 configures address lookup once per
+    // checkout with a handler that carries no view identity, so per-view routing cannot exist.
 
     // Removed: eight tests covering `CardComponentViewProxy` and the v5 embedded-component bus
     // entry points (`createActionHandlerIfNeeded`, `hide`, `handle`). None of those symbols exist

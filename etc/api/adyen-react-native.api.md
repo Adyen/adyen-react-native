@@ -5,7 +5,6 @@
 ```ts
 
 import { default as React_2 } from 'react';
-import type { TurboModule } from 'react-native';
 
 // @public
 export interface ActionModule {
@@ -334,32 +333,6 @@ export interface Checkout {
     readonly paymentMethods: PaymentMethodsResponse;
     requiresUserInteraction(type: string): Promise<boolean>;
     submit(type: string): void;
-    // @internal
-    subscribe(viewId: string): void;
-    // @internal
-    unsubscribe(viewId: string): void;
-}
-
-// Warning: (ae-forgotten-export) The symbol "NativeModule" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export interface ComponentNativeModule extends NativeModule {
-    // (undocumented)
-    action(viewId: string, action: PaymentAction): void;
-    // (undocumented)
-    completion(viewId: string, resultCode: string): void;
-    // (undocumented)
-    confirm(viewId: string, success: boolean, body?: AddressLookupItem | {
-        message?: string;
-    }): void;
-    // (undocumented)
-    retry(viewId: string, message?: string): void;
-    // (undocumented)
-    subscribe(viewId: string): void;
-    // (undocumented)
-    unsubscribe(viewId: string): void;
-    // (undocumented)
-    update(viewId: string, results: AddressLookupItem[]): void;
 }
 
 // @public

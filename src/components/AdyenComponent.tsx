@@ -5,7 +5,7 @@
 //
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { findNodeHandle, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import NativeAdyenComponentView, {
   type LayoutChangeEvent,
 } from '../specs/NativeAdyenComponentView';
@@ -42,11 +42,13 @@ export interface AdyenComponentProps {
 
 /**
  * Generic embedded payment view. Renders the native payment component for the
- * given `type` and bridges its lifecycle to the shared checkout context: on
- * mount it subscribes the native view (keyed by its reactTag) to the
- * ComponentModule bus, and on unmount it unsubscribes and disposes the
- * controller. Replaces the former per-method card and platform-pay button
- * view components.
+ * given `type` against the shared checkout context.
+ *
+ * It subscribes to nothing. The merchant's callbacks are global rather than per
+ * view, so every event and every result travels through the checkout itself.
+ * The native view registers with its own module so teardown can dispose the
+ * component it built, but that is invisible from here. Replaces the former
+ * per-method card and platform-pay button view components.
  */
 export const AdyenComponent: React.FC<AdyenComponentProps> = ({
   checkout,
@@ -60,7 +62,7 @@ export const AdyenComponent: React.FC<AdyenComponentProps> = ({
   }
 
   // Read from checkout prop directly — no provider context needed
-  const { subscribe, unsubscribe, configuration } = checkout;
+  const { configuration } = checkout;
   const nativeRef = useRef(null);
   const [size, setSize] = useState<LayoutChangeEvent>();
 
@@ -79,15 +81,6 @@ export const AdyenComponent: React.FC<AdyenComponentProps> = ({
       activeComponentTypes.delete(type);
     };
   }, [type]);
-
-  // Bridge the native view lifecycle to the ComponentModule bus by reactTag.
-  useEffect(() => {
-    const tag = findNodeHandle(nativeRef.current);
-    if (tag == null) return;
-    const viewId = String(tag);
-    subscribe(viewId);
-    return () => unsubscribe(viewId);
-  }, [subscribe, unsubscribe]);
 
   // Configuration is null until setup()/setupAdvanced() has been called.
   if (!configuration) {

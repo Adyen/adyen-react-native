@@ -12,8 +12,10 @@ import React
 @objc(AdyenContext)
 internal final class ContextModule: BaseModule {
 
-    /// The live instance, so ``ComponentModule`` can hand advanced-flow callback ownership back
-    /// when the last embedded view unmounts. Weak: the React Native bridge owns the module.
+    /// The module JS subscribes to, and therefore the only one whose events reach a listener.
+    /// Held so a mounted view's ``ComponentProxy`` can surface a component-creation failure
+    /// through the same channel as every other event. Weak: the bridge owns the module.
+    /// Goes away once the checkout modules merge.
     internal private(set) weak static var shared: ContextModule?
 
     /// Pre-built payment components keyed by payment method type, populated by

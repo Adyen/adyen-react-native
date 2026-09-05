@@ -15,11 +15,8 @@ import type {
 import { BeforeSubmitResult } from '../core';
 import { AdyenContext } from '../modules/context/ContextModule';
 import { AdyenDropIn } from '../modules/dropin/AdyenDropIn';
-import { AdyenComponent as AdyenComponentModule } from '../modules/component/AdyenComponentModule';
-import { ComponentProxy } from '../modules/component/ComponentProxy';
 import {
   startDropInEventListeners,
-  startEventListeners,
   type EventListenerTarget,
 } from './utils/startEventListeners';
 import { checkConfiguration } from './utils/checkConfiguration';
@@ -27,14 +24,23 @@ import { checkPaymentMethodsResponse } from './utils/checkPaymentMethodsResponse
 import { subscribeApplePayHandlers } from './utils/subscribeApplePayHandlers';
 import { DROP_IN_KEY } from './constants';
 import { createCheckout } from './createCheckout';
-import {
-  dispatchSubmitResult,
-  resolveTarget,
-  stripTag,
-  viewIdOf,
-  viewKey,
-} from './presenters';
 import type { CheckoutHost, CheckoutRuntime, EventHandlers } from './types';
+import type { SubmitResult } from '../core';
+
+/** Sends a {@link SubmitResult} back to the suspended native callback awaiting it. */
+function dispatchSubmitResult(result: SubmitResult): void {
+  switch (result.type) {
+    case 'action':
+      AdyenContext.action(result.action);
+      break;
+    case 'completed':
+      AdyenContext.completion(result.resultCode);
+      break;
+    case 'retry':
+      AdyenContext.retry(result.message);
+      break;
+  }
+}
 
 /**
  * Static entry point for the Adyen checkout.
@@ -177,10 +183,7 @@ export class AdyenCheckout {
     // Wire native event listeners
     // Intermediate callbacks — return-based
     AdyenContext.removeAllListeners();
-    AdyenContext.assignSubmitHandler(async (raw) => {
-      // The tag sits beside `paymentData`, so what the merchant receives is already clean.
-      const target = resolveTarget(raw);
-      const { paymentData } = raw;
+    AdyenContext.assignSubmitHandler(async ({ paymentData }) => {
       const payload = {
         ...paymentData,
         returnUrl: paymentData.returnUrl ?? configuration.returnUrl,
@@ -188,17 +191,16 @@ export class AdyenCheckout {
       const result =
         await AdyenCheckout.runtime.advancedCallbacks?.onSubmit(payload);
       if (result) {
-        dispatchSubmitResult(result, target);
+        dispatchSubmitResult(result);
       }
     });
-    AdyenContext.assignAdditionalDetailsHandler(async (raw) => {
-      const target = resolveTarget(raw);
+    AdyenContext.assignAdditionalDetailsHandler(async (data) => {
       const result =
         await AdyenCheckout.runtime.advancedCallbacks?.onAdditionalDetails(
-          stripTag(raw)
+          data
         );
       if (result) {
-        target.completion(result.resultCode);
+        AdyenContext.completion(result.resultCode);
       }
     });
     // Terminal callbacks — no handler
@@ -223,27 +225,18 @@ export class AdyenCheckout {
   private static checkoutHost(): CheckoutHost {
     return {
       isActive: () => !AdyenCheckout.runtime.isCleanedUp,
-      subscribe: (viewId) => AdyenCheckout.subscribe(viewId),
-      unsubscribe: (viewId) => AdyenCheckout.unsubscribe(viewId),
       invalidate: () => AdyenCheckout.cleanup(),
     };
   }
-
-  // Terminal payloads are stripped too: Drop-in emits them through a tagged bus, so the tag would
-  // otherwise surface in the result object handed to the merchant.
 
   private static subscribeSessionTerminalHandlers(
     callbacks: SessionCallbacks
   ): void {
     AdyenContext.assignCompletionHandler((result) => {
-      AdyenCheckout.handleTerminalEvent(() =>
-        callbacks.onComplete(stripTag(result))
-      );
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
     });
     AdyenContext.assignErrorHandler((error) => {
-      AdyenCheckout.handleTerminalEvent(() =>
-        callbacks.onError(stripTag(error))
-      );
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
     });
   }
 
@@ -251,14 +244,10 @@ export class AdyenCheckout {
     callbacks: AdvancedCallbacks
   ): void {
     AdyenContext.assignAdvancedCompleteHandler((result) => {
-      AdyenCheckout.handleTerminalEvent(() =>
-        callbacks.onComplete(stripTag(result))
-      );
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
     });
     AdyenContext.assignAdvancedErrorHandler((error) => {
-      AdyenCheckout.handleTerminalEvent(() =>
-        callbacks.onError(stripTag(error))
-      );
+      AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
     });
   }
 
@@ -332,15 +321,9 @@ export class AdyenCheckout {
   }
 
   private static resetState(cleanupNativeContext: boolean): void {
-    // Tear down every presenter's listeners. Only embedded views also have a native
-    // subscription to detach; Drop-in's bag is JS-only.
-    AdyenCheckout.runtime.subscriptions.forEach((listeners, key) => {
-      listeners.forEach((s) => s.remove());
-      const viewId = viewIdOf(key);
-      if (viewId !== undefined) {
-        AdyenComponentModule.unsubscribe(viewId);
-      }
-    });
+    AdyenCheckout.runtime.subscriptions.forEach((listeners) =>
+      listeners.forEach((s) => s.remove())
+    );
     AdyenCheckout.runtime.subscriptions.clear();
     // Remove native event listeners
     AdyenContext.removeAllListeners();
@@ -356,28 +339,6 @@ export class AdyenCheckout {
     AdyenCheckout.runtime.hasHandledTerminalEvent = true;
     AdyenCheckout.runtime.eventHandlerRefs.config.current = null;
     AdyenCheckout.wireEventHandlerRefs();
-  }
-
-  // --- Per-view subscription management (for <AdyenComponent>) ---
-
-  private static subscribe(viewId: string): void {
-    const key = viewKey(viewId);
-    if (AdyenCheckout.runtime.subscriptions.has(key)) return;
-    AdyenComponentModule.subscribe(viewId);
-    const proxy = new ComponentProxy(AdyenComponentModule, viewId);
-    const bag = startEventListeners(
-      proxy,
-      AdyenCheckout.runtime.eventHandlerRefs,
-      viewId
-    );
-    AdyenCheckout.runtime.subscriptions.set(key, bag);
-  }
-
-  private static unsubscribe(viewId: string): void {
-    const key = viewKey(viewId);
-    AdyenCheckout.runtime.subscriptions.get(key)?.forEach((s) => s.remove());
-    AdyenCheckout.runtime.subscriptions.delete(key);
-    AdyenComponentModule.unsubscribe(viewId);
   }
 
   // --- Auto-cleanup on terminal callbacks ---

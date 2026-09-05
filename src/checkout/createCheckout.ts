@@ -21,7 +21,7 @@ const inactiveWarning = (method: string): string =>
  * the public barrel so consumers can only obtain a `Checkout` after setup resolves.
  *
  * The handle is per-setup and disposable, unlike the process-wide `AdyenCheckout` that owns it.
- * Once its owner is torn down, every method except `unsubscribe` becomes an ignored no-op.
+ * Once its owner is torn down, every method becomes an ignored no-op.
  */
 export function createCheckout(
   paymentMethods: PaymentMethodsResponse,
@@ -53,13 +53,5 @@ export function createCheckout(
     },
     // Idempotent by design — a repeated or late call is a silent no-op.
     invalidate: () => host.invalidate(),
-    subscribe: (viewId: string) => {
-      if (isActive('subscribe')) {
-        host.subscribe(viewId);
-      }
-    },
-    // Never guarded: views unsubscribe while tearing down, after the checkout
-    // has already been cleaned up.
-    unsubscribe: (viewId: string) => host.unsubscribe(viewId),
   };
 }
