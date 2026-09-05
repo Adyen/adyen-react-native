@@ -50,9 +50,8 @@ classDiagram
     +setup(session, config, callbacks) Promise~Checkout~
     +setupAdvanced(paymentMethods, config, callbacks) Promise~Checkout~
     -wireEventHandlerRefs(handlers)
+    -subscribeCardHandlers()
     -subscribeDropInHandlers()
-    -subscribe(viewId)
-    -unsubscribe(viewId)
     -resetState(cleanupNativeContext)
   }
 
@@ -80,22 +79,10 @@ classDiagram
   class CheckoutHost {
     <<interface>>
     +isActive() boolean
-    +subscribe(viewId)
-    +unsubscribe(viewId)
     +invalidate()
   }
 
-  class presenters {
-    <<module>>
-    +viewKey(viewId) string
-    +viewIdOf(key) string?
-    +stripTag(raw) T
-    +resolveTarget(raw) AdvancedPayment
-    +dispatchSubmitResult(result, target)
-  }
-
   AdyenCheckout *-- CheckoutRuntime
-  AdyenCheckout ..> presenters : routes with
   AdyenCheckout ..> Checkout : creates via createCheckout()
   Checkout --> CheckoutHost : delegates lifecycle
   CheckoutHost <|.. AdyenCheckout : implements
@@ -109,9 +96,8 @@ Two lifetimes worth separating:
 | Lifetime | until a terminal event or `invalidate()` | outlives every handle |
 | Visibility | public interface | public class, private state |
 
-Once its owner is torn down, every handle method except `unsubscribe` becomes an ignored no-op
-that warns — `unsubscribe` is never guarded because views detach *while* tearing down, after
-cleanup has already run.
+Once its owner is torn down, every handle method becomes an ignored no-op that warns, and
+`invalidate()` a silent one.
 
 ## Native module wrappers
 
@@ -140,8 +126,6 @@ classDiagram
   class EventListenerWrapper~T~ {
     <<abstract>>
     #nativeModule: T
-    #supportedEvents: string[]
-    +isSupported(event) boolean
     +eventEmitterTarget
   }
   class ContextModuleWrapper {
@@ -153,19 +137,14 @@ classDiagram
     +removeStored() / provideBalance() / provideOrder()
     +update() / confirm()
   }
-  class ComponentModuleWrapper {
-    +subscribe(viewId) / unsubscribe(viewId)
-  }
-
   AdvancedPayment <|-- AdyenContextModule
   AdvancedPayment <|-- DropInModule
   AdyenContextModule <|.. ContextModuleWrapper
   DropInModule <|.. DropInWrapper
 
   EventListenerWrapper <|-- DropInWrapper
-  EventListenerWrapper <|-- ComponentModuleWrapper
 
-  note for AdvancedPayment "the shared contract.\nresolveTarget() returns this, so\ndispatchSubmitResult() can send a result\nto Drop-in or the context flow\nwithout knowing which."
+  note for AdvancedPayment "the shared contract for\nreturning a result to native:\naction / completion / retry."
 ```
 
 **There is deliberately no shared base *class* between Drop-in and the context flow.** They share
@@ -176,87 +155,64 @@ delegations to the native module. Their event models genuinely differ:
 | --- | --- | --- |
 | Emitter | owns its own `NativeEventEmitter` | none — exposes `eventEmitterTarget` |
 | Subscriptions | private map, one listener per event, replaced on re-setup | built externally by `startEventListeners` |
-| Consumer API | `assign*Handler(cb)` | `isSupported(event)` |
+| Consumer API | `assign*Handler(cb)` | subscribed via `startDropInEventListeners` |
 
 A common base would have to bridge those two models, or exist purely to hold nine lines of
 delegation — which is what the former `ModuleWrapper` did, and why it was removed.
 
-> [!NOTE]
-> `ContextModuleWrapper` — the busiest module — is outside the ladder and subscribes
-> unconditionally, so the `isSupported` gate only affects the Drop-in and embedded-view paths.
-> `ActionModuleWrapper` and `AdyenCSEWrapper` are standalone too: promise-based, no events.
-> `ComponentProxy` composes `ComponentModuleWrapper` and scopes every call to one `viewId`.
-
-## Presenter attribution
-
-Every payment event is produced by one of three presenters. They all emit the **same event
-names**, because delivery is global through `RCTDeviceEventEmitter` on both platforms — a
-per-module emitter does not isolate delivery, it only does listener bookkeeping. Identity
-therefore travels inside the payload.
-
-```mermaid
-flowchart LR
-  DI["Drop-in<br/><code>source: 'dropin'</code>"]
-  HL["Headless / context<br/><code>source: 'context'</code>"]
-  EV["Embedded view<br/><code>viewId: reactTag</code>"]
-
-  EM(["one global event channel"])
-  DI & HL & EV --> EM
-
-  EM --> F{"viewId present?"}
-  F -->|yes| VL["that view's listener"]
-  F -->|no| S{"source"}
-  S -->|"'context'"| AC["AdyenContext"]
-  S -->|"else / absent"| AD["AdyenDropIn"]
-```
-
-**The rule**, applied identically in `ContextModuleWrapper.subscribe` and `startEventListeners`:
-
-- a listener bound to a view accepts only payloads with that same `viewId`;
-- a listener *not* bound to a view accepts only payloads with **no** `viewId`.
-
-Both halves matter. Without the second, an embedded view's events also reach the context
-listeners and the merchant `onSubmit` runs twice for one payment.
-
-> [!IMPORTANT]
-> The tag is stripped before any merchant callback. This is correctness, not tidiness: the
-> additional-details payload *is* the request body posted to `/payments/details`, so a stray
-> `source` field would be sent to the API.
+`EventListenerWrapper` now has one subclass, `DropInWrapper`. It stays because
+`startDropInEventListeners` needs an `eventEmitterTarget`, not because the hierarchy earns its
+keep.
 
 > [!NOTE]
-> `onBeforeSubmit` is deliberately **never** `viewId`-tagged — the session bridge is
-> context-owned and emits untagged even for embedded views. If that changed, the filter above
-> would swallow it and the session flow would deadlock on a suspended continuation. Enforced
-> only by tests.
+> `ContextModuleWrapper` — the busiest module — is outside the ladder, as are
+> `ActionModuleWrapper` and `AdyenCSEWrapper`: promise-based, no events.
+
+## No presenter attribution
+
+Drop-in, an embedded `<AdyenComponent>` and the headless `checkout.submit(type)` all drive the
+same checkout, and all emit the **same event names** — delivery is global through
+`RCTDeviceEventEmitter` on both platforms, so a per-module emitter does listener bookkeeping and
+nothing more.
+
+None of them is identified in the payload, because nothing needs to tell them apart:
+
+- **Delivery** never needed it. `AdyenComponentProps` carries only `checkout` and `type`, so there
+  are no per-view merchant callbacks — every event ends at the same handler either way.
+- **Results** do not need it either. Only one payment can be in flight, so exactly one native
+  closure is suspended and a result has one place to go.
+
+> [!NOTE]
+> This replaced a `viewId` / `source` tagging scheme. It existed because each embedded view had its
+> own listener set, competing with the context listeners for the same globally-delivered names, so
+> identity had to travel inside the payload — and then be stripped before reaching a merchant
+> callback, since the additional-details payload *is* the body posted to `/payments/details`.
+> Removing the second and third listener set removed the problem instead of routing around it.
 
 ## Advanced flow round trip
-
-The loop must close on the presenter that opened it, because each one suspends its own
-continuation natively.
 
 ```mermaid
 sequenceDiagram
   participant M as Merchant app
   participant AC as AdyenCheckout
   participant CW as ContextModuleWrapper
-  participant N as Native presenter
+  participant N as AdyenContext (native)
   participant SDK as v6 Checkout
 
   M->>AC: setupAdvanced(paymentMethods, config, callbacks)
   AC->>AC: checkConfiguration + checkPaymentMethodsResponse
   AC->>CW: assign*Handler(...)
-  AC->>N: setup()
+  AC->>N: setup() — wires the SDK closures once
   AC-->>M: Checkout
 
-  Note over N,SDK: shopper pays
+  Note over N,SDK: shopper pays, from Drop-in, a view or submit(type)
   SDK->>N: onSubmit(data) — suspends
-  N->>CW: emit(submit, data + tag)
+  N->>CW: emit(submit, data)
   CW->>AC: didSubmit
-  AC->>AC: resolveTarget(payload)
   AC->>M: onSubmit(paymentData)
   M-->>AC: SubmitResult
   AC->>N: action / completion / retry
-  N-->>SDK: resume continuation
+  N-->>SDK: resume the suspended closure
   SDK->>N: onComplete(result)
   N->>AC: complete
   AC->>M: onComplete(result)
@@ -265,50 +221,42 @@ sequenceDiagram
 
 ## Listener families
 
-`startEventListeners` groups events so a caller subscribes only what it owns.
+`startEventListeners` groups events so a caller subscribes only what it owns. Only Drop-in uses it
+now; everything else is subscribed through `ContextModuleWrapper.assign*Handler`.
 
 ```mermaid
 flowchart TD
-  SE["startEventListeners(component, refs, viewId, families)"]
-  C["core<br/>submit · additionalDetails · complete · error"]
-  CD["card<br/>BIN lookup / value"]
+  SE["startEventListeners(component, refs, families)"]
   AL["addressLookup<br/>update · confirm"]
   DI["dropIn<br/>stored-payment removal · partial payments"]
-  AP["applePay<br/>authorize · shipping · coupon"]
 
-  SE --> C & CD & AL & DI & AP
+  D["Drop-in<br/><i>startDropInEventListeners(module, refs)</i>"] --> SE
+  SE --> AL & DI
 
-  V["Embedded view<br/><i>startEventListeners(proxy, refs, viewId)</i>"] -->|all families| SE
-  D["Drop-in<br/><i>startDropInEventListeners(module, refs)</i>"] -->|"card + addressLookup + dropIn"| SE
+  CTX["AdyenCheckout<br/><i>assign*Handler</i>"] --> CO["core · session · card BIN · Apple Pay"]
 ```
 
-`core` is excluded from the Drop-in entry point on purpose: those events arrive on the context
-listeners and are routed by tag, so subscribing them in both places would invoke merchant
-callbacks twice.
+`core` is absent from the Drop-in entry point on purpose: those events arrive on the context
+handlers, and subscribing them in both places would invoke merchant callbacks twice. `card` left
+too — BIN is configured on the card configuration rather than per presenter, which makes it
+checkout-level, so it sits with the other configuration callbacks.
 
-> [!NOTE]
-> Before families existed, `startEventListeners` was only ever called per `viewId`, so
-> stored-payment removal, partial payments and address lookup had **no listener at all** unless
-> an embedded view was mounted — the matching Drop-in configuration callbacks never fired.
+`addressLookup` stays with Drop-in because its result path needs `update` / `confirm`, which only
+the Drop-in module exposes. Wiring it checkout-level needs those methods on the context module on
+both platforms; on iOS the callbacks are not wired at all yet.
 
 ## Subscription bookkeeping
-
-One map, keyed by presenter, so Drop-in and every view are torn down by the same loop.
 
 ```mermaid
 flowchart LR
   subgraph M["runtime.subscriptions"]
-    K1["'view:42' → EmitterSubscription[]"]
-    K2["'view:57' → EmitterSubscription[]"]
     K3["'dropin' → EmitterSubscription[]"]
   end
 
   R["resetState()"] --> M
-  M --> Q{"viewIdOf(key)"}
-  Q -->|"'42'"| NU["remove listeners<br/>+ AdyenComponent.unsubscribe(42)"]
-  Q -->|undefined| JU["remove listeners only"]
+  M --> JU["remove listeners"]
 ```
 
-The `view:` prefix is what teardown needs: only a view has a native subscription to detach. A
-bare `dropin` key in the same namespace would have made teardown call
-`AdyenComponent.unsubscribe('dropin')`.
+One entry, because Drop-in is the only thing with its own listener bag. Views used to have one
+each, keyed `view:<reactTag>`, and teardown had to tell the two kinds apart so it knew which also
+needed a native `unsubscribe`. Neither the keys nor that branch are needed now.

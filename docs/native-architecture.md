@@ -68,7 +68,7 @@ classDiagram
     +resultSink: AdvancedResultSink
     +createSession() / setup()
     +isAvailable() / requiresUserInteraction() / submit()
-    +reattachAdvancedCallbacks()
+    +action() / completion() / retry()
   }
   class DropInModule {
     <<AdyenDropIn>>
@@ -77,7 +77,7 @@ classDiagram
   class ComponentModule {
     <<AdyenComponent>>
     +delegates: [String: ComponentProxy]
-    +subscribe() / register()
+    +register() / unregister()
   }
   class ActionModule {
     <<AdyenAction>>
@@ -133,33 +133,43 @@ flow ends terminally instead of looking like a shopper-initiated retry.
 
 ## Callback ownership on iOS
 
-The advanced closures live on the **one** shared `AdvancedCheckout`, so whoever wires them last
-owns emission. There is room for exactly one owner at a time — which is why presenters are
-sequential rather than parallel.
+The advanced closures live on **one** callback store per checkout:
+
+```swift
+package final class AdvancedCheckoutCallbackStore {
+    package var onSubmit: SubmitHandler?          // one slot for the whole checkout
+    package var onAdditionalDetails: AdditionalDetailsHandler?
+}
+```
+
+`ContextModule` wires them once, at setup, and nothing re-points them.
 
 ```mermaid
 sequenceDiagram
-  participant JS
+  participant View as Fabric view
   participant CM as ComponentModule
   participant CP as ComponentProxy
   participant CTX as ContextModule
   participant SDK as AdvancedCheckout
 
-  Note over CTX,SDK: setup() — ContextModule wires the closures
+  Note over CTX,SDK: setup() — wired once, for the lifetime of the checkout
   CTX->>SDK: onSubmit / onAdditionalDetails
 
-  JS->>CM: subscribe(viewId)
+  View->>CM: register(viewId)
   CM->>CP: create proxy
-  CP->>SDK: re-points onSubmit at itself
-  Note over CP,SDK: the view is now the owner
+  CP->>SDK: createPaymentComponent(for:)
+  Note over CP,SDK: the proxy owns a component,<br/>not any callbacks
 
-  JS->>CM: unsubscribe(viewId)
+  View->>CM: unregister(viewId)
   CM->>CP: dispose()
-  CP->>CP: resultSink.cancelPending()
-  CM->>CTX: reattachAdvancedCallbacks()
-  CTX->>SDK: onSubmit / onAdditionalDetails
-  Note over CTX,SDK: ownership handed back —<br/>a later headless submit() would otherwise<br/>suspend on a disposed proxy
 ```
+
+> [!NOTE]
+> The migration had three call sites writing to that single slot — `ContextModule` at setup, every
+> `ComponentProxy` on `makeViewController`, and a reattach on dispose — simulating per-component
+> ownership on an API that does not offer it. Whichever proxy mounted last owned every submit.
+> That is what `viewId` tagging, `resolveTarget` and `reattachAdvancedCallbacks` were all
+> compensating for.
 
 > [!NOTE]
 > Unsubscribing the last view does **not** tear the checkout down. Teardown belongs to a terminal
@@ -202,7 +212,7 @@ classDiagram
   class ComponentModule {
     <<AdyenComponent>>
     +consumers: Map
-    +subscribe() / register()
+    +register() / unregister()
   }
   class DropInModule {
     <<AdyenDropIn>>
@@ -238,11 +248,6 @@ classDiagram
     +sendEvent(name, String)
     +sendEvent(name, JSONArray)
   }
-  class TaggedEmitter {
-    <<private constructor>>
-    +forView(emitter, viewId)$
-    +forSource(emitter, source)$
-  }
   class MessageBus {
     <<by delegation>>
     SessionMessenger
@@ -253,37 +258,31 @@ classDiagram
     AddressLookupCallback
   }
 
-  Emitter <|.. TaggedEmitter
-  TaggedEmitter --> Emitter : wraps
   MessageBus --> Emitter : emits through
 ```
 
 `MessageBus` is composition by Kotlin delegation rather than a god object: each concern is a small
 `*Messenger` interface with its own `*MessengerImpl`, and the bus simply delegates.
 
-### Why the two factories treat scalars differently
+There is one bus. A `TaggedEmitter` used to wrap it to stamp a `viewId` or a `source` onto every
+payload, with an awkward asymmetry — the view factory boxed scalar payloads as `{viewId, value}`
+while the source factory passed them through, because boxing `onBinValue` and address lookup would
+have reshaped payloads JS reads directly. Nothing needs a tag now.
 
-`TaggedEmitter` has three `sendEvent` overloads, and the factories diverge on the scalar ones:
+## Where the platforms genuinely differ
 
-| | `String` payload | `JSONArray` payload |
+The two SDKs offer different callback shapes, so the bridge lands differently:
+
+| | Android | iOS |
 | --- | --- | --- |
-| `forView` | boxed as `{viewId, value}` | boxed as `{viewId, data}` |
-| `forSource` | passed through, untagged | passed through, untagged |
+| Callback scope | constructor arguments per `CheckoutController` | one store per checkout |
+| Who holds them | each `ComponentManager` | `ContextModule`, wired once |
+| Finding the suspended one | `awaitingManager()` over the registered managers | the single `AdvancedResultSink` |
+| Concurrent submits | `AtomicBoolean canSubmit` per controller, ignores the second | one `submitTask`, a second cancels the first |
 
-The asymmetry is what makes the Drop-in bus taggable at all. `onBinValue` and address lookup emit
-scalars that JS reads directly; boxing them for a source tag would silently reshape those
-payloads. Neither carries a result that needs routing, so leaving them untagged costs nothing.
-
-## Presenter equivalence
-
-The same three responsibilities, named differently per platform:
-
-| | Android `ComponentManager` | iOS `ComponentProxy` |
-| --- | --- | --- |
-| Suspended continuations | `submitContinuation`, `additionalDetailsContinuation` | `AdvancedResultSink` |
-| "Is a result pending?" | `isAwaitingResult` | `resultSink.isAwaitingResult` |
-| Identity-tagged emitter | injected `MessageBus` | `taggedBody()` via `ComponentModule` |
-| Extra callback wiring | `additionalCallbacks: CheckoutCallbacks.() -> Unit` | closures on the shared checkout |
+The consequence worth knowing: Android's SDK would allow one in-flight submit *per payment method*,
+while iOS allows one per checkout. The bridge exposes the narrower contract on both, so behaviour
+does not diverge by platform.
 
 ## Headless submit on Android
 
@@ -317,13 +316,13 @@ sequenceDiagram
 
 ## Event identity summary
 
-| Presenter | Tag | Android | iOS |
-| --- | --- | --- | --- |
-| Embedded view | `viewId` | `TaggedEmitter.forView` | `ComponentProxy.taggedBody()` |
-| Headless / context | `source: "context"` | context-tagged `MessageBus` | `ContextModule.taggedBody()` |
-| Drop-in | `source: "dropin"` | Drop-in-tagged `MessageBus` | untagged while Drop-in is unsupported |
+| Presenter | Emits through (Android) | Emits through (iOS) |
+| --- | --- | --- |
+| Embedded view | the shared `MessageBus` | `ContextModule` |
+| Headless / context | the shared `MessageBus` | `ContextModule` |
+| Drop-in | the shared `MessageBus` | n/a while Drop-in is unsupported |
 
-Keep `EventSource` on both platforms and the presenter ids in `src/checkout/constants.ts` in sync.
+No identity travels in a payload on either platform. Nothing to keep in sync.
 
 > [!NOTE]
 > v6 has **no Drop-in yet** on either platform: Android has only `com.adyen.checkout.dropin.old`,

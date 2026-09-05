@@ -18,33 +18,34 @@ not enforced) by `src/AdyenCheckout.ts`:
 | **Setup is required** | A `Checkout` is only obtainable by awaiting `AdyenCheckout.setup()` / `setupAdvanced()`. It has no public constructor, so its methods cannot be called before the native context exists. |
 | **One active checkout** | Each setup replaces the previous checkout. There is no support for two independent checkouts (e.g. on two screens) at the same time. |
 | **Setup calls must not overlap** | `setup()` / `setupAdvanced()` are `async` and are **not** serialized or rejected by the SDK. Calling them concurrently is an integration error: the last native setup to resolve wins, and earlier listeners are already replaced. Always `await` one setup before starting another. |
-| **Re-setup clears JS state only** | On re-setup the JS side unsubscribes embedded views, removes context listeners and resets callbacks; it does **not** call native `cleanup()`. The native side replaces its own state when it receives the new setup call. |
+| **Re-setup clears JS state only** | On re-setup the JS side removes its listeners and resets callbacks; it does **not** call native `cleanup()`. The native side replaces its own state when it receives the new setup call. |
 | **Terminal events fire once** | The first `onComplete` / `onError` per checkout invokes the merchant callback and then triggers auto-cleanup. Later or duplicate terminal events for the same checkout are ignored. |
 | **Abandoned flows need `invalidate()`** | `checkout.invalidate()` tears the checkout down when the shopper leaves without a terminal callback (e.g. navigating away). It is idempotent, suppresses any terminal event still queued for that checkout, and is the only consumer-facing teardown API. |
 | **Teardown is once per checkout** | Native `cleanup()` runs from the terminal-event path or from `invalidate()`, whichever happens first, and is a no-op afterwards. |
-| **A stale handle is inert** | After teardown, `submit()` / `isAvailable()` / `requiresUserInteraction()` / `subscribe()` on that `Checkout` are ignored and log a warning; `isAvailable` and `requiresUserInteraction` report `false`. `unsubscribe()` still runs so unmounting views can detach, and `invalidate()` stays a silent no-op. |
-
-Because a checkout is global, a terminal event tears down **all** embedded `<AdyenComponent>`
-views attached to it, not only the view that produced the event.
+| **A stale handle is inert** | After teardown, `submit()` / `isAvailable()` / `requiresUserInteraction()` on that `Checkout` are ignored and log a warning; the latter two report `false`. `invalidate()` stays a silent no-op. |
 
 ### Presenters within one checkout
 
-Drop-in and embedded `<AdyenComponent>` views share the single checkout, and both can drive the
-full event set (session or advanced, per the configuration used at setup). They are expected to be
-used **sequentially, not in parallel**:
+Drop-in, embedded `<AdyenComponent>` views and the headless `checkout.submit(type)` all drive the
+same checkout. None of them is identified in an event payload, and none needs to be: the merchant's
+callbacks are configured once per checkout, not per presenter, so every event reaches the same
+handler and every result resumes the one closure that is suspended.
 
-- Embedded component events are tagged with the view's `viewId` and filtered per view, so a
-  component never reacts to Drop-in's events.
-- Drop-in and headless/context events are untagged and arrive on the shared context listeners.
-  When Drop-in is presented it is treated as the **dominant emitter** for those events.
+**Concurrent presentation is supported** — Card, Boleto and Apple Pay can all be on screen at once.
+**Concurrent interaction is not.** Only one payment may be in flight, which is the native SDKs' own
+constraint rather than one this layer adds:
 
-> [!WARNING]
-> Because Drop-in and context events are indistinguishable on the JS side, advanced-flow results
-> from the context listeners are currently dispatched to the Drop-in module. A headless
-> `checkout.submit(type)` in the **advanced** flow therefore does not yet resolve correctly
-> (Android also lacks a context-level `action` bridge, and its `ContextModule.completion()` tears
-> the context down instead of resuming the pending `ComponentManager` continuation). Use Drop-in or
-> embedded components for the advanced flow until this is addressed.
+- iOS shares a single `CheckoutCore` across every component, holding one `pendingPaymentComponent`
+  and one `submitTask`. A second submit cancels the first.
+- Android's `FullCheckoutFlow` guards each controller with an `AtomicBoolean canSubmit` and ignores
+  a second submit with a warning.
+
+Preventing a double submit is the integrator's job: disable the pay button while a payment is in
+flight. The rule is per callback kind rather than global, so a submit being in flight does not block
+an unrelated address lookup.
+
+Because a checkout is global, a terminal event tears down **all** embedded `<AdyenComponent>` views
+attached to it, not only the view that produced the event.
 
 ## Directory Structure
 
@@ -93,10 +94,6 @@ src/
     ├── action/                             # Standalone action handler
     │   ├── AdyenAction.ts
     │   └── ActionModuleWrapper.ts
-    ├── component/                          # Embedded component bus (per-viewId routing)
-    │   ├── ComponentBus.ts                   # Singleton bus instance
-    │   ├── ComponentBusWrapper.ts            # Wrapper with subscribe/unsubscribe/action/completion/retry
-    │   └── ComponentProxy.ts                 # Per-component proxy that binds a viewId to bus calls
     ├── context/                            # Checkout context lifecycle (session + advanced setup)
     │   ├── ContextModule.ts                  # AdyenContext module interface
     │   ├── ContextModuleWrapper.ts           # Wrapper: createSession, setup, isAvailable, requiresUserInteraction, submit
@@ -115,10 +112,8 @@ src/
 ### TypeScript Module Wrappers
 
 ```
-EventListenerWrapper<T>                                      # Abstract - manages event subscriptions
-    │                                                          - reads supportedEvents from getConstants()
-    │                                                          - isSupported(event)
-    │                                                          - addListener/removeListeners
+EventListenerWrapper<T>                                      # Abstract - holds the native module
+    │                                                          - exposes eventEmitterTarget
     ▼
 AddressLookupModule<T>                                       # Abstract - adds action(), completion(), retry()
     │                                                          - update(), confirm()
@@ -132,24 +127,12 @@ AddressLookupModule<T>                                       # Abstract - adds a
 
 ### Embedded Component Wrappers
 
-These handle communication for inline embedded `<AdyenComponent>` views:
+None. An embedded `<AdyenComponent>` has no JS-facing module of its own: it renders a native view
+and nothing else. Events and results travel through `ContextModuleWrapper` like every other
+checkout event, because the merchant's callbacks are per checkout rather than per view.
 
-```
-EventListenerWrapper<ComponentNativeModule>
-    │
-    └──► ComponentBusWrapper                                 # Bus for all embedded views
-            - subscribe(key), unsubscribe(key)
-            - action(key, action), completion(key, resultCode), retry(key, message)
-            - update(key, results), confirm(key, success, body)
-
-ComponentProxy                                               # Per-view proxy (not a wrapper subclass)
-    implements AddressLookup, AdyenEventListener
-    - constructor(wrapper, viewId)
-    - action(action) → wrapper.action(key, action)
-    - completion(resultCode) → wrapper.completion(key, resultCode)
-    - retry(message) → wrapper.retry(key, message)
-    - update/confirm/reject → wrapper.update/confirm(key, ...)
-```
+The native side keeps a registry of mounted views, but only so teardown can dispose the component
+each one built — see [Embedded Views](#embedded-views-fabric-native-components).
 
 ### Standalone Wrappers (outside hierarchy)
 
@@ -336,9 +319,7 @@ BaseModule                                           # Base class for payment mo
 
 ### Embedded Views (Fabric Native Components)
 
-Embedded views are rendered inline within the React tree using Fabric codegen. Unlike modal-based modules (Drop-in), they don't use `open()`/`hide()` — instead, props drive initialization and the ComponentModule event bus routes callbacks.
-
-![Embedded Views](./assets/Embedded%20Views.png)
+Embedded views are rendered inline within the React tree using Fabric codegen. Unlike modal-based modules (Drop-in), they don't use `open()`/`hide()` — props drive initialization, and the view builds its payment component directly against the shared checkout.
 
 #### Architecture Overview
 
@@ -347,17 +328,11 @@ Embedded views are rendered inline within the React tree using Fabric codegen. U
 │  JS Layer                                                                │
 │                                                                          │
 │  AdyenComponent.tsx                                                      │
-│    ├── ref → findNodeHandle() → reactTag                                 │
-│    ├── subscribe(reactTag) → ComponentBus                                │
 │    └── <NativeAdyenComponentView type={...} configuration={...} />       │
 │                                                                          │
-│  SubscriptionManager (internal)                                          │
-│    ├── ComponentBus.subscribe(key)                                       │
-│    ├── ComponentProxy(bus, key) → startEventListeners()                  │
-│    └── Filters incoming events by viewId === key                         │
-│                                                                          │
-│  ComponentProxy                                                          │
-│    └── action(action), completion(), retry(), update(), confirm() → bus  │
+│  No subscription, no proxy. Events and results travel through            │
+│  AdyenCheckout's own context listeners, because the merchant's           │
+│  callbacks are per checkout rather than per view.                        │
 └──────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -365,28 +340,33 @@ Embedded views are rendered inline within the React tree using Fabric codegen. U
 │  Native Layer (per-platform)                                             │
 │                                                                          │
 │  ViewManager creates view → props set → renderComponentIfNeeded()        │
-│    ├── Creates Adyen SDK component (via CheckoutController / Compose)    │
-│    ├── Registers with ComponentModule using reactTag key                 │
-│    └── TaggedEmitter tags all outgoing events with reactTag              │
+│    ├── Reads the shared checkout from BaseModule.checkoutState           │
+│    ├── Creates the SDK component (via CheckoutController / Compose)      │
+│    └── Registers with ComponentModule under its reactTag                 │
 │                                                                          │
-│  ComponentModule                                                         │
-│    ├── register(key, contract) — maps reactTag → native view state       │
-│    ├── action(key, action) — routes actions from JS to correct view      │
-│    ├── completion(key, resultCode) — completes payment for correct view  │
-│    ├── retry(key, message) — retries payment for correct view            │
-│    └── unregister(key) — cleanup on dispose                              │
+│  ComponentModule — registry only, native-facing                          │
+│    ├── register(viewId) / unregister(viewId)                             │
+│    └── cleanUp() — disposes every mounted view's component               │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+The registry earns its place at teardown. `cleanup()` has to dispose the component each mounted
+view built, and JS cannot do it: the merchant owns the JSX and can keep a view mounted across a
+checkout being replaced.
+
 #### Multi-Instance Support
 
-Each embedded view instance uses its **reactTag** (view ID) as the bus registration key. Only one `<AdyenComponent>` per payment method `type` may be mounted at a time (enforced by the `activeComponentTypes` set in `AdyenComponent.tsx`):
+Only one `<AdyenComponent>` per payment method `type` may be mounted at a time, enforced by the
+`activeComponentTypes` set in `AdyenComponent.tsx`. Several views of *different* types can be
+mounted together — the constraint is on concurrent *interaction*, not presentation.
 
-- **JS**: `findNodeHandle(ref)` → `subscribe(String(tag))`
-- **Android**: `view.id.toString()` → `register(key, this)` + `TaggedEmitter(emitter, key)`
+Each view registers natively under its **reactTag**:
+
+- **Android**: `view.id.toString()` → `register(key, this)`
 - **iOS**: `self.tag` → `viewId` → `register(viewId:)`
 
-Events are tagged with the reactTag and filtered on the JS side by `startEventListeners`, which checks `rawData.viewId === key`.
+That key is only ever used natively, to find a view again at teardown. It is not put into event
+payloads and JS never sees it.
 
 #### Android Embedded View Classes
 
@@ -405,8 +385,9 @@ AdyenComponentViewState                              # Per-view state holder
     - type, configuration (props from JS)
     - viewId (reactTag)
     - componentManager: ComponentManager             # Unified manager for all payment methods
-    - renderView(view) — creates ComposeView + CheckoutPaymentFlow, registers with bus
-    - dispose(view) — unregisters, clears state
+    - renderView(view) — creates ComposeView + CheckoutPaymentFlow; registers the view for
+      teardown and its manager in ContextModule's routing table
+    - dispose(view) — unregisters both, clears state
     - onAction/onFinalResult — delegates to componentManager
 
 ComponentManager                                     # Unified manager for all embedded components (in component/base/)
@@ -421,7 +402,7 @@ DynamicComponentView : FrameLayout                   # Auto-resizing container
     - setView(view) — adds child, starts polling resize
     - onDispose() — stops polling, clears children
 
-ComponentContract                                    # Interface for bus → view communication
+ComponentContract                                    # Interface for module → view communication
     - onAction(action)
     - onFinalResult(success, message)
 ```
@@ -446,31 +427,34 @@ AdyenComponentViewProxy : UIStackView                # Component lifecycle manag
     - dispose() — unregisters, tears down VC hierarchy
     - reportContentHeight() → delegate.onLayoutChange
 
-ComponentModule : BaseAddressModule                  # Singleton bus (shared instance)
+ComponentModule : BaseModule                         # Registry (shared instance)
     (@objc(AdyenComponent))
     - delegates: [String: ComponentProxy]
     - register(viewId:) → ComponentProxy
     - unregister(viewId:)
-    - subscribe/unsubscribe (JS lifecycle)
-    - action/completion/retry/update/confirm (JS → native routing)
+    - cleanUp() — disposes every registered proxy
+    - supportedEvents() == [] — emits nothing; JS subscribes to ContextModule
 
-ComponentProxy                                       # Per-view delegate that tags events (@MainActor)
+ComponentProxy                                       # Per-view component owner (@MainActor)
     - viewId: String (reactTag)
-    - checkout: PaymentCheckout?, paymentComponent: CheckoutPaymentComponent?
-    - submitContinuation, additionalDetailsContinuation
-    - taggedBody() — injects viewId into event payloads
-    - Wires onSubmit/onAdditionalDetails/onComplete/onFailure closures
-    - Handles BIN change/lookup via CardConfiguration closures
+    - paymentComponent: CheckoutPaymentComponent?
+    - makeViewController(type:configuration:)
+    - sendError(error:) — through ContextModule, the emitter JS listens to
+    - dispose()
 ```
 
-#### Event Tagging (Android TaggedEmitter / iOS ComponentProxy)
+`ComponentProxy` deliberately does not touch the checkout's closures. v6 keeps one callback store
+per checkout, so a proxy wiring its own would overwrite whichever proxy wired before it — which is
+exactly what the migration did, and what `ContextModule` wiring them once replaced.
 
-Both platforms inject a `viewId` field (the view's **reactTag**) into every event payload so the JS side can demux events from multiple simultaneous embedded views:
+#### No event tagging
 
-| Platform | Mechanism | Tags with |
-|----------|-----------|-----------|
-| Android  | `TaggedEmitter` wraps `MessageBusEmitter` | `jsonObject.put("viewId", viewId)` |
-| iOS      | `ComponentProxy.taggedBody()` | `dict["viewId"] = viewId` |
+Events carry no presenter identity. They used to: both platforms injected the view's reactTag as a
+`viewId` field, and JS filtered on it, because each embedded view had its own listener set competing
+with the context listeners for the same globally-delivered event names.
+
+That is gone. There is one listener set and one suspended closure per callback kind, so there is
+nothing to demux. The `viewId` survives only as a key in the native registry that teardown walks.
 
 ### Event Emission: iOS BaseModuleSender vs Android MessageBus
 
@@ -545,9 +529,9 @@ Both platforms use static/companion properties for cross-module coordination:
 | `currentPresenter` | computed (`presenterStack.last`) | N/A                      | iOS presenter view controller                    |
 
 > [!NOTE]
-> The v5 `currentModule` delegation property was removed. Drop-in `action` / `completion` / `retry`
-> now route directly from TypeScript to the `AdyenDropIn` native module, and embedded components
-> route by `viewId` through `ComponentModule`.
+> The v5 `currentModule` delegation property was removed. `action` / `completion` / `retry` route
+> from TypeScript to `AdyenContext`, which resumes whichever closure is suspended — no id, because
+> only one can be.
 
 ### Error Routing Pattern
 
@@ -595,9 +579,14 @@ continuation is settled with the SDK's error result code — iOS uses the shared
 `errorSubmitResult` / `errorAdditionalDetailsResult` constants — so a cancelled flow ends
 terminally instead of looking like a shopper-initiated retry.
 
-iOS `ComponentProxy` uses the same pattern per `viewId`, so a result only affects the embedded view
-it was routed to. Android `ContextModule.completion()` tears the checkout context down, and its
-`retry()` only guards against a missing checkout state.
+A mounted embedded view does not participate. On iOS v6 keeps one callback store per checkout, so
+`ContextModule` wires the closures once and nothing re-points them. On Android callbacks are
+constructor arguments per `CheckoutController`, so a view's `ComponentManager` joins
+`ContextModule`'s routing table and `awaitingManager()` finds it — the same lookup that matches a
+headless result to its suspended closure.
+
+Android's `ContextModule.completion()` falls back to tearing the checkout down when nothing is
+suspended, which preserves session-flow behaviour.
 
 #### Drop-in flow (Android)
 
