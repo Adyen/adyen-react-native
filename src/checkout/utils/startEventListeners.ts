@@ -87,12 +87,14 @@ const ALL_FAMILIES: readonly ListenerFamily[] = [
   'applePay',
 ];
 
-/** Families Drop-in owns exclusively. `core` is deliberately absent — see {@link ListenerFamily}. */
-const DROP_IN_FAMILIES: readonly ListenerFamily[] = [
-  'card',
-  'addressLookup',
-  'dropIn',
-];
+/**
+ * Families Drop-in owns exclusively.
+ *
+ * `core` is absent — see {@link ListenerFamily}. So is `card`: BIN is configured on the card
+ * configuration rather than per presenter, which makes it checkout-level, so it is subscribed
+ * through the context handlers alongside every other configuration callback.
+ */
+const DROP_IN_FAMILIES: readonly ListenerFamily[] = ['addressLookup', 'dropIn'];
 
 /**
  * Subscribes the event families Drop-in owns.

@@ -14,6 +14,7 @@ import {
   type ApplePayShippingMethodUpdateRequest,
   type BeforeSubmitData,
   type BeforeSubmitResult,
+  type BinLookupData,
   type Configuration,
   type EnvironmentConfiguration,
   type PaymentAction,
@@ -121,13 +122,7 @@ export class ContextModuleWrapper implements AdyenContextModule {
     callback: (data: T) => void
   ): EventSubscription {
     this.subscriptions.get(event)?.remove();
-    const subscription = this.eventEmitter.addListener(event, (data) => {
-      // Event names are global on both platforms, so an embedded <AdyenComponent>'s events also
-      // arrive here. They carry a viewId and are already delivered to that view's own listener;
-      // handling them again would invoke the merchant callback twice and dispatch two results.
-      if (data?.viewId !== undefined) return;
-      callback(data);
-    });
+    const subscription = this.eventEmitter.addListener(event, callback);
     this.subscriptions.set(event, subscription);
     return subscription;
   }
@@ -141,6 +136,33 @@ export class ContextModuleWrapper implements AdyenContextModule {
     callback: (data: BeforeSubmitData) => void
   ): EventSubscription {
     return this.subscribe(Event.onBeforeSubmit, callback);
+  }
+
+  /**
+   * Subscribe to BIN lookup results.
+   *
+   * Configured on the card configuration rather than per component, so this is checkout-level
+   * like every other handler here. Fire-and-forget: nothing is sent back.
+   *
+   * @param callback - Called with the brands detected for the BIN the shopper typed.
+   * @returns EventSubscription that can be used to remove the listener.
+   */
+  assignBinLookupHandler(
+    callback: (data: BinLookupData[]) => void
+  ): EventSubscription {
+    return this.subscribe(Event.onBinLookup, callback);
+  }
+
+  /**
+   * Subscribe to changes of the BIN the shopper has typed.
+   *
+   * @param callback - Called with the current BIN value.
+   * @returns EventSubscription that can be used to remove the listener.
+   */
+  assignBinValueHandler(
+    callback: (binValue: string) => void
+  ): EventSubscription {
+    return this.subscribe(Event.onBinValue, callback);
   }
 
   /**

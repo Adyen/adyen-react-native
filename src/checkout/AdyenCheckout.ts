@@ -115,6 +115,7 @@ export class AdyenCheckout {
     // Terminal callbacks — no handler parameter
     AdyenContext.removeAllListeners();
     AdyenCheckout.subscribeSessionTerminalHandlers(callbacks);
+    AdyenCheckout.subscribeCardHandlers();
     AdyenCheckout.subscribeDropInHandlers();
     AdyenContext.assignBeforeSubmitHandler(async (data) => {
       const result =
@@ -205,6 +206,7 @@ export class AdyenCheckout {
     });
     // Terminal callbacks — no handler
     AdyenCheckout.subscribeAdvancedTerminalHandlers(callbacks);
+    AdyenCheckout.subscribeCardHandlers();
     AdyenCheckout.subscribeDropInHandlers();
     subscribeApplePayHandlers(() => AdyenCheckout.runtime.configuration);
 
@@ -227,6 +229,22 @@ export class AdyenCheckout {
       isActive: () => !AdyenCheckout.runtime.isCleanedUp,
       invalidate: () => AdyenCheckout.cleanup(),
     };
+  }
+
+  /**
+   * Subscribes the card configuration callbacks.
+   *
+   * BIN is configured once per checkout on the card configuration, so it belongs here rather than
+   * with a presenter: the same handler serves Drop-in, an embedded view and a headless submit.
+   */
+  private static subscribeCardHandlers(): void {
+    const refs = AdyenCheckout.runtime.eventHandlerRefs;
+    AdyenContext.assignBinLookupHandler((data) =>
+      refs.config.current?.card?.onBinLookup?.(data)
+    );
+    AdyenContext.assignBinValueHandler((value) =>
+      refs.config.current?.card?.onBinValue?.(value)
+    );
   }
 
   private static subscribeSessionTerminalHandlers(

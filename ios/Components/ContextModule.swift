@@ -312,7 +312,19 @@ internal final class ContextModule: BaseModule {
 
     private func buildCheckoutConfiguration(parser: RootConfigurationParser,
                                             configuration: NSDictionary) throws -> CheckoutConfiguration {
-        let cardConfiguration = CardConfigurationParser(configuration: configuration).configuration
+        // BIN callbacks live on the card configuration, so they are checkout-wide rather than
+        // per presenter: one handler serves Drop-in, an embedded view and a headless submit.
+        // The parser has accepted these since the v6 migration but was never passed them, so the
+        // events were declared and advertised while nothing emitted them.
+        let cardConfiguration = CardConfigurationParser(
+            configuration: configuration,
+            onBinChange: { [weak self] binValue in
+                self?.sendEvent(event: .changeBinValue, body: binValue)
+            },
+            onBinLookup: { [weak self] data in
+                self?.sendBinLookupEvent(data)
+            }
+        ).configuration
         let authenticationConfiguration = ThreeDS2ConfigurationParser(configuration: configuration).configuration
 
         // Apple Pay only contributes a component configuration when the merchant supplied one;
@@ -329,6 +341,17 @@ internal final class ContextModule: BaseModule {
             cardConfiguration
             authenticationConfiguration
         }
+    }
+
+    /// Emits the brands detected for a BIN.
+    ///
+    /// Flattened to `[{ brand }]` to match Android and the `BinLookupData[]` the merchant
+    /// callback is typed against; the SDK nests brands inside one result object.
+    @MainActor
+    private func sendBinLookupEvent(_ data: BinLookupData) {
+        let brands = data.brands.map { [Key.brand: $0.brand] }
+        guard !brands.isEmpty else { return }
+        sendEvent(event: .binLookup, body: brands)
     }
 
     // MARK: - Session callbacks
@@ -424,5 +447,6 @@ internal final class ContextModule: BaseModule {
         static let deliveryAddress = "deliveryAddress"
         static let shopperName = "shopperName"
         static let shopperEmail = "shopperEmail"
+        static let brand = "brand"
     }
 }

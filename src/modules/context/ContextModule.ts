@@ -13,6 +13,7 @@ import type {
   ApplePayShippingMethodUpdateRequest,
   BeforeSubmitData,
   BeforeSubmitResult,
+  BinLookupData,
   Configuration,
   EnvironmentConfiguration,
   PaymentDetailsData,
@@ -77,6 +78,24 @@ export interface AdyenContextModule extends AdvancedPayment {
 
   /** Resumes a pending session pre-submit callback with the shopper's decision. */
   provideBeforeSubmitResult(result: BeforeSubmitResult): void;
+
+  /**
+   * Subscribe to BIN lookup results from the card configuration.
+   * @param callback - Called with the brands detected for the BIN the shopper typed.
+   * @returns EmitterSubscription that can be used to remove the listener.
+   */
+  assignBinLookupHandler(
+    callback: (data: BinLookupData[]) => void
+  ): EventSubscription;
+
+  /**
+   * Subscribe to changes of the BIN the shopper has typed.
+   * @param callback - Called with the current BIN value.
+   * @returns EmitterSubscription that can be used to remove the listener.
+   */
+  assignBinValueHandler(
+    callback: (binValue: string) => void
+  ): EventSubscription;
 
   /**
    * Subscribe to a session pre-submit event.

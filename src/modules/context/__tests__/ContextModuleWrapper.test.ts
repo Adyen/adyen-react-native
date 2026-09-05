@@ -10,7 +10,15 @@ jest.mock('react-native', () => ({
     addListener: (event: string, handler: (data: any) => void) => {
       if (!mockListeners.has(event)) mockListeners.set(event, []);
       mockListeners.get(event)!.push(handler);
-      return { remove: jest.fn() };
+      // A faithful remove, so a test can tell whether the wrapper actually detaches the
+      // previous listener when a handler is reassigned.
+      return {
+        remove: () => {
+          const handlers = mockListeners.get(event) ?? [];
+          const index = handlers.indexOf(handler);
+          if (index >= 0) handlers.splice(index, 1);
+        },
+      };
     },
   })),
 }));
@@ -55,40 +63,44 @@ describe('ContextModuleWrapper', () => {
     mockListeners.clear();
   });
 
-  describe('view-tagged event filtering', () => {
-    test('ignores events produced by an embedded view', () => {
+  describe('event delivery', () => {
+    test('delivers every event to the assigned handler', () => {
+      // Nothing filters any more. Events used to carry a viewId so this listener could ignore
+      // the ones an embedded view produced, back when each view had its own listener set.
       const wrapper = new ContextModuleWrapper(mockNativeModule);
       const callback = jest.fn();
       wrapper.assignSubmitHandler(callback);
 
-      fire(Event.onSubmit, { viewId: 'view-1', paymentData: {} });
-
-      // The view has its own listener. Handling it here as well would run the merchant
-      // callback twice and dispatch two results for one payment.
-      expect(callback).not.toHaveBeenCalled();
-    });
-
-    test('receives events that no view produced', () => {
-      const wrapper = new ContextModuleWrapper(mockNativeModule);
-      const callback = jest.fn();
-      wrapper.assignSubmitHandler(callback);
-
-      fire(Event.onSubmit, { source: 'context', paymentData: {} });
+      fire(Event.onSubmit, { paymentData: {} });
 
       expect(callback).toHaveBeenCalledTimes(1);
     });
 
-    test('before-submit is never view-tagged, so it still reaches the handler', () => {
-      // Load-bearing invariant. The session before-submit bridge is context-owned and emits on
-      // the untagged bus even for embedded views. If it ever became view-tagged the filter above
-      // would swallow it and the session flow would deadlock on a suspended continuation.
+    test('assigning a handler twice replaces the first', () => {
       const wrapper = new ContextModuleWrapper(mockNativeModule);
-      const callback = jest.fn();
-      wrapper.assignBeforeSubmitHandler(callback);
+      const first = jest.fn();
+      const second = jest.fn();
+      wrapper.assignSubmitHandler(first);
+      wrapper.assignSubmitHandler(second);
 
-      fire(Event.onBeforeSubmit, { shopperEmail: 'shopper@example.com' });
+      fire(Event.onSubmit, { paymentData: {} });
 
-      expect(callback).toHaveBeenCalledTimes(1);
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledTimes(1);
+    });
+
+    test('delivers BIN lookup and BIN value to their handlers', () => {
+      const wrapper = new ContextModuleWrapper(mockNativeModule);
+      const onLookup = jest.fn();
+      const onValue = jest.fn();
+      wrapper.assignBinLookupHandler(onLookup);
+      wrapper.assignBinValueHandler(onValue);
+
+      fire(Event.onBinLookup, [{ brand: 'visa' }]);
+      fire(Event.onBinValue, '411111');
+
+      expect(onLookup).toHaveBeenCalledWith([{ brand: 'visa' }]);
+      expect(onValue).toHaveBeenCalledWith('411111');
     });
   });
 

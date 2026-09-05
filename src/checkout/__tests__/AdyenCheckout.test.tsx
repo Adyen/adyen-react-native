@@ -23,6 +23,8 @@ const mockProvideAuthorizationResult = jest.fn<MockFunction>();
 const mockProvideShippingContactUpdate = jest.fn<MockFunction>();
 const mockProvideShippingMethodUpdate = jest.fn<MockFunction>();
 const mockProvideCouponCodeUpdate = jest.fn<MockFunction>();
+const mockAssignBinLookupHandler = jest.fn<MockFunction>();
+const mockAssignBinValueHandler = jest.fn<MockFunction>();
 
 const mockDropInAction = jest.fn();
 const mockDropInCompletion = jest.fn();
@@ -59,6 +61,10 @@ jest.mock('../../modules/context/ContextModule', () => ({
       mockAssignErrorHandler(handler),
     assignSubmitHandler: (handler: (data: any) => Promise<void>) =>
       mockAssignSubmitHandler(handler),
+    assignBinLookupHandler: (handler: (data: any) => void) =>
+      mockAssignBinLookupHandler(handler),
+    assignBinValueHandler: (handler: (value: any) => void) =>
+      mockAssignBinValueHandler(handler),
     assignAdditionalDetailsHandler: (handler: (data: any) => Promise<void>) =>
       mockAssignAdditionalDetailsHandler(handler),
     assignAdvancedCompleteHandler: (handler: (result: any) => void) =>
