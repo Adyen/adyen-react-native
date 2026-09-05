@@ -34,22 +34,17 @@ internal final class ContextModule: BaseModule {
     /// module cannot extend ``BaseModuleSender`` without its continuations colliding.
     internal let resultSink = AdvancedResultSink()
 
-    private var beforeSubmitContinuation: CheckedContinuation<BeforeSubmitResult, Never>?
+    private let beforeSubmitBridge = CallbackBridge<BeforeSubmitResult>()
 
     // MARK: - Apple Pay callback state
 
-    /// Continuations for the v6 Apple Pay closures. Each is set when the SDK invokes the
-    /// matching closure and consumed by the corresponding `provide…` method once JS responds.
+    /// The suspended Apple Pay closures. Each is suspended when the SDK invokes the matching
+    /// closure and resumed by the corresponding `provide…` method once JS responds.
     /// Stored on the class because Swift extensions cannot declare stored properties.
-    internal var shippingContactHandler: ((PKPaymentRequestShippingContactUpdate) -> Void)?
-    internal var shippingMethodHandler: ((PKPaymentRequestShippingMethodUpdate) -> Void)?
-    internal var authorizationHandler: ((PKPaymentAuthorizationResult) -> Void)?
-    private var _couponCodeHandler: Any?
-    @available(iOS 15.0, *)
-    internal var couponCodeHandler: ((PKPaymentRequestCouponCodeUpdate) -> Void)? {
-        get { _couponCodeHandler as? (PKPaymentRequestCouponCodeUpdate) -> Void }
-        set { _couponCodeHandler = newValue }
-    }
+    internal let authorizationBridge = CallbackBridge<PKPaymentAuthorizationResult>()
+    internal let shippingContactBridge = CallbackBridge<PKPaymentRequestShippingContactUpdate>()
+    internal let shippingMethodBridge = CallbackBridge<PKPaymentRequestShippingMethodUpdate>()
+    internal let couponCodeBridge = CallbackBridge<PKPaymentRequestCouponCodeUpdate>()
 
     /// The summary items currently shown in the Apple Pay sheet. v6 delivers them on every
     /// shipping / coupon callback, so they are stored here to serve as a fallback when a
@@ -107,13 +102,12 @@ internal final class ContextModule: BaseModule {
     @objc
     func provideBeforeSubmitResult(_ result: NSDictionary) {
         ensureMainThread { [weak self] in
-            guard let self, let continuation = self.beforeSubmitContinuation else { return }
-            self.beforeSubmitContinuation = nil
+            guard let self else { return }
             do {
-                try continuation.resume(returning: self.parseBeforeSubmitResult(result))
+                try self.beforeSubmitBridge.resolve(self.parseBeforeSubmitResult(result))
             } catch {
                 self.sendError(error: error)
-                continuation.resume(returning: .abort)
+                self.beforeSubmitBridge.resolve(.abort)
             }
         }
     }
@@ -294,8 +288,7 @@ internal final class ContextModule: BaseModule {
     private func cancelPendingOperations() {
         components.removeAll()
         resultSink.cancelPending()
-        beforeSubmitContinuation?.resume(returning: .abort)
-        beforeSubmitContinuation = nil
+        beforeSubmitBridge.resolve(.abort)
         cancelApplePayCallbacks()
     }
 
@@ -356,9 +349,8 @@ internal final class ContextModule: BaseModule {
 
     @MainActor
     private func awaitBeforeSubmitResult(for data: BeforeSubmitData) async -> BeforeSubmitResult {
-        await withCheckedContinuation { continuation in
-            beforeSubmitContinuation = continuation
-            sendEvent(withName: EventName.beforeSubmit.rawValue, body: beforeSubmitDataDictionary(data))
+        await beforeSubmitBridge.suspend(superseding: .abort) {
+            sendEvent(event: .beforeSubmit, body: beforeSubmitDataDictionary(data))
         }
     }
 

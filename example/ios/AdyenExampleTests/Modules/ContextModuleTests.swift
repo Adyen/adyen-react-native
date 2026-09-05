@@ -25,34 +25,50 @@ final class ContextModuleTests: XCTestCase {
         super.tearDown()
     }
 
-    func test_cancelApplePayCallbacks_resolvesAndClearsPendingHandlers() {
-        let authorizationExpectation = expectation(description: "authorization handler")
-        let shippingContactExpectation = expectation(description: "shipping contact handler")
-        let shippingMethodExpectation = expectation(description: "shipping method handler")
-
-        sut.authorizationHandler = { result in
-            XCTAssertEqual(result.status, .failure)
-            authorizationExpectation.fulfill()
+    func test_cancelApplePayCallbacks_settlesSuspendedAuthorization() async {
+        // GIVEN an authorization call suspended awaiting a response from JS
+        let suspended = Task {
+            await sut.authorizationBridge.suspend(superseding: .init(status: .failure, errors: nil)) {}
         }
-        sut.shippingContactHandler = { _ in shippingContactExpectation.fulfill() }
-        sut.shippingMethodHandler = { _ in shippingMethodExpectation.fulfill() }
+        while !sut.authorizationBridge.isAwaiting {
+            await Task.yield()
+        }
 
+        // WHEN the flow is torn down
         sut.cancelApplePayCallbacks()
 
-        wait(for: [authorizationExpectation, shippingContactExpectation, shippingMethodExpectation], timeout: 1)
-        XCTAssertNil(sut.authorizationHandler)
-        XCTAssertNil(sut.shippingContactHandler)
-        XCTAssertNil(sut.shippingMethodHandler)
+        // THEN the suspended call is settled as a failure rather than left to leak
+        let result = await suspended.value
+        XCTAssertEqual(result.status, .failure)
+        XCTAssertFalse(sut.authorizationBridge.isAwaiting)
     }
 
-    @available(iOS 15.0, *)
-    func test_cancelApplePayCallbacks_resolvesAndClearsPendingCouponHandler() {
-        let expectation = expectation(description: "coupon code handler")
-        sut.couponCodeHandler = { _ in expectation.fulfill() }
+    func test_cancelApplePayCallbacks_settlesSuspendedShippingAndCouponCalls() async {
+        // GIVEN the shipping and coupon callbacks all suspended
+        let contact = Task {
+            await sut.shippingContactBridge.suspend(superseding: .init(paymentSummaryItems: [])) {}
+        }
+        let method = Task {
+            await sut.shippingMethodBridge.suspend(superseding: .init(paymentSummaryItems: [])) {}
+        }
+        let coupon = Task {
+            await sut.couponCodeBridge.suspend(superseding: .init(paymentSummaryItems: [])) {}
+        }
+        while !(sut.shippingContactBridge.isAwaiting
+            && sut.shippingMethodBridge.isAwaiting
+            && sut.couponCodeBridge.isAwaiting) {
+            await Task.yield()
+        }
 
+        // WHEN the flow is torn down
         sut.cancelApplePayCallbacks()
 
-        wait(for: [expectation], timeout: 1)
-        XCTAssertNil(sut.couponCodeHandler)
+        // THEN every suspended call is settled, so none of them leaks a continuation
+        _ = await contact.value
+        _ = await method.value
+        _ = await coupon.value
+        XCTAssertFalse(sut.shippingContactBridge.isAwaiting)
+        XCTAssertFalse(sut.shippingMethodBridge.isAwaiting)
+        XCTAssertFalse(sut.couponCodeBridge.isAwaiting)
     }
 }

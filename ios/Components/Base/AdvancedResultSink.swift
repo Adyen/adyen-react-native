@@ -6,67 +6,55 @@
 
 import Adyen
 
-/// Owns the suspended advanced-flow continuations for a single presenter.
+/// The advanced flow's two suspended callbacks, held together because they share a lifetime.
 ///
-/// The v6 SDK drives the advanced flow through `async` closures: `onSubmit` and
-/// `onAdditionalDetails` suspend until the merchant returns a result through JS. Each presenter
-/// — Drop-in, an embedded view, or the headless context flow — needs its own pair, because a
-/// result must resume the presenter that actually opened the request.
-///
-/// Held as a property rather than inherited. ``ContextModule`` previously re-declared this state
-/// because it could not inherit ``BaseModuleSender`` (its own continuations would have collided
-/// with the inherited ones), leaving three copies of the same logic across the codebase.
+/// The SDK drives the advanced flow through `async` closures: `onSubmit` and `onAdditionalDetails`
+/// suspend until the merchant returns a result through JS.
 @MainActor
 internal final class AdvancedResultSink {
 
-    private var submitContinuation: CheckedContinuation<SubmitResult, Never>?
-    private var additionalDetailsContinuation: CheckedContinuation<AdditionalDetailsResult, Never>?
+    internal let submit = CallbackBridge<SubmitResult>()
+    internal let additionalDetails = CallbackBridge<AdditionalDetailsResult>()
 
-    /// Whether a submit is suspended. Distinguishes which continuation a bare `completion(_:)`
-    /// from JS is meant to resume.
+    /// Whether a submit is suspended. Distinguishes which callback a bare `completion(_:)` from JS
+    /// is meant to resume.
     internal var isAwaitingSubmit: Bool {
-        submitContinuation != nil
+        submit.isAwaiting
     }
 
     internal var isAwaitingAdditionalDetails: Bool {
-        additionalDetailsContinuation != nil
+        additionalDetails.isAwaiting
     }
 
-    /// Whether anything is suspended, so a holder of several sinks can pick the active one.
+    /// Whether anything is suspended.
     internal var isAwaitingResult: Bool {
         isAwaitingSubmit || isAwaitingAdditionalDetails
     }
 
     // MARK: - Suspension
 
-    internal func awaitSubmit() async -> SubmitResult {
-        await withCheckedContinuation { submitContinuation = $0 }
+    internal func awaitSubmit(emit: () -> Void) async -> SubmitResult {
+        await submit.suspend(superseding: errorSubmitResult, emit: emit)
     }
 
-    internal func awaitAdditionalDetails() async -> AdditionalDetailsResult {
-        await withCheckedContinuation { additionalDetailsContinuation = $0 }
+    internal func awaitAdditionalDetails(emit: () -> Void) async -> AdditionalDetailsResult {
+        await additionalDetails.suspend(superseding: errorAdditionalDetailsResult, emit: emit)
     }
 
     // MARK: - Resumption
 
-    /// Resumes a suspended submit. No-op when nothing is pending, so a late or duplicate result
-    /// from JS is ignored rather than crashing on a double resume.
     internal func resolveSubmit(_ result: SubmitResult) {
-        guard let continuation = submitContinuation else { return }
-        submitContinuation = nil
-        continuation.resume(returning: result)
+        submit.resolve(result)
     }
 
     internal func resolveAdditionalDetails(_ result: AdditionalDetailsResult) {
-        guard let continuation = additionalDetailsContinuation else { return }
-        additionalDetailsContinuation = nil
-        continuation.resume(returning: result)
+        additionalDetails.resolve(result)
     }
 
     /// Settles anything still suspended with the SDK's error result code, so a torn-down flow ends
     /// terminally instead of looking like a shopper-initiated retry.
     internal func cancelPending() {
-        resolveSubmit(errorSubmitResult)
-        resolveAdditionalDetails(errorAdditionalDetailsResult)
+        submit.resolve(errorSubmitResult)
+        additionalDetails.resolve(errorAdditionalDetailsResult)
     }
 }

@@ -16,12 +16,6 @@ internal let errorAdditionalDetailsResult = AdditionalDetailsResult.completion(r
 /// Base class for all Adyen React Native modules.
 /// - Important: Only one payment flow is supported at a time. Starting a new payment flow
 ///   while another is in progress will replace the current session and presenter.
-extension BaseModule: EventEmitter {
-    func send(event: EventName, body: Any?) {
-        sendEvent(withName: event.rawValue, body: body)
-    }
-}
-
 internal class BaseModule: RCTEventEmitter {
 
     /// Override for testing. When nil, uses self (RCTEventEmitter).
@@ -226,5 +220,11 @@ extension BaseModule: UIAdaptivePresentationControllerDelegate {
         // Remove the swiped-away VC from the stack
         BaseModule.presenterStack.removeAll { $0 === presentationController.presentedViewController }
         cancelDidPress()
+    }
+}
+
+extension BaseModule: EventEmitter {
+    func send(event: EventName, body: Any?) {
+        sendEvent(withName: event.rawValue, body: body)
     }
 }

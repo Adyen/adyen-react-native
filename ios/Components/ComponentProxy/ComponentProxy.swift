@@ -97,14 +97,12 @@ internal final class ComponentProxy {
 
     @MainActor
     private func awaitSubmitResult(for data: PaymentComponentData) async -> SubmitResult {
-        sendSubmitEvent(data: data)
-        return await resultSink.awaitSubmit()
+        await resultSink.awaitSubmit { sendSubmitEvent(data: data) }
     }
 
     @MainActor
     private func awaitAdditionalDetailsResult(for data: ActionComponentData) async -> AdditionalDetailsResult {
-        sendProvideEvent(actionData: data)
-        return await resultSink.awaitAdditionalDetails()
+        await resultSink.awaitAdditionalDetails { sendProvideEvent(actionData: data) }
     }
 
     // MARK: - JS-routed commands

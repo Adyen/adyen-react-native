@@ -54,8 +54,7 @@ extension ContextModule {
 
     @MainActor
     internal func awaitAuthorization(payment: PKPayment) async -> PKPaymentAuthorizationResult {
-        await withCheckedContinuation { continuation in
-            self.authorizationHandler = { continuation.resume(returning: $0) }
+        await authorizationBridge.suspend(superseding: .init(status: .failure, errors: nil)) {
             var body: [String: Any] = [:]
             if let billing = payment.billingContact {
                 body[ApplePayKeys.billingContact] = billing.jsonObject
@@ -66,7 +65,7 @@ extension ContextModule {
             if let method = payment.shippingMethod {
                 body[ApplePayKeys.shippingMethod] = method.jsonObject
             }
-            self.sendEvent(withName: EventName.authorizePayment.rawValue, body: body)
+            self.sendEvent(event: .authorizePayment, body: body)
         }
     }
 
@@ -76,9 +75,8 @@ extension ContextModule {
         summaryItems: [PKPaymentSummaryItem]
     ) async -> PKPaymentRequestShippingContactUpdate {
         currentSummaryItems = summaryItems
-        return await withCheckedContinuation { continuation in
-            self.shippingContactHandler = { continuation.resume(returning: $0) }
-            self.sendEvent(withName: EventName.updateShippingContact.rawValue, body: contact.jsonObject)
+        return await shippingContactBridge.suspend(superseding: .init(paymentSummaryItems: summaryItems)) {
+            self.sendEvent(event: .updateShippingContact, body: contact.jsonObject)
         }
     }
 
@@ -88,22 +86,19 @@ extension ContextModule {
         summaryItems: [PKPaymentSummaryItem]
     ) async -> PKPaymentRequestShippingMethodUpdate {
         currentSummaryItems = summaryItems
-        return await withCheckedContinuation { continuation in
-            self.shippingMethodHandler = { continuation.resume(returning: $0) }
-            self.sendEvent(withName: EventName.updateShippingMethod.rawValue, body: shippingMethod.jsonObject)
+        return await shippingMethodBridge.suspend(superseding: .init(paymentSummaryItems: summaryItems)) {
+            self.sendEvent(event: .updateShippingMethod, body: shippingMethod.jsonObject)
         }
     }
 
-    @available(iOS 15.0, *)
     @MainActor
     internal func awaitCouponCode(
         couponCode: String,
         summaryItems: [PKPaymentSummaryItem]
     ) async -> PKPaymentRequestCouponCodeUpdate {
         currentSummaryItems = summaryItems
-        return await withCheckedContinuation { continuation in
-            self.couponCodeHandler = { continuation.resume(returning: $0) }
-            self.sendEvent(withName: EventName.updateCouponCode.rawValue, body: [ApplePayKeys.couponCode: couponCode])
+        return await couponCodeBridge.suspend(superseding: .init(paymentSummaryItems: summaryItems)) {
+            self.sendEvent(event: .updateCouponCode, body: [ApplePayKeys.couponCode: couponCode])
         }
     }
 }
@@ -114,75 +109,58 @@ extension ContextModule {
 
     @MainActor
     internal func cancelApplePayCallbacks() {
-        let pendingAuthorizationHandler = authorizationHandler
-        self.authorizationHandler = nil
-        pendingAuthorizationHandler?(PKPaymentAuthorizationResult(status: .failure, errors: nil))
-
-        let pendingShippingContactHandler = shippingContactHandler
-        self.shippingContactHandler = nil
-        pendingShippingContactHandler?(PKPaymentRequestShippingContactUpdate(paymentSummaryItems: currentSummaryItems))
-
-        let pendingShippingMethodHandler = shippingMethodHandler
-        self.shippingMethodHandler = nil
-        pendingShippingMethodHandler?(PKPaymentRequestShippingMethodUpdate(paymentSummaryItems: currentSummaryItems))
-
-        if #available(iOS 15.0, *) {
-            let pendingCouponCodeHandler = couponCodeHandler
-            self.couponCodeHandler = nil
-            pendingCouponCodeHandler?(PKPaymentRequestCouponCodeUpdate(paymentSummaryItems: currentSummaryItems))
-        }
+        authorizationBridge.resolve(.init(status: .failure, errors: nil))
+        shippingContactBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
+        shippingMethodBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
+        couponCodeBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
     }
 
     @objc
     func provideAuthorizationResult(_ result: NSDictionary) {
-        guard let handler = authorizationHandler else { return }
-        authorizationHandler = nil
         let dict = result as? [String: Any] ?? [:]
         let success = (dict[ApplePayKeys.Update.status] as? String) == "success"
         let errors = parseErrors(dict)
         let status: PKPaymentAuthorizationStatus = success ? .success : .failure
-        DispatchQueue.main.async {
-            handler(PKPaymentAuthorizationResult(status: status, errors: errors))
+        ensureMainThread { [weak self] in
+            self?.authorizationBridge.resolve(.init(status: status, errors: errors))
         }
     }
 
-    @available(iOS 15.0, *)
     @objc
     func provideCouponCodeUpdate(_ update: NSDictionary) {
-        guard let handler = couponCodeHandler else { return }
-        couponCodeHandler = nil
         let dict = update as? [String: Any] ?? [:]
-        let summaryItems = parseSummaryItems(dict) ?? currentSummaryItems
-        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
-        let errors = parseErrors(dict)
-        DispatchQueue.main.async {
+        ensureMainThread { [weak self] in
+            guard let self else { return }
+            let summaryItems = self.parseSummaryItems(dict) ?? self.currentSummaryItems
+            let shippingMethods = self.parseShippingMethods(dict) ?? self.currentShippingMethods
             self.currentShippingMethods = shippingMethods
-            handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
+            self.couponCodeBridge.resolve(
+                .init(errors: self.parseErrors(dict), paymentSummaryItems: summaryItems, shippingMethods: shippingMethods)
+            )
         }
     }
 
     @objc
     func provideShippingContactUpdate(_ update: NSDictionary) {
-        guard let handler = shippingContactHandler else { return }
-        shippingContactHandler = nil
         let dict = update as? [String: Any] ?? [:]
-        let summaryItems = parseSummaryItems(dict) ?? currentSummaryItems
-        let shippingMethods = parseShippingMethods(dict) ?? currentShippingMethods
-        let errors = parseErrors(dict)
-        DispatchQueue.main.async {
+        ensureMainThread { [weak self] in
+            guard let self else { return }
+            let summaryItems = self.parseSummaryItems(dict) ?? self.currentSummaryItems
+            let shippingMethods = self.parseShippingMethods(dict) ?? self.currentShippingMethods
             self.currentShippingMethods = shippingMethods
-            handler(.init(errors: errors, paymentSummaryItems: summaryItems, shippingMethods: shippingMethods))
+            self.shippingContactBridge.resolve(
+                .init(errors: self.parseErrors(dict), paymentSummaryItems: summaryItems, shippingMethods: shippingMethods)
+            )
         }
     }
 
     @objc
     func provideShippingMethodUpdate(_ update: NSDictionary) {
-        guard let handler = shippingMethodHandler else { return }
-        shippingMethodHandler = nil
         let dict = update as? [String: Any] ?? [:]
-        let summaryItems = parseSummaryItems(dict) ?? currentSummaryItems
-        DispatchQueue.main.async {
-            handler(.init(paymentSummaryItems: summaryItems))
+        ensureMainThread { [weak self] in
+            guard let self else { return }
+            let summaryItems = self.parseSummaryItems(dict) ?? self.currentSummaryItems
+            self.shippingMethodBridge.resolve(.init(paymentSummaryItems: summaryItems))
         }
     }
 

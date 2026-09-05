@@ -49,14 +49,12 @@ extension ContextModule {
 
     @MainActor
     internal func awaitSubmitResult(for data: PaymentComponentData) async -> SubmitResult {
-        sendSubmitEvent(data: data)
-        return await resultSink.awaitSubmit()
+        await resultSink.awaitSubmit { sendSubmitEvent(data: data) }
     }
 
     @MainActor
     internal func awaitAdditionalDetailsResult(for data: ActionComponentData) async -> AdditionalDetailsResult {
-        sendProvideEvent(actionData: data)
-        return await resultSink.awaitAdditionalDetails()
+        await resultSink.awaitAdditionalDetails { sendProvideEvent(actionData: data) }
     }
 
     // MARK: - Event emission
