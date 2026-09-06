@@ -318,7 +318,7 @@ describe('ContextModuleWrapper', () => {
     });
   });
 
-  describe('AdyenContextModule interface', () => {
+  describe('NativeCheckoutModule interface', () => {
     test('should implement setup method', () => {
       const wrapper = new ContextModuleWrapper(mockNativeModule);
       expect(typeof wrapper.setup).toBe('function');

@@ -27,7 +27,7 @@ import { ContextModuleWrapper } from './ContextModuleWrapper';
 import type { SessionContext } from './types';
 
 /** Describes a native module capable of setting up the checkout and creating sessions. */
-export interface AdyenContextModule extends AdvancedPayment {
+export interface NativeCheckoutModule extends AdvancedPayment {
   /**
    * Sets up the checkout with payment methods and configuration.
    * @param paymentMethods - The payment methods response from the Adyen API.
@@ -231,6 +231,6 @@ export interface AdyenContextModule extends AdvancedPayment {
 }
 
 /** Collection of setup and session helper methods */
-export const AdyenContext: AdyenContextModule = new ContextModuleWrapper(
-  NativeModules.AdyenContext ?? ModuleMock
+export const NativeCheckout: NativeCheckoutModule = new ContextModuleWrapper(
+  NativeModules.AdyenCheckout ?? ModuleMock
 );

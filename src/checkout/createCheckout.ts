@@ -5,7 +5,7 @@
 //
 
 import type { Checkout, Configuration, PaymentMethodsResponse } from '../core';
-import { AdyenContext } from '../modules/context/ContextModule';
+import { NativeCheckout } from '../modules/context/ContextModule';
 import type { CheckoutHost } from './types';
 
 const inactiveWarning = (method: string): string =>
@@ -41,14 +41,14 @@ export function createCheckout(
     paymentMethods,
     configuration,
     isAvailable: async (type: string) =>
-      isActive('isAvailable') ? AdyenContext.isAvailable(type) : false,
+      isActive('isAvailable') ? NativeCheckout.isAvailable(type) : false,
     requiresUserInteraction: async (type: string) =>
       isActive('requiresUserInteraction')
-        ? AdyenContext.requiresUserInteraction(type)
+        ? NativeCheckout.requiresUserInteraction(type)
         : false,
     submit: (type: string) => {
       if (isActive('submit')) {
-        AdyenContext.submit(type);
+        NativeCheckout.submit(type);
       }
     },
     // Idempotent by design — a repeated or late call is a silent no-op.

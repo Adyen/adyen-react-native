@@ -25,10 +25,10 @@ import {
   type SessionsResult,
   type SubmitModel,
 } from '../../core';
-import type { AdyenContextModule } from './ContextModule';
+import type { NativeCheckoutModule } from './ContextModule';
 import type { SessionContext } from './types';
 
-/** Native module interface specific to AdyenContext */
+/** Native module interface specific to NativeCheckout */
 interface ContextNativeModule extends NativeModule {
   setup(
     paymentMethods: PaymentMethodsResponse,
@@ -56,7 +56,7 @@ interface ContextNativeModule extends NativeModule {
   provideCouponCodeUpdate(update: ApplePayCouponCodeUpdateRequest): void;
 }
 
-export class ContextModuleWrapper implements AdyenContextModule {
+export class ContextModuleWrapper implements NativeCheckoutModule {
   private readonly nativeModule: ContextNativeModule;
   private readonly eventEmitter: NativeEventEmitter;
   private readonly subscriptions: Map<string, EventSubscription> = new Map();

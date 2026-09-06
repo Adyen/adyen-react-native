@@ -11,7 +11,7 @@ flowchart TB
   JS(["JavaScript"])
 
   subgraph N["Native module layer"]
-    CTX["ContextModule<br/><i>AdyenContext</i><br/>owns setup + CheckoutState"]
+    CTX["ContextModule<br/><i>AdyenCheckout</i><br/>owns setup + CheckoutState"]
     DIM["DropInModule<br/><i>AdyenDropIn</i>"]
     CPM["ComponentModule<br/><i>AdyenComponent</i><br/>view bus"]
     ACT["ActionModule<br/><i>AdyenAction</i><br/>standalone, promise-based"]
@@ -63,7 +63,7 @@ classDiagram
     +confirm(success, address)
   }
   class ContextModule {
-    <<AdyenContext>>
+    <<AdyenCheckout>>
     +shared$ ContextModule?
     +resultSink: AdvancedResultSink
     +createSession() / setup()
@@ -203,7 +203,7 @@ classDiagram
     +parseLookupAddress()
   }
   class ContextModule {
-    <<AdyenContext>>
+    <<AdyenCheckout>>
     +componentManagers: Map
     +createSession() / setup()
     +action() / completion() / retry()

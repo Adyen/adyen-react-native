@@ -364,7 +364,7 @@ class ContextModule(
     }
 
     private const val TAG = "ContextModule"
-    private const val COMPONENT_NAME = "AdyenContext"
+    private const val COMPONENT_NAME = "AdyenCheckout"
     private const val ID = "id"
     private const val SESSION_DATA = "sessionData"
     private val GOOGLE_PAY_KEYS =

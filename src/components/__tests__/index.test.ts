@@ -10,7 +10,7 @@ const mockSetSdkVersion = jest.fn();
 
 jest.mock('react-native', () => ({
   NativeModules: {
-    AdyenContext: {
+    AdyenCheckout: {
       setSdkVersion: mockSetSdkVersion,
     },
   },

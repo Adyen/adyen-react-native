@@ -12,7 +12,7 @@ import type {
   ApplePayShippingMethodUpdateRequest,
   Configuration,
 } from '../../core';
-import { AdyenContext } from '../../modules/context/ContextModule';
+import { NativeCheckout } from '../../modules/context/ContextModule';
 
 /**
  * Bridges the Apple Pay sheet callbacks to the merchant's configuration.
@@ -31,9 +31,9 @@ import { AdyenContext } from '../../modules/context/ContextModule';
 export function subscribeApplePayHandlers(
   configOf: () => Configuration | null
 ): void {
-  AdyenContext.assignApplePayAuthorizationHandler((payment) => {
+  NativeCheckout.assignApplePayAuthorizationHandler((payment) => {
     const provide = (result: ApplePayAuthorizationResult) =>
-      AdyenContext.provideAuthorizationResult(result);
+      NativeCheckout.provideAuthorizationResult(result);
     const actions: ApplePayAuthorizationActions = {
       resolve: () => provide({ status: 'success' }),
       reject: (errors?) => provide({ status: 'failure', errors }),
@@ -46,9 +46,9 @@ export function subscribeApplePayHandlers(
     }
   });
 
-  AdyenContext.assignApplePayShippingContactHandler((contact) => {
+  NativeCheckout.assignApplePayShippingContactHandler((contact) => {
     const resolve = (update: ApplePayShippingContactUpdateRequest) =>
-      AdyenContext.provideShippingContactUpdate(update);
+      NativeCheckout.provideShippingContactUpdate(update);
     const callback = configOf()?.applepay?.onShippingContactChange;
     if (callback) {
       callback(contact, resolve);
@@ -57,9 +57,9 @@ export function subscribeApplePayHandlers(
     }
   });
 
-  AdyenContext.assignApplePayShippingMethodHandler((shippingMethod) => {
+  NativeCheckout.assignApplePayShippingMethodHandler((shippingMethod) => {
     const resolve = (update: ApplePayShippingMethodUpdateRequest) =>
-      AdyenContext.provideShippingMethodUpdate(update);
+      NativeCheckout.provideShippingMethodUpdate(update);
     const callback = configOf()?.applepay?.onShippingMethodChange;
     if (callback) {
       callback(shippingMethod, resolve);
@@ -68,9 +68,9 @@ export function subscribeApplePayHandlers(
     }
   });
 
-  AdyenContext.assignApplePayCouponCodeHandler((data) => {
+  NativeCheckout.assignApplePayCouponCodeHandler((data) => {
     const resolve = (update: ApplePayCouponCodeUpdateRequest) =>
-      AdyenContext.provideCouponCodeUpdate(update);
+      NativeCheckout.provideCouponCodeUpdate(update);
     const callback = configOf()?.applepay?.onCouponCodeChange;
     if (callback) {
       callback(data.couponCode, resolve);

@@ -19,7 +19,7 @@ const mockRequiresUserInteraction =
 const mockSubmit = jest.fn<(type: string) => void>();
 
 jest.mock('../../modules/context/ContextModule', () => ({
-  AdyenContext: {
+  NativeCheckout: {
     isAvailable: mockIsAvailable,
     requiresUserInteraction: mockRequiresUserInteraction,
     submit: mockSubmit,

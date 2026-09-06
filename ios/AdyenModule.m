@@ -81,7 +81,7 @@ RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
 
 @end
 
-@interface RCT_EXTERN_MODULE(AdyenContext, NSObject)
+@interface RCT_EXTERN_MODULE(AdyenCheckout, NSObject)
 
 RCT_EXTERN_METHOD(setup:(NSDictionary *)sessionModelJSON
                   configuration:(NSDictionary *)configurationJSON

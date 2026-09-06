@@ -95,7 +95,7 @@ src/
     │   ├── AdyenAction.ts
     │   └── ActionModuleWrapper.ts
     ├── context/                            # Checkout context lifecycle (session + advanced setup)
-    │   ├── ContextModule.ts                  # AdyenContext module interface
+    │   ├── ContextModule.ts                  # AdyenCheckout module interface
     │   ├── ContextModuleWrapper.ts           # Wrapper: createSession, setup, isAvailable, requiresUserInteraction, submit
     │   └── types.ts
     ├── cse/                                # Client-side encryption
@@ -139,7 +139,7 @@ each one built — see [Embedded Views](#embedded-views-fabric-native-components
 These don't inherit from `EventListenerWrapper` as they don't need event subscription management:
 
 ```
-ContextModuleWrapper                                         # implements AdyenContextModule
+ContextModuleWrapper                                         # implements NativeCheckoutModule
     - createSession(session, config) → Promise<SessionContext>
     - setup(paymentMethods, config) → Promise<void>
     - isAvailable(type) → Promise<boolean>
@@ -182,7 +182,7 @@ BeforeSubmitResult                # Union type returned from onBeforeSubmit
 **Public module interfaces:**
 
 - `DropInModule` — action, completion, retry methods + partial payment methods
-- `AdyenContextModule` — lifecycle: createSession, setup, isAvailable, requiresUserInteraction, submit, cleanup
+- `NativeCheckoutModule` — lifecycle: createSession, setup, isAvailable, requiresUserInteraction, submit, cleanup
 - `ActionModule`, `AdyenCSEModule` — standalone
 
 ### Configuration Hierarchy
@@ -243,7 +243,7 @@ BaseModule                                           # Base class for all iOS mo
                     │   - confirm(success, address)
                     │
                     ├──► ContextModule               # Unified lifecycle + headless APIs
-                    │       (@objc(AdyenContext))
+                    │       (@objc(AdyenCheckout))
                     │       - createSession(session, config) — session flow setup
                     │       - setup(paymentMethods, config) — advanced flow setup
                     │       - isAvailable(type), requiresUserInteraction(type), submit(type)
@@ -295,7 +295,7 @@ BaseModule                                           # Base class for payment mo
             └──► BaseAddressModule                   # Adds parseAddressOptions/parseLookupAddress()
                     │
                     ├──► ContextModule               # Unified lifecycle + headless APIs
-                    │       ("AdyenContext")
+                    │       ("AdyenCheckout")
                     │       - createSession(session, config) — session flow setup
                     │       - setup(paymentMethods, config) — advanced flow setup
                     │       - isAvailable(type), requiresUserInteraction(type), submit(type)
@@ -530,7 +530,7 @@ Both platforms use static/companion properties for cross-module coordination:
 
 > [!NOTE]
 > The v5 `currentModule` delegation property was removed. `action` / `completion` / `retry` route
-> from TypeScript to `AdyenContext`, which resumes whichever closure is suspended — no id, because
+> from TypeScript to `AdyenCheckout`, which resumes whichever closure is suspended — no id, because
 > only one can be.
 
 ### Error Routing Pattern

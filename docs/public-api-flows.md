@@ -145,7 +145,7 @@ graph TB
     end
 
     subgraph "Native Modules (internal)"
-        Context["ContextModule (AdyenContext)<br/>createSession, setup, cleanup,<br/>isAvailable, requiresUserInteraction, submit,<br/>action, completion, retry"]
+        Context["ContextModule (AdyenCheckout)<br/>createSession, setup, cleanup,<br/>isAvailable, requiresUserInteraction, submit,<br/>action, completion, retry"]
         CompMod["ComponentModule (AdyenComponent)<br/>subscribe, unsubscribe,<br/>action, completion, retry"]
         DropInMod["DropInModule (AdyenDropIn)<br/>open, action, completion, retry"]
     end

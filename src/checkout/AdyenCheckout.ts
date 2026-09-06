@@ -13,7 +13,7 @@ import type {
   SessionConfiguration,
 } from '../core';
 import { BeforeSubmitResult } from '../core';
-import { AdyenContext } from '../modules/context/ContextModule';
+import { NativeCheckout } from '../modules/context/ContextModule';
 import { AdyenDropIn } from '../modules/dropin/AdyenDropIn';
 import {
   startDropInEventListeners,
@@ -31,13 +31,13 @@ import type { SubmitResult } from '../core';
 function dispatchSubmitResult(result: SubmitResult): void {
   switch (result.type) {
     case 'action':
-      AdyenContext.action(result.action);
+      NativeCheckout.action(result.action);
       break;
     case 'completed':
-      AdyenContext.completion(result.resultCode);
+      NativeCheckout.completion(result.resultCode);
       break;
     case 'retry':
-      AdyenContext.retry(result.message);
+      NativeCheckout.retry(result.message);
       break;
   }
 }
@@ -113,20 +113,20 @@ export class AdyenCheckout {
 
     // Wire native event listeners
     // Terminal callbacks — no handler parameter
-    AdyenContext.removeAllListeners();
+    NativeCheckout.removeAllListeners();
     AdyenCheckout.subscribeSessionTerminalHandlers(callbacks);
     AdyenCheckout.subscribeCardHandlers();
     AdyenCheckout.subscribeDropInHandlers();
-    AdyenContext.assignBeforeSubmitHandler(async (data) => {
+    NativeCheckout.assignBeforeSubmitHandler(async (data) => {
       const result =
         await AdyenCheckout.runtime.sessionCallbacks?.onBeforeSubmit?.(data);
-      AdyenContext.provideBeforeSubmitResult(
+      NativeCheckout.provideBeforeSubmitResult(
         result ?? BeforeSubmitResult.proceed(data)
       );
     });
     subscribeApplePayHandlers(() => AdyenCheckout.runtime.configuration);
 
-    const context = await AdyenContext.createSession(
+    const context = await NativeCheckout.createSession(
       { id: session.id, sessionData: session.sessionData },
       configuration
     );
@@ -183,8 +183,8 @@ export class AdyenCheckout {
 
     // Wire native event listeners
     // Intermediate callbacks — return-based
-    AdyenContext.removeAllListeners();
-    AdyenContext.assignSubmitHandler(async ({ paymentData }) => {
+    NativeCheckout.removeAllListeners();
+    NativeCheckout.assignSubmitHandler(async ({ paymentData }) => {
       const payload = {
         ...paymentData,
         returnUrl: paymentData.returnUrl ?? configuration.returnUrl,
@@ -195,13 +195,13 @@ export class AdyenCheckout {
         dispatchSubmitResult(result);
       }
     });
-    AdyenContext.assignAdditionalDetailsHandler(async (data) => {
+    NativeCheckout.assignAdditionalDetailsHandler(async (data) => {
       const result =
         await AdyenCheckout.runtime.advancedCallbacks?.onAdditionalDetails(
           data
         );
       if (result) {
-        AdyenContext.completion(result.resultCode);
+        NativeCheckout.completion(result.resultCode);
       }
     });
     // Terminal callbacks — no handler
@@ -210,7 +210,7 @@ export class AdyenCheckout {
     AdyenCheckout.subscribeDropInHandlers();
     subscribeApplePayHandlers(() => AdyenCheckout.runtime.configuration);
 
-    await AdyenContext.setup(paymentMethods, configuration);
+    await NativeCheckout.setup(paymentMethods, configuration);
     const checkout = createCheckout(
       paymentMethods,
       configuration,
@@ -239,10 +239,10 @@ export class AdyenCheckout {
    */
   private static subscribeCardHandlers(): void {
     const refs = AdyenCheckout.runtime.eventHandlerRefs;
-    AdyenContext.assignBinLookupHandler((data) =>
+    NativeCheckout.assignBinLookupHandler((data) =>
       refs.config.current?.card?.onBinLookup?.(data)
     );
-    AdyenContext.assignBinValueHandler((value) =>
+    NativeCheckout.assignBinValueHandler((value) =>
       refs.config.current?.card?.onBinValue?.(value)
     );
   }
@@ -250,10 +250,10 @@ export class AdyenCheckout {
   private static subscribeSessionTerminalHandlers(
     callbacks: SessionCallbacks
   ): void {
-    AdyenContext.assignCompletionHandler((result) => {
+    NativeCheckout.assignCompletionHandler((result) => {
       AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
     });
-    AdyenContext.assignErrorHandler((error) => {
+    NativeCheckout.assignErrorHandler((error) => {
       AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
     });
   }
@@ -261,10 +261,10 @@ export class AdyenCheckout {
   private static subscribeAdvancedTerminalHandlers(
     callbacks: AdvancedCallbacks
   ): void {
-    AdyenContext.assignAdvancedCompleteHandler((result) => {
+    NativeCheckout.assignAdvancedCompleteHandler((result) => {
       AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
     });
-    AdyenContext.assignAdvancedErrorHandler((error) => {
+    NativeCheckout.assignAdvancedErrorHandler((error) => {
       AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
     });
   }
@@ -344,9 +344,9 @@ export class AdyenCheckout {
     );
     AdyenCheckout.runtime.subscriptions.clear();
     // Remove native event listeners
-    AdyenContext.removeAllListeners();
+    NativeCheckout.removeAllListeners();
     if (cleanupNativeContext) {
-      AdyenContext.cleanup();
+      NativeCheckout.cleanup();
     }
     // Clear state
     AdyenCheckout.runtime.configuration = null;

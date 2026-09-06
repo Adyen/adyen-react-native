@@ -46,7 +46,7 @@ jest.mock('../../modules/dropin/AdyenDropIn', () => ({
 }));
 
 jest.mock('../../modules/context/ContextModule', () => ({
-  AdyenContext: {
+  NativeCheckout: {
     createSession: (...args: any[]) => mockCreateSession(...args),
     setup: (...args: any[]) => mockSetup(...args),
     cleanup: (...args: any[]) => mockCleanup(...args),
@@ -311,10 +311,10 @@ describe('AdyenCheckout', () => {
     });
 
     // There is one suspended callback per kind and one module holding it, so every result
-    // goes to AdyenContext. Results used to be routed by a `source` tag, which existed only
+    // goes to NativeCheckout. Results used to be routed by a `source` tag, which existed only
     // because Drop-in, embedded views and the headless flow each emitted the same events.
 
-    test('advanced onSubmit dispatches an action result to AdyenContext', async () => {
+    test('advanced onSubmit dispatches an action result to NativeCheckout', async () => {
       advancedCallbacks.onSubmit.mockResolvedValue(
         SubmitResult.action({ type: 'threeDS2', paymentMethodType: 'scheme' })
       );
@@ -344,7 +344,7 @@ describe('AdyenCheckout', () => {
       expect(mockDropInAction).not.toHaveBeenCalled();
     });
 
-    test('advanced onSubmit dispatches a completed result to AdyenContext', async () => {
+    test('advanced onSubmit dispatches a completed result to NativeCheckout', async () => {
       advancedCallbacks.onSubmit.mockResolvedValue(
         SubmitResult.completed('Authorised')
       );
@@ -364,7 +364,7 @@ describe('AdyenCheckout', () => {
       expect(mockDropInCompletion).not.toHaveBeenCalled();
     });
 
-    test('advanced onSubmit dispatches a retry result to AdyenContext', async () => {
+    test('advanced onSubmit dispatches a retry result to NativeCheckout', async () => {
       advancedCallbacks.onSubmit.mockResolvedValue(
         SubmitResult.retry('Card declined')
       );
@@ -384,7 +384,7 @@ describe('AdyenCheckout', () => {
       expect(mockDropInRetry).not.toHaveBeenCalled();
     });
 
-    test('advanced onAdditionalDetails dispatches its result to AdyenContext', async () => {
+    test('advanced onAdditionalDetails dispatches its result to NativeCheckout', async () => {
       advancedCallbacks.onAdditionalDetails.mockResolvedValue({
         resultCode: 'Authorised',
       });

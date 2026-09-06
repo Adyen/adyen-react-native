@@ -7,5 +7,5 @@
 import { NativeModules } from 'react-native';
 
 export function configureSDKVersion(sdkVersion: string) {
-  NativeModules.AdyenContext?.setSdkVersion(sdkVersion);
+  NativeModules.AdyenCheckout?.setSdkVersion(sdkVersion);
 }

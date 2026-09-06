@@ -21,7 +21,7 @@ flowchart TD
   CO["core/<br/><i>vocabulary</i><br/>types · constants · configurations<br/><b>pure leaf</b>"]
   CH["checkout/<br/><i>machinery</i><br/>lifecycle · routing · validation"]
   CM["components/<br/><i>React layer</i><br/>AdyenComponent.tsx"]
-  MO["modules/<br/><i>native wrappers</i><br/>AdyenContext · AdyenDropIn · AdyenAction · AdyenCSE"]
+  MO["modules/<br/><i>native wrappers</i><br/>NativeCheckout · AdyenDropIn · AdyenAction · AdyenCSE"]
 
   pub --> CH & CM & CO & MO
   CH --> CO
@@ -112,7 +112,7 @@ classDiagram
     +completion(resultCode)
     +retry(message)
   }
-  class AdyenContextModule {
+  class NativeCheckoutModule {
     <<interface>>
     +setup() / createSession()
     +isAvailable() / requiresUserInteraction() / submit()
@@ -137,9 +137,9 @@ classDiagram
     +removeStored() / provideBalance() / provideOrder()
     +update() / confirm()
   }
-  AdvancedPayment <|-- AdyenContextModule
+  AdvancedPayment <|-- NativeCheckoutModule
   AdvancedPayment <|-- DropInModule
-  AdyenContextModule <|.. ContextModuleWrapper
+  NativeCheckoutModule <|.. ContextModuleWrapper
   DropInModule <|.. DropInWrapper
 
   EventListenerWrapper <|-- DropInWrapper
@@ -196,7 +196,7 @@ sequenceDiagram
   participant M as Merchant app
   participant AC as AdyenCheckout
   participant CW as ContextModuleWrapper
-  participant N as AdyenContext (native)
+  participant N as AdyenCheckout (native)
   participant SDK as v6 Checkout
 
   M->>AC: setupAdvanced(paymentMethods, config, callbacks)

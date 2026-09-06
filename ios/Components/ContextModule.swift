@@ -9,7 +9,7 @@ import Foundation
 import PassKit
 import React
 
-@objc(AdyenContext)
+@objc(AdyenCheckout)
 internal final class ContextModule: BaseModule {
 
     /// The module JS subscribes to, and therefore the only one whose events reach a listener.
