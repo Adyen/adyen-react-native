@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Adyen
+@_spi(AdyenInternal) import Adyen
 import Foundation
 
 internal struct EncodablePaymentComponentData: Encodable {
@@ -24,10 +24,7 @@ internal struct EncodablePaymentComponentData: Encodable {
         try container.encodeIfPresent(data.socialSecurityNumber, forKey: .socialSecurityNumber)
         try container.encodeIfPresent(data.order?.compactOrder, forKey: .order)
         try container.encodeIfPresent(data.installments, forKey: .installments)
-        try container.encodeIfPresent(data.amount, forKey: .amount)
-        try container.encodeIfPresent(data.checkoutAttemptId, forKey: .checkoutAttemptId)
-        try container.encodeIfPresent(data.supportNativeRedirect, forKey: .supportNativeRedirect)
-        try container.encodeIfPresent(data.delegatedAuthenticationData, forKey: .delegatedAuthenticationData)
+        try container.encodeIfPresent(data.paymentMethod.checkoutAttemptId, forKey: .checkoutAttemptId)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -42,10 +39,7 @@ internal struct EncodablePaymentComponentData: Encodable {
         case socialSecurityNumber
         case order
         case installments
-        case amount
         case checkoutAttemptId
-        case supportNativeRedirect
-        case delegatedAuthenticationData
     }
 }
 

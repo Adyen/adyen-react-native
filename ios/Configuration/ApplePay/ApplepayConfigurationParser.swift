@@ -134,12 +134,18 @@ public struct ApplepayConfigurationParser {
         return parser.paymentRequest
     }
 
-    public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
-        let paymentRequest = try buildPaymentRequest(payment: payment)
-        return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
+    /// Builds the v6 ``ApplePayConfiguration`` from the parsed configuration.
+    ///
+    /// The returned configuration only carries the `PKPaymentRequest` and the onboarding flag.
+    /// The Apple Pay callback closures (authorization, shipping, coupon) are attached by
+    /// ``ContextModule`` because they capture the module instance.
+    public func buildConfiguration(amount: Amount, countryCode: String) throws -> ApplePayConfiguration {
+        let paymentRequest = try buildPaymentRequest(amount: amount, countryCode: countryCode)
+        return try ApplePayConfiguration(paymentRequest: paymentRequest)
+            .allowOnboarding(allowOnboarding)
     }
 
-    public func buildPaymentRequest(payment: Payment) throws -> PKPaymentRequest {
+    public func buildPaymentRequest(amount: Amount, countryCode: String) throws -> PKPaymentRequest {
         guard let merchantID else {
             throw ApplePayError.invalidMerchantID
         }
@@ -152,17 +158,17 @@ public struct ApplepayConfigurationParser {
                 throw ApplePayError.invalidMerchantName
             }
 
-            let amount = AmountFormatter.decimalAmount(payment.amount.value,
-                                                       currencyCode: payment.amount.currencyCode,
-                                                       localeIdentifier: payment.amount.localeIdentifier)
-            summaryItems = [PKPaymentSummaryItem(label: merchantName, amount: amount)]
+            let decimalAmount = AmountFormatter.decimalAmount(amount.value,
+                                                              currencyCode: amount.currencyCode,
+                                                              localeIdentifier: amount.localeIdentifier)
+            summaryItems = [PKPaymentSummaryItem(label: merchantName, amount: decimalAmount)]
         }
 
         let paymentRequest = PKPaymentRequest()
         paymentRequest.merchantIdentifier = merchantID
         paymentRequest.paymentSummaryItems = summaryItems
-        paymentRequest.countryCode = payment.countryCode
-        paymentRequest.currencyCode = payment.amount.currencyCode
+        paymentRequest.countryCode = countryCode
+        paymentRequest.currencyCode = amount.currencyCode
         paymentRequest.billingContact = billingContact
         paymentRequest.requiredShippingContactFields = requiredShippingContactFields
         paymentRequest.requiredBillingContactFields = requiredBillingContactFields

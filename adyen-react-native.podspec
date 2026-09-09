@@ -10,13 +10,22 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
-  s.platform     = :ios, "12.0"
+  s.platform     = :ios, "16.0"
   s.source       = { :git => "https://github.com/Adyen/adyen-react-native.git", :tag => "#{s.version}" }
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.public_header_files = "ios/ADYRedirectComponent.h"
 
-  s.dependency "Adyen", '5.25.1'
+  s.dependency "Adyen", '6.0.0-alpha.1'
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
+
+  # Compile into Adyen's Swift package so the bridge can reach the SDK's `package`-level
+  # redirect-return API. In the umbrella CocoaPods build every Adyen module merges into a single
+  # `Adyen` module, so `canImport(AdyenActions)` is false and the public `Checkout.handleReturn`
+  # is compiled out; `RedirectComponent.applicationDidOpen(from:)` (which it wraps) is only
+  # reachable from the same package.
+  s.pod_target_xcconfig = {
+    'OTHER_SWIFT_FLAGS' => '$(inherited) -package-name com.adyen.checkout'
+  }
 
   install_modules_dependencies(s)
 end

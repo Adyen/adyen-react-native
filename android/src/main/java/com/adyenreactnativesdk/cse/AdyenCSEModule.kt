@@ -6,14 +6,13 @@
 
 package com.adyenreactnativesdk.cse
 
-import com.adyen.checkout.core.CardBrand
-import com.adyen.checkout.core.ui.model.ExpiryDate
-import com.adyen.checkout.core.ui.validation.CardExpiryDateValidationResult
-import com.adyen.checkout.core.ui.validation.CardExpiryDateValidator
-import com.adyen.checkout.core.ui.validation.CardNumberValidationResult
-import com.adyen.checkout.core.ui.validation.CardNumberValidator
-import com.adyen.checkout.core.ui.validation.CardSecurityCodeValidationResult
-import com.adyen.checkout.core.ui.validation.CardSecurityCodeValidator
+import com.adyen.checkout.core.common.CardBrand
+import com.adyen.checkout.core.common.helper.CardExpiryDateValidationResult
+import com.adyen.checkout.core.common.helper.CardExpiryDateValidator
+import com.adyen.checkout.core.common.helper.CardNumberValidationResult
+import com.adyen.checkout.core.common.helper.CardNumberValidator
+import com.adyen.checkout.core.common.helper.CardSecurityCodeValidationResult
+import com.adyen.checkout.core.common.helper.CardSecurityCodeValidator
 import com.adyen.checkout.cse.CardEncrypter
 import com.adyen.checkout.cse.EncryptionException
 import com.adyen.checkout.cse.UnencryptedCard
@@ -96,15 +95,7 @@ class AdyenCSEModule(
     expiryYear: String,
     promise: Promise,
   ) {
-    val expireMonth = expiryMonth.toIntOrNull()
-    val expireYear = expiryYear.toIntOrNull()
-    if (expireMonth == null || expireYear == null) {
-      promise.resolve(false)
-      return
-    }
-
-    val expiryDate = ExpiryDate(expireMonth, expireYear)
-    val validationResult = CardExpiryDateValidator.validateExpiryDate(expiryDate)
+    val validationResult = CardExpiryDateValidator.validateExpiryDate(expiryMonth, expiryYear)
     promise.resolve(validationResult is CardExpiryDateValidationResult.Valid)
   }
 

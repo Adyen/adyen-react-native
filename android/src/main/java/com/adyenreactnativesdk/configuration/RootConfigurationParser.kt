@@ -7,8 +7,8 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
-import com.adyen.checkout.components.core.Amount
-import com.adyen.checkout.core.Environment
+import com.adyen.checkout.core.common.Environment
+import com.adyen.checkout.core.components.data.model.Amount
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReadableMap
 import java.util.Locale
@@ -29,14 +29,15 @@ class RootConfigurationParser(
     get() {
       if (config.hasKey(AMOUNT_KEY)) {
         val map = config.getMap(AMOUNT_KEY)
-        val jsonObject =
-          try {
-            ReactNativeJson.convertMapToJson(map)
-          } catch (e: Throwable) {
-            Log.w(TAG, "Amount" + map.toString() + " not valid", e)
-            return null
-          }
-        return Amount.SERIALIZER.deserialize(jsonObject)
+        // Deserialization must stay inside the try: Amount.SERIALIZER throws when `currency`
+        // or `value` is missing, and an incomplete amount should degrade to null rather than
+        // propagate out of configuration parsing.
+        return try {
+          Amount.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+        } catch (e: Throwable) {
+          Log.w(TAG, "Amount" + map.toString() + " not valid", e)
+          null
+        }
       }
       return null
     }
@@ -70,12 +71,12 @@ class RootConfigurationParser(
       if (config.hasKey(ENVIRONMENT_KEY)) {
         val environment = config.getString(ENVIRONMENT_KEY)!!
         when (environment.lowercase(Locale.ROOT)) {
-          "live-au" -> Environment.AUSTRALIA
-          "live", "live-eu" -> Environment.EUROPE
-          "live-us" -> Environment.UNITED_STATES
-          "live-apse" -> Environment.APSE
-          "live-in" -> Environment.INDIA
-          "live-nea" -> Environment.NEA
+          "live-au" -> Environment.LIVE_AUSTRALIA
+          "live", "live-eu" -> Environment.LIVE_EUROPE
+          "live-us" -> Environment.LIVE_UNITED_STATES
+          "live-apse" -> Environment.LIVE_APSE
+          "live-in" -> Environment.LIVE_INDIA
+          "live-nea" -> Environment.LIVE_NEA
           else -> Environment.TEST
         }
       } else {

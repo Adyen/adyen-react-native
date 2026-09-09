@@ -7,7 +7,7 @@
 import Adyen
 import Foundation
 
-extension LookupAddressModel: Codable {
+extension AddressLookupResult: Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let identifier = try container.decode(String.self, forKey: .id)

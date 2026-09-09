@@ -6,7 +6,6 @@
 
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.dropin.DropInConfiguration
 import com.facebook.react.bridge.ReadableMap
 
 class DropInConfigurationParser(
@@ -30,7 +29,7 @@ class DropInConfigurationParser(
     }
   }
 
-  private val skipListWhenSinglePaymentMethod: Boolean?
+  val skipListWhenSinglePaymentMethod: Boolean?
     get() =
       if (config.hasKey(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY)) {
         config.getBoolean(SKIP_LIST_WHEN_SINGLE_PAYMENT_METHOD_KEY)
@@ -38,7 +37,7 @@ class DropInConfigurationParser(
         null
       }
 
-  private val showPreselectedStoredPaymentMethod: Boolean?
+  val showPreselectedStoredPaymentMethod: Boolean?
     get() =
       if (config.hasKey(SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY)) {
         config.getBoolean(SHOW_PRESELECTED_STORED_PAYMENT_METHOD_KEY)
@@ -46,17 +45,11 @@ class DropInConfigurationParser(
         null
       }
 
-  private val setEnableRemovingStoredPaymentMethods: Boolean?
+  val isRemovingStoredPaymentMethodsEnabled: Boolean?
     get() =
       if (config.hasKey(SHOW_REMOVE_PAYMENT_METHOD_BUTTON_KEY)) {
         config.getBoolean(SHOW_REMOVE_PAYMENT_METHOD_BUTTON_KEY)
       } else {
         null
       }
-
-  fun applyConfiguration(builder: DropInConfiguration.Builder) {
-    showPreselectedStoredPaymentMethod?.let { builder.showPreselectedStoredPaymentMethod = it }
-    skipListWhenSinglePaymentMethod?.let { builder.skipListWhenSinglePaymentMethod = it }
-    setEnableRemovingStoredPaymentMethods?.let { builder.isRemovingStoredPaymentMethodsEnabled = it }
-  }
 }

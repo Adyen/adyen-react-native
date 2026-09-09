@@ -6,173 +6,147 @@
 
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 
 class GooglePayConfigurationParserTest {
   @Test
-  fun test_applyConfiguration_doesNotModifyBuilder_whenGivenEmptySubDictionary() {
+  fun test_returnsNullValues_whenGivenEmptySubDictionary() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     val googleConfig = WritableMapMock()
-
     config.putMap(GooglePayConfigurationParser.ROOT_KEY, googleConfig)
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(0)).allowedAuthMethods = any()
-    verify(mockBuilder, times(0)).allowedCardNetworks = any()
-    verify(mockBuilder, times(0)).isAllowCreditCards = any()
-    verify(mockBuilder, times(0)).isAllowPrepaidCards = any()
-    verify(mockBuilder, times(0)).isEmailRequired = any()
-    verify(mockBuilder, times(0)).isShippingAddressRequired = any()
-    verify(mockBuilder, times(0)).isBillingAddressRequired = any()
-    verify(mockBuilder, times(0)).totalPriceStatus = any()
-    verify(mockBuilder, times(0)).merchantAccount = any()
+    assertNull(sut.allowedAuthMethods)
+    assertNull(sut.allowedCardNetworks)
+    assertNull(sut.allowCreditCards)
+    assertNull(sut.allowPrepaidCards)
+    assertNull(sut.emailRequired)
+    assertNull(sut.shippingAddressRequired)
+    assertNull(sut.billingAddressRequired)
+    assertNull(sut.existingPaymentMethodRequired)
+    assertNull(sut.totalPriceStatus)
+    assertNull(sut.merchantAccount)
   }
 
   @Test
-  fun test_allowCreditCards_appliesCorrectValue_whenExplicitlySet() {
+  fun test_allowCreditCards_returnsCorrectValue_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putBoolean(GooglePayConfigurationParser.ALLOW_CREDIT_CARDS_KEY, true)
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isAllowCreditCards = true
+    assertEquals(true, sut.allowCreditCards)
   }
 
   @Test
-  fun test_allowPrepaidCards_appliesCorrectValue_whenExplicitlySet() {
+  fun test_allowPrepaidCards_returnsCorrectValue_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putBoolean(GooglePayConfigurationParser.ALLOW_PREPAID_CARDS_KEY, true)
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isAllowPrepaidCards = true
+    assertEquals(true, sut.allowPrepaidCards)
   }
 
   @Test
-  fun test_emailRequired_appliesCorrectValue_whenExplicitlySet() {
+  fun test_emailRequired_returnsCorrectValue_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putBoolean(GooglePayConfigurationParser.EMAIL_REQUIRED_KEY, true)
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isEmailRequired = true
+    assertEquals(true, sut.emailRequired)
   }
 
   @Test
-  fun test_shippingAddressRequired_appliesCorrectValue_whenExplicitlySet() {
+  fun test_shippingAddressRequired_returnsCorrectValue_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putBoolean(GooglePayConfigurationParser.SHIPPING_ADDRESS_REQUIRED_KEY, true)
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isShippingAddressRequired = true
+    assertEquals(true, sut.shippingAddressRequired)
   }
 
   @Test
-  fun test_billingAddressRequired_appliesCorrectValue_whenExplicitlySet() {
+  fun test_billingAddressRequired_returnsCorrectValue_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putBoolean(GooglePayConfigurationParser.BILLING_ADDRESS_REQUIRED_KEY, true)
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).isBillingAddressRequired = true
+    assertEquals(true, sut.billingAddressRequired)
   }
 
   @Test
-  fun test_totalPriceStatus_appliesCorrectValue_whenExplicitlySet() {
+  fun test_totalPriceStatus_returnsCorrectValue_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putString(GooglePayConfigurationParser.TOTAL_PRICE_STATUS_KEY, "FINAL")
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).totalPriceStatus = "FINAL"
+    assertEquals("FINAL", sut.totalPriceStatus)
   }
 
   @Test
-  fun test_merchantAccount_appliesCorrectValue_whenExplicitlySet() {
+  fun test_merchantAccount_returnsCorrectValue_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putString(GooglePayConfigurationParser.MERCHANT_ACCOUNT_KEY, "Merchant_account")
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).merchantAccount = "Merchant_account"
+    assertEquals("Merchant_account", sut.merchantAccount)
   }
 
   @Test
-  fun test_allowedAuthMethods_appliesCorrectValues_whenExplicitlySet() {
+  fun test_allowedAuthMethods_returnsCorrectValues_whenExplicitlySet() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
-
     val allowedAuthArray = mock(ReadableArray::class.java)
     `when`(allowedAuthArray.toArrayList()).thenReturn(arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS"))
     config.putArray(GooglePayConfigurationParser.ALLOWED_AUTH_METHODS_KEY, allowedAuthArray)
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).allowedAuthMethods =
-      arrayListOf("PAN_ONLY", "CRYPTOGRAM_3DS")
+    assertEquals(listOf("PAN_ONLY", "CRYPTOGRAM_3DS"), sut.allowedAuthMethods)
   }
 
   @Test
-  fun test_allowedCardNetworks_appliesCorrectValues_includingInvalidValues() {
+  fun test_allowedCardNetworks_returnsAllValues_includingUnknownValues() {
     // GIVEN
-    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
-
     val allowedCardArray = mock(ReadableArray::class.java)
     `when`(allowedCardArray.toArrayList()).thenReturn(
       arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value"),
@@ -181,10 +155,8 @@ class GooglePayConfigurationParserTest {
 
     // WHEN
     val sut = GooglePayConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
 
     // THEN
-    verify(mockBuilder, times(1)).allowedCardNetworks =
-      arrayListOf("MASTERCARD", "VISA", "amex", "wrong_value")
+    assertEquals(listOf("MASTERCARD", "VISA", "amex", "wrong_value"), sut.allowedCardNetworks)
   }
 }

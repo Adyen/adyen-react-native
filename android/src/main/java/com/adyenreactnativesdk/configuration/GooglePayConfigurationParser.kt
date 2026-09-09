@@ -7,9 +7,11 @@
 package com.adyenreactnativesdk.configuration
 
 import android.util.Log
+import com.adyen.checkout.core.components.CheckoutConfiguration
 import com.adyen.checkout.googlepay.BillingAddressParameters
-import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.googlepay.GooglePayAllowedPaymentMethods
 import com.adyen.checkout.googlepay.ShippingAddressParameters
+import com.adyen.checkout.googlepay.googlePay
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
@@ -46,6 +48,7 @@ class GooglePayConfigurationParser(
 
   internal val shippingAddressParameters: ShippingAddressParameters?
     get() {
+      if (!config.hasKey(SHIPPING_ADDRESS_PARAMETERS_KEY)) return null
       return try {
         val map = config.getMap(SHIPPING_ADDRESS_PARAMETERS_KEY)
         ShippingAddressParameters.SERIALIZER.deserialize(
@@ -61,6 +64,7 @@ class GooglePayConfigurationParser(
 
   internal val billingAddressParameters: BillingAddressParameters?
     get() {
+      if (!config.hasKey(BILLING_ADDRESS_PARAMETERS_KEY)) return null
       return try {
         val map = config.getMap(BILLING_ADDRESS_PARAMETERS_KEY)
         BillingAddressParameters.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
@@ -70,59 +74,100 @@ class GooglePayConfigurationParser(
       }
     }
 
-  internal val allowedCardNetworks: List<String>
+  internal val allowedCardNetworks: List<String>?
     get() {
-      return config.getArray(ALLOWED_CARD_NETWORKS_KEY)?.toArrayList().orEmpty().map {
-        it.toString()
+      return if (config.hasKey(ALLOWED_CARD_NETWORKS_KEY)) {
+        config
+          .getArray(ALLOWED_CARD_NETWORKS_KEY)
+          ?.toArrayList()
+          .orEmpty()
+          .map { it.toString() }
+      } else {
+        null
       }
     }
 
-  internal val allowedAuthMethods: List<String>
+  internal val allowedAuthMethods: List<String>?
     get() {
-      return config.getArray(ALLOWED_AUTH_METHODS_KEY)?.toArrayList().orEmpty().map {
-        it.toString()
+      return if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
+        config
+          .getArray(ALLOWED_AUTH_METHODS_KEY)
+          ?.toArrayList()
+          .orEmpty()
+          .map { it.toString() }
+      } else {
+        null
       }
     }
 
-  fun applyConfiguration(builder: GooglePayConfiguration.Builder) {
-    if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
-      builder.allowedAuthMethods = allowedAuthMethods
-    }
-    if (config.hasKey(ALLOWED_CARD_NETWORKS_KEY)) {
-      builder.allowedCardNetworks = allowedCardNetworks
-    }
-    if (config.hasKey(ALLOW_PREPAID_CARDS_KEY)) {
-      builder.isAllowPrepaidCards = config.getBoolean(ALLOW_PREPAID_CARDS_KEY)
-    }
-    if (config.hasKey(ALLOW_CREDIT_CARDS_KEY)) {
-      builder.isAllowCreditCards = config.getBoolean(ALLOW_CREDIT_CARDS_KEY)
-    }
-    if (config.hasKey(BILLING_ADDRESS_REQUIRED_KEY)) {
-      builder.isBillingAddressRequired = config.getBoolean(BILLING_ADDRESS_REQUIRED_KEY)
-    }
-    if (config.hasKey(EMAIL_REQUIRED_KEY)) {
-      builder.isEmailRequired = config.getBoolean(EMAIL_REQUIRED_KEY)
-    }
-    if (config.hasKey(SHIPPING_ADDRESS_REQUIRED_KEY)) {
-      builder.isShippingAddressRequired = config.getBoolean(SHIPPING_ADDRESS_REQUIRED_KEY)
-    }
-    if (config.hasKey(EXISTING_PAYMENT_METHOD_REQUIRED_KEY)) {
-      builder.isExistingPaymentMethodRequired =
-        config.getBoolean(
-          EXISTING_PAYMENT_METHOD_REQUIRED_KEY,
-        )
-    }
-    if (config.hasKey(MERCHANT_ACCOUNT_KEY)) {
-      config.getString(MERCHANT_ACCOUNT_KEY)?.let { builder.merchantAccount = it }
-    }
-    if (config.hasKey(TOTAL_PRICE_STATUS_KEY)) {
-      config.getString(TOTAL_PRICE_STATUS_KEY)?.let { builder.totalPriceStatus = it }
-    }
-    if (config.hasKey(BILLING_ADDRESS_PARAMETERS_KEY)) {
-      builder.billingAddressParameters = billingAddressParameters
-    }
-    if (config.hasKey(SHIPPING_ADDRESS_PARAMETERS_KEY)) {
-      builder.shippingAddressParameters = shippingAddressParameters
-    }
+  internal val merchantAccount: String?
+    get() =
+      if (config.hasKey(MERCHANT_ACCOUNT_KEY)) config.getString(MERCHANT_ACCOUNT_KEY) else null
+
+  internal val totalPriceStatus: String?
+    get() =
+      if (config.hasKey(TOTAL_PRICE_STATUS_KEY)) config.getString(TOTAL_PRICE_STATUS_KEY) else null
+
+  internal val allowPrepaidCards: Boolean?
+    get() =
+      if (config.hasKey(ALLOW_PREPAID_CARDS_KEY)) config.getBoolean(ALLOW_PREPAID_CARDS_KEY) else null
+
+  internal val allowCreditCards: Boolean?
+    get() =
+      if (config.hasKey(ALLOW_CREDIT_CARDS_KEY)) config.getBoolean(ALLOW_CREDIT_CARDS_KEY) else null
+
+  internal val billingAddressRequired: Boolean?
+    get() =
+      if (config.hasKey(BILLING_ADDRESS_REQUIRED_KEY)) {
+        config.getBoolean(BILLING_ADDRESS_REQUIRED_KEY)
+      } else {
+        null
+      }
+
+  internal val emailRequired: Boolean?
+    get() =
+      if (config.hasKey(EMAIL_REQUIRED_KEY)) config.getBoolean(EMAIL_REQUIRED_KEY) else null
+
+  internal val shippingAddressRequired: Boolean?
+    get() =
+      if (config.hasKey(SHIPPING_ADDRESS_REQUIRED_KEY)) {
+        config.getBoolean(SHIPPING_ADDRESS_REQUIRED_KEY)
+      } else {
+        null
+      }
+
+  internal val existingPaymentMethodRequired: Boolean?
+    get() =
+      if (config.hasKey(EXISTING_PAYMENT_METHOD_REQUIRED_KEY)) {
+        config.getBoolean(EXISTING_PAYMENT_METHOD_REQUIRED_KEY)
+      } else {
+        null
+      }
+
+  fun applyConfiguration(
+    configuration: CheckoutConfiguration,
+    countryCode: String?,
+  ) {
+    configuration.googlePay(
+      merchantAccount = merchantAccount,
+      countryCode = countryCode,
+      allowedPaymentMethods =
+        GooglePayAllowedPaymentMethods(
+          card =
+            GooglePayAllowedPaymentMethods.Card(
+              allowedAuthMethods = allowedAuthMethods,
+              allowedCardNetworks = allowedCardNetworks,
+              allowPrepaidCards = allowPrepaidCards,
+              allowCreditCards = allowCreditCards,
+              billingAddressRequired = billingAddressRequired,
+              billingAddressParameters = billingAddressParameters,
+            ),
+        ),
+      isEmailRequired = emailRequired,
+      isExistingPaymentMethodRequired = existingPaymentMethodRequired,
+      isShippingAddressRequired = shippingAddressRequired,
+      shippingAddressParameters = shippingAddressParameters,
+      totalPriceStatus = totalPriceStatus,
+    )
   }
 }

@@ -4,28 +4,21 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-@_spi(AdyenInternal) import Adyen
-import adyen_react_native
+@testable @_spi(AdyenInternal) import Adyen
+@testable import adyen_react_native
 import PassKit
 import XCTest
-
-class AddressLookupProviderMock: AddressLookupProvider {
-    func lookUp(searchTerm: String, resultHandler: @escaping ([Adyen.LookupAddressModel]) -> Void) {
-        // Do nothing
-    }
-}
 
 final class CardConfigurationTests: XCTestCase {
 
     let mockAmount = Amount(value: 1000, currencyCode: "USD", localeIdentifier: "en-US")
-    let mockAddressLookupProvider = AddressLookupProviderMock()
 
     func test_initialization_createsConfiguration_withEmptyDictionary() {
         // GIVEN
         let emptyDict = NSDictionary()
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: emptyDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: emptyDict)
         
         // THEN
         XCTAssertNotNil(sut.configuration)
@@ -36,7 +29,7 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": [:]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
         XCTAssertNotNil(sut.configuration)
@@ -47,10 +40,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["showStorePaymentField": false]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertFalse(sut.configuration.showsStorePaymentMethodField)
+        XCTAssertFalse(sut.showsStorePaymentMethodField)
     }
 
     func test_configuration_setsShowsHolderNameField_whenHolderNameRequired() {
@@ -58,10 +51,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["holderNameRequired": true]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertTrue(sut.configuration.showsHolderNameField)
+        XCTAssertTrue(sut.showsHolderNameField)
     }
 
     func test_configuration_setsShowsSecurityCodeField_forStoredCard() {
@@ -69,10 +62,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["hideCvcStoredCard": false]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertTrue(sut.configuration.stored.showsSecurityCodeField) // inverted
+        XCTAssertTrue(sut.showsStoredSecurityCodeField) // inverted
     }
 
     func test_configuration_setsShowsSecurityCodeField_whenHideCvcIsFalse() {
@@ -80,10 +73,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["hideCvc": false]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertTrue(sut.configuration.showsSecurityCodeField) // inverted
+        XCTAssertTrue(sut.showsSecurityCodeField) // inverted
     }
 
     func test_configuration_setsBillingAddressMode_toFull() {
@@ -91,10 +84,12 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["addressVisibility": "full"]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.billingAddress.mode, .full)
+        guard case .full = sut.billingAddressMode else {
+            return XCTFail("Expected .full billing address mode")
+        }
     }
 
     func test_configuration_setsBillingAddressMode_toPostalCode() {
@@ -102,10 +97,12 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["addressVisibility": "postal"]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.billingAddress.mode, .postalCode)
+        guard case .postalCode = sut.billingAddressMode else {
+            return XCTFail("Expected .postalCode billing address mode")
+        }
     }
 
     func test_configuration_setsKoreanAuthenticationMode_toHide() {
@@ -113,10 +110,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["kcpVisibility": "hide"]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .hide)
+        XCTAssertEqual(sut.kcpVisibility, .hide)
     }
 
     func test_configuration_setsKoreanAuthenticationMode_toShow() {
@@ -124,10 +121,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["kcpVisibility": "show"]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.koreanAuthenticationMode, .show)
+        XCTAssertEqual(sut.kcpVisibility, .show)
     }
 
     func test_configuration_setsSocialSecurityNumberMode_toHide() {
@@ -135,10 +132,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["socialSecurity": "hide"]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .hide)
+        XCTAssertEqual(sut.socialSecurityVisibility, .hide)
     }
 
     func test_configuration_setsSocialSecurityNumberMode_toShow() {
@@ -146,10 +143,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["socialSecurity": "show"]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.socialSecurityNumberMode, .show)
+        XCTAssertEqual(sut.socialSecurityVisibility, .show)
     }
 
     func test_configuration_setsAllowedCardTypes_whenProvided() {
@@ -157,10 +154,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["supported": ["visa", "mc", "maestro"]]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.allowedCardTypes?.count, 3)
+        XCTAssertEqual(sut.supportedCardBrands?.count, 3)
     }
 
     func test_configuration_setsBillingAddressCountryCodes_whenProvided() {
@@ -168,10 +165,10 @@ final class CardConfigurationTests: XCTestCase {
         let configDict: NSDictionary = ["card": ["allowedAddressCountryCodes": ["GB", "US"]]]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertEqual(sut.configuration.billingAddress.countryCodes?.count, 2)
+        XCTAssertEqual(sut.billingAddressCountryCodes?.count, 2)
     }
 
     func test_configuration_setsInstallmentConfiguration_withDefaultOptions() {
@@ -187,12 +184,12 @@ final class CardConfigurationTests: XCTestCase {
         ]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertNotNil(sut.configuration.installmentConfiguration)
-        XCTAssertEqual(sut.configuration.installmentConfiguration?.defaultOptions?.regularInstallmentMonths, [2, 3])
-        XCTAssertFalse(sut.configuration.installmentConfiguration?.defaultOptions?.includesRevolving ?? true)
+        XCTAssertNotNil(sut.installmentConfiguration)
+        XCTAssertEqual(sut.installmentConfiguration?.defaultOptions?.regularInstallmentMonths, [2, 3])
+        XCTAssertFalse(sut.installmentConfiguration?.defaultOptions?.includesRevolving ?? true)
     }
 
     func test_configuration_setsInstallmentConfiguration_withRevolvingPlan() {
@@ -209,11 +206,11 @@ final class CardConfigurationTests: XCTestCase {
         ]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertNotNil(sut.configuration.installmentConfiguration)
-        XCTAssertTrue(sut.configuration.installmentConfiguration?.defaultOptions?.includesRevolving ?? false)
+        XCTAssertNotNil(sut.installmentConfiguration)
+        XCTAssertTrue(sut.installmentConfiguration?.defaultOptions?.includesRevolving ?? false)
     }
 
     func test_configuration_setsInstallmentConfiguration_withCardBasedOptions() {
@@ -232,11 +229,11 @@ final class CardConfigurationTests: XCTestCase {
         ]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertNotNil(sut.configuration.installmentConfiguration)
-        XCTAssertEqual(sut.configuration.installmentConfiguration?.cardBasedOptions?.count, 2)
+        XCTAssertNotNil(sut.installmentConfiguration)
+        XCTAssertEqual(sut.installmentConfiguration?.cardBasedOptions?.count, 2)
     }
 
     func test_configuration_setsInstallmentConfiguration_withMixedOptions() {
@@ -256,10 +253,10 @@ final class CardConfigurationTests: XCTestCase {
         ]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertNotNil(sut.configuration.installmentConfiguration)
+        XCTAssertNotNil(sut.installmentConfiguration)
     }
 
     func test_configuration_showInstallmentAmount_defaultsToFalse() {
@@ -275,10 +272,10 @@ final class CardConfigurationTests: XCTestCase {
         ]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        XCTAssertFalse(sut.configuration.installmentConfiguration?.showInstallmentAmount ?? true)
+        XCTAssertFalse(sut.installmentConfiguration?.showInstallmentAmount ?? true)
     }
 
     func test_configuration_showInstallmentAmount_canBeSetToTrue() throws {
@@ -295,10 +292,10 @@ final class CardConfigurationTests: XCTestCase {
         ]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        let showInstallmentAmount = try XCTUnwrap(sut.configuration.installmentConfiguration?.showInstallmentAmount)
+        let showInstallmentAmount = try XCTUnwrap(sut.installmentConfiguration?.showInstallmentAmount)
         XCTAssertTrue(showInstallmentAmount)
     }
 
@@ -316,28 +313,11 @@ final class CardConfigurationTests: XCTestCase {
         ]
         
         // WHEN
-        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+        let sut = CardConfigurationParser(configuration: configDict)
         
         // THEN
-        let showInstallmentAmount = try XCTUnwrap(sut.configuration.installmentConfiguration?.showInstallmentAmount)
+        let showInstallmentAmount = try XCTUnwrap(sut.installmentConfiguration?.showInstallmentAmount)
         XCTAssertFalse(showInstallmentAmount)
-    }
-
-}
-
-extension CardComponent.AddressFormType: Equatable {
-
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        switch (lhs, rhs) {
-        case (.full, .full):
-            return true
-        case (.none, .none):
-            return true
-        case (.postalCode, .postalCode):
-            return true
-        default:
-            return false
-        }
     }
 
 }

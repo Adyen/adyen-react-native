@@ -6,9 +6,9 @@
 
 package com.adyenreactnativesdk.util.messaging.base
 
-import com.adyen.checkout.components.core.ActionComponentData
-import com.adyen.checkout.components.core.PaymentComponentData
-import com.adyen.checkout.components.core.PaymentComponentState
+import com.adyen.checkout.core.action.data.ActionComponentData
+import com.adyen.checkout.core.components.data.PaymentComponentData
+import com.adyen.checkout.core.components.paymentmethod.PaymentMethodDetails
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MockEmitter
 import org.json.JSONObject
@@ -16,8 +16,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class AdvancedMessengerImplTest {
   private lateinit var mockEmitter: MockEmitter
@@ -56,36 +54,30 @@ class AdvancedMessengerImplTest {
   }
 
   @Test
+  fun `onFinished with resultCode sends event with COMPLETE_VOUCHER and forwards resultCode`() {
+    // WHEN
+    sut.onFinished("Authorised")
+
+    // THEN
+    assertEquals(1, mockEmitter.events.size)
+    assertEquals(EventName.COMPLETE_VOUCHER, mockEmitter.events[0].eventName)
+    val payload = mockEmitter.events[0].payload as JSONObject
+    assertEquals("Authorised", payload.getString("resultCode"))
+  }
+
+  @Test
   fun `onSubmit sends event with SUBMIT`() {
     // GIVEN
-    val paymentComponentData: PaymentComponentData<*> = mock()
-    val state: PaymentComponentState<*> = mock()
-    whenever(state.data).thenReturn(paymentComponentData)
+    val data = PaymentComponentData<PaymentMethodDetails>(paymentMethod = null, order = null)
 
     // WHEN
-    sut.onSubmit(state, returnUrl = "myapp://return")
+    sut.onSubmit(data)
 
     // THEN
     assertEquals(1, mockEmitter.events.size)
     assertEquals(EventName.SUBMIT, mockEmitter.events[0].eventName)
     val payload = mockEmitter.events[0].payload as JSONObject
     assertTrue(payload.has("paymentData"))
-  }
-
-  @Test
-  fun `onSubmit includes returnUrl in payload when provided`() {
-    // GIVEN
-    val paymentComponentData: PaymentComponentData<*> = mock()
-    val state: PaymentComponentState<*> = mock()
-    whenever(state.data).thenReturn(paymentComponentData)
-
-    // WHEN
-    sut.onSubmit(state, returnUrl = "myapp://return")
-
-    // THEN
-    val payload = mockEmitter.events[0].payload as JSONObject
-    val paymentData = payload.getJSONObject("paymentData")
-    assertEquals("myapp://return", paymentData.getString("returnUrl"))
   }
 
   @Test

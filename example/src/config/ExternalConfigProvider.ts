@@ -59,7 +59,8 @@ const parseCardSettings = (
 
   const addressMode = card.addressVisibility ?? card.addressMode;
   if (typeof addressMode === 'string') {
-    settings.addressVisibility = addressMode;
+    settings.addressVisibility =
+      addressMode as CardSettings['addressVisibility'];
   }
 
   if (typeof card.showStorePaymentField === 'boolean') {
@@ -75,11 +76,13 @@ const parseCardSettings = (
   }
 
   if (typeof card.kcpFieldVisibility === 'string') {
-    settings.kcpVisibility = card.kcpFieldVisibility;
+    settings.kcpVisibility =
+      card.kcpFieldVisibility as CardSettings['kcpVisibility'];
   }
 
   if (typeof card.socialSecurityNumberFieldVisibility === 'string') {
-    settings.socialSecurity = card.socialSecurityNumberFieldVisibility;
+    settings.socialSecurity =
+      card.socialSecurityNumberFieldVisibility as CardSettings['socialSecurity'];
   }
 
   return settings;

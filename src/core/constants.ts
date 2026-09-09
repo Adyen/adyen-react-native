@@ -4,7 +4,7 @@ export enum Event {
   onSubmit = 'didSubmitCallback',
   /** Event handler, called when a payment method requires more details, for example for native 3D Secure 2, or native QR code payment methods. */
   onAdditionalDetails = 'didProvideCallback',
-  /** Event handler, called when a shopper finishes the flow (Voucher payments only). */
+  /** Event handler, called when the payment reaches a final result in the advanced flow. */
   onComplete = 'didCompleteCallback',
   /** Event handler, called when payment about to be terminate. */
   onError = 'didFailCallback',
@@ -26,6 +26,8 @@ export enum Event {
   onBinValue = `didChangeBinValueCallback`,
   /** Event handler, called when a shopper finishes the session flow. */
   onSessionComplete = 'didSessionCompleteCallback',
+  /** Event handler, called after session component validation and before the SDK submits payment data. */
+  onBeforeSubmit = 'didBeforeSubmitCallback',
   /** Event handler, called when a session flow about to be terminate. */
   onSessionError = 'didSessionErrorCallback',
   /** Apple Pay: called when the shopper authorizes the payment (before submission). */

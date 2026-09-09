@@ -1,8 +1,8 @@
 package com.adyenreactnativesdk.component.dropin
 
-import com.adyen.checkout.card.BinLookupData
+import com.adyen.checkout.card.old.BinLookupData
 import com.adyen.checkout.components.core.LookupAddress
-import com.adyen.checkout.dropin.SessionDropInService
+import com.adyen.checkout.dropin.old.SessionDropInService
 import com.adyenreactnativesdk.AdyenPaymentPackage
 
 class SessionCheckoutService : SessionDropInService() {
@@ -19,7 +19,7 @@ class SessionCheckoutService : SessionDropInService() {
     AdyenPaymentPackage.messageBus.onLookupCompletion(lookupAddress)
 
   override fun onBinLookup(data: List<BinLookupData>) {
-    AdyenPaymentPackage.messageBus.onBinLookup(data)
+    // TODO: v6 migration - map old BinLookupData to v6 BinLookupData
   }
 
   override fun onBinValue(binValue: String) {

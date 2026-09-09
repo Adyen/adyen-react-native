@@ -1,5 +1,5 @@
 export function setImportSwift(contents: string): string {
-  const importLine = 'import Adyen';
+  const importLine = 'import adyen_react_native';
 
   if (contents.includes(importLine)) {
     return contents;
