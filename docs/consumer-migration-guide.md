@@ -145,7 +145,6 @@ checkout.invalidate();
 ```
 
 > [!NOTE]
-> `subscribe()` / `unsubscribe()` are internal — `<AdyenComponent>` calls them for you.
 > There is no `AdyenCheckout.cleanup()`; use `checkout.invalidate()`.
 
 ### Drop-In

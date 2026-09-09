@@ -41,7 +41,7 @@ sequenceDiagram
         AC-->>App: onError(error)
     end
 
-    Note over App: Auto-cleanup on terminal callbacks,<br/>or explicit: checkout.cleanup() / AdyenCheckout.cleanup()
+    Note over App: Auto-cleanup on terminal callbacks;<br/>checkout.invalidate() for an abandoned flow
 ```
 
 ## Advanced Flow
@@ -51,7 +51,7 @@ sequenceDiagram
     participant App as Consumer App
     participant AC as AdyenCheckout (static)
     participant View as <AdyenComponent>
-    participant Native as Native (ContextModule + ComponentModule)
+    participant Native as Native (ContextModule)
     participant SDK as Adyen SDK v6
     participant Server as Merchant Server
 
@@ -130,8 +130,8 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "Consumer API"
-        AC["AdyenCheckout (static class)<br/>setup(), setupAdvanced(), cleanup()"]
-        Checkout["Checkout object<br/>paymentMethods, isAvailable,<br/>requiresUserInteraction, submit,<br/>configuration, subscribe, unsubscribe, cleanup"]
+        AC["AdyenCheckout (static class)<br/>setup(), setupAdvanced()"]
+        Checkout["Checkout object<br/>paymentMethods, configuration,<br/>isAvailable, requiresUserInteraction,<br/>submit, invalidate"]
     end
 
     subgraph "Payment Modules"
@@ -146,14 +146,14 @@ graph TB
 
     subgraph "Native Modules (internal)"
         Context["ContextModule (AdyenCheckout)<br/>createSession, setup, cleanup,<br/>isAvailable, requiresUserInteraction, submit,<br/>action, completion, retry"]
-        CompMod["ComponentModule (AdyenComponent)<br/>subscribe, unsubscribe,<br/>action, completion, retry"]
+        CompMod["ComponentModule (AdyenComponent)<br/>register / unregister<br/><i>native-only registry, for teardown</i>"]
         DropInMod["DropInModule (AdyenDropIn)<br/>open, action, completion, retry"]
     end
 
     AC --> Checkout
     Checkout --> Context
     DropIn --> DropInMod
-    Component --> CompMod
+    Component -.->|"renders a native view;<br/>events go through Context"| CompMod
 
     style AC fill:#4a90d9,color:#fff
     style Checkout fill:#4a90d9,color:#fff

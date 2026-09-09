@@ -1,5 +1,20 @@
 # iOS Bridge Migration Guide: Adyen iOS SDK v5 to v6.0.0-alpha.1
 
+> [!NOTE]
+> **Scope.** This guide records the v5 → v6.0.0-alpha.1 bridge migration, and describes the code as
+> that migration left it. Parts of it have since been superseded:
+>
+> - The advanced callbacks are now wired **once** by the context module. The per-presenter wiring,
+>   `viewId` / `source` tagging, `resolveTarget` and `reattachAdvancedCallbacks` described below are
+>   gone — v6 keeps one callback store per checkout, and simulating per-component ownership on top
+>   of it was the mistake those mechanisms were compensating for.
+> - Embedded views no longer subscribe from JS. The component module is a native-only registry,
+>   kept so teardown can dispose each mounted view's payment component.
+> - The context module is registered as **`AdyenCheckout`**, not `AdyenContext`.
+>
+> For the current design see [Architecture.md](Architecture.md),
+> [native-architecture.md](native-architecture.md) and [js-architecture.md](js-architecture.md).
+
 ## Overview
 
 The iOS bridge layer of `adyen-react-native` was rewritten to use Adyen iOS SDK 6.0.0-alpha.1. All delegate-based patterns (conforming to `PaymentComponentDelegate`, `ActionComponentDelegate`, `AdyenSessionDelegate`, etc.) have been replaced with `Checkout.setup()` entry points and closure-based callbacks. Swift concurrency is used throughout: `@MainActor` isolation, `async/await` for checkout setup, and `CheckedContinuation` to bridge the asynchronous closures back to the React Native event model.
@@ -48,7 +63,7 @@ In addition to the native SDK v5-to-v6 migration, the React Native bridge layer 
 
 | v5 Module (ObjC Name) | v6 Module (ObjC Name) | Notes |
 |---|---|---|
-| `SetupModule` (`AdyenSetup`) | `ContextModule` (`AdyenContext`) | Unified lifecycle + headless APIs. Also absorbed session creation from `SessionHelperModule` and Apple Pay callbacks from `ApplePayModule`. |
+| `SetupModule` (`AdyenSetup`) | `ContextModule` (`AdyenCheckout`) | Unified lifecycle + headless APIs. Also absorbed session creation from `SessionHelperModule` and Apple Pay callbacks from `ApplePayModule`. |
 | `EmbeddedComponentBusModule` (`AdyenComponentBus`) | `ComponentModule` (`AdyenComponent`) | View event bus for embedded components. Same per-viewId proxy architecture, renamed class and registration. |
 
 ### Modules Removed
@@ -68,7 +83,7 @@ The `AdyenModule.m` file now registers the following modules:
 RCT_EXTERN_MODULE(AdyenDropIn, ...)     // DropInModule
 RCT_EXTERN_MODULE(AdyenComponent, ...)  // ComponentModule (was EmbeddedComponentBusModule)
 RCT_EXTERN_MODULE(AdyenCSE, ...)        // AdyenCSEModule (unchanged)
-RCT_EXTERN_MODULE(AdyenContext, ...)    // ContextModule (replaces SetupModule, SessionHelperModule, ApplePayModule, InstantModule)
+RCT_EXTERN_MODULE(AdyenCheckout, ...)   // ContextModule (replaces SetupModule, SessionHelperModule, ApplePayModule, InstantModule)
 RCT_EXTERN_MODULE(AdyenAction, ...)     // ActionModule (unchanged)
 ```
 
@@ -331,7 +346,7 @@ Three new JS-callable methods resume these continuations (replacing the removed 
 |---|---|
 | `ios/Model/Payment.swift` | Bridge-local `Payment` struct (amount + countryCode). Replaces the removed `Adyen.Payment` type that was used for Apple Pay `PKPaymentRequest` construction. |
 | `ios/Components/Base/BaseModuleSender+Callbacks.swift` | Closure callback wiring for the advanced flow. Contains `setupCallbacks(on:)`, `resolveSubmit(_:)`, `resolveAdditionalDetails(_:)`, and the `awaitSubmitResult` / `awaitAdditionalDetailsResult` suspension helpers. |
-| `ios/Components/ContextModule.swift` | Replaces `SetupModule`. Unified lifecycle module (`@objc(AdyenContext)`) that handles session creation, advanced-flow setup, headless APIs (`isAvailable`, `requiresUserInteraction`, `submit`), and cleanup. |
+| `ios/Components/ContextModule.swift` | Replaces `SetupModule`. Unified lifecycle module (`@objc(AdyenCheckout)`) that handles session creation, advanced-flow setup, headless APIs (`isAvailable`, `requiresUserInteraction`, `submit`), and cleanup. |
 | `ios/Components/ContextModule+ApplePay.swift` | Apple Pay callback bridging extension. Builds `ApplePayConfiguration` and wires authorization, shipping, and coupon closures via `CheckedContinuation`. Replaces the removed `ApplePayModule`. |
 | `ios/Components/ContextModule+Advanced.swift` | Advanced-flow wiring extension. Contains `setupAdvancedCallbacks(on:)` with `onSubmit`, `onAdditionalDetails`, `onComplete`, `onFailure` closures that emit viewId-tagged React Native events. |
 | `ios/Components/ComponentModule.swift` | Replaces `EmbeddedComponentBusModule`. Per-viewId view event bus (`@objc(AdyenComponent)`) managing `ComponentProxy` instances for embedded component lifecycle. |
@@ -348,7 +363,7 @@ Three new JS-callable methods resume these continuations (replacing the removed 
 | `ios/Model/EncodableBalance.swift` | Partial payments not yet supported in v6 alpha. |
 | `ios/Model/CancelOrderData.swift` | Partial payments not yet supported in v6 alpha. |
 | `ios/Components/Base/BaseModuleSender+Delegates.swift` | v5 delegate conformances (`PaymentComponentDelegate`, `ActionComponentDelegate`, `CardComponentDelegate`). Replaced by closure callbacks. |
-| `ios/Components/SetupModule.swift` | Replaced by `ContextModule.swift`. Lifecycle and setup APIs consolidated under `@objc(AdyenContext)`. |
+| `ios/Components/SetupModule.swift` | Replaced by `ContextModule.swift`. Lifecycle and setup APIs consolidated under `@objc(AdyenCheckout)`. |
 | `ios/Components/SessionHelperModule.swift` | Session creation consolidated into `ContextModule.setup()`. |
 | `ios/Components/ApplePay/ApplePayModule.swift` | Apple Pay bridging moved to `ContextModule+ApplePay.swift` extension. |
 | `ios/Components/ApplePay/ApplePayModule+Delegates.swift` | v5 Apple Pay delegate conformances removed; callback closures now in `ContextModule+ApplePay.swift`. |
@@ -366,11 +381,11 @@ Three new JS-callable methods resume these continuations (replacing the removed 
 
 ## Module-by-Module Changes
 
-### ContextModule (AdyenContext)
+### ContextModule (AdyenCheckout)
 
 **Files:** `ios/Components/ContextModule.swift`, `ios/Components/ContextModule+ApplePay.swift`, `ios/Components/ContextModule+Advanced.swift`
 
-This is a new module that consolidates `SetupModule`, `SessionHelperModule`, `ApplePayModule`, and `InstantModule` into a single `@objc(AdyenContext)` bridge module. It inherits from `BaseModule` and conforms to `SessionErrorDelegate`.
+This is a new module that consolidates `SetupModule`, `SessionHelperModule`, `ApplePayModule`, and `InstantModule` into a single `@objc(AdyenCheckout)` bridge module. It inherits from `BaseModule` and conforms to `SessionErrorDelegate`.
 
 #### Session Flow (`setup`)
 

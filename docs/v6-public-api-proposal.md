@@ -9,7 +9,6 @@ classDiagram
     class AdyenCheckout {
         +setup(session, configuration, SessionCallbacks): Promise~Checkout~$
         +setupAdvanced(paymentMethods, configuration, AdvancedCallbacks): Promise~Checkout~$
-        +cleanup()$
     }
 
     class Checkout {
@@ -18,9 +17,7 @@ classDiagram
         +isAvailable(type: string): Promise~boolean~
         +requiresUserInteraction(type: string): Promise~boolean~
         +submit(type: string): void
-        +subscribe(...): void
-        +unsubscribe(...): void
-        +cleanup(): void
+        +invalidate(): void
     }
 
     class PaymentMethodsResponse {
@@ -71,7 +68,6 @@ classDiagram
     class AdyenCheckout {
         +setup(session, config, callbacks): Promise~Checkout~$
         +setupAdvanced(paymentMethods, config, callbacks): Promise~Checkout~$
-        +cleanup()$
         Note: Static class, not a React component
     }
 
@@ -101,7 +97,7 @@ stateDiagram-v2
     Ready --> Ready: checkout.isAvailable() / checkout.requiresUserInteraction() / checkout.submit()
     Ready --> Ready: AdyenDropIn.start(checkout)
     Ready --> Idle: AdyenCheckout.setup() called again (implicit cleanup)
-    Ready --> Destroyed: checkout.cleanup() or AdyenCheckout.cleanup()
+    Ready --> Destroyed: terminal callback, or checkout.invalidate()
     Ready --> Destroyed: Terminal callback (onComplete / onError) triggers auto-cleanup
 
     state Ready {
@@ -120,24 +116,23 @@ stateDiagram-v2
 
 **`<AdyenComponent>` mount/unmount behavior:**
 
-| Event | What happens | checkoutContext affected? |
+| Event | What happens | checkoutState affected? |
 |-------|-------------|--------------------------|
-| `<AdyenComponent>` **mounts** | Attaches event listeners, uses pre-built controller | No |
-| `<AdyenComponent>` **unmounts** | Removes its listeners, disposes its controller | No |
-| **Terminal callback** fires | Auto-cleanup: disposes ALL controllers, clears context, removes listeners | **Yes — full teardown** |
-| `checkout.cleanup()` called | Same as above — explicit cleanup | **Yes — full teardown** |
-| `AdyenCheckout.cleanup()` called | Cleans up all active checkout instances | **Yes — full teardown** |
+| `<AdyenComponent>` **mounts** | Builds its payment component from the shared checkout; registers natively so teardown can find it | No |
+| `<AdyenComponent>` **unmounts** | Disposes its component | No |
+| **Terminal callback** fires | Auto-cleanup: disposes every component, clears state, removes listeners | **Yes — full teardown** |
+| `checkout.invalidate()` called | Same as above, for a flow the shopper abandoned | **Yes — full teardown** |
 
-> **Lifecycle invariant:** `BaseModule.checkoutContext` is managed by the `AdyenCheckout` static class.
-> Terminal callbacks (`onComplete`, `onError`) automatically trigger cleanup, tearing down all controllers,
-> clearing the checkout context, and removing listeners. No checkout state survives cleanup.
+> **Lifecycle invariant:** `BaseModule.checkoutState` is managed by the `AdyenCheckout` static class.
+> Terminal callbacks (`onComplete`, `onError`) trigger cleanup automatically, and
+> `checkout.invalidate()` does the same for an abandoned flow. No checkout state survives cleanup.
 >
-> Calling `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()` again implicitly cleans up
-> the previous context first. Cleanup can also be triggered explicitly via `checkout.cleanup()` or
-> the static `AdyenCheckout.cleanup()`.
+> Calling `AdyenCheckout.setup()` or `setupAdvanced()` again clears the JS-side state; native
+> replaces its own when it receives the new setup call.
 >
-> **`<AdyenComponent>` unmount** only removes that component's event listeners and disposes its
-> controller. It does NOT affect `BaseModule.checkoutContext` or other components.
+> **`<AdyenComponent>` unmount** disposes only that view's payment component. It does not affect
+> `checkoutState` or any other view — a view going away must not end the checkout, or a headless
+> `submit()` afterwards would have no context to run in.
 
 ## Sessions Flow
 
@@ -268,7 +263,7 @@ sequenceDiagram
         Native-->>AC: delegates to registered callbacks
     end
 
-    Note over App: Auto-cleanup on terminal callbacks,<br/>or explicit: checkout.cleanup() / AdyenCheckout.cleanup()
+    Note over App: Auto-cleanup on terminal callbacks;<br/>checkout.invalidate() for an abandoned flow
 ```
 
 ## `requiresUserInteraction` + Controller Pre-build
@@ -314,7 +309,7 @@ Not allowed — duplicate type:
 
 ```
 Native modules:
-├── ContextModule (AdyenContext)         — lifecycle, controllers, headless APIs
+├── ContextModule (AdyenCheckout)        — lifecycle, callbacks, events, headless APIs
 │   ├─ createSession(session, config)        (session flow setup)
 │   ├─ setup(paymentMethods, config)         (advanced flow setup)
 │   ├─ cleanup()
@@ -322,11 +317,11 @@ Native modules:
 │   ├─ requiresUserInteraction(type)
 │   ├─ submit(type)
 │   ├─ action(action) / completion(resultCode) / retry(message)
-│   └─ controllers: Map<type, CheckoutController>
+│   ├─ the only emitter — every event reaches JS through this module
+│   └─ componentManagers: Map<type, ComponentManager>   (Android)
 │
-├── ComponentModule (AdyenComponent)     — view event bus
-│   ├─ subscribe(viewId) / unsubscribe(viewId)
-│   └─ action(viewId) / completion(viewId) / retry(viewId)
+├── ComponentModule (AdyenComponent)     — registry of mounted views, native-only
+│   └─ register(viewId) / unregister(viewId), disposed on cleanup
 │
 ├── DropInModule (AdyenDropIn)           — modal Drop-In
 │   ├─ open(paymentMethods) → uses BaseModule.checkoutContext
@@ -354,16 +349,17 @@ Before (v5):
 ├── EmbeddedComponentBusModule  (viewId routing)
 
 After (v6 — implemented):
-├── AdyenCheckout        (static class: setup, setupAdvanced, cleanup)
-│   └── Checkout         (paymentMethods, configuration, isAvailable, requiresUserInteraction, submit, subscribe, unsubscribe, cleanup)
+├── AdyenCheckout        (static class: setup, setupAdvanced)
+│   └── Checkout         (paymentMethods, configuration, isAvailable, requiresUserInteraction, submit, invalidate)
 ├── <AdyenComponent>     (checkout, type — generic native view for ANY payment method)
 ├── AdyenDropIn          (start(checkout))
 ├── AdyenAction          (handle, hide — standalone escape hatch)
 ├── AdyenCSE             (encrypt, validate)
 │
 │ Native modules (internal):
-├── ContextModule        (createSession, setup, cleanup, isAvailable, requiresUserInteraction, submit)
-├── ComponentModule      (subscribe, unsubscribe, action, completion, retry — view bus)
+├── ContextModule        (createSession, setup, cleanup, isAvailable, requiresUserInteraction, submit,
+│                         action, completion, retry — and the only event emitter)
+├── ComponentModule      (register / unregister — native-only registry, for teardown)
 ├── DropInModule         (open, action, completion, retry)
 ├── ActionModule         (action, hide)
 └── AdyenCSEModule       (encrypt, validate)

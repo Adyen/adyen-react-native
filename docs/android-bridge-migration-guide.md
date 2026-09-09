@@ -108,7 +108,7 @@ The React Native bridge layer was refactored after the initial v5→v6 native SD
 
 | v5 Module (Registered Name) | v6 Module (Registered Name) | Notes |
 |---|---|---|
-| `SetupModule` ("AdyenSetup") | `ContextModule` ("AdyenContext") | Unified lifecycle management + headless APIs (session setup, advanced setup, availability checks, submit) |
+| `SetupModule` ("AdyenSetup") | `ContextModule` ("AdyenCheckout") | Unified lifecycle management + headless APIs (session setup, advanced setup, availability checks, submit) |
 | `EmbeddedComponentBusModule` ("AdyenComponentBus") | `ComponentModule` ("AdyenComponent") | View event bus — relays action/completion/retry commands to per-view `ComponentContract` consumers |
 
 ### Modules Removed
@@ -679,7 +679,7 @@ Key differences:
 | `CheckoutControllerRegistry.kt` | Tracks active `CheckoutController` instances in a `WeakHashMap` for redirect routing. Dispatches `handleReturn(intent)` to all registered controllers. |
 | `ComponentManager.kt` | Unified manager (in `component/base/`) that builds and drives the v6 `CheckoutController` for all payment methods (card, Google Pay, instant). Manages suspend continuations for the advanced flow. Registers/unregisters with `CheckoutControllerRegistry`. Replaces the former per-method managers (`CardComponentManager`, `GooglePayComponentManager`, `InstantComponentManager`). |
 | `GooglePayAvailability.kt` | Custom Google Pay availability check using Google Play Services + Wallet APIs. Required because v6 removed the public `GooglePayComponent.PROVIDER.isAvailable`. |
-| `ContextModule.kt` | Replaces `SetupModule`. Unified lifecycle + headless API module registered as `"AdyenContext"`. Handles session setup, advanced setup, availability checks, `requiresUserInteraction`, and `submit`. |
+| `ContextModule.kt` | Replaces `SetupModule`. Unified lifecycle + headless API module registered as `"AdyenCheckout"`. Handles session setup, advanced setup, availability checks, `requiresUserInteraction`, and `submit`. |
 | `ComponentModule.kt` | Merged from `EmbeddedComponentBusModule`. View event bus module registered as `"AdyenComponent"`. Relays action/completion/retry commands by viewId to per-view `ComponentContract` consumers. |
 | `AdyenComponentViewManager.kt` | Replaces `CardViewManager` and `PlatformPayViewManager`. Generic view manager registered as `"AdyenComponentView"` that handles all payment method types via the `type` prop. |
 | `AdyenComponentViewState.kt` | Replaces `CardViewState`. Per-view state that owns the `ComponentManager`, renders `CheckoutPaymentFlow` in a `ComposeView`, and implements `ComponentContract` for receiving commands from `ComponentModule`. |
@@ -737,11 +737,11 @@ Key differences:
 - Bridges `DropInResult.Completed`, `DropInResult.Failed`, `DropInResult.Cancelled` to `MessageBus` events.
 - Replaces both v5 `DropInCallback` and `SessionDropInCallback` patterns.
 
-### ContextModule (AdyenContext)
+### ContextModule (AdyenCheckout)
 
-Replaces `SetupModule` ("AdyenSetup") and absorbs `SessionHelperModule`. Registered as `"AdyenContext"`. Serves as the unified lifecycle and headless API entry point.
+Replaces `SetupModule` ("AdyenSetup") and absorbs `SessionHelperModule`. Registered as `"AdyenCheckout"`. Serves as the unified lifecycle and headless API entry point.
 
-- **`COMPONENT_NAME = "AdyenContext"`**
+- **`COMPONENT_NAME = "AdyenCheckout"`**
 - **`setup(sessionModelJSON, configurationJSON, promise)`**: Session flow setup. Calls `cleanup()` first to dispose stale controllers, then `Checkout.setup(sessionResponse, configuration)`. Stores the resulting `CheckoutContext.Sessions` in `BaseModule.checkoutContext`. Returns the serialized `SessionSetupResponse` to JS.
 - **`setupAdvanced(paymentMethodsData, configurationJSON, promise)`**: Advanced flow setup. Calls `cleanup()` first, then `Checkout.setup(paymentMethods, configuration)`. Stores the resulting `CheckoutContext.Advanced` in `BaseModule.checkoutContext`.
 - **`isAvailable(type, promise)`**: Checks payment method availability:
@@ -784,7 +784,7 @@ The merged result of the old modal `ComponentModule` and `EmbeddedComponentBusMo
 
 ### SessionHelperModule (REMOVED)
 
-`SessionHelperModule` has been consolidated into `ContextModule`. All session setup functionality (`setup`, `parseSessionResponse`, result serialization) is now handled by `ContextModule.setup()`. See the [ContextModule (AdyenContext)](#contextmodule-adyencontext) section above.
+`SessionHelperModule` has been consolidated into `ContextModule`. All session setup functionality (`setup`, `parseSessionResponse`, result serialization) is now handled by `ContextModule.setup()`. See the [ContextModule (AdyenCheckout)](#contextmodule-adyencheckout) section above.
 
 ### BaseModule
 
@@ -796,11 +796,11 @@ The merged result of the old modal `ComponentModule` and `EmbeddedComponentBusMo
 
 ### InstantModule (REMOVED)
 
-`InstantModule` has been removed. Instant payment methods are now handled via `ContextModule` headless APIs (`requiresUserInteraction`, `submit`) for headless flows, and `ComponentModule` / `AdyenComponentViewManager` for embedded view flows. See the [ContextModule (AdyenContext)](#contextmodule-adyencontext) and [ComponentModule (AdyenComponent)](#componentmodule-adyencomponent) sections above.
+`InstantModule` has been removed. Instant payment methods are now handled via `ContextModule` headless APIs (`requiresUserInteraction`, `submit`) for headless flows, and `ComponentModule` / `AdyenComponentViewManager` for embedded view flows. See the [ContextModule (AdyenCheckout)](#contextmodule-adyencheckout) and [ComponentModule (AdyenComponent)](#componentmodule-adyencomponent) sections above.
 
 ### GooglePayModule (REMOVED)
 
-`GooglePayModule` has been removed as a standalone module. Google Pay availability is now checked via `ContextModule.isAvailable("googlepay")`, which delegates to `GooglePayAvailability.kt` internally. Google Pay rendering is handled by `AdyenComponentViewManager` like all other payment methods. See the [ContextModule (AdyenContext)](#contextmodule-adyencontext) and [AdyenComponentViewManager](#adyencomponentviewmanager) sections.
+`GooglePayModule` has been removed as a standalone module. Google Pay availability is now checked via `ContextModule.isAvailable("googlepay")`, which delegates to `GooglePayAvailability.kt` internally. Google Pay rendering is handled by `AdyenComponentViewManager` like all other payment methods. See the [ContextModule (AdyenCheckout)](#contextmodule-adyencheckout) and [AdyenComponentViewManager](#adyencomponentviewmanager) sections.
 
 ### ActionModule
 

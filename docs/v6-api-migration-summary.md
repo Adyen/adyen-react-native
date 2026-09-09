@@ -61,7 +61,7 @@ Removed `currentModule` dispatch pattern. DropIn `action`/`completion`/`retry` r
 
 | v5 | v6 |
 |----|----|
-| `SetupModule` / `AdyenSetup` | `ContextModule` / `AdyenContext` |
+| `SetupModule` / `AdyenSetup` | `ContextModule` / `AdyenContext` (later renamed `AdyenCheckout`) |
 | `EmbeddedComponentBusModule` / `AdyenComponentBus` | `ComponentModule` / `AdyenComponent` |
 | `EmbeddedComponentDelegateProxy` | `ComponentProxy` |
 
