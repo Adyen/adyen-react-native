@@ -83,7 +83,8 @@
     "react-native": "0.85.0",
     "react-native-builder-bob": "^0.41.0",
     "react-test-renderer": "19.2.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "webdriverio": "^9.31.1"
   },
   "peerDependencies": {
     "expo": ">=52",

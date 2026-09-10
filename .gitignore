@@ -97,7 +97,10 @@ example/package-lock.json
 .yarn/*
 !.yarn/releases
 
-#Example credentials
+# Example credentials
 example/secrets.json
 example/android/gradlew.bat
 example/android/gradle/gradle-daemon-jvm.properties
+
+# Appium
+appium_*
