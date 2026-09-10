@@ -31,13 +31,13 @@ import type { SessionContext } from './types';
 /** Native module interface specific to NativeCheckout */
 interface ContextNativeModule extends NativeModule {
   setup(
-    paymentMethods: PaymentMethodsResponse,
-    configuration: Configuration
-  ): Promise<void>;
-  createSession(
     session: SessionConfiguration,
     configuration: EnvironmentConfiguration
   ): Promise<SessionContext>;
+  setupAdvanced(
+    paymentMethods: PaymentMethodsResponse,
+    configuration: Configuration
+  ): Promise<void>;
   isAvailable(type: string): Promise<boolean>;
   requiresUserInteraction(type: string): Promise<boolean>;
   submit(type: string): void;
@@ -70,7 +70,7 @@ export class ContextModuleWrapper implements NativeCheckoutModule {
     paymentMethods: PaymentMethodsResponse,
     configuration: Configuration
   ): Promise<void> {
-    return this.nativeModule.setup(paymentMethods, configuration);
+    return this.nativeModule.setupAdvanced(paymentMethods, configuration);
   }
 
   action(action: PaymentAction): void {
@@ -89,7 +89,7 @@ export class ContextModuleWrapper implements NativeCheckoutModule {
     session: SessionConfiguration,
     configuration: EnvironmentConfiguration
   ): Promise<SessionContext> {
-    return this.nativeModule.createSession(session, configuration);
+    return this.nativeModule.setup(session, configuration);
   }
 
   isAvailable(type: string): Promise<boolean> {

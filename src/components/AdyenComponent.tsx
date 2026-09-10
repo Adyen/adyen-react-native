@@ -5,7 +5,7 @@
 //
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { NativeModules, StyleSheet } from 'react-native';
 import NativeAdyenComponentView, {
   type LayoutChangeEvent,
 } from '../specs/NativeAdyenComponentView';
@@ -14,6 +14,13 @@ import type { Checkout } from '../core';
 const styles = StyleSheet.create({
   container: { width: '100%' },
 });
+
+// The `AdyenComponent` bridge module exposes no JS-callable methods — every `<AdyenComponent>`
+// view talks to it purely on the native side (e.g. iOS reads `ComponentModule.shared`). React
+// Native only constructs a bridge module the first time JS touches it, so without this, iOS never
+// builds `ComponentModule` and `ComponentModule.shared` stays nil when the first view mounts.
+// Referencing it here, at import time, forces that construction before any view can need it.
+void NativeModules.AdyenComponent; // eslint-disable-line no-void
 
 /**
  * Types with a live `<AdyenComponent>` mounted. A payment method type maps 1:1 to

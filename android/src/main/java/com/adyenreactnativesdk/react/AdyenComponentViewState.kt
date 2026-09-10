@@ -92,7 +92,12 @@ class AdyenComponentViewState(
 
     val composeView =
       ComposeView(activity).apply {
-        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        // Not DisposeOnViewTreeLifecycleDestroyed: this app hosts every screen in a single
+        // Activity, so its ViewTree lifecycle never reaches DESTROYED just because React
+        // Navigation unmounts this view — the composition would never dispose at the right
+        // time. This view is added/removed dynamically while the Activity stays alive, so tie
+        // disposal to the view's own detach instead.
+        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
       }
     dynamicComponentView.setView(composeView)
 

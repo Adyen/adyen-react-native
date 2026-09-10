@@ -35,12 +35,12 @@ function createMockContextModule() {
     action: jest.fn(),
     completion: jest.fn(),
     retry: jest.fn(),
-    setup: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-    createSession: jest.fn<() => Promise<any>>().mockResolvedValue({
+    setup: jest.fn<() => Promise<any>>().mockResolvedValue({
       id: 'session_123',
       sessionData: 'test_session_data',
       paymentMethods: { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
     }),
+    setupAdvanced: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
     isAvailable: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
     requiresUserInteraction: jest
       .fn<() => Promise<boolean>>()
@@ -105,7 +105,7 @@ describe('ContextModuleWrapper', () => {
   });
 
   describe('setup', () => {
-    test('should call native module setup', async () => {
+    test('should call native module setupAdvanced', async () => {
       const wrapper = new ContextModuleWrapper(mockNativeModule);
       const paymentMethods = {
         paymentMethods: [{ type: 'scheme', name: 'Card' }],
@@ -119,15 +119,15 @@ describe('ContextModuleWrapper', () => {
 
       await wrapper.setup(paymentMethods, config);
 
-      expect(mockNativeModule.setup).toHaveBeenCalledWith(
+      expect(mockNativeModule.setupAdvanced).toHaveBeenCalledWith(
         paymentMethods,
         config
       );
     });
 
-    test('should propagate errors from native module setup', async () => {
+    test('should propagate errors from native module setupAdvanced', async () => {
       const error = new Error('Setup failed');
-      mockNativeModule.setup.mockRejectedValue(error);
+      mockNativeModule.setupAdvanced.mockRejectedValue(error);
 
       const wrapper = new ContextModuleWrapper(mockNativeModule);
 
@@ -145,7 +145,7 @@ describe('ContextModuleWrapper', () => {
   });
 
   describe('createSession', () => {
-    test('should call native module createSession', async () => {
+    test('should call native module setup', async () => {
       const wrapper = new ContextModuleWrapper(mockNativeModule);
       const session = { id: 'session_123', sessionData: 'test_data' };
       const config = {
@@ -156,10 +156,7 @@ describe('ContextModuleWrapper', () => {
 
       await wrapper.createSession(session, config);
 
-      expect(mockNativeModule.createSession).toHaveBeenCalledWith(
-        session,
-        config
-      );
+      expect(mockNativeModule.setup).toHaveBeenCalledWith(session, config);
     });
 
     test('should return session context', async () => {
@@ -168,7 +165,7 @@ describe('ContextModuleWrapper', () => {
         sessionData: 'new_session_data',
         paymentMethods: { paymentMethods: [{ type: 'ideal', name: 'iDEAL' }] },
       };
-      mockNativeModule.createSession.mockResolvedValue(expectedResult);
+      mockNativeModule.setup.mockResolvedValue(expectedResult);
 
       const wrapper = new ContextModuleWrapper(mockNativeModule);
       const result = await wrapper.createSession(
@@ -181,7 +178,7 @@ describe('ContextModuleWrapper', () => {
 
     test('should propagate errors from native module', async () => {
       const error = new Error('Session creation failed');
-      mockNativeModule.createSession.mockRejectedValue(error);
+      mockNativeModule.setup.mockRejectedValue(error);
 
       const wrapper = new ContextModuleWrapper(mockNativeModule);
 

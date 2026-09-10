@@ -55,7 +55,7 @@ internal final class ContextModule: BaseModule {
     internal var currentShippingMethods: [PKShippingMethod] = []
 
     override func supportedEvents() -> [String]! {
-        (EventName.coreEvents + EventName.sessionEvents + EventName.applePayEvents).map(\.rawValue)
+        (EventName.coreEvents + EventName.sessionEvents + EventName.applePayEvents + EventName.cardEvents).map(\.rawValue)
     }
 
     /// Forwards a JS-provided action into a suspended advanced-flow `onSubmit` closure so the SDK

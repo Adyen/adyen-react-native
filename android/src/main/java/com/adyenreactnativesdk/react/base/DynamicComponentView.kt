@@ -47,12 +47,23 @@ class DynamicComponentView(
 
   override fun onDetachedFromWindow() {
     super.onDetachedFromWindow()
-    onDispose()
+    // Do NOT call removeAllViews() here: ViewGroup.dispatchDetachedFromWindow() already
+    // cascades to every child (detaching the Compose-backed child view) before calling this
+    // method, so the child is already detached by the time we get here. Calling
+    // removeAllViews() would detach it a second time, racing Compose's own
+    // accessibility-delegate teardown and crashing with a NullPointerException. Only clear our
+    // own bookkeeping; the (already-detached) child gets garbage collected with this view.
+    removeCallbacks(resizeRunnable)
+    isViewSet = false
+    oldSize = null
   }
 
+  /** Explicit disposal from [com.adyenreactnativesdk.react.AdyenComponentViewManager.onDropViewInstance]. */
   fun onDispose() {
     removeCallbacks(resizeRunnable)
-    removeAllViews()
+    if (isViewSet) {
+      removeAllViews()
+    }
     isViewSet = false
     oldSize = null
   }
