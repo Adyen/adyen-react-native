@@ -4,6 +4,7 @@ import { AdyenCheckout, AdyenComponent } from '@adyen/react-native';
 import {
   SubmitResult,
   AdditionalDetailsResult,
+  ResultCode,
   type Checkout,
   type PaymentResult,
   type PaymentMethodData,
@@ -14,7 +15,7 @@ import Styles from '../common/Styles';
 import AdaptiveText from '../common/AdaptiveText';
 import PageScrollView from '../common/PageScrollView';
 import TopView from './components/TopView';
-import AvailablePaymentComponent from './components/AvailablePaymentComponent';
+import PaymentMethodComponent from './components/PaymentMethodComponent';
 import { useAppContext } from '../../hooks/useAppContext';
 import { processAdyenError } from './utils/processAdyenError';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
@@ -65,7 +66,10 @@ const AdvancedCheckout = () => {
 
   const didComplete = useCallback(
     async (result: PaymentResult) => {
-      navigateToResults(result);
+      navigateToResults({
+        ...result,
+        resultCode: result.resultCode ?? ResultCode.error,
+      });
     },
     [navigateToResults]
   );
@@ -136,8 +140,18 @@ const AdvancedCheckout = () => {
       <PageScrollView>
         <AdaptiveText style={Styles.paddedTitle}>Card</AdaptiveText>
         <AdyenComponent checkout={checkout} type="scheme" />
-        <AvailablePaymentComponent checkout={checkout} type="applepay" />
-        <AvailablePaymentComponent checkout={checkout} type="googlepay" />
+        <PaymentMethodComponent checkout={checkout} type="applepay" />
+        <PaymentMethodComponent checkout={checkout} type="googlepay" />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="paypal"
+          title="Pay with PayPal"
+        />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="klarna_paynow"
+          title="Pay with Klarna"
+        />
       </PageScrollView>
     </View>
   );

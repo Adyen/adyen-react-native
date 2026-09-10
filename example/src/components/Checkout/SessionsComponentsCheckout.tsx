@@ -6,7 +6,7 @@ import Styles from '../common/Styles';
 import AdaptiveText from '../common/AdaptiveText';
 import PageScrollView from '../common/PageScrollView';
 import TopView from './components/TopView';
-import AvailablePaymentComponent from './components/AvailablePaymentComponent';
+import PaymentMethodComponent from './components/PaymentMethodComponent';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
@@ -34,20 +34,13 @@ const SessionsComponentsCheckout = () => {
 
   const didComplete = useCallback(
     async (result: SessionsResult) => {
-      if (
-        result.resultCode === 'PresentToShopper' ||
-        apiClient.usesDirectSessionResult
-      ) {
-        navigateToResults(result);
-        return;
-      }
-      const status = await apiClient.requestSessionResult(
-        result.sessionId,
-        result.sessionResult
-      );
-      navigateToResults(status);
+      // TODO: use apiClient.requestSessionResult(result.sessionId, result.sessionResult) to
+      // verify the outcome server-side once adyen-android forwards a real sessionResult
+      // (currently always undefined there - the native SDK reads it off the /payments response
+      // but never threads it through to SessionCheckoutResult). Works correctly on iOS today.
+      navigateToResults(result);
     },
-    [navigateToResults, apiClient]
+    [navigateToResults]
   );
 
   useEffect(() => {
@@ -104,8 +97,18 @@ const SessionsComponentsCheckout = () => {
       <PageScrollView>
         <AdaptiveText style={Styles.paddedTitle}>Card</AdaptiveText>
         <AdyenComponent checkout={checkout} type="scheme" />
-        <AvailablePaymentComponent checkout={checkout} type="applepay" />
-        <AvailablePaymentComponent checkout={checkout} type="googlepay" />
+        <PaymentMethodComponent checkout={checkout} type="applepay" />
+        <PaymentMethodComponent checkout={checkout} type="googlepay" />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="paypal"
+          title="Pay with PayPal"
+        />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="klarna_paynow"
+          title="Pay with Klarna"
+        />
       </PageScrollView>
     </View>
   );

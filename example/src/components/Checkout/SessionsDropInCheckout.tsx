@@ -32,20 +32,13 @@ const SessionsDropInCheckout = () => {
 
   const didComplete = useCallback(
     async (result: SessionsResult) => {
-      if (
-        result.resultCode === 'PresentToShopper' ||
-        apiClient.usesDirectSessionResult
-      ) {
-        navigateToResults(result);
-        return;
-      }
-      const status = await apiClient.requestSessionResult(
-        result.sessionId,
-        result.sessionResult
-      );
-      navigateToResults(status);
+      // TODO: use apiClient.requestSessionResult(result.sessionId, result.sessionResult) to
+      // verify the outcome server-side once adyen-android forwards a real sessionResult
+      // (currently always undefined there - the native SDK reads it off the /payments response
+      // but never threads it through to SessionCheckoutResult). Works correctly on iOS today.
+      navigateToResults(result);
     },
-    [navigateToResults, apiClient]
+    [navigateToResults]
   );
 
   useEffect(() => {
