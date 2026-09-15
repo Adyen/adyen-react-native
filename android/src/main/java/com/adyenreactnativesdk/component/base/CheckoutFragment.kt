@@ -11,8 +11,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutPaymentFlow
@@ -73,6 +82,15 @@ class CheckoutFragment : BottomSheetDialogFragment() {
 
     (view as ComposeView).setContent {
       CheckoutPaymentFlow(controller = controller)
+      // TODO: some actions (e.g. a redirect) render no UI of their own while waiting for the
+      // shopper to return - RedirectComponent.Content() launches the browser and draws nothing,
+      // so with setCanceledOnTouchOutside(false) above there was no visible way to back out
+      // besides the system back button. Adyen.checkout:ui-core has no cancel/loading affordance
+      // for this either. Temporary hack: a plain close button, since this module has no Compose
+      // Material dependency to build a proper one with. Revisit once upstream has a real answer.
+      if (config.cancellable) {
+        CloseButton(onClick = { dialog?.cancel() })
+      }
     }
 
     if (config.autoSubmit && !submitted && !controller.requiresUserInteraction()) {
@@ -85,6 +103,14 @@ class CheckoutFragment : BottomSheetDialogFragment() {
     super.onCancel(dialog)
     val fragmentTag = tag ?: return
     configs[fragmentTag]?.onCancelled?.invoke()
+  }
+
+  @Suppress("ktlint:standard:function-naming")
+  @Composable
+  private fun CloseButton(onClick: () -> Unit) {
+    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.TopEnd) {
+      BasicText(text = "✕", modifier = Modifier.clickable(onClick = onClick).padding(8.dp))
+    }
   }
 
   companion object {

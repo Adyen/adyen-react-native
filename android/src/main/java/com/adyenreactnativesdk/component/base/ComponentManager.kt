@@ -37,6 +37,13 @@ internal class ComponentManager(
   private val additionalCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val additionalSessionCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val sessionBeforeSubmitBridge: SessionBeforeSubmitBridge? = null,
+  /**
+   * Invoked once the flow reaches a terminal state (`onComplete` / `onFailure`), in addition to
+   * the message bus notification. Lets a headless caller (e.g. [com.adyenreactnativesdk.component.ContextModule.submit])
+   * dismiss whatever UI it presented for this controller's action - an embedded `<AdyenComponent>`
+   * has no such UI to dismiss, so this stays unset there.
+   */
+  private val onTerminal: (() -> Unit)? = null,
 ) {
   var checkoutController: CheckoutController? = null
     private set
@@ -126,6 +133,7 @@ internal class ComponentManager(
     }
     checkoutController?.let { CheckoutControllerRegistry.unregister(it) }
     checkoutController = null
+    onTerminal?.invoke()
   }
 
   private fun advancedCallbacks(): AdvancedCheckoutCallbacks {
@@ -143,8 +151,14 @@ internal class ComponentManager(
           messageBus.onAdditionalDetails(data)
         }
       },
-      onFailure = { error -> messageBus.onException(error.toModuleException()) },
-      onComplete = { result -> messageBus.onFinished(result.resultCode.value) },
+      onFailure = { error ->
+        messageBus.onException(error.toModuleException())
+        onTerminal?.invoke()
+      },
+      onComplete = { result ->
+        messageBus.onFinished(result.resultCode.value)
+        onTerminal?.invoke()
+      },
       additionalCallbacksBlock = block ?: defaultBlock,
     )
   }
@@ -152,8 +166,14 @@ internal class ComponentManager(
   private fun sessionCallbacks(): SessionCheckoutCallbacks {
     val block = additionalSessionCallbacks
     return SessionCheckoutCallbacks(
-      onComplete = { result -> messageBus.onFinished(result) },
-      onFailure = { error -> messageBus.onSessionException(error.toModuleException()) },
+      onComplete = { result ->
+        messageBus.onFinished(result)
+        onTerminal?.invoke()
+      },
+      onFailure = { error ->
+        messageBus.onSessionException(error.toModuleException())
+        onTerminal?.invoke()
+      },
       onBeforeSubmit = sessionBeforeSubmitBridge?.let { bridge -> { data -> bridge.onBeforeSubmit(data) } },
       additionalCallbacksBlock = block ?: defaultBlock,
     )

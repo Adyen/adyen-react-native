@@ -18,6 +18,7 @@ import com.adyen.checkout.core.sessions.internal.data.model.SessionSetupResponse
 import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.BaseActionModule
 import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyenreactnativesdk.component.base.CheckoutFragment
 import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentManager
 import com.adyenreactnativesdk.component.base.ModuleException
@@ -189,6 +190,14 @@ class ContextModule(
     }
   }
 
+  /**
+   * Submits [type] with no `<AdyenComponent>` ever mounted for it (e.g. PayPal, Klarna).
+   *
+   * `CheckoutController.submit()` alone only starts the flow - a resulting action needing UI
+   * (a redirect, a 3DS challenge, ...) has nowhere to render without a [CheckoutFragment] hosting
+   * it, the same one Google Pay's own headless launch uses (see [CheckoutFragment]'s `autoSubmit`).
+   * Left showing until the flow reaches a terminal state; see [ComponentManager]'s `onTerminal`.
+   */
   @ReactMethod
   fun submit(type: String) {
     val state = BaseModule.checkoutState
@@ -199,12 +208,28 @@ class ContextModule(
     val context = state.checkoutContext
     appCompatActivity.lifecycleScope.launch {
       try {
-        resolveController(context, type)?.submit()
+        val controller = resolveController(context, type) ?: return@launch
+        CheckoutFragment.show(
+          fragmentManager = appCompatActivity.supportFragmentManager,
+          tag = headlessFragmentTag(type),
+          controllerProvider = { controller },
+          autoSubmit = true,
+          // The shopper closing this fragment (there's no in-app UI to cancel from otherwise -
+          // see CheckoutFragment's temporary close button) is equivalent to cancelling from
+          // within the redirect/action itself: report it as a shopper-cancelled payment and
+          // dispose the controller, rather than leaving both silently dangling.
+          onCancelled = {
+            sendError(ModuleException.Canceled())
+            unregisterManager(type)
+          },
+        )
       } catch (e: Exception) {
         sendError(e)
       }
     }
   }
+
+  private fun headlessFragmentTag(type: String) = "HeadlessSubmit-$type"
 
   /** Returns (building and caching if needed) the controller for [type] within [context]. */
   private suspend fun resolveController(
@@ -216,6 +241,7 @@ class ContextModule(
         activity = appCompatActivity,
         messageBus = messageBus,
         sessionBeforeSubmitBridge = BaseModule.checkoutState?.sessionBeforeSubmitBridge,
+        onTerminal = { CheckoutFragment.hide(appCompatActivity.supportFragmentManager, headlessFragmentTag(type)) },
       )
     }.let { it.checkoutController ?: it.createController(context, type) }
 
