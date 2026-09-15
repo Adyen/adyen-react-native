@@ -5,6 +5,7 @@
 //
 
 import Adyen
+import AdyenComponents
 import PassKit
 
 public struct ApplepayConfigurationParser {

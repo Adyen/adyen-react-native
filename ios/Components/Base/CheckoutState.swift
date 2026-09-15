@@ -5,6 +5,7 @@
 //
 
 import Adyen
+import AdyenCheckout
 
 /// Holds per-checkout shared state.
 ///

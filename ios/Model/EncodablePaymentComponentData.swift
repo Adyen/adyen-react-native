@@ -24,7 +24,6 @@ internal struct EncodablePaymentComponentData: Encodable {
         try container.encodeIfPresent(data.socialSecurityNumber, forKey: .socialSecurityNumber)
         try container.encodeIfPresent(data.order?.compactOrder, forKey: .order)
         try container.encodeIfPresent(data.installments, forKey: .installments)
-        try container.encodeIfPresent(data.paymentMethod.checkoutAttemptId, forKey: .checkoutAttemptId)
     }
 
     private enum CodingKeys: String, CodingKey {

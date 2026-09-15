@@ -5,6 +5,8 @@
 //
 
 import Adyen
+import AdyenCard
+import AdyenCheckout
 import Foundation
 import PassKit
 import React
@@ -37,6 +39,11 @@ internal final class ContextModule: BaseModule {
     internal let resultSink = AdvancedResultSink()
 
     private let beforeSubmitBridge = CallbackBridge<BeforeSubmitResult>()
+    /// `BeforeSubmitData` has no accessible initializer outside the Adyen module (its memberwise
+    /// init is internal, not public - unreachable from a vendored xcframework regardless of
+    /// package boundaries). Stashing the instance the SDK handed us so parseBeforeSubmitResult
+    /// can mutate its `public var` properties in place instead of constructing a new one.
+    private var pendingBeforeSubmitData: BeforeSubmitData?
 
     // MARK: - Apple Pay callback state
 
@@ -374,7 +381,8 @@ internal final class ContextModule: BaseModule {
 
     @MainActor
     private func awaitBeforeSubmitResult(for data: BeforeSubmitData) async -> BeforeSubmitResult {
-        await beforeSubmitBridge.suspend(superseding: .abort) {
+        pendingBeforeSubmitData = data
+        return await beforeSubmitBridge.suspend(superseding: .abort) {
             sendEvent(event: .beforeSubmit, body: beforeSubmitDataDictionary(data))
         }
     }
@@ -404,19 +412,17 @@ internal final class ContextModule: BaseModule {
             return .abort
         }
         guard type == Key.proceed,
-              let data = result[Key.data] as? NSDictionary else {
+              let data = result[Key.data] as? NSDictionary,
+              var beforeSubmitData = pendingBeforeSubmitData else {
             throw ModuleException.invalidPaymentMethods
         }
-        let billingAddress = (data[Key.billingAddress] as? NSDictionary).flatMap { try? $0.decode() as PostalAddress }
-        let deliveryAddress = (data[Key.deliveryAddress] as? NSDictionary).flatMap { try? $0.decode() as PostalAddress }
-        let shopperName = (data[Key.shopperName] as? NSDictionary).flatMap { try? $0.decode() as ShopperName }
+        pendingBeforeSubmitData = nil
+        beforeSubmitData.billingAddress = (data[Key.billingAddress] as? NSDictionary).flatMap { try? $0.decode() as PostalAddress }
+        beforeSubmitData.deliveryAddress = (data[Key.deliveryAddress] as? NSDictionary).flatMap { try? $0.decode() as PostalAddress }
+        beforeSubmitData.shopperName = (data[Key.shopperName] as? NSDictionary).flatMap { try? $0.decode() as ShopperName }
+        beforeSubmitData.shopperEmail = data[Key.shopperEmail] as? String
         return .proceed(
-            data: BeforeSubmitData(
-                billingAddress: billingAddress,
-                deliveryAddress: deliveryAddress,
-                shopperName: shopperName,
-                shopperEmail: data[Key.shopperEmail] as? String
-            ),
+            data: beforeSubmitData,
             sessionData: result[Key.sessionData] as? String
         )
     }

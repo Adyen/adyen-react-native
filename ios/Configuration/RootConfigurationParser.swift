@@ -5,6 +5,8 @@
 //
 
 @_spi(AdyenInternal) import Adyen
+import AdyenCheckout
+import AdyenUI
 
 public struct RootConfigurationParser {
 

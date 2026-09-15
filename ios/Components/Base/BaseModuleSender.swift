@@ -5,6 +5,8 @@
 //
 
 import Adyen
+import AdyenCheckout
+import AdyenComponents
 
 internal class BaseModuleSender: BaseModule {
 

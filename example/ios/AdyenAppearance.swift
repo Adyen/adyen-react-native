@@ -6,6 +6,7 @@
 
 import Adyen
 import adyen_react_native
+import AdyenUI
 import Foundation
 
 /// Please make sure that the name of the class exactly matches.

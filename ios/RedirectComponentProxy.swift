@@ -5,6 +5,9 @@
 //
 
 import Adyen
+#if canImport(AdyenActions)
+    import AdyenCheckout
+#endif
 import Foundation
 
 @objc

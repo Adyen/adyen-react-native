@@ -6,6 +6,8 @@
 
 import Adyen
 import Adyen3DS2
+import AdyenCard
+import AdyenCheckout
 import Foundation
 import React
 

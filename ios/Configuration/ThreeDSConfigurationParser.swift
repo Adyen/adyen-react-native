@@ -5,6 +5,7 @@
 //
 
 import Adyen
+import AdyenActions
 import Foundation
 
 public struct ThreeDS2ConfigurationParser {

@@ -5,6 +5,7 @@
 //
 
 import Adyen
+import AdyenCheckout
 
 /// v6 closure-callback wiring for the advanced (merchant-managed) flow.
 ///

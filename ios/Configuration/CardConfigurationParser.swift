@@ -5,6 +5,7 @@
 //
 
 import Adyen
+import AdyenCard
 
 public struct CardConfigurationParser {
 

@@ -5,15 +5,24 @@
 //
 
 import Adyen
+import AdyenDropIn
 import Foundation
 import React
 
 @objc(AdyenDropIn)
 internal final class DropInModule: BaseAddressModule {
 
-    internal var disableStoredPaymentMethodHandler: Adyen.Completion<Bool>?
+    // TODO: DropIn is not fully supported in v6 alpha (see `start()`/`action()` below), and its
+    // delegate conformances in DropInModule+Delegates.swift are disabled: PaymentComponent,
+    // AnyDropInComponent, ActionComponent, Balance, Completion, DropInComponentDelegate,
+    // PartialPaymentDelegate, and StoredPaymentMethodsDelegate are all `package`-scoped in the
+    // real Adyen module, and Swift's module loader for vendored xcframeworks never resolves a
+    // dependency's .package.swiftinterface (only .private/.public) - package-level access
+    // across a precompiled-xcframework boundary does not work. `Completion<Bool>` and `Balance`
+    // are avoided here (using plain closure/`Any` types instead) for the same reason.
+    internal var disableStoredPaymentMethodHandler: ((Bool) -> Void)?
     internal var requestOrderHandler: ((Result<PartialPaymentOrder, any Error>) -> Void)?
-    internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
+    internal var checkBalanceHandler: ((Result<Any, any Error>) -> Void)?
 
     override func supportedEvents() -> [String]! {
         super.supportedEvents() + (EventName.cardEvents + EventName.dropInEvents).map(\.rawValue)

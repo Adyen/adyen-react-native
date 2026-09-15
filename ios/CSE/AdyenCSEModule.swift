@@ -5,6 +5,8 @@
 //
 
 import Adyen
+import AdyenCard
+import AdyenEncryption
 import Foundation
 import React
 

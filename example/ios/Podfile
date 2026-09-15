@@ -8,11 +8,14 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, ['16.0', min_ios_version_supported].max
 prepare_react_native_project!
 
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
+# adyen-react-native vendors per-module xcframeworks (see its podspec) rather than depending on
+# a single umbrella pod. That only resolves correctly under CocoaPods' framework-based linking -
+# under the default static-library linking, transitive source pods like AdyenNetworking fail to
+# import from the vendored frameworks' textual interfaces ("cannot load underlying module").
+# Consumers of this library need use_frameworks! in their own Podfile for the same reason.
+linkage = ENV['USE_FRAMEWORKS'] || 'dynamic'
+Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+use_frameworks! :linkage => linkage.to_sym
 
 target 'AdyenExample' do
   config = use_native_modules!

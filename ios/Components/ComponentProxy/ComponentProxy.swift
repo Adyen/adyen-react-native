@@ -5,6 +5,7 @@
 //
 
 import Adyen
+import AdyenCheckout
 import UIKit
 
 /// Per-view controller for an embedded `<AdyenComponent>` view.

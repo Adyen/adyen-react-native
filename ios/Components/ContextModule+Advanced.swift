@@ -5,6 +5,8 @@
 //
 
 import Adyen
+import AdyenCheckout
+import AdyenComponents
 
 // MARK: - v6 advanced-flow callback bridging
 

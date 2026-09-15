@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "pod": "cd ios && bundle exec pod update"
+    "pod": "bash ../scripts/ensure-xcframeworks.sh && cd ios && bundle exec pod update"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.2",
