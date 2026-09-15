@@ -140,7 +140,11 @@ const AdvancedCheckout = () => {
       <PageScrollView>
         <AdaptiveText style={Styles.paddedTitle}>Card</AdaptiveText>
         <AdyenComponent checkout={checkout} type="scheme" />
-        <PaymentMethodComponent checkout={checkout} type="applepay" />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="applepay"
+          title="Pay with Apple Pay"
+        />
         <PaymentMethodComponent checkout={checkout} type="googlepay" />
         <PaymentMethodComponent
           checkout={checkout}
