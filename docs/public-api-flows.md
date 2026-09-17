@@ -1,167 +1,729 @@
-# React Native SDK v6 - Public API Flows
+# Public API Flows
 
-## Sessions Flow
+Chronological sequences for the `@adyen/react-native` v6-alpha bridge: setup, the session and
+advanced presenters, embedded and headless submission, Drop-in, and the standalone action. This
+document owns chronology only. For the lifecycle contract see [Architecture.md](./Architecture.md),
+for the TypeScript layer [js-architecture.md](./js-architecture.md), for the native bridges
+[native-architecture.md](./native-architecture.md), and for capability status
+[FeatureSupport.md](./FeatureSupport.md).
 
-```mermaid
-sequenceDiagram
-    participant App as Consumer App
-    participant AC as AdyenCheckout (static)
-    participant Native as Native (ContextModule)
-    participant SDK as Adyen SDK v6
+> [!NOTE]
+> These sequences describe current behavior in source. Unsupported and legacy-backed branches end
+> at the outcome they actually reach today, not at an intended design. Every platform/presenter
+> status used here matches [FeatureSupport.md](./FeatureSupport.md); the diagrams do not depict a
+> successful flow for a path that is unsupported.
 
-    App->>AC: const checkout = await AdyenCheckout.setup(session, configuration, callbacks)
-    AC->>Native: createSession(session, config)
-    Native->>SDK: Checkout.setup(session, config)
-    SDK-->>Native: SessionContext + paymentMethods
-    Native-->>AC: paymentMethods
-    Note over AC: checkout object returned
+## Participants
 
-    alt Drop-In
-        App->>App: AdyenDropIn.start(checkout)
-        App->>Native: open(paymentMethods)
-        Native->>SDK: Present Drop-In UI
-    else Embedded Component
-        App->>App: render <AdyenComponent checkout={checkout} type="scheme" />
-        Note over App: Native view renders card form<br/>User fills in and taps Pay
-    else Headless
-        App->>App: await checkout.isAvailable('klarna')
-        App->>App: await checkout.requiresUserInteraction('klarna')
-        App->>App: checkout.submit('klarna')
-    end
+| Alias     | Real object                                                                               |
+| --------- | ----------------------------------------------------------------------------------------- |
+| App       | The merchant's React code                                                                 |
+| AC        | `AdyenCheckout` static class (`src/checkout/AdyenCheckout.ts`)                            |
+| NC        | `NativeCheckout` = `ContextModuleWrapper` (`src/modules/context/ContextModuleWrapper.ts`) |
+| Ctx       | Native `ContextModule` (`@objc(AdyenCheckout)` / `component/ContextModule.kt`)            |
+| Mgr       | Android `ComponentManager` (`component/base/ComponentManager.kt`)                         |
+| Sink      | iOS `AdvancedResultSink` (`ios/Components/Base/AdvancedResultSink.swift`)                 |
+| SDK       | The v6 native checkout SDK                                                                |
+| Server    | The merchant's payments backend                                                           |
+| DropInMod | Native `DropInModule` (`@objc(AdyenDropIn)` / `component/dropin/DropInModule.kt`)         |
+| ActionMod | Native `ActionModule` (`@objc(AdyenAction)` / `cse/ActionModule.kt`)                      |
 
-    Note over SDK: SDK handles /payments<br/>and /payments/details<br/>automatically
+## Setup
 
-    alt Success
-        SDK-->>Native: onComplete(result)
-        Native-->>AC: SessionsResult
-        AC-->>App: onComplete(result)
-    else Error
-        SDK-->>Native: onError(error)
-        Native-->>AC: error
-        AC-->>App: onError(error)
-    end
+### Session setup
 
-    Note over App: Auto-cleanup on terminal callbacks;<br/>checkout.invalidate() for an abandoned flow
-```
-
-## Advanced Flow
+For a clean initial runtime, `AdyenCheckout.setup(session, configuration, callbacks)` validates
+before it mutates any state, wires the process-wide JS runtime and native listeners **before**
+`NativeCheckout.createSession`, lets native setup resolve the payment methods, and creates the
+`Checkout` handle last.
 
 ```mermaid
 sequenceDiagram
-    participant App as Consumer App
-    participant AC as AdyenCheckout (static)
-    participant View as <AdyenComponent>
-    participant Native as Native (ContextModule)
-    participant SDK as Adyen SDK v6
-    participant Server as Merchant Server
+  participant App
+  participant AC
+  participant NC
+  participant Ctx
+  participant SDK
 
-    App->>Server: /paymentMethods
-    Server-->>App: paymentMethods
-
-    App->>AC: const checkout = await AdyenCheckout.setupAdvanced(paymentMethods, configuration, callbacks)
-    AC->>Native: setup(paymentMethods, config)
-    Native->>SDK: Checkout.setup(paymentMethods, config)
-    SDK-->>Native: CheckoutContext
-    Note over AC: checkout object returned
-
-    alt Drop-In
-        App->>App: AdyenDropIn.start(checkout)
-        Native->>SDK: Present Drop-In UI
-    else Embedded Component
-        App->>View: render <AdyenComponent checkout={checkout} type="scheme" />
-        Note over View: Native view renders card form<br/>User fills in and taps Pay
-    else Headless
-        App->>App: checkout.submit('klarna')
-    end
-
-    SDK-->>Native: onSubmit(paymentData)
-    Native-->>AC: PaymentMethodData
-    AC-->>App: onSubmit(data) → Promise<SubmitResult>
-
-    App->>Server: /payments(data)
-    Server-->>App: response
-
-    alt Action required (3DS2, redirect, etc.)
-        App-->>AC: return SubmitResult.action(response.action)
-        AC->>Native: SubmitResult.Action(action)
-        SDK-->>Native: Action UI (3DS2 challenge, redirect, etc.)
-        SDK-->>Native: onAdditionalDetails(data)
-        AC-->>App: onAdditionalDetails(data) → Promise<AdditionalDetailsResult>
-        App->>Server: /payments/details(data)
-        Server-->>App: finalResult
-        App-->>AC: return { resultCode }
-    else Final result
-        App-->>AC: return SubmitResult.completed(resultCode)
-    else Retry (soft decline)
-        App-->>AC: return SubmitResult.retry('Card declined')
-        Note over Native: UI stays open,<br/>shopper can retry
-    end
+  App->>AC: setup(session, configuration, callbacks)
+  opt runtime.isCleanedUp === false (re-setup)
+    AC->>AC: clearJSState()
+  end
+  AC->>AC: checkConfiguration(configuration)
+  AC->>AC: wire runtime + eventHandlerRefs (session)
+  AC->>NC: removeAllListeners()
+  AC->>NC: subscribe terminal / card / Drop-in / before-submit / Apple Pay
+  AC->>NC: createSession({ id, sessionData }, configuration)
+  NC->>Ctx: setup(sessionModelJSON, configuration)
+  Ctx->>Ctx: cancelPendingOperations() (iOS) / dispose managers (Android)
+  Ctx->>SDK: Checkout.setup(session, configuration)
+  SDK-->>Ctx: SessionCheckout + paymentMethods
+  Ctx->>Ctx: checkoutState = CheckoutState(...) (only on success)
+  Ctx-->>NC: SessionContext (paymentMethods)
+  NC-->>AC: SessionContext
+  AC->>AC: createCheckout(paymentMethods, configuration, host)
+  AC-->>App: Checkout
 ```
 
-## Actions Flow (Standalone)
+Source order: `checkConfiguration` runs first (`src/checkout/AdyenCheckout.ts`, `setup`), then the
+runtime fields, `wireEventHandlerRefs`, `NativeCheckout.removeAllListeners()`, the session terminal
+/ card / Drop-in / before-submit / Apple Pay subscriptions, then `await
+NativeCheckout.createSession(...)`, and finally `createCheckout(...)`. `createSession` maps to
+`ContextNativeModule.setup` (`ContextModuleWrapper.createSession`), whose native body assigns
+`BaseModule.checkoutState` only after `Checkout.setup(...)` succeeds
+(`ContextModule.setupSessionAsync` on Android; `ContextModule.setup` on iOS). No presenter or
+merchant payment callback runs before the handle returns.
+
+### Advanced setup
+
+`AdyenCheckout.setupAdvanced(paymentMethods, configuration, callbacks)` validates both the
+configuration and the merchant-supplied payment-methods response before touching state, wires the
+runtime and listeners before `NativeCheckout.setup`, and returns the handle last.
 
 ```mermaid
 sequenceDiagram
-    participant App as Consumer App
-    participant Action as AdyenAction
-    participant Native as Native Action Module
-    participant SDK as Adyen SDK v6
+  participant App
+  participant AC
+  participant NC
+  participant Ctx
+  participant SDK
 
-    Note over App: Consumer already has an action<br/>from a /payments response
-
-    App->>Action: handle(action, config)
-    Action->>Native: handle(action, config)
-    Native->>SDK: Present action UI (3DS2, redirect, QR, voucher)
-
-    alt User completes action
-        SDK-->>Native: Action result
-        Native-->>Action: PaymentDetailsData
-        Action-->>App: Promise resolves with PaymentDetailsData
-        App->>Action: hide(true)
-    else User cancels / error
-        SDK-->>Native: Error
-        Native-->>Action: Promise rejects
-        App->>Action: hide(false)
-    end
+  App->>AC: setupAdvanced(paymentMethods, configuration, callbacks)
+  opt runtime.isCleanedUp === false (re-setup)
+    AC->>AC: clearJSState()
+  end
+  AC->>AC: checkConfiguration(configuration)
+  AC->>AC: checkPaymentMethodsResponse(paymentMethods)
+  AC->>AC: wire runtime + eventHandlerRefs (advanced)
+  AC->>NC: removeAllListeners()
+  AC->>NC: assignSubmitHandler / assignAdditionalDetailsHandler
+  AC->>NC: subscribe advanced terminal / card / Drop-in / Apple Pay
+  AC->>NC: setup(paymentMethods, configuration)
+  NC->>Ctx: setupAdvanced(paymentMethods, configuration)
+  Ctx->>Ctx: cancelPendingOperations() (iOS) / dispose managers (Android)
+  Ctx->>SDK: Checkout.setup(paymentMethods, configuration)
+  SDK-->>Ctx: AdvancedCheckout
+  Ctx->>Ctx: setupAdvancedCallbacks(on:) (iOS, once)
+  Ctx->>Ctx: checkoutState = CheckoutState(...) (only on success)
+  Ctx-->>NC: void
+  NC-->>AC: void
+  AC->>AC: createCheckout(paymentMethods, configuration, host)
+  AC-->>App: Checkout
 ```
 
-## Module Architecture
+Source order: `checkConfiguration` then `checkPaymentMethodsResponse` (the advanced flow is the only
+entry point that receives payment methods from the merchant), then the runtime fields and
+`wireEventHandlerRefs`, then `NativeCheckout.removeAllListeners()`, `assignSubmitHandler`,
+`assignAdditionalDetailsHandler`, the advanced terminal / card / Drop-in / Apple Pay subscriptions,
+then `await NativeCheckout.setup(...)` (which maps to `ContextNativeModule.setupAdvanced` through
+`ContextModuleWrapper.setup`), and finally `createCheckout(...)`. On iOS the advanced closures are
+wired exactly once in `setupAdvancedCallbacks(on:)`; on both platforms `checkoutState` is assigned
+only when `Checkout.setup(...)` succeeds.
+
+### Re-setup
+
+When a setup call runs while a checkout is still active (`runtime.isCleanedUp === false`), the very
+first step is `clearJSState()` — before any validation. It removes JS subscriptions and listeners
+and clears callbacks/configuration but deliberately does **not** call `NativeCheckout.cleanup()`;
+the native side replaces its own state when the new setup reaches it. See the failed-setup section
+below for what a rejection leaves behind, and
+[Architecture.md](./Architecture.md#re-setup-clears-js-state-without-native-cleanup) for the
+contract.
+
+### Failed setup and mixed state
+
+During an active re-setup, `setup()`/`setupAdvanced()` have two distinct rejection points, and each
+leaves observable mixed state because `clearJSState()` has already run and native state is replaced
+only on success.
 
 ```mermaid
-graph TB
-    subgraph "Consumer API"
-        AC["AdyenCheckout (static class)<br/>setup(), setupAdvanced()"]
-        Checkout["Checkout object<br/>paymentMethods, configuration,<br/>isAvailable, requiresUserInteraction,<br/>submit, invalidate"]
-    end
+sequenceDiagram
+  participant App
+  participant AC
+  participant NC
+  participant Ctx
+  participant SDK
 
-    subgraph "Payment Modules"
-        DropIn["AdyenDropIn<br/>start(checkout)"]
-        Component["&lt;AdyenComponent&gt;<br/>checkout, type"]
-    end
-
-    subgraph "Standalone"
-        ActionMod["AdyenAction<br/>handle(action): Promise<br/>hide()"]
-        CSE["AdyenCSE<br/>encryptCard, encryptBin<br/>validate*"]
-    end
-
-    subgraph "Native Modules (internal)"
-        Context["ContextModule (AdyenCheckout)<br/>createSession, setup, cleanup,<br/>isAvailable, requiresUserInteraction, submit,<br/>action, completion, retry"]
-        CompMod["ComponentModule (AdyenComponent)<br/>register / unregister<br/><i>native-only registry, for teardown</i>"]
-        DropInMod["DropInModule (AdyenDropIn)<br/>open, action, completion, retry"]
-    end
-
-    AC --> Checkout
-    Checkout --> Context
-    DropIn --> DropInMod
-    Component -.->|"renders a native view;<br/>events go through Context"| CompMod
-
-    style AC fill:#4a90d9,color:#fff
-    style Checkout fill:#4a90d9,color:#fff
-    style DropIn fill:#7ed321,color:#fff
-    style Component fill:#7ed321,color:#fff
-    style ActionMod fill:#e74c3c,color:#fff
-    style CSE fill:#95a5a6,color:#fff
-    style Context fill:#f5a623,color:#fff
-    style CompMod fill:#f5a623,color:#fff
-    style DropInMod fill:#f5a623,color:#fff
+  App->>AC: setup() / setupAdvanced() while active
+  AC->>AC: clearJSState() (listeners gone, old handle deactivated)
+  alt validation rejection
+    AC->>AC: checkConfiguration / checkPaymentMethodsResponse throws
+    AC-->>App: rejects (no native call, no new handle)
+    Note over Ctx,SDK: native checkoutState untouched; no preamble ran
+  else native setup rejection
+    AC->>AC: wire new runtime + listeners
+    AC->>NC: createSession() / setup()
+    NC->>Ctx: setup / setupAdvanced
+    Ctx->>Ctx: cancelPendingOperations() (iOS) / dispose managers (Android)
+    Ctx->>SDK: Checkout.setup(...)
+    SDK-->>Ctx: Result.Error / throws
+    Ctx-->>NC: reject
+    NC-->>AC: reject
+    AC-->>App: rejects (no new handle)
+    Note over Ctx,SDK: previous checkoutState remains (assigned only on success)
+  end
+  Note over App,Ctx: an old globally backed handle can still consult<br/>or invalidate() the resulting mixed state
 ```
+
+Validation rejection happens after `clearJSState()` and before any native call, so JS listeners are
+gone and existing handles are deactivated but no native preamble runs. Native rejection happens
+after the new JS runtime is wired and after the native preamble
+(`cancelPendingOperations()`/manager disposal) has cancelled in-flight work; because native
+assignment only happens on success, the previous `checkoutState` remains and no new handle is
+returned. An older handle reads the process-wide host, so it can still `isAvailable()`,
+`submit()`, or `invalidate()` against the mixed state — see
+[Architecture.md](./Architecture.md#setup-rejection-and-failed-replacement).
+
+## Session flow
+
+Session support covers the embedded `<AdyenComponent>` and headless `checkout.submit(type)`
+presenters (see [FeatureSupport.md](./FeatureSupport.md)). The native **session** checkout owns
+`/payments` and `/payments/details`; the merchant does not run those calls in the session flow.
+
+### Before-submit
+
+The only session callback that suspends native work is the optional `onBeforeSubmit`. Native
+suspends on a continuation and emits the event before JS runs; JS awaits the optional callback,
+defaults its absence to `BeforeSubmitResult.proceed(data)`, and forwards the result through
+`provideBeforeSubmitResult`. Native then continues with proceed or abort before the SDK submits.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant AC
+  participant NC
+  participant Ctx
+  participant SDK
+
+  SDK->>Ctx: onBeforeSubmit(data) — suspends continuation
+  Ctx->>NC: emit onBeforeSubmit(data)
+  NC->>AC: before-submit handler
+  AC->>App: sessionCallbacks.onBeforeSubmit?(data)
+  App-->>AC: BeforeSubmitResult (or undefined)
+  AC->>NC: provideBeforeSubmitResult(result ?? proceed(data))
+  NC->>Ctx: provideBeforeSubmitResult(result)
+  alt proceed
+    Ctx->>SDK: resume(.proceed) → SDK submits /payments
+  else abort
+    Ctx->>SDK: resume(.abort) → submission cancelled
+  end
+```
+
+Source: the session `assignBeforeSubmitHandler` in `AdyenCheckout.setup` awaits
+`sessionCallbacks?.onBeforeSubmit?.(data)` and calls `NativeCheckout.provideBeforeSubmitResult(result
+?? BeforeSubmitResult.proceed(data))`. Native suspension is
+`ContextModule.awaitBeforeSubmitResult` through `beforeSubmitBridge` (iOS) and
+`SessionBeforeSubmitBridge.onBeforeSubmit` (Android); `provide` resumes the continuation. If the
+merchant `onBeforeSubmit` throws or rejects, JS sends no result, so the before-submit continuation
+stays pending until cancellation delivers its fallback (`abort`) — see
+[native-architecture.md](./native-architecture.md#suspended-callback-cleanup-fallbacks).
+
+### Session terminal
+
+Session success delivers exactly one `onComplete(SessionsResult)` and session failure exactly one
+`onError(AdyenError)` through the session error event. In both cases cleanup follows the callback
+even if it throws.
+
+```mermaid
+sequenceDiagram
+  participant SDK
+  participant Ctx
+  participant NC
+  participant AC
+  participant App
+
+  alt success
+    SDK->>Ctx: onComplete(result)
+    Ctx->>NC: emit onSessionComplete(SessionsResult)
+    NC->>AC: completion handler → handleTerminalEvent
+    AC->>App: sessionCallbacks.onComplete(result)
+  else failure
+    SDK->>Ctx: onFailure(error)
+    Ctx->>NC: emit onSessionError(AdyenError)
+    NC->>AC: error handler → handleTerminalEvent
+    AC->>App: sessionCallbacks.onError(error)
+  end
+  AC->>AC: performAutoCleanup() in finally (runs even if callback threw)
+  AC->>NC: removeAllListeners() + cleanup()
+```
+
+Source: `subscribeSessionTerminalHandlers` routes `assignCompletionHandler`
+(`Event.onSessionComplete`) and `assignErrorHandler` (`Event.onSessionError`) through
+`handleTerminalEvent`, which guards `hasHandledTerminalEvent`, runs the callback, then calls
+`performAutoCleanup()` in a `finally`. The advanced error event and any duplicate or pre-callback
+cleanup are not part of this path.
+
+## Advanced flow
+
+Advanced support covers the v6 context/embedded/headless presenters. Android **legacy Drop-in** is a
+separate implementation with its own result/task lifecycle and is excluded here (see the Drop-in
+section).
+
+### Submit
+
+Native `onSubmit` suspends before the event is emitted. The wrapper adds the configured `returnUrl`
+only if the payload lacks one, and the merchant `onSubmit` performs `/payments`. The returned
+`SubmitResult` dispatches to native `action`, `completion`, or `retry`, which resolves the suspended
+submit continuation.
+
+```mermaid
+sequenceDiagram
+  participant SDK
+  participant Ctx
+  participant NC
+  participant AC
+  participant App
+  participant Server
+
+  SDK->>Ctx: onSubmit(data) — suspends (Sink / Mgr continuation)
+  Ctx->>NC: emit onSubmit(paymentData)
+  NC->>AC: submit handler
+  AC->>AC: payload.returnUrl ??= configuration.returnUrl
+  AC->>App: advancedCallbacks.onSubmit(payload)
+  App->>Server: POST /payments(payload)
+  Server-->>App: response
+  alt action required
+    App-->>AC: SubmitResult.action(action)
+    AC->>NC: action(action)
+    NC->>Ctx: action(action)
+    Ctx->>SDK: resume(.action) → SDK presents action UI
+  else final result
+    App-->>AC: SubmitResult.completed(resultCode)
+    AC->>NC: completion(resultCode)
+    NC->>Ctx: completion(resultCode)
+    Ctx->>SDK: resume(.completion) → awaits SDK terminal onComplete
+  else retry (soft decline)
+    App-->>AC: SubmitResult.retry(message)
+    AC->>NC: retry(message)
+    NC->>Ctx: retry(message)
+    Ctx->>SDK: resume(.retry) → context retained for another attempt
+  end
+```
+
+Source: `assignSubmitHandler` in `setupAdvanced` builds `{ ...paymentData, returnUrl:
+paymentData.returnUrl ?? configuration.returnUrl }`, awaits `advancedCallbacks?.onSubmit(payload)`,
+and — only if a result is returned — calls `dispatchSubmitResult`, which maps `action`/`completed`/
+`retry` to `NativeCheckout.action`/`completion`/`retry`. Native resumes the suspended continuation:
+`ContextModule.action/completion/retry` on the awaiting `AdvancedResultSink` (iOS) or the
+`awaitingManager()` continuation (Android). None of the three branches is a direct SDK server call
+and none triggers premature JS cleanup. `completed` awaits the SDK's later terminal `onComplete`;
+`retry` retains the checkout context for another attempt.
+
+### Additional details
+
+If the merchant returned an action, the SDK later invokes `onAdditionalDetails`, which suspends
+before its event is emitted. The merchant performs `/payments/details` and the completed result
+dispatches to native `completion`, resolving that continuation before the later terminal callback.
+
+```mermaid
+sequenceDiagram
+  participant SDK
+  participant Ctx
+  participant NC
+  participant AC
+  participant App
+  participant Server
+
+  SDK->>Ctx: onAdditionalDetails(data) — suspends continuation
+  Ctx->>NC: emit onAdditionalDetails(data)
+  NC->>AC: additional-details handler
+  AC->>App: advancedCallbacks.onAdditionalDetails(data)
+  App->>Server: POST /payments/details(data)
+  Server-->>App: finalResult
+  App-->>AC: AdditionalDetailsResult.completed(resultCode)
+  AC->>NC: completion(resultCode)
+  NC->>Ctx: completion(resultCode)
+  Ctx->>SDK: resume additional-details continuation
+  SDK->>Ctx: onComplete(result) (later terminal)
+```
+
+Source: `assignAdditionalDetailsHandler` awaits `advancedCallbacks?.onAdditionalDetails(data)` and,
+only if a result is returned, calls `NativeCheckout.completion(result.resultCode)`. On iOS a bare
+`completion` resolves `resultSink.additionalDetails` when it is the awaiting bridge; on Android
+`ComponentManager.completion` resumes `additionalDetailsContinuation` when no submit is pending.
+
+### Missing or rejected intermediate result
+
+If the advanced `onSubmit` or `onAdditionalDetails` callback returns no result, throws, or rejects,
+no fallback native command is sent and the continuation stays pending until cancellation. The same
+holds for a session `onBeforeSubmit` that throws or rejects.
+
+```mermaid
+sequenceDiagram
+  participant SDK
+  participant Ctx
+  participant NC
+  participant AC
+  participant App
+
+  SDK->>Ctx: onSubmit / onAdditionalDetails — suspends
+  Ctx->>NC: emit event
+  NC->>AC: handler awaits callback
+  AC->>App: advanced callback
+  App-->>AC: undefined / throws / rejects
+  Note over AC: `if (result) { dispatch }` — nothing dispatched
+  Note over Ctx,SDK: continuation stays pending until cancelPending() /<br/>manager dispose() delivers its fallback
+```
+
+Source: both advanced handlers guard on `if (result)` before dispatching, so an absent, thrown, or
+rejected result sends nothing. The suspended continuation is only settled later by re-setup or
+terminal/`invalidate()` cleanup, which delivers the platform-specific fallback value documented in
+[native-architecture.md](./native-architecture.md#suspended-callback-cleanup-fallbacks).
+
+### Advanced terminal and abandonment
+
+Advanced success and failure each deliver exactly one terminal merchant callback, followed — even if
+the callback throws — by listener/subscription removal, native context cleanup, callback/config
+clearing, and deactivation.
+
+```mermaid
+sequenceDiagram
+  participant SDK
+  participant Ctx
+  participant NC
+  participant AC
+  participant App
+
+  alt success
+    SDK->>Ctx: onComplete(result)
+    Ctx->>NC: emit onComplete(PaymentResult)
+    NC->>AC: advanced complete handler → handleTerminalEvent
+    AC->>App: advancedCallbacks.onComplete(result)
+  else failure
+    SDK->>Ctx: onFailure(error)
+    Ctx->>NC: emit onError(AdyenError)
+    NC->>AC: advanced error handler → handleTerminalEvent
+    AC->>App: advancedCallbacks.onError(error)
+  end
+  AC->>AC: performAutoCleanup() in finally
+  AC->>NC: removeAllListeners() + cleanup()
+```
+
+When a flow is abandoned and no terminal callback will fire, the consumer calls
+`checkout.invalidate()`.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant AC
+  participant NC
+
+  App->>AC: checkout.invalidate()
+  alt already cleaned up
+    AC-->>App: no-op (idempotent)
+  else active
+    AC->>AC: cleanup() → resetState(true)
+    AC->>NC: removeAllListeners() + cleanup()
+  end
+  Note over App,AC: afterward isAvailable/requiresUserInteraction → false,<br/>submit() ignored with a warning, repeat invalidate() → no-op
+```
+
+Source: `subscribeAdvancedTerminalHandlers` routes `assignAdvancedCompleteHandler` (`Event.onComplete`)
+and `assignAdvancedErrorHandler` (`Event.onError`) through `handleTerminalEvent`. `invalidate()`
+delegates to `host.invalidate()` → `AdyenCheckout.cleanup()`, which returns early when already
+cleaned up; both terminal and invalidate paths converge on `resetState(true)`, the only path that
+calls `NativeCheckout.cleanup()`. After teardown, `createCheckout`'s `isActive()` guard warns and
+ignores `submit()` and resolves the query methods to `false`.
+
+## Embedded component
+
+An embedded flow starts with a `Checkout` that already exists. `<AdyenComponent>` renders the native
+Fabric view first and then, in a `useEffect`, applies the process-wide `activeComponentTypes`
+duplicate check. There is no pre-mount native-creation guard, and no checkout-wide interaction
+guarantee for a same-type duplicate.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant View as AdyenComponent
+  participant Ctx
+  participant Mgr
+  participant SDK
+
+  App->>View: render <AdyenComponent checkout type />
+  View->>View: commit NativeAdyenComponentView
+  View->>View: useEffect: throw if activeComponentTypes.has(type), else add
+  Note over View,Ctx: native view registers with ComponentModule + routing
+  alt Android
+    View->>Ctx: registerManager(type, ComponentManager)
+    Note over Mgr: pre-emission suspension; emits via its own MessageBus;<br/>action/completion/retry routed by awaitingManager()
+  else iOS
+    Note over Ctx,SDK: setup-time checkout-wide closures + one AdvancedResultSink;<br/>ComponentProxy owns a component, wires no callbacks
+  end
+  App->>View: unmount
+  View->>Ctx: dispose view registration/controller only (checkout untouched)
+```
+
+Source: `AdyenComponent.tsx` returns the `<NativeAdyenComponentView>` and the duplicate guard lives
+in a `useEffect` that throws on a mounted same-`type` view and deletes the type on unmount — so the
+check is process-wide, not checkout-bound, and runs after commit. On Android
+`AdyenComponentViewState.renderView` builds a per-view `MessageBus`, registers the view's
+`ComponentManager` with `ContextModule.registerManager(type, manager)`, and the manager suspends
+before emitting (`ComponentManager.advancedCallbacks`); routing uses `awaitingManager()`. On iOS the
+advanced closures are wired once at setup and `ComponentProxy` only owns a payment component
+(`createPaymentComponent(for:)`) — it wires no callbacks and carries no presenter tag. Unmount
+(`dispose` on Android, `prepareForRecycle`/`proxy.dispose()` on iOS) disposes only that view's native
+registration and controller; the checkout is untouched. The routing detail is in
+[native-architecture.md](./native-architecture.md#continuation-ownership-and-routing).
+
+## Headless submit
+
+Headless submission drives the one active checkout with no `<AdyenComponent>` mounted. Availability
+is `false` when there is no checkout; unknown or absent types fail during controller creation; Apple
+Pay is unavailable on Android and Google Pay on iOS; wallet availability runs a device check.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant AC
+  participant NC
+  participant Ctx
+  participant SDK
+
+  App->>AC: checkout.isAvailable(type)
+  alt no active checkout
+    AC-->>App: false
+  else active
+    AC->>NC: isAvailable(type)
+    NC->>Ctx: isAvailable(type)
+    Note over Ctx: Apple Pay → false on Android; Google Pay → false on iOS;<br/>wallets run a device availability check
+    Ctx-->>App: boolean
+  end
+
+  App->>AC: checkout.requiresUserInteraction(type)
+  AC->>Ctx: resolveController(type) get-or-create + cache
+  alt unknown / absent type
+    Ctx-->>App: reject (NoPaymentMethod / invalidPaymentMethods)
+  else resolved
+    Ctx-->>App: controller.requiresUserInteraction()
+  end
+
+  App->>AC: checkout.submit(type)
+  AC->>Ctx: submit(type) — reuse or create cached controller
+  alt Android
+    Ctx->>Ctx: CheckoutFragment.show(autoSubmit = true) as action host
+    Ctx->>SDK: controller.submit()
+    Note over Ctx: fragment hidden terminally (onTerminal);<br/>shopper closes it → Canceled() + unregisterManager(type)
+  else iOS
+    Ctx->>SDK: component.submit()
+    Note over Ctx,SDK: action UI presented via presentation delegate +<br/>presenterStack only when the SDK requests it
+  end
+```
+
+Source: `createCheckout` returns `false` from `isAvailable`/`requiresUserInteraction` when the host
+is inactive. On Android `ContextModule.isAvailable` resolves `false` for `applepay`, runs
+`GooglePayAvailability.isAvailable` for Google Pay keys, and otherwise checks `hasPaymentMethod`;
+`requiresUserInteraction` rejects `NoPaymentMethod` when `resolveController` returns null; `submit`
+presents an auto-submit `CheckoutFragment` (`CheckoutFragment.show(autoSubmit = true)`) as an action
+host, `onTerminal` hides it, and `onCancelled` maps to `ModuleException.Canceled()` plus
+`unregisterManager(type)` (which disposes the manager). On iOS `isAvailable` resolves `false` for
+Google Pay and gates Apple Pay on `PKPaymentAuthorizationViewController.canMakePayments()`;
+`submit` calls `resolveComponent(...).submit()` and presents through the module's presentation
+delegate and `presenterStack` only when the SDK requests it — there is no invented fragment. The
+generic v6 continuation retention above does not apply to legacy Drop-in.
+
+## Drop-in
+
+Drop-in support is uneven; [FeatureSupport.md](./FeatureSupport.md) is the authority. Each branch
+below ends at the outcome it reaches today.
+
+### iOS Drop-in (session and advanced) — unsupported
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant DropIn as AdyenDropIn
+  participant DropInMod
+  participant Ctx
+
+  App->>DropIn: start(checkout)
+  DropIn->>DropInMod: start(paymentMethods)
+  DropInMod->>Ctx: sendError(ModuleException.notSupported)
+  Note over Ctx: routed to failSession / fail by sendError;<br/>current Drop-in JS subscriptions do not observe this core error
+  Note over App,Ctx: no presentation, no merchant terminal callback,<br/>no automatic cleanup — abandonment needs checkout.invalidate()
+```
+
+Source: iOS `DropInModule.start(_:)` and `action(_:)` call `sendError(error:
+ModuleException.notSupported)` and never present. `ContextModule.sendError` routes it to `failSession`
+or `fail`, but `AdyenCheckout`'s Drop-in subscriptions (`startDropInEventListeners`) subscribe only
+the `addressLookup` and `dropIn` families — not `core` — so no merchant terminal callback runs and no
+auto-cleanup happens. A consumer must call `checkout.invalidate()` to abandon.
+
+### Android session Drop-in — unsupported
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant DropIn as AdyenDropIn
+  participant DropInMod
+
+  App->>DropIn: start(checkout)
+  DropIn->>DropInMod: start(paymentMethods)
+  DropInMod->>DropInMod: parse payment methods + build old configuration
+  DropInMod->>DropInMod: startBackgroundService() — task started
+  DropInMod->>DropInMod: sendError("Drop-in session flow not yet supported in v6 alpha")
+  Note over DropInMod: launcher never presented; background task is NOT finished here
+```
+
+Source: `DropInModule.start` calls `startBackgroundService()` and then, when
+`checkoutState?.isSession == true`, calls `sendError(ModuleException.Unknown("Drop-in session flow not
+yet supported in v6 alpha"))` before any launcher presentation. The unsupported session path does
+not finish the background task.
+
+### Android advanced Drop-in — legacy-backed
+
+Android advanced Drop-in alone is legacy-backed: it converts to `com.adyen.checkout.dropin.old`
+types and launches through `dropin.old.DropIn.startPayment` with an `AdvancedCheckoutService`. Its
+compatibility configuration builder forwards only environment, client key, locale, and amount.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant DropIn as AdyenDropIn
+  participant DropInMod
+  participant Service as AdvancedCheckoutService
+  participant AC
+  participant Server
+
+  App->>DropIn: start(checkout)
+  DropIn->>DropInMod: start(paymentMethods)
+  DropInMod->>DropInMod: buildOldCheckoutConfiguration (env, clientKey, locale, amount only)
+  DropInMod->>DropInMod: startBackgroundService() — task started
+  DropInMod->>DropInMod: dropin.old.DropIn.startPayment(..., AdvancedCheckoutService)
+  Service->>AC: emit onSubmit / onAdditionalDetails via MessageBus
+  AC->>Server: /payments or /payments/details
+  Server-->>AC: response
+  alt completion
+    AC->>DropInMod: completion(resultCode)
+    DropInMod->>Service: sendResult(DropInServiceResult.Finished)
+    DropInMod->>DropInMod: cleanup() + stopBackgroundService() (task finished)
+  else retry
+    AC->>DropInMod: retry(message)
+    DropInMod->>Service: sendResult(DropInServiceResult.Error(reason, retry=true))
+    DropInMod->>DropInMod: cleanup() + stopBackgroundService() (task finished)
+  else action
+    AC->>DropInMod: action(action)
+    DropInMod->>Service: sendResult(DropInServiceResult.Action)
+  end
+```
+
+Source: `DropInModule.start` builds the old `CheckoutConfiguration` via
+`buildOldCheckoutConfiguration` (which forwards only `environment`, `clientKey`, `shopperLocale`, and
+`amount`), calls `startBackgroundService()`, then `startPayment(..., AdvancedCheckoutService::class.java)`.
+`AdvancedCheckoutService` relays SDK callbacks to the shared `MessageBus`; the merchant answers
+through `AdyenCheckout`'s advanced handlers, which dispatch to `DropInModule.action`/`completion`/
+`retry`. Only `completion()` and `retry()` call `cleanup()` + `stopBackgroundService()`; they clear
+checkout state and finish the task but do not null the retained `advancedService`, and `retry` does
+not retain shared checkout context. The `action` callback sends a result but does not finish the task.
+
+### Legacy Drop-in task termination
+
+Because `start()` begins the background task before the session unsupported guard and before the
+old-launcher callbacks run, only the wrapper's `completion()`/`retry()` finish that task.
+
+```mermaid
+sequenceDiagram
+  participant DropInMod
+  participant Task as HeadlessJsTask
+  participant Launcher as dropin.old launcher
+
+  DropInMod->>Task: startBackgroundService() (before session guard)
+  alt session flow
+    DropInMod->>DropInMod: sendError(unsupported) — task NOT finished
+  else advanced flow
+    DropInMod->>Launcher: startPayment(...)
+    Launcher-->>DropInMod: cancellation / error / final-result callback — task NOT finished
+    DropInMod->>Task: only completion()/retry() → stopBackgroundService()
+  end
+  Note over DropInMod: generic ContextModule cleanup does not touch Drop-in task state
+```
+
+Source: `startBackgroundService()` runs before the `isSession` branch in `start`. The unsupported
+session path, and the old launcher's cancellation/error/final-result callbacks, do not call
+`stopBackgroundService()`; only `completion()` and `retry()` do. `ContextModule.cleanup()` disposes
+managers and clears checkout state but never touches the Drop-in `taskId`.
+
+## Standalone action
+
+`AdyenAction.handle(action, configuration)` runs an action-only native checkout with no
+`AdyenCheckout` handle. It parses inputs, creates action-only native state, handles the action, and
+settles its own promise. A details result precedes the merchant's `/payments/details`, which is
+followed by an explicit `hide(success)`.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant Action as AdyenAction
+  participant ActionMod
+  participant SDK
+  participant Server
+
+  App->>Action: handle(action, configuration)
+  Action->>ActionMod: handle(action, configuration)
+  ActionMod->>ActionMod: parse action + configuration
+  alt parse / setup rejection
+    ActionMod-->>App: promise rejects (no UI/state created — no hide() needed)
+  else setup success
+    ActionMod->>SDK: Checkout.setup(...) → handle(action)
+    Note over ActionMod,SDK: Android presents CheckoutFragment explicitly;<br/>iOS presents UI only if handle(action:) requests it via delegate
+    alt additional details
+      SDK->>ActionMod: onAdditionalDetails(data)
+      ActionMod-->>App: promise resolves with details
+      App->>Server: POST /payments/details(data)
+      Server-->>App: finalResult
+      App->>Action: hide(success)
+    else iOS onComplete
+      SDK->>ActionMod: onComplete(result)
+      ActionMod-->>App: promise resolves with result-code object (iOS only)
+      App->>Action: hide(success)
+    else failure after presentation
+      SDK->>ActionMod: onFailure(error)
+      ActionMod-->>App: promise rejects
+      App->>Action: hide(false)
+    end
+  end
+```
+
+Source: TypeScript `ActionModuleWrapper.handle` returns `nativeModule.handle(action, configuration)`
+and `hide(success)` calls `nativeModule.hide(success)`. Native `handle` first parses the action and
+configuration and rejects on failure before any UI or checkout state exists — so no `hide()` is
+required after a parse/setup rejection. After a successful `Checkout.setup`, Android
+(`cse/ActionModule.kt`) presents a `CheckoutFragment` explicitly, while iOS (`ios/CSE/ActionModule.swift`)
+presents only if `checkout.handle(action:)` requests it through the presentation delegate.
+`onAdditionalDetails` resolves the promise with the details on both platforms; iOS additionally
+resolves an `onComplete` result-code object, whereas Android has no `onComplete` resolution and
+otherwise rejects. `hide` dismisses the UI and releases the controller/promise; its boolean argument
+is currently not read on either platform, so it has no semantic effect. Consumer-owned `hide(false)`
+is required only when native action UI/state may have been created, not after a parse/setup
+rejection.
+
+## Concurrent continuation ambiguity (Android)
+
+On Android, embedded and headless managers can coexist and await results simultaneously. Because
+continuation commands (`action`/`completion`/`retry`) carry no presenter identity, `awaitingManager()`
+routes to the first awaiting entry in the type-keyed map; the flow makes no promise of deterministic
+presenter routing.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant Ctx
+  participant MgrA as Manager("scheme")
+  participant MgrB as Manager("ideal")
+
+  Note over Ctx: componentManagers keyed by payment-method type
+  MgrA->>Ctx: onSubmit suspends (awaiting)
+  MgrB->>Ctx: onSubmit suspends (awaiting)
+  App->>Ctx: action(actionMap) — no presenter identity in payload
+  Ctx->>Ctx: awaitingManager() = values.firstOrNull { isAwaitingResult }
+  Ctx->>MgrA: resolves the FIRST awaiting entry (may not be the intended one)
+  Note over Ctx,MgrB: same-type headless + embedded managers can replace<br/>one another in the map (registration keyed by type)
+```
+
+Source: `ContextModule.awaitingManager()` is `componentManagers.values.firstOrNull { it.isAwaitingResult
+}`, and `action`/`completion`/`retry` carry only their payload. Registration is keyed by type
+(`registerManager`, `resolveController`'s `getOrPut`), so a same-type headless and embedded manager
+overwrite each other in the routing map. On iOS the analogous case is a second suspension of the same
+callback kind superseding the first with the SDK error result (`AdvancedResultSink` / `CallbackBridge`).
+See [native-architecture.md](./native-architecture.md#concurrent-routing-ambiguity) and
+[FeatureSupport.md](./FeatureSupport.md).
