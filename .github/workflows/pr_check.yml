@@ -14,8 +14,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-ios-frameworks:
+    name: Build iOS xcframeworks
+    uses: ./.github/workflows/build_ios_frameworks.yml
+
   build-lib:
     name: Build Nodes
+    needs: [build-ios-frameworks]
     uses: ./.github/workflows/build_lib.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
@@ -24,7 +29,7 @@ jobs:
 
   test-iOS:
     name: Test iOS
-    needs: [build-lib]
+    needs: [build-lib, build-ios-frameworks]
     uses: ./.github/workflows/ios_tests.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}

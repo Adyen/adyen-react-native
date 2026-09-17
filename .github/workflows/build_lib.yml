@@ -45,6 +45,28 @@ jobs:
           path: reports
           retention-days: 1
 
+      - name: Read pinned adyen-ios version
+        if: inputs.build-tgz
+        id: adyen-ios-version
+        run: echo "value=$(jq -r .adyen.ios package.json)" >> "$GITHUB_OUTPUT"
+
+      # Restore-only: this job never populates the cache itself, only build_ios_frameworks.yml
+      # does. Doesn't need macOS - it's just extracting a tarball, no Xcode involved.
+      - name: Restore iOS xcframeworks cache
+        if: inputs.build-tgz
+        id: ios-frameworks-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ios/frameworks
+          key: ios-frameworks-${{ steps.adyen-ios-version.outputs.value }}
+
+      - name: Fail if iOS xcframeworks cache is missing
+        if: inputs.build-tgz && steps.ios-frameworks-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "ios/frameworks/ cache miss for version ${{ steps.adyen-ios-version.outputs.value }}." >&2
+          echo "Run the 'Build iOS xcframeworks' workflow (workflow_dispatch) to populate it." >&2
+          exit 1
+
       - name: Create tgz
         if: inputs.build-tgz
         run: |

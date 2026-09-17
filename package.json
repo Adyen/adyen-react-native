@@ -9,6 +9,10 @@
   "bugs": {
     "url": "https://support.adyen.com/"
   },
+  "adyen": {
+    "ios": "6.0.0-alpha.1",
+    "android": "6.0.0-alpha.1"
+  },
   "keywords": [
     "adyen",
     "adyen-ios",

@@ -1,0 +1,43 @@
+name: Build iOS xcframeworks
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build xcframeworks
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      # package.json's adyen.ios is the single source of truth for this version - keeps
+      # it out of every workflow file that needs it (this one, build_lib.yml, ios_tests.yml).
+      - name: Read pinned adyen-ios version
+        id: adyen-ios-version
+        run: echo "value=$(jq -r .adyen.ios package.json)" >> "$GITHUB_OUTPUT"
+
+      # Restore-only cache lookup, populated below on a miss. Keyed on the pinned adyen-ios
+      # version: exact-match only is intentional - a partial/stale restore across versions would
+      # silently vendor the wrong build.
+      - name: Cache xcframeworks
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ios/frameworks
+          key: ios-frameworks-${{ steps.adyen-ios-version.outputs.value }}
+
+      - name: Checkout adyen-ios
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: Adyen/adyen-ios
+          ref: ${{ steps.adyen-ios-version.outputs.value }}
+          path: adyen-ios
+          fetch-depth: 1
+
+      - name: Build xcframeworks
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: bash scripts/build-xcframeworks.sh adyen-ios

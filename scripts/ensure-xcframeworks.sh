@@ -20,11 +20,11 @@ if [ -d "$FRAMEWORKS_DIR/AdyenCheckout.xcframework" ] && [ "${FORCE_REBUILD_XCFR
 fi
 
 if [ -z "${ADYEN_IOS_PATH:-}" ]; then
+  ADYEN_IOS_VERSION="$(node -p "require('$SCRIPT_DIR/../package.json').adyen.ios")"
   echo "Error: ios/frameworks/ is missing and ADYEN_IOS_PATH is not set." >&2
   echo "" >&2
-  echo "Set it to a local checkout of https://github.com/Adyen/adyen-ios at the version this" >&2
-  echo "SDK depends on (see adyen-react-native.podspec's vendored_frameworks comment for the" >&2
-  echo "current pinned tag), e.g.:" >&2
+  echo "Set it to a local checkout of https://github.com/Adyen/adyen-ios at tag" >&2
+  echo "$ADYEN_IOS_VERSION (package.json's adyen.ios - the pinned version), e.g.:" >&2
   echo "" >&2
   echo "  ADYEN_IOS_PATH=../adyen-ios yarn app pod" >&2
   exit 1

@@ -16,13 +16,15 @@ Pod::Spec.new do |s|
   s.public_header_files = "ios/ADYRedirectComponent.h"
 
   # Vendored as separate per-module xcframeworks, built from a local checkout of
-  # https://github.com/Adyen/adyen-ios at tag 6.0.0-alpha.1 via `scripts/build-xcframeworks.sh`
-  # (see `scripts/ensure-xcframeworks.sh`, which `yarn app pod` runs automatically) - rather than
-  # depending on the umbrella "Adyen" CocoaPods pod. The umbrella pod merges every Adyen module
-  # into a single "Adyen" module, so canImport(AdyenCard)/canImport(AdyenComponents) are false
-  # and the factories needed to build Card/Components payment methods get compiled out.
-  # Vendoring the real, separate modules makes canImport correct. Not committed to git (see
-  # .gitignore) - bump the tag above and rebuild when upgrading the pinned adyen-ios version.
+  # https://github.com/Adyen/adyen-ios at package.json's adyen.ios tag (the single source of
+  # truth for this version - also read by CI's build_ios_frameworks.yml) via
+  # `scripts/build-xcframeworks.sh` (see `scripts/ensure-xcframeworks.sh`, which `yarn app pod`
+  # runs automatically) - rather than depending on the umbrella "Adyen" CocoaPods pod. The
+  # umbrella pod merges every Adyen module into a single "Adyen" module, so
+  # canImport(AdyenCard)/canImport(AdyenComponents) are false and the factories needed to build
+  # Card/Components payment methods get compiled out. Vendoring the real, separate modules makes
+  # canImport correct. Not committed to git (see .gitignore) - bump adyen.ios and rebuild when
+  # upgrading it.
   s.vendored_frameworks = [
     'ios/frameworks/Adyen.xcframework',
     'ios/frameworks/AdyenEncryption.xcframework',
@@ -39,7 +41,8 @@ Pod::Spec.new do |s|
   # Transitive dependencies the umbrella "Adyen" pod used to pull in automatically via its own
   # podspec (Adyen/Core depends on AdyenNetworking, Adyen/Actions depends on Adyen3DS2). Vendoring
   # the xcframeworks directly bypasses CocoaPods' own dependency resolution for them, so they need
-  # to be declared here too, pinned to the same versions Adyen 6.0.0-alpha.1 itself used.
+  # to be declared here too, pinned to the same versions Adyen used at package.json's adyen.ios.
+  # Bump these alongside it.
   s.dependency "AdyenNetworking", "3.0.1"
   s.dependency "Adyen3DS2", "2.4.4"
 
