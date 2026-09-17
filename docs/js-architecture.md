@@ -1,71 +1,125 @@
 # JS Architecture
 
-Diagrams of the TypeScript layer. For the iOS and Android sides see
-[native-architecture.md](./native-architecture.md); for prose on the lifecycle contract see
-[Architecture.md](./Architecture.md).
+TypeScript layer of the SDK: source topology, public boundary, dependency direction, the checkout
+runtime, the native module wrappers, and listener/handle ownership. For the lifecycle contract see
+[Architecture.md](./Architecture.md); for the native bridges see
+[native-architecture.md](./native-architecture.md). Chronological flows live in
+[public-api-flows.md](./public-api-flows.md) and capability status in
+[FeatureSupport.md](./FeatureSupport.md).
 
-## Module layout
+## Source topology
 
-Four top-level folders, with dependencies pointing one way only.
+`src/` has six top-level folders. Four are runtime code, one is a build-time tool, and one is a
+codegen contract:
+
+| Folder           | Role                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `src/core`       | Vocabulary: types, constants, configuration interfaces. Pure leaf.                   |
+| `src/checkout`   | Lifecycle machinery: `AdyenCheckout`, `createCheckout`, validation, listener wiring. |
+| `src/components` | React layer: the embedded `AdyenComponent` view.                                     |
+| `src/modules`    | Native module wrappers and their singletons (context, Drop-in, action, CSE).         |
+| `src/plugin`     | Build-time Expo config plugin (runs during `expo prebuild`). Not runtime code.       |
+| `src/specs`      | React Native Fabric codegen contract (`NativeAdyenComponentView.ts`).                |
+
+## Public boundary
+
+`src/index.ts` re-exports four barrels — `./checkout`, `./components`, `./core`, `./modules` — and
+runs `configureSDKVersion` at import time. It does **not** export `src/plugin` or `src/specs`. The
+package-root public API (confirmed against `etc/api/adyen-react-native.api.md`) is:
+
+- `checkout/index.ts` exports only the `AdyenCheckout` class.
+- `components/index.ts` exports `AdyenComponent` (and `AdyenComponentProps`).
+- `core/index.ts` exports the types, constants, configuration interfaces, and payment-method
+  constant arrays.
+- `modules/index.ts` exports the singletons `AdyenDropIn`, `AdyenAction`, `AdyenCSE` and their
+  public interfaces.
+
+The following are **internal** and are not part of the package-root public API:
+
+- the `createCheckout` factory and the `CheckoutRuntime` / `CheckoutHost` / `EventHandlers` types
+  in `checkout/`;
+- the wrappers `ContextModuleWrapper`, `DropInWrapper`, `ActionModuleWrapper`, and the internal
+  `NativeCheckout` singleton;
+- `checkout/utils/startEventListeners` and the other `checkout/utils` helpers;
+- the Expo `plugin` helpers;
+- the Fabric `specs` component contract.
+
+## Dependency direction
+
+Edges below follow current `import` declarations; each is labeled by what it depends on.
 
 ```mermaid
 flowchart TD
-  subgraph pub["src/index.ts — public barrel"]
-    direction LR
-    B1["export * from './checkout'"]
-    B2["'./components'"]
-    B3["'./core'"]
-    B4["'./modules'"]
-  end
+  CORE["src/core<br/>(pure leaf)"]
+  SPECS["src/specs<br/>(Fabric contract)"]
+  CHECKOUT["src/checkout"]
+  COMPONENTS["src/components"]
+  MODULES["src/modules"]
+  PLUGIN["src/plugin<br/>(build-time, outside runtime graph)"]
 
-  CO["core/<br/><i>vocabulary</i><br/>types · constants · configurations<br/><b>pure leaf</b>"]
-  CH["checkout/<br/><i>machinery</i><br/>lifecycle · routing · validation"]
-  CM["components/<br/><i>React layer</i><br/>AdyenComponent.tsx"]
-  MO["modules/<br/><i>native wrappers</i><br/>NativeCheckout · AdyenDropIn · AdyenAction · AdyenCSE"]
-
-  pub --> CH & CM & CO & MO
-  CH --> CO
-  CH --> MO
-  CM --> CO
-  CM -.->|"AdyenComponent only"| MO
-  MO --> CO
+  CHECKOUT -->|"types + NativeCheckout/AdyenDropIn singletons"| MODULES
+  CHECKOUT -->|"types"| CORE
+  COMPONENTS -->|"Checkout type"| CORE
+  COMPONENTS -->|"NativeAdyenComponentView"| SPECS
+  MODULES -->|"types"| CORE
 ```
 
-`core` imports nothing from the other three, so the vocabulary can never depend on machinery.
-`checkout` is the only folder that reaches into both `core` and `modules`.
+- **`checkout` → `core`**: `AdyenCheckout.ts` and `createCheckout.ts` import types such as
+  `Checkout`, `Configuration`, `SubmitResult`, and `BeforeSubmitResult` from `../core`.
+- **`checkout` → `modules`**: `AdyenCheckout.ts` and `createCheckout.ts` import the `NativeCheckout`
+  singleton from `../modules/context/ContextModule`, and `AdyenCheckout.ts` imports `AdyenDropIn`
+  from `../modules/dropin/AdyenDropIn`; `src/index.ts` imports `configureSDKVersion` from
+  `./modules/base/configureSDKVersion`.
+- **`components` → `core`**: `AdyenComponent.tsx` imports the `Checkout` type from `../core`.
+- **`components` → `specs`**: `AdyenComponent.tsx` imports `NativeAdyenComponentView` from
+  `../specs/NativeAdyenComponentView`.
+- **`modules` → `core`**: the wrappers import types from `../../core`.
+- **`core`** imports nothing from its sibling folders, so the vocabulary never depends on
+  machinery. **`plugin`** imports only `@expo/config-plugins` and its own helpers, so it is outside
+  the runtime graph. **`specs`** imports only React Native codegen utilities.
 
 > [!NOTE]
-> `core/types.ts` is a **publication mechanism**, not a shared types bucket: `core/index.ts` does
-> `export * from './types'` and `src/index.ts` does `export * from './core'`, so anything added
-> there becomes public API. Internal shapes belong beside their consumer — which is why
-> `EventTags`, `CheckoutRuntime` and `CheckoutHost` live in `checkout/types.ts`.
+> `AdyenComponent.tsx` also references `NativeModules.AdyenComponent` at import time
+> (`void NativeModules.AdyenComponent`). This is a dynamic React Native bridge lookup that forces
+> the native `AdyenComponent` module to be constructed before the first view mounts. It is a
+> runtime bridge access, **not** a `components` → `modules` source-folder import, and is not shown
+> as a dependency edge above.
 
-## `src/checkout/`
+> [!NOTE]
+> `core/types.ts` is a publication mechanism, not a shared internal bucket: `core/index.ts` does
+> `export * from './types'` and `src/index.ts` does `export * from './core'`, so anything added
+> there becomes public API. Internal shapes such as `CheckoutRuntime`, `CheckoutHost`, and
+> `EventHandlerRefs` live in `checkout/` instead.
+
+## Checkout runtime
+
+`AdyenCheckout` is a process-wide singleton class. Its private static `runtime` (`CheckoutRuntime`
+in `checkout/types.ts`) holds the single active checkout's state; each setup call produces a
+`Checkout` handle through `createCheckout`, which delegates lifecycle questions back to the class
+through a `CheckoutHost`.
 
 ```mermaid
 classDiagram
   class AdyenCheckout {
-    <<static>>
+    <<class, public>>
     -runtime: CheckoutRuntime
     +setup(session, config, callbacks) Promise~Checkout~
     +setupAdvanced(paymentMethods, config, callbacks) Promise~Checkout~
-    -wireEventHandlerRefs(handlers)
-    -subscribeCardHandlers()
-    -subscribeDropInHandlers()
+    -checkoutHost() CheckoutHost
+    -handleTerminalEvent(cb)
+    -clearJSState()
     -resetState(cleanupNativeContext)
   }
-
   class CheckoutRuntime {
-    <<interface>>
-    +configuration: Configuration
-    +sessionCallbacks: SessionCallbacks
-    +advancedCallbacks: AdvancedCallbacks
+    <<interface, internal>>
+    +configuration
+    +sessionCallbacks
+    +advancedCallbacks
     +subscriptions: Map~string, EmitterSubscription[]~
     +isCleanedUp: boolean
     +hasHandledTerminalEvent: boolean
-    +eventHandlerRefs: EventHandlerRefs
+    +eventHandlerRefs
   }
-
   class Checkout {
     <<interface, public>>
     +paymentMethods
@@ -75,34 +129,36 @@ classDiagram
     +submit(type)
     +invalidate()
   }
-
   class CheckoutHost {
-    <<interface>>
+    <<interface, internal>>
     +isActive() boolean
     +invalidate()
   }
 
-  AdyenCheckout *-- CheckoutRuntime
+  AdyenCheckout *-- CheckoutRuntime : holds
   AdyenCheckout ..> Checkout : creates via createCheckout()
-  Checkout --> CheckoutHost : delegates lifecycle
-  CheckoutHost <|.. AdyenCheckout : implements
+  Checkout ..> CheckoutHost : delegates lifecycle
+  CheckoutHost <.. AdyenCheckout : provides
 ```
 
-Two lifetimes worth separating:
+Two lifetimes are worth separating:
 
-| | `Checkout` | `AdyenCheckout` |
-| --- | --- | --- |
-| Scope | one per `setup()` | process-wide singleton |
-| Lifetime | until a terminal event or `invalidate()` | outlives every handle |
-| Visibility | public interface | public class, private state |
+|            | `Checkout`                               | `AdyenCheckout`             |
+| ---------- | ---------------------------------------- | --------------------------- |
+| Scope      | one per setup call                       | process-wide singleton      |
+| Lifetime   | until a terminal event or `invalidate()` | outlives every handle       |
+| Visibility | public interface                         | public class, private state |
 
-Once its owner is torn down, every handle method becomes an ignored no-op that warns, and
-`invalidate()` a silent one.
+A handle is not identity-bound: `createCheckout` guards each method with `host.isActive()`, which
+reads the process-wide `runtime.isCleanedUp`. Once the runtime is inactive, `submit()` warns and is
+ignored and the two query methods resolve `false`; `invalidate()` is a silent, idempotent no-op.
+After a re-setup the runtime is active again, so an older handle can still act on the current global
+state — see the stale-handle rules in [Architecture.md](./Architecture.md#stale-handles-are-not-identity-bound).
 
 ## Native module wrappers
 
-Two things are going on: a small **inheritance** ladder for event plumbing, and an **interface**
-that is what routing actually depends on. The interface is the important one.
+Two things coexist: a small **inheritance** ladder for event plumbing, and the **interfaces** that
+routing actually depends on.
 
 ```mermaid
 classDiagram
@@ -116,13 +172,13 @@ classDiagram
     <<interface>>
     +setup() / createSession()
     +isAvailable() / requiresUserInteraction() / submit()
+    +assign*Handler() / removeAllListeners()
   }
   class DropInModule {
     <<interface>>
     +start(checkout)
     +getReturnURL()
   }
-
   class EventListenerWrapper~T~ {
     <<abstract>>
     #nativeModule: T
@@ -131,132 +187,68 @@ classDiagram
   class ContextModuleWrapper {
     -eventEmitter: NativeEventEmitter
     -subscriptions: Map
-    +assignSubmitHandler() etc.
+    +assign*Handler()
   }
   class DropInWrapper {
     +removeStored() / provideBalance() / provideOrder()
     +update() / confirm()
   }
+
   AdvancedPayment <|-- NativeCheckoutModule
   AdvancedPayment <|-- DropInModule
   NativeCheckoutModule <|.. ContextModuleWrapper
   DropInModule <|.. DropInWrapper
-
   EventListenerWrapper <|-- DropInWrapper
-
-  note for AdvancedPayment "the shared contract for\nreturning a result to native:\naction / completion / retry."
 ```
 
-**There is deliberately no shared base *class* between Drop-in and the context flow.** They share
-the `AdvancedPayment` interface, and the only duplicated implementation is three one-line
-delegations to the native module. Their event models genuinely differ:
+- `NativeCheckout` (an instance of `ContextModuleWrapper`) implements `NativeCheckoutModule` and is
+  the one wrapper `AdyenCheckout` calls for setup, headless methods, and every context event
+  subscription. It owns its own `NativeEventEmitter` and a private `Map` of one subscription per
+  event, replaced on re-`setup()` so listeners never accumulate.
+- `AdyenDropIn` (an instance of `DropInWrapper`) implements `DropInModule` and extends
+  `EventListenerWrapper`, which only exposes `eventEmitterTarget`. Its listeners are built
+  externally by `startDropInEventListeners`.
+- `AdyenAction` (`ActionModuleWrapper`) and `AdyenCSE` (`AdyenCSEModuleWrapper`) are promise-based
+  and outside the event ladder.
 
-| | `ContextModuleWrapper` | `DropInWrapper` |
-| --- | --- | --- |
-| Emitter | owns its own `NativeEventEmitter` | none — exposes `eventEmitterTarget` |
-| Subscriptions | private map, one listener per event, replaced on re-setup | built externally by `startEventListeners` |
-| Consumer API | `assign*Handler(cb)` | subscribed via `startDropInEventListeners` |
+`AdvancedPayment` is the shared contract for returning a result to native — `action` / `completion`
+/ `retry` — implemented by both the context and Drop-in wrappers. There is deliberately no shared
+base _class_ between them, because their event models differ: `ContextModuleWrapper` owns and
+replaces its subscriptions internally, while `DropInWrapper` exposes an emitter target for
+`startEventListeners` to subscribe.
 
-A common base would have to bridge those two models, or exist purely to hold nine lines of
-delegation — which is what the former `ModuleWrapper` did, and why it was removed.
+## Listener ownership
 
-`EventListenerWrapper` now has one subclass, `DropInWrapper`. It stays because
-`startDropInEventListeners` needs an `eventEmitterTarget`, not because the hierarchy earns its
-keep.
-
-> [!NOTE]
-> `ContextModuleWrapper` — the busiest module — is outside the ladder, as are
-> `ActionModuleWrapper` and `AdyenCSEWrapper`: promise-based, no events.
-
-## No presenter attribution
-
-Drop-in, an embedded `<AdyenComponent>` and the headless `checkout.submit(type)` all drive the
-same checkout, and all emit the **same event names** — delivery is global through
-`RCTDeviceEventEmitter` on both platforms, so a per-module emitter does listener bookkeeping and
-nothing more.
-
-None of them is identified in the payload, because nothing needs to tell them apart:
-
-- **Delivery** never needed it. `AdyenComponentProps` carries only `checkout` and `type`, so there
-  are no per-view merchant callbacks — every event ends at the same handler either way.
-- **Results** do not need it either. Only one payment can be in flight, so exactly one native
-  closure is suspended and a result has one place to go.
-
-> [!NOTE]
-> This replaced a `viewId` / `source` tagging scheme. It existed because each embedded view had its
-> own listener set, competing with the context listeners for the same globally-delivered names, so
-> identity had to travel inside the payload — and then be stripped before reaching a merchant
-> callback, since the additional-details payload *is* the body posted to `/payments/details`.
-> Removing the second and third listener set removed the problem instead of routing around it.
-
-## Advanced flow round trip
-
-```mermaid
-sequenceDiagram
-  participant M as Merchant app
-  participant AC as AdyenCheckout
-  participant CW as ContextModuleWrapper
-  participant N as AdyenCheckout (native)
-  participant SDK as v6 Checkout
-
-  M->>AC: setupAdvanced(paymentMethods, config, callbacks)
-  AC->>AC: checkConfiguration + checkPaymentMethodsResponse
-  AC->>CW: assign*Handler(...)
-  AC->>N: setup() — wires the SDK closures once
-  AC-->>M: Checkout
-
-  Note over N,SDK: shopper pays, from Drop-in, a view or submit(type)
-  SDK->>N: onSubmit(data) — suspends
-  N->>CW: emit(submit, data)
-  CW->>AC: didSubmit
-  AC->>M: onSubmit(paymentData)
-  M-->>AC: SubmitResult
-  AC->>N: action / completion / retry
-  N-->>SDK: resume the suspended closure
-  SDK->>N: onComplete(result)
-  N->>AC: complete
-  AC->>M: onComplete(result)
-  AC->>AC: auto-cleanup
-```
-
-## Listener families
-
-`startEventListeners` groups events so a caller subscribes only what it owns. Only Drop-in uses it
-now; everything else is subscribed through `ContextModuleWrapper.assign*Handler`.
+`startEventListeners(component, refs, families)` (`checkout/utils/startEventListeners.ts`) groups
+events into families — `core`, `card`, `addressLookup`, `dropIn`, `applePay` — so a caller
+subscribes only what it owns.
 
 ```mermaid
 flowchart TD
-  SE["startEventListeners(component, refs, families)"]
-  AL["addressLookup<br/>update · confirm"]
-  DI["dropIn<br/>stored-payment removal · partial payments"]
+  CTX["AdyenCheckout via ContextModuleWrapper.assign*Handler"]
+  CTX --> CORE["core: submit / additionalDetails / complete / error"]
+  CTX --> CARD["card: onBinLookup / onBinValue"]
+  CTX --> AP["applePay: authorization / shipping / coupon"]
+  CTX --> SESS["session: before-submit / complete / error (session flow)"]
 
-  D["Drop-in<br/><i>startDropInEventListeners(module, refs)</i>"] --> SE
-  SE --> AL & DI
-
-  CTX["AdyenCheckout<br/><i>assign*Handler</i>"] --> CO["core · session · card BIN · Apple Pay"]
+  DROPIN["Drop-in via startDropInEventListeners"] --> AL["addressLookup: update / confirm"]
+  DROPIN --> DI["dropIn: stored-method removal / partial payments"]
 ```
 
-`core` is absent from the Drop-in entry point on purpose: those events arrive on the context
-handlers, and subscribing them in both places would invoke merchant callbacks twice. `card` left
-too — BIN is configured on the card configuration rather than per presenter, which makes it
-checkout-level, so it sits with the other configuration callbacks.
+- The context handlers own core, card (BIN), Apple Pay, and the session terminal/before-submit
+  events. `AdyenCheckout.subscribeCardHandlers()` subscribes BIN through the context wrapper because
+  BIN is configured on the card configuration, making it checkout-level rather than per presenter.
+- `startDropInEventListeners` subscribes only the `addressLookup` and `dropIn` families
+  (`DROP_IN_FAMILIES`). `core` and `card` are excluded on purpose: those events already arrive on
+  the context handlers, so subscribing them here too would invoke merchant callbacks twice.
+- The embedded `<AdyenComponent>` subscribes to **no** payment events. It renders the native view
+  and reads only `checkout` and `type` from its props; every event and result travels through the
+  checkout's own context listeners.
 
-`addressLookup` stays with Drop-in because its result path needs `update` / `confirm`, which only
-the Drop-in module exposes. Wiring it checkout-level needs those methods on the context module on
-both platforms; on iOS the callbacks are not wired at all yet.
+### Subscription bookkeeping
 
-## Subscription bookkeeping
-
-```mermaid
-flowchart LR
-  subgraph M["runtime.subscriptions"]
-    K3["'dropin' → EmitterSubscription[]"]
-  end
-
-  R["resetState()"] --> M
-  M --> JU["remove listeners"]
-```
-
-One entry, because Drop-in is the only thing with its own listener bag. Views used to have one
-each, keyed `view:<reactTag>`, and teardown had to tell the two kinds apart so it knew which also
-needed a native `unsubscribe`. Neither the keys nor that branch are needed now.
+`runtime.subscriptions` is a `Map<string, EmitterSubscription[]>` with a single entry keyed
+`DROP_IN_KEY` (`'dropin'`). `subscribeDropInHandlers()` removes the previous bag before replacing
+it, so a re-setup cannot leave two Drop-in bags listening. Teardown (`resetState`) removes every
+subscription in every bag, clears the map, and calls `NativeCheckout.removeAllListeners()` to drop
+the context listeners as well.

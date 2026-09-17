@@ -1,38 +1,37 @@
 # Native Architecture
 
-Diagrams of the iOS and Android bridges. For the TypeScript side see
-[js-architecture.md](./js-architecture.md); for prose on the lifecycle contract see
-[Architecture.md](./Architecture.md).
+The iOS and Android bridges: exact class hierarchies, shared state, callback suspension, event
+production, embedded views, headless presentation, and cleanup. For the lifecycle contract see
+[Architecture.md](./Architecture.md); for the TypeScript layer see
+[js-architecture.md](./js-architecture.md). Chronological flows live in
+[public-api-flows.md](./public-api-flows.md) and capability status in
+[FeatureSupport.md](./FeatureSupport.md).
 
 ## The shape both platforms share
 
 ```mermaid
 flowchart TB
-  JS(["JavaScript"])
+  JS(["JavaScript (NativeCheckout / AdyenComponent / AdyenDropIn / AdyenAction)"])
 
   subgraph N["Native module layer"]
-    CTX["ContextModule<br/><i>AdyenCheckout</i><br/>owns setup + CheckoutState"]
-    DIM["DropInModule<br/><i>AdyenDropIn</i>"]
-    CPM["ComponentModule<br/><i>AdyenComponent</i><br/>view bus"]
-    ACT["ActionModule<br/><i>AdyenAction</i><br/>standalone, promise-based"]
+    CTX["ContextModule<br/><i>@objc(AdyenCheckout)</i><br/>setup + shared checkout state"]
+    CPM["ComponentModule<br/><i>@objc(AdyenComponent)</i><br/>embedded-view registry"]
+    DIM["DropInModule<br/><i>@objc(AdyenDropIn)</i>"]
+    ACT["ActionModule<br/><i>@objc(AdyenAction)</i><br/>standalone, promise-based"]
   end
 
-  subgraph P["Presenters — own suspended continuations"]
-    HP["headless<br/><i>per payment method type</i>"]
-    VP["one per embedded view"]
-  end
-
-  SDK["v6 native SDK<br/>SessionCheckout / AdvancedCheckout"]
+  SDK["v6 native SDK<br/>session / advanced checkout"]
 
   JS <-->|"@ReactMethod / @objc + events"| N
-  CTX --> HP
-  CPM --> VP
-  HP & VP & DIM <-->|"closures + continuations"| SDK
+  CTX -->|writes| STATE["shared checkout state"]
+  CPM -->|reads| STATE
+  DIM -->|reads| STATE
+  N <-->|"closures + continuations"| SDK
 ```
 
-`ContextModule` is the lifecycle owner on both platforms: it performs `setup()` / `createSession()`
-and holds the static `CheckoutState`. Drop-in and embedded views read that shared state rather than
-creating their own checkout.
+`ContextModule` is the lifecycle owner on both platforms: it performs setup and holds the shared
+checkout state that presenters read. The class ladders below are intentionally different between
+the platforms.
 
 ## iOS class hierarchy
 
@@ -40,141 +39,67 @@ creating their own checkout.
 classDiagram
   class RCTEventEmitter
   class BaseModule {
-    <<abstract-ish>>
     +checkoutState$ CheckoutState?
+    +sdkVersion$ String?
     +presenterStack$ UIViewController[]
-    +completion(resultCode)
-    +retry(message)
-    +present(component)
+    +currentPresenter$ UIViewController?
     +cleanUp()
   }
   class BaseModuleSender {
-    +checkout: BaseCheckout?
     +resultSink: AdvancedResultSink
     +sendSubmitEvent() / sendCompleteEvent()
-    +setupCallbacks(on:)
   }
   class BaseActionModule {
     +action(_:)
-    +setupActionCallbacks()
   }
   class BaseAddressModule {
-    +update(results)
-    +confirm(success, address)
+    +update(results) / confirm(success, address)
   }
   class ContextModule {
     <<AdyenCheckout>>
-    +shared$ ContextModule?
     +resultSink: AdvancedResultSink
     +createSession() / setup()
-    +isAvailable() / requiresUserInteraction() / submit()
     +action() / completion() / retry()
-  }
-  class DropInModule {
-    <<AdyenDropIn>>
-    +open(paymentMethods)
   }
   class ComponentModule {
     <<AdyenComponent>>
-    +delegates: [String: ComponentProxy]
-    +register() / unregister()
+    +register() / unregister() / cleanUp()
+  }
+  class DropInModule {
+    <<AdyenDropIn>>
+    +start(paymentMethods)
   }
   class ActionModule {
     <<AdyenAction>>
-    +action(_:) Promise
+    +handle(_:) / hide(_:)
   }
 
   RCTEventEmitter <|-- BaseModule
   BaseModule <|-- ContextModule
+  BaseModule <|-- ComponentModule
   BaseModule <|-- ActionModule
   BaseModule <|-- BaseModuleSender
   BaseModuleSender <|-- BaseActionModule
   BaseActionModule <|-- BaseAddressModule
   BaseAddressModule <|-- DropInModule
-  BaseAddressModule <|-- ComponentModule
 ```
+
+Exact Swift declarations:
+
+- `internal class BaseModule: RCTEventEmitter` (`ios/Components/Base/BaseModule.swift`)
+- `internal final class ContextModule: BaseModule` — `@objc(AdyenCheckout)` (`ios/Components/ContextModule.swift`)
+- `internal final class ComponentModule: BaseModule` — `@objc(AdyenComponent)` (`ios/Components/ComponentModule.swift`)
+- `internal final class ActionModule: BaseModule` — `@objc(AdyenAction)` (`ios/CSE/ActionModule.swift`)
+- `internal class BaseModuleSender: BaseModule` (`ios/Components/Base/BaseModuleSender.swift`)
+- `internal class BaseActionModule: BaseModuleSender` (`ios/Components/Base/BaseActionModule.swift`)
+- `internal class BaseAddressModule: BaseActionModule` (`ios/Components/Base/BaseAddressModule.swift`)
+- `internal final class DropInModule: BaseAddressModule` — `@objc(AdyenDropIn)` (`ios/Components/DropIn/DropInModule.swift`)
 
 > [!IMPORTANT]
-> `ContextModule` extends `BaseModule` **directly**, not the sender ladder. It cannot inherit
-> `BaseModuleSender`, because that class declares its own continuations which would collide with
-> the ones `ContextModule` must own. That collision is why the continuations were extracted into
-> `AdvancedResultSink` and are now *composed* rather than inherited.
-
-## `AdvancedResultSink`
-
-The v6 SDK drives the advanced flow with `async` closures: `onSubmit` and `onAdditionalDetails`
-suspend until the merchant answers through JS. Each presenter needs its own pair, so a result
-resumes the presenter that opened the request.
-
-```mermaid
-classDiagram
-  class AdvancedResultSink {
-    -submitContinuation
-    -additionalDetailsContinuation
-    +isAwaitingSubmit: Bool
-    +isAwaitingAdditionalDetails: Bool
-    +isAwaitingResult: Bool
-    +awaitSubmit() async
-    +awaitAdditionalDetails() async
-    +resolveSubmit(result)
-    +resolveAdditionalDetails(result)
-    +cancelPending()
-  }
-
-  ContextModule *-- AdvancedResultSink
-  ComponentProxy *-- AdvancedResultSink
-  BaseModuleSender *-- AdvancedResultSink
-
-  note for AdvancedResultSink "composed by all three.\nresolve* no-ops when nothing is pending,\nso a late or duplicate result from JS\ncannot double-resume."
-```
-
-`cancelPending()` settles anything still suspended with the SDK's error result, so a torn-down
-flow ends terminally instead of looking like a shopper-initiated retry.
-
-## Callback ownership on iOS
-
-The advanced closures live on **one** callback store per checkout:
-
-```swift
-package final class AdvancedCheckoutCallbackStore {
-    package var onSubmit: SubmitHandler?          // one slot for the whole checkout
-    package var onAdditionalDetails: AdditionalDetailsHandler?
-}
-```
-
-`ContextModule` wires them once, at setup, and nothing re-points them.
-
-```mermaid
-sequenceDiagram
-  participant View as Fabric view
-  participant CM as ComponentModule
-  participant CP as ComponentProxy
-  participant CTX as ContextModule
-  participant SDK as AdvancedCheckout
-
-  Note over CTX,SDK: setup() — wired once, for the lifetime of the checkout
-  CTX->>SDK: onSubmit / onAdditionalDetails
-
-  View->>CM: register(viewId)
-  CM->>CP: create proxy
-  CP->>SDK: createPaymentComponent(for:)
-  Note over CP,SDK: the proxy owns a component,<br/>not any callbacks
-
-  View->>CM: unregister(viewId)
-  CM->>CP: dispose()
-```
-
-> [!NOTE]
-> The migration had three call sites writing to that single slot — `ContextModule` at setup, every
-> `ComponentProxy` on `makeViewController`, and a reattach on dispose — simulating per-component
-> ownership on an API that does not offer it. Whichever proxy mounted last owned every submit.
-> That is what `viewId` tagging, `resolveTarget` and `reattachAdvancedCallbacks` were all
-> compensating for.
-
-> [!NOTE]
-> Unsubscribing the last view does **not** tear the checkout down. Teardown belongs to a terminal
-> event or `invalidate()`. Doing it on unmount used to nil `checkoutState`, which broke a headless
-> `submit()` afterwards and left JS believing the checkout was still active.
+> `ContextModule` and `ComponentModule` extend `BaseModule` **directly**. Neither is on the
+> `BaseModuleSender` → `BaseActionModule` → `BaseAddressModule` → `DropInModule` ladder. The
+> standalone `ActionModule` also extends `BaseModule` directly. The continuations for the advanced
+> flow are composed via `AdvancedResultSink` rather than inherited from `BaseModuleSender`.
 
 ## Android class hierarchy
 
@@ -182,32 +107,25 @@ sequenceDiagram
 classDiagram
   class ReactContextBaseJavaModule
   class AppCompatModule {
-    <<abstract>>
     +appCompatActivity
   }
   class BaseModule {
-    <<abstract>>
     +checkoutState$ CheckoutState?
+    +sdkVersion$ String?
     +messageBus: MessageBus
-    +supportedEvents()
     +cleanup()
   }
   class BaseActionModule {
-    <<abstract>>
     +parseActionFromMap()
-    +coreEvents()
   }
   class BaseAddressModule {
-    <<abstract>>
-    +parseAddressOptions()
-    +parseLookupAddress()
+    +parseAddressOptions() / parseLookupAddress()
   }
   class ContextModule {
     <<AdyenCheckout>>
     +componentManagers: Map
     +createSession() / setup()
     +action() / completion() / retry()
-    -awaitingManager()
   }
   class ComponentModule {
     <<AdyenComponent>>
@@ -216,11 +134,11 @@ classDiagram
   }
   class DropInModule {
     <<AdyenDropIn>>
-    +open(paymentMethods)
+    +start(paymentMethods)
   }
   class ActionModule {
     <<AdyenAction>>
-    +action() Promise
+    +handle() / hide()
   }
 
   ReactContextBaseJavaModule <|-- AppCompatModule
@@ -233,61 +151,97 @@ classDiagram
   BaseAddressModule <|-- DropInModule
 ```
 
-> [!NOTE]
-> The two platforms differ here on purpose. On Android `ContextModule` and `ComponentModule` both
-> extend `BaseActionModule`; on iOS `ContextModule` extends `BaseModule` and `ComponentModule`
-> extends `BaseAddressModule`. Each ladder reflects what that platform's module actually needs.
+Exact Kotlin declarations:
 
-## Android messaging
+- `abstract class AppCompatModule(...) : ReactContextBaseJavaModule(reactContext)` (`component/base/AppCompatModule.kt`)
+- `abstract class BaseModule(..., val messageBus: MessageBus) : AppCompatModule(reactContext)` (`component/base/BaseModule.kt`)
+- `abstract class BaseActionModule(...) : BaseModule(reactContext, messageBus)` (`component/base/BaseActionModule.kt`)
+- `abstract class BaseAddressModule(...) : BaseActionModule(reactContext, messageBus)` (`component/base/BaseAddressModule.kt`)
+- `class ContextModule(...) : BaseActionModule(reactContext, messageBus)` (`component/ContextModule.kt`)
+- `class ComponentModule(...) : BaseActionModule(context, messageBus)` (`component/ComponentModule.kt`)
+- `class DropInModule(...) : BaseAddressModule(reactContext, messageBus)` (`component/dropin/DropInModule.kt`)
+- `class ActionModule(...) : AppCompatModule(reactContext)` (`cse/ActionModule.kt`)
+
+> [!IMPORTANT]
+> The platforms differ on purpose. On Android, `ContextModule` and `ComponentModule` **both** extend
+> `BaseActionModule`, `BaseAddressModule` extends `BaseActionModule`, and `DropInModule` extends
+> `BaseAddressModule`. The standalone `ActionModule` extends `AppCompatModule` directly, so it has
+> no `MessageBus` and does not participate in the shared checkout-state cleanup path. On iOS the
+> corresponding modules sit at different points of a different ladder (see above).
+
+## Shared state and presentation ownership
+
+Both platforms keep the active checkout in process-wide state on `BaseModule`, written by context
+setup and read by the presenters:
+
+- **iOS**: `internal static var checkoutState: CheckoutState?`. Written in `ContextModule` session
+  and advanced setup (`BaseModule.checkoutState = CheckoutState(...)`); read by
+  `isAvailable`/`requiresUserInteraction`/`submit`, `sendError`, and the embedded proxy; cleared to
+  `nil` in `BaseModule.cleanUp`.
+- **Android**: `@Volatile internal var checkoutState: CheckoutState?` in the `BaseModule` companion
+  object. Written in `ContextModule.setupSessionAsync`/`setupAdvancedAsync`; read the same way;
+  cleared to `null` in `BaseModule.cleanup`.
+
+Presentation ownership is asymmetric. Only **iOS** keeps a presenter stack on `BaseModule`:
+`internal static var presenterStack: [UIViewController]` with the computed
+`internal static var currentPresenter: UIViewController? { presenterStack.last }`. **Android has no
+presenter stack**; it routes results through a map of component managers keyed by payment-method
+type (below).
+
+## Continuation ownership and routing
+
+The v6 SDK drives the advanced flow with `async` closures (`onSubmit`, `onAdditionalDetails`) that
+suspend until the merchant answers through JS. The two platforms own that suspension differently.
+
+### iOS — one checkout-wide result sink
+
+`ContextModule` wires the SDK closures **once**, at setup, in `setupAdvancedCallbacks(on:)`; nothing
+re-points them afterward. Suspension goes through the checkout-wide `AdvancedResultSink`, which
+composes one `CallbackBridge` per callback kind:
+
+- `awaitSubmit`/`awaitAdditionalDetails` suspend on a single continuation slot;
+- `resolveSubmit`/`resolveAdditionalDetails` resume it, and a `resolve` when nothing is pending is a
+  no-op, so a late or duplicate result from JS cannot double-resume;
+- a second suspension of the same callback kind supersedes the first, resuming the earlier
+  continuation with the SDK error result before installing the new one.
+
+Embedded proxies do **not** rewire callbacks. `ComponentProxy` owns a payment component
+(`createPaymentComponent(for:)`) and nothing more; it never touches the checkout's closures. JS
+`action`/`completion`/`retry` reach `ContextModule`, which resolves the applicable pending sink.
 
 ```mermaid
-classDiagram
-  class Emitter {
-    <<interface>>
-    +sendEvent(name, JSONObject)
-    +sendEvent(name, String)
-    +sendEvent(name, JSONArray)
-  }
-  class MessageBus {
-    <<by delegation>>
-    SessionMessenger
-    AdvancedMessenger
-    PartialPaymentMessenger
-    RemoveStoredPaymentMessenger
-    CardMessenger
-    AddressLookupCallback
-  }
+sequenceDiagram
+  participant View as Fabric view
+  participant CM as ComponentModule
+  participant CP as ComponentProxy
+  participant CTX as ContextModule
+  participant SDK as AdvancedCheckout
 
-  MessageBus --> Emitter : emits through
+  Note over CTX,SDK: setup() wires onSubmit / onAdditionalDetails once
+  CTX->>SDK: setupAdvancedCallbacks(on:)
+  View->>CM: register(viewId)
+  CM->>CP: create proxy (owns a component, no callbacks)
+  CP->>SDK: createPaymentComponent(for:)
+  View->>CM: unregister(viewId)
+  CM->>CP: dispose()
 ```
 
-`MessageBus` is composition by Kotlin delegation rather than a god object: each concern is a small
-`*Messenger` interface with its own `*MessengerImpl`, and the bus simply delegates.
+### Android — per-manager continuations selected by lookup
 
-There is one bus. A `TaggedEmitter` used to wrap it to stamp a `viewId` or a `source` onto every
-payload, with an awkward asymmetry — the view factory boxed scalar payloads as `{viewId, value}`
-while the source factory passed them through, because boxing `onBinValue` and address lookup would
-have reshaped payloads JS reads directly. Nothing needs a tag now.
+Each `ComponentManager` (`component/base/ComponentManager.kt`) owns its own `CheckoutController`
+and its own `submitContinuation` / `additionalDetailsContinuation` (both via
+`suspendCancellableCoroutine`). `ContextModule` keeps a `componentManagers: MutableMap<String,
+ComponentManager>` keyed by payment-method type, and routes an incoming continuation command to the
+first manager reporting it awaits a result:
 
-## Where the platforms genuinely differ
+```kotlin
+private fun awaitingManager(): ComponentManager? =
+  componentManagers.values.firstOrNull { it.isAwaitingResult }
+```
 
-The two SDKs offer different callback shapes, so the bridge lands differently:
-
-| | Android | iOS |
-| --- | --- | --- |
-| Callback scope | constructor arguments per `CheckoutController` | one store per checkout |
-| Who holds them | each `ComponentManager` | `ContextModule`, wired once |
-| Finding the suspended one | `awaitingManager()` over the registered managers | the single `AdvancedResultSink` |
-| Concurrent submits | `AtomicBoolean canSubmit` per controller, ignores the second | one `submitTask`, a second cancels the first |
-
-The consequence worth knowing: Android's SDK would allow one in-flight submit *per payment method*,
-while iOS allows one per checkout. The bridge exposes the narrower contract on both, so behaviour
-does not diverge by platform.
-
-## Headless submit on Android
-
-`ContextModule` keeps one `ComponentManager` per payment method type and routes a JS result to
-whichever one is actually waiting — only one payment can be mid-flight.
+`action`/`completion`/`retry` take only the payload — no presenter identity — and target whatever
+`awaitingManager()` returns. `completion()` falls back to `cleanup()` when nothing is pending, which
+preserves the session-flow behavior.
 
 ```mermaid
 sequenceDiagram
@@ -297,35 +251,169 @@ sequenceDiagram
   participant SDK as AdvancedCheckout
 
   JS->>CTX: submit("scheme")
-  CTX->>CMG: get/create for type
+  CTX->>CMG: resolveController(type) get-or-create
   CMG->>SDK: submit()
-  SDK->>CMG: onSubmit(data) — suspends
-  CMG->>JS: emit(submit, data + source:"context")
-
+  SDK->>CMG: onSubmit(data) suspends submitContinuation
+  CMG->>JS: emit(onSubmit, data) via MessageBus
   JS->>CTX: action(actionMap)
-  CTX->>CTX: awaitingManager() — isAwaitingResult
-  CTX->>CMG: resume with Action
+  CTX->>CTX: awaitingManager() → first awaiting manager
+  CTX->>CMG: handleAction → resume with SubmitResult.Action
   CMG-->>SDK: resume continuation
-  SDK->>CMG: onComplete(result)
-  CMG->>JS: emit(complete)
 ```
 
-> [!NOTE]
-> `completion()` falls back to `cleanup()` **only** when nothing is pending. That fallback is what
-> the session flow relies on, so it cannot simply be replaced by resuming the continuation.
+### Concurrent-routing ambiguity
 
-## Event identity summary
+The manager map is keyed by payment-method type, and continuation commands carry no presenter
+identity, so routing can be ambiguous:
 
-| Presenter | Emits through (Android) | Emits through (iOS) |
-| --- | --- | --- |
-| Embedded view | the shared `MessageBus` | `ContextModule` |
-| Headless / context | the shared `MessageBus` | `ContextModule` |
-| Drop-in | the shared `MessageBus` | n/a while Drop-in is unsupported |
+- On **Android**, multiple managers can await simultaneously; `awaitingManager()` selects the first
+  awaiting map entry, and a same-type headless and embedded manager can replace one another in the
+  map because registration is keyed by type (`getOrPut` / `registerManager` overwrite by type).
+- On **iOS**, a second suspension of the same callback kind supersedes the first with the SDK error
+  result (see the sink behavior above). No uniqueness guarantee is inferred from comments.
 
-No identity travels in a payload on either platform. Nothing to keep in sync.
+## Suspended callback cleanup fallbacks
 
-> [!NOTE]
-> v6 has **no Drop-in yet** on either platform: Android has only `com.adyen.checkout.dropin.old`,
-> and iOS `AdyenDropIn` reports `notSupported`. When the v6 Drop-in lands it is expected to reuse
-> the same `CheckoutConfiguration` and callbacks, so it should slot in as another presenter rather
-> than a new subsystem.
+Re-setup and terminal/`invalidate()` cleanup settle every still-suspended callback with an exact
+fallback value so a cancelled flow ends terminally instead of hanging or looking like a fresh retry.
+
+| Callback                              | iOS fallback on cancel/reset                           | Android fallback on cancel/reset                                    |
+| ------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| Advanced `onSubmit`                   | `errorSubmitResult` (`SubmitResult.completion(error)`) | `SubmitResult.Retry(null)` (on manager `dispose()`)                 |
+| Advanced `onAdditionalDetails`        | `errorAdditionalDetailsResult` (completion, error)     | `AdditionalDetailsResult.Completion(ERROR)`                         |
+| Session `onBeforeSubmit`              | `beforeSubmitBridge.resolve(.abort)`                   | `SessionBeforeSubmitBridge.cancel()` → `BeforeSubmitResult.Abort()` |
+| Apple Pay authorization (iOS only)    | `.init(status: .failure, errors: nil)`                 | n/a                                                                 |
+| Apple Pay shipping-contact (iOS only) | update with current summary items                      | n/a                                                                 |
+| Apple Pay shipping-method (iOS only)  | update with current summary items                      | n/a                                                                 |
+| Apple Pay coupon-code (iOS only)      | update with current summary items                      | n/a                                                                 |
+
+On iOS these are driven from `ContextModule.cancelPendingOperations()`
+(`resultSink.cancelPending()`, `beforeSubmitBridge.resolve(.abort)`, `cancelApplePayCallbacks()`).
+On Android the advanced fallbacks come from `ComponentManager.dispose()` and the before-submit
+fallback from `SessionBeforeSubmitBridge.cancel()`.
+
+## Event production
+
+Both platforms translate native SDK callbacks into JS events, but the ownership differs.
+
+- **iOS**: modules that emit inherit event helpers. `BaseModuleSender` exposes `sendSubmitEvent` /
+  `sendCompleteEvent` / `sendProvideEvent`, and `ContextModule` emits its own events through
+  `RCTEventEmitter.sendEvent(withName:body:)`. `ComponentModule.supportedEvents()` returns `[]` — it
+  emits nothing; every event the JS side subscribes to arrives through `ContextModule`.
+- **Android**: there is **one** React Native event channel (`RCTDeviceEventEmitter`, keyed by event
+  name) but **multiple** `MessageBus` producers emitting through it. `MessageBus`
+  (`util/messaging/MessageBus.kt`) is composition by Kotlin `by` delegation over the small
+  `SessionMessenger` / `AdvancedMessenger` / `PartialPaymentMessenger` /
+  `RemoveStoredPaymentMessenger` / `CardMessenger` / `AddressLookupCallback` interfaces. A
+  package-level bus is created in `AdyenPaymentPackage` and shared by `ContextModule`,
+  `ComponentModule`, and `DropInModule`; each embedded view constructs its **own** per-view
+  `MessageBus` in `AdyenComponentViewState.renderView`. Both bus objects emit through the same
+  underlying channel.
+
+No payment event payload carries presenter identity on either platform. Submit/details/complete
+bodies contain only SDK payment data (for example Android `SubmitData` puts `paymentData` and
+`extra`; iOS `sendSubmitEvent` emits the `SubmitData` json). The `viewId` exists only as a native
+registry key.
+
+## Embedded views
+
+An embedded `<AdyenComponent>` renders a native Fabric view that reads the shared checkout state and
+builds the SDK component directly. Each view registers under its React tag so teardown can find it:
+
+- **iOS**: `ADYAdyenComponentView` derives `viewId` from `self.tag`, calls
+  `ComponentModule.register(viewId:)` to obtain a `ComponentProxy`, and on `prepareForRecycle` calls
+  `proxy.dispose()` which `unregister`s the view. `ComponentModule` keeps
+  `delegates: [String: ComponentProxy]`.
+- **Android**: `AdyenComponentViewState` registers the view in `ComponentModule` (`consumers:
+MutableMap<String, ComponentContract>` keyed by reactTag) and registers its `ComponentManager` in
+  `ContextModule`'s routing map. Unmount (`onDropViewInstance` → `dispose`) disposes the view's
+  compose child, unregisters both registrations, and disposes that view's own `ComponentManager`.
+
+Unmounting a view disposes only that view's native registration/controller; it does not tear down
+the checkout. The mounting constraint (one view per payment-method type) is enforced in TypeScript —
+see [js-architecture.md](./js-architecture.md#listener-ownership) and the presenter model in
+[Architecture.md](./Architecture.md#presenter-model).
+
+## Headless submit and presentation
+
+- **Android**: `requiresUserInteraction(type)` builds and caches a controller via
+  `resolveController(type)` (get-or-put into the manager map) and reports whether it needs UI;
+  `submit(type)` reuses or creates that controller and presents an auto-submit `CheckoutFragment`
+  as an action host, so a resulting action (redirect/3DS) has somewhere to render even with no
+  `<AdyenComponent>` mounted. The fragment is hidden terminally. A shopper closing it maps to
+  `ModuleException.Canceled()` plus `unregisterManager(type)` (which disposes the manager). Apple Pay
+  is unavailable on Android; Google Pay runs a device availability check.
+- **iOS**: `submit(type)` submits a cached payment component and presents action UI through the
+  module's presentation delegate and the `presenterStack` only when the SDK requests it. Google Pay
+  is unavailable on iOS; Apple Pay runs a PassKit availability check.
+
+Full availability and capability status is in [FeatureSupport.md](./FeatureSupport.md).
+
+## Standalone action
+
+`AdyenAction.handle(action, configuration)` runs an action-only checkout with no `AdyenCheckout`
+handle:
+
+- **iOS** (`ios/CSE/ActionModule.swift`): sets up an `ActionOnlyCheckout` with
+  `presentationDelegate: self` and calls `checkout.handle(action:)`; UI appears only if the SDK
+  requests presentation. `onAdditionalDetails` resolves the JS promise with the details json;
+  `onComplete` resolves with a result-code object; `onFailure` rejects. `hide(_:)` clears the promise
+  blocks and dismisses.
+- **Android** (`cse/ActionModule.kt`): sets up the checkout and presents a `CheckoutFragment`
+  explicitly. `onAdditionalDetails` resolves the promise with the details and otherwise the flow
+  rejects (no `onComplete` result-code resolution). `hide(success)` dismisses the fragment and
+  releases the controller/promise.
+
+On both platforms the `hide` boolean currently has no semantic effect — it is not read.
+
+## Re-setup and failed replacement
+
+Re-setup runs a native preamble that cancels in-flight work **without** tearing the context down,
+and replaces shared state only on success:
+
+- **iOS**: `setupAdvanced` (and the session path) call `cancelPendingOperations()` first — clearing
+  cached components, cancelling the result sink, the before-submit bridge, and the Apple Pay bridges
+  — but **not** `cleanUp()`, so `checkoutState` and the presenter stack are retained. A new
+  `CheckoutState` is assigned only after `Checkout.setup(...)` succeeds; if it rejects, the previous
+  `checkoutState` remains.
+- **Android**: `setupSessionAsync`/`setupAdvancedAsync` first cancel the session before-submit
+  bridge and dispose+clear the component managers, but do **not** clear the `ComponentModule`
+  consumer registry and do **not** clear `checkoutState`. The new `CheckoutState` is assigned only
+  after `Checkout.setup(...)` succeeds.
+
+Because JS re-setup runs `clearJSState()` before validation and native assignment happens only on
+success, a rejected replacement leaves observable mixed state that an old globally backed handle can
+still consult or `invalidate()`. See [Architecture.md](./Architecture.md#setup-rejection-and-failed-replacement).
+
+## Cleanup asymmetry and mounted-view survival
+
+Native context cleanup is not a React view unmount and does not reconstruct views for a replacement
+checkout:
+
+- **iOS** `ContextModule` cleanup runs `cancelPendingOperations()` then `cleanUp()`, which sets
+  `checkoutState = nil` and clears/dismisses the presenter stack. It does **not** call
+  `ComponentModule.cleanUp()` and does not dispose the registered proxies, so mounted proxies survive
+  context cleanup.
+- **Android** `ContextModule.cleanup()` cancels the session before-submit bridge, disposes the
+  registered component managers, clears the `componentManagers` map, calls
+  `ComponentModule.clearConsumers()`, then clears `checkoutState`. Clearing the consumer map does not
+  itself dispose the consumers, and the mounted `DynamicComponentView` is not disposed.
+
+A `<AdyenComponent>` left mounted across a context cleanup or re-setup therefore becomes a
+platform-specific stale view. View unmount/recycle cleanup is a separate path owned by the view
+managers (`onDropViewInstance` on Android, `prepareForRecycle` on iOS).
+
+## Drop-in
+
+Drop-in support is intentionally uneven; the authority is [FeatureSupport.md](./FeatureSupport.md).
+Architecturally:
+
+- **iOS** `DropInModule.start(_:)` and `action(_:)` emit `ModuleException.notSupported` (routed to
+  the session or advanced error name by `sendError`) rather than presenting.
+- **Android session** Drop-in emits an explicit `"Drop-in session flow not yet supported in v6
+alpha"` error, after the background task has already started.
+- **Android advanced** Drop-in is legacy-backed: it converts to `com.adyen.checkout.dropin.old`
+  types and launches through `dropin.old.DropIn.startPayment` with an `AdvancedCheckoutService`. Its
+  compatibility configuration builder forwards only environment, client key, locale, and amount. The
+  background task is finished only by the wrapper's `completion()`/`retry()`, not by the
+  cancellation/error/final-result callbacks and not by generic context cleanup.
