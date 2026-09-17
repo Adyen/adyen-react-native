@@ -1,698 +1,197 @@
 # Architecture
 
-> [!NOTE]
-> This document reflects the v6 alpha architecture. For migration details from v5, see
-> `docs/ios-bridge-migration-guide.md` and `docs/android-bridge-migration-guide.md`.
-
-For UML and flow diagrams of the same structure, see
-[js-architecture.md](./js-architecture.md) and [native-architecture.md](./native-architecture.md).
-
-## Checkout Lifecycle Contract
-
-The SDK exposes a **single active checkout** at a time, mirroring the native iOS/Android SDKs, which
-keep one checkout context in static/companion state. The rules below are enforced (or deliberately
-not enforced) by `src/AdyenCheckout.ts`:
-
-| Rule | Behaviour |
-| ---- | --------- |
-| **Setup is required** | A `Checkout` is only obtainable by awaiting `AdyenCheckout.setup()` / `setupAdvanced()`. It has no public constructor, so its methods cannot be called before the native context exists. |
-| **One active checkout** | Each setup replaces the previous checkout. There is no support for two independent checkouts (e.g. on two screens) at the same time. |
-| **Setup calls must not overlap** | `setup()` / `setupAdvanced()` are `async` and are **not** serialized or rejected by the SDK. Calling them concurrently is an integration error: the last native setup to resolve wins, and earlier listeners are already replaced. Always `await` one setup before starting another. |
-| **Re-setup clears JS state only** | On re-setup the JS side removes its listeners and resets callbacks; it does **not** call native `cleanup()`. The native side replaces its own state when it receives the new setup call. |
-| **Terminal events fire once** | The first `onComplete` / `onError` per checkout invokes the merchant callback and then triggers auto-cleanup. Later or duplicate terminal events for the same checkout are ignored. |
-| **Abandoned flows need `invalidate()`** | `checkout.invalidate()` tears the checkout down when the shopper leaves without a terminal callback (e.g. navigating away). It is idempotent, suppresses any terminal event still queued for that checkout, and is the only consumer-facing teardown API. |
-| **Teardown is once per checkout** | Native `cleanup()` runs from the terminal-event path or from `invalidate()`, whichever happens first, and is a no-op afterwards. |
-| **A stale handle is inert** | After teardown, `submit()` / `isAvailable()` / `requiresUserInteraction()` on that `Checkout` are ignored and log a warning; the latter two report `false`. `invalidate()` stays a silent no-op. |
-
-### Presenters within one checkout
-
-Drop-in, embedded `<AdyenComponent>` views and the headless `checkout.submit(type)` all drive the
-same checkout. None of them is identified in an event payload, and none needs to be: the merchant's
-callbacks are configured once per checkout, not per presenter, so every event reaches the same
-handler and every result resumes the one closure that is suspended.
-
-**Concurrent presentation is supported** — Card, Boleto and Apple Pay can all be on screen at once.
-**Concurrent interaction is not.** Only one payment may be in flight, which is the native SDKs' own
-constraint rather than one this layer adds:
-
-- iOS shares a single `CheckoutCore` across every component, holding one `pendingPaymentComponent`
-  and one `submitTask`. A second submit cancels the first.
-- Android's `FullCheckoutFlow` guards each controller with an `AtomicBoolean canSubmit` and ignores
-  a second submit with a warning.
-
-Preventing a double submit is the integrator's job: disable the pay button while a payment is in
-flight. The rule is per callback kind rather than global, so a submit being in flight does not block
-an unrelated address lookup.
-
-Because a checkout is global, a terminal event tears down **all** embedded `<AdyenComponent>` views
-attached to it, not only the view that produced the event.
-
-## Directory Structure
-
-```
-src/
-├── index.ts                              # Main entry point (barrel exports)
-├── components/                           # React components
-│   ├── index.ts
-│   ├── AdyenCheckout.ts                    # Static checkout class (setup, setupAdvanced, cleanup)
-│   ├── AdyenComponent.tsx                  # Generic embedded payment view (checkout, type props)
-│   ├── utils/                              # Component utilities
-│   │   ├── checkConfiguration.ts             # Configuration validation
-│   │   └── startEventListeners.ts            # Event listener setup for native components
-│   └── common/
-│       └── Styles.ts                         # Shared styles
-├── core/                                 # Core types, constants, and configurations
-│   ├── index.ts
-│   ├── Checkout.ts                         # Checkout interface + factory (isAvailable, requiresUserInteraction, submit)
-│   ├── types.ts                            # Payment types and component interfaces
-│   ├── constants.ts                        # Event enums, error codes, result codes
-│   └── configurations/                     # Configuration interfaces
-│       ├── index.ts
-│       ├── Configuration.ts
-│       ├── AddressLookup.ts
-│       ├── ApplePayConfiguration.ts
-│       ├── CardsConfiguration.ts
-│       ├── DropInConfiguration.ts
-│       ├── GooglePayConfiguration.ts
-│       ├── PartialPaymentConfiguration.ts
-│       └── ThreeDSConfiguration.ts
-├── plugin/                               # Expo config plugins
-│   ├── withAdyen.ts                        # Main plugin entry
-│   ├── withAdyenIos.ts                     # iOS-specific configuration
-│   ├── withAdyenAndroid.ts                 # Android-specific configuration
-│   └── ...                                 # Platform setup utilities
-├── specs/                                # Fabric codegen specs
-│   └── NativeAdyenComponentView.ts          # Generic component view spec (type, configuration, onLayoutChange)
-└── modules/                              # Native module wrappers
-    ├── index.ts
-    ├── base/                               # Base wrapper classes
-    │   ├── EventListenerWrapper.ts           # Abstract base for event handling
-    │   ├── AddressLookupModule.ts            # Base with address lookup + action/completion/retry
-    │   ├── ModuleMock.ts                     # Mock for unavailable modules
-    │   ├── constants.ts                      # Module-specific constants
-    │   └── utils.ts                          # Utility functions
-    ├── action/                             # Standalone action handler
-    │   ├── AdyenAction.ts
-    │   └── ActionModuleWrapper.ts
-    ├── context/                            # Checkout context lifecycle (session + advanced setup)
-    │   ├── ContextModule.ts                  # AdyenCheckout module interface
-    │   ├── ContextModuleWrapper.ts           # Wrapper: createSession, setup, isAvailable, requiresUserInteraction, submit
-    │   └── types.ts
-    ├── cse/                                # Client-side encryption
-    │   ├── types.ts
-    │   ├── AdyenCSEModule.ts
-    │   └── AdyenCSEModuleWrapper.ts
-    └── dropin/                             # Drop-in module
-        ├── AdyenDropIn.ts                    # DropInModule interface: start(checkout), getReturnURL
-        └── DropInWrapper.ts                  # Wrapper: start calls nativeModule.open(paymentMethods)
-```
-
-## Class Hierarchy
-
-### TypeScript Module Wrappers
-
-```
-EventListenerWrapper<T>                                      # Abstract - holds the native module
-    │                                                          - exposes eventEmitterTarget
-    ▼
-AddressLookupModule<T>                                       # Abstract - adds action(), completion(), retry()
-    │                                                          - update(), confirm()
-    │
-    └──► DropInWrapper                                       # implements DropInModule
-            + start(checkout) → open(checkout.paymentMethods)
-            + getReturnURL()
-            + removeStored()                       (TODO: not yet supported)
-            + provideBalance/Order/PaymentMethods  (TODO: not yet supported)
-```
-
-### Embedded Component Wrappers
-
-None. An embedded `<AdyenComponent>` has no JS-facing module of its own: it renders a native view
-and nothing else. Events and results travel through `ContextModuleWrapper` like every other
-checkout event, because the merchant's callbacks are per checkout rather than per view.
-
-The native side keeps a registry of mounted views, but only so teardown can dispose the component
-each one built — see [Embedded Views](#embedded-views-fabric-native-components).
-
-### Standalone Wrappers (outside hierarchy)
-
-These don't inherit from `EventListenerWrapper` as they don't need event subscription management:
-
-```
-ContextModuleWrapper                                         # implements NativeCheckoutModule
-    - createSession(session, config) → Promise<SessionContext>
-    - setup(paymentMethods, config) → Promise<void>
-    - isAvailable(type) → Promise<boolean>
-    - requiresUserInteraction(type) → Promise<boolean>
-    - submit(type)
-    - action(action), completion(resultCode), retry(message?)
-    - cleanup()
-    - assign*Handler() methods for event subscriptions
-    - removeAllListeners()
-
-ActionModuleWrapper                                          # implements ActionModule
-    - action(action, config) → Promise<PaymentDetailsData>
-    - completion(resultCode)
-    - retry(message?)
-    - threeDS2SdkVersion
-
-AdyenCSEModuleWrapper                                        # implements AdyenCSEModule
-    - encryptCard(card, publicKey)
-    - encryptBin(bin, publicKey)
-```
-
-## Result Types
-
-### Core Types (`core/types.ts`)
-
-```
-SubmitResult                      # Union type returned from onSubmit
-    { type: 'action', action }
-    { type: 'completed', resultCode }
-    { type: 'retry', message? }
-
-AdditionalDetailsResult           # Returned from onAdditionalDetails
-    { resultCode: string }
-
-BeforeSubmitResult                # Union type returned from onBeforeSubmit
-    { type: 'proceed', data, sessionData? }
-    { type: 'abort' }
-```
-
-**Public module interfaces:**
-
-- `DropInModule` — action, completion, retry methods + partial payment methods
-- `NativeCheckoutModule` — lifecycle: createSession, setup, isAvailable, requiresUserInteraction, submit, cleanup
-- `ActionModule`, `AdyenCSEModule` — standalone
-
-### Configuration Hierarchy
-
-```
-BaseConfiguration
-    │   environment, clientKey, countryCode, locale?
-    │
-    └──► EnvironmentConfiguration
-            │   + amount
-            │
-            └──► Configuration
-                    + analytics?
-                    + dropin?
-                    + card?
-                    + applepay?
-                    + googlepay?
-                    + threeDS2?
-                    + partialPayment?
-```
-
-## Native Class Hierarchies
-
-### iOS Class Structure
-
-```
-RCTEventEmitter (React Native)
-    │
-    ▼
-BaseModule                                           # Base class for all iOS modules
-    │   - checkoutState: CheckoutState? (static) — owns checkout lifecycle
-    │   - sdkVersion: String? (static, lock-guarded)
-    │   - presenterStack: [UIViewController] (static)
-    │   - currentPresenter: UIViewController? (static, computed — presenterStack.last)
-    │   - topPresenterProvider (static, overridable in tests)
-    │   - completion(_ resultCode:) — dismisses; subclasses resume continuations
-    │   - retry(_ message:) — no-op; subclasses resume continuations
-    │   - present(component)
-    │   - cleanUp()
-    │   - sendError(error)
-    │
-    ├──► ActionModule                                # Standalone action handler (Promise-based)
-    │       - action(_ dictionary:) → Promise
-    │       - completion(_ resultCode:)
-    │       - retry(_ message:)
-    │       - Uses ActionOnlyCheckout via Checkout.setup(configuration:)
-    │
-    └──► BaseModuleSender                            # Adds event sending helpers + v6 callback wiring
-            │   - checkout: BaseCheckout?
-            │   - submitContinuation: CheckedContinuation<SubmitResult>
-            │   - additionalDetailsContinuation: CheckedContinuation<AdditionalDetailsResult>
-            │   - supportedEvents() → [String]
-            │   - sendSubmitEvent(data), sendCompleteEvent(), sendProvideEvent(actionData)
-            │   - action(), completion(), retry() — resume continuations from JS
-            │
-            └──► BaseAddressModule                   # Adds address lookup support
-                    │   - update(results)
-                    │   - confirm(success, address)
-                    │
-                    ├──► ContextModule               # Unified lifecycle + headless APIs
-                    │       (@objc(AdyenCheckout))
-                    │       - createSession(session, config) — session flow setup
-                    │       - setup(paymentMethods, config) — advanced flow setup
-                    │       - isAvailable(type), requiresUserInteraction(type), submit(type)
-                    │       - cleanup()
-                    │       - Apple Pay callback bridging (via extension)
-                    │       - Caches CheckoutPaymentComponent per type
-                    │
-                    ├──► DropInModule                # Drop-in component
-                    │       - open(paymentMethods) — uses BaseModule.checkoutState
-                    │       - action(action), completion(resultCode), retry(message)
-                    │       - removeStored(success) (TODO: not yet supported)
-                    │       - getReturnURL()
-                    │
-                    └──► ComponentModule             # Embedded component bus (singleton)
-                            (@objc(AdyenComponent))
-                            - delegates: [String: ComponentProxy]
-                            - subscribe/unsubscribe (JS lifecycle)
-                            - register/unregister (native view lifecycle)
-                            - action/completion/retry/update/confirm (JS → native routing)
-```
-
-### Android Class Structure
-
-```
-ReactContextBaseJavaModule (React Native)
-    │
-    ▼
-AppCompatModule                                      # Provides AppCompatActivity access
-    │   - appCompatActivity: AppCompatActivity
-    │
-    ├──► ActionModule                                # Standalone action handler (Promise-based)
-    │       - action(action, config) → Promise
-    │       - completion(resultCode), retry(message)
-    │       - Uses ActionOnlyCheckoutCallbacks
-    │
-    ▼
-BaseModule                                           # Base class for payment modules
-    │   - checkoutState: CheckoutState? (companion, @Volatile) — owns checkout lifecycle
-    │   - sdkVersion: String? (companion, @Volatile)
-    │   - configureAnalytics() (companion)
-    │   - messageBus: MessageBus
-    │   - supportedEvents(): List<String> (abstract)
-    │   - getConstants() → ["supportedEvents": ...]
-    │   - cleanup() (open — subclasses extend teardown)
-    │   - sendError(exception)
-    │
-    └──► BaseActionModule                            # Adds parseActionFromMap() + mainEvents()
-            │
-            └──► BaseAddressModule                   # Adds parseAddressOptions/parseLookupAddress()
-                    │
-                    ├──► ContextModule               # Unified lifecycle + headless APIs
-                    │       ("AdyenCheckout")
-                    │       - createSession(session, config) — session flow setup
-                    │       - setup(paymentMethods, config) — advanced flow setup
-                    │       - isAvailable(type), requiresUserInteraction(type), submit(type)
-                    │       - cleanup() — disposes all cached ComponentManagers
-                    │       - controllers: Map<type, ComponentManager>
-                    │
-                    ├──► DropInModule                # Drop-in component
-                    │       - open(paymentMethods) — uses BaseModule.checkoutState
-                    │       - action(action), completion(resultCode), retry(message)
-                    │       - removeStored(success) (TODO: not yet supported)
-                    │       - getReturnURL()
-                    │       - Uses DropInLauncher + AdvancedCheckoutService
-                    │
-                    └──► ComponentModule             # Embedded component bus
-                            ("AdyenComponent")
-                            - consumers: Map<String, ComponentContract> (companion, keyed by reactTag)
-                            - subscribe/unsubscribe (JS lifecycle)
-                            - register/unregister (native view lifecycle)
-                            - action/completion/retry/update/confirm (JS → native routing)
-```
-
-### Embedded Views (Fabric Native Components)
-
-Embedded views are rendered inline within the React tree using Fabric codegen. Unlike modal-based modules (Drop-in), they don't use `open()`/`hide()` — props drive initialization, and the view builds its payment component directly against the shared checkout.
-
-#### Architecture Overview
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  JS Layer                                                                │
-│                                                                          │
-│  AdyenComponent.tsx                                                      │
-│    └── <NativeAdyenComponentView type={...} configuration={...} />       │
-│                                                                          │
-│  No subscription, no proxy. Events and results travel through            │
-│  AdyenCheckout's own context listeners, because the merchant's           │
-│  callbacks are per checkout rather than per view.                        │
-└──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  Native Layer (per-platform)                                             │
-│                                                                          │
-│  ViewManager creates view → props set → renderComponentIfNeeded()        │
-│    ├── Reads the shared checkout from BaseModule.checkoutState           │
-│    ├── Creates the SDK component (via CheckoutController / Compose)      │
-│    └── Registers with ComponentModule under its reactTag                 │
-│                                                                          │
-│  ComponentModule — registry only, native-facing                          │
-│    ├── register(viewId) / unregister(viewId)                             │
-│    └── cleanUp() — disposes every mounted view's component               │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
-The registry earns its place at teardown. `cleanup()` has to dispose the component each mounted
-view built, and JS cannot do it: the merchant owns the JSX and can keep a view mounted across a
-checkout being replaced.
-
-#### Multi-Instance Support
-
-Only one `<AdyenComponent>` per payment method `type` may be mounted at a time, enforced by the
-`activeComponentTypes` set in `AdyenComponent.tsx`. Several views of *different* types can be
-mounted together — the constraint is on concurrent *interaction*, not presentation.
-
-Each view registers natively under its **reactTag**:
-
-- **Android**: `view.id.toString()` → `register(key, this)`
-- **iOS**: `self.tag` → `viewId` → `register(viewId:)`
-
-That key is only ever used natively, to find a view again at teardown. It is not put into event
-payloads and JS never sees it.
-
-#### Android Embedded View Classes
-
-```
-SimpleViewManager<DynamicComponentView> (React Native)
-    │
-    └──► AdyenComponentViewManager                   # Generic Fabric ViewManager ("AdyenComponentView")
-            - viewStates: Map<View, AdyenComponentViewState> (per-view state)
-            - createViewInstance() → DynamicComponentView
-            - onAfterUpdateTransaction() → state.renderView()
-            - onDropViewInstance() → state.dispose()
-            - setType/setConfiguration (prop setters)
-
-AdyenComponentViewState                              # Per-view state holder
-    implements LayoutListener, ComponentContract
-    - type, configuration (props from JS)
-    - viewId (reactTag)
-    - componentManager: ComponentManager             # Unified manager for all payment methods
-    - renderView(view) — creates ComposeView + CheckoutPaymentFlow; registers the view for
-      teardown and its manager in ContextModule's routing table
-    - dispose(view) — unregisters both, clears state
-    - onAction/onFinalResult — delegates to componentManager
-
-ComponentManager                                     # Unified manager for all embedded components (in component/base/)
-    - createController(checkoutContext, type) → CheckoutController
-    - handleAction(action)
-    - finish() / dispose()
-    - Uses CheckoutPaymentFlow composable in ComposeView
-
-DynamicComponentView : FrameLayout                   # Auto-resizing container
-    - isViewSet: Boolean
-    - layoutListener: LayoutListener
-    - setView(view) — adds child, starts polling resize
-    - onDispose() — stops polling, clears children
-
-ComponentContract                                    # Interface for module → view communication
-    - onAction(action)
-    - onFinalResult(success, message)
-```
-
-#### iOS Embedded View Classes
-
-```
-RCTViewComponentView (Fabric)
-    │
-    └──► ADYAdyenComponentView                       # Generic Fabric component view
-            - updateProps() → sets viewId, type, forwards to proxy
-            - prepareForRecycle() → proxy.dispose()
-            - AdyenComponentViewProxyDelegate (layout changes → eventEmitter)
-
-AdyenComponentViewProxy : UIStackView                # Component lifecycle manager
-    - type, configuration (parsed NSDictionary)
-    - viewId (reactTag from parent ADYAdyenComponentView)
-    - isViewSet: Bool
-    - renderComponentIfNeeded() — creates component, registers with bus
-    - createComponent() → CheckoutPaymentComponent via checkout.createPaymentComponent(for:)
-    - embedComponentView() — VC containment + scroll disable
-    - dispose() — unregisters, tears down VC hierarchy
-    - reportContentHeight() → delegate.onLayoutChange
-
-ComponentModule : BaseModule                         # Registry (shared instance)
-    (@objc(AdyenComponent))
-    - delegates: [String: ComponentProxy]
-    - register(viewId:) → ComponentProxy
-    - unregister(viewId:)
-    - cleanUp() — disposes every registered proxy
-    - supportedEvents() == [] — emits nothing; JS subscribes to ContextModule
-
-ComponentProxy                                       # Per-view component owner (@MainActor)
-    - viewId: String (reactTag)
-    - paymentComponent: CheckoutPaymentComponent?
-    - makeViewController(type:configuration:)
-    - sendError(error:) — through ContextModule, the emitter JS listens to
-    - dispose()
-```
-
-`ComponentProxy` deliberately does not touch the checkout's closures. v6 keeps one callback store
-per checkout, so a proxy wiring its own would overwrite whichever proxy wired before it — which is
-exactly what the migration did, and what `ContextModule` wiring them once replaced.
-
-#### No event tagging
-
-Events carry no presenter identity. They used to: both platforms injected the view's reactTag as a
-`viewId` field, and JS filtered on it, because each embedded view had its own listener set competing
-with the context listeners for the same globally-delivered event names.
-
-That is gone. There is one listener set and one suspended closure per callback kind, so there is
-nothing to demux. The `viewId` survives only as a key in the native registry that teardown walks.
-
-### Event Emission: iOS BaseModuleSender vs Android MessageBus
-
-Both platforms use a centralized event emission layer that translates native SDK callbacks to JS events:
-
-| Aspect               | iOS (`BaseModuleSender`)                                                       | Android (`MessageBus`)                                         |
-| -------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| **Role**             | Base class with event helper methods                                           | Aggregator implementing messenger protocols                    |
-| **Inheritance**      | Modules extend `BaseModuleSender`                                              | Modules hold `MessageBus` instance                             |
-| **Event helpers**    | `sendSubmitEvent()`, `sendCompleteEvent()`, `sendProvideEvent()`               | `onSubmit()`, `onFinished()`, `onAdditionalDetails()`          |
-| **Delegate support** | `PaymentComponentDelegate`, `ActionComponentDelegate`, `CardComponentDelegate` | `SessionMessenger`, `AdvancedMessenger`, `CardMessenger`, etc. |
-| **Emission target**  | `sendEvent(withName:body:)` via `RCTEventEmitter`                              | `RCTDeviceEventEmitter.emit()` via `Emitter` interface         |
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                           Native SDK Callback                                       │
-└─────────────────────────────────────────────────────────────────────────────────────┘
-                                        │
-              ┌─────────────────────────┴─────────────────────────┐
-              ▼                                                   ▼
-┌───────────────────────────────┐               ┌───────────────────────────────┐
-│  iOS: BaseModuleSender        │               │  Android: MessageBus          │
-│  - sendSubmitEvent(data)      │               │  - onSubmit(state, returnUrl) │
-│  - sendCompleteEvent()        │               │  - onFinished()               │
-│  - sendProvideEvent(action)   │               │  - onAdditionalDetails(data)  │
-└───────────────────────────────┘               └───────────────────────────────┘
-              │                                                   │
-              ▼                                                   ▼
-┌───────────────────────────────┐               ┌───────────────────────────────┐
-│  RCTEventEmitter              │               │  Emitter → MessageBusEmitter  │
-│  sendEvent(withName:body:)    │               │  → RCTDeviceEventEmitter      │
-└───────────────────────────────┘               └───────────────────────────────┘
-              │                                                   │
-              └─────────────────────────┬─────────────────────────┘
-                                        ▼
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                           JavaScript Event Handler                                  │
-└─────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Common Native Module Patterns
-
-### Lifecycle Pattern
-
-Both platforms follow a consistent lifecycle for payment components:
-
-1. **Context Setup** - `ContextModule.createSession()` or `ContextModule.setup()` stores checkout state in the static/companion property
-2. **Open/Start** - Module uses `BaseModule.checkoutState` to create and present components
-3. **Events** - Native SDK callbacks are translated to JS events via emitter (or via closure-based callbacks on iOS)
-4. **Complete/Retry** - Resume suspended continuations, cleanup resources, dismiss UI
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
-│   Setup     │────►│  Open/Start │────►│   Events    │────►│ Complete/Retry   │
-│ (required)  │     │             │     │             │     │                  │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────────┘
-      │                   │                   │                       │
-      ▼                   ▼                   ▼                       ▼
- Store checkout     Uses checkoutState   Emit to JS             Resume continuation
- state in static    Present UI           via emitter            Dismiss UI
-```
-
-### Static State Management
-
-Both platforms use static/companion properties for cross-module coordination:
-
-| Property           | iOS                        | Android                       | Purpose                                          |
-| ------------------ | -------------------------- | ----------------------------- | ------------------------------------------------ |
-| `checkoutState`    | `static var`               | `companion object` `@Volatile` | Shared checkout state (context + `isSession`)    |
-| `sdkVersion`       | `static var` (lock-guarded) | `companion object` `@Volatile` | Cross-platform analytics version                 |
-| `presenterStack`   | `static var`               | N/A                            | iOS presented view controller chain              |
-| `currentPresenter` | computed (`presenterStack.last`) | N/A                      | iOS presenter view controller                    |
+System overview and checkout lifecycle contract for the `@adyen/react-native` v6-alpha bridge.
+This document owns the lifecycle and the cross-cutting model. Detailed layer diagrams live in the
+two companion documents, and the other concerns are delegated to their canonical authorities:
+
+| Concern                                     | Canonical document                                 |
+| ------------------------------------------- | -------------------------------------------------- |
+| TypeScript topology, dependencies, runtime  | [js-architecture.md](./js-architecture.md)         |
+| iOS/Android class hierarchies and internals | [native-architecture.md](./native-architecture.md) |
+| Chronological session/advanced/etc. flows   | [public-api-flows.md](./public-api-flows.md)       |
+| Platform/flow capability status             | [FeatureSupport.md](./FeatureSupport.md)           |
+| Consumer migration steps                    | [MigrationGuide.md](./MigrationGuide.md)           |
 
 > [!NOTE]
-> The v5 `currentModule` delegation property was removed. `action` / `completion` / `retry` route
-> from TypeScript to `AdyenCheckout`, which resumes whichever closure is suspended — no id, because
-> only one can be.
+> This document describes current behavior in source. Where current behavior differs from earlier
+> intent, the current behavior is documented and its limitations are labeled. Historical proposals
+> and bridge guides are in [archive/](./archive/README.md) and are not evidence of current
+> behavior.
 
-### Error Routing Pattern
+## Public surface
 
-Errors are routed differently based on integration type:
+The public API is defined by `src/index.ts`, the per-layer barrels it re-exports, and the
+committed report `etc/api/adyen-react-native.api.md`. The runtime entry points are:
 
-```
-                    ┌─────────────────┐
-                    │  Error occurs   │
-                    └────────┬────────┘
-                             │
-                    ┌────────▼────────┐
-                    │ checkoutState    │
-                    │ isSession?      │
-                    └────────┬────────┘
-                             │
-              ┌──────────────┴──────────────┐
-              │ YES                         │ NO
-              ▼                             ▼
-    ┌─────────────────┐           ┌─────────────────┐
-    │ Session Error   │           │ Advanced Error  │
-    │ (onFailure)     │           │ (onFailure)     │
-    └─────────────────┘           └─────────────────┘
-```
+- **`AdyenCheckout`** — a class with only the static `setup()` and `setupAdvanced()` methods. It
+  has no public constructor and holds the single active checkout as process-wide state.
+- **`Checkout`** — the interface returned by an awaited setup call. It exposes `isAvailable`,
+  `requiresUserInteraction`, `submit`, and `invalidate`, and carries `paymentMethods` and
+  `configuration`.
+- **`AdyenComponent`** — the embedded React view (`AdyenComponentProps` = `{ checkout, type }`).
+- **`AdyenDropIn`**, **`AdyenAction`**, **`AdyenCSE`** — module singletons for Drop-in, standalone
+  action handling, and client-side encryption.
 
-### Completion/Retry Pattern
+Internal machinery — the `createCheckout` factory, `CheckoutRuntime`/`CheckoutHost`, the native
+module wrappers, `startEventListeners`, the Expo `plugin`, and the Fabric `specs` contract — is not
+part of the package-root public API. See [js-architecture.md](./js-architecture.md) for the exact
+boundary.
 
-Each module resolves its **own** pending work — there is no cross-module delegation. Which module
-receives a JS result depends on how the payment was started (context/headless, Drop-in, or an
-embedded view).
+## Checkout lifecycle contract
 
-#### Continuation-based flows (headless / embedded)
+A `Checkout` is obtainable only by awaiting `AdyenCheckout.setup()` (session flow) or
+`AdyenCheckout.setupAdvanced()` (advanced flow). Both are `static async` methods on `AdyenCheckout`
+(`src/checkout/AdyenCheckout.ts`). Each returns a handle produced by the internal `createCheckout`
+factory (`src/checkout/createCheckout.ts`).
 
-`ContextModule` (iOS) and `ComponentManager` (Android) suspend the SDK's `onSubmit` /
-`onAdditionalDetails` closures on a continuation and resume it with the result forwarded from JS.
-When no continuation is pending, the call is a no-op.
+### Setup order
 
-| JS call                  | iOS `ContextModule` resumes with          | Android `ComponentManager` resumes with               |
-| ------------------------ | ----------------------------------------- | ----------------------------------------------------- |
-| `action(action)`         | `.action(action)`                         | `SubmitResult.Action(action)`                         |
-| `completion(resultCode)` | `.completion(resultCode:)` — submit *or* additional-details continuation | `SubmitResult.Completion` *or* `AdditionalDetailsResult.Completion` |
-| `retry(message)`         | `.retry(errorMessage:)`                   | `SubmitResult.Retry(message)`                         |
+For a clean initial runtime, both entry points follow the same order:
 
-On teardown (`cleanup()` / re-`setup` on iOS, `dispose()` on Android) any still-suspended
-continuation is settled with the SDK's error result code — iOS uses the shared
-`errorSubmitResult` / `errorAdditionalDetailsResult` constants — so a cancelled flow ends
-terminally instead of looking like a shopper-initiated retry.
+1. **Validate input.** `setup()` calls `checkConfiguration(configuration)`. `setupAdvanced()` calls
+   `checkConfiguration(configuration)` then `checkPaymentMethodsResponse(paymentMethods)` — the
+   advanced flow is the only path that receives payment methods from the merchant.
+2. **Wire process-wide JS runtime state.** The private static `AdyenCheckout.runtime` records the
+   configuration and the session or advanced callbacks, sets `isCleanedUp = false` and
+   `hasHandledTerminalEvent = false`, points the event-handler refs at the active callbacks, and
+   registers the native event listeners (`NativeCheckout.removeAllListeners()` followed by the
+   terminal, card, Drop-in, before-submit/submit/additional-details, and Apple Pay subscriptions
+   appropriate to the flow).
+3. **Invoke native setup.** `setup()` awaits `NativeCheckout.createSession(...)`; `setupAdvanced()`
+   awaits `NativeCheckout.setup(paymentMethods, configuration)`.
+4. **Create and return the handle.** `createCheckout(paymentMethods, configuration, host)` returns
+   the per-call `Checkout` last.
 
-A mounted embedded view does not participate. On iOS v6 keeps one callback store per checkout, so
-`ContextModule` wires the closures once and nothing re-points them. On Android callbacks are
-constructor arguments per `CheckoutController`, so a view's `ComponentManager` joins
-`ContextModule`'s routing table and `awaitingManager()` finds it — the same lookup that matches a
-headless result to its suspended closure.
-
-Android's `ContextModule.completion()` falls back to tearing the checkout down when nothing is
-suspended, which preserves session-flow behaviour.
-
-#### Drop-in flow (Android)
-
-Advanced Drop-in results are forwarded to the Drop-in service rather than a continuation:
-
-| JS call                  | Result sent to the service              |
-| ------------------------ | --------------------------------------- |
-| `action(action)`         | `DropInServiceResult.Action(action)`    |
-| `completion(resultCode)` | `DropInServiceResult.Finished(resultCode)` |
-| `retry(message)`         | `DropInServiceResult.Error(null, message, true)` |
-
-> [!NOTE]
-> Session-flow Drop-in is not supported in the v6 alpha; `start()` reports a `notSupported` error.
-
-### Event Emission Differences
-
-| Aspect            | iOS                             | Android                           |
-| ----------------- | ------------------------------- | --------------------------------- |
-| Base class        | `RCTEventEmitter`               | `ReactContextBaseJavaModule`      |
-| Emit method       | `sendEvent(withName:body:)`     | `RCTDeviceEventEmitter.emit()`    |
-| Event declaration | `supportedEvents() -> [String]` | `supportedEvents(): List<String>` |
-| Constants export  | `constantsToExport()`           | `getConstants()`                  |
-
-### Callback Pattern
-
-Both platforms translate native SDK callbacks to JS events. The JS-facing API uses `action()`/`completion()`/`retry()`:
-
-**iOS** — Closure callbacks (v5 delegate protocols removed):
-
-```swift
-// BaseModuleSender+Callbacks.swift
-checkout.onSubmit { [weak self] data in
-    await self?.awaitSubmitResult(for: data) ?? errorSubmitResult
-}
-// awaitSubmitResult sends the event to JS and suspends on a CheckedContinuation
-// until JS calls action(), completion(), or retry()
+```mermaid
+flowchart TD
+  A["setup() / setupAdvanced()"] --> B{"runtime.isCleanedUp?"}
+  B -->|"no (re-setup)"| C["clearJSState()"]
+  B -->|yes| D
+  C --> D["validate input"]
+  D --> E["wire process-wide JS runtime + listeners"]
+  E --> F["await native createSession() / setup()"]
+  F --> G["createCheckout() → return Checkout"]
 ```
 
-**Android** — MessageBus delegation:
+The exact chronological ordering, including the native continuation hops, is in
+[public-api-flows.md](./public-api-flows.md).
 
-The SDK callback is forwarded to `MessageBus`, which serializes the payload and emits it through
-`Emitter` to JS. The advanced flow suspends on `suspendCancellableCoroutine` in `ComponentManager`
-until JS calls `action()`, `completion()`, or `retry()`.
+### Re-setup clears JS state without native cleanup
 
-```kotlin
-// AdvancedMessengerImpl — serializes and emits the submit event
-override fun onSubmit(data: PaymentComponentData<*>) {
-  val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
-  val submitData = SubmitData(jsonObject, null)
-  // → emitter.sendEvent(...)
-}
-```
+When a setup call runs while a checkout is still active (`runtime.isCleanedUp === false`), the very
+first step is `AdyenCheckout.clearJSState()`, which runs before input validation. `clearJSState()`
+delegates to `resetState(false)`: it removes the tracked subscription bags, calls
+`NativeCheckout.removeAllListeners()`, clears the configuration and callbacks, and re-marks the
+runtime as cleaned up — but it deliberately does **not** call the native context cleanup
+(`NativeCheckout.cleanup()`). The native side replaces its own state when the new setup call
+reaches it.
 
-## Event System
+On the native side, each platform runs a setup preamble that cancels in-flight work without
+tearing the context down, and the shared native checkout state is replaced only if native setup
+succeeds. See [native-architecture.md](./native-architecture.md#re-setup-and-failed-replacement)
+for the platform-specific preambles and the resulting stale-state behavior.
 
-Events flow through two paths depending on the module:
+### Stale handles are not identity-bound
 
-1. **ContextModule** — Uses `ContextModuleWrapper` with `NativeEventEmitter` and per-event subscription via `assign*Handler()` methods. Re-`setup()` calls replace previous listeners so handlers never accumulate.
-2. **ComponentModule / DropInModule** — Supported events are exposed via `getConstants()` and read by the JS wrapper at construction:
+A `Checkout` handle carries no identity of its own. Every method consults the process-wide host
+(`AdyenCheckout.runtime` via `CheckoutHost.isActive()`), so a handle from a previous setup and a
+handle from the current setup both read the same global runtime. Consequences:
 
-```typescript
-// EventListenerWrapper constructor reads from native module
-constructor(nativeModule: T) {
-  this.nativeModule = nativeModule;
-  const constants = nativeModule.getConstants?.();
-  this.supportedEvents = constants?.supportedEvents ?? [];
-}
-```
+- After a terminal callback or `invalidate()` has made the runtime inactive, an old handle's
+  `submit()` is ignored with a warning, and `isAvailable()`/`requiresUserInteraction()` resolve
+  `false`; `invalidate()` stays a silent no-op.
+- After a re-setup, the runtime is active again, so an old handle can still act on or invalidate the
+  current global state. Handles are not independently invalidated per setup.
 
-### Native Module Event Declaration
+### Terminal callbacks and `invalidate()`
 
-**iOS** - Override `constantsToExport()` in `BaseModule.swift`:
+- The first terminal event runs the merchant callback exactly once.
+  `AdyenCheckout.handleTerminalEvent()` guards on `runtime.hasHandledTerminalEvent`, sets the flag,
+  runs the callback, and then performs cleanup in a `finally` path — so cleanup runs even if the
+  merchant callback throws, and duplicate terminal events are ignored.
+- `checkout.invalidate()` delegates to `AdyenCheckout.cleanup()` for abandoned flows that will not
+  reach a terminal callback. `cleanup()` returns early when already cleaned up, so invalidation is
+  idempotent.
+- Both paths converge on `resetState(true)`, which removes JS subscriptions and listeners, clears
+  callback/configuration state, marks the runtime inactive, and — unlike re-setup — calls
+  `NativeCheckout.cleanup()` to tear down the native context.
 
-```swift
-@objc override func constantsToExport() -> [AnyHashable: Any]! {
-  ["supportedEvents": supportedEvents() ?? []]
-}
-```
+### Setup rejection and failed replacement
 
-**Android** - Override `getConstants()` in `BaseModule.kt`:
+`setup()`/`setupAdvanced()` distinguish two rejection points, and during an active re-setup both
+leave observable mixed state because `clearJSState()` has already run:
 
-```kotlin
-override fun getConstants(): MutableMap<String, Any> =
-  mutableMapOf("supportedEvents" to supportedEvents())
-```
+- **Validation rejection** (`checkConfiguration` / `checkPaymentMethodsResponse` throws): occurs
+  after JS state is cleared but before native setup. JS listeners are gone and existing handles are
+  deactivated; no native cleanup runs and no new handle is returned.
+- **Native setup rejection** (`createSession`/`setup` rejects): occurs after the new JS runtime is
+  wired and after the native preamble cancelled in-flight work. The previous native checkout state
+  remains because native assignment happens only on success, and no new handle is returned. An old
+  globally backed handle can still consult or `invalidate()` the resulting mixed state.
 
-### Event Reference
+### Overlapping setup calls are unsupported
 
-| Event                          | Description                      |
-| ------------------------------ | -------------------------------- |
-| `onSubmit`                     | Payment details submitted        |
-| `onAdditionalDetails`          | Additional action details needed |
-| `onComplete`                   | Payment completed (vouchers)     |
-| `onError`                      | Error occurred                   |
-| `onDisableStoredPaymentMethod` | Stored payment removal requested |
-| `onAddressUpdate`              | Address lookup update            |
-| `onAddressConfirm`             | Address confirmed                |
-| `onCheckBalance`               | Balance check requested          |
-| `onRequestOrder`               | New order requested              |
-| `onCancelOrder`                | Order cancelled                  |
-| `onBinValue`                   | BIN value changed                |
-| `onBinLookup`                  | BIN lookup completed             |
+`setup()` and `setupAdvanced()` are `async` and have no lock, queue, or active-call guard. Calling
+them concurrently mutates the process-wide JS callbacks/listeners while native state is replaced
+asynchronously, so no deterministic isolation is promised. Always `await` one setup before starting
+another.
 
-#### Fabric View Events (Direct Events via codegen)
+## Presenter model
 
-| Event            | Component              | Description                          |
-| ---------------- | ---------------------- | ------------------------------------ |
-| `onLayoutChange` | `AdyenComponentView`   | Embedded view size changed (w × h)   |
+Three presenters drive the one active checkout:
 
+- the embedded **`<AdyenComponent>`** view;
+- the headless **`checkout.submit(type)`** call;
+- **Drop-in**, where the platform supports it.
+
+They share the checkout context but differ in native ownership and support (see
+[FeatureSupport.md](./FeatureSupport.md)). Mounting and interaction are separate concerns:
+
+- **Mounting** is constrained in TypeScript. `src/components/AdyenComponent.tsx` keeps a
+  module-level `activeComponentTypes` set and, in a `useEffect`, throws if a second
+  `<AdyenComponent>` of the same `type` is already mounted; the unmount cleanup deletes the type.
+  Different types can be mounted together.
+- **Interaction** is not guarded checkout-wide by this bridge. There is no cross-presenter in-flight
+  submit lock in the TypeScript layer, and none is inferred here. Routing of an in-flight result is
+  platform-specific and, on Android, can be ambiguous — see
+  [native-architecture.md](./native-architecture.md#continuation-ownership-and-routing).
+
+## Result routing
+
+Submit, additional-details, completion, and error callbacks are configured once per checkout, not
+per presenter. Payment payloads carry no presenter identity — there is no `viewId`, `source`, or
+other presenter tag in a payment payload, and no route selects a continuation by payload tag. The
+`viewId` that appears natively is only a registry key used to find a mounted view at teardown.
+
+The intermediate advanced callbacks are dispatched back to native through a single checkout-level
+path:
+
+- `onSubmit` results dispatch to `NativeCheckout.action` / `completion` / `retry`
+  (`dispatchSubmitResult` in `src/checkout/AdyenCheckout.ts`);
+- `onAdditionalDetails` results dispatch to `NativeCheckout.completion`.
+
+How native resolves the suspended SDK closure differs by platform (checkout-wide callback bridges
+on iOS; per-`ComponentManager` continuations selected by `awaitingManager()` on Android). See
+[native-architecture.md](./native-architecture.md#continuation-ownership-and-routing).
+
+## Cleanup ownership
+
+JS teardown (`resetState`) always removes the context and Drop-in listener collections and clears
+callback/configuration state. Only the terminal/`invalidate()` path additionally calls
+`NativeCheckout.cleanup()`; re-setup does not.
+
+Native context cleanup is intentionally asymmetric, and neither platform unmounts React views:
+
+- **iOS** context cleanup cancels context-owned work (cached components, the advanced result sink,
+  the before-submit bridge, and the Apple Pay bridges) and clears the checkout and presenter state.
+  It does **not** call `ComponentModule.cleanUp()` and does not dispose every mounted proxy.
+- **Android** context cleanup cancels the session before-submit bridge, disposes the registered
+  component managers, clears the `ComponentModule` consumer registry map, and then clears the
+  checkout state. Clearing the map does not itself dispose the consumers, and the mounted
+  `DynamicComponentView` is not disposed.
+
+Because of this, a `<AdyenComponent>` that stays mounted across a context cleanup or re-setup
+becomes a stale view whose behavior differs by platform. View unmount/recycle cleanup is a separate
+path owned by the view managers. The full ownership detail, including the exact fallback value
+delivered to each suspended callback, is in
+[native-architecture.md](./native-architecture.md#suspended-callback-cleanup-fallbacks).
