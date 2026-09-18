@@ -31,7 +31,7 @@
 | `clientKey`   | A public key linked to your API credentials, used for [client-side authentication](https://docs.adyen.com/development-resources/client-side-authentication).                                                                                                                                                                                                                                                                                                                                                                                                                   | Yes                                                                      |
 | `amount`      | Amount to be displayed on the "Pay" Button. It expects an object with a minor units value and currency properties. For example, `{ value: 1000, currency: 'USD' }` is **$10**. For card pre-authorisation set the amount to **0** (zero).                                                                                                                                                                                                                                                                                                                                      | For `ApplePay` and `GooglePay`. Must be used together with `countryCode` |
 | `countryCode` | The shopper's country code in ISO 3166-1 alpha-2 format. Example: **NL** or **US**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | For `ApplePay` and `GooglePay`. Must be used together with `amount`      |
-| `locale`      | Enforce a [particular locale](Localization.md) for the Drop-in and component UI. If not set, the device locale is used.                                                                                                                                                                                                                                                                                                                                                                                                                                                        | No                                                                       |
+| `locale`      | Enforce a [particular locale](Localization.md) for the Drop-in and component UI. If not set, the device locale is used. Platform behavior currently differs: Android applies this value as the SDK `shopperLocale`, while iOS parses it but does not apply it when constructing checkout — see [Localization.md](Localization.md).                                                                                                                                                                                                                                             | No                                                                       |
 | `returnUrl`   | Url where the shopper should return after a payment is completed. Can use [Universal Links](https://developer.apple.com/ios/universal-links/)/[App Links](https://developer.android.com/training/app-links) or Custom URL Schemes. Maximum of 1024 characters.<br><br> - For **iOS**, any means of redirect can be used.<br><br> - For **Android Components**, any means of redirect can be used.<br><br> - For **Android Drop-in**, this value is automatically overridden by `AdyenCheckout`. Also, `await AdyenDropIn.getReturnURL()` can be used to extract a `returnUrl`. | Yes                                                                      |
 
 > [!IMPORTANT]
@@ -56,13 +56,13 @@
 > (`showRemovePaymentMethodButton` / `onDisableStoredPaymentMethod`) is not enabled by the current
 > bridge. See [FeatureSupport.md](./FeatureSupport.md#stored-method-removal).
 
-| Parameter                                                                  | Description                                                                                                                                                                                                                                                                                                          | Required |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `showPreselectedStoredPaymentMethod`                                       | Determines whether to enable the preselected stored payment method view step. Defaults to **true**.                                                                                                                                                                                                                  | No       |
-| `skipListWhenSinglePaymentMethod`                                          | When set to **true**, allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.                                                                                                                                                                              | No       |
-| `title`                                                                    | Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name is used. This property has no effect on Android.                                                                                                                                                                   | No       |
-| `showRemovePaymentMethodButton`                                            | When set to **true**, the shopper can remove stored payment details using the UI. Defaults to **false**. For the `/sessions` flow, this option works out of the box. For the `/payments`(aka Advanced) flow, you must also use the `onDisableStorePaymentMethod` callback.                                           | No       |
-| `onDisableStoredPaymentMethod(storedPaymentMethod, resolve, reject) => {}` | Called when `showRemovePaymentMethodButton` is **true** and the shopper selects to remove stored payment details during the `/payments` (aka Advanced) flow. Make a POST [`/disable`](https://docs.adyen.com/api-explorer/Recurring/68/post/disable) request. If successful, call `resolve()`, otherwise `reject()`. | No       |
+| Parameter                                                                  | Description                                                                                                                                                                                                                                                                                                                                                                             | Required |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `showPreselectedStoredPaymentMethod`                                       | Determines whether to enable the preselected stored payment method view step. Defaults to **true**.                                                                                                                                                                                                                                                                                     | No       |
+| `skipListWhenSinglePaymentMethod`                                          | When set to **true**, allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.                                                                                                                                                                                                                                                 | No       |
+| `title`                                                                    | Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name is used. This property has no effect on Android.                                                                                                                                                                                                                                      | No       |
+| `showRemovePaymentMethodButton`                                            | Declared Drop-in option intended to show a "remove stored payment method" button. Defaults to **false**. Not enabled by the current bridge on either platform (iOS is declared-only, Android is legacy plumbing not enabled by the compatibility builder), so setting it has no runtime effect — see [FeatureSupport.md](./FeatureSupport.md#stored-method-removal).                    | No       |
+| `onDisableStoredPaymentMethod(storedPaymentMethod, resolve, reject) => {}` | Declared callback intended for the advanced (`/payments`) flow when `showRemovePaymentMethodButton` is **true**, meant to make a POST [`/disable`](https://docs.adyen.com/api-explorer/Recurring/68/post/disable) request and then call `resolve()` or `reject()`. Not reachable at runtime in the current bridge — see [FeatureSupport.md](./FeatureSupport.md#stored-method-removal). | No       |
 
 ### Card component
 
@@ -109,33 +109,32 @@
 > Requires `amount` and `countryCode`. Apple Pay is available on iOS only and is gated by a PassKit
 > device check — see [FeatureSupport.md](./FeatureSupport.md#apple-pay-and-google-pay).
 
-| Parameter                                               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                     | Required                                |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `merchantID`                                            | The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.                                                                                                                                                                                                                                                                                                                                 | Yes                                     |
-| `merchantName`                                          | The merchant name. This value will be used to generate a single _PKPaymentSummaryItem_.                                                                                                                                                                                                                                                                                                                                                         | Yes, if `summaryItems` is not provided. |
-| `allowOnboarding`                                       | The flag to toggle onboarding. If **true**, allow the shopper to add cards to Apple Pay if none exist yet or none are applicable. If **false**, Apple Pay is disabled when the shopper doesn’t have supported cards on the Apple Pay wallet. The default is **false**.                                                                                                                                                                          | No                                      |
-| `summaryItems`                                          | An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. <br>**WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`.                                                     | Yes, if `merchantName` is not provided. |
-| `requiredShippingContactFields`                         | A list of fields that you need for a shipping contact to process the transaction. The list is empty by default.                                                                                                                                                                                                                                                                                                                                 | No                                      |
-| `requiredBillingContactFields`                          | A list of fields that you need for a billing contact to process the transaction. The list is empty by default.                                                                                                                                                                                                                                                                                                                                  | No                                      |
-| `billingContact`                                        | Billing contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).                                                                                                                                                                                                                                                                       | No                                      |
-| `shippingContact`                                       | Shipping contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).                                                                                                                                                                                                                                                                      | No                                      |
-| `shippingType`                                          | Indicates the display mode for the shipping (e.g. "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Corresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype).                                                                                                                                                                     | No                                      |
-| `merchantCapabilities`                                  | A list of supported merchant capabilities. Accepted values: **"debit"**, **"credit"**. `threeDSecure` is always included regardless of this value. The default is **undefined**, which allows both debit and credit cards. Use `['debit']` to allow debit cards only, greying out credit cards in the Apple Pay sheet. iOS only. Corresponds to [PKMerchantCapability](https://developer.apple.com/documentation/passkit/pkmerchantcapability). | No                                      |
-| `supportedCountries`                                    | A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.                                                                                                                                                                                                                                        | No                                      |
-| `shippingMethods`                                       | The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods).                                                                                                                                                                                                                           | No                                      |
-| `recurringPaymentRequest`                               | A class that represents a request to set up a recurring payment, typically a subscription. Corresponds to [PKRecurringPaymentRequest](#applepay-recurring-payment).                                                                                                                                                                                                                                                                             | No                                      |
-| `supportsCouponCode`                                    | When **true**, the Apple Pay sheet displays a coupon code entry field. Requires iOS 15+. Defaults to **false**.                                                                                                                                                                                                                                                                                                                                 | No                                      |
-| `couponCode`                                            | Pre-fills the coupon code field in the Apple Pay sheet. Requires iOS 15+.                                                                                                                                                                                                                                                                                                                                                                       | No                                      |
-| `onShippingContactChange(contact, resolve) => {}`       | Called when the shopper selects or updates a shipping contact. Call `resolve({ paymentSummaryItems?, shippingMethods?, errors? })` to update the sheet. Pass an empty array for `shippingMethods` to indicate no shipping is available. Omit fields to keep current values.                                                                                                                                                                     | No                                      |
-| `onShippingMethodChange(shippingMethod, resolve) => {}` | Called when the shopper selects a shipping method. Call `resolve({ paymentSummaryItems? })` to update the sheet. Omit to keep current summary items.                                                                                                                                                                                                                                                                                            | No                                      |
-| `onCouponCodeChange(couponCode, resolve) => {}`         | Called when the shopper enters or updates a coupon code. Requires `supportsCouponCode: true` and iOS 15+. Call `resolve({ paymentSummaryItems?, shippingMethods?, errors? })` to update the sheet.                                                                                                                                                                                                                                              | No                                      |
-| `onAuthorize(payment, actions) => {}`                   | Called after the shopper authorizes the payment (Face ID / Touch ID), before it is submitted to Adyen. Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show field-level errors and keep the sheet open. If omitted, the payment is automatically approved.                                                                                                                                                                  | No                                      |
+| Parameter                                               | Description                                                                                                                                                                                                                                                                                                                                                                                 | Required                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `merchantID`                                            | The [Merchant ID](https://developer.apple.com/library/archive/ApplePay_Guide/Configuration.html) for Apple Pay.                                                                                                                                                                                                                                                                             | Yes                                     |
+| `merchantName`                                          | The merchant name. This value will be used to generate a single _PKPaymentSummaryItem_.                                                                                                                                                                                                                                                                                                     | Yes, if `summaryItems` is not provided. |
+| `allowOnboarding`                                       | The flag to toggle onboarding. If **true**, allow the shopper to add cards to Apple Pay if none exist yet or none are applicable. If **false**, Apple Pay is disabled when the shopper doesn’t have supported cards on the Apple Pay wallet. The default is **false**.                                                                                                                      | No                                      |
+| `summaryItems`                                          | An array of [payment summary item](https://developer.apple.com/documentation/passkit/pkpaymentrequest/1619231-paymentsummaryitems) objects that summarize the amount of the payment. The last element of this array must contain the same value as `amount` on the Checkout `\payments` API request. <br>**WARNING**: Adyen uses integer minor units, whereas Apple uses `NSDecimalNumber`. | Yes, if `merchantName` is not provided. |
+| `requiredShippingContactFields`                         | A list of fields that you need for a shipping contact to process the transaction. The list is empty by default.                                                                                                                                                                                                                                                                             | No                                      |
+| `requiredBillingContactFields`                          | A list of fields that you need for a billing contact to process the transaction. The list is empty by default.                                                                                                                                                                                                                                                                              | No                                      |
+| `billingContact`                                        | Billing contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).                                                                                                                                                                                                                   | No                                      |
+| `shippingContact`                                       | Shipping contact information for the user. Corresponds to [ApplePayPaymentContact](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentcontact).                                                                                                                                                                                                                  | No                                      |
+| `shippingType`                                          | Indicates the display mode for the shipping (e.g. "Pick Up", "Ship To", "Deliver To"). Localized. The default is **shipping**. Corresponds to [PKShippingType](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916128-shippingtype).                                                                                                                 | No                                      |
+| `supportedCountries`                                    | A list of two-letter country codes for limiting payment to cards from specific countries or regions. When provided will filter the selectable payment passes to those issued in the supported countries.                                                                                                                                                                                    | No                                      |
+| `shippingMethods`                                       | The list of shipping methods available for a payment request. Corresponds to [ApplePayShippingMethod](https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypaymentrequest/1916121-shippingmethods).                                                                                                                                                                       | No                                      |
+| `recurringPaymentRequest`                               | A class that represents a request to set up a recurring payment, typically a subscription. Corresponds to [PKRecurringPaymentRequest](#applepay-recurring-payment).                                                                                                                                                                                                                         | No                                      |
+| `supportsCouponCode`                                    | When **true**, the Apple Pay sheet displays a coupon code entry field. Requires iOS 15+. Defaults to **false**.                                                                                                                                                                                                                                                                             | No                                      |
+| `couponCode`                                            | Pre-fills the coupon code field in the Apple Pay sheet. Requires iOS 15+.                                                                                                                                                                                                                                                                                                                   | No                                      |
+| `onShippingContactChange(contact, resolve) => {}`       | Called when the shopper selects or updates a shipping contact. Call `resolve({ paymentSummaryItems?, shippingMethods?, errors? })` to update the sheet. Pass an empty array for `shippingMethods` to indicate no shipping is available. Omit fields to keep current values.                                                                                                                 | No                                      |
+| `onShippingMethodChange(shippingMethod, resolve) => {}` | Called when the shopper selects a shipping method. Call `resolve({ paymentSummaryItems? })` to update the sheet. Omit to keep current summary items.                                                                                                                                                                                                                                        | No                                      |
+| `onCouponCodeChange(couponCode, resolve) => {}`         | Called when the shopper enters or updates a coupon code. Requires `supportsCouponCode: true` and iOS 15+. Call `resolve({ paymentSummaryItems?, shippingMethods?, errors? })` to update the sheet.                                                                                                                                                                                          | No                                      |
+| `onAuthorize(payment, actions) => {}`                   | Called after the shopper authorizes the payment (Face ID / Touch ID), before it is submitted to Adyen. Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show field-level errors and keep the sheet open. If omitted, the payment is automatically approved.                                                                                                              | No                                      |
 
 #### ApplePay Recurring payment
 
 | Parameter              | Description                                                                                                                                    | Required |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `paymentDescription`   | The description you provide of the recurring payment and that Apple Pay displays to the user in the payment sheet.                             | Yes      |
+| `description`          | The description you provide of the recurring payment and that Apple Pay displays to the user in the payment sheet.                             | Yes      |
 | `regularBilling`       | The regular billing cycle for the recurring payment, including start and end dates, an interval, and an interval count.                        | Yes      |
 | `managementURL`        | The URL to a web page where the user can update or delete the payment method for the recurring payment.                                        | Yes      |
 | `trialBilling`         | The trial billing cycle for the recurring payment.                                                                                             | No       |
@@ -192,16 +191,16 @@ const configuration = {
     hideCvc: true,
     allowedAddressCountryCodes: ['US', 'UK', 'CA', 'NL'],
     onUpdateAddress: (prompt, lookup) => {
-      let results = ... // get list of addresses for shopper's prompt
+      const results = []; // get list of addresses for shopper's prompt
       lookup.update(results);
     },
     onConfirmAddress: (address, lookup) => {
       lookup.confirm(address);
     },
-    onBinValue: binValue => {
+    onBinValue: (binValue) => {
       console.log('BIN: ', binValue);
     },
-    onBinLookup: binData => {
+    onBinLookup: (binData) => {
       console.log('BIN data: ', JSON.stringify(binData));
     },
     installmentOptions: {
@@ -270,7 +269,6 @@ const configuration = {
       countryCode: 'US',
     },
     shippingType: 'storePickup',
-    merchantCapabilities: ['debit'],
     supportedCountries: ['US', 'UK', 'CA', 'NL'],
     shippingMethods: [
       {
@@ -294,8 +292,18 @@ const configuration = {
     onShippingContactChange: (contact, resolve) => {
       resolve({
         shippingMethods: [
-          { label: 'Standard', amount: 5, identifier: 'standard', detail: '5–7 days' },
-          { label: 'Express', amount: 15, identifier: 'express', detail: '1–2 days' },
+          {
+            label: 'Standard',
+            amount: 5,
+            identifier: 'standard',
+            detail: '5–7 days',
+          },
+          {
+            label: 'Express',
+            amount: 15,
+            identifier: 'express',
+            detail: '1–2 days',
+          },
         ],
         paymentSummaryItems: [
           { label: 'Shipping', amount: 5 },
@@ -314,9 +322,17 @@ const configuration = {
     },
     onCouponCodeChange: (couponCode, resolve) => {
       if (couponCode === 'SAVE10') {
-        resolve({ paymentSummaryItems: [{ label: '{YOUR_MERCHANT_NAME}', amount: 88.2 }] });
+        resolve({
+          paymentSummaryItems: [
+            { label: '{YOUR_MERCHANT_NAME}', amount: 88.2 },
+          ],
+        });
       } else {
-        resolve({ errors: [{ type: 'couponCode', message: 'This coupon code is not valid.' }] });
+        resolve({
+          errors: [
+            { type: 'couponCode', message: 'This coupon code is not valid.' },
+          ],
+        });
       }
     },
     onAuthorize: (payment, actions) => {
@@ -326,26 +342,25 @@ const configuration = {
       // actions.reject([{ type: 'shippingAddress', field: 'postalCode', message: 'We do not ship here.' }]);
     },
     recurringPaymentRequest: {
-            description: 'My Subscription',
-            regularBilling: {
-              amount: 1000,
-              label: 'Monthly payment',
-              intervalCount: 1,
-              intervalUnit: 'month',
-              startDate: new Date('2025-04-28'),
-            },
-            managementURL: 'https://my-domain.com/managementURL',
-            trialBilling: {
-              amount: 10,
-              label: 'Trial week',
-              intervalCount: 7,
-              intervalUnit: 'day',
-              endDate: new Date('2025-04-21'),
-            },
-            tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
-            billingAgreement: 'Hereby I am willing to give my money',
-          },
-        }
+      description: 'My Subscription',
+      regularBilling: {
+        amount: 1000,
+        label: 'Monthly payment',
+        intervalCount: 1,
+        intervalUnit: 'month',
+        startDate: '2025-04-28',
+      },
+      managementURL: 'https://my-domain.com/managementURL',
+      trialBilling: {
+        amount: 10,
+        label: 'Trial week',
+        intervalCount: 7,
+        intervalUnit: 'day',
+        endDate: '2025-04-21',
+      },
+      tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
+      billingAgreement: 'Hereby I am willing to give my money',
+    },
   },
   googlepay: {
     allowCreditCards: false,
