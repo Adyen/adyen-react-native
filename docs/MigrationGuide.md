@@ -86,7 +86,7 @@ These are the consumer-owned native integration changes.
    platform :ios, '16.0'
    ```
 2. Run `pod install` in your `ios/` directory to pick up the updated pods.
-3. Update redirect handling in your AppDelegate. The redirect entry point is
+3. Forward custom-URL-scheme redirect returns from your AppDelegate. The redirect entry point is
    `ADYRedirectComponent`, exposed by this library (`ios/ADYRedirectComponent.h`):
    ```swift
    // Swift AppDelegate
@@ -107,10 +107,42 @@ These are the consumer-owned native integration changes.
      return [ADYRedirectComponent applicationDidOpenURL:url];
    }
    ```
+4. Forward universal-link redirect returns as well. Redirect payment methods that return over an
+   HTTPS universal link arrive through `application(_:continue:restorationHandler:)`, so you must
+   hand its `webpageURL` to the same `ADYRedirectComponent` entry point in addition to the
+   custom-scheme handler above:
+   ```swift
+   // Swift AppDelegate
+   func application(_ application: UIApplication,
+                    continue userActivity: NSUserActivity,
+                    restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+     if let url = userActivity.webpageURL, ADYRedirectComponent.applicationDidOpen(url) {
+       return true
+     }
+     return super.application(application, continue: userActivity, restorationHandler: restorationHandler)
+   }
+   ```
+   ```objectivec
+   // Objective-C AppDelegate
+   - (BOOL)application:(UIApplication *)application
+       continueUserActivity:(NSUserActivity *)userActivity
+         restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> *))restorationHandler {
+     if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
+       NSURL *url = userActivity.webpageURL;
+       if (url && [ADYRedirectComponent applicationDidOpenURL:url]) {
+         return YES;
+       }
+     }
+     return [super application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
+   }
+   ```
 
 > [!TIP]
 > If you use the Expo config plugin (`withAdyen`), the plugin rewrites the AppDelegate import and
-> redirect call for you (`src/plugin/withAdyenIos.ts`), so you can skip the manual AppDelegate edit.
+> both the open-URL and universal-link (`continue userActivity`) forwarding for you
+> (`src/plugin/withAdyenIos.ts`, `src/plugin/setApplicationOpenUrlSwift.ts`,
+> `src/plugin/setApplicationContinueUserActivitySwift.ts`), so you can skip the manual AppDelegate
+> edits.
 
 **Android**
 
@@ -118,7 +150,17 @@ These are the consumer-owned native integration changes.
    library builds against). Set it in your own root `android/build.gradle` — for example an
    `ext.kotlinVersion` your buildscript already uses — rather than editing anything under
    `node_modules`. Do not pin the Adyen SDK or Compose versions yourself; those are library-owned.
-2. Forward redirect intents to the library from your launcher activity's `onNewIntent`, using the
+2. Register your launcher activity with the library in its `onCreate`, using
+   `AdyenCheckout.setLauncherActivity(this)` (`android/.../AdyenCheckout.kt`). This is **required**:
+   the activity is the presentation host, and Drop-in or `<AdyenComponent>` cannot start until it has
+   been registered.
+   ```kotlin
+   override fun onCreate(savedInstanceState: Bundle?) {
+     super.onCreate(savedInstanceState)
+     AdyenCheckout.setLauncherActivity(this)
+   }
+   ```
+3. Forward redirect intents to the library from that launcher activity's `onNewIntent`, using the
    `AdyenCheckout.handleIntent(intent)` entry point (`android/.../AdyenCheckout.kt`):
    ```kotlin
    override fun onNewIntent(intent: Intent) {
@@ -126,8 +168,15 @@ These are the consumer-owned native integration changes.
      AdyenCheckout.handleIntent(intent)
    }
    ```
-3. Register an `intent-filter` for your redirect URL scheme on that activity in
+4. Register an `intent-filter` for your redirect URL scheme on that activity in
    `AndroidManifest.xml`, as with any Android deep link.
+
+> [!TIP]
+> If you use the Expo config plugin (`withAdyen`), the plugin edits your `MainActivity` for you,
+> inserting both `AdyenCheckout.setLauncherActivity(this)` in `onCreate` and
+> `AdyenCheckout.handleIntent(...)` in `onNewIntent` (`src/plugin/withAdyenAndroid.ts`,
+> `src/plugin/setKotlinMainActivity.ts`, `src/plugin/setJavaMainActivity.ts`), so you can skip
+> steps 2 and 3.
 
 ## 3. Update the TypeScript public API and configuration
 
@@ -155,7 +204,7 @@ and callbacks are passed directly to the static setup methods, which resolve to 
 const { start } = useAdyenCheckout();
 
 // After (v6): static class, no provider, no hook
-import { AdyenCheckout } from '@adyen/react-native';
+import { AdyenCheckout, BeforeSubmitResult } from '@adyen/react-native';
 
 // Session flow
 const checkout = await AdyenCheckout.setup(session, configuration, {
@@ -326,7 +375,9 @@ After migrating, verify each of the following:
 - **iOS build** — the app builds after `pod install` with `platform :ios, '16.0'`.
 - **Android build** — the app builds with a Kotlin toolchain compatible with `2.3.21`.
 - **Redirect / action return handling** — a redirect payment method returns to your app and resolves
-  (iOS `ADYRedirectComponent.applicationDidOpen`; Android `AdyenCheckout.handleIntent` from
+  over both a custom URL scheme and an HTTPS universal link (iOS
+  `ADYRedirectComponent.applicationDidOpen` from `open url` and `continue userActivity`; Android
+  `AdyenCheckout.setLauncherActivity` in `onCreate` plus `AdyenCheckout.handleIntent` from
   `onNewIntent`), and 3DS2 / action results flow back through `onAdditionalDetails`.
 - **Every presenter and flow you use** — embedded `<AdyenComponent>`, headless `checkout.submit()`,
   Drop-in where supported, and standalone `AdyenAction`, on each platform and flow marked supported in

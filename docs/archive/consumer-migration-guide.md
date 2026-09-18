@@ -66,7 +66,7 @@ In v5, `<AdyenCheckout>` was a React component that accepted configuration and c
   onError={onError}
 >
   {children}
-</AdyenCheckout>;
+</AdyenCheckout>
 
 // After (v6) — no provider, no hook
 import { AdyenCheckout } from '@adyen/react-native';
@@ -80,8 +80,8 @@ const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
 import { AdyenCheckout, BeforeSubmitResult } from '@adyen/react-native';
 
 const checkout = await AdyenCheckout.setup(
-  session, // SessionConfiguration: { id: string, sessionData: string }
-  configuration, // Configuration object
+  session,         // SessionConfiguration: { id: string, sessionData: string }
+  configuration,   // Configuration object
   {
     onComplete: (result) => {
       // Handle session completion
@@ -103,8 +103,8 @@ const checkout = await AdyenCheckout.setup(
 import { AdyenCheckout, SubmitResult } from '@adyen/react-native';
 
 const checkout = await AdyenCheckout.setupAdvanced(
-  paymentMethods, // PaymentMethodsResponse from /paymentMethods API
-  configuration, // Configuration object
+  paymentMethods,   // PaymentMethodsResponse from /paymentMethods API
+  configuration,    // Configuration object
   {
     onSubmit: async (data) => {
       const result = await apiClient.payments(data);
@@ -200,11 +200,11 @@ The old `AdyenComponent` and `AdyenActionComponent` interfaces (with `handle()` 
 
 The following standalone modules have been removed and replaced by the `Checkout` headless APIs:
 
-| Removed Module   | Replacement                                                               |
-| ---------------- | ------------------------------------------------------------------------- |
+| Removed Module | Replacement |
+|---|---|
 | `AdyenGooglePay` | `checkout.isAvailable('googlepay')` + `<AdyenComponent type="googlepay">` |
-| `AdyenApplePay`  | `checkout.isAvailable('applepay')` + `<AdyenComponent type="applepay">`   |
-| `AdyenInstant`   | `checkout.requiresUserInteraction(type)` + `checkout.submit(type)`        |
+| `AdyenApplePay` | `checkout.isAvailable('applepay')` + `<AdyenComponent type="applepay">` |
+| `AdyenInstant` | `checkout.requiresUserInteraction(type)` + `checkout.submit(type)` |
 
 ### Configuration Object
 
@@ -250,7 +250,6 @@ func application(_ app: UIApplication, open url: URL, options: [UIApplication.Op
 ```
 
 Key changes:
-
 1. Import `adyen_react_native` instead of `import Adyen`.
 2. Call `ADYRedirectComponent.applicationDidOpen(url)` instead of `RedirectComponent.applicationDidOpen(from: url)`.
 
@@ -317,11 +316,7 @@ No new ProGuard rules are needed. The SDK handles minification internally.
 
 ```tsx
 import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
-import type {
-  SessionConfiguration,
-  Configuration,
-  SessionCallbacks,
-} from '@adyen/react-native';
+import type { SessionConfiguration, Configuration, SessionCallbacks } from '@adyen/react-native';
 
 const config: Configuration = {
   environment: 'test',
@@ -354,16 +349,8 @@ const App = () => {
 ## Complete Example: Advanced Flow
 
 ```tsx
-import {
-  AdyenCheckout,
-  AdyenComponent,
-  SubmitResult,
-} from '@adyen/react-native';
-import type {
-  Configuration,
-  AdvancedCallbacks,
-  PaymentMethodsResponse,
-} from '@adyen/react-native';
+import { AdyenCheckout, AdyenComponent, SubmitResult } from '@adyen/react-native';
+import type { Configuration, AdvancedCallbacks, PaymentMethodsResponse } from '@adyen/react-native';
 
 const config: Configuration = {
   environment: 'test',
@@ -396,9 +383,7 @@ const App = () => {
   const [checkout, setCheckout] = useState(null);
 
   useEffect(() => {
-    AdyenCheckout.setupAdvanced(paymentMethods, config, callbacks).then(
-      setCheckout
-    );
+    AdyenCheckout.setupAdvanced(paymentMethods, config, callbacks).then(setCheckout);
   }, []);
 
   if (!checkout) return <ActivityIndicator />;
@@ -411,18 +396,18 @@ const App = () => {
 
 ## Breaking Changes Summary
 
-| Change                                                           | Impact                                     | Action Required                                                                                    |
-| ---------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| iOS minimum deployment target raised to 16.0                     | Apps targeting < iOS 16 will fail to build | Update `Podfile` to `platform :ios, '16.0'`                                                        |
-| Kotlin 2.3.21 required                                           | Android build will fail with older Kotlin  | Update `kotlinVersion` in `android/build.gradle`                                                   |
-| Swift redirect API changed                                       | iOS redirect handling in AppDelegate.swift | Change import to `adyen_react_native` and method to `ADYRedirectComponent.applicationDidOpen(url)` |
-| `<AdyenCheckout>` provider and `useAdyenCheckout()` hook removed | `AdyenCheckout` is now a static class      | Use `AdyenCheckout.setup()` / `AdyenCheckout.setupAdvanced()`                                      |
-| `start('type')` removed                                          | Drop-in and component launch changed       | Use `AdyenDropIn.start(checkout)` and `<AdyenComponent>`                                           |
-| `handle()`/`hide()` and handler objects removed                  | Payment result handling changed            | Return `SubmitResult` / `AdditionalDetailsResult` from callbacks                                   |
-| `AdyenGooglePay`, `AdyenApplePay`, `AdyenInstant` removed        | Per-method modules gone                    | Use `Checkout` headless APIs                                                                       |
-| `CardView`, `ApplePayButton`, `GooglePayButton` removed          | Per-method views gone                      | Use `<AdyenComponent checkout={checkout} type="...">`                                              |
-| Partial payments not functional                                  | Apps using partial payment flow            | Remove usage or wait for GA release                                                                |
-| Stored payment method removal not functional                     | Apps using stored payment removal UI       | Remove usage or wait for GA release                                                                |
+| Change | Impact | Action Required |
+|--------|--------|----------------|
+| iOS minimum deployment target raised to 16.0 | Apps targeting < iOS 16 will fail to build | Update `Podfile` to `platform :ios, '16.0'` |
+| Kotlin 2.3.21 required | Android build will fail with older Kotlin | Update `kotlinVersion` in `android/build.gradle` |
+| Swift redirect API changed | iOS redirect handling in AppDelegate.swift | Change import to `adyen_react_native` and method to `ADYRedirectComponent.applicationDidOpen(url)` |
+| `<AdyenCheckout>` provider and `useAdyenCheckout()` hook removed | `AdyenCheckout` is now a static class | Use `AdyenCheckout.setup()` / `AdyenCheckout.setupAdvanced()` |
+| `start('type')` removed | Drop-in and component launch changed | Use `AdyenDropIn.start(checkout)` and `<AdyenComponent>` |
+| `handle()`/`hide()` and handler objects removed | Payment result handling changed | Return `SubmitResult` / `AdditionalDetailsResult` from callbacks |
+| `AdyenGooglePay`, `AdyenApplePay`, `AdyenInstant` removed | Per-method modules gone | Use `Checkout` headless APIs |
+| `CardView`, `ApplePayButton`, `GooglePayButton` removed | Per-method views gone | Use `<AdyenComponent checkout={checkout} type="...">` |
+| Partial payments not functional | Apps using partial payment flow | Remove usage or wait for GA release |
+| Stored payment method removal not functional | Apps using stored payment removal UI | Remove usage or wait for GA release |
 
 ---
 
