@@ -24,7 +24,13 @@ Titles of payment methods are fetched from the Adyen API and localized according
 Provide a specific `locale` in the `Configuration` object passed to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`. This is the same [`locale`](Configuration.md) option documented in the configuration reference.
 
 > [!IMPORTANT]
-> For Session flow `locale` will match value provided by your backend via [shopperLocale](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) parameter.
+> The `configuration.locale` you pass here is an independent input. The session input this bridge
+> accepts exposes only `id` and `sessionData`, so neither platform derives `configuration.locale`
+> from, nor validates it against, the backend
+> [`shopperLocale`](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale)
+> you sent when creating the session. There is no guarantee the two values match; set
+> `configuration.locale` explicitly if you need a specific UI locale (subject to the iOS/Android
+> application asymmetry noted above).
 
 ## Overriding default values
 

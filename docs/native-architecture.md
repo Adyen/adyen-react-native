@@ -25,16 +25,20 @@ flowchart TB
   JS <-->|"@ReactMethod / @objc + events"| N
   CTX -->|writes| STATE["shared checkout state"]
   CPM -->|reads| STATE
-  DIM -->|"reads (Android only)"| STATE
+  DIM -->|"reads (Android: directly; iOS: indirectly via sendError)"| STATE
   N <-->|"closures + continuations"| SDK
 ```
 
 `ContextModule` is the lifecycle owner on both platforms: it performs setup and holds the shared
 checkout state that presenters read. Reading is asymmetric for Drop-in: the Android `DropInModule`
-reads `BaseModule.checkoutState` (its `configurationJSON`/`isSession` in `start()`, plus
+reads `BaseModule.checkoutState` **directly** (its `configurationJSON`/`isSession` in `start()`, plus
 `completion()`/`retry()`), whereas the iOS `DropInModule` stub returns `notSupported` from
-`start()`/`action()` without reading the checkout state. The class ladders below are intentionally
-different between the platforms.
+`start()`/`action()` and never reads the state to present Drop-in. The iOS path is not entirely
+state-free, though: both `start()` and `action()` call the inherited `BaseModuleSender.sendError`,
+which evaluates `BaseModule.checkoutState?.isSession` to choose the session (`failSession`) versus
+advanced (`fail`) error event (`ios/Components/Base/BaseModuleSender.swift`). So iOS reads the shared
+state **indirectly**, only to route the error, not to drive presentation. The class ladders below are
+intentionally different between the platforms.
 
 ## iOS class hierarchy
 
