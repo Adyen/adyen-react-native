@@ -456,4 +456,4 @@ alpha"` error after the background task has already started. `BaseModule.sendErr
   without nulling the retained `advancedService`); direct `DropInModule.action()` sends a result but
   does not finish the task. See
   [FeatureSupport.md](./FeatureSupport.md#legacy-drop-in-limitations) and
-  [public-api-flows.md](./public-api-flows.md#android-advanced-drop-in--legacy-backed).
+  [public-api-flows.md](./public-api-flows.md#android-advanced-drop-in-legacy-backed).

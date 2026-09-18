@@ -497,31 +497,36 @@ Pay is unavailable on Android and Google Pay on iOS; wallet availability runs a 
 ```mermaid
 sequenceDiagram
   participant App
-  participant AC
-  participant NC
-  participant Ctx
+  participant Chk as Checkout
+  participant NC as NativeCheckout (ContextModuleWrapper)
+  participant Ctx as ContextModule (native)
   participant SDK
 
-  App->>AC: checkout.isAvailable(type)
+  Note over Chk: createCheckout guards every method with isActive();<br/>inactive → isAvailable/requiresUserInteraction resolve false, submit is an ignored no-op
+
+  App->>Chk: checkout.isAvailable(type)
   alt no active checkout
-    AC-->>App: false
+    Chk-->>App: false
   else active
-    AC->>NC: isAvailable(type)
-    NC->>Ctx: isAvailable(type)
+    Chk->>NC: NativeCheckout.isAvailable(type)
+    NC->>Ctx: this.nativeModule.isAvailable(type)
     Note over Ctx: Apple Pay → false on Android; Google Pay → false on iOS;<br/>wallets run a device availability check
     Ctx-->>App: boolean
   end
 
-  App->>AC: checkout.requiresUserInteraction(type)
-  AC->>Ctx: resolveController(type) get-or-create + cache
+  App->>Chk: checkout.requiresUserInteraction(type)
+  Chk->>NC: NativeCheckout.requiresUserInteraction(type)
+  NC->>Ctx: this.nativeModule.requiresUserInteraction(type)
+  Ctx->>Ctx: resolveController(type) get-or-create + cache
   alt unknown / absent type
     Ctx-->>App: reject (NoPaymentMethod / invalidPaymentMethods)
   else resolved
     Ctx-->>App: controller.requiresUserInteraction()
   end
 
-  App->>AC: checkout.submit(type)
-  AC->>Ctx: submit(type) — reuse or create cached controller
+  App->>Chk: checkout.submit(type)
+  Chk->>NC: NativeCheckout.submit(type)
+  NC->>Ctx: this.nativeModule.submit(type) — reuse or create cached controller
   alt Android
     Ctx->>Ctx: CheckoutFragment.show(autoSubmit = true) as action host
     Ctx->>SDK: controller.submit()
@@ -532,7 +537,10 @@ sequenceDiagram
   end
 ```
 
-Source: `createCheckout` returns `false` from `isAvailable`/`requiresUserInteraction` when the host
+Source: every `Checkout` method built by `createCheckout` first runs its `isActive()` guard and then
+delegates to the `NativeCheckout` singleton — which is `new ContextModuleWrapper(NativeModules.AdyenCheckout)`
+— whose `isAvailable`/`requiresUserInteraction`/`submit` methods forward to `this.nativeModule`, the
+native `ContextModule`. `createCheckout` returns `false` from `isAvailable`/`requiresUserInteraction` when the host
 is inactive. On Android `ContextModule.isAvailable` resolves `false` for `applepay`, runs
 `GooglePayAvailability.isAvailable` for Google Pay keys, and otherwise checks `hasPaymentMethod`;
 `requiresUserInteraction` rejects `NoPaymentMethod` when `resolveController` returns null; `submit`
