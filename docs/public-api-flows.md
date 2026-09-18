@@ -141,9 +141,9 @@ contract.
 
 ### Failed setup and mixed state
 
-During an active re-setup, `setup()`/`setupAdvanced()` have two distinct rejection points, and each
-leaves observable mixed state because `clearJSState()` has already run and native state is replaced
-only on success.
+During an active re-setup, `setup()`/`setupAdvanced()` have three distinct rejection points — JS
+validation, native input parsing, and native SDK setup — and each leaves observable mixed state
+because `clearJSState()` has already run and native state is replaced only on success.
 
 ```mermaid
 sequenceDiagram
@@ -699,27 +699,41 @@ sequenceDiagram
   participant DropInMod
   participant Task as HeadlessJsTask
   participant Launcher as dropin.old launcher
+  participant Handler as DropInCallbackHandler
+  participant Bus as MessageBus
 
   DropInMod->>Task: startBackgroundService() (before session guard)
   alt session flow
     DropInMod->>DropInMod: sendError(unsupported) → global terminal error + context cleanup
     Note over Ctx,Task: context cleanup runs but the task is NOT finished
   else advanced flow
-    DropInMod->>Launcher: startPayment(...)
-    Launcher-->>DropInMod: cancellation / error / final-result callback — task NOT finished
+    DropInMod->>Launcher: startPayment(..., AdvancedCheckoutService)
+    Launcher-->>Handler: cancellation / error / final-result callback
+    Handler->>Bus: onException (cancel/error) / onFinished (final result)
+    Bus-->>AC: global didFailCallback / didCompleteCallback event
+    AC->>AC: merchant onError / onComplete (terminal)
+    AC->>Ctx: handleTerminalEvent → context cleanup
+    Note over DropInMod,Task: task still NOT finished (no stopBackgroundService())
     Note over AC,Ctx: normal return results route AC → ContextModule (not DropInMod)
     AC->>Ctx: action / retry → stall; completion → cleanup() (task NOT finished)
     Note over DropInMod: only DIRECT DropInModule.completion()/retry() → stopBackgroundService()
   end
 ```
 
-Source: `startBackgroundService()` runs before the `isSession` branch in `start`. The unsupported
-session path, and the old launcher's cancellation/error/final-result callbacks, do not call
-`stopBackgroundService()`. Normal advanced return-based results dispatch through
-`NativeCheckout`/`ContextModule`, so `action`/`retry` do not resolve the legacy service and
-`completion` reaches `ContextModule.cleanup()` (disposing managers and clearing checkout state)
-without touching the Drop-in `taskId`. Only a direct `DropInModule.completion()`/`retry()` call sends
-its legacy service result, clears checkout state, and finishes the task.
+Source: `startBackgroundService()` runs before the `isSession` branch in `start`. The old launcher's
+terminal callbacks are globally observed: `DropInCallbackHandler.onDropInResult` maps
+`CancelledByUser`/`Error`/null to `MessageBus.onException` and `Finished` to `MessageBus.onFinished`
+(`DropInCallbackHandler.kt`). `AdvancedMessengerImpl` sends `onException` to `EventName.ERROR`
+(`didFailCallback`) and `onFinished` to `EventName.COMPLETE_VOUCHER` (`didCompleteCallback`), the
+same global events `ContextModuleWrapper` subscribes to for the advanced terminal callbacks. So a
+launcher cancellation or error invokes the merchant `onError`, a final result invokes the merchant
+`onComplete`, and either terminal callback runs `handleTerminalEvent` → context cleanup — yet none of
+these paths calls `stopBackgroundService()`, so the Drop-in task still leaks. Normal advanced
+return-based results dispatch through `NativeCheckout`/`ContextModule`, so `action`/`retry` do not
+resolve the legacy service and `completion` reaches `ContextModule.cleanup()` (disposing managers and
+clearing checkout state) without touching the Drop-in `taskId`. Only a direct
+`DropInModule.completion()`/`retry()` call sends its legacy service result, clears checkout state, and
+finishes the task.
 
 ## Standalone action
 

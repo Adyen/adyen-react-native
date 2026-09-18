@@ -87,17 +87,27 @@ These are the consumer-owned native integration changes.
    ```
 2. Run `pod install` in your `ios/` directory to pick up the updated pods.
 3. Forward custom-URL-scheme redirect returns from your AppDelegate. The redirect entry point is
-   `ADYRedirectComponent`, exposed by this library (`ios/ADYRedirectComponent.h`):
+   `ADYRedirectComponent`, exposed by this library (`ios/ADYRedirectComponent.h`). A bare React
+   Native AppDelegate conforms directly to `UIResponder, UIApplicationDelegate` (as the example app's
+   `example/ios/AppDelegate.swift` does), which has **no** inherited `application(_:open:options:)` to
+   call through `super`, so forward any URL the Adyen component does not consume to
+   `RCTLinkingManager` (`import React`) instead:
    ```swift
-   // Swift AppDelegate
+   // Swift AppDelegate (bare React Native: `AppDelegate: UIResponder, UIApplicationDelegate`)
    import adyen_react_native
+   import React
 
    func application(_ app: UIApplication, open url: URL,
                     options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-     return ADYRedirectComponent.applicationDidOpen(url)
-       || super.application(app, open: url, options: options)
+     if ADYRedirectComponent.applicationDidOpen(url) {
+       return true
+     }
+     return RCTLinkingManager.application(app, open: url, options: options)
    }
    ```
+   If instead your AppDelegate subclasses `RCTAppDelegate`/`ExpoAppDelegate` (which do implement this
+   method), mark it `override` and chain to `super.application(app, open: url, options: options)`
+   rather than calling `RCTLinkingManager` directly.
    ```objectivec
    // Objective-C AppDelegate
    #import <adyen_react_native/ADYRedirectComponent.h>
@@ -112,16 +122,24 @@ These are the consumer-owned native integration changes.
    hand its `webpageURL` to the same `ADYRedirectComponent` entry point in addition to the
    custom-scheme handler above:
    ```swift
-   // Swift AppDelegate
+   // Swift AppDelegate (bare React Native: `AppDelegate: UIResponder, UIApplicationDelegate`)
+   import React
+
    func application(_ application: UIApplication,
                     continue userActivity: NSUserActivity,
                     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
      if let url = userActivity.webpageURL, ADYRedirectComponent.applicationDidOpen(url) {
        return true
      }
-     return super.application(application, continue: userActivity, restorationHandler: restorationHandler)
+     return RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
    }
    ```
+   A bare `UIResponder, UIApplicationDelegate` has no inherited
+   `application(_:continue:restorationHandler:)` to call through `super`, so forward the unclaimed
+   activity to `RCTLinkingManager` as above. If your AppDelegate subclasses
+   `RCTAppDelegate`/`ExpoAppDelegate` (which implement this method), mark it `override` and chain to
+   `super.application(application, continue: userActivity, restorationHandler: restorationHandler)`
+   instead — this is exactly what the Expo config plugin generates.
    ```objectivec
    // Objective-C AppDelegate
    - (BOOL)application:(UIApplication *)application
@@ -151,9 +169,11 @@ These are the consumer-owned native integration changes.
    `ext.kotlinVersion` your buildscript already uses — rather than editing anything under
    `node_modules`. Do not pin the Adyen SDK or Compose versions yourself; those are library-owned.
 2. Register your launcher activity with the library in its `onCreate`, using
-   `AdyenCheckout.setLauncherActivity(this)` (`android/.../AdyenCheckout.kt`). This is **required**:
-   the activity is the presentation host, and Drop-in or `<AdyenComponent>` cannot start until it has
-   been registered.
+   `AdyenCheckout.setLauncherActivity(this)` (`android/.../AdyenCheckout.kt`). This is **required for
+   Android Drop-in**: `setLauncherActivity` only delegates to `DropInModule.register(activity)`, so it
+   registers the presentation host that the Drop-in launcher needs. It is **not** required for
+   `<AdyenComponent>` or headless components — the embedded view obtains its `FragmentActivity`
+   directly from `ThemedReactContext.currentActivity` and never consults the Drop-in registration.
    ```kotlin
    override fun onCreate(savedInstanceState: Bundle?) {
      super.onCreate(savedInstanceState)
