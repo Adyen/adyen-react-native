@@ -2,11 +2,20 @@
 
 By default, the UI uses the device locale. Translations, the set of available locales, and the
 fallback behavior are owned by the Adyen native SDKs this library pins to `6.0.0-alpha.1`
-(`package.json` `adyen.ios` / `adyen.android`), not by this bridge — the bridge only forwards the
-`locale` you configure as the SDK `shopperLocale` (iOS `RootConfigurationParser.shopperLocale`,
-Android `RootConfigurationParser.locale`). To enable the necessary translations on iOS, make sure
-“Localizations” in the project configuration contains all required languages. When the device locale
-is not supported, the Adyen iOS SDK falls back to `en-US`.
+(`package.json` `adyen.ios` / `adyen.android`), not by this bridge.
+
+> [!IMPORTANT]
+> The two platforms currently handle the configured `locale` asymmetrically. Android reads it with
+> `RootConfigurationParser.locale` and applies it as the SDK `shopperLocale` when constructing the
+> checkout (`CheckoutConfigurationFactory.get` passes `shopperLocale = rootParser.locale`). iOS
+> parses the same value with `RootConfigurationParser.shopperLocale` but does **not** apply it when
+> building the checkout configuration — `RootConfigurationParser.checkoutConfiguration(...)` never
+> references `shopperLocale`, so the value has no effect on iOS today. On iOS the UI therefore stays
+> on the device locale regardless of the configured `locale`.
+
+To enable the necessary translations on iOS, make sure “Localizations” in the project configuration
+contains all required languages. When the device locale is not supported, the Adyen iOS SDK falls
+back to `en-US`.
 
 Titles of payment methods are fetched from the Adyen API and localized according to the `shopperLocale` value you set in your [/paymentMethods](https://docs.adyen.com/api-explorer/Checkout/68/post/paymentMethods#request-shopperLocale) or [/sessions](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) requests.
 
