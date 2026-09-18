@@ -39,12 +39,7 @@ class ContextModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
 ) : BaseActionModule(reactContext, messageBus) {
-  /**
-   * The manager whose SDK closure is suspended waiting on JS, if any.
-   *
-   * Only one payment can be mid-flight, so the awaiting manager is the unambiguous target for
-   * `action` / `completion` / `retry`.
-   */
+  /** The manager awaiting a JS result, if any; only one payment can be mid-flight. */
   private fun awaitingManager(): ComponentManager? = componentManagers.values.firstOrNull { it.isAwaitingResult }
 
   override fun supportedEvents(): List<String> = EventName.sessionEvents()
@@ -67,10 +62,7 @@ class ContextModule(
     BaseModule.checkoutState?.sessionBeforeSubmitBridge?.provide(result)
   }
 
-  /**
-   * Forwards a JS-provided action into the suspended `onSubmit` closure so the SDK can present it
-   * (e.g. 3DS). No-op when nothing is pending.
-   */
+  /** Forwards a JS-provided action to the suspended `onSubmit` closure (e.g. 3DS). No-op if none pending. */
   @ReactMethod
   fun action(actionMap: ReadableMap?) {
     val manager = awaitingManager()
@@ -90,8 +82,7 @@ class ContextModule(
     if (BaseModule.checkoutState == null) {
       Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
     }
-    // Advanced flow: resolve the suspended SDK closure instead of tearing the context down.
-    // Only fall back to cleanup() when nothing is pending, which preserves session behaviour.
+    // Advanced flow: resolve the suspended closure; fall back to cleanup() when nothing is pending.
     val manager = awaitingManager()
     if (manager != null) {
       manager.completion(resultCode)
@@ -191,12 +182,8 @@ class ContextModule(
   }
 
   /**
-   * Submits [type] with no `<AdyenComponent>` ever mounted for it (e.g. PayPal, Klarna).
-   *
-   * `CheckoutController.submit()` alone only starts the flow - a resulting action needing UI
-   * (a redirect, a 3DS challenge, ...) has nowhere to render without a [CheckoutFragment] hosting
-   * it, the same one Google Pay's own headless launch uses (see [CheckoutFragment]'s `autoSubmit`).
-   * Left showing until the flow reaches a terminal state; see [ComponentManager]'s `onTerminal`.
+   * Submits [type] headlessly, with no `<AdyenComponent>` mounted; hosts any resulting UI (redirect,
+   * 3DS) in a [CheckoutFragment], shown until [ComponentManager]'s `onTerminal` fires.
    */
   @ReactMethod
   fun submit(type: String) {
@@ -214,10 +201,7 @@ class ContextModule(
           tag = headlessFragmentTag(type),
           controllerProvider = { controller },
           autoSubmit = true,
-          // The shopper closing this fragment (there's no in-app UI to cancel from otherwise -
-          // see CheckoutFragment's temporary close button) is equivalent to cancelling from
-          // within the redirect/action itself: report it as a shopper-cancelled payment and
-          // dispose the controller, rather than leaving both silently dangling.
+          // Closing the fragment is treated as a shopper cancellation of the payment.
           onCancelled = {
             sendError(ModuleException.Canceled())
             unregisterManager(type)
@@ -368,13 +352,7 @@ class ContextModule(
   }
 
   companion object {
-    /**
-     * Every manager that can have a suspended SDK closure, keyed by payment method type.
-     *
-     * Holds both the headless managers built by [requiresUserInteraction] / [submit] and the ones
-     * built by mounted embedded views. A result arriving from JS carries no routing information,
-     * so this table is what makes the suspended closure findable.
-     */
+    /** Managers keyed by payment method type, covering both headless and mounted-view flows. */
     private val componentManagers: MutableMap<String, ComponentManager> = mutableMapOf()
 
     /** Adds a mounted view's manager to the routing table. */

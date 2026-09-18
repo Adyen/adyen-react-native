@@ -1,5 +1,5 @@
-import UIKit
 import adyen_react_native
+import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?

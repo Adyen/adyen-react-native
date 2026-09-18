@@ -6,18 +6,13 @@
 
 import Adyen
 
-/// The advanced flow's two suspended callbacks, held together because they share a lifetime.
-///
-/// The SDK drives the advanced flow through `async` closures: `onSubmit` and `onAdditionalDetails`
-/// suspend until the merchant returns a result through JS.
+/// Holds the advanced flow's two suspended `async` callbacks (`onSubmit`, `onAdditionalDetails`), which wait for a merchant result from JS.
 @MainActor
 internal final class AdvancedResultSink {
 
     internal let submit = CallbackBridge<SubmitResult>()
     internal let additionalDetails = CallbackBridge<AdditionalDetailsResult>()
 
-    /// Whether a submit is suspended. Distinguishes which callback a bare `completion(_:)` from JS
-    /// is meant to resume.
     internal var isAwaitingSubmit: Bool {
         submit.isAwaiting
     }
@@ -51,8 +46,7 @@ internal final class AdvancedResultSink {
         additionalDetails.resolve(result)
     }
 
-    /// Settles anything still suspended with the SDK's error result code, so a torn-down flow ends
-    /// terminally instead of looking like a shopper-initiated retry.
+    /// Settles anything still suspended with an error result, so a torn-down flow ends terminally.
     internal func cancelPending() {
         submit.resolve(errorSubmitResult)
         additionalDetails.resolve(errorAdditionalDetailsResult)

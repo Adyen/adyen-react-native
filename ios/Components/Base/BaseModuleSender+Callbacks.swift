@@ -7,12 +7,6 @@
 import Adyen
 import AdyenCheckout
 
-/// v6 closure-callback wiring for the advanced (merchant-managed) flow.
-///
-/// Replaces the v5 payment / action / card delegate conformances.
-/// Instead of delegate methods, the checkout object exposes closures that emit the
-/// same React Native events. The `onSubmit` and `onAdditionalDetails` closures are asynchronous and
-/// must return a result; the bridge suspends them on ``AdvancedResultSink`` until JS responds.
 extension BaseModuleSender {
 
     /// Wires the advanced-flow closures on the checkout object to React Native event emission.

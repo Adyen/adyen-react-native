@@ -40,9 +40,7 @@ final class DropInConfigurationParserTests: XCTestCase {
         XCTAssertEqual(sut.title, "MY_DROPIN")
         XCTAssertTrue(sut.showRemovePaymentMethodButton)
 
-        // TODO(v6-dropin): DropInConfigurationParser no longer builds a v5
-        // DropInComponent.Configuration. Re-assert the built configuration once the
-        // v6 Drop-in lands and the parser feeds the shared `dropIn { }` configuration block.
+        // TODO(v6-dropin): re-assert the built configuration once v6 Drop-in lands.
     }
 
     func test_initialization_usesDefaultValues_withEmptySubDictionary() {

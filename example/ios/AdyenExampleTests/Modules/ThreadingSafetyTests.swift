@@ -50,9 +50,7 @@ final class ThreadingSafetyTests: XCTestCase {
         // WHEN the view goes away
         sut.unregister(viewId: "card-view")
 
-        // THEN the checkout is left intact. Per the lifecycle contract teardown happens only on a
-        // terminal event or `invalidate()` — a view unmounting must not end the checkout, or a
-        // headless submit afterwards would have no context to run in.
+        // THEN the checkout is left intact: unmounting a view must not end it.
         XCTAssertFalse(presenter.dismissCalled)
         XCTAssertNotNil(BaseModule.currentPresenter)
     }
@@ -67,13 +65,11 @@ final class ThreadingSafetyTests: XCTestCase {
         // WHEN the checkout is torn down from a background thread
         DispatchQueue.global().async {
             sut.cleanUp()
-            // cleanUp hops to the main queue, so this later hop is drained after it.
+            // cleanUp hops to main, so this later hop runs after it.
             DispatchQueue.main.async { expectation.fulfill() }
         }
 
-        // THEN it completes on the main thread. Disposing mounted views is the only reason this
-        // registry exists: JS cannot do it, because the merchant owns the JSX and can keep a view
-        // mounted across a checkout being replaced.
+        // THEN it completes on the main thread.
         wait(for: [expectation], timeout: 1.0)
     }
 
@@ -132,17 +128,6 @@ final class ThreadingSafetyTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
     }
-
-    // Removed: three tests covering the per-view address-lookup handlers
-    // (`storeLookupHandler`, `storeLookupCompletionHandler`, `update`, `confirm`). They exercised
-    // plumbing that no call site ever populated, and v6 configures address lookup once per
-    // checkout with a handler that carries no view identity, so per-view routing cannot exist.
-
-    // Removed: eight tests covering `CardComponentViewProxy` and the v5 embedded-component bus
-    // entry points (`createActionHandlerIfNeeded`, `hide`, `handle`). None of those symbols exist
-    // in v6 — action routing now goes through `ComponentModule.action(_:actionDict:)` and
-    // `ComponentProxy`. Re-add equivalent coverage against the v6 surface when the presenter
-    // refactor lands.
 
     private static let lookupAddress: NSDictionary = [
         "id": "addr1",

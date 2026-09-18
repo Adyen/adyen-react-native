@@ -28,19 +28,8 @@ import com.adyen.checkout.core.components.CheckoutPaymentFlow
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /**
- * Generic host for the v6 [CheckoutPaymentFlow] composable.
- *
- * Both the action-only flow and the Google Pay flow need a [BottomSheetDialogFragment] that
- * renders the composable. This single fragment replaces the former per-flow fragments
- * (`ActionFragment`, `GooglePayFragment`) by parameterising the differences:
- *
- * - **controllerProvider** – resolves the [CheckoutController] to render.
- * - **cancellable** – whether the dialog can be dismissed by the user.
- * - **autoSubmit** – when `true`, calls [CheckoutController.submit] once after the composable
- *   is set up (used by Google Pay to launch the sheet immediately).
- * - **onCancelled** – optional callback invoked when the user cancels the dialog.
- *
- * Configuration is stored per-tag in the companion so multiple callers can coexist.
+ * Generic [BottomSheetDialogFragment] host for [CheckoutPaymentFlow] composable, replacing
+ * the former per-flow fragments (`ActionFragment`, `GooglePayFragment`). Configured per-tag via [show].
  */
 class CheckoutFragment : BottomSheetDialogFragment() {
   private var submitted = false
@@ -82,12 +71,8 @@ class CheckoutFragment : BottomSheetDialogFragment() {
 
     (view as ComposeView).setContent {
       CheckoutPaymentFlow(controller = controller)
-      // TODO: some actions (e.g. a redirect) render no UI of their own while waiting for the
-      // shopper to return - RedirectComponent.Content() launches the browser and draws nothing,
-      // so with setCanceledOnTouchOutside(false) above there was no visible way to back out
-      // besides the system back button. Adyen.checkout:ui-core has no cancel/loading affordance
-      // for this either. Temporary hack: a plain close button, since this module has no Compose
-      // Material dependency to build a proper one with. Revisit once upstream has a real answer.
+      // TODO: temporary close button for actions with no UI of their own (e.g. redirect); revisit
+      // once upstream (ui-core) offers a proper cancel/loading affordance.
       if (config.cancellable) {
         CloseButton(onClick = { dialog?.cancel() })
       }

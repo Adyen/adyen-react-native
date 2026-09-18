@@ -13,38 +13,21 @@ import Styles from '../../common/Styles';
 interface PaymentMethodComponentProps {
   checkout: Checkout;
   type: string;
-  /** Button title shown when the method is direct/headless, or Apple Pay (see the TODO below). */
+  /** Button title for direct/headless methods (and Apple Pay's tap gate). */
   title?: string;
 }
 
 type Availability = 'unavailable' | 'needsInteraction' | 'direct';
 
-/**
- * TODO: iOS's `ApplePayComponent.viewController` is the `PKPaymentAuthorizationViewController`
- * itself (meant for modal presentation), not an inline "tap to pay" button the way Android's
- * GooglePayComponent renders one - so mounting `<AdyenComponent type="applepay">` immediately
- * presents the system sheet, with no button tap involved. A future SDK version will make Apple
- * Pay render its own inline button first, matching Google Pay, with `checkout.submit("applepay")`
- * available for consumers who want to skip straight to the sheet. Until then, gate mounting
- * behind our own button as a temporary hack - Google Pay needs no such gate, its own inline
- * button already is the tap.
- */
+// TODO: Apple Pay's native component presents the sheet immediately on mount (no inline button
+// like Google Pay), so we gate it behind our own tap button until the SDK adds one.
 const NEEDS_TAP_GATE_HACK = new Set(['applepay']);
 
 /**
- * Renders the given payment method as:
- * - nothing, if it isn't offered by the current checkout, or the device/platform reports it
- *   unavailable (e.g. Apple Pay or Google Pay with no cards configured)
- * - an embedded `<AdyenComponent>`, if it needs the shopper to fill in details with UI embedded
- *   inline in the checkout screen (e.g. Card, Google Pay's own button)
- * - a plain button, if it's a direct/headless method with no UI of its own (e.g. PayPal,
- *   Klarna), calling `checkout.submit(type)` directly, or Apple Pay (see the TODO above),
- *   mounting `<AdyenComponent>` - and so presenting its sheet - only once tapped
- *
- * Every payment method needs both an availability check and a UI-vs-headless check in general;
- * there's no harm running both regardless of type; the AvailablePaymentComponent
- * (platform-pay-only) / PayableComponent (headless-only) split that preceded this component was
- * unnecessary.
+ * Renders a payment method embedded `<AdyenComponent>` (needs UI),
+ * or a plain button calling `checkout.submit(type)` (direct/headless, or Apple Pay's tap gate).
+ * If it isn't offered by the current checkout, or the device/platform reports it unavailable,
+ * it renders nothing.
  */
 const PaymentMethodComponent = ({
   checkout,

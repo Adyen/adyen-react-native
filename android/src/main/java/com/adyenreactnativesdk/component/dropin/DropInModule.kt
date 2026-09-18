@@ -90,9 +90,7 @@ class DropInModule(
       return sendError(ModuleException.Unknown("Checkout context is not initialized. Call setup() or setupAdvanced() first."))
     }
 
-    // TODO: v6 migration - CheckoutConfigurationFactory now returns the new v6 CheckoutConfiguration type.
-    //  The old DropIn.startPayment() expects com.adyen.checkout.components.core.CheckoutConfiguration.
-    //  For now, create the old CheckoutConfiguration inline from the parsed values.
+    // TODO: v6 migration - old DropIn.startPayment() needs the old CheckoutConfiguration type.
     val checkoutConfiguration: CheckoutConfiguration
     val paymentMethodsResponse: PaymentMethodsApiResponse
     try {
@@ -104,9 +102,7 @@ class DropInModule(
 
     startBackgroundService()
     if (BaseModule.checkoutState?.isSession == true) {
-      // TODO: v6 migration - session is now CheckoutContext.Sessions, not CheckoutSession.
-      //  The old DropIn.startPayment() expects CheckoutSession. Session-flow Drop-in needs
-      //  proper v6 migration.
+      // TODO: v6 migration - old DropIn.startPayment() needs CheckoutSession, not CheckoutContext.Sessions.
       sendError(ModuleException.Unknown("Drop-in session flow not yet supported in v6 alpha"))
     } else {
       startPayment(
@@ -122,9 +118,7 @@ class DropInModule(
   @ReactMethod
   fun action(actionMap: ReadableMap?) {
     try {
-      // TODO: v6 migration - old DropInServiceResult.Action expects old Action type
-      //  (com.adyen.checkout.components.core.action.Action), so deserialize using the old
-      //  serializer instead of the v6 one from BaseActionModule.parseActionFromMap.
+      // TODO: v6 migration - DropInServiceResult.Action needs the old Action type, so deserialize with the old serializer.
       val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
       val action =
         com.adyen.checkout.components.core.action.Action.SERIALIZER
@@ -255,10 +249,7 @@ class DropInModule(
     service.sendResult(DropInServiceResult.Update(paymentMethods, order))
   }
 
-  /**
-   * Parses the payment methods JSON into the v5-era [PaymentMethodsApiResponse] type,
-   * which the old DropIn API still requires.
-   */
+  /** Parses payment methods JSON into the v5-era [PaymentMethodsApiResponse] type the old DropIn API needs. */
   private fun getPaymentMethodsApiResponse(paymentMethods: ReadableMap?): PaymentMethodsApiResponse =
     try {
       val jsonObject = ReactNativeJson.convertMapToJson(paymentMethods)
@@ -267,11 +258,7 @@ class DropInModule(
       throw ModuleException.InvalidPaymentMethods(e)
     }
 
-  /**
-   * Creates the old [CheckoutConfiguration] (from components-core) required by the old DropIn API.
-   * TODO: v6 migration - This should be replaced with the new CheckoutConfiguration once
-   *  Drop-in is migrated to the v6 API.
-   */
+  /** Creates the old [CheckoutConfiguration] required by the old DropIn API. TODO: v6 migration. */
   private fun buildOldCheckoutConfiguration(configuration: ReadableMap): CheckoutConfiguration {
     val rootParser = com.adyenreactnativesdk.configuration.RootConfigurationParser(configuration)
     val clientKey = rootParser.clientKey ?: throw ModuleException.NoClientKey()

@@ -8,9 +8,8 @@ const {
   testAdvancedCheckoutPayment,
 } = require('./tests/advanced-checkout-payment.test');
 
-// Runs the payment-flow tests against the real example/ app directly, unlike run-appium.js
-// which runs against a freshly-scaffolded fixture app. Reuses the same helpers/driver.js and
-// helpers/utils.js conventions so both suites stay consistent.
+// Runs payment-flow tests against the real example/ app (unlike run-appium.js, which uses a
+// scaffolded fixture app). Reuses helpers/driver.js and helpers/utils.js conventions.
 const TESTS = [
   { name: 'Sessions Components (Card)', run: testSessionsComponentsPayment },
   { name: 'Advanced Checkout (Card)', run: testAdvancedCheckoutPayment },
@@ -29,13 +28,12 @@ function relaunchAndroidApp(appPackage) {
 
 function relaunchIOSApp(bundleId, udid) {
   try {
-    // Not running yet on the first call - expected, so stdio is suppressed rather than left to
-    // print "found nothing to terminate" noise on every run.
+    // Suppress stdio: app isn't running on the first call, which would otherwise print noise.
     execFileSync('xcrun', ['simctl', 'terminate', udid, bundleId], {
       stdio: 'ignore',
     });
   } catch {
-    // Ignored - see above.
+    // Expected on first call.
   }
   execFileSync('xcrun', ['simctl', 'launch', udid, bundleId]);
 }

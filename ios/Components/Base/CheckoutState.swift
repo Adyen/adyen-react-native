@@ -7,12 +7,7 @@
 import Adyen
 import AdyenCheckout
 
-/// Holds per-checkout shared state.
-///
-/// Replaced scattered static properties on ``BaseModule`` with a single atomic
-/// reference to eliminate inconsistent-state windows.
-///
-/// - ``checkoutContext``: The Adyen SDK checkout object (session or advanced).
+/// Holds per-checkout shared state as a single atomic reference, replacing scattered static properties on ``BaseModule``.
 struct CheckoutState {
     let checkoutContext: PaymentCheckout
 

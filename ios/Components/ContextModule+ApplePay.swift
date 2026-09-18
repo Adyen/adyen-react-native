@@ -9,18 +9,13 @@ import AdyenComponents
 import Contacts
 import PassKit
 
-// MARK: - v6 Apple Pay callback bridging
+// MARK: - Apple Pay callback bridging
 
-/// The v6 SDK replaced the `ApplePayComponentDelegate` / `ApplePayAuthorizationDelegate`
-/// protocols with `async` closures configured on ``ApplePayConfiguration``. Each closure emits
-/// the matching React Native event and suspends on a continuation until JS responds through the
-/// corresponding `provide…` method below. ContextModule owns this bridging in v6.
+/// the Apple Pay delegate protocols use `async` closures; each emits a React Native
+/// event and suspends until JS responds via the matching `provide…` method below.
 extension ContextModule {
 
-    /// Builds the v6 ``ApplePayConfiguration`` from [configuration] and attaches the callback
-    /// closures (authorization, shipping contact, shipping method, coupon) so shopper interactions
-    /// in the Apple Pay sheet are bridged to React Native events. Returns `nil` when the
-    /// configuration carries no Apple Pay merchant setup or no payment, leaving Apple Pay unoffered.
+    /// Builds the ``ApplePayConfiguration`` and attaches its callback closures. Returns `nil` when merchant setup or payment info is missing.
     internal func makeApplePayConfiguration(parser: RootConfigurationParser,
                                             configuration: NSDictionary) throws -> ApplePayConfiguration? {
         let applePayParser = ApplepayConfigurationParser(configuration: configuration)

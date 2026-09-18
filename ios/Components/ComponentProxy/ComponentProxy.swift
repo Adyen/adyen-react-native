@@ -8,25 +8,16 @@ import Adyen
 import AdyenCheckout
 import UIKit
 
-/// Per-view controller for an embedded `<AdyenComponent>` view.
+/// Per-view controller for an embedded `<AdyenComponent>` view. Owns the ``CheckoutPaymentComponent``
+/// for a single `viewId`: creates it, hands over its view controller, and disposes of it.
 ///
-/// Owns the ``CheckoutPaymentComponent`` created for a single `viewId` within the shared checkout
-/// context, and nothing else: creating the component, handing over its view controller, and
-/// disposing of it.
-///
-/// It deliberately does not touch the checkout's lifecycle closures. v6 keeps one callback store
-/// per checkout, so a proxy that wired its own closures would overwrite whichever proxy wired
-/// before it. ``ContextModule`` wires them once at setup instead, and because the merchant's
-/// callbacks are global rather than per view, nothing here needs to know which view a payment
-/// came from.
+/// Doesn't wire the checkout's lifecycle closures itself — ``ContextModule`` does that once at setup,
+/// since v6 keeps a single global callback store per checkout.
 @MainActor
 internal final class ComponentProxy {
 
     let viewId: String
 
-    /// The single event emitter. Errors raised while building a component have to reach the same
-    /// listener as every other event, and ``ComponentModule`` is a separate emitter that nothing
-    /// subscribes to.
     private weak var emitter: ContextModule?
 
     private var paymentComponent: CheckoutPaymentComponent?
@@ -38,8 +29,7 @@ internal final class ComponentProxy {
 
     // MARK: - Component creation
 
-    /// Builds the payment component for the generic `<AdyenComponent>` view within the shared
-    /// checkout context created by ``ContextModule`` at `setup` time.
+    /// Builds the payment component for this view within the shared checkout context.
     @MainActor
     func makeViewController(type: String, configuration _: NSDictionary) async throws -> UIViewController? {
         guard let state = BaseModule.checkoutState else {

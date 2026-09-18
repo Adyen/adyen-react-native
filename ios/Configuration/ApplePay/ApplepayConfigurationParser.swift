@@ -135,11 +135,8 @@ public struct ApplepayConfigurationParser {
         return parser.paymentRequest
     }
 
-    /// Builds the v6 ``ApplePayConfiguration`` from the parsed configuration.
-    ///
-    /// The returned configuration only carries the `PKPaymentRequest` and the onboarding flag.
-    /// The Apple Pay callback closures (authorization, shipping, coupon) are attached by
-    /// ``ContextModule`` because they capture the module instance.
+    /// Builds the ``ApplePayConfiguration`` carrying just the `PKPaymentRequest` and onboarding flag;
+    /// ``ContextModule`` attaches the callback closures separately.
     public func buildConfiguration(amount: Amount, countryCode: String) throws -> ApplePayConfiguration {
         let paymentRequest = try buildPaymentRequest(amount: amount, countryCode: countryCode)
         return try ApplePayConfiguration(paymentRequest: paymentRequest)

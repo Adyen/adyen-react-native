@@ -24,10 +24,7 @@ import org.robolectric.RobolectricTestRunner
     "runs. Re-enable by making threeDS2Version lazy, or move this to an instrumentation test.",
 )
 class ActionModuleTest {
-  // TODO(v6): `currentController` is `private set`, so it cannot be seeded directly.
-  //  Seeding it requires driving `handle()` with a real action and checkout configuration.
-  //  Until then this only guards that `hide()` is safe with nothing pending and leaves
-  //  no controller registered.
+  // TODO(v6): `currentController` can't be seeded directly; this only checks hide() is safe when idle.
   @Test
   fun `hide leaves no pending controller`() {
     val activity = Robolectric.buildActivity(AppCompatActivity::class.java).create().get()

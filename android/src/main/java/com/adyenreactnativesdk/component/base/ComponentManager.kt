@@ -25,11 +25,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * Builds and drives a v6 [CheckoutController] for any payment method.
- *
- * This is the single manager that replaces the former per-method managers (Card, GooglePay,
- * Instant). Optional [additionalCallbacks] / [additionalSessionCallbacks] builder lambdas let
- * callers inject payment-method-specific callback extensions (e.g. card BIN events).
+ * Builds and drives a [CheckoutController] for any payment method.
  */
 internal class ComponentManager(
   private val activity: FragmentActivity,
@@ -37,12 +33,7 @@ internal class ComponentManager(
   private val additionalCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val additionalSessionCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val sessionBeforeSubmitBridge: SessionBeforeSubmitBridge? = null,
-  /**
-   * Invoked once the flow reaches a terminal state (`onComplete` / `onFailure`), in addition to
-   * the message bus notification. Lets a headless caller (e.g. [com.adyenreactnativesdk.component.ContextModule.submit])
-   * dismiss whatever UI it presented for this controller's action - an embedded `<AdyenComponent>`
-   * has no such UI to dismiss, so this stays unset there.
-   */
+  /** Called on terminal state (complete/failure) so a headless caller can dismiss its UI. */
   private val onTerminal: (() -> Unit)? = null,
 ) {
   var checkoutController: CheckoutController? = null
@@ -51,13 +42,7 @@ internal class ComponentManager(
   private var submitContinuation: CancellableContinuation<SubmitResult>? = null
   private var additionalDetailsContinuation: CancellableContinuation<AdditionalDetailsResult>? = null
 
-  /**
-   * Whether this manager has a suspended SDK closure waiting on a result from JS.
-   *
-   * Lets a caller holding several managers (e.g. [com.adyenreactnativesdk.component.ContextModule],
-   * which caches one per payment method type) route an incoming `action` / `completion` / `retry`
-   * to the one that is actually awaiting it.
-   */
+  /** Whether this manager is suspended waiting on a submit/additionalDetails result from JS. */
   val isAwaitingResult: Boolean
     get() = submitContinuation != null || additionalDetailsContinuation != null
 

@@ -8,12 +8,10 @@ import Adyen
 import AdyenCheckout
 import AdyenComponents
 
-// MARK: - v6 advanced-flow callback bridging
+// MARK: - Advanced-flow callback bridging
 
-/// The advanced (merchant-managed) flow drives payments through the ``AdvancedCheckout`` closures
-/// rather than delegate methods. Each `onSubmit` / `onAdditionalDetails` closure emits the matching
-/// React Native event and suspends on a continuation until JS forwards a result through
-/// ``ContextModule/action(_:)`` / ``ContextModule/completion(_:)`` / ``ContextModule/retry(_:)``.
+/// The advanced flow drives payments via ``AdvancedCheckout`` closures: each emits a React Native
+/// event and suspends until JS responds through `action(_:)` / `completion(_:)` / `retry(_:)`.
 extension ContextModule {
 
     /// Wires the advanced-flow closures on the checkout object to React Native event emission.

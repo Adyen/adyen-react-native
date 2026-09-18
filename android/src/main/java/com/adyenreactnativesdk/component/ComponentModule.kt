@@ -13,10 +13,7 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 
 /**
- * Native module that relays JS commands to the per-view v6 [ComponentContract] of embedded
- * `<AdyenComponent>` views. `action` resumes an in-flight submission with a merchant
- * action; `completion` resolves it with a terminal result; `retry` re-prompts the shopper.
- * Address-lookup commands are accepted but inert until the v6 SDK exposes embedded address lookup.
+ * Relays JS commands to the per-view [ComponentContract] of embedded `<AdyenComponent>` views.
  */
 class ComponentModule(
   val context: ReactApplicationContext?,
@@ -89,8 +86,7 @@ class ComponentModule(
     viewId: String,
     resultCode: String,
   ) {
-    // Terminal result for this view — the consumer finishes the flow and the view is
-    // unregistered. Global cleanup happens when the TS-level terminal callback fires.
+    // Terminal result for this view; global cleanup happens via the TS-level terminal callback.
     getConsumer(viewId)?.onFinalResult(true, null)
     unregister(viewId)
   }
@@ -100,9 +96,7 @@ class ComponentModule(
     viewId: String,
     message: String?,
   ) {
-    // A retriable failure loops back into onSubmit as SubmitResult.Retry, so the consumer
-    // reports whether it stayed in-flight. The view remains registered when retained.
-    // Global cleanup happens when the TS-level terminal callback fires.
+    // Retriable failure: consumer reports whether it stayed in-flight; view stays registered if so.
     val retained = getConsumer(viewId)?.onFinalResult(false, message) ?: false
     if (retained) return
 

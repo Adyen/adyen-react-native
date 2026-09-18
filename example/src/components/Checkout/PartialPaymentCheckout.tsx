@@ -35,11 +35,7 @@ const PartialPaymentCheckout = () => {
           configuration,
           data.returnUrl
         );
-        // TODO: Partial-payment continuation (reloading Drop-in with refreshed
-        // payment methods for a non-fully-paid order via providePaymentMethods)
-        // is not available on the v6 handlers. Re-enable once the v6 DropIn
-        // partial-payment continuation API lands. For now, handle the result
-        // like a standard payment.
+        // TODO: partial-payment continuation (providePaymentMethods) isn't on v6 handlers yet; treat as a standard payment for now.
         if (result.action) {
           return SubmitResult.action(result.action);
         }
@@ -56,9 +52,7 @@ const PartialPaymentCheckout = () => {
     async (data: PaymentDetailsData): Promise<AdditionalDetailsResult> => {
       try {
         const result = await apiClient.paymentDetails(data);
-        // TODO: Partial-payment continuation is not available on the v6
-        // handlers (see didSubmit). Handle the result like a standard payment
-        // until the v6 DropIn partial-payment continuation API lands.
+        // TODO: partial-payment continuation isn't available yet (see didSubmit); treat as standard payment.
         return AdditionalDetailsResult.completed(result.resultCode);
       } catch (err) {
         console.error('Payment details error: ', err);
@@ -121,9 +115,7 @@ const PartialPaymentCheckout = () => {
       try {
         await apiClient.cancelOrder(order, configuration);
         if (shouldUpdatePaymentMethods) {
-          // TODO: Reload Drop-in with refreshed payment methods via the v6
-          // DropIn partial-payment continuation API (providePaymentMethods),
-          // which the v6 handlers do not yet expose. Clearing the UI for now.
+          // TODO: reload Drop-in via providePaymentMethods once v6 exposes it; clearing UI for now.
           console.warn(
             'Partial payment: reloading Drop-in after order cancel is not supported in v6 alpha yet.'
           );

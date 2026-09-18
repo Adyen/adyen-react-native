@@ -34,10 +34,7 @@ const SessionsComponentsCheckout = () => {
 
   const didComplete = useCallback(
     async (result: SessionsResult) => {
-      // TODO: use apiClient.requestSessionResult(result.sessionId, result.sessionResult) to
-      // verify the outcome server-side once adyen-android forwards a real sessionResult
-      // (currently always undefined there - the native SDK reads it off the /payments response
-      // but never threads it through to SessionCheckoutResult). Works correctly on iOS today.
+      // TODO: verify server-side via apiClient.requestSessionResult once Android forwards a real sessionResult (works on iOS today).
       navigateToResults(result);
     },
     [navigateToResults]

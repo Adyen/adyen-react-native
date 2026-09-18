@@ -99,8 +99,4 @@ final class ApplePayModuleUtilitiesTests: XCTestCase {
         XCTAssertNotNil(error)
     }
 
-    // Removed: two tests exercised `ApplePayPaymentMethod.supportedNetworks`, which belongs to
-    // the Adyen SDK rather than this bridge. In 6.0.0-alpha.1 it is an `internal func
-    // supportedNetworks(provider:)` — neither a property nor `@_spi(AdyenInternal)` exposed — so
-    // it is unreachable from this target. Upstream covers it in `ApplePayPaymentMethodTests`.
 }

@@ -7,15 +7,8 @@
 import Adyen
 import AdyenDropIn
 
-// TODO: DropIn is not fully supported in v6 alpha (`DropInModule.start()`/`action()` already
-// fail early with `ModuleException.notSupported`), and these delegate conformances can't
-// compile against the vendored xcframeworks anyway: DropInComponentDelegate,
-// StoredPaymentMethodsDelegate, PartialPaymentDelegate, and the types their methods use
-// (PaymentComponent, AnyDropInComponent, ActionComponent, Balance, Completion) are all
-// `package`-scoped in the real Adyen module. Swift's module loader for vendored xcframeworks
-// never resolves a dependency's .package.swiftinterface (only .private/.public), so
-// package-level access across a precompiled-xcframework boundary does not work. Disabled
-// entirely until either DropIn is fully supported again or these become `public` upstream.
+// TODO: Disabled — these delegate types are `package`-scoped in Adyen and don't resolve across a
+// vendored xcframework boundary. Re-enable once DropIn is fully supported or they go `public`.
 #if false
     extension DropInModule: DropInComponentDelegate {
         func didSubmit(_ data: Adyen.PaymentComponentData,
@@ -38,9 +31,6 @@ import AdyenDropIn
 
         func didComplete(from _: Adyen.ActionComponent,
                          in _: Adyen.AnyDropInComponent) {
-            // Drop-in is not supported in v6 alpha (`open()` fails early), so this delegate should
-            // never fire. Report an explicit not-supported error rather than falsely reporting an
-            // authorised payment if the SDK ever invokes it.
             sendError(error: ModuleException.notSupported)
         }
 
@@ -75,9 +65,7 @@ import AdyenDropIn
 
         @objc
         func provideBalance(_: NSNumber, balance _: NSDictionary?, error: NSDictionary?) {
-            // Partial payments are unsupported in v6 alpha: `Balance` is a package struct that no
-            // longer conforms to `Decodable`, so a balance cannot be reconstructed from JS. Fail the
-            // pending balance check rather than resolving it with a value we cannot build.
+            // `Balance` is package-scoped and no longer `Decodable`, so it can't be rebuilt from JS; always fail.
             ensureMainThread { [weak self] in
                 guard let self, let checkBalanceHandler = self.checkBalanceHandler else { return }
                 let message = error.getErrorMessage
@@ -104,8 +92,7 @@ import AdyenDropIn
         }
 
         func cancelOrder(_ order: Adyen.PartialPaymentOrder, component _: any Adyen.Component) {
-            // The `CancelOrderData` wrapper model was removed with the v6 partial-payment rework; emit
-            // the order payload directly so the event still fires without the retired type.
+            // `CancelOrderData` was removed with the v6 rework; emit the order payload directly.
             sendEvent(event: .cancelOrder, body: order.jsonObject)
         }
 

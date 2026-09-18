@@ -40,9 +40,7 @@ internal class BaseModule: RCTEventEmitter {
         emitter.send(event: event, body: body)
     }
 
-    /// The pre-created checkout state set by ``ContextModule.setup()`` or ``ContextModule.setupAdvanced()``.
-    /// Downstream modules (``ComponentModule``, ``DropInModule``) can reuse this instead of
-    /// creating their own checkout inline.
+    /// Checkout state set by ``ContextModule.setup()`` / `setupAdvanced()`, reused by downstream modules.
     internal static var checkoutState: CheckoutState?
 
     private static let sdkVersionLock = NSLock()
@@ -97,6 +95,7 @@ internal class BaseModule: RCTEventEmitter {
     func retry(_ message: NSString) {
         // No-op: subclasses handle retry (e.g. resolving the submit continuation).
         // The checkout context and UI remain alive on retry.
+        // TODO: Consider if this should be removed or if it's still needed.
     }
 
     // MARK: - Internal methods

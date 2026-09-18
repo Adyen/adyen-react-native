@@ -14,14 +14,10 @@ import React
 @objc(AdyenCheckout)
 internal final class ContextModule: BaseModule {
 
-    /// The module JS subscribes to, and therefore the only one whose events reach a listener.
-    /// Held so a mounted view's ``ComponentProxy`` can surface a component-creation failure
-    /// through the same channel as every other event. Weak: the bridge owns the module.
-    /// Goes away once the checkout modules merge.
+    /// Module JS subscribes to, so a mounted ``ComponentProxy`` can surface errors on it. Weak: the bridge owns the module.
     internal private(set) weak static var shared: ContextModule?
 
-    /// Pre-built payment components keyed by payment method type, populated by
-    /// ``requiresUserInteraction(_:resolver:rejecter:)`` and reused by ``submit(_:)``.
+    /// Payment components cached per payment method type, built lazily and reused by `submit(_:)`.
     private var components: [String: CheckoutPaymentComponent] = [:]
 
     override init() {
@@ -33,31 +29,22 @@ internal final class ContextModule: BaseModule {
 
     // MARK: - Advanced-flow callback state
 
-    /// Suspended advanced-flow closures for the headless presenter, resumed when JS calls
-    /// ``action(_:)`` / ``completion(_:)`` / ``retry(_:)``. Composed rather than inherited: this
-    /// module cannot extend ``BaseModuleSender`` without its continuations colliding.
+    /// Suspended advanced-flow closures, resumed when JS calls `action(_:)` / `completion(_:)` / `retry(_:)`.
     internal let resultSink = AdvancedResultSink()
 
     private let beforeSubmitBridge = CallbackBridge<BeforeSubmitResult>()
-    /// `BeforeSubmitData` has no accessible initializer outside the Adyen module (its memberwise
-    /// init is internal, not public - unreachable from a vendored xcframework regardless of
-    /// package boundaries). Stashing the instance the SDK handed us so parseBeforeSubmitResult
-    /// can mutate its `public var` properties in place instead of constructing a new one.
+    /// `BeforeSubmitData` has no public initializer, so we stash the SDK's instance here and mutate it in place instead of constructing a new one.
     private var pendingBeforeSubmitData: BeforeSubmitData?
 
     // MARK: - Apple Pay callback state
 
-    /// The suspended Apple Pay closures. Each is suspended when the SDK invokes the matching
-    /// closure and resumed by the corresponding `provide…` method once JS responds.
-    /// Stored on the class because Swift extensions cannot declare stored properties.
+    /// Suspended Apple Pay closures, resumed by the matching `provide…` method once JS responds.
     internal let authorizationBridge = CallbackBridge<PKPaymentAuthorizationResult>()
     internal let shippingContactBridge = CallbackBridge<PKPaymentRequestShippingContactUpdate>()
     internal let shippingMethodBridge = CallbackBridge<PKPaymentRequestShippingMethodUpdate>()
     internal let couponCodeBridge = CallbackBridge<PKPaymentRequestCouponCodeUpdate>()
 
-    /// The summary items currently shown in the Apple Pay sheet. v6 delivers them on every
-    /// shipping / coupon callback, so they are stored here to serve as a fallback when a
-    /// JS-provided update omits its own summary items.
+    /// Summary items currently shown in the Apple Pay sheet; fallback when a JS-provided update omits its own.
     internal var currentSummaryItems: [PKPaymentSummaryItem] = []
     internal var currentShippingMethods: [PKShippingMethod] = []
 
@@ -140,8 +127,7 @@ internal final class ContextModule: BaseModule {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            // Re-setup: clear stale components and continuations without calling cleanUp().
-            // The native side replaces its own state when the new setup completes.
+            // Clear stale state for re-setup without a full cleanUp().
             self.cancelPendingOperations()
             do {
                 let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
@@ -167,10 +153,7 @@ internal final class ContextModule: BaseModule {
         }
     }
 
-    /// Sets up an ``AdvancedCheckout`` for the advanced (merchant-managed) flow and wires its
-    /// lifecycle closures (`onSubmit`, `onAdditionalDetails`, `onComplete`, `onFailure`) to the
-    /// React Native events consumed by the hook. The checkout context is stored on ``BaseModule``
-    /// so downstream modules and headless ``submit(_:)`` can reuse it.
+    /// Sets up an ``AdvancedCheckout`` and wires its lifecycle closures to React Native events.
     @objc
     func setupAdvanced(_ paymentMethodsDict: NSDictionary,
                        configuration: NSDictionary,
@@ -186,8 +169,7 @@ internal final class ContextModule: BaseModule {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            // Re-setup: clear stale components and continuations without calling cleanUp().
-            // The native side replaces its own state when the new setup completes.
+            // Clear stale state for re-setup without a full cleanUp().
             self.cancelPendingOperations()
             do {
                 let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
@@ -283,10 +265,7 @@ internal final class ContextModule: BaseModule {
         }
     }
 
-    /// Clears all per-setup state: cached components, any suspended advanced-flow closures, and the
-    /// shared checkout context / presenter stack. Invoked on `cleanup()` and at the start of
-    /// ``setup(_:configuration:resolver:rejecter:)`` / ``createSession(_:configuration:resolver:rejecter:)``
-    /// so a re-setup never reuses stale controllers or a dangling continuation.
+    /// Clears cached components, suspended closures, and the shared checkout context/presenter stack.
     @MainActor
     private func performCleanup() {
         cancelPendingOperations()
@@ -319,10 +298,7 @@ internal final class ContextModule: BaseModule {
 
     private func buildCheckoutConfiguration(parser: RootConfigurationParser,
                                             configuration: NSDictionary) throws -> CheckoutConfiguration {
-        // BIN callbacks live on the card configuration, so they are checkout-wide rather than
-        // per presenter: one handler serves Drop-in, an embedded view and a headless submit.
-        // The parser has accepted these since the v6 migration but was never passed them, so the
-        // events were declared and advertised while nothing emitted them.
+        // BIN callbacks are checkout-wide so they serve Drop-in, embedded views, and headless submit alike.
         let cardConfiguration = CardConfigurationParser(
             configuration: configuration,
             onBinChange: { [weak self] binValue in
@@ -334,8 +310,7 @@ internal final class ContextModule: BaseModule {
         ).configuration
         let authenticationConfiguration = ThreeDS2ConfigurationParser(configuration: configuration).configuration
 
-        // Apple Pay only contributes a component configuration when the merchant supplied one;
-        // the DSL cannot mix an optional entry with the required ones, so branch on its presence.
+        // The DSL can't mix an optional entry with required ones, so branch on Apple Pay's presence.
         if let applePayConfiguration = try makeApplePayConfiguration(parser: parser, configuration: configuration) {
             return try parser.checkoutConfiguration {
                 cardConfiguration
@@ -350,10 +325,7 @@ internal final class ContextModule: BaseModule {
         }
     }
 
-    /// Emits the brands detected for a BIN.
-    ///
-    /// Flattened to `[{ brand }]` to match Android and the `BinLookupData[]` the merchant
-    /// callback is typed against; the SDK nests brands inside one result object.
+    /// Emits the brands detected for a BIN, flattened to `[{ brand }]` to match Android.
     @MainActor
     private func sendBinLookupEvent(_ data: BinLookupData) {
         let brands = data.brands.map { [Key.brand: $0.brand] }
@@ -364,7 +336,6 @@ internal final class ContextModule: BaseModule {
     // MARK: - Session callbacks
 
     /// Wires the v6 ``SessionCheckout`` closures to the React Native session events.
-    /// Replaces the removed v5 session delegate conformance.
     @MainActor
     private func setupSessionCallbacks(on checkout: SessionCheckout, sessionData: String) {
         _ = checkout

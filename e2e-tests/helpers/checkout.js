@@ -1,5 +1,4 @@
-// Adyen's well-known public test card. Always Authorised in the test environment; no real
-// payment data. https://docs.adyen.com/development-resources/testing/test-card-numbers/
+// Adyen's public test card. Always Authorised in the test environment; no real payment data.
 const TEST_CARD = {
   number: '4111111111111111',
   expiryDate: '0330',
@@ -7,15 +6,8 @@ const TEST_CARD = {
 };
 
 /**
- * Fills the three plain-text fields of the native Adyen Card component (card number, expiry,
- * security code).
- *
- * On Android the component exposes no resource-id/accessibility-id, so fields are matched by
- * their stable on-screen order among all EditTexts in the current window. On iOS the native
- * AdyenCard component sets stable accessibility identifiers directly.
- *
- * Waits for the form to actually render first - the Card component is built asynchronously
- * (session/payment-methods setup) after navigation, so it isn't present immediately.
+ * Fills the card number, expiry and security code fields. Android matches fields by on-screen
+ * order (no accessibility-id); iOS uses stable accessibility identifiers.
  */
 async function fillCardDetails(driver, card = TEST_CARD, timeout = 20000) {
   if (driver.isIOS) {
@@ -29,10 +21,7 @@ async function fillCardDetails(driver, card = TEST_CARD, timeout = 20000) {
       '~AdyenCard.CardComponent.securityCodeItem.textField'
     );
     await numberField.waitForDisplayed({ timeout });
-    // These are custom-formatted fields (grouping/masking as you type); setting one right after
-    // another without focusing first can leak keystrokes into whichever field WDA left focused,
-    // corrupting both. Click to focus each field explicitly and pause briefly after typing to
-    // let its formatting/validation settle before moving on.
+    // Focus each field explicitly and pause after typing, or keystrokes can leak between fields.
     for (const [field, value] of [
       [numberField, card.number],
       [expiryField, card.expiryDate],
@@ -62,12 +51,7 @@ async function fillCardDetails(driver, card = TEST_CARD, timeout = 20000) {
   await fields[2].setValue(card.securityCode);
 }
 
-/**
- * Waits for and taps the Card component's own "Pay <amount>" submit button (amount/currency
- * vary per session). On iOS this is matched by its stable accessibility identifier rather than
- * its label text - other mounted payment methods (Apple Pay, Google Pay) also render buttons
- * whose titles begin with "Pay ", so a text-based match would be ambiguous.
- */
+/** Waits for and taps the Card component's "Pay" button (matched by id on iOS to avoid ambiguity with other payment buttons). */
 async function tapPayButton(driver, timeout = 15000) {
   const payButton = driver.isIOS
     ? await driver.$('~AdyenCard.CardComponent.payButtonItem.button')

@@ -7,15 +7,8 @@
 import Adyen
 import React
 
-/// Registry of the payment components built for mounted `<AdyenComponent>` views.
-///
-/// Exists only so teardown can reach them. `cleanup()` has to dispose every mounted view's
-/// component, and JS cannot do that because the merchant owns the JSX and can keep a view mounted
-/// across a checkout being replaced.
-///
-/// It exposes nothing to JS and emits nothing: the merchant's callbacks are global rather than per
-/// view, so events and results all travel through ``ContextModule``. Registration is native-only,
-/// driven by the view itself.
+/// Registry of the payment components built for mounted `<AdyenComponent>` views, so `cleanup()` can dispose them all.
+/// Emits nothing to JS; events travel through ``ContextModule`` instead.
 @objc(AdyenComponent)
 internal final class ComponentModule: BaseModule {
 
@@ -25,8 +18,6 @@ internal final class ComponentModule: BaseModule {
     private var delegates: [String: ComponentProxy] = [:]
 
     override func supportedEvents() -> [String]! {
-        // Emits nothing. Every event reaches JS through ContextModule, the module the JS side
-        // subscribes to.
         []
     }
 

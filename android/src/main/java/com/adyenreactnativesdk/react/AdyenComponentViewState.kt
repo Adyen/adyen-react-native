@@ -34,10 +34,8 @@ private const val SCHEME = "scheme"
 private const val TAG = "AdyenComponentViewState"
 
 /**
- * Per-view state for the generic embedded `<AdyenComponent>` view. Owns the [ComponentManager]
- * that builds the v6 [com.adyen.checkout.core.components.CheckoutController] for the payment method
- * identified by [type] and renders it through the `CheckoutPaymentFlow` composable hosted in a
- * [ComposeView].
+ * Per-view state for the embedded `<AdyenComponent>` view; owns the [ComponentManager] and renders
+ * its controller via `CheckoutPaymentFlow` in a [ComposeView].
  */
 class AdyenComponentViewState(
   val context: ThemedReactContext,
@@ -61,9 +59,7 @@ class AdyenComponentViewState(
     val checkoutContext = state.checkoutContext
 
     val viewId = dynamicComponentView.id.toString()
-    // The untagged shared bus. Events used to carry this view's id so JS could route a result
-    // back to it, but the merchant's callbacks are global and there is one suspended closure at
-    // a time, so there is nothing to route.
+    // Untagged bus: only one closure is ever suspended at a time, so there's nothing to route by id.
     val bus = MessageBus(emitter)
     // BIN callbacks only exist on the card configuration; wire them exclusively for card views.
     val cardCallbackBlock: (CheckoutCallbacks.() -> Unit)? =
@@ -92,11 +88,8 @@ class AdyenComponentViewState(
 
     val composeView =
       ComposeView(activity).apply {
-        // Not DisposeOnViewTreeLifecycleDestroyed: this app hosts every screen in a single
-        // Activity, so its ViewTree lifecycle never reaches DESTROYED just because React
-        // Navigation unmounts this view — the composition would never dispose at the right
-        // time. This view is added/removed dynamically while the Activity stays alive, so tie
-        // disposal to the view's own detach instead.
+        // Tie disposal to view detach, not ViewTree lifecycle: the single-Activity app never
+        // reaches DESTROYED just because React Navigation unmounts this view.
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
       }
     dynamicComponentView.setView(composeView)

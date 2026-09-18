@@ -29,9 +29,7 @@ class RootConfigurationParser(
     get() {
       if (config.hasKey(AMOUNT_KEY)) {
         val map = config.getMap(AMOUNT_KEY)
-        // Deserialization must stay inside the try: Amount.SERIALIZER throws when `currency`
-        // or `value` is missing, and an incomplete amount should degrade to null rather than
-        // propagate out of configuration parsing.
+        // An incomplete amount (missing currency/value) should degrade to null, not throw.
         return try {
           Amount.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
         } catch (e: Throwable) {

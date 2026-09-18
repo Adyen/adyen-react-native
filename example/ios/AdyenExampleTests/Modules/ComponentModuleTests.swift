@@ -32,8 +32,8 @@ final class ComponentModuleTests: XCTestCase {
     // MARK: - supportedEvents
 
     func test_supportedEvents_isEmpty_becauseTheModuleEmitsNothing() {
-        // Every event reaches JS through ContextModule, the module the JS side subscribes to.
-        // Advertising events here would be misleading: nothing listens to this emitter.
+        // Every event reaches JS through ContextModule instead.
+        // TODO: Confirm this is still the case in v6.
         XCTAssertEqual(sut.supportedEvents() ?? [], [])
     }
 
@@ -58,7 +58,4 @@ final class ComponentModuleTests: XCTestCase {
         XCTAssertFalse(first === second)
     }
 
-    // Removed: `test_isAvailable_alwaysReturnsFalse`. Availability moved to
-    // `ContextModule.isAvailable(_:resolver:rejecter:)` in v6; `ComponentModule` no longer
-    // exposes it. `ContextModuleTests` is the right home for that coverage.
 }

@@ -28,11 +28,7 @@ public struct AnalyticsParser {
 
     public var configuration: AnalyticsConfiguration {
         let analytics = AnalyticsConfiguration(isEnabled: analyticsOn)
-        // TODO: `CheckoutPlatformParams` is `package`-scoped in the real Adyen module and can't
-        // be reached across the vendored-xcframework boundary (see the podspec's
-        // pod_target_xcconfig comment). Omitting this only affects Adyen's own analytics
-        // attribution (reporting this SDK's usage as React Native rather than plain iOS), not
-        // payment functionality.
+        // TODO: `CheckoutPlatformParams` is package-scoped and unreachable across the xcframework boundary; only affects analytics attribution, not payments.
         AdyenLogging.isEnabled = verboseLogsOn
         return analytics
     }

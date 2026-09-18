@@ -26,9 +26,6 @@ final class BaseModuleTests: XCTestCase {
         super.tearDown()
     }
 
-    // Removed: `test_cleanUp_clearsCurrentComponent` and the two `hide` tests. v6 BaseModule
-    // no longer has `currentComponent` or `hide(_:event:)`; teardown goes through
-    // `cleanUp()` / `dismiss(_:)`, which the surrounding tests already cover.
 
     // MARK: - presenterStack / currentPresenter
 
@@ -163,9 +160,7 @@ final class BaseModuleTests: XCTestCase {
         sut.present(component: mockComponent)
 
         wait(for: [exp], timeout: 1.0)
-        // NOTE(v6): present() always wraps in a UINavigationController and does not consult
-        // `requiresModalPresentation`. Deviates from the protocol contract; revisit when the
-        // presenter refactor reworks presentation.
+        // TODO: present() always wraps in a UINavigationController, ignoring `requiresModalPresentation`.
         let nav = mockPresenter.lastPresentedViewController as? UINavigationController
         XCTAssertTrue(nav?.viewControllers.first === mockComponent.viewController)
     }

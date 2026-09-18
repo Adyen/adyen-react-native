@@ -24,10 +24,7 @@ object AdyenCheckout {
   }
 
   /**
-   * Allow Adyen Components to process intents.
-   *
-   * In v6 redirect/deep-link returns are dispatched to the active [com.adyen.checkout.core.components.CheckoutController]
-   * instances tracked by [CheckoutControllerRegistry], which call `CheckoutController.handleReturn(intent)`.
+   * Allow Adyen Components to process intents. Dispatches to [CheckoutControllerRegistry].
    * @param intent  received redirect intent
    * @return `true` when intent could be handled by AdyenCheckout
    */

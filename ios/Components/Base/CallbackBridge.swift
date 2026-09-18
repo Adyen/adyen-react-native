@@ -6,17 +6,7 @@
 
 import Foundation
 
-/// Bridges one suspended native callback to the JS response that resolves it.
-///
-/// Every feedback-style callback has the same shape: the SDK invokes an `async` closure, we emit an
-/// event, and a later module method supplies the result. The response arrives as a separate bridge
-/// call rather than a return value, so the invocation has to be suspended in between — which is the
-/// one piece of machinery the React Native layer has to invent, because a native integration simply
-/// returns from the closure.
-///
-/// Holding that state in one place rather than as a continuation property per callback removes the
-/// store / resume / nil-out sequence from every call site, and with it the chance of dropping a
-/// continuation without resuming it.
+/// Bridges one suspended native `async` callback to the JS response that later resolves it via a bridge call.
 @MainActor
 internal final class CallbackBridge<Response> {
 
@@ -27,13 +17,7 @@ internal final class CallbackBridge<Response> {
         continuation != nil
     }
 
-    /// Suspends until ``resolve(_:)`` supplies a response, running `emit` once suspended.
-    ///
-    /// `emit` is invoked *inside* the continuation body so the event cannot reach JS — and a
-    /// response cannot come back — before there is something to resume.
-    ///
-    /// A call already suspended is settled with `superseding` first. A continuation dropped without
-    /// being resumed leaks, and Swift reports that at runtime.
+    /// Suspends until ``resolve(_:)`` supplies a response, running `emit` once suspended. Any already-suspended call is settled with `superseding` first.
     internal func suspend(superseding: Response, emit: () -> Void) async -> Response {
         resolve(superseding)
         return await withCheckedContinuation { continuation in
@@ -42,10 +26,7 @@ internal final class CallbackBridge<Response> {
         }
     }
 
-    /// Resumes the suspended call.
-    ///
-    /// No-op when nothing is pending, so a late or duplicate response from JS is ignored rather
-    /// than crashing on a double resume.
+    /// Resumes the suspended call. No-op when nothing is pending.
     internal func resolve(_ response: Response) {
         guard let continuation else { return }
         self.continuation = nil

@@ -68,10 +68,7 @@ internal final class ActionModule: BaseModule {
         dismiss(success.boolValue)
     }
 
-    /// Wires the v6 action-only closures to the JS promise. Replaces the v5
-    /// `ActionComponentDelegate` conformance: additional details resolve the promise with the data
-    /// for the merchant's `/payments/details` call, completion resolves with the result code, and
-    /// failures reject the promise.
+    /// Wires the action-only closures to the JS promise.
     @MainActor
     private func setupCallbacks(on checkout: ActionOnlyCheckout) {
         _ = checkout

@@ -21,14 +21,11 @@ public class RedirectComponentProxy: NSObject {
     @MainActor
     public class func proccessURL(_ url: URL) -> Bool {
         #if canImport(AdyenActions)
-            // Modular build (SPM / dynamic frameworks): `AdyenActions` is a separate module and
-            // `Checkout.handleReturn(url:)` is the public redirect-return entry point.
+            // Modular build: `AdyenActions` is separate, so use the public `Checkout.handleReturn(url:)`.
             return Checkout.handleReturn(url: url)
         #else
-            // Umbrella CocoaPods build: every Adyen module merges into a single `Adyen` module, so
-            // `canImport(AdyenActions)` is false and `Checkout.handleReturn` is not compiled.
-            // Call the same underlying API it wraps; it is reachable because the bridge is
-            // compiled into the `com.adyen.checkout` package (see the podspec Swift flags).
+            // Umbrella CocoaPods build: everything merges into `Adyen`, so call the underlying API directly.
+            // TODO: Check if this is still needed.
             return RedirectComponent.applicationDidOpen(from: url)
         #endif
     }

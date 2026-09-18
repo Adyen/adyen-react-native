@@ -17,9 +17,7 @@ import com.facebook.react.viewmanagers.AdyenComponentViewManagerDelegate
 import com.facebook.react.viewmanagers.AdyenComponentViewManagerInterface
 
 /**
- * Generic Fabric [SimpleViewManager] for the embedded `<AdyenComponent>` view. Renders the payment
- * component for any payment method type through a shared [AdyenComponentViewState]. Replaces the
- * former per-method card and platform-pay view managers.
+ * Generic Fabric [SimpleViewManager] for the embedded `<AdyenComponent>` view.
  */
 @ReactModule(name = AdyenComponentViewManager.NAME)
 class AdyenComponentViewManager(

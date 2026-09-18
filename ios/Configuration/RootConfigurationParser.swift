@@ -49,14 +49,10 @@ public struct RootConfigurationParser {
 
 extension RootConfigurationParser {
 
-    /// Builds a v6 ``CheckoutConfiguration`` from the parsed root configuration.
-    ///
-    /// Component configurations (card, Apple Pay, authentication, etc.) are supplied
-    /// through the DSL `content` builder by the calling module.
-    /// - Parameters:
-    ///   - amount: An amount that overrides the one parsed from the configuration (for example, a
-    ///     session amount). When `nil`, the amount parsed from the configuration is used.
-    ///   - content: The component configuration builder.
+    /// Builds a ``CheckoutConfiguration`` from the parsed root configuration.
+    /// - Parameter amount: Overrides the amount parsed from the configuration (e.g. a session amount) when non-nil.
+    /// - Parameter content: The component configuration builder (card, Apple Pay, etc).
+    /// TODO: Check if still needed.
     internal func checkoutConfiguration(
         amount: Amount? = nil,
         @CheckoutConfigurationBuilder content: () throws -> CheckoutConfigurable
