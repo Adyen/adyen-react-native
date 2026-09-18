@@ -20,15 +20,15 @@ Complete public API redesign for `adyen-react-native` v6. The SDK moved from a R
 
 ## Commit History
 
-| #   | Hash       | Description                                                                   |
-| --- | ---------- | ----------------------------------------------------------------------------- |
-| 1   | `b4e9057b` | iOS/Android/TS bridge rewrite for v6                                          |
-| 2   | `8064394c` | API redesign + docs (renames, dead code removal)                              |
-| 3   | `ad3e6c21` | Option B: static API + example migration + docs                               |
-| 4   | `79e3d799` | Native alignment (CheckoutState, cleanup terminal-only, remove currentModule) |
-| 5   | `4f55f42d` | Return-based callbacks                                                        |
-| 6   | `754a714f` | Cleanup: AdvancedPayment interface, factory methods, example app fixes        |
-| 7   | `e27487ac` | Flatten DropIn inheritance, fix open→start mismatch                           |
+| # | Hash | Description |
+|---|------|-------------|
+| 1 | `b4e9057b` | iOS/Android/TS bridge rewrite for v6 |
+| 2 | `8064394c` | API redesign + docs (renames, dead code removal) |
+| 3 | `ad3e6c21` | Option B: static API + example migration + docs |
+| 4 | `79e3d799` | Native alignment (CheckoutState, cleanup terminal-only, remove currentModule) |
+| 5 | `4f55f42d` | Return-based callbacks |
+| 6 | `754a714f` | Cleanup: AdvancedPayment interface, factory methods, example app fixes |
+| 7 | `e27487ac` | Flatten DropIn inheritance, fix open→start mismatch |
 
 ---
 
@@ -66,19 +66,19 @@ Removed `currentModule` dispatch pattern. DropIn `action`/`completion`/`retry` r
 
 ### Module Renames
 
-| v5                                                 | v6                                                               |
-| -------------------------------------------------- | ---------------------------------------------------------------- |
-| `SetupModule` / `AdyenSetup`                       | `ContextModule` / `AdyenContext` (later renamed `AdyenCheckout`) |
-| `EmbeddedComponentBusModule` / `AdyenComponentBus` | `ComponentModule` / `AdyenComponent`                             |
-| `EmbeddedComponentDelegateProxy`                   | `ComponentProxy`                                                 |
+| v5 | v6 |
+|----|----|
+| `SetupModule` / `AdyenSetup` | `ContextModule` / `AdyenContext` (later renamed `AdyenCheckout`) |
+| `EmbeddedComponentBusModule` / `AdyenComponentBus` | `ComponentModule` / `AdyenComponent` |
+| `EmbeddedComponentDelegateProxy` | `ComponentProxy` |
 
 ### Method Renames
 
-| v5                                         | v6                                                 |
-| ------------------------------------------ | -------------------------------------------------- |
-| `createSession(...)`                       | `setup(session, config, callbacks)`                |
-| `setup(...)`                               | `setupAdvanced(paymentMethods, config, callbacks)` |
-| `AdyenDropIn.open(paymentMethods, config)` | `AdyenDropIn.start(checkout)`                      |
+| v5 | v6 |
+|----|----|
+| `createSession(...)` | `setup(session, config, callbacks)` |
+| `setup(...)` | `setupAdvanced(paymentMethods, config, callbacks)` |
+| `AdyenDropIn.open(paymentMethods, config)` | `AdyenDropIn.start(checkout)` |
 
 ### Removed APIs
 
@@ -109,12 +109,8 @@ const checkout = await AdyenCheckout.setup(
   { id: sessionId, sessionData },
   configuration,
   {
-    onComplete(result: SessionsResult) {
-      /* terminal */
-    },
-    onError(error: AdyenError) {
-      /* terminal */
-    },
+    onComplete(result: SessionsResult) { /* terminal */ },
+    onError(error: AdyenError) { /* terminal */ },
     async onBeforeSubmit(data: BeforeSubmitData): Promise<BeforeSubmitResult> {
       return BeforeSubmitResult.proceed(data);
     },
@@ -131,20 +127,12 @@ const checkout = await AdyenCheckout.setupAdvanced(
       if (res.action) return SubmitResult.action(res.action);
       return SubmitResult.completed(res.resultCode);
     },
-    async onAdditionalDetails(
-      data: PaymentDetailsData
-    ): Promise<AdditionalDetailsResult> {
-      const res = await fetch('/payments/details', {
-        body: JSON.stringify(data),
-      });
+    async onAdditionalDetails(data: PaymentDetailsData): Promise<AdditionalDetailsResult> {
+      const res = await fetch('/payments/details', { body: JSON.stringify(data) });
       return AdditionalDetailsResult.completed(res.resultCode);
     },
-    onComplete(result: PaymentResult) {
-      /* terminal */
-    },
-    onError(error: AdyenError) {
-      /* terminal */
-    },
+    onComplete(result: PaymentResult) { /* terminal */ },
+    onError(error: AdyenError) { /* terminal */ },
   }
 );
 ```

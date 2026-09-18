@@ -123,12 +123,12 @@ stateDiagram-v2
 
 **`<AdyenComponent>` mount/unmount behavior:**
 
-| Event                           | What happens                                                                                      | checkoutState affected? |
-| ------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- |
-| `<AdyenComponent>` **mounts**   | Builds its payment component from the shared checkout; registers natively so teardown can find it | No                      |
-| `<AdyenComponent>` **unmounts** | Disposes its component                                                                            | No                      |
-| **Terminal callback** fires     | Auto-cleanup: disposes every component, clears state, removes listeners                           | **Yes — full teardown** |
-| `checkout.invalidate()` called  | Same as above, for a flow the shopper abandoned                                                   | **Yes — full teardown** |
+| Event | What happens | checkoutState affected? |
+|-------|-------------|--------------------------|
+| `<AdyenComponent>` **mounts** | Builds its payment component from the shared checkout; registers natively so teardown can find it | No |
+| `<AdyenComponent>` **unmounts** | Disposes its component | No |
+| **Terminal callback** fires | Auto-cleanup: disposes every component, clears state, removes listeners | **Yes — full teardown** |
+| `checkout.invalidate()` called | Same as above, for a flow the shopper abandoned | **Yes — full teardown** |
 
 > **Lifecycle invariant:** `BaseModule.checkoutState` is managed by the `AdyenCheckout` static class.
 > Terminal callbacks (`onComplete`, `onError`) trigger cleanup automatically, and
