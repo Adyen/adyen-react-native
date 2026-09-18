@@ -25,13 +25,16 @@ flowchart TB
   JS <-->|"@ReactMethod / @objc + events"| N
   CTX -->|writes| STATE["shared checkout state"]
   CPM -->|reads| STATE
-  DIM -->|reads| STATE
+  DIM -->|"reads (Android only)"| STATE
   N <-->|"closures + continuations"| SDK
 ```
 
 `ContextModule` is the lifecycle owner on both platforms: it performs setup and holds the shared
-checkout state that presenters read. The class ladders below are intentionally different between
-the platforms.
+checkout state that presenters read. Reading is asymmetric for Drop-in: the Android `DropInModule`
+reads `BaseModule.checkoutState` (its `configurationJSON`/`isSession` in `start()`, plus
+`completion()`/`retry()`), whereas the iOS `DropInModule` stub returns `notSupported` from
+`start()`/`action()` without reading the checkout state. The class ladders below are intentionally
+different between the platforms.
 
 ## iOS class hierarchy
 
@@ -58,7 +61,7 @@ classDiagram
   class ContextModule {
     <<AdyenCheckout>>
     +resultSink: AdvancedResultSink
-    +createSession() / setup()
+    +setup() / setupAdvanced()
     +action() / completion() / retry()
   }
   class ComponentModule {
@@ -124,7 +127,7 @@ classDiagram
   class ContextModule {
     <<AdyenCheckout>>
     +componentManagers: Map
-    +createSession() / setup()
+    +setup() / setupAdvanced()
     +action() / completion() / retry()
   }
   class ComponentModule {
