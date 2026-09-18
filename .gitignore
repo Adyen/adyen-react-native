@@ -97,7 +97,14 @@ example/package-lock.json
 .yarn/*
 !.yarn/releases
 
-#Example credentials
+# Example credentials
 example/secrets.json
 example/android/gradlew.bat
 example/android/gradle/gradle-daemon-jvm.properties
+
+# Built by scripts/build-xcframeworks.sh - see the podspec's vendored_frameworks comment.
+# Not committed: run the script (needs a local adyen-ios checkout) before `pod install`.
+ios/frameworks/
+
+# Appium
+appium_*

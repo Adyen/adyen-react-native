@@ -1,9 +1,9 @@
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.components.core.AnalyticsConfiguration
-import com.adyen.checkout.components.core.AnalyticsLevel
-import com.adyen.checkout.core.AdyenLogLevel
-import com.adyen.checkout.core.AdyenLogger
+import com.adyen.checkout.core.common.AdyenLogLevel
+import com.adyen.checkout.core.common.AdyenLogger
+import com.adyen.checkout.core.components.AnalyticsConfiguration
+import com.adyen.checkout.core.components.AnalyticsLevel
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.facebook.react.bridge.ReadableMap
 

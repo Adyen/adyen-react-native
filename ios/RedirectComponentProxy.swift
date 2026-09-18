@@ -5,18 +5,29 @@
 //
 
 import Adyen
+#if canImport(AdyenActions)
+    import AdyenCheckout
+#endif
 import Foundation
 
 @objc
 public class RedirectComponentProxy: NSObject {
 
-    @objc
+    @objc @MainActor
     public class func proccessURL(_ url: NSURL) -> Bool {
-        RedirectComponent.applicationDidOpen(from: url as URL)
+        proccessURL(url as URL)
     }
 
+    @MainActor
     public class func proccessURL(_ url: URL) -> Bool {
-        RedirectComponent.applicationDidOpen(from: url)
+        #if canImport(AdyenActions)
+            // Modular build: `AdyenActions` is separate, so use the public `Checkout.handleReturn(url:)`.
+            return Checkout.handleReturn(url: url)
+        #else
+            // Umbrella CocoaPods build: everything merges into `Adyen`, so call the underlying API directly.
+            // TODO: Check if this is still needed.
+            return RedirectComponent.applicationDidOpen(from: url)
+        #endif
     }
 
 }

@@ -5,6 +5,8 @@
 //
 
 @_spi(AdyenInternal) import Adyen
+import AdyenCheckout
+import AdyenUI
 
 public struct RootConfigurationParser {
 
@@ -40,16 +42,6 @@ public struct RootConfigurationParser {
         configuration[RootKeys.countryCode] as? String
     }
 
-    public var payment: Payment? {
-        guard let amount = self.amount,
-              let countryCode
-        else {
-            return nil
-        }
-
-        return Payment(amount: amount, countryCode: countryCode)
-    }
-
     public var shopperLocale: String? {
         configuration[RootKeys.locale] as? String
     }
@@ -57,29 +49,32 @@ public struct RootConfigurationParser {
 
 extension RootConfigurationParser {
 
-    internal func fetchContext(session: AdyenSession?) throws -> AdyenContext {
+    /// Builds a ``CheckoutConfiguration`` from the parsed root configuration.
+    /// - Parameter amount: Overrides the amount parsed from the configuration (e.g. a session amount) when non-nil.
+    /// - Parameter content: The component configuration builder (card, Apple Pay, etc).
+    /// TODO: Check if still needed.
+    internal func checkoutConfiguration(
+        amount: Amount? = nil,
+        @CheckoutConfigurationBuilder content: () throws -> CheckoutConfigurable
+    ) throws -> CheckoutConfiguration {
         guard let clientKey = self.clientKey else {
             throw ModuleException.noClientKey
         }
 
-        guard ClientKeyValidator().isValid(clientKey) else {
-            throw ModuleException.invalidClientKey
-        }
-
-        let apiContext = try APIContext(environment: self.environment, clientKey: clientKey)
-
         let analytics = AnalyticsParser(configuration: configuration).configuration
 
-        var payment: Payment?
-        if
-            let context = session?.sessionContext,
-            let countryCode = context.countryCode ?? self.countryCode {
-            payment = Payment(amount: context.amount, countryCode: countryCode)
-        } else {
-            payment = self.payment
-        }
+        let config = try CheckoutConfiguration(
+            environment: environment,
+            amount: amount ?? self.amount,
+            clientKey: clientKey,
+            analyticsConfiguration: analytics,
+            content: content
+        )
 
-        return AdyenContext(apiContext: apiContext, payment: payment, analyticsConfiguration: analytics)
+        guard let theme = AdyenAppearanceLoader.findStyle() else {
+            return config
+        }
+        return config.theme(theme)
     }
 }
 

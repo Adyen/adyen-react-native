@@ -6,7 +6,8 @@
 
 package com.adyenreactnativesdk.util.messaging.base
 
-import com.adyen.checkout.sessions.core.SessionPaymentResult
+import com.adyen.checkout.core.common.CheckoutResultCode
+import com.adyen.checkout.core.components.SessionCheckoutResult
 import com.adyenreactnativesdk.util.ResultCodes
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MockEmitter
@@ -43,12 +44,10 @@ class SessionMessengerImplTest {
   fun `onFinished sends event with COMPLETE_SESSION`() {
     // GIVEN
     val result =
-      SessionPaymentResult(
+      SessionCheckoutResult(
+        resultCode = CheckoutResultCode("Authorised"),
         sessionId = "session123",
         sessionData = "data",
-        sessionResult = "result",
-        resultCode = "Authorised",
-        order = null,
       )
 
     // WHEN
@@ -65,12 +64,10 @@ class SessionMessengerImplTest {
   fun `onFinished replaces finish_with_action resultCode with PresentToShopper`() {
     // GIVEN
     val result =
-      SessionPaymentResult(
+      SessionCheckoutResult(
+        resultCode = CheckoutResultCode("finish_with_action"),
         sessionId = "session123",
         sessionData = "data",
-        sessionResult = "result",
-        resultCode = "finish_with_action",
-        order = null,
       )
 
     // WHEN

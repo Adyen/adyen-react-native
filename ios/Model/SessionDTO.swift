@@ -7,33 +7,23 @@
 import Adyen
 import Foundation
 
+/// The session context returned to JavaScript after a v6 ``SessionCheckout`` is set up.
 struct SessionDTO {
     let id: String
     let sessionData: String
-    let amount: Amount
-    let expiresAt: String?
     let paymentMethods: [String: Any]
-    let configuration: [String: Any]?
 
-    init(session: AdyenSession) {
-        id = session.sessionContext.identifier
-        sessionData = session.sessionContext.data
-        amount = session.sessionContext.amount
-        expiresAt = nil
-        paymentMethods = session.sessionContext.paymentMethods.jsonObject
-        configuration = nil
+    init(id: String, sessionData: String, paymentMethods: PaymentMethods) {
+        self.id = id
+        self.sessionData = sessionData
+        self.paymentMethods = paymentMethods.jsonObject
     }
 
     var jsonObject: [String: Any] {
-        var dict = [String: Any]()
-        dict["id"] = id
-        dict["sessionData"] = sessionData
-        dict["amount"] = amount
-        dict["paymentMethods"] = paymentMethods
-        return dict
-    }
-
-    private enum CodingKeys: String {
-        case id, sessionData, amount, expiresAt, paymentMethods, configuration
+        [
+            "id": id,
+            "sessionData": sessionData,
+            "paymentMethods": paymentMethods
+        ]
     }
 }

@@ -49,6 +49,7 @@ const Home = ({ navigation }: HomeScreenProps) => {
           <TabItem
             key={tab}
             label={tab}
+            testID={`tab-${tab}`}
             isActive={activeTab === tab}
             onPress={() => setActiveTab(tab)}
           />
@@ -60,6 +61,7 @@ const Home = ({ navigation }: HomeScreenProps) => {
           <MenuButton
             key={title}
             title={title}
+            testID={`menu-item-${route}`}
             onPress={() => navigationHandler(route)}
           />
         ))}

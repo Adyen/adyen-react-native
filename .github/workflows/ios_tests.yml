@@ -40,6 +40,24 @@ jobs:
         run: |
           yarn install --frozen-lockfile
 
+      - name: Read pinned adyen-ios version
+        id: adyen-ios-version
+        run: echo "value=$(jq -r .adyen.ios package.json)" >> "$GITHUB_OUTPUT"
+
+      # Testable variant - AdyenExampleTests @testable imports Adyen (see build-xcframeworks.sh).
+      - name: Restore iOS xcframeworks cache
+        id: ios-frameworks-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ios/frameworks
+          key: ios-frameworks-${{ steps.adyen-ios-version.outputs.value }}-testable
+
+      - name: Fail if iOS xcframeworks cache is missing
+        if: steps.ios-frameworks-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "ios/frameworks/ (testable) cache miss - check build_ios_frameworks.yml's logs." >&2
+          exit 1
+
       - uses: actions/cache@v6
         id: pods-cache
         with:

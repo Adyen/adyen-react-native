@@ -47,12 +47,17 @@ class DynamicComponentView(
 
   override fun onDetachedFromWindow() {
     super.onDetachedFromWindow()
-    onDispose()
+    removeCallbacks(resizeRunnable)
+    isViewSet = false
+    oldSize = null
   }
 
+  /** Explicit disposal from [AdyenComponentViewManager.onDropViewInstance]. */
   fun onDispose() {
     removeCallbacks(resizeRunnable)
-    removeAllViews()
+    if (isViewSet) {
+      removeAllViews()
+    }
     isViewSet = false
     oldSize = null
   }

@@ -46,7 +46,7 @@ export interface AnalyticsOptions {
 }
 
 /**
- * General type for AdyenContext configuration. See {@link https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md}
+ * General type for NativeCheckout configuration. See {@link https://github.com/Adyen/adyen-react-native/blob/develop/docs/Configuration.md}
  */
 export interface Configuration extends BaseConfiguration {
   /** Return URL to be called after payment is completed. This value is always passed throught on iOS and in some cases overrided on Android. */
@@ -66,5 +66,6 @@ export interface Configuration extends BaseConfiguration {
   /** 3D Secure 2 authentication configuration. */
   threeDS2?: ThreeDSConfiguration;
   /** Partial payment flow configuration. */
+  // TODO: v6 alpha - not yet supported
   partialPayment?: PartialPaymentConfiguration;
 }

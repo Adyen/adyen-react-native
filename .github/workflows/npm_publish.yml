@@ -17,7 +17,14 @@ on:
     types: [published]
 
 jobs:
+  # package.json's "ios" files entry ships ios/frameworks/ wholesale. Needs its own macOS job.
+  build-ios-frameworks:
+    name: Build iOS xcframeworks
+    uses: ./.github/workflows/build_ios_frameworks.yml
+
   publish-npm:
+    name: Publish
+    needs: [build-ios-frameworks]
     environment: release
     runs-on: ubuntu-latest
     env:
@@ -35,5 +42,24 @@ jobs:
         run: npm version "$VERSION" --no-git-tag-version
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+
+      - name: Read pinned adyen-ios version
+        id: adyen-ios-version
+        run: echo "value=$(jq -r .adyen.ios package.json)" >> "$GITHUB_OUTPUT"
+
+      # Restore-only: populated by build-ios-frameworks above, in this same run.
+      - name: Restore iOS xcframeworks cache
+        id: ios-frameworks-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ios/frameworks
+          key: ios-frameworks-${{ steps.adyen-ios-version.outputs.value }}
+
+      - name: Fail if iOS xcframeworks cache is missing
+        if: steps.ios-frameworks-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "ios/frameworks/ cache miss - check build-ios-frameworks's logs." >&2
+          exit 1
+
       - name: Publish to npm
         run: npm publish --access public

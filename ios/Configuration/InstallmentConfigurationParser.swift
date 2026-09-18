@@ -18,7 +18,7 @@ internal struct InstallmentConfigurationParser {
 
     var installmentConfiguration: InstallmentConfiguration? {
         var defaultOptions: InstallmentOptions?
-        var cardBasedConfigurations: [CardType: InstallmentOptions] = [:]
+        var cardBasedConfigurations: [CardBrand: InstallmentOptions] = [:]
 
         for (key, value) in dict {
             guard let keyString = key as? String,
@@ -38,8 +38,8 @@ internal struct InstallmentConfigurationParser {
                 )
             } else {
                 // Card-specific options
-                let cardType = CardType(rawValue: keyString)
-                cardBasedConfigurations[cardType] =
+                let cardBrand = CardBrand(rawValue: keyString)
+                cardBasedConfigurations[cardBrand] =
                     InstallmentOptions(
                         monthValues: valuesArray,
                         includesRevolving: includeRevolving

@@ -6,6 +6,9 @@
 
 @testable @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
+import AdyenCard
+import AdyenComponents
+@testable import AdyenEncryption
 import XCTest
 
 class EncodablePaymentComponentDataTests: XCTestCase {
@@ -15,7 +18,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
     func test_encode_serializesMinimalData_whenOnlyRequiredFieldsProvided() throws {
         // GIVEN
         let paymentDetails = InstantPaymentDetails(type: .payPal)
-        let paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails, amount: nil, order: nil)
+        let paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails, order: nil)
         let encodableData = EncodablePaymentComponentData(data: paymentData)
 
         // WHEN
@@ -30,21 +33,22 @@ class EncodablePaymentComponentDataTests: XCTestCase {
         XCTAssertNil(json["order"])
         XCTAssertNil(json["checkoutAttemptId"])
         XCTAssertNil(json["installments"])
-        XCTAssertTrue(try XCTUnwrap(json["supportNativeRedirect"] as? Bool))
+        // v6 no longer emits `supportNativeRedirect` or `delegatedAuthenticationData` from
+        // EncodablePaymentComponentData; asserted here so a reappearance is caught.
+        XCTAssertNil(json["supportNativeRedirect"])
         XCTAssertNil(json["delegatedAuthenticationData"])
     }
 
     func test_encode_serializesAllGeneralFields_whenAllDataProvided() throws {
         // GIVEN
         let paymentDetails = InstantPaymentDetails(type: .payPal)
-        var paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails,
-                                               amount: Amount(value: 100, currencyCode: "USD"),
+        // v6 dropped `amount` from PaymentComponentData, and BrowserInfo now only has an async
+        // failable initializer that reads the real user agent, so neither can be supplied here.
+        let paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails,
                                                order: PartialPaymentOrder(pspReference: "reference",
                                                                           orderData: nil),
                                                storePaymentMethod: true,
-                                               browserInfo: BrowserInfo(userAgent: "user_agent"),
                                                installments: Installments(totalMonths: 3, plan: .regular))
-        paymentData = paymentData.replacing(checkoutAttemptId: "attempt_id")
         let encodableData = EncodablePaymentComponentData(data: paymentData)
 
         // WHEN
@@ -54,12 +58,15 @@ class EncodablePaymentComponentDataTests: XCTestCase {
         // THEN
         XCTAssertNotNil(json["paymentMethod"])
         XCTAssertTrue(try XCTUnwrap(json["storePaymentMethod"] as? Bool))
-        XCTAssertNotNil(json["browserInfo"])
-        XCTAssertNotNil(json["amount"])
+        XCTAssertNil(json["browserInfo"])
+        XCTAssertNil(json["amount"])
         XCTAssertNotNil(json["order"])
-        XCTAssertNotNil(json["checkoutAttemptId"])
+        // checkoutAttemptId is package-scoped and unreachable here, so it's never emitted.
+        XCTAssertNil(json["checkoutAttemptId"])
         XCTAssertNotNil(json["installments"])
-        XCTAssertNotNil(json["supportNativeRedirect"])
+        // v6 no longer emits `supportNativeRedirect` or `delegatedAuthenticationData` from
+        // EncodablePaymentComponentData; asserted here so a reappearance is caught.
+        XCTAssertNil(json["supportNativeRedirect"])
     }
 
     func test_encode_includesCardSpecificFields_whenCardDetailsProvided() throws {
@@ -70,7 +77,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
                                          encryptedCard: EncryptedCard(number: nil, securityCode: nil, expiryMonth: nil, expiryYear: nil),
                                          socialSecurityNumber: "123-45-6789",
                                          delegatedAuthenticationData: delegatedData)
-        var paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails, amount: nil, order: nil)
+        var paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails, order: nil)
         paymentData = paymentData.replacing(checkoutAttemptId: "attempt_id")
         let encodableData = EncodablePaymentComponentData(data: paymentData)
 
@@ -81,7 +88,9 @@ class EncodablePaymentComponentDataTests: XCTestCase {
         // THEN
         XCTAssertNotNil(json["paymentMethod"])
         XCTAssertEqual(json["socialSecurityNumber"] as? String, "123-45-6789")
-        XCTAssertNotNil(json["delegatedAuthenticationData"])
+        // v6 no longer emits `supportNativeRedirect` or `delegatedAuthenticationData` from
+        // EncodablePaymentComponentData; asserted here so a reappearance is caught.
+        XCTAssertNil(json["delegatedAuthenticationData"])
     }
 
     func test_encode_includesAffirmSpecificFields_whenAffirmDetailsProvided() throws {
@@ -93,7 +102,7 @@ class EncodablePaymentComponentDataTests: XCTestCase {
                                            emailAddress: "test@example.com",
                                            billingAddress: PostalAddress(city: "Amsterdam", country: "NL"),
                                            deliveryAddress: PostalAddress(city: "Rotterdam", country: "NL"))
-        let paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails, amount: nil, order: nil)
+        let paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails, order: nil)
         let encodableData = EncodablePaymentComponentData(data: paymentData)
 
         // WHEN

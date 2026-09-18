@@ -189,7 +189,8 @@ describe('withAdyenIos', () => {
   });
 
   it('should skip modification if AppDelegate is already configured for Swift', async () => {
-    const originalContent = 'import Adyen\n// Already contains Adyen';
+    const originalContent =
+      'import adyen_react_native\n// Already contains adyen_react_native';
     const config = {
       name: 'test-app',
       slug: 'test-app',

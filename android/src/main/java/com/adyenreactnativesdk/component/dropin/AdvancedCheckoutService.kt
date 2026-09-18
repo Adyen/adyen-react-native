@@ -6,14 +6,14 @@
 
 package com.adyenreactnativesdk.component.dropin
 
-import com.adyen.checkout.card.BinLookupData
+import com.adyen.checkout.card.old.BinLookupData
 import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.Order
+import com.adyen.checkout.components.core.PaymentComponentData
 import com.adyen.checkout.components.core.PaymentComponentState
 import com.adyen.checkout.components.core.StoredPaymentMethod
-import com.adyen.checkout.dropin.DropInService
-import com.adyen.checkout.redirect.RedirectComponent
+import com.adyen.checkout.dropin.old.DropInService
 import com.adyenreactnativesdk.AdyenPaymentPackage
 
 open class AdvancedCheckoutService : DropInService() {
@@ -23,12 +23,22 @@ open class AdvancedCheckoutService : DropInService() {
   }
 
   override fun onSubmit(state: PaymentComponentState<*>) {
-    val returnUrl = RedirectComponent.getReturnUrl(applicationContext)
-    AdyenPaymentPackage.messageBus.onSubmit(state, returnUrl)
+    // TODO: v6 migration - old DropInService provides PaymentComponentState (old),
+    //  but MessageBus expects PaymentComponentData (v6). Serialize/deserialize to bridge types.
+    val json = PaymentComponentData.SERIALIZER.serialize(state.data)
+    val v6Data =
+      com.adyen.checkout.core.components.data.PaymentComponentData.SERIALIZER
+        .deserialize(json)
+    AdyenPaymentPackage.messageBus.onSubmit(v6Data)
   }
 
   override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
-    AdyenPaymentPackage.messageBus.onAdditionalDetails(actionComponentData)
+    // TODO: v6 migration - bridge old ActionComponentData to v6 via JSON round-trip.
+    val json = ActionComponentData.SERIALIZER.serialize(actionComponentData)
+    val v6Data =
+      com.adyen.checkout.core.action.data.ActionComponentData.SERIALIZER
+        .deserialize(json)
+    AdyenPaymentPackage.messageBus.onAdditionalDetails(v6Data)
   }
 
   override fun onAddressLookupQueryChanged(query: String) {
@@ -54,7 +64,7 @@ open class AdvancedCheckoutService : DropInService() {
   }
 
   override fun onBinLookup(data: List<BinLookupData>) {
-    AdyenPaymentPackage.messageBus.onBinLookup(data)
+    // TODO: v6 migration - map old BinLookupData to v6 BinLookupData
   }
 
   override fun onBinValue(binValue: String) {
