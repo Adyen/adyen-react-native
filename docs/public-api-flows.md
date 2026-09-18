@@ -55,7 +55,8 @@ sequenceDiagram
   AC->>NC: subscribe terminal / card / Drop-in / before-submit / Apple Pay
   AC->>NC: createSession({ id, sessionData }, configuration)
   NC->>Ctx: setup(sessionModelJSON, configuration)
-  Ctx->>Ctx: cancelPendingOperations() (iOS) / dispose managers (Android)
+  Ctx->>Ctx: iOS: validate session fields, then cancelPendingOperations()
+  Ctx->>Ctx: Android: cancel session before-submit bridge + dispose managers, then parse
   Ctx->>SDK: Checkout.setup(session, configuration)
   SDK-->>Ctx: SessionCheckout + paymentMethods
   Ctx->>Ctx: checkoutState = CheckoutState(...) (only on success)
@@ -71,8 +72,12 @@ runtime fields, `wireEventHandlerRefs`, `NativeCheckout.removeAllListeners()`, t
 NativeCheckout.createSession(...)`, and finally `createCheckout(...)`. `createSession` maps to
 `ContextNativeModule.setup` (`ContextModuleWrapper.createSession`), whose native body assigns
 `BaseModule.checkoutState` only after `Checkout.setup(...)` succeeds
-(`ContextModule.setupSessionAsync` on Android; `ContextModule.setup` on iOS). No presenter or
-merchant payment callback runs before the handle returns.
+(`ContextModule.setupSessionAsync` on Android; `ContextModule.setup` on iOS). The native preamble is
+path-specific: iOS validates the session fields (`id`/`sessionData`) before it calls
+`cancelPendingOperations()`, so malformed session input rejects before cancellation, whereas Android
+`setupSessionAsync` cancels the old `SessionBeforeSubmitBridge` and disposes managers **before**
+parsing the session/configuration input. No presenter or merchant payment callback runs before the
+handle returns.
 
 ### Advanced setup
 
@@ -100,7 +105,8 @@ sequenceDiagram
   AC->>NC: subscribe advanced terminal / card / Drop-in / Apple Pay
   AC->>NC: setup(paymentMethods, configuration)
   NC->>Ctx: setupAdvanced(paymentMethods, configuration)
-  Ctx->>Ctx: cancelPendingOperations() (iOS) / dispose managers (Android)
+  Ctx->>Ctx: iOS: parse payment methods, then cancelPendingOperations()
+  Ctx->>Ctx: Android: dispose managers (session bridge NOT cancelled), then parse
   Ctx->>SDK: Checkout.setup(paymentMethods, configuration)
   SDK-->>Ctx: AdvancedCheckout
   Ctx->>Ctx: setupAdvancedCallbacks(on:) (iOS, once)
@@ -118,7 +124,10 @@ entry point that receives payment methods from the merchant), then the runtime f
 then `await NativeCheckout.setup(...)` (which maps to `ContextNativeModule.setupAdvanced` through
 `ContextModuleWrapper.setup`), and finally `createCheckout(...)`. On iOS the advanced closures are
 wired exactly once in `setupAdvancedCallbacks(on:)`; on both platforms `checkoutState` is assigned
-only when `Checkout.setup(...)` succeeds.
+only when `Checkout.setup(...)` succeeds. The native preamble is path-specific: iOS parses the
+payment methods before it calls `cancelPendingOperations()`, so malformed payment methods reject
+before cancellation, whereas Android `setupAdvancedAsync` disposes managers **before** parsing and
+does **not** cancel the existing `SessionBeforeSubmitBridge`.
 
 ### Re-setup
 
@@ -146,15 +155,25 @@ sequenceDiagram
 
   App->>AC: setup() / setupAdvanced() while active
   AC->>AC: clearJSState() (listeners gone, old handle deactivated)
-  alt validation rejection
+  alt JS validation rejection
     AC->>AC: checkConfiguration / checkPaymentMethodsResponse throws
     AC-->>App: rejects (no native call, no new handle)
     Note over Ctx,SDK: native checkoutState untouched; no preamble ran
-  else native setup rejection
+  else native input parsing rejection
     AC->>AC: wire new runtime + listeners
     AC->>NC: createSession() / setup()
     NC->>Ctx: setup / setupAdvanced
-    Ctx->>Ctx: cancelPendingOperations() (iOS) / dispose managers (Android)
+    Note over Ctx: iOS parses session fields / payment methods BEFORE cancelPendingOperations()
+    Note over Ctx: Android session cancels bridge + disposes managers, advanced disposes managers (no bridge cancel), THEN parses
+    Ctx-->>NC: reject (malformed input)
+    NC-->>AC: reject
+    AC-->>App: rejects (no new handle)
+    Note over Ctx,SDK: previous checkoutState remains (assigned only on success)
+  else native SDK setup rejection
+    AC->>AC: wire new runtime + listeners
+    AC->>NC: createSession() / setup()
+    NC->>Ctx: setup / setupAdvanced
+    Ctx->>Ctx: preamble (per platform/path above)
     Ctx->>SDK: Checkout.setup(...)
     SDK-->>Ctx: Result.Error / throws
     Ctx-->>NC: reject
@@ -165,12 +184,15 @@ sequenceDiagram
   Note over App,Ctx: an old globally backed handle can still consult<br/>or invalidate() the resulting mixed state
 ```
 
-Validation rejection happens after `clearJSState()` and before any native call, so JS listeners are
-gone and existing handles are deactivated but no native preamble runs. Native rejection happens
-after the new JS runtime is wired and after the native preamble
-(`cancelPendingOperations()`/manager disposal) has cancelled in-flight work; because native
-assignment only happens on success, the previous `checkoutState` remains and no new handle is
-returned. An older handle reads the process-wide host, so it can still `isAvailable()`,
+JS validation rejection happens after `clearJSState()` and before any native call, so JS listeners
+are gone and existing handles are deactivated but no native preamble runs. The two native branches
+differ by platform and path. iOS parses the session fields or advanced payment methods **before**
+`cancelPendingOperations()`, so a native input-parsing rejection precedes cancellation. Android
+session setup cancels the old `SessionBeforeSubmitBridge` and disposes managers before parsing;
+Android advanced setup disposes managers before parsing but does **not** cancel that bridge. A later
+native SDK setup rejection happens after the applicable preamble. Because native assignment only
+happens on success, every native rejection branch leaves the previous `checkoutState` in place and
+returns no new handle. An older handle reads the process-wide host, so it can still `isAvailable()`,
 `submit()`, or `invalidate()` against the mixed state — see
 [Architecture.md](./Architecture.md#setup-rejection-and-failed-replacement).
 
@@ -534,20 +556,27 @@ sequenceDiagram
   participant App
   participant DropIn as AdyenDropIn
   participant DropInMod
-  participant Ctx
+  participant NC
+  participant AC
 
   App->>DropIn: start(checkout)
   DropIn->>DropInMod: start(paymentMethods)
-  DropInMod->>Ctx: sendError(ModuleException.notSupported)
-  Note over Ctx: routed to failSession / fail by sendError;<br/>current Drop-in JS subscriptions do not observe this core error
-  Note over App,Ctx: no presentation, no merchant terminal callback,<br/>no automatic cleanup — abandonment needs checkout.invalidate()
+  DropInMod->>DropInMod: sendError(ModuleException.notSupported) → emits fail / failSession
+  Note over DropInMod,NC: emitted on the global RCTDeviceEventEmitter, keyed by event name
+  NC->>AC: terminal error handler → handleTerminalEvent
+  AC->>App: callbacks.onError(notSupported)
+  AC->>AC: performAutoCleanup() → NativeCheckout.cleanup()
+  Note over App,AC: no presentation; merchant onError runs and context cleanup follows
 ```
 
 Source: iOS `DropInModule.start(_:)` and `action(_:)` call `sendError(error:
-ModuleException.notSupported)` and never present. `ContextModule.sendError` routes it to `failSession`
-or `fail`, but `AdyenCheckout`'s Drop-in subscriptions (`startDropInEventListeners`) subscribe only
-the `addressLookup` and `dropIn` families — not `core` — so no merchant terminal callback runs and no
-auto-cleanup happens. A consumer must call `checkout.invalidate()` to abandon.
+ModuleException.notSupported)` and never present. The inherited `BaseModuleSender.sendError` emits
+`failSession` (session) or `fail` (advanced). Although `AdyenCheckout`'s Drop-in subscriptions
+(`startDropInEventListeners`) subscribe only the `addressLookup` and `dropIn` families — not `core` —
+React Native routes native events **by name** through the global `RCTDeviceEventEmitter`, so the
+checkout terminal error listener wired by `ContextModuleWrapper` (`assignErrorHandler` /
+`assignAdvancedErrorHandler`) receives the error, runs the merchant `onError` through
+`handleTerminalEvent`, and `performAutoCleanup()` tears down the context. No presentation occurs.
 
 ### Android session Drop-in — unsupported
 
@@ -556,19 +585,28 @@ sequenceDiagram
   participant App
   participant DropIn as AdyenDropIn
   participant DropInMod
+  participant NC
+  participant AC
 
   App->>DropIn: start(checkout)
   DropIn->>DropInMod: start(paymentMethods)
   DropInMod->>DropInMod: parse payment methods + build old configuration
   DropInMod->>DropInMod: startBackgroundService() — task started
   DropInMod->>DropInMod: sendError("Drop-in session flow not yet supported in v6 alpha")
-  Note over DropInMod: launcher never presented; background task is NOT finished here
+  Note over DropInMod,NC: messageBus.onSessionException → session error event on the global channel
+  NC->>AC: terminal error handler → handleTerminalEvent
+  AC->>App: callbacks.onError(...)
+  AC->>AC: performAutoCleanup() → NativeCheckout.cleanup() (ContextModule.cleanup)
+  Note over DropInMod: launcher never presented; the background task is NOT finished by that cleanup
 ```
 
 Source: `DropInModule.start` calls `startBackgroundService()` and then, when
 `checkoutState?.isSession == true`, calls `sendError(ModuleException.Unknown("Drop-in session flow not
-yet supported in v6 alpha"))` before any launcher presentation. The unsupported session path does
-not finish the background task.
+yet supported in v6 alpha"))` before any launcher presentation. `BaseModule.sendError` routes it
+through `messageBus.onSessionException` to the session error event, which the global
+`RCTDeviceEventEmitter` delivers to the checkout terminal error listener, so the merchant `onError`
+runs and `ContextModule.cleanup()` tears down the context. That cleanup disposes managers and clears
+checkout state but does **not** finish the Drop-in background task.
 
 ### Android advanced Drop-in — legacy-backed
 
@@ -583,6 +621,7 @@ sequenceDiagram
   participant DropInMod
   participant Service as AdvancedCheckoutService
   participant AC
+  participant Ctx
   participant Server
 
   App->>DropIn: start(checkout)
@@ -593,55 +632,94 @@ sequenceDiagram
   Service->>AC: emit onSubmit / onAdditionalDetails via MessageBus
   AC->>Server: /payments or /payments/details
   Server-->>AC: response
+  Note over AC: dispatchSubmitResult / details → NativeCheckout, i.e. ContextModule (NOT DropInModule)
   alt completion
-    AC->>DropInMod: completion(resultCode)
-    DropInMod->>Service: sendResult(DropInServiceResult.Finished)
-    DropInMod->>DropInMod: cleanup() + stopBackgroundService() (task finished)
-  else retry
-    AC->>DropInMod: retry(message)
-    DropInMod->>Service: sendResult(DropInServiceResult.Error(reason, retry=true))
-    DropInMod->>DropInMod: cleanup() + stopBackgroundService() (task finished)
+    AC->>Ctx: completion(resultCode)
+    Ctx->>Ctx: awaitingManager() = null → cleanup()
+    Note over Ctx,Service: context torn down; legacy service NOT resolved, task NOT finished
   else action
-    AC->>DropInMod: action(action)
-    DropInMod->>Service: sendResult(DropInServiceResult.Action)
+    AC->>Ctx: action(actionMap)
+    Ctx->>Ctx: awaitingManager() = null → logs "No pending payment is awaiting an action"
+    Note over Ctx,Service: legacy service stalls (no result sent)
+  else retry
+    AC->>Ctx: retry(message)
+    Ctx->>Ctx: awaitingManager() = null → no-op
+    Note over Ctx,Service: legacy service stalls (no result sent)
+  end
+```
+
+Only a direct call to the Drop-in module methods resolves the legacy service:
+
+```mermaid
+sequenceDiagram
+  participant Caller
+  participant DropInMod
+  participant Service as AdvancedCheckoutService
+  participant Task as HeadlessJsTask
+
+  alt direct DropInModule.completion(resultCode)
+    Caller->>DropInMod: completion(resultCode)
+    DropInMod->>Service: sendResult(DropInServiceResult.Finished)
+    DropInMod->>Task: cleanup() + stopBackgroundService() (task finished, advancedService retained)
+  else direct DropInModule.retry(message)
+    Caller->>DropInMod: retry(message)
+    DropInMod->>Service: sendResult(DropInServiceResult.Error(reason, retry=true))
+    DropInMod->>Task: cleanup() + stopBackgroundService() (task finished, advancedService retained)
+  else direct DropInModule.action(actionMap)
+    Caller->>DropInMod: action(actionMap)
+    DropInMod->>Service: sendResult(DropInServiceResult.Action) — task NOT finished
   end
 ```
 
 Source: `DropInModule.start` builds the old `CheckoutConfiguration` via
 `buildOldCheckoutConfiguration` (which forwards only `environment`, `clientKey`, `shopperLocale`, and
 `amount`), calls `startBackgroundService()`, then `startPayment(..., AdvancedCheckoutService::class.java)`.
-`AdvancedCheckoutService` relays SDK callbacks to the shared `MessageBus`; the merchant answers
-through `AdyenCheckout`'s advanced handlers, which dispatch to `DropInModule.action`/`completion`/
-`retry`. Only `completion()` and `retry()` call `cleanup()` + `stopBackgroundService()`; they clear
-checkout state and finish the task but do not null the retained `advancedService`, and `retry` does
-not retain shared checkout context. The `action` callback sends a result but does not finish the task.
+`AdvancedCheckoutService` relays SDK callbacks to the shared `MessageBus`, and the merchant answers
+through `AdyenCheckout`'s advanced handlers. Those results dispatch through `NativeCheckout`
+(`dispatchSubmitResult` and the additional-details handler) to **`ContextModule`**, not `DropInModule`.
+`ContextModule` finds no awaiting `ComponentManager` — Drop-in registers none — so `action` logs
+"No pending payment is awaiting an action" and `retry` no-ops (both stall the legacy service), while
+`completion` falls through to `ContextModule.cleanup()`, which disposes managers, clears consumers,
+and clears `checkoutState` without sending the legacy `DropInServiceResult` or finishing the Drop-in
+background task. Only a direct call to `DropInModule.completion()`/`retry()` sends the legacy
+`DropInServiceResult.Finished`/`Error` and calls `cleanup()` + `stopBackgroundService()` — finishing
+the task, though without nulling the retained `advancedService`; direct `DropInModule.action()` sends
+`DropInServiceResult.Action` but does not finish the task.
 
 ### Legacy Drop-in task termination
 
 Because `start()` begins the background task before the session unsupported guard and before the
-old-launcher callbacks run, only the wrapper's `completion()`/`retry()` finish that task.
+old-launcher callbacks run, only a **direct** call to `DropInModule.completion()`/`retry()` finishes
+that task. Normal return-based results never reach `DropInModule` — they route to `ContextModule`.
 
 ```mermaid
 sequenceDiagram
+  participant AC
+  participant Ctx as ContextModule
   participant DropInMod
   participant Task as HeadlessJsTask
   participant Launcher as dropin.old launcher
 
   DropInMod->>Task: startBackgroundService() (before session guard)
   alt session flow
-    DropInMod->>DropInMod: sendError(unsupported) — task NOT finished
+    DropInMod->>DropInMod: sendError(unsupported) → global terminal error + context cleanup
+    Note over Ctx,Task: context cleanup runs but the task is NOT finished
   else advanced flow
     DropInMod->>Launcher: startPayment(...)
     Launcher-->>DropInMod: cancellation / error / final-result callback — task NOT finished
-    DropInMod->>Task: only completion()/retry() → stopBackgroundService()
+    Note over AC,Ctx: normal return results route AC → ContextModule (not DropInMod)
+    AC->>Ctx: action / retry → stall; completion → cleanup() (task NOT finished)
+    Note over DropInMod: only DIRECT DropInModule.completion()/retry() → stopBackgroundService()
   end
-  Note over DropInMod: generic ContextModule cleanup does not touch Drop-in task state
 ```
 
 Source: `startBackgroundService()` runs before the `isSession` branch in `start`. The unsupported
 session path, and the old launcher's cancellation/error/final-result callbacks, do not call
-`stopBackgroundService()`; only `completion()` and `retry()` do. `ContextModule.cleanup()` disposes
-managers and clears checkout state but never touches the Drop-in `taskId`.
+`stopBackgroundService()`. Normal advanced return-based results dispatch through
+`NativeCheckout`/`ContextModule`, so `action`/`retry` do not resolve the legacy service and
+`completion` reaches `ContextModule.cleanup()` (disposing managers and clearing checkout state)
+without touching the Drop-in `taskId`. Only a direct `DropInModule.completion()`/`retry()` call sends
+its legacy service result, clears checkout state, and finishes the task.
 
 ## Standalone action
 

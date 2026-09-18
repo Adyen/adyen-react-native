@@ -292,6 +292,13 @@ On iOS these are driven from `ContextModule.cancelPendingOperations()`
 On Android the advanced fallbacks come from `ComponentManager.dispose()` and the before-submit
 fallback from `SessionBeforeSubmitBridge.cancel()`.
 
+During **re-setup** these fallbacks fire only where the implementation calls them. On iOS
+`cancelPendingOperations()` runs only after the session fields or advanced payment methods have
+already parsed successfully, so malformed native input rejects before any suspended callback is
+cancelled. On Android, session re-setup cancels the old `SessionBeforeSubmitBridge` and disposes the
+managers, whereas advanced re-setup disposes the manager continuations but leaves the old session
+before-submit bridge pending.
+
 ## Event production
 
 Both platforms translate native SDK callbacks into JS events, but the ownership differs.
@@ -368,18 +375,25 @@ On both platforms the `hide` boolean currently has no semantic effect — it is 
 
 ## Re-setup and failed replacement
 
-Re-setup runs a native preamble that cancels in-flight work **without** tearing the context down,
-and replaces shared state only on success:
+Re-setup runs a **path-specific** native preamble that cancels in-flight work **without** tearing
+the context down, and replaces shared state only on success. The cancellation performed and its
+order relative to input parsing differ by platform and by flow:
 
-- **iOS**: `setupAdvanced` (and the session path) call `cancelPendingOperations()` first — clearing
-  cached components, cancelling the result sink, the before-submit bridge, and the Apple Pay bridges
-  — but **not** `cleanUp()`, so `checkoutState` and the presenter stack are retained. A new
-  `CheckoutState` is assigned only after `Checkout.setup(...)` succeeds; if it rejects, the previous
-  `checkoutState` remains.
-- **Android**: `setupSessionAsync`/`setupAdvancedAsync` first cancel the session before-submit
-  bridge and dispose+clear the component managers, but do **not** clear the `ComponentModule`
-  consumer registry and do **not** clear `checkoutState`. The new `CheckoutState` is assigned only
-  after `Checkout.setup(...)` succeeds.
+- **iOS**: both native setup entry points parse or validate their input **before** entering the
+  main-actor task that cancels in-flight work. `setup` rejects malformed session fields
+  (`id`/`sessionData`) before the task, and `setupAdvanced` rejects malformed payment methods
+  (`parsePaymentMethods`) before the task — so a native input-parsing failure happens **before**
+  `cancelPendingOperations()`. Once inside the task, both call `cancelPendingOperations()` —
+  clearing cached components, cancelling the result sink, the before-submit bridge, and the Apple
+  Pay bridges — but **not** `cleanUp()`, so `checkoutState` and the presenter stack are retained. A
+  new `CheckoutState` is assigned only after `Checkout.setup(...)` succeeds; if it rejects, the
+  previous `checkoutState` remains.
+- **Android**: the two paths differ. `setupSessionAsync` cancels the session before-submit bridge
+  (`sessionBeforeSubmitBridge?.cancel()`) and disposes+clears the component managers, **then** parses
+  the session response and configuration. `setupAdvancedAsync` disposes+clears the component managers
+  and **then** parses the payment methods and configuration, but does **not** cancel the session
+  before-submit bridge. Neither path clears the `ComponentModule` consumer registry or
+  `checkoutState`, and the new `CheckoutState` is assigned only after `Checkout.setup(...)` succeeds.
 
 Because JS re-setup runs `clearJSState()` before validation and native assignment happens only on
 success, a rejected replacement leaves observable mixed state that an old globally backed handle can
@@ -406,14 +420,33 @@ managers (`onDropViewInstance` on Android, `prepareForRecycle` on iOS).
 ## Drop-in
 
 Drop-in support is intentionally uneven; the authority is [FeatureSupport.md](./FeatureSupport.md).
-Architecturally:
+Every branch is shaped by one fact: React Native routes native events **by name** through the global
+`RCTDeviceEventEmitter`, so an error a Drop-in module emits reaches any listener subscribed to that
+event name — including the checkout terminal error listener wired by `ContextModuleWrapper` — even
+though the Drop-in-specific JS subscriptions omit `core`.
 
-- **iOS** `DropInModule.start(_:)` and `action(_:)` emit `ModuleException.notSupported` (routed to
-  the session or advanced error name by `sendError`) rather than presenting.
+- **iOS** `DropInModule.start(_:)` and `action(_:)` emit `ModuleException.notSupported` rather than
+  presenting. The inherited `BaseModuleSender.sendError` emits `failSession` (session) or `fail`
+  (advanced) — the same event names `ContextModuleWrapper` subscribes to for the terminal error
+  callback. So the merchant `onError` runs through `handleTerminalEvent` and `performAutoCleanup()`
+  tears down the context; no presentation occurs.
 - **Android session** Drop-in emits an explicit `"Drop-in session flow not yet supported in v6
-alpha"` error, after the background task has already started.
-- **Android advanced** Drop-in is legacy-backed: it converts to `com.adyen.checkout.dropin.old`
-  types and launches through `dropin.old.DropIn.startPayment` with an `AdvancedCheckoutService`. Its
-  compatibility configuration builder forwards only environment, client key, locale, and amount. The
-  background task is finished only by the wrapper's `completion()`/`retry()`, not by the
-  cancellation/error/final-result callbacks and not by generic context cleanup.
+alpha"` error after the background task has already started. `BaseModule.sendError` routes it
+  through `messageBus.onSessionException` to the session error event, which the same global channel
+  delivers to the checkout terminal error listener, so the merchant `onError` and context cleanup
+  run — but that cleanup does **not** finish the Drop-in background task.
+- **Android advanced** Drop-in is legacy-backed: `DropInModule.start` converts to
+  `com.adyen.checkout.dropin.old` types and launches through `dropin.old.DropIn.startPayment` with an
+  `AdvancedCheckoutService`. Its compatibility configuration builder forwards only environment,
+  client key, locale, and amount. The merchant answers `onSubmit`/`onAdditionalDetails` through the
+  advanced handlers, which dispatch through `NativeCheckout` to **`ContextModule`**, not
+  `DropInModule`. `ContextModule` finds no awaiting `ComponentManager` (Drop-in registers none), so
+  `action` logs "No pending payment is awaiting an action" and `retry` no-ops — both stall the
+  legacy service — while `completion` falls through to `ContextModule.cleanup()`, tearing down the
+  checkout context without sending the legacy service result or finishing the Drop-in background
+  task. Only a direct call to `DropInModule.completion()`/`retry()` sends the legacy
+  `DropInServiceResult` and calls `cleanup()` + `stopBackgroundService()` (finishing the task, though
+  without nulling the retained `advancedService`); direct `DropInModule.action()` sends a result but
+  does not finish the task. See
+  [FeatureSupport.md](./FeatureSupport.md#legacy-drop-in-limitations) and
+  [public-api-flows.md](./public-api-flows.md#android-advanced-drop-in--legacy-backed).

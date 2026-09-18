@@ -86,10 +86,14 @@ runtime as cleaned up — but it deliberately does **not** call the native conte
 (`NativeCheckout.cleanup()`). The native side replaces its own state when the new setup call
 reaches it.
 
-On the native side, each platform runs a setup preamble that cancels in-flight work without
-tearing the context down, and the shared native checkout state is replaced only if native setup
-succeeds. See [native-architecture.md](./native-architecture.md#re-setup-and-failed-replacement)
-for the platform-specific preambles and the resulting stale-state behavior.
+On the native side, each platform runs a **path-specific** setup preamble: the cancellation it
+performs and its order relative to input parsing differ by platform and by session versus advanced
+flow. iOS parses or validates its input before it cancels in-flight work; Android session setup
+cancels the `SessionBeforeSubmitBridge` and disposes managers before parsing, while Android advanced
+setup disposes managers but does **not** cancel that bridge. No preamble tears the context down, and
+the shared native checkout state is replaced only if native setup succeeds. See
+[native-architecture.md](./native-architecture.md#re-setup-and-failed-replacement) for the
+platform-specific preambles and the resulting stale-state behavior.
 
 ### Stale handles are not identity-bound
 
@@ -118,16 +122,27 @@ handle from the current setup both read the same global runtime. Consequences:
 
 ### Setup rejection and failed replacement
 
-`setup()`/`setupAdvanced()` distinguish two rejection points, and during an active re-setup both
-leave observable mixed state because `clearJSState()` has already run:
+`setup()`/`setupAdvanced()` distinguish three rejection points, and during an active re-setup each
+leaves observable mixed state because `clearJSState()` has already run:
 
-- **Validation rejection** (`checkConfiguration` / `checkPaymentMethodsResponse` throws): occurs
-  after JS state is cleared but before native setup. JS listeners are gone and existing handles are
-  deactivated; no native cleanup runs and no new handle is returned.
-- **Native setup rejection** (`createSession`/`setup` rejects): occurs after the new JS runtime is
-  wired and after the native preamble cancelled in-flight work. The previous native checkout state
-  remains because native assignment happens only on success, and no new handle is returned. An old
-  globally backed handle can still consult or `invalidate()` the resulting mixed state.
+- **JS validation rejection** (`checkConfiguration` / `checkPaymentMethodsResponse` throws): occurs
+  after JS state is cleared but before any native call. JS listeners are gone and existing handles
+  are deactivated; no native preamble runs and no new handle is returned.
+- **Native input parsing rejection** (native rejects malformed session fields, payment methods, or
+  configuration): occurs after the new JS runtime is wired. Its order relative to the native
+  cancellation preamble is platform- and path-specific: malformed iOS session fields and advanced
+  payment methods reject **before** `cancelPendingOperations()`; Android session parsing rejects
+  **after** the old session before-submit bridge is cancelled and managers are disposed; Android
+  advanced parsing rejects **after** managers are disposed but **without** cancelling the session
+  before-submit bridge.
+- **Native SDK setup rejection** (`Checkout.setup(...)` rejects): occurs after the applicable
+  preamble. The previous native checkout state remains because native assignment happens only on
+  success.
+
+In every native rejection branch no new handle is returned, the previous native `checkoutState`
+survives, and an old globally backed handle can still consult or `invalidate()` the resulting mixed
+state. See [native-architecture.md](./native-architecture.md#re-setup-and-failed-replacement) for
+the per-platform ordering.
 
 ### Overlapping setup calls are unsupported
 

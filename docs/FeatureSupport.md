@@ -45,14 +45,20 @@ Notes:
   [public-api-flows.md](./public-api-flows.md); the routing internals are in
   [native-architecture.md](./native-architecture.md#continuation-ownership-and-routing).
 - **iOS Drop-in** returns `ModuleException.notSupported` from `DropInModule.start(_:)` and
-  `action(_:)` without presenting; current Drop-in JS subscriptions do not observe that core error,
-  so no terminal callback or auto-cleanup runs and abandonment needs `checkout.invalidate()`.
+  `action(_:)` without presenting. The Drop-in-specific JS subscriptions omit `core`, but React
+  Native observes native events globally by name, so the checkout terminal error listener still
+  delivers the merchant `onError` and runs context cleanup.
 - **Android session Drop-in** emits `"Drop-in session flow not yet supported in v6 alpha"` from
-  `DropInModule.start` after the background task has already started, and never presents the
-  launcher.
+  `DropInModule.start` after the background task has already started and never presents the launcher.
+  The error is globally observed, so the checkout terminal error callback and context cleanup run —
+  but that cleanup leaves the Drop-in background task unfinished.
 - **Android advanced Drop-in** is the only legacy-backed path: it converts to
   `com.adyen.checkout.dropin.old` types and launches through `dropin.old.DropIn.startPayment` with an
-  `AdvancedCheckoutService`. See [Legacy Drop-in limitations](#legacy-drop-in-limitations).
+  `AdvancedCheckoutService`. Its critical limitation is that normal return-based merchant results
+  dispatch through `NativeCheckout`/`ContextModule`, not `DropInModule`: `action` and `retry` stall
+  the legacy service, and `completion` tears down the checkout context without resolving the legacy
+  service or finishing its background task unless `DropInModule.completion()`/`retry()` are called
+  directly. See [Legacy Drop-in limitations](#legacy-drop-in-limitations).
 - **Standalone action** is supported on both platforms with a payload difference: iOS may resolve
   either the additional-details data or an `onComplete` result-code object, whereas Android resolves
   only the additional-details data and otherwise rejects. See
@@ -142,9 +148,12 @@ configuration builder (`DropInModule.buildOldCheckoutConfiguration`) forwards on
 
 No v6 card, Drop-in, Google Pay, 3DS, partial-payment, stored-removal, or address configuration is
 mapped into the old launcher by that builder, so any such capability is available only if the old
-launcher's own defaults reach it — not because this bridge forwards the v6 configuration. The
-background task is finished only by the wrapper's `completion()`/`retry()`, not by the
-cancellation/error/final-result callbacks and not by generic context cleanup (see
+launcher's own defaults reach it — not because this bridge forwards the v6 configuration. Normal
+return-based merchant results dispatch through `NativeCheckout`/`ContextModule`, not `DropInModule`,
+so `action`/`retry` stall the legacy service and `completion` tears down the checkout context
+without resolving it. The background task is finished only by a direct `DropInModule.completion()`/
+`retry()` call, not by the normal return-based results, the cancellation/error/final-result
+callbacks, or generic context cleanup (see
 [public-api-flows.md](./public-api-flows.md#legacy-drop-in-task-termination)).
 
 ## Declared vs. reachable
