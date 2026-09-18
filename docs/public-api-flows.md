@@ -502,7 +502,7 @@ sequenceDiagram
   participant Ctx as ContextModule (native)
   participant SDK
 
-  Note over Chk: createCheckout guards every method with isActive();<br/>inactive → isAvailable/requiresUserInteraction resolve false, submit is an ignored no-op
+  Note over Chk: createCheckout guards isAvailable(), requiresUserInteraction(), and submit() with isActive();<br/>inactive → queries resolve false, submit is an ignored no-op
 
   App->>Chk: checkout.isAvailable(type)
   alt no active checkout
@@ -537,11 +537,14 @@ sequenceDiagram
   end
 ```
 
-Source: every `Checkout` method built by `createCheckout` first runs its `isActive()` guard and then
-delegates to the `NativeCheckout` singleton — which is `new ContextModuleWrapper(NativeModules.AdyenCheckout)`
-— whose `isAvailable`/`requiresUserInteraction`/`submit` methods forward to `this.nativeModule`, the
-native `ContextModule`. `createCheckout` returns `false` from `isAvailable`/`requiresUserInteraction` when the host
-is inactive. On Android `ContextModule.isAvailable` resolves `false` for `applepay`, runs
+Source: `createCheckout` guards `isAvailable()`, `requiresUserInteraction()`, and `submit()` with
+`isActive()` before they delegate to the `NativeCheckout` singleton — which is `new
+ContextModuleWrapper(NativeModules.AdyenCheckout)` — whose
+`isAvailable`/`requiresUserInteraction`/`submit` methods forward to `this.nativeModule`, the native
+`ContextModule`. `createCheckout` returns `false` from `isAvailable`/`requiresUserInteraction` when
+the host is inactive. In contrast, `invalidate()` calls `host.invalidate()` directly; the host cleanup
+is idempotent, so repeated or late invalidation is a silent no-op. On Android
+`ContextModule.isAvailable` resolves `false` for `applepay`, runs
 `GooglePayAvailability.isAvailable` for Google Pay keys, and otherwise checks `hasPaymentMethod`;
 `requiresUserInteraction` rejects `NoPaymentMethod` when `resolveController` returns null; `submit`
 presents an auto-submit `CheckoutFragment` (`CheckoutFragment.show(autoSubmit = true)`) as an action
@@ -616,7 +619,7 @@ through `messageBus.onSessionException` to the session error event, which the gl
 runs and `ContextModule.cleanup()` tears down the context. That cleanup disposes managers and clears
 checkout state but does **not** finish the Drop-in background task.
 
-### Android advanced Drop-in — legacy-backed
+### Android advanced Drop-in legacy-backed
 
 Android advanced Drop-in alone is legacy-backed: it converts to `com.adyen.checkout.dropin.old`
 types and launches through `dropin.old.DropIn.startPayment` with an `AdvancedCheckoutService`. Its
