@@ -1,64 +1,112 @@
 # Error codes
 
-Errors surface to your `onError` callback (both the advanced `AdvancedCallbacks` and the `SessionCallbacks`
-expose `onError(error: AdyenError)`; the session flow routes through the internal
-`didSessionErrorCallback` event) or reject a public promise (for example `AdyenAction.handle`) as an
-`AdyenError` object with a `message` and an `errorCode` string.
+The public API has three different error shapes. Do not treat their fields as interchangeable.
 
-The `errorCode` values your app can receive are defined by the public `ErrorCode` enum
-(`src/core/constants.ts`) plus a set of native-only codes that the bridge forwards without a
-matching enum member. Not every enum member is actually produced by the current native code, and
-some native failures carry **no** `errorCode` at all — a native error that is not a known,
-coded exception is delivered with `message` set and `errorCode` `undefined` (iOS `Model/Error.swift`,
-Android `util/ReactNativeError.kt`). For the flows and platforms that produce these errors see
-[public-api-flows.md](./public-api-flows.md) and [FeatureSupport.md](./FeatureSupport.md).
+| Surface                                                                                       | Shape                                                        | Code field                 |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------- |
+| Native checkout event, delivered to `SessionCallbacks.onError` or `AdvancedCallbacks.onError` | `AdyenError` map with `message` and optional native metadata | Optional `error.errorCode` |
+| React Native promise rejection                                                                | JavaScript `Error`                                           | `error.code`               |
+| TypeScript validation before a native call                                                    | Ordinary `Error` or `TypeError`                              | No bridge code             |
 
-## Public `ErrorCode` values
+An event map only has `errorCode` when the native error is a known coded error. Its absence is not a
+code named `undefined`. On iOS this serialization is in
+`ios/Model/Error.swift`; on Android it is in
+`android/src/main/java/com/adyenreactnativesdk/util/ReactNativeError.kt`.
 
-These are the members of the exported `ErrorCode` enum. The "Emitted by" column records whether the
-current native code actually delivers the value.
+The first two sections below list all codes that can reach an event map or a public promise
+rejection. The [flow guide](./public-api-flows.md) and
+[feature matrix](./FeatureSupport.md) explain when their paths are reachable.
 
-| `errorCode`             | Meaning                                                                | Emitted by                                                                                                                         |
-| ----------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `canceledByShopper`     | Payment canceled by the shopper (or a canceled 3D Secure 2 challenge). | iOS and Android, all presenters.                                                                                                   |
-| `notSupported`          | The requested path is not supported on the current platform.           | iOS only, from Drop-in `start`/`action`. The Android `NotSupported` case is defined but never instantiated.                        |
-| `noClientKey`           | Missing `clientKey` in configuration.                                  | iOS and Android, during configuration parsing. In the Android session setup path it can be re-wrapped as `session`.                |
-| `noPayment`             | Missing or invalid `amount`/`countryCode` in configuration.            | **Declared-only.** The Android `NoPayment` case is never instantiated and iOS has no equivalent, so this value is never delivered. |
-| `invalidPaymentMethods` | Cannot parse `paymentMethods`, or the list is empty.                   | iOS and Android.                                                                                                                   |
-| `invalidAction`         | Cannot parse the action.                                               | iOS and Android.                                                                                                                   |
-| `notSupportedAction`    | The component does not support action handling.                        | **Declared-only.** No layer produces this value.                                                                                   |
-| `noPaymentMethod`       | Cannot find the selected payment-method type in the provided list.     | iOS (`paymentMethodNotFound`) and Android (`NoPaymentMethod`).                                                                     |
-| `sessionError`          | Session failed to be created.                                          | **Never delivered with this spelling.** Session-creation failures deliver the `session` code (see below).                          |
+## Event `error.errorCode`
 
-## Additional native codes
+These codes can be present on native error events. The value comes from the native error
+serialization, not from the rejected-promise code.
 
-These reach an error callback or reject a public promise but are **not** members of the `ErrorCode`
-enum. Handle them by string.
+| Code                     | Reachable event path                                                      |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `canceledByShopper`      | iOS and Android cancellation, including Android headless-fragment closure |
+| `notSupported`           | iOS Drop-in `start`/`action`, which emits a terminal checkout error       |
+| `noClientKey`            | Android legacy Drop-in configuration failure                              |
+| `invalidPaymentMethods`  | iOS component/context parsing and Android component/Drop-in parsing       |
+| `invalidAction`          | iOS and Android action parsing routed through an event-producing module   |
+| `noPaymentMethod`        | iOS component resolution and Android payment-method resolution            |
+| `notKeyWindow`           | iOS presentation cannot find a root view controller                       |
+| `componentNotRegistered` | iOS embedded-component proxy cannot find the registered view              |
+| `unknown`                | Android uncoded checkout, context, or Drop-in failure                     |
+| `noActivity`             | Android Drop-in starts without a registered launcher activity             |
+| `noConsumer`             | Android embedded command has no registered `ComponentModule` consumer     |
+| `noModuleListener`       | Android legacy Drop-in cannot find its service listener                   |
 
-| `errorCode`              | Platform        | Meaning                                                                                                                                                                        | Source                                                                                                                       |
-| ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `session`                | iOS and Android | Something went wrong while starting the session. This is the value actually delivered for session-creation failures, not `sessionError`.                                       | Android `ModuleException.SessionError` (`code = "session"`); iOS rejects `createSession()` with the reject code `"session"`. |
-| `unknown`                | Android         | Catch-all for an uncoded failure, including a non-cancel `CheckoutError` and the "checkout not initialized" and "Drop-in session flow not yet supported in v6 alpha" branches. | Android `ModuleException.Unknown`, `CheckoutErrorExt.toModuleException`.                                                     |
-| `notKeyWindow`           | iOS             | No root view controller was available to present on.                                                                                                                           | iOS `ModuleException.notKeyWindow`.                                                                                          |
-| `componentNotRegistered` | iOS             | No embedded component was registered for the requested view id.                                                                                                                | iOS `ModuleException.componentNotRegistered` (embedded `<AdyenComponent>` proxy).                                            |
-| `invalidClientKey`       | iOS             | The backend returned an empty 401 (interpreted as an invalid client key). Reachable through the standalone `AdyenAction` reject path.                                          | iOS `ModuleException.invalidClientKey` via `ModuleException.checkErrorType`.                                                 |
-| `noConsumer`             | Android         | No embedded view is registered in `ComponentModule` under the requested id.                                                                                                    | Android `ModuleException.NoConsumer`.                                                                                        |
-| `noActivity`             | Android         | The Drop-in launcher activity was not registered (`AdyenCheckout.setLauncherActivity()`).                                                                                      | Android `ModuleException.NoActivity`.                                                                                        |
-| `noModuleListener`       | Android         | No `DropInService` is registered for the current (session/advanced) integration.                                                                                               | Android `ModuleException.NoModuleListener` (legacy Drop-in wiring).                                                          |
-| `invalidMerchantID`      | iOS             | Apple Pay is configured without a `merchantID`. Rejects the setup promise.                                                                                                     | iOS `ApplepayConfigurationParser`.                                                                                           |
-| `invalidMerchantName`    | iOS             | Apple Pay is configured without a `merchantName` or `summaryItems`. Rejects the setup promise.                                                                                 | iOS `ApplepayConfigurationParser`.                                                                                           |
+`message` is always the stable part of the event shape. A non-`KnownError` on iOS, or a
+non-`KnownException` on Android, still emits a message but has no `errorCode`.
 
-> [!NOTE]
-> The `session`/`sessionError` mismatch is real: the TypeScript `ErrorCode` enum spells the value
-> `sessionError`, but both platforms deliver `session` for a session-creation failure. Compare
-> `error.errorCode` against `'session'` for that case.
+## Rejected-promise `error.code`
 
-## Codes that exist in source but are never delivered
+React Native turns a native rejection into a JavaScript `Error`; read its `.code`, not
+`.errorCode`. These are the complete current public rejection codes.
 
-For completeness, the following native cases are defined but never instantiated, so they cannot
-reach your app in the current build: Android `NotSupported`, `NoPayment`, `NoPaymentMethods`
-(the plural variant), `WrongFlow`, and `NoPaymentRegistered`; iOS `sessionError`, and the Drop-in
-`balanceCheck`/`orderRequest` cases (their only call sites are in the disabled
-`DropInModule+Delegates.swift`). Apple Pay runtime failures do not produce a dedicated code — a
-rejected authorization is delivered as the Apple Pay result payload from your `onAuthorize` handler,
-not as an `errorCode`.
+| Code                      | Public API and platform                                                                                                                | Notes                                                                                                                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session`                 | `AdyenCheckout.setup()` (iOS)                                                                                                          | Fixed code for invalid session input, configuration/setup failure, or an empty payment-method response. It masks any attached underlying error code.                   |
+| `setup`                   | `AdyenCheckout.setupAdvanced()` (iOS)                                                                                                  | Fixed code for invalid payment methods and every later setup/configuration failure. It masks any attached underlying error code.                                       |
+| `context`                 | `checkout.requiresUserInteraction()` (iOS)                                                                                             | Fixed when no native checkout context exists.                                                                                                                          |
+| `requiresUserInteraction` | `checkout.requiresUserInteraction()` (iOS)                                                                                             | Fixed for component-resolution failure. It masks, for example, an underlying `noPaymentMethod`.                                                                        |
+| `EUNSPECIFIED`            | `checkout.isAvailable()`, `checkout.requiresUserInteraction()`, `AdyenCheckout.setup()`, and `AdyenCheckout.setupAdvanced()` (Android) | These paths call React Native's one-argument `Promise.reject(Throwable)` overload, so React Native supplies its fallback code rather than the `ModuleException` code.  |
+| `invalidAction`           | `AdyenAction.handle()` (Android)                                                                                                       | The action parser throws `ModuleException.InvalidAction`, which is rejected with its code.                                                                             |
+| `noClientKey`             | `AdyenAction.handle()` (Android)                                                                                                       | The Android action configuration parser throws this known exception before setup.                                                                                      |
+| `parsingError`            | `AdyenAction.handle()` (Android)                                                                                                       | Generic action or configuration parsing failure.                                                                                                                       |
+| `canceledByShopper`       | `AdyenAction.handle()` (Android)                                                                                                       | An action-only checkout cancellation is converted to this code.                                                                                                        |
+| `unknown`                 | `AdyenAction.handle()` (Android)                                                                                                       | A non-cancellation action-only checkout failure is converted to this code.                                                                                             |
+| `invalidAction`           | `AdyenAction.handle()` (iOS)                                                                                                           | The action parser throws `ModuleException.invalidAction`, which the action module preserves.                                                                           |
+| `noClientKey`             | `AdyenAction.handle()` (iOS)                                                                                                           | The action configuration parser throws `ModuleException.noClientKey`, which the action module preserves.                                                               |
+| `notKeyWindow`            | `AdyenAction.handle()` (iOS)                                                                                                           | The action-only presentation delegate cannot find a root view controller.                                                                                              |
+| `actionError`             | `AdyenAction.handle()` (iOS)                                                                                                           | Fixed fallback for a configuration, setup, or SDK error that is not a `ModuleException` and is not converted below. It masks an attached underlying `KnownError` code. |
+| `canceledByShopper`       | `AdyenAction.handle()` (iOS)                                                                                                           | iOS maps component or 3DS cancellation to `ModuleException.canceled`.                                                                                                  |
+| `invalidClientKey`        | `AdyenAction.handle()` (iOS)                                                                                                           | iOS maps an empty-401 networking response to `ModuleException.invalidClientKey`.                                                                                       |
+| `Encryption failed`       | `AdyenCSE.encryptCard()` (iOS and Android), `AdyenCSE.encryptBin()` (Android)                                                          | Encryption failure.                                                                                                                                                    |
+| `AdyenCSE`                | `AdyenCSE.encryptBin()` (iOS)                                                                                                          | iOS uses this fixed code for BIN encryption failure.                                                                                                                   |
+
+`checkout.isAvailable()` normally resolves `false`; its Android Google Pay helper has a catch path
+that uses the one-argument rejection overload, hence `EUNSPECIFIED` if that helper throws. The CSE
+validation methods resolve booleans and do not reject.
+
+### Fixed-code masking on iOS
+
+`KnownError.errorCode` is not automatically the code of a rejected promise. For example,
+`ApplePayError.invalidMerchantID` and `ApplePayError.invalidMerchantName` implement `KnownError`,
+but `ContextModule.setup` rejects them as `session` or `setup`, and the action-only path rejects
+them as `actionError`. Similarly, iOS `ModuleException.invalidPaymentMethods` and
+`noPaymentMethod` can be attached to a context rejection while its promise `.code` remains one of
+the fixed codes above. `AdyenAction.handle()` is different: it preserves an attached
+`ModuleException` code, such as `invalidAction`, `noClientKey`, or `notKeyWindow`. Do not attribute
+any other underlying value to a promise branch unless it independently reaches an event map.
+
+The fixed branches are in `ios/Components/ContextModule.swift` (`session`, `setup`, `context`, and
+`requiresUserInteraction`), `ios/CSE/ActionModule.swift` (`actionError` and the two explicit
+conversions), and `ios/CSE/AdyenCSEModule.swift` (encryption). Android's explicit code overloads
+are in `android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`; its context overloads
+are in `android/src/main/java/com/adyenreactnativesdk/component/ContextModule.kt`.
+
+## Exported `ErrorCode` enum
+
+`ErrorCode` in `src/core/constants.ts` is a public declaration. It is not an exhaustive description
+of current event or promise delivery, and it includes values that no reachable path currently
+delivers.
+
+| Exported value          | Current delivery status                                                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `canceledByShopper`     | Delivered by event maps and standalone-action promise rejections as described above.                                                               |
+| `notSupported`          | Delivered by the iOS Drop-in event path. Android defines, but does not instantiate, its counterpart.                                               |
+| `noClientKey`           | Delivered by Android legacy Drop-in events and Android and iOS standalone-action rejections.                                                       |
+| `noPayment`             | Declared only. No reachable current path produces it.                                                                                              |
+| `invalidPaymentMethods` | Delivered by event maps; iOS setup promise branches mask it as `session` or `setup`.                                                               |
+| `invalidAction`         | Delivered by event maps and Android and iOS standalone-action parse rejections.                                                                    |
+| `notSupportedAction`    | Declared only. No reachable current path produces it.                                                                                              |
+| `noPaymentMethod`       | Delivered by event maps; iOS `requiresUserInteraction()` masks it as `requiresUserInteraction`, and Android's context promise uses `EUNSPECIFIED`. |
+| `sessionError`          | Declared only with this spelling. Session setup uses `session` on iOS and Android's context promise uses `EUNSPECIFIED`.                           |
+
+The non-enum codes in the preceding tables, including `session`, `setup`, `context`,
+`requiresUserInteraction`, `EUNSPECIFIED`, `actionError`, `parsingError`, `Encryption failed`,
+`AdyenCSE`, `unknown`, `notKeyWindow`, `componentNotRegistered`, `noConsumer`, `noActivity`, and
+`noModuleListener`, are public delivery values too. Handle them as strings and only on the
+surface and platform shown above.

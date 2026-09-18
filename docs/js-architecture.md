@@ -149,9 +149,11 @@ Two lifetimes are worth separating:
 | Lifetime   | until a terminal event or `invalidate()` | outlives every handle       |
 | Visibility | public interface                         | public class, private state |
 
-A handle is not identity-bound: `createCheckout` guards each method with `host.isActive()`, which
-reads the process-wide `runtime.isCleanedUp`. Once the runtime is inactive, `submit()` warns and is
-ignored and the two query methods resolve `false`; `invalidate()` is a silent, idempotent no-op.
+A handle is not identity-bound: `createCheckout` guards `isAvailable()`,
+`requiresUserInteraction()`, and `submit()` with `host.isActive()`, which reads the process-wide
+`runtime.isCleanedUp`. Once the runtime is inactive, `submit()` warns and is ignored and the two
+query methods resolve `false`; `invalidate()` delegates directly to `host.invalidate()` and is a
+silent, idempotent no-op.
 After a re-setup the runtime is active again, so an older handle can still act on the current global
 state — see the stale-handle rules in [Architecture.md](./Architecture.md#stale-handles-are-not-identity-bound).
 

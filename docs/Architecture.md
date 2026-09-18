@@ -97,9 +97,11 @@ platform-specific preambles and the resulting stale-state behavior.
 
 ### Stale handles are not identity-bound
 
-A `Checkout` handle carries no identity of its own. Every method consults the process-wide host
-(`AdyenCheckout.runtime` via `CheckoutHost.isActive()`), so a handle from a previous setup and a
-handle from the current setup both read the same global runtime. Consequences:
+A `Checkout` handle carries no identity of its own. `isAvailable()`,
+`requiresUserInteraction()`, and `submit()` consult the process-wide host
+(`AdyenCheckout.runtime` via `CheckoutHost.isActive()`); `invalidate()` delegates directly to the
+same host. A handle from a previous setup and a handle from the current setup therefore act on the
+same global runtime. Consequences:
 
 - After a terminal callback or `invalidate()` has made the runtime inactive, an old handle's
   `submit()` is ignored with a warning, and `isAvailable()`/`requiresUserInteraction()` resolve

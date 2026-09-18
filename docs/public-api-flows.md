@@ -15,18 +15,18 @@ for the TypeScript layer [js-architecture.md](./js-architecture.md), for the nat
 
 ## Participants
 
-| Alias     | Real object                                                                               |
-| --------- | ----------------------------------------------------------------------------------------- |
-| App       | The merchant's React code                                                                 |
-| AC        | `AdyenCheckout` static class (`src/checkout/AdyenCheckout.ts`)                            |
-| NC        | `NativeCheckout` = `ContextModuleWrapper` (`src/modules/context/ContextModuleWrapper.ts`) |
-| Ctx       | Native `ContextModule` (`@objc(AdyenCheckout)` / `component/ContextModule.kt`)            |
-| Mgr       | Android `ComponentManager` (`component/base/ComponentManager.kt`)                         |
-| Sink      | iOS `AdvancedResultSink` (`ios/Components/Base/AdvancedResultSink.swift`)                 |
-| SDK       | The v6 native checkout SDK                                                                |
-| Server    | The merchant's payments backend                                                           |
-| DropInMod | Native `DropInModule` (`@objc(AdyenDropIn)` / `component/dropin/DropInModule.kt`)         |
-| ActionMod | Native `ActionModule` (`@objc(AdyenAction)` / `cse/ActionModule.kt`)                      |
+| Alias     | Real object                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| App       | The merchant's React code                                                                                                       |
+| AC        | `AdyenCheckout` static class (`src/checkout/AdyenCheckout.ts`)                                                                  |
+| NC        | `NativeCheckout` = `ContextModuleWrapper` (`src/modules/context/ContextModuleWrapper.ts`)                                       |
+| Ctx       | Native `ContextModule` (`@objc(AdyenCheckout)` / `android/src/main/java/com/adyenreactnativesdk/component/ContextModule.kt`)    |
+| Mgr       | Android `ComponentManager` (`android/src/main/java/com/adyenreactnativesdk/component/base/ComponentManager.kt`)                 |
+| Sink      | iOS `AdvancedResultSink` (`ios/Components/Base/AdvancedResultSink.swift`)                                                       |
+| SDK       | The v6 native checkout SDK                                                                                                      |
+| Server    | The merchant's payments backend                                                                                                 |
+| DropInMod | Native `DropInModule` (`@objc(AdyenDropIn)` / `android/src/main/java/com/adyenreactnativesdk/component/dropin/DropInModule.kt`) |
+| ActionMod | Native `ActionModule` (`@objc(AdyenAction)` / `android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`)              |
 
 ## Setup
 
@@ -492,7 +492,9 @@ registration and controller; the checkout is untouched. The routing detail is in
 
 Headless submission drives the one active checkout with no `<AdyenComponent>` mounted. Availability
 is `false` when there is no checkout; unknown or absent types fail during controller creation; Apple
-Pay is unavailable on Android and Google Pay on iOS; wallet availability runs a device check.
+Pay is unavailable on Android and Google Pay on iOS. On Android, Google Pay is `false` without a
+matching payment method; with one, the current TODO availability helper returns `true`
+unconditionally rather than checking the device.
 
 ```mermaid
 sequenceDiagram
@@ -510,7 +512,7 @@ sequenceDiagram
   else active
     Chk->>NC: NativeCheckout.isAvailable(type)
     NC->>Ctx: this.nativeModule.isAvailable(type)
-    Note over Ctx: Apple Pay → false on Android; Google Pay → false on iOS;<br/>wallets run a device availability check
+    Note over Ctx: Apple Pay → false on Android; Google Pay → false on iOS;<br/>Android Google Pay: matching method required, then TODO helper → true
     Ctx-->>App: boolean
   end
 
@@ -545,7 +547,9 @@ ContextModuleWrapper(NativeModules.AdyenCheckout)` — whose
 the host is inactive. In contrast, `invalidate()` calls `host.invalidate()` directly; the host cleanup
 is idempotent, so repeated or late invalidation is a silent no-op. On Android
 `ContextModule.isAvailable` resolves `false` for `applepay`, runs
-`GooglePayAvailability.isAvailable` for Google Pay keys, and otherwise checks `hasPaymentMethod`;
+`GooglePayAvailability.isAvailable` for Google Pay keys only after `hasPaymentMethod` succeeds.
+That helper is currently a TODO stub returning `true` unconditionally, not a device-capability check;
+otherwise it checks `hasPaymentMethod`;
 `requiresUserInteraction` rejects `NoPaymentMethod` when `resolveController` returns null; `submit`
 presents an auto-submit `CheckoutFragment` (`CheckoutFragment.show(autoSubmit = true)`) as an action
 host, `onTerminal` hides it, and `onCancelled` maps to `ModuleException.Canceled()` plus
@@ -791,7 +795,7 @@ Source: TypeScript `ActionModuleWrapper.handle` returns `nativeModule.handle(act
 and `hide(success)` calls `nativeModule.hide(success)`. Native `handle` first parses the action and
 configuration and rejects on failure before any UI or checkout state exists — so no `hide()` is
 required after a parse/setup rejection. After a successful `Checkout.setup`, Android
-(`cse/ActionModule.kt`) presents a `CheckoutFragment` explicitly, while iOS (`ios/CSE/ActionModule.swift`)
+(`android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`) presents a `CheckoutFragment` explicitly, while iOS (`ios/CSE/ActionModule.swift`)
 presents only if `checkout.handle(action:)` requests it through the presentation delegate.
 `onAdditionalDetails` resolves the promise with the details on both platforms; iOS additionally
 resolves an `onComplete` result-code object, whereas Android has no `onComplete` resolution and
