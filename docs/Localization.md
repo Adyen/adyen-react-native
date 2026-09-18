@@ -1,12 +1,18 @@
 # Localization
 
-By default, the React Native library uses a device's locale. To enable necessary translations for iOS, make sure “Localizations” in the project configuration contains all required languages. If the device's locale is not supported, localization fallbacks to `en-US`.
+By default, the UI uses the device locale. Translations, the set of available locales, and the
+fallback behavior are owned by the Adyen native SDKs this library pins to `6.0.0-alpha.1`
+(`package.json` `adyen.ios` / `adyen.android`), not by this bridge — the bridge only forwards the
+`locale` you configure as the SDK `shopperLocale` (iOS `RootConfigurationParser.shopperLocale`,
+Android `RootConfigurationParser.locale`). To enable the necessary translations on iOS, make sure
+“Localizations” in the project configuration contains all required languages. When the device locale
+is not supported, the Adyen iOS SDK falls back to `en-US`.
 
 Titles of payment methods are fetched from the Adyen API and localized according to the `shopperLocale` value you set in your [/paymentMethods](https://docs.adyen.com/api-explorer/Checkout/68/post/paymentMethods#request-shopperLocale) or [/sessions](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) requests.
 
 ## Enforcing specific localization
 
-Provide a specific `locale` in the `Configuration` object passed to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`.
+Provide a specific `locale` in the `Configuration` object passed to `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`. This is the same [`locale`](Configuration.md) option documented in the configuration reference.
 
 > [!IMPORTANT]
 > For Session flow `locale` will match value provided by your backend via [shopperLocale](https://docs.adyen.com/api-explorer/Checkout/71/post/sessions#request-shopperLocale) parameter.
@@ -17,18 +23,19 @@ Provide a specific `locale` in the `Configuration` object passed to `AdyenChecko
 
 1. Open your iOS folder in Xcode.
 2. Create a new ’Strings’ file with the name `Localizable`. If you are using multiple localizations, make sure you check them all in for the `Localizations.string` in "File Inspector". For each localization, your iOS project will have a corresponding file: `(localization).lproj/Localizable.string`.
-3. Override all necessary strings with desired values for all your localizations. The list of available strings can be found [here](https://github.com/Adyen/adyen-ios/blob/develop/Adyen/Assets/Generated/LocalizationKey.swift).
+3. Override all necessary strings with desired values for all your localizations. The authoritative list of available strings is defined by the pinned Adyen iOS SDK — see [`LocalizationKey.swift` at `6.0.0-alpha.1`](https://github.com/Adyen/adyen-ios/blob/6.0.0-alpha.1/Adyen/Assets/Generated/LocalizationKey.swift).
 
 ### Android
 
 1. Open /res/values/strings.xml in "Translations Editor” in Android Studio.
-2. Override all necessary strings with desired values for all your localizations. The list of available strings can be found [here](https://github.com/search?q=repo%3AAdyen%2Fadyen-android+res%2Fvalues%2Fstrings.xml&type=code&branch=main)
+2. Override all necessary strings with desired values for all your localizations. The authoritative string resources are defined by the pinned Adyen Android SDK — browse the [`adyen-android` tree at `6.0.0-alpha.1`](https://github.com/Adyen/adyen-android/tree/6.0.0-alpha.1) for the module `res/values/strings.xml` files.
 
 ## Adding new localizations
 
 Add new locales in Xcode and Android Studio respectively. Provide a translation for all necessary keys.
 
-List of currently available locales:
+List of locales available in the pinned `6.0.0-alpha.1` native SDKs (the SDKs remain the
+authoritative source for the current set):
 
 | Language               | Locale code | Fallback |
 | ---------------------- | ----------- | :------: |
