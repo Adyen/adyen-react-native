@@ -6,6 +6,9 @@
 
 @testable @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
+import AdyenCard
+import AdyenComponents
+@testable import AdyenEncryption
 import XCTest
 
 class EncodablePaymentComponentDataTests: XCTestCase {
@@ -41,12 +44,11 @@ class EncodablePaymentComponentDataTests: XCTestCase {
         let paymentDetails = InstantPaymentDetails(type: .payPal)
         // v6 dropped `amount` from PaymentComponentData, and BrowserInfo now only has an async
         // failable initializer that reads the real user agent, so neither can be supplied here.
-        var paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails,
+        let paymentData = PaymentComponentData(paymentMethodDetails: paymentDetails,
                                                order: PartialPaymentOrder(pspReference: "reference",
                                                                           orderData: nil),
                                                storePaymentMethod: true,
                                                installments: Installments(totalMonths: 3, plan: .regular))
-        paymentData = paymentData.replacing(checkoutAttemptId: "attempt_id")
         let encodableData = EncodablePaymentComponentData(data: paymentData)
 
         // WHEN
@@ -59,7 +61,8 @@ class EncodablePaymentComponentDataTests: XCTestCase {
         XCTAssertNil(json["browserInfo"])
         XCTAssertNil(json["amount"])
         XCTAssertNotNil(json["order"])
-        XCTAssertNotNil(json["checkoutAttemptId"])
+        // checkoutAttemptId is package-scoped and unreachable here, so it's never emitted.
+        XCTAssertNil(json["checkoutAttemptId"])
         XCTAssertNotNil(json["installments"])
         // v6 no longer emits `supportNativeRedirect` or `delegatedAuthenticationData` from
         // EncodablePaymentComponentData; asserted here so a reappearance is caught.

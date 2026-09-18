@@ -14,6 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Builds both the distribution and testable xcframework variants - see build_ios_frameworks.yml.
   build-ios-frameworks:
     name: Build iOS xcframeworks
     uses: ./.github/workflows/build_ios_frameworks.yml

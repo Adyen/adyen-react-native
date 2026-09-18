@@ -10,6 +10,13 @@
 # Usage:
 #   ./scripts/build-xcframeworks.sh <path-to-adyen-ios-checkout> [output-dir]
 #
+# TESTABLE=1 builds a variant AdyenExampleTests can @testable import - mutually exclusive with
+# the normal distribution build (BUILD_LIBRARY_FOR_DISTRIBUTION only emits a .swiftinterface,
+# never a real .swiftmodule, and @testable needs the latter).
+#
+# SPM_CACHE_DIR points at a dir already resolved via
+# `xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath`, to skip re-resolving.
+#
 # Requires: Xcode command line tools, a local adyen-ios checkout at the desired version/tag.
 
 set -euo pipefail
@@ -45,6 +52,21 @@ trap 'rm -rf "$WORKDIR"' EXIT
 
 mkdir -p "$OUTPUT_DIR"
 
+if [ "${TESTABLE:-}" = "1" ]; then
+  DISTRIBUTION_FLAGS=(BUILD_LIBRARY_FOR_DISTRIBUTION=NO SWIFT_ENABLE_TESTABILITY=YES)
+  # No .swiftinterface without library evolution - -create-xcframework needs telling it's fine.
+  XCFRAMEWORK_FLAGS=(-allow-internal-distribution)
+else
+  DISTRIBUTION_FLAGS=(BUILD_LIBRARY_FOR_DISTRIBUTION=YES)
+  XCFRAMEWORK_FLAGS=()
+fi
+
+if [ -n "${SPM_CACHE_DIR:-}" ]; then
+  SPM_FLAGS=(-clonedSourcePackagesDirPath "$SPM_CACHE_DIR" -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile)
+else
+  SPM_FLAGS=()
+fi
+
 build_slice() {
   local module=$1
   local platform=$2
@@ -54,6 +76,7 @@ build_slice() {
   # Ad-hoc signed (CODE_SIGN_IDENTITY="-"): these are intermediate library archives, not an
   # app — they get re-signed as part of whatever app eventually links them, so this build
   # doesn't need (and shouldn't require) a real signing certificate.
+  # "${ARR[@]+"${ARR[@]}"}": bash 3.2 (macOS's /bin/bash) errors on an empty array under `set -u`.
   if command -v xcbeautify > /dev/null 2>&1; then
     xcodebuild archive \
       -project "$PROJECT" \
@@ -61,8 +84,9 @@ build_slice() {
       -destination "generic/platform=$platform" \
       -archivePath "$archive_path" \
       -configuration Release \
+      "${SPM_FLAGS[@]+"${SPM_FLAGS[@]}"}" \
       SKIP_INSTALL=NO \
-      BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+      "${DISTRIBUTION_FLAGS[@]}" \
       CODE_SIGN_IDENTITY="-" \
       CODE_SIGNING_REQUIRED=NO \
       CODE_SIGNING_ALLOWED=NO \
@@ -74,8 +98,9 @@ build_slice() {
       -destination "generic/platform=$platform" \
       -archivePath "$archive_path" \
       -configuration Release \
+      "${SPM_FLAGS[@]+"${SPM_FLAGS[@]}"}" \
       SKIP_INSTALL=NO \
-      BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+      "${DISTRIBUTION_FLAGS[@]}" \
       CODE_SIGN_IDENTITY="-" \
       CODE_SIGNING_REQUIRED=NO \
       CODE_SIGNING_ALLOWED=NO
@@ -105,6 +130,7 @@ for MODULE in "${MODULES[@]}"; do
   xcodebuild -create-xcframework \
     -framework "$DEVICE_FRAMEWORK" \
     -framework "$SIM_FRAMEWORK" \
+    "${XCFRAMEWORK_FLAGS[@]+"${XCFRAMEWORK_FLAGS[@]}"}" \
     -output "$DEST"
 
   echo "== Wrote $DEST"

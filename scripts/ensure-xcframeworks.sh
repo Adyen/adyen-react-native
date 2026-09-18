@@ -8,6 +8,9 @@
 #
 # Set FORCE_REBUILD_XCFRAMEWORKS=1 to rebuild even if ios/frameworks/ already exists (e.g. after
 # bumping the pinned adyen-ios version).
+#
+# Set TESTABLE=1 for the variant AdyenExampleTests needs (see build-xcframeworks.sh). Also pass
+# FORCE_REBUILD_XCFRAMEWORKS=1 when switching between the two, or you'll keep the stale one.
 
 set -euo pipefail
 
