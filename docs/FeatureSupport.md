@@ -74,22 +74,24 @@ see [public-api-flows.md](./public-api-flows.md#concurrent-continuation-ambiguit
 
 ## Payment-method and wallet capabilities
 
-| Capability            | iOS                                                             | Android                                                                                      |
-| --------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Apple Pay             | supported (limited to iOS; PassKit device check)                | **unsupported** (`isAvailable` resolves `false` for `applepay`)                              |
-| Google Pay            | **unsupported** (`isAvailable` resolves `false` for Google Pay) | supported (limited to Android; `GooglePayAvailability` device check)                         |
-| BIN callbacks         | supported checkout-wide (card configuration)                    | supported for the embedded `scheme` view only; **not** wired for headless submit             |
-| Partial payments      | declared-only / nonfunctional                                   | legacy-backed (Drop-in only)                                                                 |
-| Stored-method removal | declared-only / nonfunctional                                   | legacy plumbing, not enabled by the compatibility builder                                    |
-| Address lookup        | falls back to full address mode when no lookup handler is wired | v6 card lookup/full unsupported; embedded address commands inert; incomplete legacy plumbing |
+| Capability            | iOS                                                             | Android                                                                                                                   |
+| --------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Apple Pay             | supported (limited to iOS; PassKit device check)                | **unsupported** (`isAvailable` resolves `false` for `applepay`)                                                           |
+| Google Pay            | **unsupported** (`isAvailable` resolves `false` for Google Pay) | limited Android availability: `false` without a matching method; otherwise the TODO helper returns `true` unconditionally |
+| BIN callbacks         | supported checkout-wide (card configuration)                    | supported for the embedded `scheme` view only; **not** wired for headless submit                                          |
+| Partial payments      | declared-only / nonfunctional                                   | legacy-backed (Drop-in only)                                                                                              |
+| Stored-method removal | declared-only / nonfunctional                                   | legacy plumbing, not enabled by the compatibility builder                                                                 |
+| Address lookup        | falls back to full address mode when no lookup handler is wired | v6 card lookup/full unsupported; embedded address commands inert; incomplete legacy plumbing                              |
 
 ### Apple Pay and Google Pay
 
-Apple Pay is limited to iOS and Google Pay to Android; each is gated by a device availability check.
-On iOS, `ContextModule.isAvailable` resolves `false` for Google Pay and, for Apple Pay, requires both
-a matching payment method and `PKPaymentAuthorizationViewController.canMakePayments()`. On Android,
-`ContextModule.isAvailable` resolves `false` for `applepay` and runs `GooglePayAvailability.isAvailable`
-for the Google Pay keys.
+Apple Pay is limited to iOS and Google Pay to Android. On iOS,
+`ContextModule.isAvailable` resolves `false` for Google Pay and, for Apple Pay, requires both a
+matching payment method and `PKPaymentAuthorizationViewController.canMakePayments()`. On Android,
+`ContextModule.isAvailable` resolves `false` for `applepay`; for a Google Pay key, it first requires
+an exact matching payment method. If present, it calls
+`android/src/main/java/com/adyenreactnativesdk/component/googlepay/GooglePayAvailability.kt`, whose
+current TODO implementation returns `true` unconditionally. It does not check real device capability.
 
 ### BIN callbacks
 

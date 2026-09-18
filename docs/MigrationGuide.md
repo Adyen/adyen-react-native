@@ -81,7 +81,7 @@ These are the consumer-owned native integration changes.
 
 **iOS**
 
-1. Set the deployment target in your `ios/Podfile`:
+1. Set the deployment target in your iOS project's `Podfile`:
    ```ruby
    platform :ios, '16.0'
    ```
@@ -169,7 +169,7 @@ These are the consumer-owned native integration changes.
    `ext.kotlinVersion` your buildscript already uses — rather than editing anything under
    `node_modules`. Do not pin the Adyen SDK or Compose versions yourself; those are library-owned.
 2. Register your launcher activity with the library in its `onCreate`, using
-   `AdyenCheckout.setLauncherActivity(this)` (`android/.../AdyenCheckout.kt`). This is **required for
+   `AdyenCheckout.setLauncherActivity(this)` (`android/src/main/java/com/adyenreactnativesdk/AdyenCheckout.kt`). This is **required for
    Android Drop-in**: `setLauncherActivity` only delegates to `DropInModule.register(activity)`, so it
    registers the presentation host that the Drop-in launcher needs. It is **not** required for
    `<AdyenComponent>` or headless components — the embedded view obtains its `FragmentActivity`
@@ -181,7 +181,7 @@ These are the consumer-owned native integration changes.
    }
    ```
 3. Forward redirect intents to the library from that launcher activity's `onNewIntent`, using the
-   `AdyenCheckout.handleIntent(intent)` entry point (`android/.../AdyenCheckout.kt`):
+   `AdyenCheckout.handleIntent(intent)` entry point (`android/src/main/java/com/adyenreactnativesdk/AdyenCheckout.kt`):
    ```kotlin
    override fun onNewIntent(intent: Intent) {
      super.onNewIntent(intent)

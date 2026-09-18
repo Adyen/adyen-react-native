@@ -160,14 +160,14 @@ classDiagram
 
 Exact Kotlin declarations:
 
-- `abstract class AppCompatModule(...) : ReactContextBaseJavaModule(reactContext)` (`component/base/AppCompatModule.kt`)
-- `abstract class BaseModule(..., val messageBus: MessageBus) : AppCompatModule(reactContext)` (`component/base/BaseModule.kt`)
-- `abstract class BaseActionModule(...) : BaseModule(reactContext, messageBus)` (`component/base/BaseActionModule.kt`)
-- `abstract class BaseAddressModule(...) : BaseActionModule(reactContext, messageBus)` (`component/base/BaseAddressModule.kt`)
-- `class ContextModule(...) : BaseActionModule(reactContext, messageBus)` (`component/ContextModule.kt`)
-- `class ComponentModule(...) : BaseActionModule(context, messageBus)` (`component/ComponentModule.kt`)
-- `class DropInModule(...) : BaseAddressModule(reactContext, messageBus)` (`component/dropin/DropInModule.kt`)
-- `class ActionModule(...) : AppCompatModule(reactContext)` (`cse/ActionModule.kt`)
+- `abstract class AppCompatModule(...) : ReactContextBaseJavaModule(reactContext)` (`android/src/main/java/com/adyenreactnativesdk/component/base/AppCompatModule.kt`)
+- `abstract class BaseModule(..., val messageBus: MessageBus) : AppCompatModule(reactContext)` (`android/src/main/java/com/adyenreactnativesdk/component/base/BaseModule.kt`)
+- `abstract class BaseActionModule(...) : BaseModule(reactContext, messageBus)` (`android/src/main/java/com/adyenreactnativesdk/component/base/BaseActionModule.kt`)
+- `abstract class BaseAddressModule(...) : BaseActionModule(reactContext, messageBus)` (`android/src/main/java/com/adyenreactnativesdk/component/base/BaseAddressModule.kt`)
+- `class ContextModule(...) : BaseActionModule(reactContext, messageBus)` (`android/src/main/java/com/adyenreactnativesdk/component/ContextModule.kt`)
+- `class ComponentModule(...) : BaseActionModule(context, messageBus)` (`android/src/main/java/com/adyenreactnativesdk/component/ComponentModule.kt`)
+- `class DropInModule(...) : BaseAddressModule(reactContext, messageBus)` (`android/src/main/java/com/adyenreactnativesdk/component/dropin/DropInModule.kt`)
+- `class ActionModule(...) : AppCompatModule(reactContext)` (`android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`)
 
 > [!IMPORTANT]
 > The platforms differ on purpose. On Android, `ContextModule` and `ComponentModule` **both** extend
@@ -235,7 +235,7 @@ sequenceDiagram
 
 ### Android — per-manager continuations selected by lookup
 
-Each `ComponentManager` (`component/base/ComponentManager.kt`) owns its own `CheckoutController`
+Each `ComponentManager` (`android/src/main/java/com/adyenreactnativesdk/component/base/ComponentManager.kt`) owns its own `CheckoutController`
 and its own `submitContinuation` / `additionalDetailsContinuation` (both via
 `suspendCancellableCoroutine`). `ContextModule` keeps a `componentManagers: MutableMap<String,
 ComponentManager>` keyed by payment-method type, and routes an incoming continuation command to the
@@ -316,7 +316,7 @@ Both platforms translate native SDK callbacks into JS events, but the ownership 
   emits nothing; every event the JS side subscribes to arrives through `ContextModule`.
 - **Android**: there is **one** React Native event channel (`RCTDeviceEventEmitter`, keyed by event
   name) but **multiple** `MessageBus` producers emitting through it. `MessageBus`
-  (`util/messaging/MessageBus.kt`) is composition by Kotlin `by` delegation over the small
+  (`android/src/main/java/com/adyenreactnativesdk/util/messaging/MessageBus.kt`) is composition by Kotlin `by` delegation over the small
   `SessionMessenger` / `AdvancedMessenger` / `PartialPaymentMessenger` /
   `RemoveStoredPaymentMessenger` / `CardMessenger` / `AddressLookupCallback` interfaces. A
   package-level bus is created in `AdyenPaymentPackage` and shared by `ContextModule`,
@@ -356,7 +356,9 @@ see [js-architecture.md](./js-architecture.md#listener-ownership) and the presen
   as an action host, so a resulting action (redirect/3DS) has somewhere to render even with no
   `<AdyenComponent>` mounted. The fragment is hidden terminally. A shopper closing it maps to
   `ModuleException.Canceled()` plus `unregisterManager(type)` (which disposes the manager). Apple Pay
-  is unavailable on Android; Google Pay runs a device availability check.
+  is unavailable on Android. Google Pay first requires a matching payment method, then calls the TODO
+  `android/src/main/java/com/adyenreactnativesdk/component/googlepay/GooglePayAvailability.kt` helper,
+  which currently returns `true` unconditionally rather than checking device capability.
 - **iOS**: `submit(type)` submits a cached payment component and presents action UI through the
   module's presentation delegate and the `presenterStack` only when the SDK requests it. Google Pay
   is unavailable on iOS; Apple Pay runs a PassKit availability check.
@@ -373,7 +375,7 @@ handle:
   requests presentation. `onAdditionalDetails` resolves the JS promise with the details json;
   `onComplete` resolves with a result-code object; `onFailure` rejects. `hide(_:)` clears the promise
   blocks and dismisses.
-- **Android** (`cse/ActionModule.kt`): sets up the checkout and presents a `CheckoutFragment`
+- **Android** (`android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`): sets up the checkout and presents a `CheckoutFragment`
   explicitly. `onAdditionalDetails` resolves the promise with the details and otherwise the flow
   rejects (no `onComplete` result-code resolution). `hide(success)` dismisses the fragment and
   releases the controller/promise.
