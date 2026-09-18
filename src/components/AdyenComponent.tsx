@@ -22,11 +22,7 @@ const styles = StyleSheet.create({
 // Referencing it here, at import time, forces that construction before any view can need it.
 void NativeModules.AdyenComponent; // eslint-disable-line no-void
 
-/**
- * Types with a live `<AdyenComponent>` mounted. A payment method type maps 1:1 to
- * a native controller, so mounting two components of the same type would fight
- * over the same controller — this registry rejects the duplicate.
- */
+/** Types with a live `<AdyenComponent>` mounted; rejects mounting a duplicate type. */
 const activeComponentTypes = new Set<string>();
 
 const duplicateTypeError = (type: string): string =>
@@ -37,25 +33,15 @@ const duplicateTypeError = (type: string): string =>
  * Props for {@link AdyenComponent}.
  */
 export interface AdyenComponentProps {
-  /**
-   * The active {@link Checkout} returned by `AdyenCheckout.setup()` /
-   * `AdyenCheckout.setupAdvanced()`.
-   * Required — its presence is compile-time proof that setup has completed.
-   */
+  /** The active {@link Checkout} returned by `AdyenCheckout.setup()`/`setupAdvanced()`. */
   checkout: Checkout;
   /** Payment method type to render (e.g. `"scheme"`, `"ideal"`, `"googlepay"`, `"applepay"`). */
   type: string;
 }
 
 /**
- * Generic embedded payment view. Renders the native payment component for the
- * given `type` against the shared checkout context.
- *
- * It subscribes to nothing. The merchant's callbacks are global rather than per
- * view, so every event and every result travels through the checkout itself.
- * The native view registers with its own module so teardown can dispose the
- * component it built, but that is invisible from here. Replaces the former
- * per-method card and platform-pay button view components.
+ * Generic embedded payment view. Renders the native payment component for the given `type`.
+ * Subscribes to nothing — callbacks are global on the checkout, not per view.
  */
 export const AdyenComponent: React.FC<AdyenComponentProps> = ({
   checkout,

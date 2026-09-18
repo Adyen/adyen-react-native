@@ -53,8 +53,7 @@ describe('AdyenComponent', () => {
   });
 
   test('mounts and unmounts without announcing itself to the checkout', () => {
-    // The merchant's callbacks are global, so a view has nothing to subscribe to. Native
-    // registration happens inside the view itself, purely so teardown can dispose it.
+    // Callbacks are global, so the view has nothing to subscribe to beyond native registration.
     const { unmount } = render(
       <AdyenComponent checkout={fakeCheckout} type="ideal" />
     );

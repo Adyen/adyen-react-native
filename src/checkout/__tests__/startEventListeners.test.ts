@@ -229,9 +229,7 @@ describe('startEventListeners', () => {
   // -------------------------------------------------------------------------
 
   test('delivers every event to the listener', () => {
-    // There is one listener set and one set of merchant callbacks, so nothing needs
-    // filtering. Events used to carry a viewId and be routed by it, which existed only
-    // because each embedded view had its own listeners.
+    // One listener set, one set of merchant callbacks — nothing needs filtering.
     const refs = createRefs();
     startEventListeners(createComponent(), refs);
     fire(Event.onError, { message: 'err', errorCode: 'x' });

@@ -13,15 +13,8 @@ const inactiveWarning = (method: string): string =>
   `Call AdyenCheckout.setup() or AdyenCheckout.setupAdvanced() to start a new checkout.`;
 
 /**
- * Produces a {@link Checkout} bound to the shared checkout context.
- *
- * This is the only way a `Checkout` is created, and it is used by `setup()` / `setupAdvanced()`.
- * It lives here rather than beside the `Checkout` interface so that `core` stays a leaf of pure
- * contracts: this factory reaches into `modules` at runtime, and it is deliberately absent from
- * the public barrel so consumers can only obtain a `Checkout` after setup resolves.
- *
- * The handle is per-setup and disposable, unlike the process-wide `AdyenCheckout` that owns it.
- * Once its owner is torn down, every method becomes an ignored no-op.
+ * Produces a {@link Checkout} bound to the shared checkout context; used by `setup()`/`setupAdvanced()`.
+ * Kept out of `core` and the public barrel so a `Checkout` can only be obtained after setup resolves.
  */
 export function createCheckout(
   paymentMethods: PaymentMethodsResponse,

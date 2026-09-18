@@ -70,12 +70,7 @@ interface NativeResultDispatcher {
   retry(message?: string): void;
 }
 
-/**
- * Groups of related events a caller can subscribe to independently.
- *
- * Drop-in owns its own families but not `core`: those events arrive on the context listeners, so
- * subscribing them here too would run merchant callbacks twice.
- */
+/** Groups of related events a caller can subscribe to independently. Drop-in excludes `core` to avoid double invocation. */
 export type ListenerFamily =
   'core' | 'card' | 'addressLookup' | 'dropIn' | 'applePay';
 
@@ -87,21 +82,10 @@ const ALL_FAMILIES: readonly ListenerFamily[] = [
   'applePay',
 ];
 
-/**
- * Families Drop-in owns exclusively.
- *
- * `core` is absent — see {@link ListenerFamily}. So is `card`: BIN is configured on the card
- * configuration rather than per presenter, which makes it checkout-level, so it is subscribed
- * through the context handlers alongside every other configuration callback.
- */
+/** Families Drop-in owns exclusively. `card` is subscribed via context handlers instead, since BIN is checkout-level. */
 const DROP_IN_FAMILIES: readonly ListenerFamily[] = ['addressLookup', 'dropIn'];
 
-/**
- * Subscribes the event families Drop-in owns.
- *
- * @param nativeComponent - The Drop-in wrapper.
- * @param refs - Callback refs for event handlers.
- */
+/** Subscribes the event families Drop-in owns. */
 export function startDropInEventListeners(
   nativeComponent: EventListenerTarget,
   refs: EventHandlerRefs
@@ -109,13 +93,7 @@ export function startDropInEventListeners(
   return startEventListeners(nativeComponent, refs, DROP_IN_FAMILIES);
 }
 
-/**
- * Start event listeners on a native component.
- *
- * @param nativeComponent - The native wrapper used for event subscription.
- * @param refs - Callback refs for event handlers.
- * @param families - Which event families to subscribe. Defaults to all of them.
- */
+/** Starts event listeners on a native component. `families` defaults to all. */
 export function startEventListeners(
   nativeComponent: EventListenerTarget,
   refs: EventHandlerRefs,

@@ -10,8 +10,7 @@ jest.mock('react-native', () => ({
     addListener: (event: string, handler: (data: any) => void) => {
       if (!mockListeners.has(event)) mockListeners.set(event, []);
       mockListeners.get(event)!.push(handler);
-      // A faithful remove, so a test can tell whether the wrapper actually detaches the
-      // previous listener when a handler is reassigned.
+      // A real remove, so tests can verify the wrapper detaches on handler reassignment.
       return {
         remove: () => {
           const handlers = mockListeners.get(event) ?? [];
@@ -65,8 +64,7 @@ describe('ContextModuleWrapper', () => {
 
   describe('event delivery', () => {
     test('delivers every event to the assigned handler', () => {
-      // Nothing filters any more. Events used to carry a viewId so this listener could ignore
-      // the ones an embedded view produced, back when each view had its own listener set.
+      // Nothing filters any more — events no longer carry a per-view viewId.
       const wrapper = new ContextModuleWrapper(mockNativeModule);
       const callback = jest.fn();
       wrapper.assignSubmitHandler(callback);

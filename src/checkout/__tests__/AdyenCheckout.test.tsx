@@ -233,9 +233,7 @@ describe('AdyenCheckout', () => {
   });
 
   describe('setupAdvanced (advanced flow)', () => {
-    // The advanced flow is the only entry point handed a payment methods response by the
-    // merchant, so it is the only one that can be given the wrong thing. Failing here beats
-    // failing later in native with a less obvious message.
+    // Advanced flow is the only entry point given a merchant-supplied payment methods response.
     test.each([
       ['undefined', undefined],
       ['a JSON string that was never parsed', '{"paymentMethods":[]}'],
@@ -310,9 +308,7 @@ describe('AdyenCheckout', () => {
       expect(sessionCallbacks.onError.mock.calls[0]).toHaveLength(1);
     });
 
-    // There is one suspended callback per kind and one module holding it, so every result
-    // goes to NativeCheckout. Results used to be routed by a `source` tag, which existed only
-    // because Drop-in, embedded views and the headless flow each emitted the same events.
+    // One suspended callback per kind, one module holding it — every result goes to NativeCheckout.
 
     test('advanced onSubmit dispatches an action result to NativeCheckout', async () => {
       advancedCallbacks.onSubmit.mockResolvedValue(
@@ -403,8 +399,7 @@ describe('AdyenCheckout', () => {
       await nativeAdditionalDetailsHandler(detailsData);
 
       expect(advancedCallbacks.onAdditionalDetails).toHaveBeenCalledTimes(1);
-      // Handed over untouched: this payload is posted verbatim to /payments/details, and
-      // nothing is added to it in transit that would have to be stripped back off.
+      // Payload is passed through untouched to /payments/details.
       const [dataArg] = advancedCallbacks.onAdditionalDetails.mock.calls[0];
       expect(dataArg).toBe(detailsData);
       expect(mockContextCompletion).toHaveBeenCalledWith('Authorised');

@@ -17,13 +17,7 @@ export interface DropInModule extends AdvancedPayment {
    */
   getReturnURL: () => Promise<string>;
 
-  /**
-   * Launches the Drop-in modal for the shared checkout context created by
-   * `setup()` / `setupAdvanced()`. Drop-in does not own or manage session
-   * state — it reads the payment methods from the shared {@link Checkout} and
-   * opens the native modal.
-   * @param checkout - The shared checkout obtained from `AdyenCheckout.setup()` or `AdyenCheckout.setupAdvanced()`.
-   */
+  /** Launches the Drop-in modal using payment methods from the shared {@link Checkout}. */
   start(checkout: Checkout): void;
 
   /**

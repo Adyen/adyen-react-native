@@ -14,13 +14,8 @@ export interface AdyenEventListener {
 }
 
 /**
- * Base for native modules that JS subscribes to. Holds the module and exposes it as a
- * `NativeEventEmitter` source.
- *
- * Which events a module can emit is deliberately not mirrored here. Native `supportedEvents()`
- * and the JS `Event` enum are kept in sync by hand, so a second runtime copy of that list added
- * no safety - and subscribing to an event a module never emits is harmless, because the listener
- * simply never fires.
+ * Base for native modules that JS subscribes to; exposes the module as a `NativeEventEmitter` source.
+ * Supported events aren't mirrored here — native and JS `Event` are kept in sync by hand.
  */
 export abstract class EventListenerWrapper<
   T extends NativeModule,

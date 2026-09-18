@@ -43,11 +43,7 @@ function dispatchSubmitResult(result: SubmitResult): void {
 }
 
 /**
- * Static entry point for the Adyen checkout.
- *
- * Cross-platform aligned: matches the setup/cleanup pattern used by iOS,
- * Android, and Flutter SDKs. Auto-cleans native resources when terminal
- * callbacks fire (onComplete / onError).
+ * Static entry point for the Adyen checkout. Auto-cleans native resources on terminal callbacks.
  *
  * @example
  * ```tsx
@@ -55,8 +51,7 @@ function dispatchSubmitResult(result: SubmitResult): void {
  * AdyenDropIn.start(checkout);
  * // or
  * <AdyenComponent checkout={checkout} type="scheme" />
- * // Auto-cleanup on terminal callbacks.
- * // Abandoning the flow without a terminal callback: checkout.invalidate()
+ * // If abandoning without a terminal callback: checkout.invalidate()
  * ```
  */
 export class AdyenCheckout {
@@ -76,21 +71,13 @@ export class AdyenCheckout {
     },
   };
 
-  /**
-   * Sets up a session-based checkout flow.
-   *
-   * @param session - The session configuration from the `/sessions` response.
-   * @param configuration - The checkout configuration.
-   * @param callbacks - Callbacks invoked for the session lifecycle.
-   * @returns A {@link Checkout} that can be passed to Drop-in or embedded components.
-   */
+  /** Sets up a session-based checkout flow; returns a {@link Checkout} for Drop-in or embedded components. */
   static async setup(
     session: SessionConfiguration,
     configuration: Configuration,
     callbacks: SessionCallbacks
   ): Promise<Checkout> {
-    // Before re-setup, clear JS-side state without calling native cleanup.
-    // The native side will handle its own state when it receives the new setup call.
+    // Before re-setup, clear JS-side state; native handles its own state on the new setup call.
     if (!AdyenCheckout.runtime.isCleanedUp) {
       AdyenCheckout.clearJSState();
     }
@@ -138,28 +125,18 @@ export class AdyenCheckout {
     return checkout;
   }
 
-  /**
-   * Sets up an advanced (merchant-managed) checkout flow.
-   *
-   * @param paymentMethods - The payment methods response from the Adyen API.
-   * @param configuration - The checkout configuration.
-   * @param callbacks - Callbacks invoked for the advanced lifecycle.
-   * @returns A {@link Checkout} that can be passed to Drop-in or embedded components.
-   */
+  /** Sets up an advanced (merchant-managed) checkout flow; returns a {@link Checkout} for Drop-in or embedded components. */
   static async setupAdvanced(
     paymentMethods: PaymentMethodsResponse,
     configuration: Configuration,
     callbacks: AdvancedCallbacks
   ): Promise<Checkout> {
-    // Before re-setup, clear JS-side state without calling native cleanup.
-    // The native side will handle its own state when it receives the new setup call.
+    // Before re-setup, clear JS-side state; native handles its own state on the new setup call.
     if (!AdyenCheckout.runtime.isCleanedUp) {
       AdyenCheckout.clearJSState();
     }
 
-    // Validate both inputs before touching any state. The advanced flow is the only entry point
-    // that receives payment methods from the merchant — in the session flow they come back from
-    // native — so this is the only place the response can be wrong.
+    // Advanced flow is the only entry point receiving payment methods from the merchant, so validate here.
     checkConfiguration(configuration);
     checkPaymentMethodsResponse(paymentMethods);
     AdyenCheckout.runtime.configuration = configuration;
@@ -219,11 +196,7 @@ export class AdyenCheckout {
     return checkout;
   }
 
-  /**
-   * Lifecycle operations handed to every {@link Checkout} produced by setup.
-   * A handle is "active" until the checkout is torn down by a terminal event or
-   * by `checkout.invalidate()`.
-   */
+  /** Lifecycle operations handed to every {@link Checkout} produced by setup. */
   private static checkoutHost(): CheckoutHost {
     return {
       isActive: () => !AdyenCheckout.runtime.isCleanedUp,
@@ -231,12 +204,7 @@ export class AdyenCheckout {
     };
   }
 
-  /**
-   * Subscribes the card configuration callbacks.
-   *
-   * BIN is configured once per checkout on the card configuration, so it belongs here rather than
-   * with a presenter: the same handler serves Drop-in, an embedded view and a headless submit.
-   */
+  /** Subscribes card config callbacks (BIN lookup/value); shared by Drop-in, embedded views, headless submit. */
   private static subscribeCardHandlers(): void {
     const refs = AdyenCheckout.runtime.eventHandlerRefs;
     NativeCheckout.assignBinLookupHandler((data) =>
@@ -270,19 +238,15 @@ export class AdyenCheckout {
   }
 
   /**
-   * Subscribes the event families only Drop-in emits: stored-payment removal, partial payments
-   * and address lookup.
-   *
-   * Core events are excluded on purpose - those arrive on the context listeners and are routed by
-   * presenter tag, so subscribing them here too would invoke merchant callbacks twice.
+   * Subscribes Drop-in-only events (stored-payment removal, partial payments, address lookup).
+   * Core events are excluded — those arrive via context listeners to avoid double invocation.
    */
   private static subscribeDropInHandlers(): void {
     // Replace rather than accumulate, so a re-setup cannot leave two bags listening.
     AdyenCheckout.runtime.subscriptions
       .get(DROP_IN_KEY)
       ?.forEach((s) => s.remove());
-    // AdyenDropIn is declared as DropInModule, its public contract, but is a DropInWrapper at
-    // runtime and so carries the event-listener members this needs.
+    // AdyenDropIn is typed as DropInModule but is a DropInWrapper at runtime with these listener members.
     AdyenCheckout.runtime.subscriptions.set(
       DROP_IN_KEY,
       startDropInEventListeners(
@@ -293,12 +257,8 @@ export class AdyenCheckout {
   }
 
   /**
-   * Points the per-view event handler refs at the active callbacks, replacing all four at once.
-   *
-   * Refs rather than direct wiring because `startEventListeners` reads them at event time, so a
-   * view subscribed before a re-setup picks up the new callbacks without resubscribing. Omitting a
-   * handler clears it, which is both how a flow declares it does not handle an event and how
-   * teardown clears everything.
+   * Points the per-view event handler refs at the active callbacks. Uses refs (read at event
+   * time) so a view subscribed before a re-setup picks up new callbacks without resubscribing.
    */
   private static wireEventHandlerRefs(handlers: EventHandlers = {}): void {
     const refs = AdyenCheckout.runtime.eventHandlerRefs;
@@ -320,11 +280,7 @@ export class AdyenCheckout {
     }
   }
 
-  /**
-   * Clears JS-side state (listeners, subscriptions, callback refs) without
-   * calling native cleanup. Used on re-setup so the native side can manage
-   * its own state transition when it receives the new setup call.
-   */
+  /** Clears JS-side state without native cleanup; used on re-setup so native manages its own transition. */
   private static clearJSState(): void {
     AdyenCheckout.resetState(false);
   }

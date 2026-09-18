@@ -15,18 +15,9 @@ import type {
 import { NativeCheckout } from '../../modules/context/ContextModule';
 
 /**
- * Bridges the Apple Pay sheet callbacks to the merchant's configuration.
- *
- * Apple Pay is configured rather than presented: the v6 SDK exposes `async` closures on
- * `ApplePayConfiguration`, and iOS `ContextModule` suspends each one until JS answers through the
- * matching `provide…` method. Every callback is optional, so each one falls back to the neutral
- * answer that lets the sheet proceed.
- *
- * Unlike the payment events, these are owned solely by `ContextModule` and need no presenter tag —
- * no other module can be awaiting them.
- *
- * @param configOf - Reads the active configuration. A function rather than a value because the
- *   handlers outlive a single setup, and a re-setup replaces the configuration underneath them.
+ * Bridges Apple Pay sheet callbacks to the merchant's configuration. Every callback is optional
+ * and falls back to a neutral answer that lets the sheet proceed.
+ * `configOf` is a function (not a value) since handlers outlive a single setup and configuration can be replaced.
  */
 export function subscribeApplePayHandlers(
   configOf: () => Configuration | null

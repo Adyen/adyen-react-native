@@ -5,9 +5,6 @@ import type {
   PaymentAction,
 } from '../../../core';
 
-/**
- * Creates a mock NativeModule for testing
- */
 export function createMockNativeModule(): jest.Mocked<NativeModule> {
   return {
     addListener: jest.fn(),
@@ -15,9 +12,6 @@ export function createMockNativeModule(): jest.Mocked<NativeModule> {
   };
 }
 
-/**
- * Sample payment methods response for testing
- */
 export const mockPaymentMethodsResponse: PaymentMethodsResponse = {
   paymentMethods: [
     { type: 'scheme', name: 'Credit Card' },
@@ -28,9 +22,6 @@ export const mockPaymentMethodsResponse: PaymentMethodsResponse = {
   ],
 };
 
-/**
- * Sample configuration for testing
- */
 export const mockConfiguration: Configuration = {
   environment: 'test',
   clientKey: 'test_client_key',
@@ -39,9 +30,6 @@ export const mockConfiguration: Configuration = {
   returnUrl: 'myapp://checkout',
 };
 
-/**
- * Sample payment action for testing
- */
 export const mockPaymentAction: PaymentAction = {
   type: 'redirect',
   paymentMethodType: 'ideal',
