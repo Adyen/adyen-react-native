@@ -84,35 +84,8 @@ class DropInModule(
       return sendError(ModuleException.NoActivity())
     }
 
-    val storedConfig = BaseModule.checkoutState?.configurationJSON
-    if (storedConfig == null) {
-      Log.w(TAG, "checkoutState is null — call setup() or setupAdvanced() first")
-      return sendError(ModuleException.Unknown("Checkout context is not initialized. Call setup() or setupAdvanced() first."))
-    }
-
-    // TODO: v6 migration - old DropIn.startPayment() needs the old CheckoutConfiguration type.
-    val checkoutConfiguration: CheckoutConfiguration
-    val paymentMethodsResponse: PaymentMethodsApiResponse
-    try {
-      paymentMethodsResponse = getPaymentMethodsApiResponse(paymentMethodsData)
-      checkoutConfiguration = buildOldCheckoutConfiguration(storedConfig)
-    } catch (e: java.lang.Exception) {
-      return sendError(e)
-    }
-
-    startBackgroundService()
-    if (BaseModule.checkoutState?.isSession == true) {
-      // TODO: v6 migration - old DropIn.startPayment() needs CheckoutSession, not CheckoutContext.Sessions.
-      sendError(ModuleException.Unknown("Drop-in session flow not yet supported in v6 alpha"))
-    } else {
-      startPayment(
-        reactApplicationContext,
-        dropInLauncher,
-        paymentMethodsResponse,
-        checkoutConfiguration,
-        AdvancedCheckoutService::class.java,
-      )
-    }
+    // TODO: v6 migration - enable when new CheckoutConfiguration available.
+    return sendError(ModuleException.Unknown("Drop-In not supported on Alpha"))
   }
 
   @ReactMethod

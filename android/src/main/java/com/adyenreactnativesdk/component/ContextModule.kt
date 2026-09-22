@@ -291,7 +291,6 @@ class ContextModule(
     BaseModule.checkoutState =
       CheckoutState(
         checkoutContext = sessionsContext,
-        configurationJSON = configurationJSON,
         sessionBeforeSubmitBridge = SessionBeforeSubmitBridge(messageBus),
       )
     promise.resolve(sessionSetupResponseMap)
@@ -332,7 +331,6 @@ class ContextModule(
         BaseModule.checkoutState =
           CheckoutState(
             checkoutContext = result.checkoutContext,
-            configurationJSON = configurationJSON,
           )
         promise.resolve(null)
       }
