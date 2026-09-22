@@ -60,7 +60,7 @@ class ApiClient implements ApiService {
       ENVIRONMENT.url +
       'sessions/' +
       sessionId +
-      `?sessionResult=${sessionResult}`;
+      `?sessionResult=${encodeURIComponent(sessionResult)}`;
     const request = new Request(url, {
       method: 'GET',
       headers: {

@@ -5,6 +5,8 @@
 //
 
 import Adyen
+import AdyenCard
+import AdyenEncryption
 import Foundation
 import React
 
@@ -78,8 +80,8 @@ internal final class AdyenCSEModule: NSObject {
                                   resolver: RCTPromiseResolveBlock,
                                   rejecter _: RCTPromiseRejectBlock) {
         if let cardBrand = cardBrand as String? {
-            let cardType = CardType(rawValue: cardBrand)
-            resolver(CardSecurityCodeValidator(cardType: cardType).isValid(securityCode as String))
+            let brand = CardBrand(rawValue: cardBrand)
+            resolver(CardSecurityCodeValidator(cardBrand: brand).isValid(securityCode as String))
         } else {
             resolver(CardSecurityCodeValidator().isValid(securityCode as String))
         }

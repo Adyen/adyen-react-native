@@ -1,72 +1,76 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { Text, ActivityIndicator, View } from 'react-native';
-import { AdyenCheckout } from '@adyen/react-native';
-import type {
-  AdyenError,
-  AdyenComponent,
-  SessionsResult,
-  SessionConfiguration,
-} from '@adyen/react-native';
-import { CheckoutNavigator } from '../../router/CheckoutNavigator';
+import { AdyenCheckout, AdyenComponent } from '@adyen/react-native';
+import type { AdyenError, Checkout, SessionsResult } from '@adyen/react-native';
 import Styles from '../common/Styles';
+import AdaptiveText from '../common/AdaptiveText';
+import PageScrollView from '../common/PageScrollView';
 import TopView from './components/TopView';
+import PaymentMethodComponent from './components/PaymentMethodComponent';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 
 const SessionsComponentsCheckout = () => {
-  const { configuration, processResult, navigateToRoot, apiClient } =
+  const { configuration, navigateToResults, navigateToRoot, apiClient } =
     useAppContext();
   const [loading, setLoading] = useState(true);
-  const [initError, setError] = useState<string | undefined>(undefined);
-  const [session, setSession] = useState<SessionConfiguration | undefined>(
-    undefined
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [checkout, setCheckout] = useState<Checkout | null>(null);
+
+  const config = useMemo(
+    () => checkoutConfiguration(configuration),
+    [configuration]
   );
 
-  useEffect(() => {
-    const refreshSession = async () => {
-      try {
-        const returnUrl = ENVIRONMENT.returnUrl;
-        const newSession = await apiClient.requestSession(
-          configuration,
-          returnUrl
-        );
-        setSession(newSession);
-      } catch (e) {
-        setError(String(e));
-      } finally {
-        setLoading(false);
-      }
-    };
-    refreshSession();
-  }, [configuration, setSession, setLoading, setError, apiClient]);
-
   const didFail = useCallback(
-    async (error: AdyenError, nativeComponent: AdyenComponent) => {
-      processAdyenError(error, nativeComponent);
+    async (adyenError: AdyenError) => {
+      processAdyenError(adyenError);
       navigateToRoot();
     },
     [navigateToRoot]
   );
 
   const didComplete = useCallback(
-    async (result: SessionsResult, nativeComponent: AdyenComponent) => {
-      if (
-        result.resultCode === 'PresentToShopper' ||
-        apiClient.usesDirectSessionResult
-      ) {
-        processResult(result, nativeComponent);
-        return;
-      }
-      const status = await apiClient.requestSessionResult(
-        result.sessionId,
-        result.sessionResult
-      );
-      processResult(status, nativeComponent);
+    async (result: SessionsResult) => {
+      // TODO: verify server-side via apiClient.requestSessionResult once Android forwards a real sessionResult (works on iOS today).
+      navigateToResults(result);
     },
-    [processResult, apiClient]
+    [navigateToResults]
   );
+
+  useEffect(() => {
+    let active = true;
+    const init = async () => {
+      try {
+        const returnUrl = ENVIRONMENT.returnUrl;
+        const session = await apiClient.requestSession(
+          configuration,
+          returnUrl
+        );
+        const c = await AdyenCheckout.setup(session, config, {
+          onComplete: didComplete,
+          onError: didFail,
+        });
+        if (active) {
+          setCheckout(c);
+        }
+      } catch (e) {
+        if (active) {
+          setError(String(e));
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+    init();
+    return () => {
+      active = false;
+    };
+  }, [configuration, apiClient, config, didComplete, didFail]);
 
   if (loading) {
     return (
@@ -76,10 +80,10 @@ const SessionsComponentsCheckout = () => {
     );
   }
 
-  if (initError) {
+  if (error || !checkout) {
     return (
       <View style={Styles.centeredContent}>
-        <Text style={Styles.errorText}>{initError}</Text>
+        <Text style={Styles.errorText}>{error ?? 'No session available'}</Text>
       </View>
     );
   }
@@ -87,14 +91,26 @@ const SessionsComponentsCheckout = () => {
   return (
     <View style={Styles.page}>
       <TopView />
-      <AdyenCheckout
-        config={checkoutConfiguration(configuration)}
-        session={session}
-        onComplete={didComplete}
-        onError={didFail}
-      >
-        <CheckoutNavigator showEmbeddedComponents={true} showInstant={true} />
-      </AdyenCheckout>
+      <PageScrollView>
+        <AdaptiveText style={Styles.paddedTitle}>Card</AdaptiveText>
+        <AdyenComponent checkout={checkout} type="scheme" />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="applepay"
+          title="Pay with Apple Pay"
+        />
+        <PaymentMethodComponent checkout={checkout} type="googlepay" />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="paypal"
+          title="Pay with PayPal"
+        />
+        <PaymentMethodComponent
+          checkout={checkout}
+          type="klarna_paynow"
+          title="Pay with Klarna"
+        />
+      </PageScrollView>
     </View>
   );
 };

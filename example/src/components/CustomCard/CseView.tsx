@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button, View, Alert, ScrollView } from 'react-native';
-import { AdyenAction, AdyenCSE } from '@adyen/react-native';
+import { AdyenCSE } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import { payWithCard } from './utils/payWithCard';
 import { useAppContext } from '../../hooks/useAppContext';
@@ -13,7 +13,7 @@ import { formatMinorUnits } from '../utilities/formatMinorUnits';
 const CARD_VALIDATION_ERROR_TITLE = 'Invalid card details';
 
 const CseView = () => {
-  const { configuration, processResult, apiClient } = useAppContext();
+  const { configuration, navigateToResults, apiClient } = useAppContext();
   const [number, setNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
@@ -66,7 +66,7 @@ const CseView = () => {
         return;
       }
       result = await payWithCard(unencryptedCard, configuration, apiClient);
-      processResult(result, AdyenAction);
+      navigateToResults(result);
     } catch (e) {
       Alert.alert('Error', String(e));
       return;
@@ -75,7 +75,7 @@ const CseView = () => {
     apiClient,
     configuration,
     unencryptedCard,
-    processResult,
+    navigateToResults,
     validateCardData,
   ]);
 

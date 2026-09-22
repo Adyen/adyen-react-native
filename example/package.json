@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "pod": "cd ios && bundle exec pod update"
+    "pod": "bash ../scripts/ensure-xcframeworks.sh && cd ios && bundle exec pod update"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.2",
@@ -19,7 +19,7 @@
     "react": "19.2.3",
     "react-native": "0.85.0",
     "react-native-safe-area-context": "^5.4.1",
-    "react-native-screens": "4.25.2"
+    "react-native-screens": "4.26.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

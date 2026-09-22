@@ -9,7 +9,7 @@ abstract class AppCompatModule(
 ) : ReactContextBaseJavaModule(reactContext) {
   protected val appCompatActivity: AppCompatActivity
     get() {
-      val currentActivity = getCurrentActivity()
+      val currentActivity = reactApplicationContext.getCurrentActivity()
       return currentActivity as AppCompatActivity?
         ?: throw IllegalStateException("Not an AppCompat Activity")
     }

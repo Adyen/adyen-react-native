@@ -6,7 +6,7 @@
 
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.components.core.AnalyticsLevel
+import com.adyen.checkout.core.components.AnalyticsLevel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

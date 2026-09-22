@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 2023 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
+import com.adyen.checkout.authentication.authentication
+import com.adyen.checkout.core.components.CheckoutConfiguration
 import com.facebook.react.bridge.ReadableMap
 
 class ThreeDSConfigurationParser(
@@ -30,7 +37,7 @@ class ThreeDSConfigurationParser(
         null
       }
 
-  fun applyConfiguration(builder: Adyen3DS2Configuration.Builder) {
-    requestorAppUrl?.let { builder.threeDSRequestorAppURL = it }
+  fun applyConfiguration(configuration: CheckoutConfiguration) {
+    configuration.authentication(threeDSRequestorAppURL = requestorAppUrl)
   }
 }

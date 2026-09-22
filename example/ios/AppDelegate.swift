@@ -1,4 +1,4 @@
-import Adyen
+import adyen_react_native
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
@@ -44,7 +44,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        RedirectComponent.applicationDidOpen(from: url)
+        ADYRedirectComponent.applicationDidOpen(url)
     }
 
     private func parseExternalConfig() -> [String: Any] {

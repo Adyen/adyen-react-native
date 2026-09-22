@@ -3,7 +3,14 @@ ext {
     jacoco_version = '0.8.12'
 
     // Adyen Dependencies
-    adyen_version = "5.20.0"
+    // package.json's adyen.android is the single source of truth for this version (mirrors
+    // adyen.ios, which adyen-react-native.podspec and CI's build_ios_frameworks.yml read the
+    // same way) - bump it there, not here.
+    def packageJson = new groovy.json.JsonSlurper().parse(new File(project.projectDir, '../package.json'))
+    adyen_version = packageJson.adyen.android
+
+    // Compose BOM (aligned with the version shipped by the Adyen v6 SDK)
+    compose_bom_version = "2026.05.01"
 
     // Android Dependencies
     gson_version = "2.9.1"

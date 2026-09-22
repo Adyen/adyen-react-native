@@ -27,14 +27,8 @@ public struct AnalyticsParser {
     }
 
     public var configuration: AnalyticsConfiguration {
-        var analytics = AnalyticsConfiguration()
-        analytics.isEnabled = analyticsOn
-        if let sdkVersion = BaseModule.sdkVersion {
-            CheckoutPlatformParams.shared.overrideForCrossPlatform(
-                platform: .reactNative,
-                version: sdkVersion
-            )
-        }
+        let analytics = AnalyticsConfiguration(isEnabled: analyticsOn)
+        // TODO: `CheckoutPlatformParams` is package-scoped and unreachable across the xcframework boundary; only affects analytics attribution, not payments.
         AdyenLogging.isEnabled = verboseLogsOn
         return analytics
     }

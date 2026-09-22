@@ -10,8 +10,8 @@ import Adyen
 import adyen_react_native
 
 class AdyenAppearance: AdyenAppearanceProvider {
-  static func createStyle() -> Adyen.DropInComponent.Style {
-     # provide your custom style here
+  static func createStyle() -> CheckoutTheme {
+     # provide your custom theme here
   }
 }
 ```

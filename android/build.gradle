@@ -12,11 +12,13 @@ buildscript {
     classpath "com.android.tools.build:gradle:8.7.3"
     // noinspection DifferentKotlinGradleVersion
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+    classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
   }
 }
 
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
+apply plugin: "org.jetbrains.kotlin.plugin.compose"
 apply from: "jacoco.gradle"
 apply from: 'dependencies.gradle'
 
@@ -36,9 +38,17 @@ android {
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
   }
 
+  buildFeatures {
+    buildConfig true
+    compose true
+  }
+
   testOptions {
     unitTests {
       includeAndroidResources = true
+      // Stub android.util.Log and friends instead of throwing "not mocked". Parsers log
+      // warnings on invalid input, so tests covering those branches need this.
+      returnDefaultValues = true
     }
   }
 
@@ -69,6 +79,11 @@ dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation("com.adyen.checkout:drop-in:$adyen_version")
+
+  // Compose is required to host the v6 CheckoutPaymentFlow composable inside a ComposeView.
+  // The BOM is pinned to the version shipped by the Adyen SDK to keep the runtime aligned.
+  implementation platform("androidx.compose:compose-bom:$compose_bom_version")
+  implementation "androidx.compose.ui:ui"
 
   //Tests
   testImplementation testLibraries.json

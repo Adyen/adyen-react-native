@@ -1,44 +1,24 @@
 package com.adyenreactnativesdk.util.messaging.base
 
-import com.adyen.checkout.components.core.ActionComponentData
-import com.adyen.checkout.components.core.PaymentComponentData
-import com.adyen.checkout.components.core.PaymentComponentState
-import com.adyen.checkout.googlepay.GooglePayComponentState
+import com.adyen.checkout.core.action.data.ActionComponentData
+import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyenreactnativesdk.component.model.ResultDTO
 import com.adyenreactnativesdk.component.model.SubmitData
-import com.adyenreactnativesdk.util.AdyenConstants
 import com.adyenreactnativesdk.util.ResultCodes
 import com.adyenreactnativesdk.util.messaging.Emitter
 import com.adyenreactnativesdk.util.messaging.EventName
-import org.json.JSONObject
 
 class AdvancedMessengerImpl(
   private val emitter: Emitter,
 ) : AdvancedMessenger {
-  override fun onSubmit(
-    state: PaymentComponentState<*>,
-    returnUrl: String?,
-  ) {
-    val extra =
-      if (state is GooglePayComponentState) {
-        state.paymentData?.let {
-          JSONObject(it.toJson())
-        }
-      } else {
-        null
-      }
-
-    val jsonObject = PaymentComponentData.Companion.SERIALIZER.serialize(state.data)
-    returnUrl?.let {
-      jsonObject.put(AdyenConstants.PARAMETER_RETURN_URL, it)
-    }
-
-    val submitData = SubmitData(jsonObject, extra)
+  override fun onSubmit(data: PaymentComponentData<*>) {
+    val jsonObject = PaymentComponentData.SERIALIZER.serialize(data)
+    val submitData = SubmitData(jsonObject, null)
     emitter.sendEvent(EventName.SUBMIT, submitData.toJSONObject())
   }
 
-  override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
-    val jsonObject = ActionComponentData.Companion.SERIALIZER.serialize(actionComponentData)
+  override fun onAdditionalDetails(data: ActionComponentData) {
+    val jsonObject = ActionComponentData.SERIALIZER.serialize(data)
     emitter.sendEvent(EventName.ADDITIONAL_DETAILS, jsonObject)
   }
 
@@ -48,6 +28,11 @@ class AdvancedMessengerImpl(
 
   override fun onFinished() {
     val jsonObject = ResultDTO(resultCode = ResultCodes.PRESENT_TO_SHOPPER.value).toJSONObject()
+    emitter.sendEvent(EventName.COMPLETE_VOUCHER, jsonObject)
+  }
+
+  override fun onFinished(resultCode: String) {
+    val jsonObject = ResultDTO(resultCode = resultCode).toJSONObject()
     emitter.sendEvent(EventName.COMPLETE_VOUCHER, jsonObject)
   }
 }

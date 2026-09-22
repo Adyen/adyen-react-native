@@ -1,0 +1,94 @@
+name: Build iOS xcframeworks
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+
+jobs:
+  resolve-package-graph:
+    name: Resolve adyen-ios package graph
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      # Single source of truth for this version (also used by build_lib.yml, ios_tests.yml).
+      - name: Read pinned adyen-ios version
+        id: adyen-ios-version
+        run: echo "value=$(jq -r .adyen.ios package.json)" >> "$GITHUB_OUTPUT"
+
+      # Cheap shallow checkout; needed upfront to hash Package.swift below.
+      - name: Checkout adyen-ios
+        uses: actions/checkout@v7
+        with:
+          repository: Adyen/adyen-ios
+          ref: ${{ steps.adyen-ios-version.outputs.value }}
+          path: adyen-ios
+          fetch-depth: 1
+
+      # Keyed on Package.swift, not the adyen-ios version: deps change less often than releases.
+      - name: Cache SPM checkouts
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: .spm-cache
+          key: spm-checkouts-${{ hashFiles('adyen-ios/Package.swift') }}
+
+      - name: Resolve package dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project adyen-ios/Adyen.xcodeproj \
+            -scheme Adyen \
+            -clonedSourcePackagesDirPath .spm-cache
+
+  build:
+    name: Build xcframeworks
+    needs: [resolve-package-graph]
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        testable: [false, true]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read pinned adyen-ios version
+        id: adyen-ios-version
+        run: echo "value=$(jq -r .adyen.ios package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Set cache key suffix
+        id: cache-key
+        run: echo "suffix=${{ matrix.testable && '-testable' || '' }}" >> "$GITHUB_OUTPUT"
+
+      # A distribution build can never be @testable imported - see build-xcframeworks.sh.
+      - name: Cache xcframeworks
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ios/frameworks
+          key: ios-frameworks-${{ steps.adyen-ios-version.outputs.value }}${{ steps.cache-key.outputs.suffix }}
+
+      - name: Checkout adyen-ios
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: Adyen/adyen-ios
+          ref: ${{ steps.adyen-ios-version.outputs.value }}
+          path: adyen-ios
+          fetch-depth: 1
+
+      # Restore-only: populated by resolve-package-graph above.
+      - name: Restore SPM checkouts cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: .spm-cache
+          key: spm-checkouts-${{ hashFiles('adyen-ios/Package.swift') }}
+
+      - name: Build xcframeworks
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          TESTABLE: ${{ matrix.testable && '1' || '' }}
+          SPM_CACHE_DIR: ${{ github.workspace }}/.spm-cache
+        run: bash scripts/build-xcframeworks.sh adyen-ios

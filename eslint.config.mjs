@@ -34,6 +34,8 @@ export default defineConfig([
     },
   },
   {
-    ignores: ['node_modules/', 'lib/'],
+    // Build output is generated and gitignored; Gradle's HTML test report ships a bundled
+    // report.js that would otherwise fail `yarn lint` after any Android test run.
+    ignores: ['node_modules/', 'lib/', '**/build/', '**/Build/'],
   },
 ]);

@@ -3,12 +3,15 @@ import Styles from '../common/Styles';
 
 type TabItemProps = {
   label: string;
+  testID?: string;
   isActive: boolean;
   onPress: () => void;
 };
 
-const TabItem = ({ label, isActive, onPress }: TabItemProps) => (
+const TabItem = ({ label, testID, isActive, onPress }: TabItemProps) => (
   <TouchableOpacity
+    testID={testID}
+    accessibilityLabel={testID}
     style={[Styles.tab, isActive && Styles.activeTab]}
     onPress={onPress}
   >
