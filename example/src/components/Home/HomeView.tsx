@@ -13,18 +13,27 @@ type TabName = 'Sessions' | 'Advanced' | 'API-Only';
 type PageType = {
   title: string;
   route: keyof HomeStackParamList;
+  disabled?: boolean;
 };
 
 const TABS: TabName[] = ['Sessions', 'Advanced', 'API-Only'];
 
 const TAB_CONTENT: Record<TabName, PageType[]> = {
   'Sessions': [
-    { title: 'Sessions DropIn', route: 'SessionsDropInCheckout' },
+    {
+      title: 'Sessions DropIn',
+      route: 'SessionsDropInCheckout',
+      disabled: true,
+    },
     { title: 'Sessions Components', route: 'SessionsComponentsCheckout' },
   ],
   'Advanced': [
     { title: 'Advanced Checkout', route: 'AdvancedCheckout' },
-    { title: 'Partial Payment', route: 'PartialPaymentCheckout' },
+    {
+      title: 'Partial Payment',
+      route: 'PartialPaymentCheckout',
+      disabled: true,
+    },
   ],
   'API-Only': [
     { title: 'Custom Card (CSE)', route: 'CustomCard' },
@@ -57,12 +66,13 @@ const Home = ({ navigation }: HomeScreenProps) => {
       </View>
 
       <View style={Styles.content}>
-        {TAB_CONTENT[activeTab].map(({ title, route }) => (
+        {TAB_CONTENT[activeTab].map(({ title, route, disabled = false }) => (
           <MenuButton
             key={title}
             title={title}
             testID={`menu-item-${route}`}
             onPress={() => navigationHandler(route)}
+            disabled={disabled}
           />
         ))}
       </View>

@@ -5,16 +5,30 @@ type MenuButtonProps = {
   title: string;
   testID?: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-const MenuButton = ({ title, testID, onPress }: MenuButtonProps) => (
+const MenuButton = ({
+  title,
+  testID,
+  onPress,
+  disabled = false,
+}: MenuButtonProps) => (
   <TouchableOpacity
     testID={testID}
     accessibilityLabel={testID}
-    style={Styles.transparentButton}
+    style={[Styles.transparentButton]}
     onPress={onPress}
+    disabled={disabled}
   >
-    <Text style={Styles.transparentButtonText}>{title}</Text>
+    <Text
+      style={[
+        Styles.transparentButtonText,
+        disabled && Styles.transparentButtonDisabled,
+      ]}
+    >
+      {title}
+    </Text>
   </TouchableOpacity>
 );
 
