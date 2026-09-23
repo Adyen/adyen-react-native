@@ -14,7 +14,6 @@ final class ThreadingSafetyTests: XCTestCase {
 
     override func tearDown() {
         BaseModule.presenterStack.removeAll()
-        ComponentModule.shared = nil
         super.tearDown()
     }
 
@@ -38,39 +37,6 @@ final class ThreadingSafetyTests: XCTestCase {
         XCTAssertTrue(presenter.dismissCalled)
         XCTAssertTrue(presenter.dismissCalledOnMainThread)
         XCTAssertNil(BaseModule.currentPresenter)
-    }
-
-    func test_unregisteringAView_doesNotTearDownCheckout() {
-        // GIVEN a registered view within a presented checkout
-        let sut = ComponentModule()
-        let presenter = MockPresenterViewController()
-        BaseModule.presenterStack = [presenter]
-        _ = sut.register(viewId: "card-view")
-
-        // WHEN the view goes away
-        sut.unregister(viewId: "card-view")
-
-        // THEN the checkout is left intact: unmounting a view must not end it.
-        XCTAssertFalse(presenter.dismissCalled)
-        XCTAssertNotNil(BaseModule.currentPresenter)
-    }
-
-    func test_cleanUp_fromBackgroundThread_disposesRegisteredViews() {
-        // GIVEN two registered views
-        let expectation = expectation(description: "cleanUp processed on the main thread")
-        let sut = ComponentModule()
-        _ = sut.register(viewId: "card-view")
-        _ = sut.register(viewId: "boleto-view")
-
-        // WHEN the checkout is torn down from a background thread
-        DispatchQueue.global().async {
-            sut.cleanUp()
-            // cleanUp hops to main, so this later hop runs after it.
-            DispatchQueue.main.async { expectation.fulfill() }
-        }
-
-        // THEN it completes on the main thread.
-        wait(for: [expectation], timeout: 1.0)
     }
 
     func test_ensureMainThread_runsImmediately_whenAlreadyOnMainThread() {

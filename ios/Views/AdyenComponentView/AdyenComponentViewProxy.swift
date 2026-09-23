@@ -11,19 +11,16 @@ import UIKit
     func onLayoutChange(width: CGFloat, height: CGFloat)
 }
 
-/// Backing UIKit view for the generic Fabric `<AdyenComponent>` component. Registers a per-view
-/// controller with ``ComponentModule`` and embeds the payment component built for the `type` prop.
+/// Backing UIKit view for an identity-bound Fabric `<AdyenComponent>` registration.
 @objc(AdyenComponentViewProxy)
+@MainActor
 public final class AdyenComponentViewProxy: UIStackView {
 
     private var controller: ComponentProxy?
     private var componentViewController: UIViewController?
-    private var type: String?
-    private var configurationJSON: NSDictionary?
-    private var hasComponent: Bool = false
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
-    @objc public var viewId: String?
+    private var creationGeneration = 0
 
     @objc public weak var delegate: AdyenComponentViewProxyDelegate?
 
@@ -37,20 +34,50 @@ public final class AdyenComponentViewProxy: UIStackView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    @objc public func setType(_ type: String?) {
-        guard let type, !type.isEmpty else { return }
-        self.type = type
-        initializeComponentIfNeeded()
-    }
-
-    @objc public func setConfiguration(_ configurationJSON: String?) {
-        guard let jsonString = configurationJSON,
-              let data = jsonString.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? NSDictionary else {
+    /// Fabric updates the complete binding as one tuple. Disposing first prevents an old
+    /// checkout/target controller from surviving long enough to attach after replacement.
+    @objc public func updateRegistration(
+        checkoutID: String?,
+        presenterID: String?,
+        targetKind: String?,
+        targetValue: String?
+    ) {
+        guard let checkoutID, !checkoutID.isEmpty,
+              let presenterID, !presenterID.isEmpty,
+              let targetKind,
+              let targetValue, !targetValue.isEmpty,
+              let target = makeTarget(kind: targetKind, value: targetValue) else {
+            dispose()
             return
         }
-        self.configurationJSON = json
-        initializeComponentIfNeeded()
+
+        if let controller, controller.matches(
+            checkoutID: checkoutID,
+            presenterID: presenterID,
+            target: target
+        ) {
+            return
+        }
+
+        dispose()
+        let controller = ComponentProxy(
+            checkoutID: checkoutID,
+            presenterID: presenterID,
+            target: target
+        )
+        do {
+            try CheckoutCoordinator.shared.registerPassivePresenter(
+                checkoutID: checkoutID,
+                presenterID: presenterID,
+                presenter: controller
+            )
+        } catch {
+            return
+        }
+        self.controller = controller
+        creationGeneration += 1
+        let generation = creationGeneration
+        createComponentView(controller, generation: generation)
     }
 
     override public func layoutSubviews() {
@@ -59,6 +86,7 @@ public final class AdyenComponentViewProxy: UIStackView {
     }
 
     @objc public func dispose() {
+        creationGeneration += 1
         if let childVC = componentViewController {
             childVC.willMove(toParent: nil)
             childVC.view.removeFromSuperview()
@@ -66,52 +94,46 @@ public final class AdyenComponentViewProxy: UIStackView {
         }
         componentView = nil
         componentViewController = nil
-        hasComponent = false
-        type = nil
-        configurationJSON = nil
         lastReportedHeight = 0
-        if let viewId {
-            ComponentModule.shared?.unregister(viewId: viewId)
-        }
-        controller = nil
-        viewId = nil
+        let controller = controller
+        self.controller = nil
+        controller?.dispose()
     }
 
     // MARK: - Component initialization
 
-    private func initializeComponentIfNeeded() {
-        guard !hasComponent,
-              let type,
-              let viewId else {
-            return
-        }
-        let configuration = configurationJSON ?? [:]
-        self.hasComponent = true
-        guard let componentBus = ComponentModule.shared else {
-            assertionFailure("ComponentModule not initialized")
-            self.hasComponent = false
-            return
-        }
-
-        let controller = componentBus.register(viewId: viewId)
-        self.controller = controller
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
+    private func createComponentView(_ controller: ComponentProxy, generation: Int) {
+        Task { @MainActor [weak self, weak controller] in
+            guard let self, let controller else { return }
             do {
-                guard let viewController = try await controller.makeViewController(
-                    type: type,
-                    configuration: configuration
-                ) else {
-                    self.hasComponent = false
+                guard let viewController = try controller.makeViewController(),
+                      self.controller === controller,
+                      self.creationGeneration == generation else {
+                    controller.dispose()
                     return
                 }
                 self.componentViewController = viewController
                 self.embedComponentView(viewController)
             } catch {
-                self.hasComponent = false
-                controller.sendError(error: error)
+                guard self.controller === controller,
+                      self.creationGeneration == generation else {
+                    return
+                }
+                self.controller = nil
+                controller.dispose()
             }
+        }
+    }
+
+    private func makeTarget(kind: String, value: String) -> TurboCheckoutTarget? {
+        switch kind {
+        case "paymentMethod":
+            guard let type = PaymentMethodType(rawValue: value) else { return nil }
+            return .paymentMethod(type)
+        case "storedPaymentMethod":
+            return .storedPaymentMethod(value)
+        default:
+            return nil
         }
     }
 

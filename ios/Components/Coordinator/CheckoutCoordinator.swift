@@ -150,6 +150,7 @@ internal final class CheckoutCoordinator {
     private var activeCheckoutID: String?
     private var activePresenter: CoordinatorPresenter?
     private var activeOperationID: String?
+    private var passivePresenters: [String: PassivePresenter] = [:]
     private var activeRequests: [String: PendingRequest] = [:]
     private var setupGeneration = 0
     private var isSettingUp = false
@@ -167,6 +168,11 @@ internal final class CheckoutCoordinator {
         let request: CoordinatorRequest
         let cancellation: CoordinatorCancellation?
         let cancellationFallback: @MainActor () -> Void
+    }
+
+    private struct PassivePresenter {
+        let checkoutID: String
+        let presenter: CoordinatorPresenter
     }
 
     init() {
@@ -194,6 +200,10 @@ internal final class CheckoutCoordinator {
 
     internal var pendingRequestCount: Int {
         activeRequests.count
+    }
+
+    internal var passivePresenterCount: Int {
+        passivePresenters.count
     }
 
     internal func isActive(checkoutID: String) -> Bool {
@@ -292,6 +302,44 @@ internal final class CheckoutCoordinator {
             throw CoordinatorError.staleCheckout
         }
         return try beginOperation()
+    }
+
+    /// Registers a mounted Fabric view without acquiring the interactive operation slot. The
+    /// caller supplies both opaque identities, so two views for the same payment target remain
+    /// independent and a stale view cannot attach to a replacement checkout.
+    internal func registerPassivePresenter(
+        checkoutID: String,
+        presenterID: String,
+        presenter: CoordinatorPresenter
+    ) throws {
+        guard activeCheckoutID == checkoutID else {
+            throw CoordinatorError.staleCheckout
+        }
+        if let existing = passivePresenters[presenterID] {
+            guard existing.presenter === presenter, existing.checkoutID == checkoutID else {
+                throw CoordinatorError.presenterIDCollision
+            }
+            return
+        }
+        passivePresenters[presenterID] = PassivePresenter(
+            checkoutID: checkoutID,
+            presenter: presenter
+        )
+    }
+
+    /// Removal is identity-bound so a delayed recycle or unmount cannot unregister a newer
+    /// presenter that happens to reuse the same Fabric registration token.
+    internal func unregisterPassivePresenter(
+        checkoutID: String,
+        presenterID: String,
+        presenter: CoordinatorPresenter
+    ) {
+        guard let existing = passivePresenters[presenterID],
+              existing.checkoutID == checkoutID,
+              existing.presenter === presenter else {
+            return
+        }
+        passivePresenters.removeValue(forKey: presenterID)
     }
 
     @discardableResult
@@ -397,6 +445,9 @@ internal final class CheckoutCoordinator {
         activePresenter?.dispose()
         activePresenter = nil
         activeOperationID = nil
+        let presenters = passivePresenters.values.map(\.presenter)
+        passivePresenters.removeAll()
+        presenters.forEach { $0.dispose() }
 
         guard let checkoutID = activeCheckoutID else { return }
         activeCheckout?.dispose()
@@ -462,6 +513,7 @@ internal enum CoordinatorError: Error {
     case operationBusy
     case staleCheckout
     case staleOperation
+    case presenterIDCollision
 }
 
 @MainActor

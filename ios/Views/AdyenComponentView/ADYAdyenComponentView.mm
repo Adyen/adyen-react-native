@@ -21,22 +21,20 @@
 
 using namespace facebook::react;
 
-@interface ADYAdyenComponentView () <RCTAdyenComponentViewViewProtocol, AdyenComponentViewProxyDelegate>
+@interface ADYAdyenComponentView () <RCTAdyenCheckoutComponentViewViewProtocol, AdyenComponentViewProxyDelegate>
 @end
 
 @implementation ADYAdyenComponentView {
   AdyenComponentViewProxy *_proxy;
-  NSString *_type;
-  NSString *_configuration;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
-  return concreteComponentDescriptorProvider<AdyenComponentViewComponentDescriptor>();
+  return concreteComponentDescriptorProvider<AdyenCheckoutComponentViewComponentDescriptor>();
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
-    static const auto defaultProps = std::make_shared<const AdyenComponentViewProps>();
+    static const auto defaultProps = std::make_shared<const AdyenCheckoutComponentViewProps>();
     _props = defaultProps;
     _proxy = [[AdyenComponentViewProxy alloc] initWithFrame:self.bounds];
     _proxy.delegate = self;
@@ -48,22 +46,17 @@ using namespace facebook::react;
 
 - (void)updateProps:(Props::Shared const &)props
            oldProps:(Props::Shared const &)oldProps {
-  const auto &newViewProps = *std::static_pointer_cast<AdyenComponentViewProps const>(props);
+  const auto &newViewProps = *std::static_pointer_cast<AdyenCheckoutComponentViewProps const>(props);
 
-  _proxy.viewId = [NSString stringWithFormat:@"%ld", (long)self.tag];
-
-  NSString *newType = [NSString stringWithUTF8String:newViewProps.type.c_str()];
-  NSString *newConfiguration = [NSString stringWithUTF8String:newViewProps.configuration.c_str()];
-
-  if (![_type isEqualToString:newType]) {
-    _type = newType;
-    [_proxy setType:_type];
-  }
-
-  if (![_configuration isEqualToString:newConfiguration]) {
-    _configuration = newConfiguration;
-    [_proxy setConfiguration:_configuration];
-  }
+  const auto targetKindString = toString(newViewProps.targetKind);
+  NSString *checkoutID = [NSString stringWithUTF8String:newViewProps.checkoutId.c_str()];
+  NSString *presenterID = [NSString stringWithUTF8String:newViewProps.presenterId.c_str()];
+  NSString *targetKind = [NSString stringWithUTF8String:targetKindString.c_str()];
+  NSString *targetValue = [NSString stringWithUTF8String:newViewProps.targetValue.c_str()];
+  [_proxy updateRegistrationWithCheckoutID:checkoutID
+                               presenterID:presenterID
+                                targetKind:targetKind
+                               targetValue:targetValue];
 
   [super updateProps:props oldProps:oldProps];
 }
@@ -71,15 +64,13 @@ using namespace facebook::react;
 - (void)prepareForRecycle {
   [super prepareForRecycle];
   [_proxy dispose];
-  _type = nil;
-  _configuration = nil;
 }
 
 #pragma mark - AdyenComponentViewProxyDelegate
 
 - (void)onLayoutChangeWithWidth:(CGFloat)width height:(CGFloat)height {
   if (_eventEmitter) {
-    AdyenComponentViewEventEmitter::OnLayoutChange result = {
+    AdyenCheckoutComponentViewEventEmitter::OnLayoutChange result = {
       .width = static_cast<int>(width),
       .height = static_cast<int>(height)
     };
@@ -87,8 +78,8 @@ using namespace facebook::react;
   }
 }
 
-- (const AdyenComponentViewEventEmitter &)eventEmitter {
-  return static_cast<const AdyenComponentViewEventEmitter &>(*_eventEmitter);
+- (const AdyenCheckoutComponentViewEventEmitter &)eventEmitter {
+  return static_cast<const AdyenCheckoutComponentViewEventEmitter &>(*_eventEmitter);
 }
 
 @end

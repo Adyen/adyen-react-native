@@ -140,7 +140,7 @@
     },
     "ios": {
       "componentProvider": {
-        "AdyenComponentView": "ADYAdyenComponentView"
+        "AdyenCheckoutComponentView": "ADYAdyenComponentView"
       },
       "modulesProvider": {
         "AdyenCheckout": "AdyenCheckoutTurboModule",

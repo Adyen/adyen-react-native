@@ -254,6 +254,69 @@ final class CheckoutCoordinatorTests: XCTestCase {
         )
     }
 
+    func test_sameTargetPassivePresentersRemainIndependentUntilTheirOwnUnmount() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let first = PassivePresenter()
+        let second = PassivePresenter()
+
+        try coordinator.registerPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "card-first",
+            presenter: first
+        )
+        try coordinator.registerPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "card-second",
+            presenter: second
+        )
+
+        XCTAssertEqual(coordinator.passivePresenterCount, 2)
+        XCTAssertNil(coordinator.operationID)
+
+        coordinator.unregisterPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "card-first",
+            presenter: first
+        )
+
+        XCTAssertEqual(coordinator.passivePresenterCount, 1)
+        XCTAssertEqual(first.disposeCount, 0)
+        XCTAssertEqual(second.disposeCount, 0)
+
+        await coordinator.invalidate()
+
+        XCTAssertEqual(first.disposeCount, 0)
+        XCTAssertEqual(second.disposeCount, 1)
+    }
+
+    func test_replacementInvalidatesMountedPresenterWithoutAllowingOldCheckoutToReregister() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let oldCheckoutID = try await coordinator.setup()
+        let oldPresenter = PassivePresenter()
+        try coordinator.registerPassivePresenter(
+            checkoutID: oldCheckoutID,
+            presenterID: "card",
+            presenter: oldPresenter
+        )
+
+        let replacementID = try await coordinator.setup()
+        XCTAssertEqual(oldPresenter.disposeCount, 1)
+        XCTAssertEqual(coordinator.passivePresenterCount, 0)
+
+        XCTAssertThrowsError(
+            try coordinator.registerPassivePresenter(
+                checkoutID: oldCheckoutID,
+                presenterID: "card",
+                presenter: oldPresenter
+            )
+        )
+        XCTAssertEqual(coordinator.checkoutID, replacementID)
+        XCTAssertEqual(coordinator.passivePresenterCount, 0)
+    }
+
     func test_invalidationWaitsForCoordinatorOwnedHostDismissal() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -651,6 +714,15 @@ final class CheckoutCoordinatorTests: XCTestCase {
 
     @MainActor
     private final class Presenter: CoordinatorPresenter {
+        private(set) var disposeCount = 0
+
+        func dispose() {
+            disposeCount += 1
+        }
+    }
+
+    @MainActor
+    private final class PassivePresenter: CoordinatorPresenter {
         private(set) var disposeCount = 0
 
         func dispose() {

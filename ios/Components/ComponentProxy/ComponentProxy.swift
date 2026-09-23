@@ -8,56 +8,58 @@ import Adyen
 import AdyenCheckout
 import UIKit
 
-/// Per-view controller for an embedded `<AdyenComponent>` view. Owns the ``CheckoutPaymentComponent``
-/// for a single `viewId`: creates it, hands over its view controller, and disposes of it.
-///
-/// Doesn't wire the checkout's lifecycle closures itself — ``ContextModule`` does that once at setup,
-/// since v6 keeps a single global callback store per checkout.
+/// Per-view controller for one identity-bound Fabric registration. The coordinator owns the
+/// registry; this presenter owns only the component created for its checkout/target tuple.
 @MainActor
-internal final class ComponentProxy {
+internal final class ComponentProxy: CoordinatorPresenter {
 
-    let viewId: String
-
-    private weak var emitter: ContextModule?
-
+    let checkoutID: String
+    let presenterID: String
+    private let target: TurboCheckoutTarget
     private var paymentComponent: CheckoutPaymentComponent?
 
-    init(viewId: String, emitter: ContextModule?) {
-        self.viewId = viewId
-        self.emitter = emitter
+    init(checkoutID: String, presenterID: String, target: TurboCheckoutTarget) {
+        self.checkoutID = checkoutID
+        self.presenterID = presenterID
+        self.target = target
+    }
+
+    func matches(
+        checkoutID: String,
+        presenterID: String,
+        target: TurboCheckoutTarget
+    ) -> Bool {
+        self.checkoutID == checkoutID && self.presenterID == presenterID && self.target == target
     }
 
     // MARK: - Component creation
 
-    /// Builds the payment component for this view within the shared checkout context.
-    @MainActor
-    func makeViewController(type: String, configuration _: NSDictionary) async throws -> UIViewController? {
-        guard let state = CheckoutCoordinator.shared.checkoutState else {
-            print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
-            throw ModuleException.componentNotRegistered(viewId)
+    /// Builds the payment component only while this exact checkout registration remains active.
+    func makeViewController() throws -> UIViewController? {
+        guard CheckoutCoordinator.shared.isActive(checkoutID: checkoutID),
+              let checkout = CheckoutCoordinator.shared.checkoutState?.checkoutContext else {
+            throw CoordinatorError.staleCheckout
         }
 
-        guard let paymentMethodType = PaymentMethodType(rawValue: type) else {
-            throw ModuleException.invalidPaymentMethods
+        let component: CheckoutPaymentComponent
+        switch target {
+        case let .paymentMethod(type):
+            component = try checkout.createPaymentComponent(for: type)
+        case let .storedPaymentMethod(id):
+            component = try checkout.createPaymentComponent(for: id)
         }
-
-        let component = try state.checkoutContext.createPaymentComponent(for: paymentMethodType)
         paymentComponent = component
         return component.viewController
-    }
-
-    // MARK: - Error reporting
-
-    func sendError(error: Error) {
-        guard let emitter else { return }
-        let errorToSend = emitter.checkErrorType(error)
-        let event: EventName = CheckoutCoordinator.shared.checkoutState?.isSession == true ? .failSession : .fail
-        emitter.sendEvent(event: event, body: errorToSend.jsonObject)
     }
 
     // MARK: - Teardown
 
     func dispose() {
         paymentComponent = nil
+        CheckoutCoordinator.shared.unregisterPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: presenterID,
+            presenter: self
+        )
     }
 }
