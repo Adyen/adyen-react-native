@@ -112,6 +112,28 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.pendingRequestCount, 0)
     }
 
+    func test_terminalCleanupDoesNotRequireAnEventListener() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator(eventSink: DiscardingEventSink())
+        _ = try await coordinator.setup()
+        let operationID = try coordinator.beginOperation()
+        var cancellations = 0
+        _ = try coordinator.beginRequest(
+            operationID: operationID,
+            kind: .advancedSubmit,
+            timeout: 10,
+            cancellationFallback: { cancellations += 1 }
+        )
+
+        coordinator.invalidate()
+
+        XCTAssertEqual(cancellations, 1)
+        XCTAssertEqual(fixture.presenter.disposeCount, 1)
+        XCTAssertEqual(fixture.factory.checkouts[0].disposeCount, 1)
+        XCTAssertEqual(fixture.host.releaseCount, 1)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+    }
+
     func test_invalidationDuringSetupDisposesUncommittedCandidate() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -172,12 +194,12 @@ final class CheckoutCoordinatorTests: XCTestCase {
 
         var log: [String] { ledger.entries }
 
-        func makeCoordinator() -> CheckoutCoordinator {
+        func makeCoordinator(eventSink: CheckoutEventSink? = nil) -> CheckoutCoordinator {
             CheckoutCoordinator(
                 dependencies: CheckoutCoordinatorDependencies(
                     checkoutFactory: factory,
                     presenterFactory: PresenterFactoryFake(presenter: presenter),
-                    eventSink: events,
+                    eventSink: eventSink ?? events,
                     identityGenerator: identities,
                     scheduler: scheduler,
                     hostAdapter: host
@@ -260,6 +282,11 @@ final class CheckoutCoordinatorTests: XCTestCase {
         func emit(_ event: CoordinatorEvent) {
             events.append(event)
         }
+    }
+
+    @MainActor
+    private final class DiscardingEventSink: CheckoutEventSink {
+        func emit(_: CoordinatorEvent) {}
     }
 
     @MainActor

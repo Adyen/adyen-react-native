@@ -10,29 +10,43 @@
 
 #import "AdyenPaymentSpec.h"
 
-@interface ContextModule : NSObject
+@interface CheckoutTurboModuleAdapter : NSObject
 - (void)setSdkVersion:(NSString *)sdkVersion;
-- (NSString *)committedCheckoutID;
-- (void)setup:(NSDictionary *)session
+- (void)setEventSink:(void (^)(NSDictionary *event))sink;
+- (void)setupSession:(NSDictionary *)session
     configuration:(NSDictionary *)configuration
          resolver:(RCTPromiseResolveBlock)resolve
          rejecter:(RCTPromiseRejectBlock)reject;
 - (void)setupAdvanced:(NSDictionary *)paymentMethods
         configuration:(NSDictionary *)configuration
              resolver:(RCTPromiseResolveBlock)resolve
-              rejecter:(RCTPromiseRejectBlock)reject;
-- (void)isAvailable:(NSString *)type
+             rejecter:(RCTPromiseRejectBlock)reject;
+- (void)isAvailable:(NSString *)checkoutID
+              target:(NSDictionary *)target
            resolver:(RCTPromiseResolveBlock)resolve
            rejecter:(RCTPromiseRejectBlock)reject;
-- (void)requiresUserInteraction:(NSString *)type
+- (void)requiresUserInteraction:(NSString *)checkoutID
+                          target:(NSDictionary *)target
                        resolver:(RCTPromiseResolveBlock)resolve
                        rejecter:(RCTPromiseRejectBlock)reject;
-- (void)submit:(NSString *)type;
-- (void)cleanup;
+- (void)submit:(NSString *)checkoutID
+         target:(NSDictionary *)target
+       resolver:(RCTPromiseResolveBlock)resolve
+       rejecter:(RCTPromiseRejectBlock)reject;
+- (void)startDropIn:(NSString *)checkoutID
+            resolver:(RCTPromiseResolveBlock)resolve
+            rejecter:(RCTPromiseRejectBlock)reject;
+- (void)respond:(NSDictionary *)response
+        resolver:(RCTPromiseResolveBlock)resolve
+        rejecter:(RCTPromiseRejectBlock)reject;
+- (void)invalidate:(NSString *)checkoutID
+           resolver:(RCTPromiseResolveBlock)resolve
+           rejecter:(RCTPromiseRejectBlock)reject;
+- (void)hostDidDisappear;
 @end
 
 @interface AdyenCheckoutTurboModule : NativeAdyenCheckoutSpecBase <NativeAdyenCheckoutSpec>
-@property(nonatomic, strong) ContextModule *context;
+@property(nonatomic, strong) CheckoutTurboModuleAdapter *adapter;
 @end
 
 @implementation AdyenCheckoutTurboModule
@@ -45,7 +59,12 @@
 - (instancetype)init
 {
   if ((self = [super init])) {
-    _context = [ContextModule new];
+    _adapter = [CheckoutTurboModuleAdapter new];
+    __weak AdyenCheckoutTurboModule *weakSelf = self;
+    [_adapter setEventSink:^(NSDictionary *event) {
+      AdyenCheckoutTurboModule *strongSelf = weakSelf;
+      [strongSelf emitOnCheckoutEvent:event];
+    }];
   }
   return self;
 }
@@ -58,7 +77,7 @@
 
 - (void)setSdkVersion:(NSString *)sdkVersion
 {
-  [_context setSdkVersion:sdkVersion];
+  [_adapter setSdkVersion:sdkVersion];
 }
 
 - (void)setupSession:(NSString *)sessionJson
@@ -72,28 +91,11 @@
     return;
   }
 
-  __weak typeof(self) weakSelf = self;
-  [_context setup:session
+  [_adapter setupSession:session
       configuration:configuration
-           resolver:^(id result) {
-             typeof(self) self = weakSelf;
-             NSString *checkoutID = [self.context committedCheckoutID];
-             NSDictionary *sessionResult = [result isKindOfClass:[NSDictionary class]] ? result : @{};
-             id paymentMethods = sessionResult[@"paymentMethods"] ?: @{};
-             NSError *error = nil;
-             NSData *data = [NSJSONSerialization dataWithJSONObject:paymentMethods options:0 error:&error];
-             if (!checkoutID || error) {
-               reject(@"invalidConfiguration", @"Checkout setup did not commit", error);
-               return;
-             }
-             resolve(@{
-               @"checkoutId" : checkoutID,
-               @"flow" : @"sessions",
-               @"paymentMethodsJson" : [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding],
-             });
-           }
-            reject:^(NSString *code, NSString *message, NSError *error) {
-              reject(@"invalidConfiguration", message ?: @"Checkout setup failed", error);
+           resolver:resolve
+           rejecter:^(NSString *code, NSString *message, NSError *error) {
+              reject(code ?: @"invalidConfiguration", message ?: @"Checkout setup failed", error);
             }];
 }
 
@@ -108,24 +110,11 @@
     return;
   }
 
-  __weak typeof(self) weakSelf = self;
-  [_context setupAdvanced:paymentMethods
+  [_adapter setupAdvanced:paymentMethods
              configuration:configuration
-                  resolver:^(__unused id result) {
-                    typeof(self) self = weakSelf;
-                    NSString *checkoutID = [self.context committedCheckoutID];
-                    if (!checkoutID) {
-                      reject(@"invalidConfiguration", @"Checkout setup did not commit", nil);
-                      return;
-                    }
-                    resolve(@{
-                      @"checkoutId" : checkoutID,
-                      @"flow" : @"advanced",
-                      @"paymentMethodsJson" : paymentMethodsJson,
-                    });
-                  }
-                   reject:^(NSString *code, NSString *message, NSError *error) {
-                     reject(@"invalidConfiguration", message ?: @"Checkout setup failed", error);
+                  resolver:resolve
+                  rejecter:^(NSString *code, NSString *message, NSError *error) {
+                     reject(code ?: @"invalidConfiguration", message ?: @"Checkout setup failed", error);
                    }];
 }
 
@@ -134,11 +123,7 @@
             resolve:(RCTPromiseResolveBlock)resolve
              reject:(RCTPromiseRejectBlock)reject
 {
-  NSString *type = [self regularTarget:target checkoutId:checkoutId reject:reject phase:@"query"];
-  if (!type) {
-    return;
-  }
-  [_context isAvailable:type resolver:resolve rejecter:reject];
+  [_adapter isAvailable:checkoutId target:target resolver:resolve rejecter:reject];
 }
 
 - (void)requiresUserInteraction:(NSString *)checkoutId
@@ -146,11 +131,7 @@
                         resolve:(RCTPromiseResolveBlock)resolve
                          reject:(RCTPromiseRejectBlock)reject
 {
-  NSString *type = [self regularTarget:target checkoutId:checkoutId reject:reject phase:@"query"];
-  if (!type) {
-    return;
-  }
-  [_context requiresUserInteraction:type resolver:resolve rejecter:reject];
+  [_adapter requiresUserInteraction:checkoutId target:target resolver:resolve rejecter:reject];
 }
 
 - (void)submit:(NSString *)checkoutId
@@ -158,48 +139,44 @@
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject
 {
-  NSString *type = [self regularTarget:target checkoutId:checkoutId reject:reject phase:@"presentation"];
-  if (!type) {
-    return;
-  }
-  [_context submit:type];
-  resolve(nil);
+  [_adapter submit:checkoutId target:target resolver:resolve rejecter:reject];
 }
 
 - (void)startDropIn:(NSString *)checkoutId
             resolve:(RCTPromiseResolveBlock)resolve
              reject:(RCTPromiseRejectBlock)reject
 {
-  if (![self ownsCheckout:checkoutId]) {
-    reject(@"staleCheckout", @"Checkout is no longer active", nil);
-    return;
-  }
-  reject(@"unsupportedCapability", @"Drop-in is not available on this iOS SDK", nil);
+  [_adapter startDropIn:checkoutId resolver:resolve rejecter:reject];
 }
 
 - (void)respond:(JS::NativeAdyenCheckout::CheckoutResponse &)response
         resolve:(RCTPromiseResolveBlock)resolve
          reject:(RCTPromiseRejectBlock)reject
 {
-  if (![self ownsCheckout:response.checkoutId()]) {
-    reject(@"staleRequest", @"Request is no longer active", nil);
-    return;
+  // Generated records borrow C++-owned conversion storage. Copy every field before handing the
+  // response to Swift, which may suspend while it validates and settles the request.
+  NSString *checkoutID = [response.checkoutId() copy];
+  NSString *operationID = [response.operationId() copy];
+  NSString *requestID = [response.requestId() copy];
+  NSString *kind = [response.kind() copy];
+  NSString *payloadJSON = [response.payloadJson() copy];
+  NSMutableDictionary *record = [@{
+    @"checkoutId" : checkoutID ?: @"",
+    @"operationId" : operationID ?: @"",
+    @"requestId" : requestID ?: @"",
+    @"kind" : kind ?: @"",
+  } mutableCopy];
+  if (payloadJSON) {
+    record[@"payloadJson"] = payloadJSON;
   }
-  // Correlated request handling is owned by the coordinator. This temporary adapter has no
-  // pending callback for an unmatched response, so it must reject instead of inferring a target.
-  reject(@"staleRequest", @"Request does not match an active callback", nil);
+  [_adapter respond:record resolver:resolve rejecter:reject];
 }
 
 - (void)invalidate:(NSString *)checkoutId
            resolve:(RCTPromiseResolveBlock)resolve
             reject:(RCTPromiseRejectBlock)reject
 {
-  if (![self ownsCheckout:checkoutId]) {
-    reject(@"staleCheckout", @"Checkout is no longer active", nil);
-    return;
-  }
-  [_context cleanup];
-  resolve(nil);
+  [_adapter invalidate:checkoutId resolver:resolve rejecter:reject];
 }
 
 - (NSDictionary *)dictionaryFromJSON:(NSString *)json
@@ -216,27 +193,9 @@
   return value;
 }
 
-- (BOOL)ownsCheckout:(NSString *)checkoutId
+- (void)invalidate
 {
-  return checkoutId.length > 0 && [checkoutId isEqualToString:[_context committedCheckoutID]];
-}
-
-- (NSString *)regularTarget:(NSDictionary *)target
-                  checkoutId:(NSString *)checkoutId
-                      reject:(RCTPromiseRejectBlock)reject
-                       phase:(NSString *)phase
-{
-  if (![self ownsCheckout:checkoutId]) {
-    reject(@"staleCheckout", @"Checkout is no longer active", nil);
-    return nil;
-  }
-  if (![target[@"kind"] isEqualToString:@"paymentMethod"] ||
-      ![target[@"type"] isKindOfClass:[NSString class]] ||
-      [target[@"type"] length] == 0) {
-    reject(@"invalidTarget", [NSString stringWithFormat:@"Invalid %@ target", phase], nil);
-    return nil;
-  }
-  return target[@"type"];
+  [_adapter hostDidDisappear];
 }
 
 @end

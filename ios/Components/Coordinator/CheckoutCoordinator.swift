@@ -138,11 +138,12 @@ internal final class CheckoutCoordinator {
     internal nonisolated(unsafe) var topPresenterProvider: @MainActor () -> UIViewController? = { UIViewController.topPresenter }
 
     private let configuredDependencies: CheckoutCoordinatorDependencies?
+    private var runtimeDependencies: CheckoutCoordinatorDependencies?
     private var dependencies: CheckoutCoordinatorDependencies {
-        guard let configuredDependencies else {
+        guard let dependencies = configuredDependencies ?? runtimeDependencies else {
             preconditionFailure("CheckoutCoordinator production dependencies are not configured")
         }
-        return configuredDependencies
+        return dependencies
     }
 
     private var activeCheckout: CoordinatorCheckout?
@@ -165,6 +166,13 @@ internal final class CheckoutCoordinator {
 
     init(dependencies: CheckoutCoordinatorDependencies) {
         configuredDependencies = dependencies
+    }
+
+    /// The generated TurboModule installs concrete runtime adapters after its event emitter is
+    /// available. Test coordinators keep their constructor-injected seams unchanged.
+    internal func configureRuntimeDependencies(_ dependencies: CheckoutCoordinatorDependencies) {
+        guard configuredDependencies == nil else { return }
+        runtimeDependencies = dependencies
     }
 
     internal var checkoutID: String? {
@@ -235,10 +243,10 @@ internal final class CheckoutCoordinator {
     /// Enforces the cross-presenter single-operation constraint without queueing.
     internal func beginOperation() throws -> String {
         try beginOperation {
-            guard let factory = self.configuredDependencies?.presenterFactory else {
+            guard let factory = self.configuredDependencies ?? self.runtimeDependencies else {
                 return NoopCoordinatorPresenter()
             }
-            return factory.makePresenter()
+            return factory.presenterFactory.makePresenter()
         }
     }
 
@@ -285,7 +293,7 @@ internal final class CheckoutCoordinator {
             requestID: nextID(for: .request),
             kind: kind
         )
-        let cancellation = configuredDependencies?.scheduler.schedule(after: timeout) { [weak self] in
+        let cancellation = (configuredDependencies ?? runtimeDependencies)?.scheduler.schedule(after: timeout) { [weak self] in
             self?.timeout(request)
         }
         activeRequests[request.requestID] = PendingRequest(
@@ -347,7 +355,7 @@ internal final class CheckoutCoordinator {
         activeCheckout = nil
         activeCheckoutID = nil
         checkoutState = nil
-        configuredDependencies?.hostAdapter.releaseCheckoutHost()
+        (configuredDependencies ?? runtimeDependencies)?.hostAdapter.releaseCheckoutHost()
         emit(.cleanedUp(checkoutID: checkoutID))
     }
 
@@ -378,11 +386,11 @@ internal final class CheckoutCoordinator {
     }
 
     private func nextID(for kind: CoordinatorIdentityKind) -> String {
-        configuredDependencies?.identityGenerator.nextID(for: kind) ?? UUID().uuidString
+        (configuredDependencies ?? runtimeDependencies)?.identityGenerator.nextID(for: kind) ?? UUID().uuidString
     }
 
     private func emit(_ event: CoordinatorEvent) {
-        configuredDependencies?.eventSink.emit(event)
+        (configuredDependencies ?? runtimeDependencies)?.eventSink.emit(event)
     }
 }
 
