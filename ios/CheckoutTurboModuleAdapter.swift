@@ -13,6 +13,23 @@ import PassKit
 import React
 import UIKit
 
+struct ApplePayShippingMethodsState {
+    private(set) var methods: [PKShippingMethod]
+
+    init(initial: [PKShippingMethod] = []) {
+        methods = initial
+    }
+
+    @discardableResult
+    mutating func applyUpdate(_ payload: [String: Any]?) -> [PKShippingMethod] {
+        guard let rawMethods = payload?["shippingMethods"] as? [[String: Any]] else {
+            return methods
+        }
+        methods = rawMethods.compactMap(PKShippingMethod.initiate)
+        return methods
+    }
+}
+
 /// Swift-owned implementation for the generated Checkout TurboModule. Objective-C++ only adapts
 /// Codegen's C++ records and generated event emitter to this coordinator-facing adapter.
 @objc(CheckoutTurboModuleAdapter)
@@ -35,7 +52,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     private let shippingMethodBridge = CallbackBridge<PKPaymentRequestShippingMethodUpdate>()
     private let couponCodeBridge = CallbackBridge<PKPaymentRequestCouponCodeUpdate>()
     private var currentSummaryItems: [PKPaymentSummaryItem] = []
-    private var currentShippingMethods: [PKShippingMethod] = []
+    private var applePayShippingMethods = ApplePayShippingMethodsState()
 
     override init() {
         super.init()
@@ -587,6 +604,7 @@ private extension CheckoutTurboModuleAdapter {
 @MainActor
 private extension CheckoutTurboModuleAdapter {
     func buildCheckoutConfiguration(parser: RootConfigurationParser, configuration: NSDictionary) throws -> CheckoutConfiguration {
+        applePayShippingMethods = .init()
         let cardConfiguration = CardConfigurationParser(configuration: configuration).configuration
         let authenticationConfiguration = ThreeDS2ConfigurationParser(configuration: configuration).configuration
         if let applePayConfiguration = try makeApplePayConfiguration(parser: parser, configuration: configuration) {
@@ -607,6 +625,7 @@ private extension CheckoutTurboModuleAdapter {
         guard applePayParser.merchantID != nil, let amount = parser.amount, let countryCode = parser.countryCode else {
             return nil
         }
+        applePayShippingMethods = .init(initial: applePayParser.shippingMethods ?? [])
         var result = try applePayParser.buildConfiguration(amount: amount, countryCode: countryCode)
             .onAuthorize { [weak self] payment in
                 await self?.awaitAuthorization(payment) ?? .init(status: .failure, errors: nil)
@@ -694,8 +713,7 @@ private extension CheckoutTurboModuleAdapter {
                 payload: ["couponCode": couponCode]
             ) { [weak self] payload in
                 guard let self else { return }
-                let shippingMethods = self.applePayShippingMethods(payload) ?? self.currentShippingMethods
-                self.currentShippingMethods = shippingMethods
+                let shippingMethods = self.applePayShippingMethods.applyUpdate(payload)
                 self.couponCodeBridge.resolve(
                     token,
                     .init(
@@ -724,8 +742,7 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func shippingUpdate(_ payload: [String: Any]?) -> PKPaymentRequestShippingContactUpdate {
-        let shippingMethods = applePayShippingMethods(payload) ?? currentShippingMethods
-        currentShippingMethods = shippingMethods
+        let shippingMethods = applePayShippingMethods.applyUpdate(payload)
         return .init(
             errors: applePayErrors(payload),
             paymentSummaryItems: applePaySummaryItems(payload) ?? currentSummaryItems,
@@ -737,12 +754,6 @@ private extension CheckoutTurboModuleAdapter {
         guard let raw = payload?["paymentSummaryItems"] as? [[String: Any]] else { return nil }
         let summaryItems = raw.compactMap(PKPaymentSummaryItem.init)
         return summaryItems.isEmpty ? nil : summaryItems
-    }
-
-    func applePayShippingMethods(_ payload: [String: Any]?) -> [PKShippingMethod]? {
-        guard let raw = payload?["shippingMethods"] as? [[String: Any]] else { return nil }
-        let shippingMethods = raw.compactMap(PKShippingMethod.initiate)
-        return shippingMethods.isEmpty ? nil : shippingMethods
     }
 
     func applePayErrors(_ payload: [String: Any]?) -> [Error]? {

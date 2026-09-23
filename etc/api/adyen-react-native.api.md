@@ -681,7 +681,7 @@ export interface SessionConfiguration {
 
 // @public
 export type SessionsResult = {
-    sessionId?: string;
+    sessionId: string;
     sessionResult?: string;
     resultCode: ResultCode;
     sessionData?: string;

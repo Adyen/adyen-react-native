@@ -541,6 +541,26 @@ final class ApplePayConfigurationTests: XCTestCase {
         }
     }
 
+    func test_shippingMethodsState_seedsConfigurationAndRetainsExplicitClearing() throws {
+        let configDict: NSDictionary = ["applepay": [
+            "merchantID": "merchant.com.adyen.test",
+            "merchantName": "SomeName",
+            "shippingMethods": [
+                [
+                    "label": "Standard",
+                    "amount": "5.00",
+                    "identifier": "standard"
+                ]
+            ]
+        ]]
+        let parser = ApplepayConfigurationParser(configuration: configDict)
+        var state = ApplePayShippingMethodsState(initial: try XCTUnwrap(parser.shippingMethods))
+
+        XCTAssertEqual(state.methods.map(\.identifier), ["standard"])
+        XCTAssertTrue(state.applyUpdate(["shippingMethods": [[String: Any]]()]).isEmpty)
+        XCTAssertTrue(state.applyUpdate([:]).isEmpty)
+    }
+
     @available(iOS 16.0, *)
     func test_recurringPaymentRequest_isConfigured_whenProvided() throws {
         // GIVEN

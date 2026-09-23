@@ -284,7 +284,7 @@ export type SessionsResult = {
   /**
    * The session ID.
    */
-  sessionId?: string;
+  sessionId: string;
   /**
    * An encoded string that can be used to get the payment outcome on your server.
    * @description Use this value with the new `/sessions/id` endpoint as a query string on your server to get a synchronous result for your payment.

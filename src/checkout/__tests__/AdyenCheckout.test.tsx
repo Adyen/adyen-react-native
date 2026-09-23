@@ -136,6 +136,79 @@ describe('AdyenCheckout', () => {
     });
   });
 
+  test.each([
+    { shopperName: { firstName: 1 } },
+    { shopperName: { lastName: null } },
+  ])(
+    'rejects configured before-submit shopper names with invalid member types',
+    async (data) => {
+      native.setupSession.mockResolvedValueOnce(
+        descriptor('checkout-session-shopper-name', 'sessions')
+      );
+      sessionCallbacks.onBeforeSubmit.mockResolvedValueOnce({
+        type: 'proceed',
+        data,
+      });
+      await AdyenCheckout.setup(
+        { id: 'session-id', sessionData: 'session-data' },
+        configuration,
+        sessionCallbacks
+      );
+      const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+      await eventHandler({
+        checkoutId: 'checkout-session-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{}',
+      });
+
+      expect(native.respond).toHaveBeenLastCalledWith({
+        checkoutId: 'checkout-session-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{"type":"failure","code":"cancelled"}',
+      });
+    }
+  );
+
+  test.each([{ shopperName: {} }, { shopperName: { firstName: 'Ada' } }])(
+    'accepts empty and partial shopper names in configured before-submit results',
+    async (data) => {
+      native.setupSession.mockResolvedValueOnce(
+        descriptor('checkout-session-valid-shopper-name', 'sessions')
+      );
+      sessionCallbacks.onBeforeSubmit.mockResolvedValueOnce({
+        type: 'proceed',
+        data,
+      });
+      await AdyenCheckout.setup(
+        { id: 'session-id', sessionData: 'session-data' },
+        configuration,
+        sessionCallbacks
+      );
+      const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+      await eventHandler({
+        checkoutId: 'checkout-session-valid-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{}',
+      });
+
+      expect(native.respond).toHaveBeenLastCalledWith({
+        checkoutId: 'checkout-session-valid-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: JSON.stringify({ type: 'proceed', data }),
+      });
+    }
+  );
+
   test('forwards coupon codes as strings and settles rejected Apple Pay callbacks', async () => {
     native.setupAdvanced.mockResolvedValueOnce(
       descriptor('checkout-apple-pay')
@@ -194,6 +267,47 @@ describe('AdyenCheckout', () => {
       kind: 'applePayAuthorization',
       payloadJson: '{"type":"failure","code":"cancelled"}',
     });
+  });
+
+  test('settles a rejected coupon callback promise once with its correlated failure response', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-rejected-coupon')
+    );
+    const onCouponCodeChange = jest.fn(async () => {
+      throw new Error('merchant rejected coupon update');
+    });
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        applepay: {
+          merchantID: 'merchant.example',
+          onCouponCodeChange,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    const settlement = eventHandler({
+      checkoutId: 'checkout-rejected-coupon',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson: '{"couponCode":"SAVE10"}',
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(native.respond).toHaveBeenCalledWith({
+      checkoutId: 'checkout-rejected-coupon',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+    await settlement;
+    expect(native.respond).toHaveBeenCalledTimes(1);
   });
 
   test('normalizes terminal failures to a complete portable error', async () => {

@@ -9,6 +9,7 @@ import type {
   CheckoutTarget,
   Spec as CheckoutSpec,
 } from './NativeAdyenCheckout';
+import { ResultCode, type SessionsResult } from '../core';
 
 declare const checkout: CheckoutDescriptor;
 declare const checkoutModule: CheckoutSpec;
@@ -31,6 +32,16 @@ const invalidate: Promise<void> = checkoutModule.invalidate(
 );
 
 export const compileContractPromises = [query, submit, invalidate];
+
+const sessionResult: SessionsResult = {
+  sessionId: 'session-id',
+  resultCode: ResultCode.authorised,
+};
+
+// @ts-expect-error Session terminal results always include the session ID.
+const missingSessionId: SessionsResult = { resultCode: ResultCode.authorised };
+
+export const sessionResultContract = [sessionResult, missingSessionId];
 
 // Checkout descriptors are private bridge metadata, not configuration carriers.
 // @ts-expect-error Removed configuration must not return from native setup.

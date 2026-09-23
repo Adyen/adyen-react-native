@@ -137,11 +137,24 @@ function isBeforeSubmitData(value: unknown): boolean {
       (typeof data.deliveryAddress === 'object' &&
         data.deliveryAddress !== null &&
         !Array.isArray(data.deliveryAddress))) &&
-    (data.shopperName === undefined ||
-      (typeof data.shopperName === 'object' &&
-        data.shopperName !== null &&
-        !Array.isArray(data.shopperName))) &&
+    (data.shopperName === undefined || isShopperName(data.shopperName)) &&
     (data.shopperEmail === undefined || typeof data.shopperEmail === 'string')
+  );
+}
+
+function isShopperName(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  const shopperName = value as {
+    firstName?: unknown;
+    lastName?: unknown;
+  };
+  return (
+    (shopperName.firstName === undefined ||
+      typeof shopperName.firstName === 'string') &&
+    (shopperName.lastName === undefined ||
+      typeof shopperName.lastName === 'string')
   );
 }
 
@@ -222,7 +235,7 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
         if (typeof couponCode !== 'string') {
           throw new Error('Invalid Apple Pay coupon code');
         }
-        update(couponCode, resolve);
+        return update(couponCode, resolve);
       });
       return;
     }
