@@ -381,19 +381,11 @@ class AndroidCheckoutModule(
     source: ReadableMap,
     promise: Promise,
   ): CheckoutTarget? =
-    when (source.getString(KIND)) {
-      PAYMENT_METHOD -> {
-        source.getString(TYPE)?.takeIf(String::isNotBlank)?.let(CheckoutTarget::PaymentMethod)
-      }
-
-      STORED_PAYMENT_METHOD -> {
-        source.getString(ID)?.takeIf(String::isNotBlank)?.let(CheckoutTarget::StoredPaymentMethod)
-      }
-
-      else -> {
-        null
-      }
-    } ?: run {
+    parseCheckoutTarget(
+      kind = source.getString(KIND),
+      paymentMethodType = source.getString(TYPE),
+      storedPaymentMethodId = source.getString(ID),
+    ) ?: run {
       reject(promise, ERROR_INVALID_TARGET)
       null
     }
@@ -761,3 +753,27 @@ class AndroidCheckoutModule(
     private const val ERROR_NO_ACTIVITY = "cancelled"
   }
 }
+
+/** Converts only the generated target discriminant and its identity-bearing value. */
+internal fun parseCheckoutTarget(
+  kind: String?,
+  paymentMethodType: String?,
+  storedPaymentMethodId: String?,
+): CheckoutTarget? =
+  when (kind) {
+    "paymentMethod" -> {
+      paymentMethodType
+        ?.takeIf(String::isNotBlank)
+        ?.let(CheckoutTarget::PaymentMethod)
+    }
+
+    "storedPaymentMethod" -> {
+      storedPaymentMethodId
+        ?.takeIf(String::isNotBlank)
+        ?.let(CheckoutTarget::StoredPaymentMethod)
+    }
+
+    else -> {
+      null
+    }
+  }

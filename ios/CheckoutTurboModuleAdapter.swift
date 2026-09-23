@@ -484,25 +484,7 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func resolvePaymentTarget(_ target: NSDictionary) throws -> TurboCheckoutTarget {
-        guard let kind = target["kind"] as? String else {
-            throw ModuleException.invalidPaymentMethods
-        }
-        switch kind {
-        case "paymentMethod":
-            guard let type = target["type"] as? String, !type.isEmpty,
-                  let paymentMethodType = PaymentMethodType(rawValue: type)
-            else {
-                throw ModuleException.invalidPaymentMethods
-            }
-            return .paymentMethod(paymentMethodType)
-        case "storedPaymentMethod":
-            guard let id = target["id"] as? String, !id.isEmpty else {
-                throw ModuleException.invalidPaymentMethods
-            }
-            return .storedPaymentMethod(id)
-        default:
-            throw ModuleException.invalidPaymentMethods
-        }
+        try resolveCheckoutTarget(target)
     }
 
     func component(for target: NSDictionary, checkout: PaymentCheckout) throws -> CheckoutPaymentComponent? {
@@ -799,9 +781,31 @@ private struct PendingResponse {
     let resume: ([String: Any]?) -> Void
 }
 
-private enum TurboCheckoutTarget {
+internal enum TurboCheckoutTarget: Equatable {
     case paymentMethod(PaymentMethodType)
     case storedPaymentMethod(String)
+}
+
+internal func resolveCheckoutTarget(_ target: NSDictionary) throws -> TurboCheckoutTarget {
+    guard let kind = target["kind"] as? String else {
+        throw ModuleException.invalidPaymentMethods
+    }
+    switch kind {
+    case "paymentMethod":
+        guard let type = target["type"] as? String, !type.isEmpty,
+              let paymentMethodType = PaymentMethodType(rawValue: type)
+        else {
+            throw ModuleException.invalidPaymentMethods
+        }
+        return .paymentMethod(paymentMethodType)
+    case "storedPaymentMethod":
+        guard let id = target["id"] as? String, !id.isEmpty else {
+            throw ModuleException.invalidPaymentMethods
+        }
+        return .storedPaymentMethod(id)
+    default:
+        throw ModuleException.invalidPaymentMethods
+    }
 }
 
 private enum EventKind {

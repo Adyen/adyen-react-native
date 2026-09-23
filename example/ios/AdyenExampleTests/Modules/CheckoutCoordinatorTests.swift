@@ -255,11 +255,166 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(fixture.host.releaseCount, 2)
     }
 
+    func test_generatedTargetParserPreservesRegularTypeAndExactStoredIdentity() throws {
+        switch try resolveCheckoutTarget(["kind": "paymentMethod", "type": "scheme"]) {
+        case let .paymentMethod(type):
+            XCTAssertEqual(type.rawValue, "scheme")
+        case .storedPaymentMethod:
+            XCTFail("Expected a regular payment method target")
+        }
+        switch try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": "stored-second"]) {
+        case .paymentMethod:
+            XCTFail("Expected a stored payment method target")
+        case let .storedPaymentMethod(id):
+            XCTAssertEqual(id, "stored-second")
+        }
+        XCTAssertThrowsError(try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": ""]))
+        XCTAssertThrowsError(try resolveCheckoutTarget(["kind": "unknown", "type": "scheme"]))
+    }
+
+    func test_everySupportedRequestKindRequiresItsExactCorrelationTuple() async throws {
+        let kinds: [CoordinatorRequestKind] = [
+            .advancedSubmit,
+            .advancedAdditionalDetails,
+            .sessionBeforeSubmit,
+            .applePayAuthorization,
+            .applePayShippingContact,
+            .applePayShippingMethod,
+            .applePayCouponCode
+        ]
+
+        for kind in kinds {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            _ = try await coordinator.setup()
+            let operationID = try coordinator.beginOperation()
+            let request = try coordinator.beginRequest(operationID: operationID, kind: kind, timeout: 10)
+
+            XCTAssertFalse(coordinator.resolve(.init(
+                checkoutID: "other-checkout",
+                operationID: request.operationID,
+                requestID: request.requestID,
+                kind: request.kind
+            )))
+            XCTAssertFalse(coordinator.resolve(.init(
+                checkoutID: request.checkoutID,
+                operationID: "other-operation",
+                requestID: request.requestID,
+                kind: request.kind
+            )))
+            XCTAssertFalse(coordinator.resolve(.init(
+                checkoutID: request.checkoutID,
+                operationID: request.operationID,
+                requestID: "other-request",
+                kind: request.kind
+            )))
+            XCTAssertFalse(coordinator.resolve(.init(
+                checkoutID: request.checkoutID,
+                operationID: request.operationID,
+                requestID: request.requestID,
+                kind: kind == .advancedSubmit ? .sessionBeforeSubmit : .advancedSubmit
+            )))
+            XCTAssertTrue(coordinator.resolve(request))
+            XCTAssertFalse(coordinator.resolve(request))
+        }
+    }
+
+    func test_everyPaymentSurfaceContenderIsRejectedWithoutAllocationOrQueueing() async throws {
+        let surfaces = ["embedded", "headless", "drop-in"]
+
+        for owner in surfaces {
+            for contender in surfaces {
+                let fixture = Fixture()
+                let coordinator = fixture.makeCoordinator()
+                _ = try await coordinator.setup()
+                let operationID = try coordinator.beginOperation()
+
+                XCTAssertThrowsError(try coordinator.beginOperation(), "\(owner) should retain the slot against \(contender)")
+                XCTAssertEqual(fixture.presenterFactory.createCount, 1)
+                XCTAssertEqual(coordinator.operationID, operationID)
+
+                coordinator.completeOperation(operationID)
+                _ = try coordinator.beginOperation()
+                XCTAssertEqual(fixture.presenterFactory.createCount, 2)
+            }
+        }
+    }
+
+    func test_callbackFailureCausesSettleEverySupportedRequestExactlyOnce() async throws {
+        let kinds: [CoordinatorRequestKind] = [
+            .advancedSubmit,
+            .advancedAdditionalDetails,
+            .sessionBeforeSubmit,
+            .applePayAuthorization,
+            .applePayShippingContact,
+            .applePayShippingMethod,
+            .applePayCouponCode
+        ]
+        let causes: [(String, @MainActor (CheckoutCoordinator, Fixture) async throws -> Void)] = [
+            ("timeout", { _, fixture in fixture.scheduler.fireLast() }),
+            ("operation completion", { coordinator, _ in
+                coordinator.completeOperation(coordinator.operationID!)
+            }),
+            ("replacement", { coordinator, _ in
+                _ = try await coordinator.setup()
+            }),
+            ("invalidation", { coordinator, _ in
+                await coordinator.invalidate()
+            }),
+            ("host loss", { coordinator, _ in
+                await coordinator.hostDidDisappear()
+            })
+        ]
+
+        for (cause, trigger) in causes {
+            for kind in kinds {
+                let fixture = Fixture()
+                let coordinator = fixture.makeCoordinator()
+                _ = try await coordinator.setup()
+                var fallbackCount = 0
+                let request = try coordinator.beginRequest(
+                    operationID: try coordinator.beginOperation(),
+                    kind: kind,
+                    timeout: 10,
+                    cancellationFallback: { fallbackCount += 1 }
+                )
+
+                try await trigger(coordinator, fixture)
+
+                XCTAssertEqual(fallbackCount, 1, "\(cause) must settle \(kind) once")
+                XCTAssertFalse(coordinator.resolve(request))
+            }
+        }
+    }
+
+    func test_cseValidationIsStatelessAndDoesNotMutateCheckoutOperationOwnership() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        _ = try await coordinator.setup()
+        let operationID = try coordinator.beginOperation()
+        let cse = CSETurboModuleAdapter()
+        var cardNumber: Any?
+        var expiry: Any?
+        var securityCode: Any?
+
+        cse.validateCardNumber("4111111111111111", enableLuhnCheck: true) { cardNumber = $0 }
+        cse.validateCardExpiryMonth("03", year: "2030") { expiry = $0 }
+        cse.validateCardSecurityCode("737", brand: "visa") { securityCode = $0 }
+
+        XCTAssertEqual(cardNumber as? Bool, true)
+        XCTAssertEqual(expiry as? Bool, true)
+        XCTAssertEqual(securityCode as? Bool, true)
+        XCTAssertEqual(coordinator.operationID, operationID)
+        coordinator.completeOperation(operationID)
+        XCTAssertNil(coordinator.operationID)
+    }
+
     @MainActor
     private final class Fixture {
         let ledger = Ledger()
         let factory: Factory
         let presenter = Presenter()
+        let presenterFactory: PresenterFactoryFake
         let events = EventSink()
         let scheduler = Scheduler()
         let host = Host()
@@ -267,6 +422,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
 
         init() {
             factory = Factory(ledger: ledger)
+            presenterFactory = PresenterFactoryFake(presenter: presenter)
             host.ledger = ledger
         }
 
@@ -278,7 +434,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
             CheckoutCoordinator(
                 dependencies: CheckoutCoordinatorDependencies(
                     checkoutFactory: factory,
-                    presenterFactory: PresenterFactoryFake(presenter: presenter),
+                    presenterFactory: presenterFactory,
                     eventSink: eventSink ?? events,
                     identityGenerator: identities,
                     scheduler: scheduler,
@@ -336,13 +492,15 @@ final class CheckoutCoordinatorTests: XCTestCase {
     @MainActor
     private final class PresenterFactoryFake: PresenterFactory {
         let presenter: Presenter
+        private(set) var createCount = 0
 
         init(presenter: Presenter) {
             self.presenter = presenter
         }
 
         func makePresenter() -> CoordinatorPresenter {
-            presenter
+            createCount += 1
+            return presenter
         }
     }
 

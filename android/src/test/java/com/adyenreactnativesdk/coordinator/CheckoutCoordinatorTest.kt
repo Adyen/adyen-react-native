@@ -103,6 +103,105 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `every supported request kind requires its exact correlation tuple`() {
+    val supportedKinds =
+      listOf(
+        CoordinatorRequestKind.ADVANCED_SUBMIT,
+        CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS,
+        CoordinatorRequestKind.SESSION_BEFORE_SUBMIT,
+      )
+
+    supportedKinds.forEach { kind ->
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      coordinator.setup()
+      val operationId = coordinator.beginOperation()
+      val request = coordinator.beginRequest(operationId, kind, 100)
+
+      assertFalse(coordinator.resolve(request.copy(checkoutId = "other-checkout")))
+      assertFalse(coordinator.resolve(request.copy(operationId = "other-operation")))
+      assertFalse(coordinator.resolve(request.copy(requestId = "other-request")))
+      assertFalse(
+        coordinator.resolve(
+          request.copy(
+            kind =
+              if (kind == CoordinatorRequestKind.ADVANCED_SUBMIT) {
+                CoordinatorRequestKind.SESSION_BEFORE_SUBMIT
+              } else {
+                CoordinatorRequestKind.ADVANCED_SUBMIT
+              },
+          ),
+        ),
+      )
+      assertTrue(coordinator.resolve(request))
+      assertFalse(coordinator.resolve(request))
+    }
+  }
+
+  @Test
+  fun `every payment surface contender is rejected without allocation or queueing`() {
+    val surfaces = listOf("embedded", "headless", "drop-in")
+
+    surfaces.forEach { owner ->
+      surfaces.forEach { contender ->
+        val fixture = Fixture()
+        val coordinator = fixture.coordinator()
+        coordinator.setup()
+        val ownerOperation = coordinator.beginOperation()
+
+        try {
+          coordinator.beginOperation()
+          fail("$owner should keep the slot against $contender")
+        } catch (_: IllegalStateException) {
+          assertEquals(1, fixture.presenterFactory.createCount)
+          assertEquals(ownerOperation, coordinator.activeOperationId())
+        }
+        coordinator.completeOperation(ownerOperation)
+        coordinator.beginOperation()
+        assertEquals(2, fixture.presenterFactory.createCount)
+      }
+    }
+  }
+
+  @Test
+  fun `replacement invalidation and timeout settle each supported request once`() {
+    val causes =
+      listOf(
+        "timeout" to { coordinator: CheckoutCoordinator, _: String, fixture: Fixture -> fixture.scheduler.fireLast() },
+        "replacement" to { coordinator: CheckoutCoordinator, _: String, _: Fixture -> coordinator.setup() },
+        "invalidation" to { coordinator: CheckoutCoordinator, _: String, _: Fixture -> coordinator.invalidate() },
+        "host-loss" to { coordinator: CheckoutCoordinator, _: String, _: Fixture -> coordinator.hostDidDisappear() },
+      )
+    val kinds =
+      listOf(
+        CoordinatorRequestKind.ADVANCED_SUBMIT,
+        CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS,
+        CoordinatorRequestKind.SESSION_BEFORE_SUBMIT,
+      )
+
+    causes.forEach { (cause, trigger) ->
+      kinds.forEach { kind ->
+        val fixture = Fixture()
+        val coordinator = fixture.coordinator()
+        coordinator.setup()
+        var fallbackCount = 0
+        val request =
+          coordinator.beginRequest(
+            coordinator.beginOperation(),
+            kind,
+            100,
+            cancellationFallback = { fallbackCount += 1 },
+          )
+
+        trigger(coordinator, cause, fixture)
+
+        assertEquals("$cause must settle $kind once", 1, fallbackCount)
+        assertFalse(coordinator.resolve(request))
+      }
+    }
+  }
+
+  @Test
   fun `request broker requires checkout operation request and kind to match`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()

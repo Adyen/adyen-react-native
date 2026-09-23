@@ -6,9 +6,13 @@
 
 package com.adyenreactnativesdk.cse
 
+import com.adyen.checkout.core.components.CheckoutTarget
+import com.adyenreactnativesdk.react.parseCheckoutTarget
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,6 +26,21 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ActionModuleTest {
+  @Test
+  fun `generated target parser preserves regular type and exact stored identity`() {
+    assertEquals(
+      CheckoutTarget.PaymentMethod("scheme"),
+      parseCheckoutTarget("paymentMethod", "scheme", null),
+    )
+    assertEquals(
+      CheckoutTarget.StoredPaymentMethod("stored-second"),
+      parseCheckoutTarget("storedPaymentMethod", "scheme", "stored-second"),
+    )
+    assertNull(parseCheckoutTarget("storedPaymentMethod", null, ""))
+    assertNull(parseCheckoutTarget("paymentMethod", " ", null))
+    assertNull(parseCheckoutTarget("unknown", "scheme", "stored-second"))
+  }
+
   @Test
   fun `token-free RedirectAction rejects before configuration or presentation setup`() {
     val context = mainThreadContext()

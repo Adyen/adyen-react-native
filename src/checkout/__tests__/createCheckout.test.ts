@@ -58,6 +58,64 @@ describe('createCheckout', () => {
     );
   });
 
+  test.each([
+    {
+      target: { kind: 'paymentMethod' as const, type: 'scheme' },
+      available: true,
+      interaction: false,
+    },
+    {
+      target: { kind: 'storedPaymentMethod' as const, id: 'stored-one' },
+      available: true,
+      interaction: true,
+    },
+    {
+      target: { kind: 'storedPaymentMethod' as const, id: 'stored-two' },
+      available: false,
+      interaction: false,
+    },
+  ])(
+    'forwards the exact canonical target discriminant without using same-type ordering: %j',
+    async ({ target, available, interaction }) => {
+      mockNativeCheckout.isAvailable.mockResolvedValueOnce(available);
+      mockNativeCheckout.requiresUserInteraction.mockResolvedValueOnce(
+        interaction
+      );
+      mockNativeCheckout.submit.mockResolvedValueOnce(undefined);
+      const checkout = createCheckout(
+        descriptor,
+        {
+          paymentMethods: [{ type: 'scheme', name: 'Card' }],
+          storedPaymentMethods: [
+            { id: 'stored-one', type: 'scheme' },
+            { id: 'stored-two', type: 'scheme' },
+          ],
+        },
+        {},
+        { onInvalidated: jest.fn() }
+      ).publicHandle;
+
+      await expect(checkout.isAvailable(target)).resolves.toBe(available);
+      await expect(checkout.requiresUserInteraction(target)).resolves.toBe(
+        interaction
+      );
+      await expect(checkout.submit(target)).resolves.toBeUndefined();
+
+      expect(mockNativeCheckout.isAvailable).toHaveBeenCalledWith(
+        'checkout-private-id',
+        target
+      );
+      expect(mockNativeCheckout.requiresUserInteraction).toHaveBeenCalledWith(
+        'checkout-private-id',
+        target
+      );
+      expect(mockNativeCheckout.submit).toHaveBeenCalledWith(
+        'checkout-private-id',
+        target
+      );
+    }
+  );
+
   test('rejects malformed targets and stale commands asynchronously', async () => {
     const checkout = createCheckout(
       descriptor,
@@ -128,4 +186,43 @@ describe('createCheckout', () => {
     expect(mockNativeCheckout.invalidate).toHaveBeenCalledTimes(1);
     expect(onInvalidated).toHaveBeenCalledTimes(1);
   });
+
+  test.each([
+    {
+      command: 'isAvailable',
+      target: { kind: 'paymentMethod' as const, type: 'scheme' },
+      nativeError: { code: 'invalidTarget', phase: 'query' },
+      expected: { code: 'invalidTarget', phase: 'query' },
+    },
+    {
+      command: 'requiresUserInteraction',
+      target: { kind: 'storedPaymentMethod' as const, id: 'stored-123' },
+      nativeError: { code: 'unsupportedCapability', phase: 'query' },
+      expected: { code: 'unsupportedCapability', phase: 'query' },
+    },
+    {
+      command: 'submit',
+      target: { kind: 'paymentMethod' as const, type: 'scheme' },
+      nativeError: { code: 'operationBusy', phase: 'presentation' },
+      expected: { code: 'operationBusy', phase: 'presentation' },
+    },
+  ])(
+    'preserves the approved public error snapshot for $command',
+    async ({ command, target, nativeError, expected }) => {
+      const checkout = createCheckout(
+        descriptor,
+        {
+          paymentMethods: [{ type: 'scheme' }],
+          storedPaymentMethods: [{ id: 'stored-123', type: 'scheme' }],
+        },
+        {},
+        { onInvalidated: jest.fn() }
+      ).publicHandle;
+      mockNativeCheckout[command].mockRejectedValueOnce(nativeError);
+
+      await expect(checkout[command](target as never)).rejects.toEqual(
+        expected
+      );
+    }
+  );
 });
