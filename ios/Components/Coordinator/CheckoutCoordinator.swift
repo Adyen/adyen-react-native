@@ -27,6 +27,7 @@ internal protocol CheckoutFactory {
 
 @MainActor
 internal protocol CoordinatorCheckout: AnyObject {
+    var checkoutState: CheckoutState? { get }
     func dispose()
 }
 
@@ -71,15 +72,17 @@ internal enum CoordinatorIdentityKind: Hashable {
     case request
 }
 
-internal enum CoordinatorRequestKind: Equatable {
+internal enum CoordinatorRequestKind: Hashable {
     case advancedSubmit
     case advancedAdditionalDetails
     case sessionBeforeSubmit
-    case addressLookup
-    case unsupportedCapability
+    case applePayAuthorization
+    case applePayShippingContact
+    case applePayShippingMethod
+    case applePayCouponCode
 }
 
-internal struct CoordinatorRequest: Equatable {
+internal struct CoordinatorRequest: Hashable {
     let checkoutID: String
     let operationID: String
     let requestID: String
@@ -92,6 +95,31 @@ internal enum CoordinatorEvent: Equatable {
     case staleRequest(CoordinatorRequest)
     case operationBusy
     case cleanedUp(checkoutID: String)
+}
+
+/// Owns an SDK checkout candidate after it has been built but before it is committed. The
+/// coordinator is the only object that keeps this flow alive after setup succeeds.
+@MainActor
+internal final class NativeCheckoutFlow: CoordinatorCheckout {
+
+    let checkoutContext: PaymentCheckout
+    private let disposeResources: @MainActor () -> Void
+    private var isDisposed = false
+
+    init(checkoutContext: PaymentCheckout, disposeResources: @escaping @MainActor () -> Void) {
+        self.checkoutContext = checkoutContext
+        self.disposeResources = disposeResources
+    }
+
+    var checkoutState: CheckoutState? {
+        CheckoutState(checkoutContext: checkoutContext)
+    }
+
+    func dispose() {
+        guard !isDisposed else { return }
+        isDisposed = true
+        disposeResources()
+    }
 }
 
 /// The sole owner for checkout lifecycle state. UIKit callers cross this main-actor boundary before
@@ -121,8 +149,15 @@ internal final class CheckoutCoordinator {
     private var activeCheckoutID: String?
     private var activePresenter: CoordinatorPresenter?
     private var activeOperationID: String?
-    private var activeRequest: CoordinatorRequest?
-    private var activeRequestCancellation: CoordinatorCancellation?
+    private var activeRequests: [String: PendingRequest] = [:]
+    private var setupGeneration = 0
+    private var isSettingUp = false
+
+    private struct PendingRequest {
+        let request: CoordinatorRequest
+        let cancellation: CoordinatorCancellation?
+        let cancellationFallback: @MainActor () -> Void
+    }
 
     init() {
         configuredDependencies = nil
@@ -136,74 +171,146 @@ internal final class CheckoutCoordinator {
         activeCheckoutID
     }
 
+    internal var operationID: String? {
+        activeOperationID
+    }
+
+    internal var pendingRequestCount: Int {
+        activeRequests.count
+    }
+
+    internal func isActive(checkoutID: String) -> Bool {
+        activeCheckoutID == checkoutID
+    }
+
+    internal func owns(checkout: PaymentCheckout) -> Bool {
+        checkoutState?.checkoutContext === checkout
+    }
+
     /// Replacement always disposes first. A factory failure leaves the coordinator idle.
     @discardableResult
     internal func setup() async throws -> String {
-        invalidate()
+        try await setup {
+            try await self.dependencies.checkoutFactory.makeCheckout()
+        }
+    }
 
-        let checkout = try await dependencies.checkoutFactory.makeCheckout()
-        let checkoutID = dependencies.identityGenerator.nextID(for: .checkout)
+    /// Creates and commits a checkout transactionally. The candidate remains private until the
+    /// factory succeeds and this setup transaction is still current.
+    @discardableResult
+    internal func setup(makeCheckout: @escaping @MainActor () async throws -> CoordinatorCheckout) async throws -> String {
+        guard !isSettingUp else {
+            throw CoordinatorError.checkoutBusy
+        }
+
+        disposeActiveFlow()
+        isSettingUp = true
+        setupGeneration += 1
+        let generation = setupGeneration
+
+        let checkout: CoordinatorCheckout
+        do {
+            checkout = try await makeCheckout()
+        } catch {
+            if setupGeneration == generation {
+                isSettingUp = false
+            }
+            throw error
+        }
+
+        guard isSettingUp, setupGeneration == generation else {
+            checkout.dispose()
+            throw CoordinatorError.staleOperation
+        }
+
+        let checkoutID = nextID(for: .checkout)
         activeCheckout = checkout
         activeCheckoutID = checkoutID
-        dependencies.eventSink.emit(.activated(checkoutID: checkoutID))
+        checkoutState = checkout.checkoutState
+        isSettingUp = false
+        emit(.activated(checkoutID: checkoutID))
         return checkoutID
     }
 
     /// Enforces the cross-presenter single-operation constraint without queueing.
     internal func beginOperation() throws -> String {
+        try beginOperation {
+            guard let factory = self.configuredDependencies?.presenterFactory else {
+                return NoopCoordinatorPresenter()
+            }
+            return factory.makePresenter()
+        }
+    }
+
+    /// Reserves the operation slot before creating a presenter. A busy contender therefore cannot
+    /// allocate a component, controller, or UIKit resource that it does not own.
+    internal func beginOperation(
+        makePresenter: @escaping @MainActor () throws -> CoordinatorPresenter
+    ) throws -> String {
         guard activeCheckoutID != nil else {
             throw CoordinatorError.noActiveCheckout
         }
         guard activeOperationID == nil else {
-            dependencies.eventSink.emit(.operationBusy)
+            emit(.operationBusy)
             throw CoordinatorError.operationBusy
         }
 
-        let operationID = dependencies.identityGenerator.nextID(for: .operation)
-        activePresenter = dependencies.presenterFactory.makePresenter()
+        let operationID = nextID(for: .operation)
+        activePresenter = try makePresenter()
         activeOperationID = operationID
         return operationID
+    }
+
+    internal func beginOperation(checkoutID: String) throws -> String {
+        guard activeCheckoutID == checkoutID else {
+            throw CoordinatorError.staleCheckout
+        }
+        return try beginOperation()
     }
 
     @discardableResult
     internal func beginRequest(
         operationID: String,
         kind: CoordinatorRequestKind,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        cancellationFallback: @escaping @MainActor () -> Void = {}
     ) throws -> CoordinatorRequest {
         guard let checkoutID = activeCheckoutID, activeOperationID == operationID else {
             throw CoordinatorError.staleOperation
         }
 
-        settleActiveRequest()
         let request = CoordinatorRequest(
             checkoutID: checkoutID,
             operationID: operationID,
-            requestID: dependencies.identityGenerator.nextID(for: .request),
+            requestID: nextID(for: .request),
             kind: kind
         )
-        activeRequest = request
-        activeRequestCancellation = dependencies.scheduler.schedule(after: timeout) { [weak self] in
+        let cancellation = configuredDependencies?.scheduler.schedule(after: timeout) { [weak self] in
             self?.timeout(request)
         }
-        dependencies.eventSink.emit(.request(request))
+        activeRequests[request.requestID] = PendingRequest(
+            request: request,
+            cancellation: cancellation,
+            cancellationFallback: cancellationFallback
+        )
+        emit(.request(request))
         return request
     }
 
     /// Returns false for stale, duplicate, wrong-kind, or late responses.
     @discardableResult
     internal func resolve(_ request: CoordinatorRequest) -> Bool {
-        guard activeRequest == request else {
-            dependencies.eventSink.emit(.staleRequest(request))
+        guard let pending = activeRequests[request.requestID], pending.request == request else {
+            emit(.staleRequest(request))
             return false
         }
-        settleActiveRequest()
+        settle(requestID: request.requestID, invokeFallback: false)
         return true
     }
 
     internal func completeOperation(_ operationID: String) {
         guard activeOperationID == operationID else { return }
-        settleActiveRequest()
+        settleRequests(for: operationID)
         activePresenter?.dispose()
         activePresenter = nil
         activeOperationID = nil
@@ -211,7 +318,26 @@ internal final class CheckoutCoordinator {
 
     /// Native cleanup owns cancellation and host release even when JavaScript does not respond.
     internal func invalidate() {
-        settleActiveRequest()
+        setupGeneration += 1
+        isSettingUp = false
+        disposeActiveFlow()
+    }
+
+    internal func invalidate(checkoutID: String) throws {
+        guard activeCheckoutID == checkoutID else {
+            throw CoordinatorError.staleCheckout
+        }
+        invalidate()
+    }
+
+    /// Host ownership is weak at the UIKit boundary. When its view controller goes away, the
+    /// coordinator settles only its own flow and never tries to dismiss foreign presentation.
+    internal func hostDidDisappear() {
+        invalidate()
+    }
+
+    private func disposeActiveFlow() {
+        settleAllRequests()
         activePresenter?.dispose()
         activePresenter = nil
         activeOperationID = nil
@@ -220,25 +346,55 @@ internal final class CheckoutCoordinator {
         activeCheckout?.dispose()
         activeCheckout = nil
         activeCheckoutID = nil
-        dependencies.hostAdapter.releaseCheckoutHost()
-        dependencies.eventSink.emit(.cleanedUp(checkoutID: checkoutID))
+        checkoutState = nil
+        configuredDependencies?.hostAdapter.releaseCheckoutHost()
+        emit(.cleanedUp(checkoutID: checkoutID))
     }
 
     private func timeout(_ request: CoordinatorRequest) {
-        guard activeRequest == request else { return }
-        dependencies.eventSink.emit(.staleRequest(request))
-        settleActiveRequest()
+        guard activeRequests[request.requestID]?.request == request else { return }
+        emit(.staleRequest(request))
+        settle(requestID: request.requestID, invokeFallback: true)
     }
 
-    private func settleActiveRequest() {
-        activeRequestCancellation?.cancel()
-        activeRequestCancellation = nil
-        activeRequest = nil
+    private func settleRequests(for operationID: String) {
+        let requestIDs = activeRequests.values
+            .filter { $0.request.operationID == operationID }
+            .map(\.request.requestID)
+        requestIDs.forEach { settle(requestID: $0, invokeFallback: true) }
+    }
+
+    private func settleAllRequests() {
+        let requestIDs = Array(activeRequests.keys)
+        requestIDs.forEach { settle(requestID: $0, invokeFallback: true) }
+    }
+
+    private func settle(requestID: String, invokeFallback: Bool) {
+        guard let pending = activeRequests.removeValue(forKey: requestID) else { return }
+        pending.cancellation?.cancel()
+        if invokeFallback {
+            pending.cancellationFallback()
+        }
+    }
+
+    private func nextID(for kind: CoordinatorIdentityKind) -> String {
+        configuredDependencies?.identityGenerator.nextID(for: kind) ?? UUID().uuidString
+    }
+
+    private func emit(_ event: CoordinatorEvent) {
+        configuredDependencies?.eventSink.emit(event)
     }
 }
 
 internal enum CoordinatorError: Error {
     case noActiveCheckout
+    case checkoutBusy
     case operationBusy
+    case staleCheckout
     case staleOperation
+}
+
+@MainActor
+private final class NoopCoordinatorPresenter: CoordinatorPresenter {
+    func dispose() {}
 }

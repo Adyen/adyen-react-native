@@ -19,16 +19,24 @@ extension ContextModule {
     internal func setupAdvancedCallbacks(on checkout: AdvancedCheckout) {
         _ = checkout
             .onSubmit { [weak self] data in
-                await self?.awaitSubmitResult(for: data) ?? errorSubmitResult
+                guard let self, CheckoutCoordinator.shared.owns(checkout: checkout) else {
+                    return errorSubmitResult
+                }
+                return await self.awaitSubmitResult(for: data)
             }
             .onAdditionalDetails { [weak self] data in
-                await self?.awaitAdditionalDetailsResult(for: data) ?? errorAdditionalDetailsResult
+                guard let self, CheckoutCoordinator.shared.owns(checkout: checkout) else {
+                    return errorAdditionalDetailsResult
+                }
+                return await self.awaitAdditionalDetailsResult(for: data)
             }
             .onComplete { [weak self] result in
-                self?.sendCompleteEvent(resultCode: result.resultCode)
+                guard let self, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                self.sendCompleteEvent(resultCode: result.resultCode)
             }
             .onFailure { [weak self] error in
-                self?.sendError(error: error)
+                guard let self, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                self.sendError(error: error)
             }
     }
 
@@ -58,6 +66,9 @@ extension ContextModule {
 
     private func sendCompleteEvent(resultCode: CheckoutResultCode) {
         sendEvent(withName: EventName.complete.rawValue, body: [Key.resultCode: resultCode.rawValue])
+        ensureMainThread {
+            CheckoutCoordinator.shared.invalidate()
+        }
     }
 
     private enum Key {

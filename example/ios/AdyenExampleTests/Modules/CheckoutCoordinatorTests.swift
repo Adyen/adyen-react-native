@@ -65,7 +65,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
         let coordinator = fixture.makeCoordinator()
         _ = try await coordinator.setup()
         let operationID = try coordinator.beginOperation()
-        let request = try coordinator.beginRequest(operationID: operationID, kind: .unsupportedCapability, timeout: 10)
+        let request = try coordinator.beginRequest(operationID: operationID, kind: .advancedSubmit, timeout: 10)
 
         fixture.scheduler.fireLast()
         XCTAssertFalse(coordinator.resolve(request))
@@ -76,6 +76,83 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(fixture.factory.checkouts[0].disposeCount, 1)
         XCTAssertEqual(fixture.host.releaseCount, 1)
         XCTAssertTrue(fixture.scheduler.cancellations.allSatisfy(\.cancelled))
+    }
+
+    func test_requestBrokerRequiresEveryIdentityAndSettlesEachRequestOnce() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        _ = try await coordinator.setup()
+        let operationID = try coordinator.beginOperation()
+        var cancelled = 0
+        let submit = try coordinator.beginRequest(
+            operationID: operationID,
+            kind: .advancedSubmit,
+            timeout: 10,
+            cancellationFallback: { cancelled += 1 }
+        )
+        let details = try coordinator.beginRequest(
+            operationID: operationID,
+            kind: .advancedAdditionalDetails,
+            timeout: 10,
+            cancellationFallback: { cancelled += 1 }
+        )
+
+        XCTAssertEqual(coordinator.pendingRequestCount, 2)
+        XCTAssertFalse(coordinator.resolve(.init(
+            checkoutID: submit.checkoutID,
+            operationID: submit.operationID,
+            requestID: details.requestID,
+            kind: submit.kind
+        )))
+        XCTAssertTrue(coordinator.resolve(submit))
+        coordinator.invalidate()
+        coordinator.invalidate()
+
+        XCTAssertEqual(cancelled, 1)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+    }
+
+    func test_invalidationDuringSetupDisposesUncommittedCandidate() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let factoryStarted = expectation(description: "factory started")
+        let allowFactoryToFinish = expectation(description: "factory may finish")
+        fixture.factory.onCreate = {
+            factoryStarted.fulfill()
+            await self.fulfillment(of: [allowFactoryToFinish], timeout: 1)
+        }
+
+        let setup = Task { @MainActor in
+            try await coordinator.setup()
+        }
+        await fulfillment(of: [factoryStarted], timeout: 1)
+        coordinator.invalidate()
+        allowFactoryToFinish.fulfill()
+
+        do {
+            _ = try await setup.value
+            XCTFail("Expected a setup invalidated while its candidate was pending")
+        } catch {
+            XCTAssertEqual(fixture.factory.checkouts[0].disposeCount, 1)
+            XCTAssertNil(coordinator.checkoutID)
+        }
+    }
+
+    func test_staleCheckoutAndHostLossCannotTouchReplacement() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let oldCheckoutID = try await coordinator.setup()
+        let replacementID = try await coordinator.setup()
+
+        XCTAssertThrowsError(try coordinator.beginOperation(checkoutID: oldCheckoutID))
+        XCTAssertThrowsError(try coordinator.invalidate(checkoutID: oldCheckoutID))
+        XCTAssertEqual(coordinator.checkoutID, replacementID)
+
+        coordinator.hostDidDisappear()
+
+        XCTAssertNil(coordinator.checkoutID)
+        XCTAssertEqual(fixture.factory.checkouts.map(\.disposeCount), [1, 1])
+        XCTAssertEqual(fixture.host.releaseCount, 2)
     }
 
     @MainActor
@@ -113,6 +190,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
     private final class Factory: CheckoutFactory {
         let ledger: Ledger
         var shouldFail = false
+        var onCreate: (@MainActor () async -> Void)?
         private(set) var checkouts: [Checkout] = []
 
         init(ledger: Ledger) {
@@ -120,6 +198,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
         }
 
         func makeCheckout() async throws -> CoordinatorCheckout {
+            await onCreate?()
             guard !shouldFail else {
                 ledger.entries.append("create-failed")
                 throw TestError.factory
@@ -140,6 +219,10 @@ final class CheckoutCoordinatorTests: XCTestCase {
             self.ledger = ledger
             self.number = number
             ledger.entries.append("create-\(number)")
+        }
+
+        var checkoutState: CheckoutState? {
+            nil
         }
 
         func dispose() {

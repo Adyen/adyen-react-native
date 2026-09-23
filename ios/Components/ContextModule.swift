@@ -17,13 +17,19 @@ internal final class ContextModule: BaseModule {
     /// Module JS subscribes to, so a mounted ``ComponentProxy`` can surface errors on it. Weak: the bridge owns the module.
     internal private(set) weak static var shared: ContextModule?
 
-    /// Payment components cached per payment method type, built lazily and reused by `submit(_:)`.
-    private var components: [String: CheckoutPaymentComponent] = [:]
-
     override init() {
         super.init()
         MainActor.assumeIsolated {
             Self.shared = self
+        }
+    }
+
+    /// React context teardown may happen without a JS terminal callback. Native still owns the
+    /// active flow and must settle it before the bridge disappears.
+    override func invalidate() {
+        super.invalidate()
+        ensureMainThread {
+            CheckoutCoordinator.shared.hostDidDisappear()
         }
     }
 
@@ -127,25 +133,31 @@ internal final class ContextModule: BaseModule {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            // Clear stale state for re-setup without a full cleanUp().
-            self.cancelPendingOperations()
             do {
-                let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
-                let sessionResponse = SessionResponse(id: id, sessionData: sessionData)
-                let checkout = try await Checkout.setup(
-                    with: sessionResponse,
-                    configuration: checkoutConfiguration,
-                    presentationDelegate: self
-                )
-                self.setupSessionCallbacks(on: checkout, sessionData: sessionData)
-
-                guard let paymentMethods = checkout.paymentMethods else {
-                    return rejecter("session", "No payment methods available for the session", nil)
+                let checkoutID = try await CheckoutCoordinator.shared.setup {
+                    let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
+                    let sessionResponse = SessionResponse(id: id, sessionData: sessionData)
+                    let checkout = try await Checkout.setup(
+                        with: sessionResponse,
+                        configuration: checkoutConfiguration,
+                        presentationDelegate: self
+                    )
+                    guard checkout.paymentMethods != nil else {
+                        throw ModuleException.invalidPaymentMethods
+                    }
+                    self.setupSessionCallbacks(on: checkout, sessionData: sessionData)
+                    return NativeCheckoutFlow(checkoutContext: checkout) { [weak self] in
+                        self?.cancelPendingOperations()
+                        self?.cleanUp()
+                    }
                 }
 
-                CheckoutCoordinator.shared.checkoutState = CheckoutState(checkoutContext: checkout)
+                guard let paymentMethods = CheckoutCoordinator.shared.checkoutState?.checkoutContext.paymentMethods else {
+                    throw ModuleException.invalidPaymentMethods
+                }
 
                 let dto = SessionDTO(id: id, sessionData: sessionData, paymentMethods: paymentMethods)
+                _ = checkoutID
                 resolver(dto.jsonObject)
             } catch {
                 rejecter("session", nil, error)
@@ -169,17 +181,20 @@ internal final class ContextModule: BaseModule {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            // Clear stale state for re-setup without a full cleanUp().
-            self.cancelPendingOperations()
             do {
-                let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
-                let checkout = try await Checkout.setup(
-                    with: paymentMethods,
-                    configuration: checkoutConfiguration,
-                    presentationDelegate: self
-                )
-                self.setupAdvancedCallbacks(on: checkout)
-                CheckoutCoordinator.shared.checkoutState = CheckoutState(checkoutContext: checkout)
+                _ = try await CheckoutCoordinator.shared.setup {
+                    let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
+                    let checkout = try await Checkout.setup(
+                        with: paymentMethods,
+                        configuration: checkoutConfiguration,
+                        presentationDelegate: self
+                    )
+                    self.setupAdvancedCallbacks(on: checkout)
+                    return NativeCheckoutFlow(checkoutContext: checkout) { [weak self] in
+                        self?.cancelPendingOperations()
+                        self?.cleanUp()
+                    }
+                }
                 resolver(true)
             } catch {
                 rejecter("setup", nil, error)
@@ -249,8 +264,14 @@ internal final class ContextModule: BaseModule {
             }
             let checkout = state.checkoutContext
             do {
-                let component = try self.resolveComponent(for: typeString, checkout: checkout)
-                component.submit()
+                var presenter: HeadlessCheckoutPresenter?
+                _ = try CheckoutCoordinator.shared.beginOperation {
+                    let component = try self.resolveComponent(for: typeString, checkout: checkout)
+                    let newPresenter = HeadlessCheckoutPresenter(component: component)
+                    presenter = newPresenter
+                    return newPresenter
+                }
+                presenter?.submit()
             } catch {
                 self.sendError(error: error)
             }
@@ -268,13 +289,11 @@ internal final class ContextModule: BaseModule {
     /// Clears cached components, suspended closures, and the shared checkout context/presenter stack.
     @MainActor
     private func performCleanup() {
-        cancelPendingOperations()
-        cleanUp()
+        CheckoutCoordinator.shared.invalidate()
     }
 
     @MainActor
     private func cancelPendingOperations() {
-        components.removeAll()
         resultSink.cancelPending()
         beforeSubmitBridge.resolve(.abort)
         cancelApplePayCallbacks()
@@ -283,15 +302,10 @@ internal final class ContextModule: BaseModule {
     /// Returns (building and caching if needed) the payment component for [type] within [checkout].
     @MainActor
     private func resolveComponent(for type: String, checkout: PaymentCheckout) throws -> CheckoutPaymentComponent {
-        if let existing = components[type] {
-            return existing
-        }
         guard let paymentMethodType = PaymentMethodType(rawValue: type) else {
             throw ModuleException.invalidPaymentMethods
         }
-        let component = try checkout.createPaymentComponent(for: paymentMethodType)
-        components[type] = component
-        return component
+        return try checkout.createPaymentComponent(for: paymentMethodType)
     }
 
     // MARK: - Configuration
@@ -340,13 +354,18 @@ internal final class ContextModule: BaseModule {
     private func setupSessionCallbacks(on checkout: SessionCheckout, sessionData: String) {
         _ = checkout
             .onBeforeSubmit { [weak self] data in
-                await self?.awaitBeforeSubmitResult(for: data) ?? .abort
+                guard let self, CheckoutCoordinator.shared.owns(checkout: checkout) else {
+                    return .abort
+                }
+                return await self.awaitBeforeSubmitResult(for: data)
             }
             .onComplete { [weak self] result in
-                self?.sendCompleteEvent(result: result, sessionData: sessionData)
+                guard let self, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                self.sendCompleteEvent(result: result, sessionData: sessionData)
             }
             .onFailure { [weak self] error in
-                self?.sendError(error: error)
+                guard let self, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                self.sendError(error: error)
             }
     }
 
@@ -403,6 +422,9 @@ internal final class ContextModule: BaseModule {
         dict[Key.sessionId] = result.sessionId
         dict[Key.sessionData] = sessionData
         sendEvent(withName: EventName.completeSession.rawValue, body: dict)
+        ensureMainThread {
+            CheckoutCoordinator.shared.invalidate()
+        }
     }
 
     override func sendError(error: any Error) {
@@ -410,6 +432,9 @@ internal final class ContextModule: BaseModule {
         // Session errors surface on `failSession`; advanced-flow errors on `fail`.
         let eventName: EventName = CheckoutCoordinator.shared.checkoutState?.isSession == true ? .failSession : .fail
         sendEvent(withName: eventName.rawValue, body: errorToSend.jsonObject)
+        ensureMainThread {
+            CheckoutCoordinator.shared.invalidate()
+        }
     }
 
     private enum Key {
@@ -425,5 +450,25 @@ internal final class ContextModule: BaseModule {
         static let shopperName = "shopperName"
         static let shopperEmail = "shopperEmail"
         static let brand = "brand"
+    }
+}
+
+/// Owns the SDK component allocated for one headless operation. It is retained only by the active
+/// coordinator operation and releases the component once that operation reaches terminal cleanup.
+@MainActor
+private final class HeadlessCheckoutPresenter: CoordinatorPresenter {
+
+    private var component: CheckoutPaymentComponent?
+
+    init(component: CheckoutPaymentComponent) {
+        self.component = component
+    }
+
+    func submit() {
+        component?.submit()
+    }
+
+    func dispose() {
+        component = nil
     }
 }
