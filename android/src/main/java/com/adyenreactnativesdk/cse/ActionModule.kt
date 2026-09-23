@@ -6,11 +6,11 @@
 
 package com.adyenreactnativesdk.cse
 
-import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.action.data.Action
 import com.adyen.checkout.core.action.data.ActionComponentData
+import com.adyen.checkout.core.action.data.RedirectAction
 import com.adyen.checkout.core.common.CheckoutResultCode
 import com.adyen.checkout.core.components.ActionOnlyCheckoutCallbacks
 import com.adyen.checkout.core.components.AdditionalDetailsResult
@@ -30,6 +30,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Generated standalone Action TurboModule.
@@ -60,12 +61,19 @@ class ActionModule(
 
       val action: Action
       val configuration: CheckoutConfiguration
-      val returnUri: Uri
       try {
         action = Action.SERIALIZER.deserialize(JSONObject(actionJson))
+        if (action is RedirectAction) {
+          // TODO: Support redirects when Adyen publishes a hook that safely correlates each
+          // standalone operation with its return, without rewriting the opaque provider URL.
+          promise.reject(
+            ERROR_UNSUPPORTED_CAPABILITY,
+            "Standalone RedirectAction is unsupported by the pinned Android SDK",
+          )
+          return@onMain
+        }
         val configurationObject = JSONObject(configurationJson)
         configuration = CheckoutConfigurationFactory.get(ReactNativeJson.convertJsonToMap(configurationObject))
-        returnUri = requiredReturnUri(configurationObject)
       } catch (error: ModuleException) {
         promise.reject(error.code, error.message, error)
         return@onMain
@@ -80,20 +88,6 @@ class ActionModule(
         return@onMain
       }
       val operation = ActiveAction(ownerToken = ActionOperationToken.create(), promise = promise)
-      if (
-        !ActionRedirectRouter.register(
-          ownerToken = operation.ownerToken,
-          returnUri = returnUri,
-          handler = { returnIntent ->
-            if (isUsable(operation)) {
-              operation.controller?.handleReturn(returnIntent)
-            }
-          },
-        )
-      ) {
-        promise.reject(ERROR_BUSY, "A standalone action is already active")
-        return@onMain
-      }
       activeAction = operation
 
       activity.lifecycleScope.launch {
@@ -200,7 +194,6 @@ class ActionModule(
     operation.controller = null
     val complete: () -> Unit = completion@{
       if (activeAction !== operation) return@completion
-      ActionRedirectRouter.unregister(operation.ownerToken)
       activeAction = null
       settle()
     }
@@ -219,15 +212,6 @@ class ActionModule(
   private fun isActive(operation: ActiveAction): Boolean = activeAction === operation
 
   private fun isUsable(operation: ActiveAction): Boolean = isActive(operation) && !operation.finishing
-
-  private fun requiredReturnUri(configuration: JSONObject): Uri {
-    val value = configuration.optString(PARAMETER_RETURN_URL)
-    val uri = Uri.parse(value)
-    require(value.isNotBlank() && uri.scheme != null && uri.path != null) {
-      "A standalone Action requires a returnUrl with a scheme and path"
-    }
-    return uri
-  }
 
   private fun onMain(action: () -> Unit) {
     reactContext.runOnUiQueueThread(action)
@@ -248,6 +232,18 @@ class ActionModule(
     const val ERROR_CANCELLED = "cancelled"
     const val ERROR_COMPONENT = "actionError"
     const val ERROR_PARSING = "parsingError"
-    const val PARAMETER_RETURN_URL = "returnUrl"
+    const val ERROR_UNSUPPORTED_CAPABILITY = "unsupportedCapability"
   }
+}
+
+/**
+ * Native-only ownership identity for a standalone Action operation.
+ *
+ * A React runtime can be torn down and recreated in the same process, so module-local counters
+ * cannot identify process-global Action ownership.
+ */
+internal object ActionOperationToken {
+  private val nextValue = AtomicLong()
+
+  fun create(): String = "action-${nextValue.incrementAndGet()}"
 }

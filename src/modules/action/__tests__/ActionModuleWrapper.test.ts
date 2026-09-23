@@ -22,7 +22,7 @@ describe('ActionModuleWrapper', () => {
 
   test('serializes handle payloads and parses the generated response', async () => {
     const wrapper = new ActionModuleWrapper(nativeModule);
-    const action = { type: 'redirect', paymentMethodType: 'ideal' };
+    const action = { type: 'threeDS2', paymentMethodType: 'scheme' };
     const configuration = {
       environment: 'test' as const,
       clientKey: 'test_key',
@@ -44,7 +44,7 @@ describe('ActionModuleWrapper', () => {
 
     await expect(
       wrapper.handle(
-        { type: 'redirect', paymentMethodType: 'ideal' },
+        { type: 'threeDS2', paymentMethodType: 'scheme' },
         {
           environment: 'test' as const,
           clientKey: 'test_key',
@@ -52,6 +52,30 @@ describe('ActionModuleWrapper', () => {
         }
       )
     ).rejects.toThrow('actionBusy');
+  });
+
+  test('normalizes token-free RedirectAction capability rejection with presentation metadata', async () => {
+    nativeModule.handle.mockRejectedValueOnce({
+      code: 'unsupportedCapability',
+    });
+    const wrapper = new ActionModuleWrapper(nativeModule);
+    const action = {
+      type: 'redirect',
+      paymentMethodType: 'ideal',
+      url: 'https://issuer.example/redirect?opaque=provider-value',
+    };
+
+    await expect(
+      wrapper.handle(action, {
+        environment: 'test' as const,
+        clientKey: 'test_key',
+        returnUrl: 'myapp://action/payment',
+      })
+    ).rejects.toEqual({
+      code: 'unsupportedCapability',
+      phase: 'presentation',
+    });
+    expect(JSON.parse(nativeModule.handle.mock.calls[0][0])).toEqual(action);
   });
 
   test('keeps each generated handle promise bound to its own native result', async () => {
@@ -77,11 +101,11 @@ describe('ActionModuleWrapper', () => {
       returnUrl: 'myapp://action/payment',
     };
     const first = wrapper.handle(
-      { type: 'redirect', paymentMethodType: 'ideal' },
+      { type: 'threeDS2', paymentMethodType: 'scheme' },
       configuration
     );
     const second = wrapper.handle(
-      { type: 'redirect', paymentMethodType: 'scheme' },
+      { type: 'threeDS2', paymentMethodType: 'scheme' },
       configuration
     );
 

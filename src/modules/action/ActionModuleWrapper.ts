@@ -3,6 +3,7 @@ import type {
   PaymentAction,
   PaymentDetailsData,
 } from '../../core';
+import { asCheckoutError } from '../../checkout/errors';
 import type { ActionModule } from './AdyenAction';
 import type { Spec as ActionNativeModule } from '../../specs/NativeAdyenAction';
 
@@ -21,11 +22,22 @@ export class ActionModuleWrapper implements ActionModule {
     action: PaymentAction,
     configuration: Configuration
   ): Promise<PaymentDetailsData> {
-    const result = await this.nativeModule.handle(
-      JSON.stringify(action),
-      JSON.stringify(configuration)
-    );
-    return JSON.parse(result) as PaymentDetailsData;
+    try {
+      const result = await this.nativeModule.handle(
+        JSON.stringify(action),
+        JSON.stringify(configuration)
+      );
+      return JSON.parse(result) as PaymentDetailsData;
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        (error as { code?: unknown }).code === 'unsupportedCapability'
+      ) {
+        throw asCheckoutError(error, 'presentation');
+      }
+      throw error;
+    }
   }
 
   hide(): Promise<void> {
