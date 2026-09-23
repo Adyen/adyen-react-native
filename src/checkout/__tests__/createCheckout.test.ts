@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import { describe, expect, jest, test } from '@jest/globals';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 jest.mock('../../specs/NativeAdyenCheckout', () => ({
   __esModule: true,
@@ -33,6 +33,10 @@ const descriptor = {
 };
 
 describe('createCheckout', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('forwards private identity and a stored-method target unchanged', async () => {
     mockNativeCheckout.isAvailable.mockResolvedValue(true);
     const checkout = createCheckout(
@@ -66,6 +70,27 @@ describe('createCheckout', () => {
     await expect(
       checkout.publicHandle.submit({ kind: 'paymentMethod', type: 'scheme' })
     ).rejects.toMatchObject({ code: 'staleCheckout', phase: 'presentation' });
+  });
+
+  test.each([
+    {},
+    { kind: 'paymentMethod', type: '' },
+    { kind: 'paymentMethod', type: '   ' },
+    { kind: 'storedPaymentMethod', id: '' },
+    { kind: 'storedPaymentMethod', id: 'stored-123', type: 'scheme' },
+  ])('rejects non-canonical targets: %j', async (target) => {
+    const checkout = createCheckout(
+      descriptor,
+      { paymentMethods: [] },
+      {},
+      { onInvalidated: jest.fn() }
+    ).publicHandle;
+
+    await expect(checkout.isAvailable(target as never)).rejects.toEqual({
+      code: 'invalidTarget',
+      phase: 'query',
+    });
+    expect(mockNativeCheckout.isAvailable).not.toHaveBeenCalled();
   });
 
   test('invalidates once and never converts cleanup into a listener operation', async () => {

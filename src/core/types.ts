@@ -515,5 +515,4 @@ export type CheckoutErrorPhase =
 export interface CheckoutError {
   code: CheckoutErrorCode;
   phase: CheckoutErrorPhase;
-  message?: string;
 }

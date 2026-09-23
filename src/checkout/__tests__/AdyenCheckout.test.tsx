@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import { describe, expect, jest, test } from '@jest/globals';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 jest.mock('../../specs/NativeAdyenCheckout', () => ({
   __esModule: true,
@@ -56,6 +56,10 @@ function descriptor(id: string, flow: 'sessions' | 'advanced' = 'advanced') {
 }
 
 describe('AdyenCheckout', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('publishes only portable immutable checkout data', async () => {
     native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-one'));
     const checkout = await AdyenCheckout.setupAdvanced(
@@ -120,5 +124,57 @@ describe('AdyenCheckout', () => {
     await expect(
       oldCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
     ).rejects.toMatchObject({ code: 'staleCheckout', phase: 'presentation' });
+  });
+
+  test('serializes overlapping setup calls before beginning replacement', async () => {
+    let resolveFirstSetup:
+      ((value: ReturnType<typeof descriptor>) => void) | undefined;
+    native.setupAdvanced.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirstSetup = resolve;
+        })
+    );
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-second'));
+
+    const first = AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const second = AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+
+    await new Promise(setImmediate);
+    expect(native.setupAdvanced).toHaveBeenCalledTimes(1);
+    expect(resolveFirstSetup).toBeDefined();
+    resolveFirstSetup!(descriptor('checkout-first'));
+    const firstCheckout = await first;
+    const secondCheckout = await second;
+
+    expect(native.invalidate).toHaveBeenCalledWith('checkout-first');
+    await expect(
+      firstCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'presentation' });
+    expect(secondCheckout.flow).toBe('advanced');
+  });
+
+  test('drops native error messages that could expose private details', async () => {
+    native.setupAdvanced.mockRejectedValueOnce({
+      code: 'staleCheckout',
+      phase: 'setup',
+      message: 'CheckoutCoordinator<checkout-private-id>',
+    });
+
+    await expect(
+      AdyenCheckout.setupAdvanced(
+        { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+        configuration,
+        callbacks
+      )
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'setup' });
   });
 });

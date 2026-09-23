@@ -40,6 +40,7 @@ let eventSubscription:
       remove(): void;
     }
   | undefined;
+let setupTransition: Promise<void> = Promise.resolve();
 
 function parsePayload<T>(payloadJson?: string): T {
   if (!payloadJson) {
@@ -264,6 +265,15 @@ async function replaceActiveCheckout(): Promise<void> {
   }
 }
 
+function serializeSetup<Value>(setup: () => Promise<Value>): Promise<Value> {
+  const transition = setupTransition.then(setup, setup);
+  setupTransition = transition.then(
+    () => undefined,
+    () => undefined
+  );
+  return transition;
+}
+
 /**
  * Static entry point for the native-owned checkout coordinator.
  *
@@ -276,18 +286,20 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: SessionCallbacks
   ): Promise<Checkout> {
-    ensureEventListener();
-    await replaceActiveCheckout();
-    checkConfiguration(configuration);
-    const descriptor = await NativeCheckout.setupSession(
-      JSON.stringify(session),
-      JSON.stringify(configuration)
-    ).catch((error: unknown) => {
-      throw asCheckoutError(error, 'setup');
-    });
-    return AdyenCheckout.publishCheckout(descriptor, {
-      session: callbacks,
-      configuration,
+    return serializeSetup(async () => {
+      ensureEventListener();
+      await replaceActiveCheckout();
+      checkConfiguration(configuration);
+      const descriptor = await NativeCheckout.setupSession(
+        JSON.stringify(session),
+        JSON.stringify(configuration)
+      ).catch((error: unknown) => {
+        throw asCheckoutError(error, 'setup');
+      });
+      return AdyenCheckout.publishCheckout(descriptor, {
+        session: callbacks,
+        configuration,
+      });
     });
   }
 
@@ -296,19 +308,21 @@ export class AdyenCheckout {
     configuration: Configuration,
     callbacks: AdvancedCallbacks
   ): Promise<Checkout> {
-    ensureEventListener();
-    await replaceActiveCheckout();
-    checkConfiguration(configuration);
-    checkPaymentMethodsResponse(paymentMethods);
-    const descriptor = await NativeCheckout.setupAdvanced(
-      JSON.stringify(paymentMethods),
-      JSON.stringify(configuration)
-    ).catch((error: unknown) => {
-      throw asCheckoutError(error, 'setup');
-    });
-    return AdyenCheckout.publishCheckout(descriptor, {
-      advanced: callbacks,
-      configuration,
+    return serializeSetup(async () => {
+      ensureEventListener();
+      await replaceActiveCheckout();
+      checkConfiguration(configuration);
+      checkPaymentMethodsResponse(paymentMethods);
+      const descriptor = await NativeCheckout.setupAdvanced(
+        JSON.stringify(paymentMethods),
+        JSON.stringify(configuration)
+      ).catch((error: unknown) => {
+        throw asCheckoutError(error, 'setup');
+      });
+      return AdyenCheckout.publishCheckout(descriptor, {
+        advanced: callbacks,
+        configuration,
+      });
     });
   }
 

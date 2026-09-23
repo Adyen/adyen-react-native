@@ -57,13 +57,17 @@ function invalidTarget(phase: 'query' | 'presentation'): Promise<never> {
 function isCheckoutTarget(target: unknown): target is CheckoutTarget {
   if (!target || typeof target !== 'object') return false;
   const candidate = target as Record<string, unknown>;
+  const keys = Object.keys(candidate);
+  if (keys.length !== 2 || !keys.includes('kind')) return false;
   return (
     (candidate.kind === 'paymentMethod' &&
       typeof candidate.type === 'string' &&
-      candidate.type.length > 0) ||
+      candidate.type.trim().length > 0 &&
+      keys.includes('type')) ||
     (candidate.kind === 'storedPaymentMethod' &&
       typeof candidate.id === 'string' &&
-      candidate.id.length > 0)
+      candidate.id.trim().length > 0 &&
+      keys.includes('id'))
   );
 }
 

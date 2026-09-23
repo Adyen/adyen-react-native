@@ -346,8 +346,6 @@ export interface CheckoutError {
     // (undocumented)
     code: CheckoutErrorCode;
     // (undocumented)
-    message?: string;
-    // (undocumented)
     phase: CheckoutErrorPhase;
 }
 
@@ -395,10 +393,8 @@ export interface DropInConfiguration {
 }
 
 // @public
-export interface DropInModule extends AdvancedPayment {
-    getReturnURL: () => Promise<string>;
-    providePaymentMethods(paymentMethods: PaymentMethodsResponse, order: Order | undefined): void;
-    start(checkout: Checkout): void;
+export interface DropInModule {
+    start(checkout: Checkout): Promise<void>;
 }
 
 // @public

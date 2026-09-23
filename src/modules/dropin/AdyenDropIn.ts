@@ -1,37 +1,31 @@
-import { NativeModules } from 'react-native';
-import type {
-  AdvancedPayment,
-  Checkout,
-  Order,
-  PaymentMethodsResponse,
-} from '../../core';
-import { ModuleMock } from '../base/ModuleMock';
-import { DropInWrapper } from './DropInWrapper';
-
-// TODO: Re-add providePaymentResult/provideAdditionalDetailsResult as convenience methods in a future version
+import type { Checkout } from '../../core';
+import NativeCheckout from '../../specs/NativeAdyenCheckout';
+import { checkoutHandleFor } from '../../checkout/createCheckout';
+import { asCheckoutError } from '../../checkout/errors';
 
 /** Describes Drop-in module. */
-export interface DropInModule extends AdvancedPayment {
-  /**
-   * Provides return URL for current application.
-   */
-  getReturnURL: () => Promise<string>;
-
-  /** Launches the Drop-in modal using payment methods from the shared {@link Checkout}. */
-  start(checkout: Checkout): void;
-
-  /**
-   * Reloads the DropIn with a new PaymentMethods object and partial payment order.
-   * @param paymentMethods JSON response from \paymentMethods API endpoint
-   * @param order The order information required for partial payments.
-   */
-  providePaymentMethods(
-    paymentMethods: PaymentMethodsResponse,
-    order: Order | undefined
-  ): void;
+export interface DropInModule {
+  /** Launches coordinator-owned Drop-in for a live checkout. */
+  start(checkout: Checkout): Promise<void>;
 }
 
-/** Drop-in is our pre-built UI solution for accepting payments. Drop-in shows all payment methods as a list and handles actions. */
-export const AdyenDropIn: DropInModule = new DropInWrapper(
-  NativeModules.AdyenDropIn ?? ModuleMock
-);
+/**
+ * Thin Drop-in façade. The only bridge input is the private identity associated with setup.
+ * It owns neither configuration, payment methods, listeners, nor callbacks.
+ */
+export const AdyenDropIn: DropInModule = {
+  async start(checkout: Checkout): Promise<void> {
+    const handle = checkoutHandleFor(checkout);
+    if (!handle || !handle.isActive()) {
+      throw asCheckoutError({
+        code: 'staleCheckout',
+        phase: 'presentation',
+      });
+    }
+    try {
+      await NativeCheckout.startDropIn(handle.checkoutId);
+    } catch (error) {
+      throw asCheckoutError(error, 'presentation');
+    }
+  },
+};

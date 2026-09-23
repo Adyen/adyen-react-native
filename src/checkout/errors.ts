@@ -43,7 +43,7 @@ export function asCheckoutError(
   const phase = errorPhases.includes(candidate?.phase as CheckoutErrorPhase)
     ? (candidate?.phase as CheckoutErrorPhase)
     : fallbackPhase;
-  const message =
-    typeof candidate?.message === 'string' ? candidate.message : undefined;
-  return message ? { code, phase, message } : { code, phase };
+  // Native error messages can include SDK class names and private coordinator identities.
+  // The portable public protocol intentionally exposes only the stable error code and phase.
+  return { code, phase };
 }
