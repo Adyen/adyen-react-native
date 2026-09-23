@@ -42,15 +42,13 @@ internal class BaseModuleSender: BaseModule {
 
     override internal func sendError(error: Error) {
         let errorToSend = checkErrorType(error)
-        if CheckoutCoordinator.shared.checkoutState?.isSession == true {
-            let eventName: EventName = .failSession
-            ensureMainThread { [weak self] in
-                self?.emitter.send(event: eventName, body: errorToSend.jsonObject)
-            }
-            return
-        }
         ensureMainThread { [weak self] in
-            self?.emitter.send(event: EventName.fail, body: errorToSend.jsonObject)
+            guard let self else { return }
+            if CheckoutCoordinator.shared.checkoutState?.isSession == true {
+                self.emitter.send(event: .failSession, body: errorToSend.jsonObject)
+                return
+            }
+            self.emitter.send(event: EventName.fail, body: errorToSend.jsonObject)
         }
     }
 

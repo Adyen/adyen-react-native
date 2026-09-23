@@ -63,7 +63,7 @@ internal protocol CoordinatorCancellation {
 
 @MainActor
 internal protocol CheckoutHostAdapter {
-    func releaseCheckoutHost()
+    func releaseCheckoutHost() async
 }
 
 internal enum CoordinatorIdentityKind: Hashable {
@@ -133,9 +133,9 @@ internal final class CheckoutCoordinator {
 
     /// Legacy module paths use this coordinator-owned state until their public commands migrate.
     /// Keeping it here prevents modules and views from owning parallel checkout or presenter state.
-    internal nonisolated(unsafe) var checkoutState: CheckoutState?
-    internal nonisolated(unsafe) var presenterStack: [UIViewController] = []
-    internal nonisolated(unsafe) var topPresenterProvider: @MainActor () -> UIViewController? = { UIViewController.topPresenter }
+    internal var checkoutState: CheckoutState?
+    internal var presenterStack: [UIViewController] = []
+    internal var topPresenterProvider: @MainActor () -> UIViewController? = { UIViewController.topPresenter }
 
     private let configuredDependencies: CheckoutCoordinatorDependencies?
     private var runtimeDependencies: CheckoutCoordinatorDependencies?
@@ -211,7 +211,7 @@ internal final class CheckoutCoordinator {
             throw CoordinatorError.checkoutBusy
         }
 
-        disposeActiveFlow()
+        await disposeActiveFlow()
         isSettingUp = true
         setupGeneration += 1
         let generation = setupGeneration
@@ -316,6 +316,17 @@ internal final class CheckoutCoordinator {
         return true
     }
 
+    /// Retires an exact request when a native SDK callback supersedes it before JavaScript
+    /// responds. The fallback is responsible for settling that request's native continuation.
+    @discardableResult
+    internal func cancel(_ request: CoordinatorRequest) -> Bool {
+        guard let pending = activeRequests[request.requestID], pending.request == request else {
+            return false
+        }
+        settle(requestID: request.requestID, invokeFallback: true)
+        return true
+    }
+
     internal func completeOperation(_ operationID: String) {
         guard activeOperationID == operationID else { return }
         settleRequests(for: operationID)
@@ -325,26 +336,26 @@ internal final class CheckoutCoordinator {
     }
 
     /// Native cleanup owns cancellation and host release even when JavaScript does not respond.
-    internal func invalidate() {
+    internal func invalidate() async {
         setupGeneration += 1
         isSettingUp = false
-        disposeActiveFlow()
+        await disposeActiveFlow()
     }
 
-    internal func invalidate(checkoutID: String) throws {
+    internal func invalidate(checkoutID: String) async throws {
         guard activeCheckoutID == checkoutID else {
             throw CoordinatorError.staleCheckout
         }
-        invalidate()
+        await invalidate()
     }
 
     /// Host ownership is weak at the UIKit boundary. When its view controller goes away, the
     /// coordinator settles only its own flow and never tries to dismiss foreign presentation.
-    internal func hostDidDisappear() {
-        invalidate()
+    internal func hostDidDisappear() async {
+        await invalidate()
     }
 
-    private func disposeActiveFlow() {
+    private func disposeActiveFlow() async {
         settleAllRequests()
         activePresenter?.dispose()
         activePresenter = nil
@@ -355,7 +366,7 @@ internal final class CheckoutCoordinator {
         activeCheckout = nil
         activeCheckoutID = nil
         checkoutState = nil
-        (configuredDependencies ?? runtimeDependencies)?.hostAdapter.releaseCheckoutHost()
+        await (configuredDependencies ?? runtimeDependencies)?.hostAdapter.releaseCheckoutHost()
         emit(.cleanedUp(checkoutID: checkoutID))
     }
 

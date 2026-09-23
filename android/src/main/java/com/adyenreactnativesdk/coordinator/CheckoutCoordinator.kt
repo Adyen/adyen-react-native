@@ -121,6 +121,9 @@ internal class CheckoutCoordinator(
 
   /** Legacy module paths delegate state and registries here until their commands migrate. */
   var checkoutState: CheckoutState? = null
+  private var runtimeDependencies: CheckoutCoordinatorDependencies? = null
+  private val dependencies: CheckoutCoordinatorDependencies?
+    get() = configuredDependencies ?: runtimeDependencies
   private val managers = mutableMapOf<String, ComponentManager>()
   private val consumers = mutableMapOf<String, ComponentContract>()
   private val redirectControllers = mutableMapOf<String, CheckoutController>()
@@ -131,6 +134,7 @@ internal class CheckoutCoordinator(
   private var operationId: String? = null
   private var request: CoordinatorRequest? = null
   private var requestCancellation: CoordinatorCancellation? = null
+  private var requestCancellationFallback: (() -> Unit)? = null
   private var isSettingUp = false
   private var setupGeneration = 0
 
@@ -143,12 +147,23 @@ internal class CheckoutCoordinator(
   @MainThread
   fun isActive(checkoutId: String): Boolean = transition { this.checkoutId == checkoutId }
 
+  /** Installs production adapters once the React runtime is available. Test coordinators retain
+   * their constructor seams and cannot be reconfigured. */
+  @MainThread
+  fun configureRuntimeDependencies(dependencies: CheckoutCoordinatorDependencies) {
+    transition {
+      if (configuredDependencies == null) {
+        runtimeDependencies = dependencies
+      }
+    }
+  }
+
   /** Replacement disposes before creation; a factory exception leaves the owner idle. */
   @MainThread
   fun setup(): String =
     transition {
       val dependencies =
-        checkNotNull(configuredDependencies) {
+        checkNotNull(dependencies) {
           "CheckoutCoordinator test setup requires configured dependencies"
         }
       replaceLocked {
@@ -216,7 +231,7 @@ internal class CheckoutCoordinator(
       }
       val createdOperationId = nextId(CoordinatorIdentityKind.OPERATION)
       presenter =
-        configuredDependencies?.presenterFactory?.create()
+        dependencies?.presenterFactory?.create()
           ?: NoopCoordinatorPresenter
       operationId = createdOperationId
       createdOperationId
@@ -227,11 +242,12 @@ internal class CheckoutCoordinator(
     operationId: String,
     kind: CoordinatorRequestKind,
     timeoutMillis: Long,
+    cancellationFallback: () -> Unit = {},
   ): CoordinatorRequest =
     transition {
       val currentCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
       check(this.operationId == operationId) { "Stale operation" }
-      settleRequestLocked()
+      settleRequestLocked(invokeFallback = true)
       val createdRequest =
         CoordinatorRequest(
           checkoutId = currentCheckoutId,
@@ -241,9 +257,10 @@ internal class CheckoutCoordinator(
         )
       request = createdRequest
       requestCancellation =
-        configuredDependencies?.scheduler?.schedule(timeoutMillis) {
+        dependencies?.scheduler?.schedule(timeoutMillis) {
           timeout(createdRequest)
         }
+      requestCancellationFallback = cancellationFallback
       emit(CoordinatorEvent.Request(createdRequest))
       createdRequest
     }
@@ -265,7 +282,7 @@ internal class CheckoutCoordinator(
   fun completeOperation(operationId: String) {
     transition {
       if (this.operationId != operationId) return@transition
-      settleRequestLocked()
+      settleRequestLocked(invokeFallback = true)
       presenter?.dispose()
       presenter = null
       this.operationId = null
@@ -400,36 +417,46 @@ internal class CheckoutCoordinator(
     transition {
       if (request != candidate) return@transition
       emit(CoordinatorEvent.StaleRequest(candidate))
-      settleRequestLocked()
+      settleRequestLocked(invokeFallback = true)
     }
   }
 
   private fun invalidateLocked() {
     setupGeneration += 1
     isSettingUp = false
-    settleRequestLocked()
+    settleRequestLocked(invokeFallback = true)
+    val currentCheckoutId = checkoutId
     presenter?.dispose()
     presenter = null
-    operationId = null
     clearManagersLocked()
     consumers.clear()
     redirectControllers.clear()
 
-    val currentCheckoutId = checkoutId
     checkout?.dispose()
     checkout = null
     checkoutId = null
     checkoutState = null
     currentCheckoutId?.let {
-      configuredDependencies?.hostLauncherAdapter?.releaseCheckoutHost()
+      // The host adapter reads the current operation to detach coordinator-owned presentation.
+      // Keep it available until all native resources have been released.
+      dependencies?.hostLauncherAdapter?.releaseCheckoutHost()
+      operationId = null
       emit(CoordinatorEvent.CleanedUp(it))
+    }
+    if (currentCheckoutId == null) {
+      operationId = null
     }
   }
 
-  private fun settleRequestLocked() {
+  private fun settleRequestLocked(invokeFallback: Boolean = false) {
     requestCancellation?.cancel()
     requestCancellation = null
     request = null
+    val fallback = requestCancellationFallback
+    requestCancellationFallback = null
+    if (invokeFallback) {
+      fallback?.invoke()
+    }
   }
 
   private inline fun <T> transition(block: () -> T): T {
@@ -445,11 +472,10 @@ internal class CheckoutCoordinator(
     ownedManagers.forEach { it.dispose() }
   }
 
-  private fun nextId(kind: CoordinatorIdentityKind): String =
-    configuredDependencies?.identityGenerator?.next(kind) ?: UUID.randomUUID().toString()
+  private fun nextId(kind: CoordinatorIdentityKind): String = dependencies?.identityGenerator?.next(kind) ?: UUID.randomUUID().toString()
 
   private fun emit(event: CoordinatorEvent) {
-    configuredDependencies?.eventSink?.emit(event)
+    dependencies?.eventSink?.emit(event)
   }
 
   private object NoopCoordinatorPresenter : CoordinatorPresenter {

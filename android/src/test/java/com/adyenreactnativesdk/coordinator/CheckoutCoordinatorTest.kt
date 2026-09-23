@@ -6,6 +6,10 @@
 
 package com.adyenreactnativesdk.coordinator
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -46,6 +50,38 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `invalidation during suspended setup disposes the uncommitted candidate`() =
+    runBlocking {
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      val factoryStarted = CompletableDeferred<Unit>()
+      val allowFactoryToFinish = CompletableDeferred<Unit>()
+
+      val setup =
+        async(start = CoroutineStart.UNDISPATCHED) {
+          runCatching {
+            coordinator.setupAsync {
+              factoryStarted.complete(Unit)
+              allowFactoryToFinish.await()
+              fixture.factory.create()
+            }
+          }
+        }
+      factoryStarted.await()
+      coordinator.invalidate()
+      allowFactoryToFinish.complete(Unit)
+
+      assertTrue(setup.await().isFailure)
+      assertNull(coordinator.activeCheckoutId())
+      assertEquals(
+        1,
+        fixture.factory.checkouts
+          .single()
+          .disposeCount,
+      )
+    }
+
+  @Test
   fun `contention and stale requests cannot settle active work`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
@@ -64,6 +100,22 @@ class CheckoutCoordinatorTest {
     assertTrue(coordinator.resolve(request))
     assertFalse(coordinator.resolve(request))
     assertEquals(1, fixture.events.filterIsInstance<CoordinatorEvent.OperationBusy>().size)
+  }
+
+  @Test
+  fun `request broker requires checkout operation request and kind to match`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+    val operationId = coordinator.beginOperation()
+    val request = coordinator.beginRequest(operationId, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+
+    assertFalse(coordinator.resolve(request.copy(checkoutId = "other-checkout")))
+    assertFalse(coordinator.resolve(request.copy(operationId = "other-operation")))
+    assertFalse(coordinator.resolve(request.copy(requestId = "other-request")))
+    assertFalse(coordinator.resolve(request.copy(kind = CoordinatorRequestKind.SESSION_BEFORE_SUBMIT)))
+    assertTrue(coordinator.resolve(request))
+    assertFalse(coordinator.resolve(request))
   }
 
   @Test
@@ -115,6 +167,21 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `replacement makes the old identity stale before host loss`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val oldCheckoutId = coordinator.setup()
+    val replacementId = coordinator.setup()
+
+    assertFalse(coordinator.isActive(oldCheckoutId))
+    assertTrue(coordinator.isActive(replacementId))
+    coordinator.hostDidDisappear()
+
+    assertNull(coordinator.activeCheckoutId())
+    assertEquals(listOf(1, 1), fixture.factory.checkouts.map { it.disposeCount })
+  }
+
+  @Test
   fun `fresh operations receive distinct identities after cleanup`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
@@ -127,6 +194,34 @@ class CheckoutCoordinatorTest {
     assertEquals("operation-2", secondOperation)
   }
 
+  @Test
+  fun `discarded events do not retain timeout cleanup`() {
+    val fixture = Fixture()
+    val coordinator =
+      fixture.coordinator(
+        eventSink =
+          object : CheckoutEventSink {
+            override fun emit(event: CoordinatorEvent) = Unit
+          },
+      )
+    coordinator.setup()
+    val operationId = coordinator.beginOperation()
+    val request = coordinator.beginRequest(operationId, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+
+    fixture.scheduler.fireLast()
+    coordinator.invalidate()
+
+    assertFalse(coordinator.resolve(request))
+    assertEquals(1, fixture.presenter.disposeCount)
+    assertEquals(
+      1,
+      fixture.factory.checkouts
+        .single()
+        .disposeCount,
+    )
+    assertEquals(1, fixture.host.releaseCount)
+  }
+
   private class Fixture {
     val log = mutableListOf<String>()
     val factory = Factory(log)
@@ -136,7 +231,14 @@ class CheckoutCoordinatorTest {
     val host = Host(log)
     private val identities = Identities()
 
-    fun coordinator(): CheckoutCoordinator =
+    fun coordinator(
+      eventSink: CheckoutEventSink =
+        object : CheckoutEventSink {
+          override fun emit(event: CoordinatorEvent) {
+            events += event
+          }
+        },
+    ): CheckoutCoordinator =
       CheckoutCoordinator(
         CheckoutCoordinatorDependencies(
           checkoutFactory = factory,
@@ -144,12 +246,7 @@ class CheckoutCoordinatorTest {
             object : PresenterFactory {
               override fun create(): CoordinatorPresenter = presenter
             },
-          eventSink =
-            object : CheckoutEventSink {
-              override fun emit(event: CoordinatorEvent) {
-                events += event
-              }
-            },
+          eventSink = eventSink,
           identityGenerator = identities,
           scheduler = scheduler,
           hostLauncherAdapter = host,

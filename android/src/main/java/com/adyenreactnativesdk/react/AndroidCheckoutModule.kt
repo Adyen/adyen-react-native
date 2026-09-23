@@ -6,6 +6,8 @@
 
 package com.adyenreactnativesdk.react
 
+import android.os.Handler
+import android.os.Looper
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.action.data.Action
@@ -26,9 +28,21 @@ import com.adyenreactnativesdk.component.base.ComponentManager
 import com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinatorDependencies
+import com.adyenreactnativesdk.coordinator.CheckoutEventSink
+import com.adyenreactnativesdk.coordinator.CheckoutFactory
+import com.adyenreactnativesdk.coordinator.CheckoutHostLauncherAdapter
+import com.adyenreactnativesdk.coordinator.CheckoutIdentityGenerator
+import com.adyenreactnativesdk.coordinator.CheckoutScheduler
 import com.adyenreactnativesdk.coordinator.CheckoutStateOwner
+import com.adyenreactnativesdk.coordinator.CoordinatorCancellation
+import com.adyenreactnativesdk.coordinator.CoordinatorCheckout
+import com.adyenreactnativesdk.coordinator.CoordinatorEvent
+import com.adyenreactnativesdk.coordinator.CoordinatorIdentityKind
+import com.adyenreactnativesdk.coordinator.CoordinatorPresenter
 import com.adyenreactnativesdk.coordinator.CoordinatorRequest
 import com.adyenreactnativesdk.coordinator.CoordinatorRequestKind
+import com.adyenreactnativesdk.coordinator.PresenterFactory
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.LifecycleEventListener
@@ -52,6 +66,16 @@ class AndroidCheckoutModule(
 
   init {
     reactContext.addLifecycleEventListener(this)
+    CheckoutCoordinator.shared.configureRuntimeDependencies(
+      CheckoutCoordinatorDependencies(
+        checkoutFactory = UnsupportedCheckoutFactory,
+        presenterFactory = NoopPresenterFactory,
+        eventSink = NoopCoordinatorEventSink,
+        identityGenerator = UUIDCoordinatorIdentityGenerator,
+        scheduler = MainThreadCheckoutScheduler,
+        hostLauncherAdapter = FragmentCheckoutHostAdapter(reactContext),
+      ),
+    )
   }
 
   override fun setSdkVersion(sdkVersion: String) {
@@ -204,9 +228,8 @@ class AndroidCheckoutModule(
             eventSink = eventSink(checkoutId, operationId),
             onTerminal = {
               CheckoutFragment.hide(activity.supportFragmentManager, tag)
-              CheckoutCoordinator.shared.unregisterManager(operationId)
-              CheckoutCoordinator.shared.completeOperation(operationId)
               pendingResponse = null
+              CheckoutCoordinator.shared.invalidate()
             },
           )
         CheckoutCoordinator.shared.registerManager(operationId, manager)
@@ -224,10 +247,9 @@ class AndroidCheckoutModule(
             controllerProvider = { controller },
             autoSubmit = true,
             onCancelled = {
-              CheckoutCoordinator.shared.unregisterManager(operationId)
-              CheckoutCoordinator.shared.completeOperation(operationId)
               pendingResponse = null
               emitTerminal(checkoutId, EVENT_ERROR)
+              CheckoutCoordinator.shared.invalidate()
             },
           )
           promise.resolve(null)
@@ -453,12 +475,24 @@ class AndroidCheckoutModule(
     payload: JSONObject,
     resume: (JSONObject?) -> Unit,
   ) {
+    var requestId: String? = null
     val request =
       try {
-        CheckoutCoordinator.shared.beginRequest(operationId, kind, REQUEST_TIMEOUT_MILLIS)
+        CheckoutCoordinator.shared.beginRequest(
+          operationId = operationId,
+          kind = kind,
+          timeoutMillis = REQUEST_TIMEOUT_MILLIS,
+          cancellationFallback = {
+            if (pendingResponse?.request?.requestId == requestId) {
+              pendingResponse = null
+            }
+            resume(null)
+          },
+        )
       } catch (_: Exception) {
         return
       }
+    requestId = request.requestId
     pendingResponse = PendingResponse(request, eventKind, resume)
     emitEvent(request.checkoutId, request.operationId, request.requestId, eventKind, payload)
   }
@@ -530,6 +564,56 @@ class AndroidCheckoutModule(
   ) : CheckoutStateOwner {
     override fun dispose() {
       checkoutState.sessionBeforeSubmitBridge?.cancel()
+    }
+  }
+
+  private object UnsupportedCheckoutFactory : CheckoutFactory {
+    override fun create(): CoordinatorCheckout = error("AndroidCheckoutModule supplies setup candidates directly")
+  }
+
+  private object NoopPresenterFactory : PresenterFactory {
+    override fun create(): CoordinatorPresenter = NoopCoordinatorPresenter
+  }
+
+  private object NoopCoordinatorPresenter : CoordinatorPresenter {
+    override fun dispose() = Unit
+  }
+
+  private object NoopCoordinatorEventSink : CheckoutEventSink {
+    override fun emit(event: CoordinatorEvent) = Unit
+  }
+
+  private object UUIDCoordinatorIdentityGenerator : CheckoutIdentityGenerator {
+    override fun next(kind: CoordinatorIdentityKind): String =
+      java.util.UUID
+        .randomUUID()
+        .toString()
+  }
+
+  private object MainThreadCheckoutScheduler : CheckoutScheduler {
+    private val handler = Handler(Looper.getMainLooper())
+
+    override fun schedule(
+      delayMillis: Long,
+      action: () -> Unit,
+    ): CoordinatorCancellation {
+      val runnable = Runnable(action)
+      handler.postDelayed(runnable, delayMillis)
+      return object : CoordinatorCancellation {
+        override fun cancel() {
+          handler.removeCallbacks(runnable)
+        }
+      }
+    }
+  }
+
+  private class FragmentCheckoutHostAdapter(
+    private val reactContext: ReactApplicationContext,
+  ) : CheckoutHostLauncherAdapter {
+    override fun releaseCheckoutHost() {
+      val activity = reactContext.currentActivity as? FragmentActivity ?: return
+      val operationId = CheckoutCoordinator.shared.activeOperationId() ?: return
+      CheckoutFragment.hide(activity.supportFragmentManager, "$FRAGMENT_TAG_PREFIX-$operationId")
     }
   }
 

@@ -55,7 +55,9 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.resolve(request))
 
         XCTAssertEqual(fixture.events.events.compactMap { event -> CoordinatorEvent? in
-            if case .operationBusy = event { return event }
+            if case .operationBusy = event {
+                return event
+            }
             return nil
         }.count, 1)
     }
@@ -69,8 +71,8 @@ final class CheckoutCoordinatorTests: XCTestCase {
 
         fixture.scheduler.fireLast()
         XCTAssertFalse(coordinator.resolve(request))
-        coordinator.invalidate()
-        coordinator.invalidate()
+        await coordinator.invalidate()
+        await coordinator.invalidate()
 
         XCTAssertEqual(fixture.presenter.disposeCount, 1)
         XCTAssertEqual(fixture.factory.checkouts[0].disposeCount, 1)
@@ -105,8 +107,8 @@ final class CheckoutCoordinatorTests: XCTestCase {
             kind: submit.kind
         )))
         XCTAssertTrue(coordinator.resolve(submit))
-        coordinator.invalidate()
-        coordinator.invalidate()
+        await coordinator.invalidate()
+        await coordinator.invalidate()
 
         XCTAssertEqual(cancelled, 1)
         XCTAssertEqual(coordinator.pendingRequestCount, 0)
@@ -125,7 +127,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
             cancellationFallback: { cancellations += 1 }
         )
 
-        coordinator.invalidate()
+        await coordinator.invalidate()
 
         XCTAssertEqual(cancellations, 1)
         XCTAssertEqual(fixture.presenter.disposeCount, 1)
@@ -148,7 +150,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
             try await coordinator.setup()
         }
         await fulfillment(of: [factoryStarted], timeout: 1)
-        coordinator.invalidate()
+        await coordinator.invalidate()
         allowFactoryToFinish.fulfill()
 
         do {
@@ -167,14 +169,40 @@ final class CheckoutCoordinatorTests: XCTestCase {
         let replacementID = try await coordinator.setup()
 
         XCTAssertThrowsError(try coordinator.beginOperation(checkoutID: oldCheckoutID))
-        XCTAssertThrowsError(try coordinator.invalidate(checkoutID: oldCheckoutID))
+        do {
+            try await coordinator.invalidate(checkoutID: oldCheckoutID)
+            XCTFail("Expected stale checkout invalidation to fail")
+        } catch {
+            // Expected.
+        }
         XCTAssertEqual(coordinator.checkoutID, replacementID)
 
-        coordinator.hostDidDisappear()
+        await coordinator.hostDidDisappear()
 
         XCTAssertNil(coordinator.checkoutID)
         XCTAssertEqual(fixture.factory.checkouts.map(\.disposeCount), [1, 1])
         XCTAssertEqual(fixture.host.releaseCount, 2)
+    }
+
+    func test_invalidationWaitsForCoordinatorOwnedHostDismissal() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        _ = try await coordinator.setup()
+        let dismissalStarted = expectation(description: "dismissal started")
+        let allowDismissal = expectation(description: "allow dismissal")
+        fixture.host.onRelease = {
+            dismissalStarted.fulfill()
+            await self.fulfillment(of: [allowDismissal], timeout: 1)
+        }
+
+        let invalidation = Task { @MainActor in
+            await coordinator.invalidate()
+        }
+        await fulfillment(of: [dismissalStarted], timeout: 1)
+        XCTAssertFalse(invalidation.isCancelled)
+        allowDismissal.fulfill()
+        await invalidation.value
+        XCTAssertEqual(fixture.host.releaseCount, 1)
     }
 
     @MainActor
@@ -192,7 +220,9 @@ final class CheckoutCoordinatorTests: XCTestCase {
             host.ledger = ledger
         }
 
-        var log: [String] { ledger.entries }
+        var log: [String] {
+            ledger.entries
+        }
 
         func makeCoordinator(eventSink: CheckoutEventSink? = nil) -> CheckoutCoordinator {
             CheckoutCoordinator(
@@ -336,11 +366,13 @@ final class CheckoutCoordinatorTests: XCTestCase {
     @MainActor
     private final class Host: CheckoutHostAdapter {
         var ledger: Ledger?
+        var onRelease: (@MainActor () async -> Void)?
         private(set) var releaseCount = 0
 
-        func releaseCheckoutHost() {
+        func releaseCheckoutHost() async {
             releaseCount += 1
             ledger?.entries.append("host-release")
+            await onRelease?()
         }
     }
 

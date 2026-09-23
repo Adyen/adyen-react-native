@@ -28,7 +28,9 @@ internal final class ContextModule: BaseModule {
     override func invalidate() {
         super.invalidate()
         ensureMainThread {
-            CheckoutCoordinator.shared.hostDidDisappear()
+            Task { @MainActor in
+                await CheckoutCoordinator.shared.hostDidDisappear()
+            }
         }
     }
 
@@ -295,7 +297,9 @@ internal final class ContextModule: BaseModule {
     /// Clears cached components, suspended closures, and the shared checkout context/presenter stack.
     @MainActor
     private func performCleanup() {
-        CheckoutCoordinator.shared.invalidate()
+        Task { @MainActor in
+            await CheckoutCoordinator.shared.invalidate()
+        }
     }
 
     @MainActor
@@ -429,17 +433,19 @@ internal final class ContextModule: BaseModule {
         dict[Key.sessionData] = sessionData
         sendEvent(withName: EventName.completeSession.rawValue, body: dict)
         ensureMainThread {
-            CheckoutCoordinator.shared.invalidate()
+            Task { @MainActor in
+                await CheckoutCoordinator.shared.invalidate()
+            }
         }
     }
 
     override func sendError(error: any Error) {
         let errorToSend = checkErrorType(error)
-        // Session errors surface on `failSession`; advanced-flow errors on `fail`.
-        let eventName: EventName = CheckoutCoordinator.shared.checkoutState?.isSession == true ? .failSession : .fail
-        sendEvent(withName: eventName.rawValue, body: errorToSend.jsonObject)
         ensureMainThread {
-            CheckoutCoordinator.shared.invalidate()
+            // Session errors surface on `failSession`; advanced-flow errors on `fail`.
+            let eventName: EventName = CheckoutCoordinator.shared.checkoutState?.isSession == true ? .failSession : .fail
+            self.sendEvent(withName: eventName.rawValue, body: errorToSend.jsonObject)
+            Task { @MainActor in await CheckoutCoordinator.shared.invalidate() }
         }
     }
 

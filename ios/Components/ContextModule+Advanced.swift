@@ -67,7 +67,9 @@ extension ContextModule {
     private func sendCompleteEvent(resultCode: CheckoutResultCode) {
         sendEvent(withName: EventName.complete.rawValue, body: [Key.resultCode: resultCode.rawValue])
         ensureMainThread {
-            CheckoutCoordinator.shared.invalidate()
+            Task { @MainActor in
+                await CheckoutCoordinator.shared.invalidate()
+            }
         }
     }
 

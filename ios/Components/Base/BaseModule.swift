@@ -22,25 +22,25 @@ internal class BaseModule: RCTEventEmitter {
     /// ``CheckoutCoordinator`` and production lifecycle paths no longer use these names.
     @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
     internal static var checkoutState: CheckoutState? {
-        get { CheckoutCoordinator.shared.checkoutState }
-        set { CheckoutCoordinator.shared.checkoutState = newValue }
+        get { MainActor.assumeIsolated { CheckoutCoordinator.shared.checkoutState } }
+        set { MainActor.assumeIsolated { CheckoutCoordinator.shared.checkoutState = newValue } }
     }
 
     @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
     internal static var presenterStack: [UIViewController] {
-        get { CheckoutCoordinator.shared.presenterStack }
-        set { CheckoutCoordinator.shared.presenterStack = newValue }
+        get { MainActor.assumeIsolated { CheckoutCoordinator.shared.presenterStack } }
+        set { MainActor.assumeIsolated { CheckoutCoordinator.shared.presenterStack = newValue } }
     }
 
     @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
     internal static var currentPresenter: UIViewController? {
-        CheckoutCoordinator.shared.presenterStack.last
+        MainActor.assumeIsolated { CheckoutCoordinator.shared.presenterStack.last }
     }
 
     @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
     internal static var topPresenterProvider: @MainActor () -> UIViewController? {
-        get { CheckoutCoordinator.shared.topPresenterProvider }
-        set { CheckoutCoordinator.shared.topPresenterProvider = newValue }
+        get { MainActor.assumeIsolated { CheckoutCoordinator.shared.topPresenterProvider } }
+        set { MainActor.assumeIsolated { CheckoutCoordinator.shared.topPresenterProvider = newValue } }
     }
 
     /// Override for testing. When nil, uses self (RCTEventEmitter).
@@ -179,10 +179,12 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     private func cleanUpOnMainThread() {
-        CheckoutCoordinator.shared.checkoutState = nil
-
-        let root = CheckoutCoordinator.shared.presenterStack.first
-        CheckoutCoordinator.shared.presenterStack.removeAll()
+        let root = MainActor.assumeIsolated {
+            CheckoutCoordinator.shared.checkoutState = nil
+            let root = CheckoutCoordinator.shared.presenterStack.first
+            CheckoutCoordinator.shared.presenterStack.removeAll()
+            return root
+        }
 
         guard root?.presentedViewController != nil else { return }
         root?.dismiss(animated: true)

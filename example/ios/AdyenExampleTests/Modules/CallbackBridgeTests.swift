@@ -100,4 +100,31 @@ final class CallbackBridgeTests: XCTestCase {
         XCTAssertEqual(firstResult, "superseded")
         XCTAssertEqual(secondResult, "resolved")
     }
+
+    func test_supersededTokenCannotSettleReplacementContinuation() async throws {
+        let bridge = CallbackBridge<String>()
+        var firstToken: CallbackBridgeToken<String>?
+        var secondToken: CallbackBridgeToken<String>?
+
+        let first = Task {
+            await bridge.suspend(superseding: "superseded") { firstToken = $0 }
+        }
+        while firstToken == nil {
+            await Task.yield()
+        }
+        let second = Task {
+            await bridge.suspend(superseding: "superseded") { secondToken = $0 }
+        }
+        while secondToken == nil {
+            await Task.yield()
+        }
+
+        try bridge.resolve(XCTUnwrap(firstToken), "stale")
+        try bridge.resolve(XCTUnwrap(secondToken), "current")
+
+        let firstResult = await first.value
+        let secondResult = await second.value
+        XCTAssertEqual(firstResult, "superseded")
+        XCTAssertEqual(secondResult, "current")
+    }
 }
