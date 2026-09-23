@@ -49,6 +49,9 @@ describe('generated bridge protocol', () => {
   });
 
   it('models commands as asynchronous TurboModule calls', () => {
+    type SDKVersionIsGenerated = Expect<
+      Equal<ReturnType<CheckoutSpec['setSdkVersion']>, void>
+    >;
     type CheckoutSetupIsAsync = Expect<
       IsPromise<ReturnType<CheckoutSpec['setupSession']>>
     >;
@@ -73,6 +76,7 @@ describe('generated bridge protocol', () => {
     >;
 
     const contracts: [
+      SDKVersionIsGenerated,
       CheckoutSetupIsAsync,
       CheckoutSubmitIsAsync,
       CheckoutInvalidateIsAsync,
@@ -81,9 +85,9 @@ describe('generated bridge protocol', () => {
       ActionHideIsAsync,
       CSEEncryptCardIsAsync,
       CSEValidateSecurityCodeIsAsync,
-    ] = [true, true, true, true, true, true, true, true];
+    ] = [true, true, true, true, true, true, true, true, true];
 
-    expect(contracts).toHaveLength(8);
+    expect(contracts).toHaveLength(9);
   });
 
   it('keeps Fabric registration identity-bound without configuration', () => {

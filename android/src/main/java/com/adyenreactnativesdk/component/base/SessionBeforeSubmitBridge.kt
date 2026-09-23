@@ -20,6 +20,7 @@ import kotlin.coroutines.resume
 
 internal class SessionBeforeSubmitBridge(
   private val messageBus: MessageBus,
+  private val onBeforeSubmit: ((JSONObject) -> Unit)? = null,
 ) {
   private var continuation: CancellableContinuation<BeforeSubmitResult>? = null
 
@@ -28,10 +29,21 @@ internal class SessionBeforeSubmitBridge(
       check(this.continuation == null) { "A session before-submit callback is already pending." }
       this.continuation = continuation
       continuation.invokeOnCancellation { this.continuation = null }
-      messageBus.onBeforeSubmit(data)
+      val payload =
+        JSONObject().apply {
+          putOpt(BILLING_ADDRESS_KEY, data.billingAddress?.let(Address.SERIALIZER::serialize))
+          putOpt(DELIVERY_ADDRESS_KEY, data.deliveryAddress?.let(Address.SERIALIZER::serialize))
+          putOpt(SHOPPER_NAME_KEY, data.shopperName?.let(ShopperName.SERIALIZER::serialize))
+          putOpt(SHOPPER_EMAIL_KEY, data.shopperEmail)
+        }
+      onBeforeSubmit?.invoke(payload) ?: messageBus.onBeforeSubmit(data)
     }
 
   fun provide(result: ReadableMap?) {
+    provideJson(ReactNativeJson.convertMapToJson(result))
+  }
+
+  fun provideJson(result: JSONObject) {
     val continuation = continuation ?: return
     this.continuation = null
     val beforeSubmitResult =
@@ -51,9 +63,8 @@ internal class SessionBeforeSubmitBridge(
     }
   }
 
-  private fun parse(result: ReadableMap?): BeforeSubmitResult {
-    val json = ReactNativeJson.convertMapToJson(result)
-    return when (json.optString(TYPE_KEY)) {
+  private fun parse(json: JSONObject): BeforeSubmitResult =
+    when (json.optString(TYPE_KEY)) {
       ABORT_TYPE -> {
         BeforeSubmitResult.Abort()
       }
@@ -69,7 +80,6 @@ internal class SessionBeforeSubmitBridge(
         throw IllegalArgumentException("Invalid before-submit result type.")
       }
     }
-  }
 
   private fun parseData(data: JSONObject): BeforeSubmitData =
     BeforeSubmitData(

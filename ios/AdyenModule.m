@@ -81,50 +81,6 @@ RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
 
 @end
 
-@interface RCT_EXTERN_MODULE(AdyenCheckout, NSObject)
-
-RCT_EXTERN_METHOD(setup:(NSDictionary *)sessionModelJSON
-                  configuration:(NSDictionary *)configurationJSON
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(setupAdvanced:(NSDictionary *)paymentMethodsDict
-                  configuration:(NSDictionary *)configurationJSON
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(setSdkVersion:(NSString *)sdkVersion)
-
-RCT_EXTERN_METHOD(isAvailable:(nonnull NSString *)type
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(requiresUserInteraction:(nonnull NSString *)type
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(submit:(nonnull NSString *)type)
-
-RCT_EXTERN_METHOD(cleanup)
-
-RCT_EXTERN_METHOD(provideBeforeSubmitResult:(nonnull NSDictionary *)result)
-
-RCT_EXTERN_METHOD(action:(nonnull NSDictionary *)actionJson)
-
-RCT_EXTERN_METHOD(completion:(NSString *)resultCode)
-
-RCT_EXTERN_METHOD(retry:(NSString *)message)
-
-RCT_EXTERN_METHOD(provideCouponCodeUpdate:(nonnull NSDictionary *)update)
-
-RCT_EXTERN_METHOD(provideShippingContactUpdate:(nonnull NSDictionary *)update)
-
-RCT_EXTERN_METHOD(provideShippingMethodUpdate:(nonnull NSDictionary *)update)
-
-RCT_EXTERN_METHOD(provideAuthorizationResult:(nonnull NSDictionary *)result)
-
-@end
-
 @interface RCT_EXTERN_MODULE(AdyenAction, NSObject)
 
 RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success)

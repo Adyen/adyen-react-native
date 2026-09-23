@@ -9,6 +9,7 @@ package com.adyenreactnativesdk.component.base
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.action.data.Action
+import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.common.CheckoutResultCode
 import com.adyen.checkout.core.components.AdditionalDetailsResult
@@ -17,12 +18,27 @@ import com.adyen.checkout.core.components.CheckoutCallbacks
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyen.checkout.core.components.SessionCheckoutCallbacks
+import com.adyen.checkout.core.components.SessionCheckoutResult
 import com.adyen.checkout.core.components.SubmitResult
+import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+
+/** Receives native callback data for the generated checkout control module. */
+internal interface ComponentEventSink {
+  fun onAdvancedSubmit(data: PaymentComponentData<*>)
+
+  fun onAdvancedAdditionalDetails(data: ActionComponentData)
+
+  fun onSessionComplete(result: SessionCheckoutResult)
+
+  fun onComplete(resultCode: String)
+
+  fun onError()
+}
 
 /**
  * Builds and drives a [CheckoutController] for any payment method.
@@ -33,6 +49,7 @@ internal class ComponentManager(
   private val additionalCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val additionalSessionCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val sessionBeforeSubmitBridge: SessionBeforeSubmitBridge? = null,
+  private val eventSink: ComponentEventSink? = null,
   /** Called on terminal state (complete/failure) so a headless caller can dismiss its UI. */
   private val onTerminal: (() -> Unit)? = null,
 ) {
@@ -51,8 +68,12 @@ internal class ComponentManager(
   suspend fun createController(
     context: CheckoutContext,
     paymentMethodType: String,
+  ): CheckoutController? = createController(context, CheckoutTarget.PaymentMethod(paymentMethodType))
+
+  suspend fun createController(
+    context: CheckoutContext,
+    target: CheckoutTarget,
   ): CheckoutController? {
-    val target = CheckoutTarget.PaymentMethod(paymentMethodType)
     val controller =
       when (context) {
         is CheckoutContext.Sessions -> {
@@ -131,21 +152,29 @@ internal class ComponentManager(
       onSubmit = { data ->
         suspendCancellableCoroutine { continuation ->
           submitContinuation = continuation
-          messageBus.onSubmit(data)
+          eventSink?.onAdvancedSubmit(data) ?: messageBus.onSubmit(data)
         }
       },
       onAdditionalDetails = { data ->
         suspendCancellableCoroutine { continuation ->
           additionalDetailsContinuation = continuation
-          messageBus.onAdditionalDetails(data)
+          eventSink?.onAdvancedAdditionalDetails(data) ?: messageBus.onAdditionalDetails(data)
         }
       },
       onFailure = { error ->
-        messageBus.onException(error.toModuleException())
+        if (eventSink == null) {
+          messageBus.onException(error.toModuleException())
+        } else {
+          eventSink.onError()
+        }
         notifyTerminal()
       },
       onComplete = { result ->
-        messageBus.onFinished(result.resultCode.value)
+        if (eventSink == null) {
+          messageBus.onFinished(result.resultCode.value)
+        } else {
+          eventSink.onComplete(result.resultCode.value)
+        }
         notifyTerminal()
       },
       additionalCallbacksBlock = block ?: defaultBlock,
@@ -156,11 +185,19 @@ internal class ComponentManager(
     val block = additionalSessionCallbacks
     return SessionCheckoutCallbacks(
       onComplete = { result ->
-        messageBus.onFinished(result)
+        if (eventSink == null) {
+          messageBus.onFinished(result)
+        } else {
+          eventSink.onSessionComplete(result)
+        }
         notifyTerminal()
       },
       onFailure = { error ->
-        messageBus.onSessionException(error.toModuleException())
+        if (eventSink == null) {
+          messageBus.onSessionException(error.toModuleException())
+        } else {
+          eventSink.onError()
+        }
         notifyTerminal()
       },
       onBeforeSubmit = sessionBeforeSubmitBridge?.let { bridge -> { data -> bridge.onBeforeSubmit(data) } },

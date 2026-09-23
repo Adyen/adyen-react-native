@@ -11,7 +11,6 @@ import Foundation
 import PassKit
 import React
 
-@objc(AdyenCheckout)
 internal final class ContextModule: BaseModule {
 
     /// Module JS subscribes to, so a mounted ``ComponentProxy`` can surface errors on it. Weak: the bridge owns the module.
@@ -117,6 +116,13 @@ internal final class ContextModule: BaseModule {
     @objc
     func setSdkVersion(_ sdkVersion: String) {
         BaseModule.sdkVersion = sdkVersion
+    }
+
+    /// The generated Checkout module uses this private adapter only to bind a committed
+    /// coordinator flow to its opaque bridge descriptor. It never surfaces the identity to JS.
+    @objc
+    func committedCheckoutID() -> String? {
+        CheckoutCoordinator.shared.checkoutID
     }
 
     @objc

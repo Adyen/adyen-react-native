@@ -89,6 +89,7 @@ export type CheckoutResponse = {
  * Checkout, operation, and request identities remain private to the JavaScript facade.
  */
 export interface Spec extends TurboModule {
+  setSdkVersion(sdkVersion: string): void;
   setupSession(
     sessionJson: string,
     configurationJson: string

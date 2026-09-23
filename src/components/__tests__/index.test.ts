@@ -8,11 +8,10 @@ import { describe, expect, jest, test } from '@jest/globals';
 
 const mockSetSdkVersion = jest.fn();
 
-jest.mock('react-native', () => ({
-  NativeModules: {
-    AdyenCheckout: {
-      setSdkVersion: mockSetSdkVersion,
-    },
+jest.mock('../../specs/NativeAdyenCheckout', () => ({
+  __esModule: true,
+  default: {
+    setSdkVersion: mockSetSdkVersion,
   },
 }));
 

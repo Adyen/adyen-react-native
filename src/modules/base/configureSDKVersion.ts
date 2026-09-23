@@ -4,8 +4,8 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import { NativeModules } from 'react-native';
+import NativeCheckout from '../../specs/NativeAdyenCheckout';
 
 export function configureSDKVersion(sdkVersion: string) {
-  NativeModules.AdyenCheckout?.setSdkVersion(sdkVersion);
+  NativeCheckout.setSdkVersion(sdkVersion);
 }
