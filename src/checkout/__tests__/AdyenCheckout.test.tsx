@@ -523,6 +523,43 @@ describe('AdyenCheckout', () => {
     ).rejects.toMatchObject({ code: 'staleCheckout', phase: 'presentation' });
   });
 
+  test('drops stale checkout query, submit, response, and event inputs without touching the current checkout', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-old'));
+    const oldCheckout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-current'));
+    const currentCheckout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+
+    await expect(
+      oldCheckout.isAvailable({ kind: 'paymentMethod', type: 'scheme' })
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'query' });
+    await expect(
+      oldCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'presentation' });
+    await eventHandler({
+      checkoutId: 'checkout-old',
+      operationId: 'operation-old',
+      requestId: 'request-old',
+      kind: 'advancedSubmit',
+      payloadJson: '{}',
+    });
+
+    expect(native.respond).not.toHaveBeenCalled();
+    expect(callbacks.onSubmit).not.toHaveBeenCalled();
+    native.isAvailable.mockResolvedValueOnce(true);
+    await expect(
+      currentCheckout.isAvailable({ kind: 'paymentMethod', type: 'scheme' })
+    ).resolves.toBe(true);
+  });
+
   test('serializes overlapping setup calls before beginning replacement', async () => {
     let resolveFirstSetup:
       ((value: ReturnType<typeof descriptor>) => void) | undefined;

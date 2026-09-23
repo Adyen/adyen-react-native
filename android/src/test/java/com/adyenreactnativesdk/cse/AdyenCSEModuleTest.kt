@@ -14,12 +14,13 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class AdyenCSEModuleTest {
   @Test
-  fun `validation commands settle independently without checkout ownership`() {
+  fun `all five CSE methods settle independently without checkout ownership`() {
     val module = AdyenCSEModule(mock<ReactApplicationContext>())
     val numberPromise = mock<Promise>()
     val expiryPromise = mock<Promise>()
@@ -32,6 +33,7 @@ class AdyenCSEModuleTest {
     verify(numberPromise).resolve(eq(true))
     verify(expiryPromise).resolve(any<Boolean>())
     verify(securityCodePromise).resolve(eq(true))
+    verifyNoMoreInteractions(numberPromise, expiryPromise, securityCodePromise)
   }
 
   @Test
@@ -45,5 +47,6 @@ class AdyenCSEModuleTest {
 
     verify(cardPromise).reject(eq("Encryption failed"), any<Throwable>())
     verify(binPromise).reject(eq("Encryption failed"), any<Throwable>())
+    verifyNoMoreInteractions(cardPromise, binPromise)
   }
 }

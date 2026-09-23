@@ -6,6 +6,12 @@
 
 package com.adyenreactnativesdk.coordinator
 
+import com.adyen.checkout.core.components.CheckoutTarget
+import com.adyenreactnativesdk.cse.ActionOperationToken
+import com.adyenreactnativesdk.cse.ActionOwnerRegistry
+import com.adyenreactnativesdk.cse.AdyenCSEModule
+import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactApplicationContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
@@ -17,6 +23,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -47,6 +56,50 @@ class CheckoutCoordinatorTest {
       assertNull(coordinator.activeCheckoutId())
       assertEquals(listOf("create-1", "dispose-1", "host-release", "create-failed"), fixture.log)
     }
+  }
+
+  @Test
+  fun `session and advanced setup failures keep candidates private and dispose once`() {
+    listOf("session-validation", "session-native", "advanced-validation", "advanced-native").forEach { stage ->
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      fixture.factory.shouldFail = true
+
+      try {
+        coordinator.setup()
+        fail("$stage must reject setup")
+      } catch (_: IllegalStateException) {
+        assertNull("$stage must not publish a checkout", coordinator.activeCheckoutId())
+        assertTrue("$stage must not retain a candidate", fixture.factory.checkouts.isEmpty())
+      }
+    }
+  }
+
+  @Test
+  fun `failed B replacement leaves A stale and C is the only event-producing checkout`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val checkoutA = coordinator.setup()
+    val operationA = coordinator.beginOperation()
+    val requestA = coordinator.beginRequest(operationA, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+    fixture.factory.shouldFail = true
+
+    try {
+      coordinator.setup()
+      fail("Expected B to fail")
+    } catch (_: IllegalStateException) {
+      assertNull(coordinator.activeCheckoutId())
+      assertFalse(coordinator.resolve(requestA))
+    }
+
+    fixture.factory.shouldFail = false
+    val checkoutC = coordinator.setup()
+
+    assertFalse(coordinator.isActive(checkoutA))
+    assertTrue(coordinator.isActive(checkoutC))
+    assertEquals(listOf("checkout-1", "checkout-2"), fixture.events.filterIsInstance<CoordinatorEvent.Activated>().map { it.checkoutId })
+    assertEquals(1, fixture.factory.checkouts[0].disposeCount)
+    assertEquals(0, fixture.factory.checkouts[1].disposeCount)
   }
 
   @Test
@@ -278,6 +331,127 @@ class CheckoutCoordinatorTest {
 
     assertNull(coordinator.activeCheckoutId())
     assertEquals(listOf(1, 1), fixture.factory.checkouts.map { it.disposeCount })
+  }
+
+  @Test
+  fun `stale query submit response and event cannot affect the current checkout`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val checkoutA = coordinator.setup()
+    val operationA = coordinator.beginOperation()
+    val requestA = coordinator.beginRequest(operationA, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+    val checkoutB = coordinator.setup()
+
+    assertFalse("stale query must not see B as active", coordinator.isActive(checkoutA))
+    assertFalse("stale response must not settle B", coordinator.resolve(requestA))
+    val staleEvents = fixture.events.filterIsInstance<CoordinatorEvent.StaleRequest>()
+    assertEquals(requestA, staleEvents.single().request)
+    assertTrue("the current checkout remains B", coordinator.isActive(checkoutB))
+    assertNull("A submit owner was disposed with replacement", coordinator.activeOperationId())
+  }
+
+  @Test
+  fun `same type stored IDs preserve exact native query and submit targets`() {
+    val storedIDs = setOf("stored-first", "stored-second")
+    val first = CheckoutTarget.StoredPaymentMethod("stored-first")
+    val second = CheckoutTarget.StoredPaymentMethod("stored-second")
+    val submitted = mutableListOf<CheckoutTarget>()
+
+    assertTrue(nativeTargetIsAvailable(first, paymentMethodTypes = setOf("scheme"), storedIDs = storedIDs))
+    assertTrue(nativeTargetIsAvailable(second, paymentMethodTypes = setOf("scheme"), storedIDs = storedIDs))
+    submitNativeTarget(first, submitted)
+    submitNativeTarget(second, submitted)
+
+    assertEquals(listOf(first, second), submitted)
+    assertFalse(nativeTargetIsAvailable(CheckoutTarget.StoredPaymentMethod("missing"), setOf("scheme"), storedIDs))
+  }
+
+  @Test
+  fun `late terminal invalidation releases the current resource ledger once`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+    val operation = coordinator.beginOperation()
+    val request = coordinator.beginRequest(operation, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+    coordinator.completeOperation(operation)
+    coordinator.invalidate()
+    coordinator.invalidate()
+
+    assertFalse(coordinator.resolve(request))
+    assertEquals(1, fixture.presenter.disposeCount)
+    assertEquals(
+      1,
+      fixture.factory.checkouts
+        .single()
+        .disposeCount,
+    )
+    assertEquals(1, fixture.host.releaseCount)
+    assertNull(coordinator.activeCheckoutId())
+  }
+
+  @Test
+  fun `representative session and advanced headless targets have coordinator owned identities`() {
+    val targets =
+      listOf(
+        "sessions" to CheckoutTarget.PaymentMethod("scheme"),
+        "advanced" to CheckoutTarget.StoredPaymentMethod("stored-second"),
+      )
+
+    targets.forEach { (_, target) ->
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      coordinator.setup()
+      val operation = coordinator.beginOperation()
+
+      assertTrue(nativeTargetIsAvailable(target, setOf("scheme"), setOf("stored-second")))
+      assertEquals(
+        operation,
+        fixture.presenterFactory.presentations
+          .single()
+          .operationId,
+      )
+      coordinator.completeOperation(operation)
+      assertEquals(1, fixture.presenter.disposeCount)
+    }
+  }
+
+  @Test
+  fun `CSE and standalone Action cleanup do not mutate checkout ownership`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+    val checkoutOperation = coordinator.beginOperation()
+    val actionToken = ActionOperationToken.create()
+    val csePromise = mock<Promise>()
+    val cse = AdyenCSEModule(mock<ReactApplicationContext>())
+
+    assertTrue(ActionOwnerRegistry.acquire(actionToken))
+    cse.validateCardNumber("4111111111111111", true, csePromise)
+    verify(csePromise).resolve(eq(true))
+    coordinator.invalidate()
+
+    assertNull(coordinator.activeCheckoutId())
+    assertFalse(ActionOwnerRegistry.acquire(ActionOperationToken.create()))
+    ActionOwnerRegistry.release(actionToken)
+    assertEquals(checkoutOperation, "operation-1")
+  }
+
+  private fun nativeTargetIsAvailable(
+    target: CheckoutTarget,
+    paymentMethodTypes: Set<String>,
+    storedIDs: Set<String>,
+  ): Boolean =
+    when (target) {
+      is CheckoutTarget.PaymentMethod -> target.type in paymentMethodTypes
+      is CheckoutTarget.StoredPaymentMethod -> target.id in storedIDs
+      else -> false
+    }
+
+  private fun submitNativeTarget(
+    target: CheckoutTarget,
+    submitted: MutableList<CheckoutTarget>,
+  ) {
+    submitted += target
   }
 
   @Test

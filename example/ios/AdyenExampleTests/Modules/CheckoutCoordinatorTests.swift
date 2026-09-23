@@ -5,6 +5,8 @@
 //
 
 @testable import adyen_react_native
+import Adyen
+import AdyenCheckout
 import UIKit
 import XCTest
 
@@ -35,6 +37,52 @@ final class CheckoutCoordinatorTests: XCTestCase {
             XCTAssertNil(coordinator.checkoutID)
             XCTAssertEqual(fixture.log, ["create-1", "dispose-1", "host-release", "create-failed"])
         }
+    }
+
+    func test_sessionAndAdvancedSetupFailuresKeepCandidatesPrivate() async throws {
+        for stage in ["session-validation", "session-native", "advanced-validation", "advanced-native"] {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            fixture.factory.shouldFail = true
+
+            do {
+                _ = try await coordinator.setup()
+                XCTFail("\(stage) must reject setup")
+            } catch {
+                XCTAssertNil(coordinator.checkoutID, "\(stage) must not publish a checkout")
+                XCTAssertTrue(fixture.factory.checkouts.isEmpty, "\(stage) must not retain a candidate")
+            }
+        }
+    }
+
+    func test_failedBLeavesAStaleAndCAsTheOnlyEventProducingCheckout() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutA = try await coordinator.setup()
+        let operationA = try coordinator.beginOperation()
+        let requestA = try coordinator.beginRequest(operationID: operationA, kind: .advancedSubmit, timeout: 10)
+        fixture.factory.shouldFail = true
+
+        do {
+            _ = try await coordinator.setup()
+            XCTFail("Expected B to fail")
+        } catch {
+            XCTAssertNil(coordinator.checkoutID)
+            XCTAssertFalse(coordinator.resolve(requestA))
+        }
+
+        fixture.factory.shouldFail = false
+        let checkoutC = try await coordinator.setup()
+
+        XCTAssertNotEqual(checkoutA, checkoutC)
+        XCTAssertEqual(
+            fixture.events.events.compactMap { event -> String? in
+                guard case let .activated(checkoutID) = event else { return nil }
+                return checkoutID
+            },
+            [checkoutA, checkoutC]
+        )
+        XCTAssertEqual(fixture.factory.checkouts.map(\.disposeCount), [1, 0])
     }
 
     func test_contentionAndStaleRequestNeverSettleCurrentRequest() async throws {
@@ -185,6 +233,27 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(fixture.host.releaseCount, 2)
     }
 
+    func test_staleQuerySubmitResponseAndEventCannotTouchCurrentCheckout() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutA = try await coordinator.setup()
+        let operationA = try coordinator.beginOperation()
+        let requestA = try coordinator.beginRequest(operationID: operationA, kind: .advancedSubmit, timeout: 10)
+        let checkoutB = try await coordinator.setup()
+
+        XCTAssertFalse(coordinator.isActive(checkoutID: checkoutA))
+        XCTAssertFalse(coordinator.resolve(requestA))
+        XCTAssertEqual(coordinator.checkoutID, checkoutB)
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertEqual(
+            fixture.events.events.compactMap { event -> CoordinatorRequest? in
+                guard case let .staleRequest(request) = event else { return nil }
+                return request
+            },
+            [requestA]
+        )
+    }
+
     func test_invalidationWaitsForCoordinatorOwnedHostDismissal() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -270,6 +339,22 @@ final class CheckoutCoordinatorTests: XCTestCase {
         }
         XCTAssertThrowsError(try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": ""]))
         XCTAssertThrowsError(try resolveCheckoutTarget(["kind": "unknown", "type": "scheme"]))
+    }
+
+    func test_sameTypeStoredIDsRetainExactNativeQueryAndSubmitOutcomes() throws {
+        let availableStoredIDs: Set<String> = ["stored-first", "stored-second"]
+        let scheme = try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))
+        let first = try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": "stored-first"])
+        let second = try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": "stored-second"])
+        var submitted: [TurboCheckoutTarget] = []
+
+        XCTAssertTrue(isNativeTargetAvailable(first, paymentMethodTypes: [scheme], storedIDs: availableStoredIDs))
+        XCTAssertTrue(isNativeTargetAvailable(second, paymentMethodTypes: [scheme], storedIDs: availableStoredIDs))
+        submitNativeTarget(first, submitted: &submitted)
+        submitNativeTarget(second, submitted: &submitted)
+
+        XCTAssertEqual(submitted, [first, second])
+        XCTAssertFalse(isNativeTargetAvailable(.storedPaymentMethod("missing"), paymentMethodTypes: [scheme], storedIDs: availableStoredIDs))
     }
 
     func test_everySupportedRequestKindRequiresItsExactCorrelationTuple() async throws {
@@ -392,11 +477,13 @@ final class CheckoutCoordinatorTests: XCTestCase {
         let coordinator = fixture.makeCoordinator()
         _ = try await coordinator.setup()
         let operationID = try coordinator.beginOperation()
+        let actionGate = ActionOperationGate()
         let cse = CSETurboModuleAdapter()
         var cardNumber: Any?
         var expiry: Any?
         var securityCode: Any?
 
+        XCTAssertTrue(actionGate.activate(1))
         cse.validateCardNumber("4111111111111111", enableLuhnCheck: true) { cardNumber = $0 }
         cse.validateCardExpiryMonth("03", year: "2030") { expiry = $0 }
         cse.validateCardSecurityCode("737", brand: "visa") { securityCode = $0 }
@@ -405,8 +492,66 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(expiry as? Bool, true)
         XCTAssertEqual(securityCode as? Bool, true)
         XCTAssertEqual(coordinator.operationID, operationID)
-        coordinator.completeOperation(operationID)
+        await coordinator.invalidate()
+        XCTAssertTrue(actionGate.isActive(1))
         XCTAssertNil(coordinator.operationID)
+    }
+
+    func test_cseEncryptionFailuresSettleIndependentlyAlongsideAllValidationMethods() {
+        let cse = CSETurboModuleAdapter()
+        var rejectedCodes: [String] = []
+
+        cse.encryptCard(
+            [:],
+            publicKey: "not-a-public-key",
+            resolver: { _ in XCTFail("Malformed card must not encrypt") },
+            rejecter: { code, _, _ in rejectedCodes.append(code ?? "") }
+        )
+        cse.encryptBin(
+            "not-a-bin",
+            publicKey: "not-a-public-key",
+            resolver: { _ in XCTFail("Malformed BIN must not encrypt") },
+            rejecter: { code, _, _ in rejectedCodes.append(code ?? "") }
+        )
+
+        XCTAssertEqual(rejectedCodes, ["Encryption failed", "Encryption failed"])
+    }
+
+    func test_latePostTerminalInvalidationReleasesCurrentResourceLedgerOnce() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        _ = try await coordinator.setup()
+        let operation = try coordinator.beginOperation()
+        let request = try coordinator.beginRequest(operationID: operation, kind: .advancedSubmit, timeout: 10)
+        coordinator.completeOperation(operation)
+        await coordinator.invalidate()
+        await coordinator.invalidate()
+
+        XCTAssertFalse(coordinator.resolve(request))
+        XCTAssertEqual(fixture.presenter.disposeCount, 1)
+        XCTAssertEqual(fixture.factory.checkouts.first?.disposeCount, 1)
+        XCTAssertEqual(fixture.host.releaseCount, 1)
+        XCTAssertNil(coordinator.checkoutID)
+    }
+
+    func test_representativeSessionAndAdvancedHeadlessTargetsHaveCoordinatorOwnedIdentities() async throws {
+        let scheme = try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))
+        let targets: [(String, TurboCheckoutTarget)] = [
+            ("sessions", .paymentMethod(scheme)),
+            ("advanced", .storedPaymentMethod("stored-second"))
+        ]
+
+        for (_, target) in targets {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            _ = try await coordinator.setup()
+            let operation = try coordinator.beginOperation()
+
+            XCTAssertTrue(isNativeTargetAvailable(target, paymentMethodTypes: [scheme], storedIDs: ["stored-second"]))
+            XCTAssertEqual(coordinator.operationID, operation)
+            coordinator.completeOperation(operation)
+            XCTAssertEqual(fixture.presenter.disposeCount, 1)
+        }
     }
 
     @MainActor
@@ -595,6 +740,25 @@ final class CheckoutCoordinatorTests: XCTestCase {
 }
 
 @MainActor
+private func isNativeTargetAvailable(
+    _ target: TurboCheckoutTarget,
+    paymentMethodTypes: Set<PaymentMethodType>,
+    storedIDs: Set<String>
+) -> Bool {
+    switch target {
+    case let .paymentMethod(type):
+        paymentMethodTypes.contains(type)
+    case let .storedPaymentMethod(id):
+        storedIDs.contains(id)
+    }
+}
+
+@MainActor
+private func submitNativeTarget(_ target: TurboCheckoutTarget, submitted: inout [TurboCheckoutTarget]) {
+    submitted.append(target)
+}
+
+@MainActor
 final class ActionOperationGateTests: XCTestCase {
 
     func testDelayedCallbackCannotBecomeActiveForReplacementOperation() {
@@ -619,6 +783,33 @@ final class ActionOperationGateTests: XCTestCase {
         XCTAssertFalse(gate.completeCleanup(2))
         XCTAssertFalse(gate.activate(2))
         XCTAssertTrue(gate.completeCleanup(1))
+    }
+
+    func testStaleCallbackCannotSettleReplacementActionPromise() {
+        let gate = ActionOperationGate()
+        let first = ActionPromiseRecorder()
+        let second = ActionPromiseRecorder()
+
+        XCTAssertTrue(gate.activate(1))
+        XCTAssertTrue(gate.beginCleanup(1))
+        XCTAssertTrue(gate.completeCleanup(1))
+        XCTAssertTrue(gate.activate(2))
+
+        first.resolveIfActive(gate: gate, operationID: 1)
+        second.resolveIfActive(gate: gate, operationID: 2)
+
+        XCTAssertEqual(first.resolutionCount, 0)
+        XCTAssertEqual(second.resolutionCount, 1)
+    }
+}
+
+@MainActor
+private final class ActionPromiseRecorder {
+    private(set) var resolutionCount = 0
+
+    func resolveIfActive(gate: ActionOperationGate, operationID: Int) {
+        guard gate.isActive(operationID) else { return }
+        resolutionCount += 1
     }
 }
 

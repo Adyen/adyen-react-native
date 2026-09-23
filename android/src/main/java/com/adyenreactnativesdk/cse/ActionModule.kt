@@ -279,4 +279,7 @@ internal object ActionOwnerRegistry {
       ownerToken = null
     }
   }
+
+  @Synchronized
+  fun owns(token: String): Boolean = ownerToken == token
 }

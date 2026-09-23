@@ -116,6 +116,35 @@ class ActionModuleTest {
     ActionOwnerRegistry.release(first)
   }
 
+  @Test
+  fun `stale callback token cannot settle a replacement action promise`() {
+    val first = ActionPromiseRecorder()
+    val second = ActionPromiseRecorder()
+    val firstToken = ActionOperationToken.create()
+    val secondToken = ActionOperationToken.create()
+
+    assertTrue(ActionOwnerRegistry.acquire(firstToken))
+    ActionOwnerRegistry.release(firstToken)
+    assertTrue(ActionOwnerRegistry.acquire(secondToken))
+
+    first.resolveIfOwner(firstToken)
+    second.resolveIfOwner(secondToken)
+
+    assertEquals(0, first.resolutionCount)
+    assertEquals(1, second.resolutionCount)
+    ActionOwnerRegistry.release(secondToken)
+  }
+
+  private class ActionPromiseRecorder {
+    var resolutionCount = 0
+
+    fun resolveIfOwner(token: String) {
+      if (ActionOwnerRegistry.owns(token)) {
+        resolutionCount += 1
+      }
+    }
+  }
+
   private fun mainThreadContext(): ReactApplicationContext {
     val context = mock<ReactApplicationContext>()
     doAnswer { invocation ->
