@@ -90,6 +90,43 @@ class CheckoutCoordinatorTest {
     assertTrue(fixture.scheduler.cancellations.all { it.cancelled })
   }
 
+  @Test
+  fun `host loss makes the operation request stale and releases the flow once`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+    val operationId = coordinator.beginOperation()
+    val request = coordinator.beginRequest(operationId, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+
+    coordinator.hostDidDisappear()
+    coordinator.hostDidDisappear()
+
+    assertNull(coordinator.activeCheckoutId())
+    assertNull(coordinator.activeOperationId())
+    assertFalse(coordinator.resolve(request))
+    assertEquals(1, fixture.presenter.disposeCount)
+    assertEquals(
+      1,
+      fixture.factory.checkouts
+        .single()
+        .disposeCount,
+    )
+    assertEquals(1, fixture.host.releaseCount)
+  }
+
+  @Test
+  fun `fresh operations receive distinct identities after cleanup`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+    val firstOperation = coordinator.beginOperation()
+    coordinator.completeOperation(firstOperation)
+    val secondOperation = coordinator.beginOperation()
+
+    assertEquals("operation-1", firstOperation)
+    assertEquals("operation-2", secondOperation)
+  }
+
   private class Fixture {
     val log = mutableListOf<String>()
     val factory = Factory(log)

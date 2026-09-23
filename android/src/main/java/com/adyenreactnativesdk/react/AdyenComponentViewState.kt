@@ -17,7 +17,6 @@ import com.adyen.checkout.core.action.data.Action
 import com.adyen.checkout.core.common.CheckoutResultCode
 import com.adyen.checkout.core.components.CheckoutCallbacks
 import com.adyen.checkout.core.components.CheckoutPaymentFlow
-import com.adyenreactnativesdk.component.ComponentModule
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ComponentManager
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
@@ -82,7 +81,7 @@ class AdyenComponentViewState(
         sessionBeforeSubmitBridge = state.sessionBeforeSubmitBridge,
       )
     componentManager = manager
-    ComponentModule.register(viewId, this)
+    CheckoutCoordinator.shared.registerConsumer(viewId, this)
     // Join the routing table so a result from JS can find this view's suspended closure.
     CheckoutCoordinator.shared.registerManager(viewId, manager)
 
@@ -144,7 +143,7 @@ class AdyenComponentViewState(
     CheckoutCoordinator.shared.unregisterManager(dynamicComponentView.id.toString())
     configuration = null
     type = null
-    ComponentModule.unregister(dynamicComponentView.id.toString())
+    CheckoutCoordinator.shared.unregisterConsumer(dynamicComponentView.id.toString())
     componentManager?.dispose()
     componentManager = null
   }

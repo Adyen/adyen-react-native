@@ -42,7 +42,7 @@ class ComponentModule(
   @ReactMethod
   fun unsubscribe(viewId: String) {
     subscribedViews.remove(viewId)
-    unregister(viewId)
+    CheckoutCoordinator.shared.unregisterConsumer(viewId)
   }
 
   @ReactMethod
@@ -59,7 +59,7 @@ class ComponentModule(
       }
 
     val consumer =
-      getConsumer(viewId)
+      CheckoutCoordinator.shared.consumer(viewId)
         ?: return sendError(ModuleException.NoConsumer(viewId))
 
     consumer.onAction(action)
@@ -88,8 +88,8 @@ class ComponentModule(
     resultCode: String,
   ) {
     // Terminal result for this view; global cleanup happens via the TS-level terminal callback.
-    getConsumer(viewId)?.onFinalResult(true, null)
-    unregister(viewId)
+    CheckoutCoordinator.shared.consumer(viewId)?.onFinalResult(true, null)
+    CheckoutCoordinator.shared.unregisterConsumer(viewId)
   }
 
   @ReactMethod
@@ -98,10 +98,10 @@ class ComponentModule(
     message: String?,
   ) {
     // Retriable failure: consumer reports whether it stayed in-flight; view stays registered if so.
-    val retained = getConsumer(viewId)?.onFinalResult(false, message) ?: false
+    val retained = CheckoutCoordinator.shared.consumer(viewId)?.onFinalResult(false, message) ?: false
     if (retained) return
 
-    unregister(viewId)
+    CheckoutCoordinator.shared.unregisterConsumer(viewId)
   }
 
   fun completion(resultCode: String) {
@@ -115,21 +115,5 @@ class ComponentModule(
   companion object {
     private const val COMPONENT_NAME = "AdyenComponent"
     private const val TAG = "ComponentModule"
-
-    /** Registry of viewId (reactTag) → ViewState implementing ComponentContract */
-    fun register(
-      viewId: String,
-      contract: ComponentContract,
-    ) {
-      CheckoutCoordinator.shared.registerConsumer(viewId, contract)
-    }
-
-    fun unregister(viewId: String) {
-      CheckoutCoordinator.shared.unregisterConsumer(viewId)
-    }
-
-    fun getConsumer(viewId: String): ComponentContract? = CheckoutCoordinator.shared.consumer(viewId)
-
-    fun clearConsumers() = CheckoutCoordinator.shared.clearConsumers()
   }
 }

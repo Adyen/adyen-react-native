@@ -41,6 +41,8 @@ internal class ComponentManager(
 
   private var submitContinuation: CancellableContinuation<SubmitResult>? = null
   private var additionalDetailsContinuation: CancellableContinuation<AdditionalDetailsResult>? = null
+  private var disposed = false
+  private var terminalHandled = false
 
   /** Whether this manager is suspended waiting on a submit/additionalDetails result from JS. */
   val isAwaitingResult: Boolean
@@ -108,6 +110,8 @@ internal class ComponentManager(
   }
 
   fun dispose() {
+    if (disposed) return
+    disposed = true
     submitContinuation?.let {
       submitContinuation = null
       it.resume(SubmitResult.Retry(null))
@@ -118,7 +122,7 @@ internal class ComponentManager(
     }
     checkoutController?.let { CheckoutCoordinator.shared.unregisterRedirectController(it) }
     checkoutController = null
-    onTerminal?.invoke()
+    notifyTerminal()
   }
 
   private fun advancedCallbacks(): AdvancedCheckoutCallbacks {
@@ -138,11 +142,11 @@ internal class ComponentManager(
       },
       onFailure = { error ->
         messageBus.onException(error.toModuleException())
-        onTerminal?.invoke()
+        notifyTerminal()
       },
       onComplete = { result ->
         messageBus.onFinished(result.resultCode.value)
-        onTerminal?.invoke()
+        notifyTerminal()
       },
       additionalCallbacksBlock = block ?: defaultBlock,
     )
@@ -153,11 +157,11 @@ internal class ComponentManager(
     return SessionCheckoutCallbacks(
       onComplete = { result ->
         messageBus.onFinished(result)
-        onTerminal?.invoke()
+        notifyTerminal()
       },
       onFailure = { error ->
         messageBus.onSessionException(error.toModuleException())
-        onTerminal?.invoke()
+        notifyTerminal()
       },
       onBeforeSubmit = sessionBeforeSubmitBridge?.let { bridge -> { data -> bridge.onBeforeSubmit(data) } },
       additionalCallbacksBlock = block ?: defaultBlock,
@@ -165,4 +169,10 @@ internal class ComponentManager(
   }
 
   private val defaultBlock: CheckoutCallbacks.() -> Unit = {}
+
+  private fun notifyTerminal() {
+    if (terminalHandled) return
+    terminalHandled = true
+    onTerminal?.invoke()
+  }
 }

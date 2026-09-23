@@ -12,6 +12,7 @@ import com.adyen.checkout.core.components.CheckoutController
 import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentManager
 import com.adyenreactnativesdk.react.ComponentContract
+import java.util.UUID
 
 /**
  * Internal lifecycle seams. They are constructor dependencies for native tests and production
@@ -118,14 +119,11 @@ internal class CheckoutCoordinator(
     val shared = CheckoutCoordinator()
   }
 
-  private val dependencies: CheckoutCoordinatorDependencies
-    get() = checkNotNull(configuredDependencies) { "CheckoutCoordinator dependencies are not configured" }
-
   /** Legacy module paths delegate state and registries here until their commands migrate. */
   var checkoutState: CheckoutState? = null
   private val managers = mutableMapOf<String, ComponentManager>()
   private val consumers = mutableMapOf<String, ComponentContract>()
-  private val redirectControllers = mutableSetOf<CheckoutController>()
+  private val redirectControllers = mutableMapOf<String, CheckoutController>()
 
   private var checkout: CoordinatorCheckout? = null
   private var checkoutId: String? = null
@@ -133,33 +131,93 @@ internal class CheckoutCoordinator(
   private var operationId: String? = null
   private var request: CoordinatorRequest? = null
   private var requestCancellation: CoordinatorCancellation? = null
+  private var isSettingUp = false
+  private var setupGeneration = 0
 
   @MainThread
   fun activeCheckoutId(): String? = transition { checkoutId }
+
+  @MainThread
+  fun activeOperationId(): String? = transition { operationId }
+
+  @MainThread
+  fun isActive(checkoutId: String): Boolean = transition { this.checkoutId == checkoutId }
 
   /** Replacement disposes before creation; a factory exception leaves the owner idle. */
   @MainThread
   fun setup(): String =
     transition {
+      val dependencies =
+        checkNotNull(configuredDependencies) {
+          "CheckoutCoordinator test setup requires configured dependencies"
+        }
+      replaceLocked {
+        dependencies.checkoutFactory.create()
+      }
+    }
+
+  /**
+   * Creates a checkout transactionally for the production bridge. The old flow is terminal before
+   * [create] runs, and a failed candidate leaves the coordinator idle.
+   */
+  @MainThread
+  fun setup(create: () -> CoordinatorCheckout): String =
+    transition {
+      replaceLocked(create)
+    }
+
+  /**
+   * Suspended setup keeps the candidate private while the SDK initializes. A concurrent setup
+   * observes [isSettingUp] and fails rather than replacing or publishing a partial candidate.
+   */
+  @MainThread
+  suspend fun setupAsync(create: suspend () -> CoordinatorCheckout): String {
+    transition {
+      check(!isSettingUp) { "Checkout setup is already active" }
       invalidateLocked()
-      val createdCheckout = dependencies.checkoutFactory.create()
-      val createdCheckoutId = dependencies.identityGenerator.next(CoordinatorIdentityKind.CHECKOUT)
+      isSettingUp = true
+      setupGeneration += 1
+    }
+    val generation = setupGeneration
+    val createdCheckout =
+      try {
+        create()
+      } catch (exception: Exception) {
+        transition {
+          if (setupGeneration == generation) {
+            isSettingUp = false
+          }
+        }
+        throw exception
+      }
+
+    return transition {
+      if (!isSettingUp || setupGeneration != generation) {
+        createdCheckout.dispose()
+        throw IllegalStateException("Checkout setup became stale")
+      }
+      val createdCheckoutId = nextId(CoordinatorIdentityKind.CHECKOUT)
       checkout = createdCheckout
       checkoutId = createdCheckoutId
-      dependencies.eventSink.emit(CoordinatorEvent.Activated(createdCheckoutId))
+      checkoutState = (createdCheckout as? CheckoutStateOwner)?.checkoutState
+      isSettingUp = false
+      emit(CoordinatorEvent.Activated(createdCheckoutId))
       createdCheckoutId
     }
+  }
 
   @MainThread
   fun beginOperation(): String =
     transition {
       check(checkoutId != null) { "No active checkout" }
       check(operationId == null) {
-        dependencies.eventSink.emit(CoordinatorEvent.OperationBusy)
+        emit(CoordinatorEvent.OperationBusy)
         "Operation is already active"
       }
-      val createdOperationId = dependencies.identityGenerator.next(CoordinatorIdentityKind.OPERATION)
-      presenter = dependencies.presenterFactory.create()
+      val createdOperationId = nextId(CoordinatorIdentityKind.OPERATION)
+      presenter =
+        configuredDependencies?.presenterFactory?.create()
+          ?: NoopCoordinatorPresenter
       operationId = createdOperationId
       createdOperationId
     }
@@ -178,15 +236,15 @@ internal class CheckoutCoordinator(
         CoordinatorRequest(
           checkoutId = currentCheckoutId,
           operationId = operationId,
-          requestId = dependencies.identityGenerator.next(CoordinatorIdentityKind.REQUEST),
+          requestId = nextId(CoordinatorIdentityKind.REQUEST),
           kind = kind,
         )
       request = createdRequest
       requestCancellation =
-        dependencies.scheduler.schedule(timeoutMillis) {
+        configuredDependencies?.scheduler?.schedule(timeoutMillis) {
           timeout(createdRequest)
         }
-      dependencies.eventSink.emit(CoordinatorEvent.Request(createdRequest))
+      emit(CoordinatorEvent.Request(createdRequest))
       createdRequest
     }
 
@@ -195,7 +253,7 @@ internal class CheckoutCoordinator(
   fun resolve(candidate: CoordinatorRequest): Boolean =
     transition {
       if (request != candidate) {
-        dependencies.eventSink.emit(CoordinatorEvent.StaleRequest(candidate))
+        emit(CoordinatorEvent.StaleRequest(candidate))
         false
       } else {
         settleRequestLocked()
@@ -219,6 +277,12 @@ internal class CheckoutCoordinator(
     transition { invalidateLocked() }
   }
 
+  /** React context and activity loss share the same native-owned terminal cleanup. */
+  @MainThread
+  fun hostDidDisappear() {
+    transition { invalidateLocked() }
+  }
+
   @MainThread
   fun registerManager(
     id: String,
@@ -226,6 +290,15 @@ internal class CheckoutCoordinator(
   ) {
     transition { managers[id] = manager }
   }
+
+  /** Presenter registrations are identities, never payment-method types. */
+  @MainThread
+  fun registerManager(manager: ComponentManager): String =
+    transition {
+      val id = nextId(CoordinatorIdentityKind.OPERATION)
+      managers[id] = manager
+      id
+    }
 
   @MainThread
   fun unregisterManager(id: String) {
@@ -241,8 +314,7 @@ internal class CheckoutCoordinator(
   @MainThread
   fun clearManagers() {
     transition {
-      managers.values.forEach { it.dispose() }
-      managers.clear()
+      clearManagersLocked()
     }
   }
 
@@ -268,43 +340,90 @@ internal class CheckoutCoordinator(
   }
 
   @MainThread
-  fun registerRedirectController(controller: CheckoutController) {
-    transition { redirectControllers += controller }
+  fun registerRedirectController(
+    controller: CheckoutController,
+    operationId: String? = this.operationId,
+  ) {
+    transition {
+      val owner = operationId ?: return@transition
+      redirectControllers[owner] = controller
+    }
   }
 
   @MainThread
   fun unregisterRedirectController(controller: CheckoutController) {
-    transition { redirectControllers -= controller }
+    transition {
+      redirectControllers.entries.removeAll { it.value === controller }
+    }
   }
 
   @MainThread
   fun handleReturn(intent: android.content.Intent): Boolean =
     transition {
-      if (redirectControllers.isEmpty()) return@transition false
-      redirectControllers.forEach { it.handleReturn(intent) }
+      val owner = operationId ?: return@transition false
+      val controller = redirectControllers[owner] ?: return@transition false
+      controller.handleReturn(intent)
       true
     }
+
+  private fun replaceLocked(create: () -> CoordinatorCheckout): String {
+    check(!isSettingUp) { "Checkout setup is already active" }
+    invalidateLocked()
+    isSettingUp = true
+    setupGeneration += 1
+    val generation = setupGeneration
+    val createdCheckout =
+      try {
+        create()
+      } catch (exception: Exception) {
+        if (setupGeneration == generation) {
+          isSettingUp = false
+        }
+        throw exception
+      }
+
+    if (!isSettingUp || setupGeneration != generation) {
+      createdCheckout.dispose()
+      throw IllegalStateException("Checkout setup became stale")
+    }
+
+    val createdCheckoutId = nextId(CoordinatorIdentityKind.CHECKOUT)
+    checkout = createdCheckout
+    checkoutId = createdCheckoutId
+    checkoutState = (createdCheckout as? CheckoutStateOwner)?.checkoutState
+    isSettingUp = false
+    emit(CoordinatorEvent.Activated(createdCheckoutId))
+    return createdCheckoutId
+  }
 
   private fun timeout(candidate: CoordinatorRequest) {
     transition {
       if (request != candidate) return@transition
-      dependencies.eventSink.emit(CoordinatorEvent.StaleRequest(candidate))
+      emit(CoordinatorEvent.StaleRequest(candidate))
       settleRequestLocked()
     }
   }
 
   private fun invalidateLocked() {
+    setupGeneration += 1
+    isSettingUp = false
     settleRequestLocked()
     presenter?.dispose()
     presenter = null
     operationId = null
+    clearManagersLocked()
+    consumers.clear()
+    redirectControllers.clear()
 
-    val currentCheckoutId = checkoutId ?: return
+    val currentCheckoutId = checkoutId
     checkout?.dispose()
     checkout = null
     checkoutId = null
-    dependencies.hostLauncherAdapter.releaseCheckoutHost()
-    dependencies.eventSink.emit(CoordinatorEvent.CleanedUp(currentCheckoutId))
+    checkoutState = null
+    currentCheckoutId?.let {
+      configuredDependencies?.hostLauncherAdapter?.releaseCheckoutHost()
+      emit(CoordinatorEvent.CleanedUp(it))
+    }
   }
 
   private fun settleRequestLocked() {
@@ -319,4 +438,26 @@ internal class CheckoutCoordinator(
     }
     return block()
   }
+
+  private fun clearManagersLocked() {
+    val ownedManagers = managers.values.toList()
+    managers.clear()
+    ownedManagers.forEach { it.dispose() }
+  }
+
+  private fun nextId(kind: CoordinatorIdentityKind): String =
+    configuredDependencies?.identityGenerator?.next(kind) ?: UUID.randomUUID().toString()
+
+  private fun emit(event: CoordinatorEvent) {
+    configuredDependencies?.eventSink?.emit(event)
+  }
+
+  private object NoopCoordinatorPresenter : CoordinatorPresenter {
+    override fun dispose() = Unit
+  }
+}
+
+/** Production checkout candidates expose coordinator-owned legacy state only after commit. */
+internal interface CheckoutStateOwner : CoordinatorCheckout {
+  val checkoutState: CheckoutState
 }

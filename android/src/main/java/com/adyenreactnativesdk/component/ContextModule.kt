@@ -11,12 +11,10 @@ import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.components.Checkout
 import com.adyen.checkout.core.components.CheckoutConfiguration
-import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyen.checkout.core.components.paymentmethod.PaymentMethodTypes
 import com.adyen.checkout.core.sessions.SessionResponse
 import com.adyen.checkout.core.sessions.internal.data.model.SessionSetupResponse
-import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.BaseActionModule
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.CheckoutFragment
@@ -27,10 +25,12 @@ import com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge
 import com.adyenreactnativesdk.component.googlepay.GooglePayAvailability
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
+import com.adyenreactnativesdk.coordinator.CheckoutStateOwner
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.adyenreactnativesdk.util.messaging.sessionEvents
+import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -40,9 +40,29 @@ import kotlinx.coroutines.launch
 class ContextModule(
   reactContext: ReactApplicationContext?,
   messageBus: MessageBus,
-) : BaseActionModule(reactContext, messageBus) {
-  /** The manager awaiting a JS result, if any; only one payment can be mid-flight. */
-  private fun awaitingManager(): ComponentManager? = CheckoutCoordinator.shared.allManagers().singleOrNull { it.isAwaitingResult }
+) : BaseActionModule(reactContext, messageBus),
+  LifecycleEventListener {
+  init {
+    reactContext?.addLifecycleEventListener(this)
+  }
+
+  /** Legacy bridge responses can reach only the current operation owner, never map-order state. */
+  private fun awaitingManager(): ComponentManager? =
+    CheckoutCoordinator.shared.activeOperationId()?.let(CheckoutCoordinator.shared::manager)
+
+  override fun onHostResume() = Unit
+
+  override fun onHostPause() = Unit
+
+  override fun onHostDestroy() {
+    CheckoutCoordinator.shared.hostDidDisappear()
+  }
+
+  override fun invalidate() {
+    reactApplicationContext.removeLifecycleEventListener(this)
+    CheckoutCoordinator.shared.hostDidDisappear()
+    super.invalidate()
+  }
 
   override fun supportedEvents(): List<String> = EventName.sessionEvents()
 
@@ -104,10 +124,7 @@ class ContextModule(
   /** Called from JS terminal callbacks (onComplete / onError) via performAutoCleanup(). */
   @ReactMethod
   override fun cleanup() {
-    BaseModule.checkoutState?.sessionBeforeSubmitBridge?.cancel()
-    CheckoutCoordinator.shared.clearManagers()
-    CheckoutCoordinator.shared.clearConsumers()
-    super.cleanup()
+    CheckoutCoordinator.shared.invalidate()
   }
 
   @ReactMethod
@@ -170,12 +187,20 @@ class ContextModule(
 
     appCompatActivity.lifecycleScope.launch {
       try {
-        val controller = resolveController(context, type)
+        val manager =
+          ComponentManager(
+            activity = appCompatActivity,
+            messageBus = messageBus,
+            sessionBeforeSubmitBridge = BaseModule.checkoutState?.sessionBeforeSubmitBridge,
+          )
+        val controller = manager.createController(context, type)
         if (controller == null) {
+          manager.dispose()
           promise.reject(ModuleException.NoPaymentMethod(type))
           return@launch
         }
         promise.resolve(controller.requiresUserInteraction())
+        manager.dispose()
       } catch (e: Exception) {
         promise.reject(e)
       }
@@ -195,45 +220,53 @@ class ContextModule(
     }
     val context = state.checkoutContext
     appCompatActivity.lifecycleScope.launch {
+      var operationId: String? = null
       try {
-        val controller = resolveController(context, type) ?: return@launch
+        operationId = CheckoutCoordinator.shared.beginOperation()
+        val currentOperationId = checkNotNull(operationId)
+        val fragmentTag = headlessFragmentTag(currentOperationId)
+        val manager =
+          ComponentManager(
+            activity = appCompatActivity,
+            messageBus = messageBus,
+            sessionBeforeSubmitBridge = state.sessionBeforeSubmitBridge,
+            onTerminal = {
+              CheckoutFragment.hide(appCompatActivity.supportFragmentManager, fragmentTag)
+              CheckoutCoordinator.shared.unregisterManager(currentOperationId)
+              CheckoutCoordinator.shared.completeOperation(currentOperationId)
+            },
+          )
+        CheckoutCoordinator.shared.registerManager(currentOperationId, manager)
+        val controller =
+          manager.createController(context, type)
+            ?: run {
+              CheckoutCoordinator.shared.unregisterManager(currentOperationId)
+              CheckoutCoordinator.shared.completeOperation(currentOperationId)
+              return@launch
+            }
         CheckoutFragment.show(
           fragmentManager = appCompatActivity.supportFragmentManager,
-          tag = headlessFragmentTag(type),
+          tag = fragmentTag,
           controllerProvider = { controller },
           autoSubmit = true,
           // Closing the fragment is treated as a shopper cancellation of the payment.
           onCancelled = {
             sendError(ModuleException.Canceled())
-            CheckoutCoordinator.shared.unregisterManager(headlessManagerId(type))
+            CheckoutCoordinator.shared.unregisterManager(currentOperationId)
+            CheckoutCoordinator.shared.completeOperation(currentOperationId)
           },
         )
       } catch (e: Exception) {
+        operationId?.let {
+          CheckoutCoordinator.shared.unregisterManager(it)
+          CheckoutCoordinator.shared.completeOperation(it)
+        }
         sendError(e)
       }
     }
   }
 
-  private fun headlessFragmentTag(type: String) = "HeadlessSubmit-$type"
-
-  private fun headlessManagerId(type: String) = "headless-$type"
-
-  /** Returns (building and caching if needed) the controller for [type] within [context]. */
-  private suspend fun resolveController(
-    context: CheckoutContext,
-    type: String,
-  ): CheckoutController? {
-    val managerId = headlessManagerId(type)
-    val manager =
-      CheckoutCoordinator.shared.manager(managerId)
-        ?: ComponentManager(
-          activity = appCompatActivity,
-          messageBus = messageBus,
-          sessionBeforeSubmitBridge = BaseModule.checkoutState?.sessionBeforeSubmitBridge,
-          onTerminal = { CheckoutFragment.hide(appCompatActivity.supportFragmentManager, headlessFragmentTag(type)) },
-        ).also { CheckoutCoordinator.shared.registerManager(managerId, it) }
-    return manager.checkoutController ?: manager.createController(context, type)
-  }
+  private fun headlessFragmentTag(operationId: String) = "HeadlessSubmit-$operationId"
 
   private fun hasPaymentMethod(
     context: CheckoutContext,
@@ -265,10 +298,6 @@ class ContextModule(
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
-    // Re-setup: clear stale controllers without tearing down the native checkout context.
-    // The native side replaces its own state when the new setup completes.
-    BaseModule.checkoutState?.sessionBeforeSubmitBridge?.cancel()
-    CheckoutCoordinator.shared.clearManagers()
     val sessionResponse: SessionResponse
     val configuration: CheckoutConfiguration
     try {
@@ -279,25 +308,30 @@ class ContextModule(
       return
     }
 
-    val sessionsContext =
-      when (val result = Checkout.setup(sessionResponse, configuration)) {
-        is Checkout.Result.Success -> {
-          result.checkoutContext
-        }
+    try {
+      CheckoutCoordinator.shared.setupAsync {
+        when (val result = Checkout.setup(sessionResponse, configuration)) {
+          is Checkout.Result.Success -> {
+            val state =
+              CheckoutState(
+                checkoutContext = result.checkoutContext,
+                sessionBeforeSubmitBridge = SessionBeforeSubmitBridge(messageBus),
+              )
+            CheckoutFlow(state)
+          }
 
-        is Checkout.Result.Error -> {
-          promise.reject(ModuleException.SessionError(result.error.cause ?: RuntimeException(result.error.message)))
-          return
+          is Checkout.Result.Error -> {
+            throw ModuleException.SessionError(result.error.cause ?: RuntimeException(result.error.message))
+          }
         }
       }
-
+    } catch (e: Exception) {
+      promise.reject(e)
+      return
+    }
+    val sessionsContext = checkNotNull(BaseModule.checkoutState).checkoutContext as CheckoutContext.Sessions
     val jsonObject = SessionSetupResponse.SERIALIZER.serialize(sessionsContext.checkoutSession.sessionSetupResponse)
     val sessionSetupResponseMap = ReactNativeJson.convertJsonToMap(jsonObject)
-    BaseModule.checkoutState =
-      CheckoutState(
-        checkoutContext = sessionsContext,
-        sessionBeforeSubmitBridge = SessionBeforeSubmitBridge(messageBus),
-      )
     promise.resolve(sessionSetupResponseMap)
   }
 
@@ -317,9 +351,6 @@ class ContextModule(
     configurationJSON: ReadableMap,
     promise: Promise,
   ) {
-    // Re-setup: clear stale controllers without tearing down the native checkout context.
-    // The native side replaces its own state when the new setup completes.
-    CheckoutCoordinator.shared.clearManagers()
     val paymentMethods: PaymentMethods
     val configuration: CheckoutConfiguration
     try {
@@ -330,18 +361,16 @@ class ContextModule(
       return
     }
 
-    when (val result = Checkout.setup(paymentMethods, configuration)) {
-      is Checkout.Result.Success -> {
-        BaseModule.checkoutState =
-          CheckoutState(
-            checkoutContext = result.checkoutContext,
-          )
-        promise.resolve(null)
+    try {
+      CheckoutCoordinator.shared.setupAsync {
+        when (val result = Checkout.setup(paymentMethods, configuration)) {
+          is Checkout.Result.Success -> CheckoutFlow(CheckoutState(checkoutContext = result.checkoutContext))
+          is Checkout.Result.Error -> throw ModuleException.Unknown(result.error.message)
+        }
       }
-
-      is Checkout.Result.Error -> {
-        promise.reject(ModuleException.Unknown(result.error.message))
-      }
+      promise.resolve(null)
+    } catch (e: Exception) {
+      promise.reject(e)
     }
   }
 
@@ -361,5 +390,18 @@ class ContextModule(
     private val GOOGLE_PAY_KEYS =
       setOf(PaymentMethodTypes.GOOGLE_PAY_LEGACY, PaymentMethodTypes.GOOGLE_PAY)
     private val APPLE_PAY_KEYS = setOf("applepay")
+  }
+}
+
+/** A committed coordinator flow owns the legacy context reference and cancels pending callbacks. */
+private class CheckoutFlow(
+  override val checkoutState: CheckoutState,
+) : CheckoutStateOwner {
+  private var disposed = false
+
+  override fun dispose() {
+    if (disposed) return
+    disposed = true
+    checkoutState.sessionBeforeSubmitBridge?.cancel()
   }
 }
