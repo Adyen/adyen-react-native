@@ -631,8 +631,6 @@ export interface PaymentMethodsResponse {
 
 // @public
 export interface PaymentResult {
-    // (undocumented)
-    [key: string]: unknown;
     action?: PaymentAction;
     refusalReason?: string;
     resultCode?: ResultCode;

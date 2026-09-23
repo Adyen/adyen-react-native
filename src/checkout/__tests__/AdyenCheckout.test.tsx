@@ -332,6 +332,133 @@ describe('AdyenCheckout', () => {
     });
   });
 
+  test('normalizes session terminal payloads before merchant delivery', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-session-terminal', 'sessions')
+    );
+    await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      sessionCallbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-session-terminal',
+      kind: 'completion',
+      payloadJson:
+        '{"sessionId":"session-id","resultCode":"Authorised","sessionData":"session-data","fabricated":"not-portable"}',
+    });
+
+    expect(sessionCallbacks.onComplete).toHaveBeenCalledWith({
+      sessionId: 'session-id',
+      resultCode: 'Authorised',
+      sessionData: 'session-data',
+    });
+  });
+
+  test('normalizes advanced terminal payloads before merchant delivery', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-advanced-terminal')
+    );
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-advanced-terminal',
+      kind: 'completion',
+      payloadJson:
+        '{"resultCode":"Authorised","refusalReason":"ignored","action":{"type":"threeDS2","paymentMethodType":"scheme","fabricated":"not-portable"},"fabricated":"not-portable"}',
+    });
+
+    expect(callbacks.onComplete).toHaveBeenCalledWith({
+      resultCode: 'Authorised',
+      refusalReason: 'ignored',
+      action: {
+        type: 'threeDS2',
+        paymentMethodType: 'scheme',
+      },
+    });
+  });
+
+  test.each([
+    { type: 'action' },
+    { type: 'action', action: { type: 'threeDS2' } },
+    { type: 'action', action: { paymentMethodType: 'scheme' } },
+    { type: 'completed' },
+    { type: 'completed', resultCode: 1 },
+    { type: 'retry', message: 1 },
+    { type: 'unknown' },
+  ])('rejects malformed advanced submit result %j', async (result) => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-invalid-submit')
+    );
+    callbacks.onSubmit.mockResolvedValueOnce(result);
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-invalid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: '{}',
+    });
+
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-invalid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test.each([
+    {
+      type: 'action',
+      action: { type: 'threeDS2', paymentMethodType: 'scheme' },
+    },
+    { type: 'completed', resultCode: 'Authorised' },
+    { type: 'retry' },
+    { type: 'retry', message: 'Try again' },
+  ])('forwards valid advanced submit result %j', async (result) => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-valid-submit')
+    );
+    callbacks.onSubmit.mockResolvedValueOnce(result);
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-valid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: '{}',
+    });
+
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-valid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: JSON.stringify(result),
+    });
+  });
+
   test('stales the old handle before replacement and leaves it stale after a failed replacement', async () => {
     native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-two'));
     const oldCheckout = await AdyenCheckout.setupAdvanced(

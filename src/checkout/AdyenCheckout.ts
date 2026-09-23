@@ -15,10 +15,13 @@ import {
   type BeforeSubmitData,
   type Configuration,
   type PaymentDetailsData,
+  type PaymentAction,
   type PaymentMethodData,
   type PaymentMethodsResponse,
+  type PaymentResult,
   type SessionCallbacks,
   type SessionConfiguration,
+  type SessionsResult,
 } from '../core';
 import { checkConfiguration } from './utils/checkConfiguration';
 import { checkPaymentMethodsResponse } from './utils/checkPaymentMethodsResponse';
@@ -95,12 +98,128 @@ async function settleRequest(
 }
 
 function isSubmitResult(value: unknown): boolean {
-  if (!value || typeof value !== 'object' || !('type' in value)) {
+  if (!isRecord(value) || typeof value.type !== 'string') {
     return false;
   }
-  return ['action', 'completed', 'retry'].includes(
-    (value as { type?: string }).type ?? ''
+  switch (value.type) {
+    case 'action':
+      return isPaymentAction(value.action);
+    case 'completed':
+      return typeof value.resultCode === 'string';
+    case 'retry':
+      return value.message === undefined || typeof value.message === 'string';
+    default:
+      return false;
+  }
+}
+
+function isPaymentAction(value: unknown): value is PaymentAction {
+  return (
+    isRecord(value) &&
+    typeof value.type === 'string' &&
+    typeof value.paymentMethodType === 'string'
   );
+}
+
+function normalizePaymentAction(value: unknown): PaymentAction | undefined {
+  if (!isPaymentAction(value)) {
+    return undefined;
+  }
+
+  return {
+    type: value.type,
+    paymentMethodType: value.paymentMethodType,
+    ...(typeof value.subtype === 'string' ? { subtype: value.subtype } : {}),
+    ...(typeof value.paymentData === 'string'
+      ? { paymentData: value.paymentData }
+      : {}),
+    ...(typeof value.method === 'string' ? { method: value.method } : {}),
+    ...(typeof value.url === 'string' ? { url: value.url } : {}),
+    ...(typeof value.alternativeReference === 'string'
+      ? { alternativeReference: value.alternativeReference }
+      : {}),
+    ...(typeof value.downloadUrl === 'string'
+      ? { downloadUrl: value.downloadUrl }
+      : {}),
+    ...(typeof value.entity === 'string' ? { entity: value.entity } : {}),
+    ...(typeof value.expiresAt === 'string'
+      ? { expiresAt: value.expiresAt }
+      : {}),
+    ...(typeof value.instructionsUrl === 'string'
+      ? { instructionsUrl: value.instructionsUrl }
+      : {}),
+    ...(typeof value.issuer === 'string' ? { issuer: value.issuer } : {}),
+    ...(typeof value.maskedTelephoneNumber === 'string'
+      ? { maskedTelephoneNumber: value.maskedTelephoneNumber }
+      : {}),
+    ...(typeof value.merchantName === 'string'
+      ? { merchantName: value.merchantName }
+      : {}),
+    ...(typeof value.merchantReference === 'string'
+      ? { merchantReference: value.merchantReference }
+      : {}),
+    ...(typeof value.reference === 'string'
+      ? { reference: value.reference }
+      : {}),
+    ...(typeof value.shopperEmail === 'string'
+      ? { shopperEmail: value.shopperEmail }
+      : {}),
+    ...(typeof value.shopperName === 'string'
+      ? { shopperName: value.shopperName }
+      : {}),
+    ...(typeof value.qrCodeData === 'string'
+      ? { qrCodeData: value.qrCodeData }
+      : {}),
+    ...(typeof value.token === 'string' ? { token: value.token } : {}),
+    ...(typeof value.authorisationToken === 'string'
+      ? { authorisationToken: value.authorisationToken }
+      : {}),
+    ...(isRecord(value.sdkData) ? { sdkData: value.sdkData } : {}),
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeSessionResult(payloadJson?: string): SessionsResult {
+  const payload = parsePayload<unknown>(payloadJson);
+  if (
+    !isRecord(payload) ||
+    typeof payload.sessionId !== 'string' ||
+    typeof payload.resultCode !== 'string'
+  ) {
+    throw new Error('Invalid session terminal payload');
+  }
+
+  return {
+    sessionId: payload.sessionId,
+    resultCode: payload.resultCode as SessionsResult['resultCode'],
+    ...(typeof payload.sessionResult === 'string'
+      ? { sessionResult: payload.sessionResult }
+      : {}),
+    ...(typeof payload.sessionData === 'string'
+      ? { sessionData: payload.sessionData }
+      : {}),
+  };
+}
+
+function normalizePaymentResult(payloadJson?: string): PaymentResult {
+  const payload = parsePayload<unknown>(payloadJson);
+  if (!isRecord(payload)) {
+    throw new Error('Invalid advanced terminal payload');
+  }
+  const action = normalizePaymentAction(payload.action);
+
+  return {
+    ...(typeof payload.resultCode === 'string'
+      ? { resultCode: payload.resultCode as PaymentResult['resultCode'] }
+      : {}),
+    ...(action ? { action } : {}),
+    ...(typeof payload.refusalReason === 'string'
+      ? { refusalReason: payload.refusalReason }
+      : {}),
+  };
 }
 
 function isBeforeSubmitResult(value: unknown): boolean {
@@ -277,9 +396,13 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
     case 'completion':
       try {
         if (checkout.flow === 'sessions') {
-          callbacks.session?.onComplete(parsePayload(event.payloadJson));
+          callbacks.session?.onComplete(
+            normalizeSessionResult(event.payloadJson)
+          );
         } else {
-          callbacks.advanced?.onComplete(parsePayload(event.payloadJson));
+          callbacks.advanced?.onComplete(
+            normalizePaymentResult(event.payloadJson)
+          );
         }
       } finally {
         checkout.markStale();

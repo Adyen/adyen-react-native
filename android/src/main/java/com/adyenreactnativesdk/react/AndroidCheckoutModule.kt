@@ -312,6 +312,13 @@ class AndroidCheckoutModule(
           reject(promise, ERROR_INVALID_RESPONSE)
           return@onMain
         }
+      if (
+        pending.eventKind == EVENT_ADVANCED_SUBMIT &&
+        (payload == null || !AdvancedSubmitResponseValidator.isValid(payload))
+      ) {
+        reject(promise, ERROR_INVALID_RESPONSE)
+        return@onMain
+      }
       if (!CheckoutCoordinator.shared.resolve(pending.request)) {
         reject(promise, ERROR_STALE_RESPONSE)
         return@onMain

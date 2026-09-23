@@ -230,7 +230,6 @@ export interface PaymentResult {
   action?: PaymentAction;
   /** The reason a payment was refused, optionally surfaced to the shopper before a retry. */
   refusalReason?: string;
-  [key: string]: unknown;
 }
 
 /**
