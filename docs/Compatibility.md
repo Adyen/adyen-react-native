@@ -18,9 +18,9 @@ Declared in `package.json` `peerDependencies`:
 
 | Dependency     | Requirement | Notes                                                                                                            |
 | -------------- | ----------- | ---------------------------------------------------------------------------------------------------------------- |
-| `react-native` | `>=0.76.0`  | Required.                                                                                                        |
+| `react-native` | `>=0.82`    | Required. The runtime modules are TurboModule-only; legacy bridge registration is not supported.                 |
 | `react`        | `*`         | Any version compatible with your React Native.                                                                   |
-| `expo`         | `>=52`      | Optional (`peerDependenciesMeta.expo.optional = true`); required only if you use the bundled Expo config plugin. |
+| `expo`         | `>=56`      | Optional (`peerDependenciesMeta.expo.optional = true`); required only if you use the bundled Expo config plugin. |
 
 ## iOS
 

@@ -38,6 +38,7 @@
     "LICENSE",
     "!ios/build",
     "!android/build",
+    "!android/**/build",
     "!android/gradle",
     "!android/gradlew",
     "!android/gradlew.bat",
@@ -59,7 +60,8 @@
     "prepare": "bob build && node scripts/generate-package-manifest.js",
     "start": "rm yarn.lock && yarn && yarn prepare && husky && bash ./scripts/credentials.sh",
     "api-extractor": "api-extractor run",
-    "api-extractor:update": "api-extractor run --local"
+    "api-extractor:update": "api-extractor run --local",
+    "check:compatibility": "node scripts/check-compatibility-baseline.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
@@ -91,9 +93,9 @@
     "webdriverio": "^9.31.1"
   },
   "peerDependencies": {
-    "expo": ">=52",
+    "expo": ">=56",
     "react": "*",
-    "react-native": ">=0.76.0"
+    "react-native": ">=0.82"
   },
   "peerDependenciesMeta": {
     "expo": {

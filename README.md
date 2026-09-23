@@ -22,7 +22,7 @@
 > - Stored payment method removal is not yet supported
 >
 > **Platform requirements:**
-> - React Native 0.85+
+> - React Native 0.82+ (TurboModule-only runtime modules)
 > - iOS 16.0+
 > - Adyen iOS SDK 6.0.0-alpha.1
 > - Adyen Android SDK 6.0.0-alpha.1

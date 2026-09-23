@@ -62,9 +62,9 @@ __metadata:
     typescript: "npm:^6.0.3"
     webdriverio: "npm:^9.31.1"
   peerDependencies:
-    expo: ">=52"
+    expo: ">=56"
     react: "*"
-    react-native: ">=0.76.0"
+    react-native: ">=0.82"
   peerDependenciesMeta:
     expo:
       optional: true

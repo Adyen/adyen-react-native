@@ -49,8 +49,9 @@ Confirm your app meets the consumer-owned requirements below. Detailed version r
 
 **Consumer-owned (you change these):**
 
-- **React Native `>=0.76.0`** — the peer requirement declared in `package.json`.
-- **Expo `>=52`** (optional) — only if you use the Expo config plugin (`peerDependencies.expo`).
+- **React Native `>=0.82`** — the peer requirement declared in `package.json`. Runtime modules
+  are TurboModule-only; legacy bridge registration is not supported.
+- **Expo `>=56`** (optional) — only if you use the Expo config plugin (`peerDependencies.expo`).
 - **iOS deployment target `16.0`** — required by the vendored Adyen iOS frameworks
   (`adyen-react-native.podspec` declares `s.platform = :ios, "16.0"`).
 - **Android root-project Kotlin compatible with `2.3.21`** — the version this library builds against

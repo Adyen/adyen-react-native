@@ -60,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '0.76.8'
+          - version: '0.82.4'
             node-version: '20'
           - version: '0.85.3'
             node-version: '22'
@@ -80,7 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['52', '53']
+        version: ['56', '57']
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'expo'

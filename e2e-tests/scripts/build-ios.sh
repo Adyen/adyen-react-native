@@ -18,8 +18,8 @@ else
 fi
 
 echo "::group::Patch fmt for Xcode 26 [$(date '+%H:%M:%S')]"
-# Xcode 26's Apple Clang breaks consteval in fmt 11.0.2 (RN 0.80.2 / Expo SDK 52
-# fixtures). base.h ignores a pre-defined FMT_USE_CONSTEVAL, so patch the header.
+# Xcode 26's Apple Clang breaks consteval in affected fmt headers. base.h ignores a
+# pre-defined FMT_USE_CONSTEVAL, so patch the header.
 FMT_BASE="ios/Pods/fmt/include/fmt/base.h"
 if [ -f "$FMT_BASE" ] && ! grep -q "Xcode 26 workaround" "$FMT_BASE"; then
   chmod 0644 "$FMT_BASE"
