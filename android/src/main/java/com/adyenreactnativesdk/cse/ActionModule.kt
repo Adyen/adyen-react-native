@@ -90,6 +90,11 @@ class ActionModule(
                 coroutineScope = activity.lifecycleScope,
               )
             operation.controller = controller
+            ActionRedirectRouter.register(operation.id) { returnIntent ->
+              if (isActive(operation)) {
+                controller.handleReturn(returnIntent)
+              }
+            }
             CheckoutFragment.show(
               fragmentManager = activity.supportFragmentManager,
               tag = operation.fragmentTag,
@@ -109,8 +114,12 @@ class ActionModule(
 
   override fun hide(promise: Promise) {
     onMain {
-      activeAction?.let(::cancel)
-      promise.resolve(null)
+      val operation = activeAction
+      if (operation == null) {
+        promise.resolve(null)
+      } else {
+        cancel(operation) { promise.resolve(null) }
+      }
     }
   }
 
@@ -145,37 +154,54 @@ class ActionModule(
     operation: ActiveAction,
     value: String,
   ) {
-    if (!isActive(operation)) return
-    activeAction = null
-    (reactContext.currentActivity as? AppCompatActivity)?.let {
-      CheckoutFragment.hide(it.supportFragmentManager, operation.fragmentTag)
+    finish(operation) {
+      operation.promise.resolve(value)
     }
-    operation.controller = null
-    operation.promise.resolve(value)
   }
 
   private fun reject(
     operation: ActiveAction,
     error: Exception,
   ) {
-    if (!isActive(operation)) return
-    activeAction = null
-    (reactContext.currentActivity as? AppCompatActivity)?.let {
-      CheckoutFragment.hide(it.supportFragmentManager, operation.fragmentTag)
-    }
-    operation.controller = null
     val knownError = error as? KnownException
-    operation.promise.reject(knownError?.code ?: ERROR_COMPONENT, error.message, error)
+    finish(operation) {
+      operation.promise.reject(knownError?.code ?: ERROR_COMPONENT, error.message, error)
+    }
   }
 
-  private fun cancel(operation: ActiveAction) {
-    if (!isActive(operation)) return
-    activeAction = null
-    (reactContext.currentActivity as? AppCompatActivity)?.let {
-      CheckoutFragment.hide(it.supportFragmentManager, operation.fragmentTag)
+  private fun cancel(
+    operation: ActiveAction,
+    afterCleanup: () -> Unit = {},
+  ) {
+    finish(operation) {
+      operation.promise.reject(ERROR_CANCELLED, "Standalone action cancelled")
+      afterCleanup()
     }
+  }
+
+  private fun finish(
+    operation: ActiveAction,
+    settle: () -> Unit,
+  ) {
+    if (!isActive(operation) || operation.finishing) return
+    operation.finishing = true
+    ActionRedirectRouter.unregister(operation.id)
     operation.controller = null
-    operation.promise.reject(ERROR_CANCELLED, "Standalone action cancelled")
+    val complete: () -> Unit = completion@{
+      if (activeAction !== operation) return@completion
+      activeAction = null
+      settle()
+    }
+    val activity = reactContext.currentActivity as? AppCompatActivity
+    if (activity == null) {
+      complete()
+      return
+    }
+    CheckoutFragment.hide(
+      fragmentManager = activity.supportFragmentManager,
+      tag = operation.fragmentTag,
+      onDismissed = complete,
+    )
   }
 
   private fun isActive(operation: ActiveAction): Boolean = activeAction === operation
@@ -188,6 +214,7 @@ class ActionModule(
     val id: Long,
     val promise: Promise,
     var controller: CheckoutController? = null,
+    var finishing: Boolean = false,
   ) {
     val fragmentTag = "$FRAGMENT_TAG_PREFIX-$id"
   }

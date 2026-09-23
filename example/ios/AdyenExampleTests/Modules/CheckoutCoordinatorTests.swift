@@ -385,3 +385,31 @@ final class CheckoutCoordinatorTests: XCTestCase {
         case factory
     }
 }
+
+@MainActor
+final class ActionOperationGateTests: XCTestCase {
+
+    func testDelayedCallbackCannotBecomeActiveForReplacementOperation() {
+        let gate = ActionOperationGate()
+
+        XCTAssertTrue(gate.activate(1))
+        XCTAssertTrue(gate.beginCleanup(1))
+        XCTAssertFalse(gate.isActive(1))
+        XCTAssertFalse(gate.activate(2))
+
+        XCTAssertTrue(gate.completeCleanup(1))
+        XCTAssertTrue(gate.activate(2))
+        XCTAssertFalse(gate.isActive(1))
+        XCTAssertTrue(gate.isActive(2))
+    }
+
+    func testOnlyTheExactOperationCanCompleteCleanup() {
+        let gate = ActionOperationGate()
+
+        XCTAssertTrue(gate.activate(1))
+        XCTAssertTrue(gate.beginCleanup(1))
+        XCTAssertFalse(gate.completeCleanup(2))
+        XCTAssertFalse(gate.activate(2))
+        XCTAssertTrue(gate.completeCleanup(1))
+    }
+}

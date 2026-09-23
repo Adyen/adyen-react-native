@@ -90,6 +90,12 @@ class CheckoutFragment : BottomSheetDialogFragment() {
     configs[fragmentTag]?.onCancelled?.invoke()
   }
 
+  override fun onDismiss(dialog: DialogInterface) {
+    super.onDismiss(dialog)
+    val fragmentTag = tag ?: return
+    configs.remove(fragmentTag)?.onDismissed?.invoke()
+  }
+
   @Suppress("ktlint:standard:function-naming")
   @Composable
   private fun CloseButton(onClick: () -> Unit) {
@@ -104,6 +110,7 @@ class CheckoutFragment : BottomSheetDialogFragment() {
       val cancellable: Boolean,
       val autoSubmit: Boolean,
       val onCancelled: (() -> Unit)?,
+      val onDismissed: (() -> Unit)? = null,
     )
 
     private val configs = mutableMapOf<String, FragmentConfig>()
@@ -129,9 +136,23 @@ class CheckoutFragment : BottomSheetDialogFragment() {
     fun hide(
       fragmentManager: FragmentManager,
       tag: String,
+      onDismissed: (() -> Unit)? = null,
     ) {
-      configs.remove(tag)
-      (fragmentManager.findFragmentByTag(tag) as? CheckoutFragment)?.dismissAllowingStateLoss()
+      val currentConfig = configs[tag]
+      if (currentConfig == null) {
+        onDismissed?.invoke()
+        return
+      }
+      configs[tag] =
+        currentConfig.copy(
+          onDismissed = onDismissed,
+        )
+      val fragment = fragmentManager.findFragmentByTag(tag) as? CheckoutFragment
+      if (fragment == null) {
+        configs.remove(tag)?.onDismissed?.invoke()
+        return
+      }
+      fragment.dismissAllowingStateLoss()
     }
   }
 }

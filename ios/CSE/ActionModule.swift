@@ -19,6 +19,7 @@ internal final class ActionTurboModuleAdapter: NSObject {
 
     private var activeAction: ActiveAction?
     private var nextOperationID = 0
+    private let operationGate = ActionOperationGate()
 
     @objc
     func handle(_ actionJSON: NSDictionary,
@@ -40,6 +41,10 @@ internal final class ActionTurboModuleAdapter: NSObject {
         }
 
         nextOperationID += 1
+        guard operationGate.activate(nextOperationID) else {
+            rejecter(ErrorCode.busy, "A standalone action is already active", nil)
+            return
+        }
         let operation = ActiveAction(id: nextOperationID, resolver: resolver, rejecter: rejecter)
         activeAction = operation
         let parser = RootConfigurationParser(configuration: configuration)
@@ -69,9 +74,12 @@ internal final class ActionTurboModuleAdapter: NSObject {
     func hideWithResolver(_ resolver: @escaping RCTPromiseResolveBlock,
                           rejecter _: @escaping RCTPromiseRejectBlock) {
         if let operation = activeAction {
-            cancel(operation)
+            cancel(operation) {
+                resolver(nil)
+            }
+        } else {
+            resolver(nil)
         }
-        resolver(nil)
     }
 
     @objc
@@ -102,25 +110,23 @@ internal final class ActionTurboModuleAdapter: NSObject {
     }
 
     private func resolve(_ operation: ActiveAction, value: Any) {
-        guard isActive(operation) else { return }
-        activeAction = nil
-        dismiss(operation)
-        do {
-            try operation.resolver(actionJSON(value))
-        } catch {
-            operation.rejecter(ErrorCode.component, error.localizedDescription, error)
+        finish(operation) {
+            do {
+                try operation.resolver(actionJSON(value))
+            } catch {
+                operation.rejecter(ErrorCode.component, error.localizedDescription, error)
+            }
         }
     }
 
     private func reject(_ operation: ActiveAction, error: Error) {
-        guard isActive(operation) else { return }
-        activeAction = nil
-        dismiss(operation)
         let moduleError = ModuleException.checkErrorType(error)
-        if let exception = moduleError as? ModuleException {
-            operation.rejecter(exception.errorCode, exception.errorDescription, exception)
-        } else {
-            operation.rejecter(ErrorCode.component, moduleError.localizedDescription, moduleError)
+        finish(operation) {
+            if let exception = moduleError as? ModuleException {
+                operation.rejecter(exception.errorCode, exception.errorDescription, exception)
+            } else {
+                operation.rejecter(ErrorCode.component, moduleError.localizedDescription, moduleError)
+            }
         }
     }
 
@@ -135,29 +141,43 @@ internal final class ActionTurboModuleAdapter: NSObject {
         }
     }
 
-    private func cancel(_ operation: ActiveAction) {
-        guard isActive(operation) else { return }
-        activeAction = nil
-        dismiss(operation)
-        operation.rejecter(ErrorCode.cancelled, "Standalone action cancelled", nil)
+    private func cancel(_ operation: ActiveAction, afterCleanup: @escaping () -> Void = {}) {
+        finish(operation) {
+            operation.rejecter(ErrorCode.cancelled, "Standalone action cancelled", nil)
+            afterCleanup()
+        }
     }
 
-    private func dismiss(_ operation: ActiveAction) {
+    private func finish(_ operation: ActiveAction, settlement: @escaping () -> Void) {
+        guard operationGate.beginCleanup(operation.id) else { return }
         operation.checkout = nil
-        guard let controller = operation.presentedController else { return }
-        controller.dismiss(animated: true)
+        let complete = { [weak self, weak operation] in
+            guard let self, let operation, self.operationGate.completeCleanup(operation.id) else { return }
+            self.activeAction = nil
+            settlement()
+        }
+        guard let controller = operation.presentedController,
+              controller.presentingViewController != nil || controller.presentedViewController != nil else {
+            operation.presentedController = nil
+            complete()
+            return
+        }
         operation.presentedController = nil
+        controller.dismiss(animated: true, completion: complete)
     }
 
     private func isActive(_ operation: ActiveAction) -> Bool {
-        activeAction === operation
+        activeAction === operation && operationGate.isActive(operation.id)
     }
 }
 
 extension ActionTurboModuleAdapter: PresentationDelegate {
     func present(component: PresentableComponent) {
-        guard let operation = activeAction, let presenter = UIViewController.topPresenter else {
-            activeAction.map(cancel)
+        guard let operation = activeAction, isActive(operation) else {
+            return
+        }
+        guard let presenter = UIViewController.topPresenter else {
+            cancel(operation)
             return
         }
         let controller = UINavigationController(rootViewController: component.viewController)
