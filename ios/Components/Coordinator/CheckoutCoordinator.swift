@@ -153,6 +153,15 @@ internal final class CheckoutCoordinator {
     private var activeRequests: [String: PendingRequest] = [:]
     private var setupGeneration = 0
     private var isSettingUp = false
+    /// Identifies the generated module instance that started the active or pending flow. Runtime
+    /// callbacks from a replaced module must not tear down its replacement.
+    private var lifecycleOwnerID: String?
+    /// A single dismissal is shared by every caller that reaches cleanup while it is in flight.
+    /// Keeping this task visible also prevents a replacement from creating or publishing a new
+    /// checkout before coordinator-owned UI has been dismissed.
+    private var disposingTask: Task<Void, Never>?
+    private var disposingCheckoutID: String?
+    private var disposalGeneration = 0
 
     private struct PendingRequest {
         let request: CoordinatorRequest
@@ -198,7 +207,7 @@ internal final class CheckoutCoordinator {
     /// Replacement always disposes first. A factory failure leaves the coordinator idle.
     @discardableResult
     internal func setup() async throws -> String {
-        try await setup {
+        try await setup(ownerID: nil) {
             try await self.dependencies.checkoutFactory.makeCheckout()
         }
     }
@@ -206,15 +215,23 @@ internal final class CheckoutCoordinator {
     /// Creates and commits a checkout transactionally. The candidate remains private until the
     /// factory succeeds and this setup transaction is still current.
     @discardableResult
-    internal func setup(makeCheckout: @escaping @MainActor () async throws -> CoordinatorCheckout) async throws -> String {
+    internal func setup(
+        ownerID: String? = nil,
+        makeCheckout: @escaping @MainActor () async throws -> CoordinatorCheckout
+    ) async throws -> String {
         guard !isSettingUp else {
             throw CoordinatorError.checkoutBusy
         }
 
-        await disposeActiveFlow()
         isSettingUp = true
         setupGeneration += 1
         let generation = setupGeneration
+        lifecycleOwnerID = ownerID
+        await disposeActiveFlow()
+
+        guard isSettingUp, setupGeneration == generation else {
+            throw CoordinatorError.staleOperation
+        }
 
         let checkout: CoordinatorCheckout
         do {
@@ -222,6 +239,7 @@ internal final class CheckoutCoordinator {
         } catch {
             if setupGeneration == generation {
                 isSettingUp = false
+                lifecycleOwnerID = nil
             }
             throw error
         }
@@ -339,23 +357,42 @@ internal final class CheckoutCoordinator {
     internal func invalidate() async {
         setupGeneration += 1
         isSettingUp = false
+        lifecycleOwnerID = nil
         await disposeActiveFlow()
     }
 
     internal func invalidate(checkoutID: String) async throws {
-        guard activeCheckoutID == checkoutID else {
-            throw CoordinatorError.staleCheckout
+        if activeCheckoutID == checkoutID {
+            await invalidate()
+            return
         }
-        await invalidate()
+        if disposingCheckoutID == checkoutID, let disposingTask {
+            await disposingTask.value
+            return
+        }
+        throw CoordinatorError.staleCheckout
     }
 
     /// Host ownership is weak at the UIKit boundary. When its view controller goes away, the
-    /// coordinator settles only its own flow and never tries to dismiss foreign presentation.
+    /// coordinator settles only the flow owned by that generated module instance and never tries
+    /// to dismiss a replacement published by another instance.
+    internal func hostDidDisappear(ownerID: String) async {
+        guard lifecycleOwnerID == ownerID else { return }
+        await invalidate()
+    }
+
+    /// Direct coordinator host-loss entry point used by native lifecycle vectors. Runtime module
+    /// teardown must use the owner-bound overload above.
     internal func hostDidDisappear() async {
         await invalidate()
     }
 
     private func disposeActiveFlow() async {
+        if let disposingTask {
+            await disposingTask.value
+            return
+        }
+
         settleAllRequests()
         activePresenter?.dispose()
         activePresenter = nil
@@ -366,7 +403,21 @@ internal final class CheckoutCoordinator {
         activeCheckout = nil
         activeCheckoutID = nil
         checkoutState = nil
-        await (configuredDependencies ?? runtimeDependencies)?.hostAdapter.releaseCheckoutHost()
+        let hostAdapter = (configuredDependencies ?? runtimeDependencies)?.hostAdapter
+        disposalGeneration += 1
+        let generation = disposalGeneration
+        disposingCheckoutID = checkoutID
+        let task = Task { @MainActor in
+            if let hostAdapter {
+                await hostAdapter.releaseCheckoutHost()
+            }
+        }
+        disposingTask = task
+        await task.value
+        if disposalGeneration == generation {
+            disposingTask = nil
+            disposingCheckoutID = nil
+        }
         emit(.cleanedUp(checkoutID: checkoutID))
     }
 

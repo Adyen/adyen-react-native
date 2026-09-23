@@ -21,6 +21,9 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
 
     typealias NativeEventSink = @convention(block) (NSDictionary) -> Void
 
+    /// This private token binds React runtime teardown to the checkout this module instance owns.
+    /// A stale module can outlive a replacement during reload and must not clear that replacement.
+    private let lifecycleOwnerID = UUID().uuidString
     private var eventSink: NativeEventSink?
     private var pendingResponses: [String: PendingResponse] = [:]
     private var pendingBeforeSubmitData: BeforeSubmitData?
@@ -49,8 +52,9 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     }
 
     deinit {
+        let lifecycleOwnerID = lifecycleOwnerID
         Task { @MainActor in
-            await CheckoutCoordinator.shared.hostDidDisappear()
+            await CheckoutCoordinator.shared.hostDidDisappear(ownerID: lifecycleOwnerID)
         }
     }
 
@@ -82,7 +86,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let checkoutID = try await CheckoutCoordinator.shared.setup {
+                let checkoutID = try await CheckoutCoordinator.shared.setup(ownerID: self.lifecycleOwnerID) {
                     let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                     let checkout = try await Checkout.setup(
                         with: SessionResponse(id: id, sessionData: sessionData),
@@ -126,7 +130,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let checkoutID = try await CheckoutCoordinator.shared.setup {
+                let checkoutID = try await CheckoutCoordinator.shared.setup(ownerID: self.lifecycleOwnerID) {
                     let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                     let checkout = try await Checkout.setup(
                         with: paymentMethods,
@@ -286,8 +290,9 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
 
     @objc
     func hostDidDisappear() {
+        let lifecycleOwnerID = lifecycleOwnerID
         Task { @MainActor in
-            await CheckoutCoordinator.shared.hostDidDisappear()
+            await CheckoutCoordinator.shared.hostDidDisappear(ownerID: lifecycleOwnerID)
         }
     }
 }
@@ -413,7 +418,7 @@ private extension CheckoutTurboModuleAdapter {
         let operationID = CheckoutCoordinator.shared.operationID
         emit(checkoutID: checkoutID, operationID: operationID, requestID: nil, kind: kind, payload: payload)
         Task { @MainActor in
-            await CheckoutCoordinator.shared.invalidate()
+            try? await CheckoutCoordinator.shared.invalidate(checkoutID: checkoutID)
         }
     }
 

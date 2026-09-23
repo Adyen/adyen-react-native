@@ -15,6 +15,7 @@ internal final class ContextModule: BaseModule {
 
     /// Module JS subscribes to, so a mounted ``ComponentProxy`` can surface errors on it. Weak: the bridge owns the module.
     internal private(set) weak static var shared: ContextModule?
+    private let lifecycleOwnerID = UUID().uuidString
 
     override init() {
         super.init()
@@ -29,7 +30,7 @@ internal final class ContextModule: BaseModule {
         super.invalidate()
         ensureMainThread {
             Task { @MainActor in
-                await CheckoutCoordinator.shared.hostDidDisappear()
+                await CheckoutCoordinator.shared.hostDidDisappear(ownerID: self.lifecycleOwnerID)
             }
         }
     }
@@ -142,7 +143,7 @@ internal final class ContextModule: BaseModule {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let checkoutID = try await CheckoutCoordinator.shared.setup {
+                let checkoutID = try await CheckoutCoordinator.shared.setup(ownerID: self.lifecycleOwnerID) {
                     let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                     let sessionResponse = SessionResponse(id: id, sessionData: sessionData)
                     let checkout = try await Checkout.setup(
@@ -190,7 +191,7 @@ internal final class ContextModule: BaseModule {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                _ = try await CheckoutCoordinator.shared.setup {
+                _ = try await CheckoutCoordinator.shared.setup(ownerID: self.lifecycleOwnerID) {
                     let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                     let checkout = try await Checkout.setup(
                         with: paymentMethods,

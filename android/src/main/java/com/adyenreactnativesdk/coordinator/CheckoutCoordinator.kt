@@ -138,6 +138,9 @@ internal class CheckoutCoordinator(
   private var isSettingUp = false
   private var setupGeneration = 0
 
+  /** The generated module instance currently allowed to tear down this checkout. */
+  private var lifecycleOwnerId: String? = null
+
   @MainThread
   fun activeCheckoutId(): String? = transition { checkoutId }
 
@@ -186,10 +189,14 @@ internal class CheckoutCoordinator(
    * observes [isSettingUp] and fails rather than replacing or publishing a partial candidate.
    */
   @MainThread
-  suspend fun setupAsync(create: suspend () -> CoordinatorCheckout): String {
+  suspend fun setupAsync(
+    ownerId: String? = null,
+    create: suspend () -> CoordinatorCheckout,
+  ): String {
     transition {
       check(!isSettingUp) { "Checkout setup is already active" }
       invalidateLocked()
+      lifecycleOwnerId = ownerId
       isSettingUp = true
       setupGeneration += 1
     }
@@ -201,6 +208,7 @@ internal class CheckoutCoordinator(
         transition {
           if (setupGeneration == generation) {
             isSettingUp = false
+            lifecycleOwnerId = null
           }
         }
         throw exception
@@ -298,6 +306,19 @@ internal class CheckoutCoordinator(
   @MainThread
   fun hostDidDisappear() {
     transition { invalidateLocked() }
+  }
+
+  /**
+   * Runtime destruction is conditional on exact generated-module ownership. This is separate
+   * from checkout-handle invalidation so a stale module instance cannot clean a replacement.
+   */
+  @MainThread
+  fun hostDidDisappear(ownerId: String) {
+    transition {
+      if (lifecycleOwnerId == ownerId) {
+        invalidateLocked()
+      }
+    }
   }
 
   @MainThread
@@ -424,6 +445,7 @@ internal class CheckoutCoordinator(
   private fun invalidateLocked() {
     setupGeneration += 1
     isSettingUp = false
+    lifecycleOwnerId = null
     settleRequestLocked(invokeFallback = true)
     val currentCheckoutId = checkoutId
     presenter?.dispose()

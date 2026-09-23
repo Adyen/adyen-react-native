@@ -187,6 +187,32 @@ final class CheckoutCoordinatorTests: XCTestCase {
     func test_invalidationWaitsForCoordinatorOwnedHostDismissal() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let dismissalStarted = expectation(description: "dismissal started")
+        let allowDismissal = expectation(description: "allow dismissal")
+        fixture.host.onRelease = {
+            dismissalStarted.fulfill()
+            await self.fulfillment(of: [allowDismissal], timeout: 1)
+        }
+
+        let firstInvalidation = Task { @MainActor in
+            try await coordinator.invalidate(checkoutID: checkoutID)
+        }
+        await fulfillment(of: [dismissalStarted], timeout: 1)
+        let secondInvalidation = Task { @MainActor in
+            try await coordinator.invalidate(checkoutID: checkoutID)
+        }
+        XCTAssertFalse(firstInvalidation.isCancelled)
+        XCTAssertFalse(secondInvalidation.isCancelled)
+        allowDismissal.fulfill()
+        try await firstInvalidation.value
+        try await secondInvalidation.value
+        XCTAssertEqual(fixture.host.releaseCount, 1)
+    }
+
+    func test_replacementWaitsForOwnedDismissalBeforeCreatingOrPublishing() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
         _ = try await coordinator.setup()
         let dismissalStarted = expectation(description: "dismissal started")
         let allowDismissal = expectation(description: "allow dismissal")
@@ -195,14 +221,37 @@ final class CheckoutCoordinatorTests: XCTestCase {
             await self.fulfillment(of: [allowDismissal], timeout: 1)
         }
 
-        let invalidation = Task { @MainActor in
-            await coordinator.invalidate()
+        let replacement = Task { @MainActor in
+            try await coordinator.setup()
         }
         await fulfillment(of: [dismissalStarted], timeout: 1)
-        XCTAssertFalse(invalidation.isCancelled)
+        XCTAssertEqual(fixture.log, ["create-1", "dispose-1", "host-release"])
+        XCTAssertNil(coordinator.checkoutID)
+
         allowDismissal.fulfill()
-        await invalidation.value
-        XCTAssertEqual(fixture.host.releaseCount, 1)
+        let replacementID = try await replacement.value
+        XCTAssertEqual(replacementID, "checkout-2")
+        XCTAssertEqual(fixture.log, ["create-1", "dispose-1", "host-release", "create-2"])
+    }
+
+    func test_staleModuleHostTeardownCannotInvalidateReplacement() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        _ = try await coordinator.setup(ownerID: "module-a") {
+            try await fixture.factory.makeCheckout()
+        }
+        let replacementID = try await coordinator.setup(ownerID: "module-b") {
+            try await fixture.factory.makeCheckout()
+        }
+
+        await coordinator.hostDidDisappear(ownerID: "module-a")
+
+        XCTAssertEqual(coordinator.checkoutID, replacementID)
+        XCTAssertEqual(fixture.factory.checkouts.map(\.disposeCount), [1, 0])
+        await coordinator.hostDidDisappear(ownerID: "module-b")
+        await coordinator.hostDidDisappear(ownerID: "module-b")
+        XCTAssertEqual(fixture.factory.checkouts.map(\.disposeCount), [1, 1])
+        XCTAssertEqual(fixture.host.releaseCount, 2)
     }
 
     @MainActor

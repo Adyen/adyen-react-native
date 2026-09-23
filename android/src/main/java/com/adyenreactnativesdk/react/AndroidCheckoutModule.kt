@@ -52,6 +52,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableNativeMap
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * Generated checkout control protocol. This is intentionally separate from the legacy event
@@ -62,6 +63,8 @@ class AndroidCheckoutModule(
   private val messageBus: MessageBus,
 ) : NativeAdyenCheckoutSpec(reactContext),
   LifecycleEventListener {
+  /** Binds lifecycle callbacks from this TurboModule instance to its exact coordinator checkout. */
+  private val lifecycleOwnerId = UUID.randomUUID().toString()
   private var pendingResponse: PendingResponse? = null
 
   init {
@@ -103,7 +106,7 @@ class AndroidCheckoutModule(
       activity.lifecycleScope.launch {
         try {
           val checkoutId =
-            CheckoutCoordinator.shared.setupAsync {
+            CheckoutCoordinator.shared.setupAsync(ownerId = lifecycleOwnerId) {
               when (val result = Checkout.setup(session, configuration)) {
                 is Checkout.Result.Success -> {
                   lateinit var beforeSubmitBridge: SessionBeforeSubmitBridge
@@ -154,7 +157,7 @@ class AndroidCheckoutModule(
       activity.lifecycleScope.launch {
         try {
           val checkoutId =
-            CheckoutCoordinator.shared.setupAsync {
+            CheckoutCoordinator.shared.setupAsync(ownerId = lifecycleOwnerId) {
               when (val result = Checkout.setup(paymentMethods, configuration)) {
                 is Checkout.Result.Success -> TurboCheckoutFlow(CheckoutState(result.checkoutContext))
                 is Checkout.Result.Error -> throw CheckoutSetupException
@@ -339,14 +342,14 @@ class AndroidCheckoutModule(
 
   override fun onHostDestroy() {
     pendingResponse = null
-    CheckoutCoordinator.shared.hostDidDisappear()
+    CheckoutCoordinator.shared.hostDidDisappear(lifecycleOwnerId)
   }
 
   override fun invalidate() {
     reactContext.removeLifecycleEventListener(this)
     onMain {
       pendingResponse = null
-      CheckoutCoordinator.shared.hostDidDisappear()
+      CheckoutCoordinator.shared.hostDidDisappear(lifecycleOwnerId)
     }
     super.invalidate()
   }

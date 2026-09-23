@@ -182,6 +182,28 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `stale module teardown cannot invalidate its replacement`() =
+    runBlocking {
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      coordinator.setupAsync(ownerId = "module-a") { fixture.factory.create() }
+      val replacementId =
+        coordinator.setupAsync(ownerId = "module-b") {
+          fixture.factory.create()
+        }
+
+      coordinator.hostDidDisappear("module-a")
+
+      assertTrue(coordinator.isActive(replacementId))
+      assertEquals(listOf(1, 0), fixture.factory.checkouts.map { it.disposeCount })
+      coordinator.hostDidDisappear("module-b")
+      coordinator.hostDidDisappear("module-b")
+      assertNull(coordinator.activeCheckoutId())
+      assertEquals(listOf(1, 1), fixture.factory.checkouts.map { it.disposeCount })
+      assertEquals(2, fixture.host.releaseCount)
+    }
+
+  @Test
   fun `fresh operations receive distinct identities after cleanup`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
