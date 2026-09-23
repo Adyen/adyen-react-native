@@ -5,6 +5,7 @@
 //
 
 @testable import adyen_react_native
+import UIKit
 import XCTest
 
 @MainActor
@@ -460,5 +461,71 @@ final class ActionOperationGateTests: XCTestCase {
         XCTAssertFalse(gate.completeCleanup(2))
         XCTAssertFalse(gate.activate(2))
         XCTAssertTrue(gate.completeCleanup(1))
+    }
+}
+
+@MainActor
+final class ActionPresentationDelegateTests: XCTestCase {
+
+    func testDelayedDelegateFromCleanedOperationCannotPresentReplacement() {
+        let host = PresentationHost()
+        let router = ActionPresentationRouter(host: host)
+        let oldOperation = makeOperation(id: 1)
+        let oldDelegate = router.delegate(for: oldOperation) { _ in }
+        router.activate(oldOperation)
+        router.deactivate(oldOperation)
+
+        let replacementOperation = makeOperation(id: 2)
+        let replacementDelegate = router.delegate(for: replacementOperation) { _ in }
+        router.activate(replacementOperation)
+
+        oldDelegate.present(viewController: UIViewController())
+        replacementDelegate.present(viewController: UIViewController())
+
+        XCTAssertEqual(host.presentedControllers.count, 1)
+        XCTAssertTrue(host.presentedControllers[0] === replacementOperation.presentedController)
+    }
+
+    func testHostLossOnlyCancelsTheDelegateBoundOperation() {
+        let host = PresentationHost()
+        host.presenter = nil
+        let router = ActionPresentationRouter(host: host)
+        let oldOperation = makeOperation(id: 1)
+        var oldHostLosses = 0
+        let oldDelegate = router.delegate(for: oldOperation) { _ in
+            oldHostLosses += 1
+        }
+        router.activate(oldOperation)
+        router.deactivate(oldOperation)
+
+        let replacementOperation = makeOperation(id: 2)
+        var replacementHostLosses = 0
+        let replacementDelegate = router.delegate(for: replacementOperation) { _ in
+            replacementHostLosses += 1
+        }
+        router.activate(replacementOperation)
+
+        oldDelegate.present(viewController: UIViewController())
+        replacementDelegate.present(viewController: UIViewController())
+
+        XCTAssertEqual(oldHostLosses, 0)
+        XCTAssertEqual(replacementHostLosses, 1)
+    }
+
+    private func makeOperation(id: Int) -> ActiveAction {
+        ActiveAction(id: id, resolver: { _ in }, rejecter: { _, _, _ in })
+    }
+
+    private final class PresentationHost: ActionPresentationHost {
+        var presenter: UIViewController? = UIViewController()
+        private(set) var presentedControllers: [UIViewController] = []
+
+        func topPresenter() -> UIViewController? {
+            presenter
+        }
+
+        func present(_ controller: UIViewController, from _: UIViewController) {
+            presentedControllers.append(controller)
+        }
     }
 }

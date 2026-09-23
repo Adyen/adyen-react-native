@@ -20,6 +20,17 @@ internal final class ActionTurboModuleAdapter: NSObject {
     private var activeAction: ActiveAction?
     private var nextOperationID = 0
     private let operationGate = ActionOperationGate()
+    private let presentationRouter: ActionPresentationRouter
+
+    override init() {
+        presentationRouter = ActionPresentationRouter(host: DefaultActionPresentationHost())
+        super.init()
+    }
+
+    internal init(presentationHost: ActionPresentationHost) {
+        presentationRouter = ActionPresentationRouter(host: presentationHost)
+        super.init()
+    }
 
     @objc
     func handle(_ actionJSON: NSDictionary,
@@ -47,6 +58,7 @@ internal final class ActionTurboModuleAdapter: NSObject {
         }
         let operation = ActiveAction(id: nextOperationID, resolver: resolver, rejecter: rejecter)
         activeAction = operation
+        presentationRouter.activate(operation)
         let parser = RootConfigurationParser(configuration: configuration)
 
         Task { @MainActor [weak self] in
@@ -56,9 +68,13 @@ internal final class ActionTurboModuleAdapter: NSObject {
                     CardConfigurationParser(configuration: configuration).configuration
                     ThreeDS2ConfigurationParser(configuration: configuration).configuration
                 }
+                let presentationDelegate = self.presentationRouter.delegate(for: operation) { [weak self] operation in
+                    self?.cancel(operation)
+                }
+                operation.presentationDelegate = presentationDelegate
                 let checkout = try await Checkout.setup(
                     configuration: checkoutConfiguration,
-                    presentationDelegate: self
+                    presentationDelegate: presentationDelegate
                 )
                 guard self.isActive(operation) else { return }
                 operation.checkout = checkout
@@ -150,6 +166,8 @@ internal final class ActionTurboModuleAdapter: NSObject {
 
     private func finish(_ operation: ActiveAction, settlement: @escaping () -> Void) {
         guard operationGate.beginCleanup(operation.id) else { return }
+        presentationRouter.deactivate(operation)
+        operation.presentationDelegate = nil
         operation.checkout = nil
         let complete = { [weak self, weak operation] in
             guard let self, let operation, self.operationGate.completeCleanup(operation.id) else { return }
@@ -171,33 +189,99 @@ internal final class ActionTurboModuleAdapter: NSObject {
     }
 }
 
-extension ActionTurboModuleAdapter: PresentationDelegate {
-    func present(component: PresentableComponent) {
-        guard let operation = activeAction, isActive(operation) else {
-            return
-        }
-        guard let presenter = UIViewController.topPresenter else {
-            cancel(operation)
-            return
-        }
-        let controller = UINavigationController(rootViewController: component.viewController)
-        operation.presentedController = controller
-        presenter.present(controller, animated: true)
-    }
-}
-
 @MainActor
-private final class ActiveAction {
+internal final class ActiveAction {
     let id: Int
     let resolver: RCTPromiseResolveBlock
     let rejecter: RCTPromiseRejectBlock
     var checkout: ActionOnlyCheckout?
+    var presentationDelegate: PresentationDelegate?
     weak var presentedController: UIViewController?
 
     init(id: Int, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
         self.id = id
         self.resolver = resolver
         self.rejecter = rejecter
+    }
+}
+
+@MainActor
+internal protocol ActionPresentationHost: AnyObject {
+    func topPresenter() -> UIViewController?
+    func present(_ controller: UIViewController, from presenter: UIViewController)
+}
+
+@MainActor
+private final class DefaultActionPresentationHost: ActionPresentationHost {
+    func topPresenter() -> UIViewController? {
+        UIViewController.topPresenter
+    }
+
+    func present(_ controller: UIViewController, from presenter: UIViewController) {
+        presenter.present(controller, animated: true)
+    }
+}
+
+@MainActor
+internal final class ActionPresentationRouter {
+
+    private let host: ActionPresentationHost
+    private weak var activeOperation: ActiveAction?
+
+    init(host: ActionPresentationHost) {
+        self.host = host
+    }
+
+    func activate(_ operation: ActiveAction) {
+        activeOperation = operation
+    }
+
+    func deactivate(_ operation: ActiveAction) {
+        guard activeOperation === operation else { return }
+        activeOperation = nil
+    }
+
+    func delegate(for operation: ActiveAction,
+                  onHostLoss: @escaping @MainActor (ActiveAction) -> Void) -> ActionPresentationDelegate {
+        ActionPresentationDelegate(router: self, operation: operation, onHostLoss: onHostLoss)
+    }
+
+    fileprivate func present(_ viewController: UIViewController,
+                             for operation: ActiveAction,
+                             onHostLoss: @escaping @MainActor (ActiveAction) -> Void) {
+        guard activeOperation === operation else { return }
+        guard let presenter = host.topPresenter() else {
+            onHostLoss(operation)
+            return
+        }
+        let controller = UINavigationController(rootViewController: viewController)
+        operation.presentedController = controller
+        host.present(controller, from: presenter)
+    }
+}
+
+@MainActor
+internal final class ActionPresentationDelegate: PresentationDelegate {
+
+    private weak var router: ActionPresentationRouter?
+    private weak var operation: ActiveAction?
+    private let onHostLoss: @MainActor (ActiveAction) -> Void
+
+    init(router: ActionPresentationRouter,
+         operation: ActiveAction,
+         onHostLoss: @escaping @MainActor (ActiveAction) -> Void) {
+        self.router = router
+        self.operation = operation
+        self.onHostLoss = onHostLoss
+    }
+
+    func present(component: PresentableComponent) {
+        present(viewController: component.viewController)
+    }
+
+    func present(viewController: UIViewController) {
+        guard let router, let operation else { return }
+        router.present(viewController, for: operation, onHostLoss: onHostLoss)
     }
 }
 
