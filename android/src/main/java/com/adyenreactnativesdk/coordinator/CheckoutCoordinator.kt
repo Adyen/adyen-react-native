@@ -8,7 +8,10 @@ package com.adyenreactnativesdk.coordinator
 
 import android.os.Looper
 import androidx.annotation.MainThread
+import com.adyen.checkout.core.action.data.Action
+import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.components.CheckoutController
+import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentManager
 import com.adyenreactnativesdk.react.ComponentContract
@@ -27,12 +30,29 @@ internal interface CoordinatorCheckout {
 }
 
 internal interface PresenterFactory {
-  fun create(): CoordinatorPresenter
+  fun create(presentation: CoordinatorPresentation): CoordinatorPresenter
 }
 
 internal interface CoordinatorPresenter {
+  suspend fun createController(
+    context: CheckoutContext,
+    target: CheckoutTarget,
+  ): CheckoutController?
+
+  fun handleAction(action: Action)
+
+  fun complete(resultCode: String)
+
+  fun retry(message: String?)
+
   fun dispose()
 }
+
+/** Private identity supplied to presenter factories, never exposed through the public bridge. */
+internal data class CoordinatorPresentation(
+  val checkoutId: String,
+  val operationId: String?,
+)
 
 internal interface CheckoutEventSink {
   fun emit(event: CoordinatorEvent)
@@ -94,6 +114,8 @@ internal sealed interface CoordinatorEvent {
 
   data class Request(
     val request: CoordinatorRequest,
+    val eventKind: String? = null,
+    val payloadJson: String? = null,
   ) : CoordinatorEvent
 
   data class StaleRequest(
@@ -232,17 +254,49 @@ internal class CheckoutCoordinator(
   @MainThread
   fun beginOperation(): String =
     transition {
-      check(checkoutId != null) { "No active checkout" }
+      val activeCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
       check(operationId == null) {
         emit(CoordinatorEvent.OperationBusy)
         "Operation is already active"
       }
       val createdOperationId = nextId(CoordinatorIdentityKind.OPERATION)
-      presenter =
-        dependencies?.presenterFactory?.create()
-          ?: NoopCoordinatorPresenter
+      val createdPresenter =
+        checkNotNull(dependencies) { "CheckoutCoordinator requires configured dependencies" }
+          .presenterFactory
+          .create(
+            CoordinatorPresentation(
+              checkoutId = activeCheckoutId,
+              operationId = createdOperationId,
+            ),
+          )
+      presenter = createdPresenter
       operationId = createdOperationId
       createdOperationId
+    }
+
+  /**
+   * Creates a coordinator-owned temporary presenter for a query and always releases it before
+   * returning. Queries do not acquire the interactive operation slot.
+   */
+  suspend fun <T> withQueryPresenter(block: suspend (CoordinatorPresenter) -> T): T {
+    val queryPresenter =
+      transition {
+        val activeCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
+        checkNotNull(dependencies) { "CheckoutCoordinator requires configured dependencies" }
+          .presenterFactory
+          .create(CoordinatorPresentation(checkoutId = activeCheckoutId, operationId = null))
+      }
+    return try {
+      block(queryPresenter)
+    } finally {
+      transition { queryPresenter.dispose() }
+    }
+  }
+
+  @MainThread
+  fun presenter(operationId: String): CoordinatorPresenter? =
+    transition {
+      if (this.operationId == operationId) presenter else null
     }
 
   @MainThread
@@ -250,6 +304,8 @@ internal class CheckoutCoordinator(
     operationId: String,
     kind: CoordinatorRequestKind,
     timeoutMillis: Long,
+    eventKind: String? = null,
+    payloadJson: String? = null,
     cancellationFallback: () -> Unit = {},
   ): CoordinatorRequest =
     transition {
@@ -269,7 +325,7 @@ internal class CheckoutCoordinator(
           timeout(createdRequest)
         }
       requestCancellationFallback = cancellationFallback
-      emit(CoordinatorEvent.Request(createdRequest))
+      emit(CoordinatorEvent.Request(createdRequest, eventKind, payloadJson))
       createdRequest
     }
 
@@ -498,10 +554,6 @@ internal class CheckoutCoordinator(
 
   private fun emit(event: CoordinatorEvent) {
     dependencies?.eventSink?.emit(event)
-  }
-
-  private object NoopCoordinatorPresenter : CoordinatorPresenter {
-    override fun dispose() = Unit
   }
 }
 

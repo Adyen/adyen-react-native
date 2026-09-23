@@ -217,6 +217,68 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `headless operation creates one configured presenter and disposes it through the coordinator`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+
+    val operationId = coordinator.beginOperation()
+
+    assertEquals(1, fixture.presenterFactory.createCount)
+    assertEquals(
+      CoordinatorPresentation(checkoutId = "checkout-1", operationId = operationId),
+      fixture.presenterFactory.presentations.single(),
+    )
+    coordinator.completeOperation(operationId)
+
+    assertEquals(1, fixture.presenter.disposeCount)
+  }
+
+  @Test
+  fun `query presenter is coordinator owned and released without acquiring an operation`() =
+    runBlocking {
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      coordinator.setup()
+
+      val result =
+        coordinator.withQueryPresenter {
+          assertNull(coordinator.activeOperationId())
+          "query-result"
+        }
+
+      assertEquals("query-result", result)
+      assertEquals(1, fixture.presenterFactory.createCount)
+      assertEquals(
+        CoordinatorPresentation(checkoutId = "checkout-1", operationId = null),
+        fixture.presenterFactory.presentations.single(),
+      )
+      assertEquals(1, fixture.presenter.disposeCount)
+    }
+
+  @Test
+  fun `configured event sink receives a generated request once`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+    val operationId = coordinator.beginOperation()
+
+    val request =
+      coordinator.beginRequest(
+        operationId = operationId,
+        kind = CoordinatorRequestKind.ADVANCED_SUBMIT,
+        timeoutMillis = 100,
+        eventKind = "advancedSubmit",
+        payloadJson = """{"amount":1}""",
+      )
+
+    val event = fixture.events.filterIsInstance<CoordinatorEvent.Request>().single()
+    assertEquals(request, event.request)
+    assertEquals("advancedSubmit", event.eventKind)
+    assertEquals("""{"amount":1}""", event.payloadJson)
+  }
+
+  @Test
   fun `discarded events do not retain timeout cleanup`() {
     val fixture = Fixture()
     val coordinator =
@@ -248,6 +310,7 @@ class CheckoutCoordinatorTest {
     val log = mutableListOf<String>()
     val factory = Factory(log)
     val presenter = Presenter()
+    val presenterFactory = PresenterFactory(presenter)
     val events = mutableListOf<CoordinatorEvent>()
     val scheduler = Scheduler()
     val host = Host(log)
@@ -264,10 +327,7 @@ class CheckoutCoordinatorTest {
       CheckoutCoordinator(
         CheckoutCoordinatorDependencies(
           checkoutFactory = factory,
-          presenterFactory =
-            object : PresenterFactory {
-              override fun create(): CoordinatorPresenter = presenter
-            },
+          presenterFactory = presenterFactory,
           eventSink = eventSink,
           identityGenerator = identities,
           scheduler = scheduler,
@@ -310,8 +370,32 @@ class CheckoutCoordinatorTest {
   private class Presenter : CoordinatorPresenter {
     var disposeCount = 0
 
+    override suspend fun createController(
+      context: com.adyen.checkout.core.common.CheckoutContext,
+      target: com.adyen.checkout.core.components.CheckoutTarget,
+    ) = null
+
+    override fun handleAction(action: com.adyen.checkout.core.action.data.Action) = Unit
+
+    override fun complete(resultCode: String) = Unit
+
+    override fun retry(message: String?) = Unit
+
     override fun dispose() {
       disposeCount += 1
+    }
+  }
+
+  private class PresenterFactory(
+    private val presenter: Presenter,
+  ) : com.adyenreactnativesdk.coordinator.PresenterFactory {
+    var createCount = 0
+    val presentations = mutableListOf<CoordinatorPresentation>()
+
+    override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter {
+      createCount += 1
+      presentations += presentation
+      return presenter
     }
   }
 

@@ -29,16 +29,13 @@ import com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinatorDependencies
-import com.adyenreactnativesdk.coordinator.CheckoutEventSink
-import com.adyenreactnativesdk.coordinator.CheckoutFactory
 import com.adyenreactnativesdk.coordinator.CheckoutHostLauncherAdapter
 import com.adyenreactnativesdk.coordinator.CheckoutIdentityGenerator
 import com.adyenreactnativesdk.coordinator.CheckoutScheduler
 import com.adyenreactnativesdk.coordinator.CheckoutStateOwner
 import com.adyenreactnativesdk.coordinator.CoordinatorCancellation
-import com.adyenreactnativesdk.coordinator.CoordinatorCheckout
-import com.adyenreactnativesdk.coordinator.CoordinatorEvent
 import com.adyenreactnativesdk.coordinator.CoordinatorIdentityKind
+import com.adyenreactnativesdk.coordinator.CoordinatorPresentation
 import com.adyenreactnativesdk.coordinator.CoordinatorPresenter
 import com.adyenreactnativesdk.coordinator.CoordinatorRequest
 import com.adyenreactnativesdk.coordinator.CoordinatorRequestKind
@@ -72,8 +69,17 @@ class AndroidCheckoutModule(
     CheckoutCoordinator.shared.configureRuntimeDependencies(
       CheckoutCoordinatorDependencies(
         checkoutFactory = UnsupportedCheckoutFactory,
-        presenterFactory = NoopPresenterFactory,
-        eventSink = NoopCoordinatorEventSink,
+        presenterFactory = HeadlessPresenterFactory(),
+        eventSink =
+          GeneratedCheckoutEventSink { event ->
+            emitEvent(
+              event.checkoutId,
+              event.operationId,
+              event.requestId,
+              event.kind,
+              event.payloadJson?.let(::JSONObject),
+            )
+          },
         identityGenerator = UUIDCoordinatorIdentityGenerator,
         scheduler = MainThreadCheckoutScheduler,
         hostLauncherAdapter = FragmentCheckoutHostAdapter(reactContext),
@@ -202,10 +208,11 @@ class AndroidCheckoutModule(
           return@launch
         }
         try {
-          val manager = ComponentManager(activity, messageBus, sessionBeforeSubmitBridge = state.sessionBeforeSubmitBridge)
-          val controller = manager.createController(state.checkoutContext, checkoutTarget)
-          promise.resolve(controller?.requiresUserInteraction() == true)
-          manager.dispose()
+          val requiresInteraction =
+            CheckoutCoordinator.shared.withQueryPresenter { presenter ->
+              presenter.createController(state.checkoutContext, checkoutTarget)?.requiresUserInteraction() == true
+            }
+          promise.resolve(requiresInteraction)
         } catch (_: Exception) {
           reject(promise, ERROR_QUERY_FAILED)
         }
@@ -235,23 +242,16 @@ class AndroidCheckoutModule(
             return@launch
           }
         val tag = "$FRAGMENT_TAG_PREFIX-$operationId"
-        val manager =
-          ComponentManager(
-            activity = activity,
-            messageBus = messageBus,
-            sessionBeforeSubmitBridge = state.sessionBeforeSubmitBridge,
-            eventSink = eventSink(checkoutId, operationId),
-            onTerminal = {
-              CheckoutFragment.hide(activity.supportFragmentManager, tag)
-              pendingResponse = null
-              CheckoutCoordinator.shared.invalidate()
-            },
-          )
-        CheckoutCoordinator.shared.registerManager(operationId, manager)
+        val presenter =
+          CheckoutCoordinator.shared.presenter(operationId)
+            ?: run {
+              CheckoutCoordinator.shared.completeOperation(operationId)
+              reject(promise, ERROR_SUBMIT_FAILED)
+              return@launch
+            }
         try {
-          val controller = manager.createController(state.checkoutContext, checkoutTarget)
+          val controller = presenter.createController(state.checkoutContext, checkoutTarget)
           if (controller == null) {
-            CheckoutCoordinator.shared.unregisterManager(operationId)
             CheckoutCoordinator.shared.completeOperation(operationId)
             reject(promise, ERROR_INVALID_TARGET)
             return@launch
@@ -269,7 +269,6 @@ class AndroidCheckoutModule(
           )
           promise.resolve(null)
         } catch (_: Exception) {
-          CheckoutCoordinator.shared.unregisterManager(operationId)
           CheckoutCoordinator.shared.completeOperation(operationId)
           reject(promise, ERROR_SUBMIT_FAILED)
         }
@@ -432,42 +431,41 @@ class AndroidCheckoutModule(
     promise.resolve(descriptor)
   }
 
-  private fun eventSink(
-    checkoutId: String,
-    operationId: String,
-  ): ComponentEventSink =
+  private fun componentEventSink(presentation: CoordinatorPresentation): ComponentEventSink =
     object : ComponentEventSink {
       override fun onAdvancedSubmit(data: PaymentComponentData<*>) {
         createRequest(
-          operationId,
+          presentation.operationId ?: return,
           CoordinatorRequestKind.ADVANCED_SUBMIT,
           EVENT_ADVANCED_SUBMIT,
           PaymentComponentData.SERIALIZER.serialize(data),
         ) { response ->
           val payload = response ?: JSONObject()
           when (payload.optString(TYPE)) {
-            ACTION -> pendingManager()?.handleAction(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
-            COMPLETED -> pendingManager()?.completion(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
-            RETRY -> pendingManager()?.retry(payload.optString(MESSAGE).takeIf(String::isNotBlank))
-            else -> pendingManager()?.retry(null)
+            ACTION -> pendingPresenter(presentation)?.handleAction(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
+            COMPLETED -> pendingPresenter(presentation)?.complete(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
+            RETRY -> pendingPresenter(presentation)?.retry(payload.optString(MESSAGE).takeIf(String::isNotBlank))
+            else -> pendingPresenter(presentation)?.retry(null)
           }
         }
       }
 
       override fun onAdvancedAdditionalDetails(data: ActionComponentData) {
         createRequest(
-          operationId,
+          presentation.operationId ?: return,
           CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS,
           EVENT_ADVANCED_ADDITIONAL_DETAILS,
           ActionComponentData.SERIALIZER.serialize(data),
         ) { response ->
-          pendingManager()?.completion(response?.optString(RESULT_CODE, CheckoutResultCode.ERROR.value) ?: CheckoutResultCode.ERROR.value)
+          pendingPresenter(presentation)?.complete(
+            response?.optString(RESULT_CODE, CheckoutResultCode.ERROR.value) ?: CheckoutResultCode.ERROR.value,
+          )
         }
       }
 
       override fun onSessionComplete(result: SessionCheckoutResult) {
         emitTerminal(
-          checkoutId,
+          presentation.checkoutId,
           EVENT_COMPLETION,
           JSONObject()
             .put(RESULT_CODE, result.resultCode.value)
@@ -477,15 +475,16 @@ class AndroidCheckoutModule(
       }
 
       override fun onComplete(resultCode: String) {
-        emitTerminal(checkoutId, EVENT_COMPLETION, JSONObject().put(RESULT_CODE, resultCode))
+        emitTerminal(presentation.checkoutId, EVENT_COMPLETION, JSONObject().put(RESULT_CODE, resultCode))
       }
 
       override fun onError() {
-        emitTerminal(checkoutId, EVENT_ERROR, terminalErrorPayload())
+        emitTerminal(presentation.checkoutId, EVENT_ERROR, terminalErrorPayload())
       }
-
-      private fun pendingManager(): ComponentManager? = CheckoutCoordinator.shared.manager(operationId)
     }
+
+  private fun pendingPresenter(presentation: CoordinatorPresentation): CoordinatorPresenter? =
+    presentation.operationId?.let(CheckoutCoordinator.shared::presenter)
 
   private fun createRequest(
     operationId: String,
@@ -501,6 +500,8 @@ class AndroidCheckoutModule(
           operationId = operationId,
           kind = kind,
           timeoutMillis = REQUEST_TIMEOUT_MILLIS,
+          eventKind = eventKind,
+          payloadJson = payload.toString(),
           cancellationFallback = {
             if (pendingResponse?.request?.requestId == requestId) {
               pendingResponse = null
@@ -513,7 +514,6 @@ class AndroidCheckoutModule(
       }
     requestId = request.requestId
     pendingResponse = PendingResponse(request, eventKind, resume)
-    emitEvent(request.checkoutId, request.operationId, request.requestId, eventKind, payload)
   }
 
   private fun emitTerminal(
@@ -591,20 +591,69 @@ class AndroidCheckoutModule(
     }
   }
 
-  private object UnsupportedCheckoutFactory : CheckoutFactory {
-    override fun create(): CoordinatorCheckout = error("AndroidCheckoutModule supplies setup candidates directly")
+  private object UnsupportedCheckoutFactory : com.adyenreactnativesdk.coordinator.CheckoutFactory {
+    override fun create(): com.adyenreactnativesdk.coordinator.CoordinatorCheckout =
+      error("AndroidCheckoutModule supplies setup candidates directly")
   }
 
-  private object NoopPresenterFactory : PresenterFactory {
-    override fun create(): CoordinatorPresenter = NoopCoordinatorPresenter
+  private inner class HeadlessPresenterFactory : PresenterFactory {
+    override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter = HeadlessCoordinatorPresenter(presentation)
   }
 
-  private object NoopCoordinatorPresenter : CoordinatorPresenter {
-    override fun dispose() = Unit
-  }
+  /**
+   * Owns the controller for one headless operation or a temporary query. The coordinator creates
+   * and disposes this presenter, so production code never builds an untracked controller.
+   */
+  private inner class HeadlessCoordinatorPresenter(
+    private val presentation: CoordinatorPresentation,
+  ) : CoordinatorPresenter {
+    private var manager: ComponentManager? = null
 
-  private object NoopCoordinatorEventSink : CheckoutEventSink {
-    override fun emit(event: CoordinatorEvent) = Unit
+    override suspend fun createController(
+      context: CheckoutContext,
+      target: CheckoutTarget,
+    ): com.adyen.checkout.core.components.CheckoutController? {
+      check(manager == null) { "Presenter controller is already created" }
+      val createdManager =
+        ComponentManager(
+          activity = activityOrThrow(),
+          messageBus = messageBus,
+          sessionBeforeSubmitBridge = CheckoutCoordinator.shared.checkoutState?.sessionBeforeSubmitBridge,
+          eventSink = componentEventSink(presentation),
+          onTerminal = terminal@{
+            pendingResponse = null
+            val operationId = presentation.operationId ?: return@terminal
+            CheckoutFragment.hide(
+              activityOrThrow().supportFragmentManager,
+              "$FRAGMENT_TAG_PREFIX-$operationId",
+            )
+            CheckoutCoordinator.shared.invalidate()
+          },
+        )
+      manager = createdManager
+      return createdManager.createController(context, target)
+    }
+
+    override fun handleAction(action: Action) {
+      manager?.handleAction(action)
+    }
+
+    override fun complete(resultCode: String) {
+      manager?.completion(resultCode)
+    }
+
+    override fun retry(message: String?) {
+      manager?.retry(message)
+    }
+
+    override fun dispose() {
+      manager?.dispose()
+      manager = null
+    }
+
+    private fun activityOrThrow(): FragmentActivity =
+      reactContext.currentActivity as? FragmentActivity
+        ?: error("Headless presenter requires an active FragmentActivity")
   }
 
   private object UUIDCoordinatorIdentityGenerator : CheckoutIdentityGenerator {
