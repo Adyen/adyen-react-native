@@ -262,9 +262,11 @@ class AndroidCheckoutModule(
             controllerProvider = { controller },
             autoSubmit = true,
             onCancelled = {
-              pendingResponse = null
+              clearPendingResponse(operationId)
               emitTerminal(checkoutId, EVENT_ERROR, terminalErrorPayload())
-              CheckoutCoordinator.shared.invalidate()
+              if (CheckoutCoordinator.shared.activeOperationId() == operationId) {
+                CheckoutCoordinator.shared.invalidate()
+              }
             },
           )
           promise.resolve(null)
@@ -486,6 +488,13 @@ class AndroidCheckoutModule(
   private fun pendingPresenter(presentation: CoordinatorPresentation): CoordinatorPresenter? =
     presentation.operationId?.let(CheckoutCoordinator.shared::presenter)
 
+  /** A presenter may only clear the response its own operation created. */
+  private fun clearPendingResponse(operationId: String) {
+    if (pendingResponse?.request?.operationId == operationId) {
+      pendingResponse = null
+    }
+  }
+
   private fun createRequest(
     operationId: String,
     kind: CoordinatorRequestKind,
@@ -503,7 +512,10 @@ class AndroidCheckoutModule(
           eventKind = eventKind,
           payloadJson = payload.toString(),
           cancellationFallback = {
-            if (pendingResponse?.request?.requestId == requestId) {
+            if (
+              pendingResponse?.request?.operationId == operationId &&
+              pendingResponse?.request?.requestId == requestId
+            ) {
               pendingResponse = null
             }
             resume(null)
@@ -620,15 +632,19 @@ class AndroidCheckoutModule(
           messageBus = messageBus,
           sessionBeforeSubmitBridge = CheckoutCoordinator.shared.checkoutState?.sessionBeforeSubmitBridge,
           eventSink = componentEventSink(presentation),
-          onTerminal = terminal@{
-            pendingResponse = null
-            val operationId = presentation.operationId ?: return@terminal
-            CheckoutFragment.hide(
-              activityOrThrow().supportFragmentManager,
-              "$FRAGMENT_TAG_PREFIX-$operationId",
-            )
-            CheckoutCoordinator.shared.invalidate()
-          },
+          onTerminal =
+            presentation.operationId?.let { operationId ->
+              {
+                clearPendingResponse(operationId)
+                if (CheckoutCoordinator.shared.activeOperationId() == operationId) {
+                  CheckoutFragment.hide(
+                    activityOrThrow().supportFragmentManager,
+                    "$FRAGMENT_TAG_PREFIX-$operationId",
+                  )
+                  CheckoutCoordinator.shared.invalidate()
+                }
+              }
+            },
         )
       manager = createdManager
       return createdManager.createController(context, target)

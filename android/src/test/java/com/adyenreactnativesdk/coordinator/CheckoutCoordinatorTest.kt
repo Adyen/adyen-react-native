@@ -257,6 +257,43 @@ class CheckoutCoordinatorTest {
     }
 
   @Test
+  fun `query presenter disposal leaves an interactive request pending`() =
+    runBlocking {
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      coordinator.setup()
+      val operationId = coordinator.beginOperation()
+      val request = coordinator.beginRequest(operationId, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+
+      coordinator.withQueryPresenter { "query-result" }
+
+      assertFalse(
+        fixture.scheduler.cancellations
+          .single()
+          .cancelled,
+      )
+      assertTrue(coordinator.resolve(request))
+    }
+
+  @Test
+  fun `terminal cleanup only clears the matching operation request`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+    val operationId = coordinator.beginOperation()
+    val request = coordinator.beginRequest(operationId, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+
+    coordinator.completeOperation("stale-operation")
+
+    assertFalse(
+      fixture.scheduler.cancellations
+        .single()
+        .cancelled,
+    )
+    assertTrue(coordinator.resolve(request))
+  }
+
+  @Test
   fun `configured event sink receives a generated request once`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
@@ -276,6 +313,63 @@ class CheckoutCoordinatorTest {
     assertEquals(request, event.request)
     assertEquals("advancedSubmit", event.eventKind)
     assertEquals("""{"amount":1}""", event.payloadJson)
+  }
+
+  @Test
+  fun `throwing request event delivery rolls back once and permits a fresh request`() {
+    val fixture = Fixture()
+    var throwsOnNextRequest = true
+    val coordinator =
+      fixture.coordinator(
+        eventSink =
+          object : CheckoutEventSink {
+            override fun emit(event: CoordinatorEvent) {
+              if (event is CoordinatorEvent.Request && throwsOnNextRequest) {
+                throwsOnNextRequest = false
+                throw IllegalStateException("Event delivery failed")
+              }
+              fixture.events += event
+            }
+          },
+      )
+    coordinator.setup()
+    val operationId = coordinator.beginOperation()
+    var fallbackCount = 0
+
+    try {
+      coordinator.beginRequest(
+        operationId,
+        CoordinatorRequestKind.ADVANCED_SUBMIT,
+        100,
+        cancellationFallback = { fallbackCount += 1 },
+      )
+      fail("Expected event delivery failure")
+    } catch (_: IllegalStateException) {
+      // Expected.
+    }
+
+    assertEquals(1, fallbackCount)
+    assertTrue(
+      fixture.scheduler.cancellations
+        .single()
+        .cancelled,
+    )
+    fixture.scheduler.fire(0)
+    assertEquals(1, fallbackCount)
+
+    val fresh =
+      coordinator.beginRequest(
+        operationId,
+        CoordinatorRequestKind.ADVANCED_SUBMIT,
+        100,
+        cancellationFallback = { fallbackCount += 1 },
+      )
+
+    assertEquals("request-2", fresh.requestId)
+    assertFalse(coordinator.resolve(CoordinatorRequest("checkout-1", operationId, "request-1", CoordinatorRequestKind.ADVANCED_SUBMIT)))
+    assertEquals(1, fallbackCount)
+    assertTrue(coordinator.resolve(fresh))
+    assertEquals(1, fallbackCount)
   }
 
   @Test
@@ -429,6 +523,10 @@ class CheckoutCoordinatorTest {
 
     fun fireLast() {
       actions.last().invoke()
+    }
+
+    fun fire(index: Int) {
+      actions[index].invoke()
     }
   }
 

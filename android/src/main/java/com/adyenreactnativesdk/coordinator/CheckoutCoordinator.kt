@@ -325,7 +325,12 @@ internal class CheckoutCoordinator(
           timeout(createdRequest)
         }
       requestCancellationFallback = cancellationFallback
-      emit(CoordinatorEvent.Request(createdRequest, eventKind, payloadJson))
+      try {
+        emit(CoordinatorEvent.Request(createdRequest, eventKind, payloadJson))
+      } catch (exception: Exception) {
+        settleRequestLocked(createdRequest, invokeFallback = true)
+        throw exception
+      }
       createdRequest
     }
 
@@ -526,7 +531,15 @@ internal class CheckoutCoordinator(
     }
   }
 
-  private fun settleRequestLocked(invokeFallback: Boolean = false) {
+  /**
+   * Settles only [expectedRequest] when supplied, so a failed publication or stale callback cannot
+   * clear a request that replaced it while an event sink was running.
+   */
+  private fun settleRequestLocked(
+    expectedRequest: CoordinatorRequest? = null,
+    invokeFallback: Boolean = false,
+  ) {
+    if (expectedRequest != null && request != expectedRequest) return
     requestCancellation?.cancel()
     requestCancellation = null
     request = null
