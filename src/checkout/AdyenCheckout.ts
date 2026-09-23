@@ -10,7 +10,9 @@ import NativeCheckout, {
 } from '../specs/NativeAdyenCheckout';
 import {
   type AdvancedCallbacks,
+  type AdyenError,
   type Checkout,
+  type BeforeSubmitData,
   type Configuration,
   type PaymentDetailsData,
   type PaymentMethodData,
@@ -102,21 +104,63 @@ function isSubmitResult(value: unknown): boolean {
 }
 
 function isBeforeSubmitResult(value: unknown): boolean {
-  if (!value || typeof value !== 'object' || !('type' in value)) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false;
   }
-  return ['proceed', 'abort'].includes((value as { type?: string }).type ?? '');
+  const result = value as {
+    type?: unknown;
+    data?: unknown;
+    sessionData?: unknown;
+  };
+  if (result.type === 'abort') {
+    return true;
+  }
+  if (result.type !== 'proceed' || !isBeforeSubmitData(result.data)) {
+    return false;
+  }
+  return (
+    result.sessionData === undefined || typeof result.sessionData === 'string'
+  );
+}
+
+function isBeforeSubmitData(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  const data = value as Record<string, unknown>;
+  return (
+    (data.billingAddress === undefined ||
+      (typeof data.billingAddress === 'object' &&
+        data.billingAddress !== null &&
+        !Array.isArray(data.billingAddress))) &&
+    (data.deliveryAddress === undefined ||
+      (typeof data.deliveryAddress === 'object' &&
+        data.deliveryAddress !== null &&
+        !Array.isArray(data.deliveryAddress))) &&
+    (data.shopperName === undefined ||
+      (typeof data.shopperName === 'object' &&
+        data.shopperName !== null &&
+        !Array.isArray(data.shopperName))) &&
+    (data.shopperEmail === undefined || typeof data.shopperEmail === 'string')
+  );
+}
+
+function normalizeTerminalError(): AdyenError {
+  return {
+    message: 'Checkout failed',
+    errorCode: 'checkoutFailed',
+  };
 }
 
 async function settleApplePayRequest(
   event: CheckoutEvent,
-  invoke: (resolve: (result: unknown) => void) => void
+  invoke: (resolve: (result: unknown) => void) => void | Promise<void>
 ): Promise<void> {
   await settleRequest(
     event,
     () =>
-      new Promise<unknown>((resolve) => {
-        invoke(resolve);
+      new Promise<unknown>((resolve, reject) => {
+        Promise.resolve(invoke(resolve)).catch(reject);
       })
   );
 }
@@ -171,21 +215,29 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
         await sendResponse(event, '{}');
         return;
       }
-      await settleApplePayRequest(event, (resolve) =>
-        update(parsePayload(event.payloadJson), resolve)
-      );
+      await settleApplePayRequest(event, (resolve) => {
+        const couponCode = parsePayload<{ couponCode?: unknown }>(
+          event.payloadJson
+        ).couponCode;
+        if (typeof couponCode !== 'string') {
+          throw new Error('Invalid Apple Pay coupon code');
+        }
+        update(couponCode, resolve);
+      });
       return;
     }
-    case 'sessionBeforeSubmit':
+    case 'sessionBeforeSubmit': {
+      const beforeSubmit = callbacks.session?.onBeforeSubmit;
       await settleRequest(
         event,
-        async () =>
-          callbacks.session?.onBeforeSubmit?.(
-            parsePayload(event.payloadJson)
-          ) ?? { type: 'proceed', data: parsePayload(event.payloadJson) },
+        async () => {
+          const data = parsePayload<BeforeSubmitData>(event.payloadJson);
+          return beforeSubmit ? beforeSubmit(data) : { type: 'proceed', data };
+        },
         isBeforeSubmitResult
       );
       return;
+    }
     case 'advancedSubmit':
       await settleRequest(
         event,
@@ -225,9 +277,9 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
     case 'error':
       try {
         if (checkout.flow === 'sessions') {
-          callbacks.session?.onError(parsePayload(event.payloadJson));
+          callbacks.session?.onError(normalizeTerminalError());
         } else {
-          callbacks.advanced?.onError(parsePayload(event.payloadJson));
+          callbacks.advanced?.onError(normalizeTerminalError());
         }
       } finally {
         checkout.markStale();

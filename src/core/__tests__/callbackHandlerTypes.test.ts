@@ -116,12 +116,7 @@ describe('callback result types', () => {
       const onError = jest.fn();
       const callbacks: SessionCallbacks = { onComplete, onError };
 
-      const result = {
-        sessionId: 'sid',
-        sessionResult: 'sr',
-        resultCode: 'Authorised',
-        sessionData: 'sd',
-      } as SessionsResult;
+      const result: SessionsResult = { resultCode: 'Authorised' };
       const error = {
         message: 'boom',
         errorCode: 'unknown',

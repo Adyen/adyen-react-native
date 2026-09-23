@@ -226,12 +226,31 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         resolver: @escaping RCTPromiseResolveBlock,
         rejecter: @escaping RCTPromiseRejectBlock
     ) {
+        guard let checkoutID = response["checkoutId"] as? String,
+              let operationID = response["operationId"] as? String,
+              let requestID = response["requestId"] as? String,
+              let kind = response["kind"] as? String,
+              let pending = pendingResponses[requestID],
+              pending.request.checkoutID == checkoutID,
+              pending.request.operationID == operationID,
+              pending.kind == kind
+        else {
+            rejecter(ErrorCode.staleRequest, "Request is no longer active", nil)
+            return
+        }
+
         let payload: [String: Any]?
         if let payloadJSON = response["payloadJson"] as? String {
             guard let data = payloadJSON.data(using: .utf8),
                   let object = try? JSONSerialization.jsonObject(with: data),
                   let dictionary = object as? [String: Any]
             else {
+                guard CheckoutCoordinator.shared.resolve(pending.request) else {
+                    rejecter(ErrorCode.staleRequest, "Request is no longer active", nil)
+                    return
+                }
+                pendingResponses.removeValue(forKey: requestID)
+                pending.resume(nil)
                 rejecter(ErrorCode.staleRequest, "Invalid request response", nil)
                 return
             }
@@ -240,20 +259,10 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
             payload = nil
         }
 
-        guard let checkoutID = response["checkoutId"] as? String,
-              let operationID = response["operationId"] as? String,
-              let requestID = response["requestId"] as? String,
-              let kind = response["kind"] as? String,
-              let pending = pendingResponses[requestID],
-              pending.request.checkoutID == checkoutID,
-              pending.request.operationID == operationID,
-              pending.kind == kind,
-              CheckoutCoordinator.shared.resolve(pending.request)
-        else {
+        guard CheckoutCoordinator.shared.resolve(pending.request) else {
             rejecter(ErrorCode.staleRequest, "Request is no longer active", nil)
             return
         }
-
         pendingResponses.removeValue(forKey: requestID)
         pending.resume(payload)
         resolver(nil)
@@ -320,7 +329,7 @@ private extension CheckoutTurboModuleAdapter {
             }
             .onFailure { [weak self, weak checkout] _ in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
-                self.emitTerminal(kind: EventKind.error, payload: [:])
+                self.emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             }
     }
 
@@ -367,7 +376,7 @@ private extension CheckoutTurboModuleAdapter {
             }
             .onFailure { [weak self, weak checkout] _ in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
-                self.emitTerminal(kind: EventKind.error, payload: [:])
+                self.emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             }
     }
 
@@ -614,14 +623,27 @@ private extension CheckoutTurboModuleAdapter {
     func awaitAuthorization(_ payment: PKPayment) async -> PKPaymentAuthorizationResult {
         guard let operationID = CheckoutCoordinator.shared.operationID else { return .init(status: .failure, errors: nil) }
         return await authorizationBridge.suspend(superseding: .init(status: .failure, errors: nil)) { token in
+            var payload: [String: Any] = [:]
+            if let billingContact = payment.billingContact {
+                payload["billingContact"] = billingContact.jsonObject
+            }
+            if let shippingContact = payment.shippingContact {
+                payload["shippingContact"] = shippingContact.jsonObject
+            }
+            if let shippingMethod = payment.shippingMethod {
+                payload["shippingMethod"] = shippingMethod.jsonObject
+            }
             self.createRequest(
                 operationID: operationID,
                 kind: .applePayAuthorization,
                 eventKind: EventKind.applePayAuthorization,
-                payload: [:]
+                payload: payload
             ) { [weak self] payload in
                 let success = payload?["status"] as? String == "success"
-                self?.authorizationBridge.resolve(token, .init(status: success ? .success : .failure, errors: nil))
+                self?.authorizationBridge.resolve(
+                    token,
+                    .init(status: success ? .success : .failure, errors: self?.applePayErrors(payload))
+                )
             }
         }
     }
@@ -647,8 +669,11 @@ private extension CheckoutTurboModuleAdapter {
                 kind: .applePayShippingMethod,
                 eventKind: EventKind.applePayShippingMethod,
                 payload: method.jsonObject
-            ) { [weak self] _ in
-                self?.shippingMethodBridge.resolve(token, .init(paymentSummaryItems: summaryItems))
+            ) { [weak self] payload in
+                self?.shippingMethodBridge.resolve(
+                    token,
+                    .init(paymentSummaryItems: self?.applePaySummaryItems(payload) ?? summaryItems)
+                )
             }
         }
     }
@@ -663,10 +688,16 @@ private extension CheckoutTurboModuleAdapter {
                 eventKind: EventKind.applePayCouponCode,
                 payload: ["couponCode": couponCode]
             ) { [weak self] payload in
-                _ = payload
-                self?.couponCodeBridge.resolve(
+                guard let self else { return }
+                let shippingMethods = self.applePayShippingMethods(payload) ?? self.currentShippingMethods
+                self.currentShippingMethods = shippingMethods
+                self.couponCodeBridge.resolve(
                     token,
-                    .init(errors: nil, paymentSummaryItems: summaryItems, shippingMethods: self?.currentShippingMethods ?? [])
+                    .init(
+                        errors: self.applePayErrors(payload),
+                        paymentSummaryItems: self.applePaySummaryItems(payload) ?? summaryItems,
+                        shippingMethods: shippingMethods
+                    )
                 )
             }
         }
@@ -688,15 +719,38 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func shippingUpdate(_ payload: [String: Any]?) -> PKPaymentRequestShippingContactUpdate {
-        _ = payload
-        return .init(errors: nil, paymentSummaryItems: currentSummaryItems, shippingMethods: currentShippingMethods)
+        let shippingMethods = applePayShippingMethods(payload) ?? currentShippingMethods
+        currentShippingMethods = shippingMethods
+        return .init(
+            errors: applePayErrors(payload),
+            paymentSummaryItems: applePaySummaryItems(payload) ?? currentSummaryItems,
+            shippingMethods: shippingMethods
+        )
+    }
+
+    func applePaySummaryItems(_ payload: [String: Any]?) -> [PKPaymentSummaryItem]? {
+        guard let raw = payload?["paymentSummaryItems"] as? [[String: Any]] else { return nil }
+        let summaryItems = raw.compactMap(PKPaymentSummaryItem.init)
+        return summaryItems.isEmpty ? nil : summaryItems
+    }
+
+    func applePayShippingMethods(_ payload: [String: Any]?) -> [PKShippingMethod]? {
+        guard let raw = payload?["shippingMethods"] as? [[String: Any]] else { return nil }
+        let shippingMethods = raw.compactMap(PKShippingMethod.initiate)
+        return shippingMethods.isEmpty ? nil : shippingMethods
+    }
+
+    func applePayErrors(_ payload: [String: Any]?) -> [Error]? {
+        guard let raw = payload?["errors"] as? [[String: Any]] else { return nil }
+        let errors = raw.compactMap(applePayError)
+        return errors.isEmpty ? nil : errors
     }
 }
 
 extension CheckoutTurboModuleAdapter: PresentationDelegate {
     func present(component: PresentableComponent) {
         guard let presenter = CheckoutCoordinator.shared.topPresenterProvider() else {
-            emitTerminal(kind: EventKind.error, payload: [:])
+            emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             return
         }
         let viewController = UINavigationController(rootViewController: component.viewController)
@@ -754,6 +808,11 @@ private enum ErrorCode {
     static let operationBusy = "operationBusy"
     static let unsupportedCapability = "unsupportedCapability"
 }
+
+private let terminalErrorPayload: [String: Any] = [
+    "message": "Checkout failed",
+    "errorCode": "checkoutFailed"
+]
 
 private func jsonString(_ object: Any) throws -> String {
     let data = try JSONSerialization.data(withJSONObject: object)

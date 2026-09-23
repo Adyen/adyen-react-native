@@ -71,6 +71,24 @@ function isCheckoutTarget(target: unknown): target is CheckoutTarget {
   );
 }
 
+function isKnownTarget(
+  target: CheckoutTarget,
+  paymentMethods: PaymentMethodsResponse
+): boolean {
+  if (target.kind === 'paymentMethod') {
+    return (
+      paymentMethods.paymentMethods?.some(
+        (paymentMethod) => paymentMethod.type === target.type
+      ) ?? false
+    );
+  }
+  return (
+    paymentMethods.storedPaymentMethods?.some(
+      (paymentMethod) => paymentMethod.id === target.id
+    ) ?? false
+  );
+}
+
 /**
  * Builds a public handle backed by one opaque native checkout identity.
  *
@@ -94,7 +112,7 @@ export function createCheckout(
     if (!active) {
       return Promise.reject(asCheckoutError({ code: 'staleCheckout', phase }));
     }
-    if (!isCheckoutTarget(target)) {
+    if (!isCheckoutTarget(target) || !isKnownTarget(target, snapshot)) {
       return invalidTarget(phase);
     }
     return command(target).catch((error: unknown) => {

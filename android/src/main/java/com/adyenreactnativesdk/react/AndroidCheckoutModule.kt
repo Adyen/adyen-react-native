@@ -176,6 +176,10 @@ class AndroidCheckoutModule(
     onMain {
       val state = activeState(checkoutId, promise) ?: return@onMain
       val checkoutTarget = parseTarget(target, promise) ?: return@onMain
+      if (!hasTarget(state.checkoutContext, checkoutTarget)) {
+        reject(promise, ERROR_INVALID_TARGET)
+        return@onMain
+      }
       promise.resolve(hasTarget(state.checkoutContext, checkoutTarget))
     }
   }
@@ -190,6 +194,10 @@ class AndroidCheckoutModule(
       activity.lifecycleScope.launch {
         val state = activeState(checkoutId, promise) ?: return@launch
         val checkoutTarget = parseTarget(target, promise) ?: return@launch
+        if (!hasTarget(state.checkoutContext, checkoutTarget)) {
+          reject(promise, ERROR_INVALID_TARGET)
+          return@launch
+        }
         try {
           val manager = ComponentManager(activity, messageBus, sessionBeforeSubmitBridge = state.sessionBeforeSubmitBridge)
           val controller = manager.createController(state.checkoutContext, checkoutTarget)
@@ -212,6 +220,10 @@ class AndroidCheckoutModule(
       activity.lifecycleScope.launch {
         val state = activeState(checkoutId, promise) ?: return@launch
         val checkoutTarget = parseTarget(target, promise) ?: return@launch
+        if (!hasTarget(state.checkoutContext, checkoutTarget)) {
+          reject(promise, ERROR_INVALID_TARGET)
+          return@launch
+        }
         val operationId =
           try {
             CheckoutCoordinator.shared.beginOperation()
@@ -248,7 +260,7 @@ class AndroidCheckoutModule(
             autoSubmit = true,
             onCancelled = {
               pendingResponse = null
-              emitTerminal(checkoutId, EVENT_ERROR)
+              emitTerminal(checkoutId, EVENT_ERROR, terminalErrorPayload())
               CheckoutCoordinator.shared.invalidate()
             },
           )
@@ -289,6 +301,10 @@ class AndroidCheckoutModule(
         try {
           response.getString(PAYLOAD_JSON)?.let(::JSONObject)
         } catch (_: Exception) {
+          if (CheckoutCoordinator.shared.resolve(pending.request)) {
+            pendingResponse = null
+            pending.resume(null)
+          }
           reject(promise, ERROR_INVALID_RESPONSE)
           return@onMain
         }
@@ -462,7 +478,7 @@ class AndroidCheckoutModule(
       }
 
       override fun onError() {
-        emitTerminal(checkoutId, EVENT_ERROR)
+        emitTerminal(checkoutId, EVENT_ERROR, terminalErrorPayload())
       }
 
       private fun pendingManager(): ComponentManager? = CheckoutCoordinator.shared.manager(operationId)
@@ -520,6 +536,11 @@ class AndroidCheckoutModule(
       },
     )
   }
+
+  private fun terminalErrorPayload(): JSONObject =
+    JSONObject()
+      .put(ERROR_MESSAGE, "Checkout failed")
+      .put(ERROR_CODE, "checkoutFailed")
 
   private fun parseSession(json: String): SessionResponse {
     val source = JSONObject(json)
@@ -639,6 +660,8 @@ class AndroidCheckoutModule(
     private const val COMPLETED = "completed"
     private const val RETRY = "retry"
     private const val MESSAGE = "message"
+    private const val ERROR_MESSAGE = "message"
+    private const val ERROR_CODE = "errorCode"
     private const val RESULT_CODE = "resultCode"
     private const val SESSION_ID = "sessionId"
     private const val SESSION_DATA = "sessionData"

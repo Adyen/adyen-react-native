@@ -41,7 +41,10 @@ describe('createCheckout', () => {
     mockNativeCheckout.isAvailable.mockResolvedValue(true);
     const checkout = createCheckout(
       descriptor,
-      { paymentMethods: [] },
+      {
+        paymentMethods: [],
+        storedPaymentMethods: [{ id: 'stored-123', type: 'scheme' }],
+      },
       {},
       { onInvalidated: jest.fn() }
     ).publicHandle;
@@ -91,6 +94,23 @@ describe('createCheckout', () => {
       phase: 'query',
     });
     expect(mockNativeCheckout.isAvailable).not.toHaveBeenCalled();
+  });
+
+  test('rejects unknown stored IDs without delegating to native', async () => {
+    const checkout = createCheckout(
+      descriptor,
+      {
+        paymentMethods: [{ type: 'scheme', name: 'Card' }],
+        storedPaymentMethods: [{ id: 'known-stored-id', type: 'scheme' }],
+      },
+      {},
+      { onInvalidated: jest.fn() }
+    ).publicHandle;
+
+    await expect(
+      checkout.submit({ kind: 'storedPaymentMethod', id: 'unknown-stored-id' })
+    ).rejects.toEqual({ code: 'invalidTarget', phase: 'presentation' });
+    expect(mockNativeCheckout.submit).not.toHaveBeenCalled();
   });
 
   test('invalidates once and never converts cleanup into a listener operation', async () => {

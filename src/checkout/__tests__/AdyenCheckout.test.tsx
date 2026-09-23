@@ -45,6 +45,11 @@ const callbacks = {
   onComplete: jest.fn(),
   onError: jest.fn(),
 };
+const sessionCallbacks = {
+  onComplete: jest.fn(),
+  onError: jest.fn(),
+  onBeforeSubmit: jest.fn(),
+};
 
 function descriptor(id: string, flow: 'sessions' | 'advanced' = 'advanced') {
   return {
@@ -99,6 +104,117 @@ describe('AdyenCheckout', () => {
       requestId: 'request-events',
       kind: 'advancedSubmit',
       payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test('rejects malformed before-submit results instead of proceeding', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-session', 'sessions')
+    );
+    sessionCallbacks.onBeforeSubmit.mockResolvedValueOnce({ type: 'proceed' });
+    await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      sessionCallbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-session',
+      operationId: 'operation-session',
+      requestId: 'request-session',
+      kind: 'sessionBeforeSubmit',
+      payloadJson: '{"shopperEmail":"shopper@example.com"}',
+    });
+
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-session',
+      operationId: 'operation-session',
+      requestId: 'request-session',
+      kind: 'sessionBeforeSubmit',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test('forwards coupon codes as strings and settles rejected Apple Pay callbacks', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-apple-pay')
+    );
+    const onCouponCodeChange = jest.fn((_couponCode, resolve) =>
+      resolve({ paymentSummaryItems: [{ label: 'Total', amount: '10.00' }] })
+    );
+    const onAuthorize = jest.fn(async () => {
+      throw new Error('merchant rejected Apple Pay');
+    });
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        applepay: {
+          merchantID: 'merchant.example',
+          onCouponCodeChange,
+          onAuthorize,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson: '{"couponCode":"SAVE10"}',
+    });
+    expect(onCouponCodeChange).toHaveBeenCalledWith(
+      'SAVE10',
+      expect.any(Function)
+    );
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson:
+        '{"paymentSummaryItems":[{"label":"Total","amount":"10.00"}]}',
+    });
+
+    await eventHandler({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{"shippingContact":{"countryCode":"NL"}}',
+    });
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test('normalizes terminal failures to a complete portable error', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-error'));
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-error',
+      kind: 'error',
+      payloadJson:
+        '{"message":"CheckoutCoordinator<private-checkout-id> failed","errorCode":"nativePrivateError"}',
+    });
+
+    expect(callbacks.onError).toHaveBeenCalledWith({
+      message: 'Checkout failed',
+      errorCode: 'checkoutFailed',
     });
   });
 

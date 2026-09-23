@@ -681,10 +681,10 @@ export interface SessionConfiguration {
 
 // @public
 export type SessionsResult = {
-    sessionId: string;
-    sessionResult: string;
+    sessionId?: string;
+    sessionResult?: string;
     resultCode: ResultCode;
-    sessionData: string;
+    sessionData?: string;
 };
 
 // @public (undocumented)
