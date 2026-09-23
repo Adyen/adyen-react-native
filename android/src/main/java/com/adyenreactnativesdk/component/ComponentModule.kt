@@ -3,6 +3,7 @@ package com.adyenreactnativesdk.component
 import android.util.Log
 import com.adyenreactnativesdk.component.base.BaseActionModule
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.react.ComponentContract
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
@@ -116,25 +117,19 @@ class ComponentModule(
     private const val TAG = "ComponentModule"
 
     /** Registry of viewId (reactTag) → ViewState implementing ComponentContract */
-    private val consumers: MutableMap<String, ComponentContract> = mutableMapOf()
-
-    @Synchronized
     fun register(
       viewId: String,
       contract: ComponentContract,
     ) {
-      consumers[viewId] = contract
+      CheckoutCoordinator.shared.registerConsumer(viewId, contract)
     }
 
-    @Synchronized
     fun unregister(viewId: String) {
-      consumers.remove(viewId)
+      CheckoutCoordinator.shared.unregisterConsumer(viewId)
     }
 
-    @Synchronized
-    fun getConsumer(viewId: String): ComponentContract? = consumers[viewId]
+    fun getConsumer(viewId: String): ComponentContract? = CheckoutCoordinator.shared.consumer(viewId)
 
-    @Synchronized
-    fun clearConsumers() = consumers.clear()
+    fun clearConsumers() = CheckoutCoordinator.shared.clearConsumers()
   }
 }

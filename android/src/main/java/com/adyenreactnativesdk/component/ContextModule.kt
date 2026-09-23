@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.components.Checkout
 import com.adyen.checkout.core.components.CheckoutConfiguration
+import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyen.checkout.core.components.paymentmethod.PaymentMethodTypes
 import com.adyen.checkout.core.sessions.SessionResponse
@@ -25,6 +26,7 @@ import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge
 import com.adyenreactnativesdk.component.googlepay.GooglePayAvailability
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.EventName
 import com.adyenreactnativesdk.util.messaging.MessageBus
@@ -40,7 +42,7 @@ class ContextModule(
   messageBus: MessageBus,
 ) : BaseActionModule(reactContext, messageBus) {
   /** The manager awaiting a JS result, if any; only one payment can be mid-flight. */
-  private fun awaitingManager(): ComponentManager? = componentManagers.values.firstOrNull { it.isAwaitingResult }
+  private fun awaitingManager(): ComponentManager? = CheckoutCoordinator.shared.allManagers().singleOrNull { it.isAwaitingResult }
 
   override fun supportedEvents(): List<String> = EventName.sessionEvents()
 
@@ -103,9 +105,8 @@ class ContextModule(
   @ReactMethod
   override fun cleanup() {
     BaseModule.checkoutState?.sessionBeforeSubmitBridge?.cancel()
-    componentManagers.values.forEach { it.dispose() }
-    componentManagers.clear()
-    ComponentModule.clearConsumers()
+    CheckoutCoordinator.shared.clearManagers()
+    CheckoutCoordinator.shared.clearConsumers()
     super.cleanup()
   }
 
@@ -204,7 +205,7 @@ class ContextModule(
           // Closing the fragment is treated as a shopper cancellation of the payment.
           onCancelled = {
             sendError(ModuleException.Canceled())
-            unregisterManager(type)
+            CheckoutCoordinator.shared.unregisterManager(headlessManagerId(type))
           },
         )
       } catch (e: Exception) {
@@ -215,19 +216,24 @@ class ContextModule(
 
   private fun headlessFragmentTag(type: String) = "HeadlessSubmit-$type"
 
+  private fun headlessManagerId(type: String) = "headless-$type"
+
   /** Returns (building and caching if needed) the controller for [type] within [context]. */
   private suspend fun resolveController(
     context: CheckoutContext,
     type: String,
-  ) = componentManagers
-    .getOrPut(type) {
-      ComponentManager(
-        activity = appCompatActivity,
-        messageBus = messageBus,
-        sessionBeforeSubmitBridge = BaseModule.checkoutState?.sessionBeforeSubmitBridge,
-        onTerminal = { CheckoutFragment.hide(appCompatActivity.supportFragmentManager, headlessFragmentTag(type)) },
-      )
-    }.let { it.checkoutController ?: it.createController(context, type) }
+  ): CheckoutController? {
+    val managerId = headlessManagerId(type)
+    val manager =
+      CheckoutCoordinator.shared.manager(managerId)
+        ?: ComponentManager(
+          activity = appCompatActivity,
+          messageBus = messageBus,
+          sessionBeforeSubmitBridge = BaseModule.checkoutState?.sessionBeforeSubmitBridge,
+          onTerminal = { CheckoutFragment.hide(appCompatActivity.supportFragmentManager, headlessFragmentTag(type)) },
+        ).also { CheckoutCoordinator.shared.registerManager(managerId, it) }
+    return manager.checkoutController ?: manager.createController(context, type)
+  }
 
   private fun hasPaymentMethod(
     context: CheckoutContext,
@@ -262,8 +268,7 @@ class ContextModule(
     // Re-setup: clear stale controllers without tearing down the native checkout context.
     // The native side replaces its own state when the new setup completes.
     BaseModule.checkoutState?.sessionBeforeSubmitBridge?.cancel()
-    componentManagers.values.forEach { it.dispose() }
-    componentManagers.clear()
+    CheckoutCoordinator.shared.clearManagers()
     val sessionResponse: SessionResponse
     val configuration: CheckoutConfiguration
     try {
@@ -314,8 +319,7 @@ class ContextModule(
   ) {
     // Re-setup: clear stale controllers without tearing down the native checkout context.
     // The native side replaces its own state when the new setup completes.
-    componentManagers.values.forEach { it.dispose() }
-    componentManagers.clear()
+    CheckoutCoordinator.shared.clearManagers()
     val paymentMethods: PaymentMethods
     val configuration: CheckoutConfiguration
     try {
@@ -350,21 +354,6 @@ class ContextModule(
   }
 
   companion object {
-    /** Managers keyed by payment method type, covering both headless and mounted-view flows. */
-    private val componentManagers: MutableMap<String, ComponentManager> = mutableMapOf()
-
-    /** Adds a mounted view's manager to the routing table. */
-    internal fun registerManager(
-      type: String,
-      manager: ComponentManager,
-    ) {
-      componentManagers[type] = manager
-    }
-
-    internal fun unregisterManager(type: String) {
-      componentManagers.remove(type)?.dispose()
-    }
-
     private const val TAG = "ContextModule"
     private const val COMPONENT_NAME = "AdyenCheckout"
     private const val ID = "id"

@@ -9,6 +9,7 @@ package com.adyenreactnativesdk
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import com.adyenreactnativesdk.component.dropin.DropInModule
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 
 /**
  * Umbrella class for setting DropIn and Component specific parameters
@@ -24,7 +25,7 @@ object AdyenCheckout {
   }
 
   /**
-   * Allow Adyen Components to process intents. Dispatches to [CheckoutControllerRegistry].
+   * Allow Adyen Components to process intents through the coordinator-owned route.
    * @param intent  received redirect intent
    * @return `true` when intent could be handled by AdyenCheckout
    */
@@ -33,7 +34,7 @@ object AdyenCheckout {
     if (intent.data == null) {
       return false
     }
-    return CheckoutControllerRegistry.handleReturn(intent)
+    return CheckoutCoordinator.shared.handleReturn(intent)
   }
 
   /**

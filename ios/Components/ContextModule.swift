@@ -143,7 +143,7 @@ internal final class ContextModule: BaseModule {
                     return rejecter("session", "No payment methods available for the session", nil)
                 }
 
-                BaseModule.checkoutState = CheckoutState(checkoutContext: checkout)
+                CheckoutCoordinator.shared.checkoutState = CheckoutState(checkoutContext: checkout)
 
                 let dto = SessionDTO(id: id, sessionData: sessionData, paymentMethods: paymentMethods)
                 resolver(dto.jsonObject)
@@ -179,7 +179,7 @@ internal final class ContextModule: BaseModule {
                     presentationDelegate: self
                 )
                 self.setupAdvancedCallbacks(on: checkout)
-                BaseModule.checkoutState = CheckoutState(checkoutContext: checkout)
+                CheckoutCoordinator.shared.checkoutState = CheckoutState(checkoutContext: checkout)
                 resolver(true)
             } catch {
                 rejecter("setup", nil, error)
@@ -195,7 +195,7 @@ internal final class ContextModule: BaseModule {
                      rejecter _: @escaping RCTPromiseRejectBlock) {
         let typeString = type as String
         Task { @MainActor in
-            guard let state = BaseModule.checkoutState else {
+            guard let state = CheckoutCoordinator.shared.checkoutState else {
                 print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
                 return resolver(false)
             }
@@ -224,7 +224,7 @@ internal final class ContextModule: BaseModule {
         let typeString = type as String
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard let state = BaseModule.checkoutState else {
+            guard let state = CheckoutCoordinator.shared.checkoutState else {
                 print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
                 return rejecter("context", "Checkout context is not initialized", nil)
             }
@@ -243,7 +243,7 @@ internal final class ContextModule: BaseModule {
         let typeString = type as String
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard let state = BaseModule.checkoutState else {
+            guard let state = CheckoutCoordinator.shared.checkoutState else {
                 print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
                 return
             }
@@ -408,7 +408,7 @@ internal final class ContextModule: BaseModule {
     override func sendError(error: any Error) {
         let errorToSend = checkErrorType(error)
         // Session errors surface on `failSession`; advanced-flow errors on `fail`.
-        let eventName: EventName = BaseModule.checkoutState?.isSession == true ? .failSession : .fail
+        let eventName: EventName = CheckoutCoordinator.shared.checkoutState?.isSession == true ? .failSession : .fail
         sendEvent(withName: eventName.rawValue, body: errorToSend.jsonObject)
     }
 

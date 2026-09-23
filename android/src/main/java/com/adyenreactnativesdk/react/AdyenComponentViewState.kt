@@ -18,9 +18,9 @@ import com.adyen.checkout.core.common.CheckoutResultCode
 import com.adyen.checkout.core.components.CheckoutCallbacks
 import com.adyen.checkout.core.components.CheckoutPaymentFlow
 import com.adyenreactnativesdk.component.ComponentModule
-import com.adyenreactnativesdk.component.ContextModule
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.base.ComponentManager
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.react.base.DynamicComponentView
 import com.adyenreactnativesdk.react.base.LayoutChangeEvent
 import com.adyenreactnativesdk.react.base.LayoutListener
@@ -84,7 +84,7 @@ class AdyenComponentViewState(
     componentManager = manager
     ComponentModule.register(viewId, this)
     // Join the routing table so a result from JS can find this view's suspended closure.
-    ContextModule.registerManager(paymentMethodType, manager)
+    CheckoutCoordinator.shared.registerManager(viewId, manager)
 
     val composeView =
       ComposeView(activity).apply {
@@ -141,7 +141,7 @@ class AdyenComponentViewState(
 
   fun dispose(dynamicComponentView: DynamicComponentView) {
     dynamicComponentView.onDispose()
-    type?.let { ContextModule.unregisterManager(it) }
+    CheckoutCoordinator.shared.unregisterManager(dynamicComponentView.id.toString())
     configuration = null
     type = null
     ComponentModule.unregister(dynamicComponentView.id.toString())

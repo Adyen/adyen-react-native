@@ -11,6 +11,7 @@ import com.adyen.checkout.core.common.internal.helper.CheckoutPlatform
 import com.adyen.checkout.core.common.internal.helper.CheckoutPlatformParams
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethod
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import com.facebook.react.bridge.ReactApplicationContext
@@ -52,8 +53,12 @@ abstract class BaseModule(
   }
 
   companion object {
-    @Volatile
-    internal var checkoutState: CheckoutState? = null
+    /** Storage is owned by [CheckoutCoordinator], not this module companion. */
+    internal var checkoutState: CheckoutState?
+      get() = CheckoutCoordinator.shared.checkoutState
+      set(value) {
+        CheckoutCoordinator.shared.checkoutState = value
+      }
 
     @Volatile
     var sdkVersion: String? = null

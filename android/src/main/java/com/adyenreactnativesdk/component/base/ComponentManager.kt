@@ -18,7 +18,7 @@ import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyen.checkout.core.components.SessionCheckoutCallbacks
 import com.adyen.checkout.core.components.SubmitResult
-import com.adyenreactnativesdk.CheckoutControllerRegistry
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.util.messaging.MessageBus
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -77,7 +77,7 @@ internal class ComponentManager(
         }
       }
     checkoutController = controller
-    controller?.let { CheckoutControllerRegistry.register(it) }
+    controller?.let { CheckoutCoordinator.shared.registerRedirectController(it) }
     return controller
   }
 
@@ -116,7 +116,7 @@ internal class ComponentManager(
       additionalDetailsContinuation = null
       it.resume(AdditionalDetailsResult.Completion(CheckoutResultCode.ERROR.value))
     }
-    checkoutController?.let { CheckoutControllerRegistry.unregister(it) }
+    checkoutController?.let { CheckoutCoordinator.shared.unregisterRedirectController(it) }
     checkoutController = null
     onTerminal?.invoke()
   }

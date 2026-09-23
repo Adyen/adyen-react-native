@@ -32,7 +32,7 @@ internal final class ComponentProxy {
     /// Builds the payment component for this view within the shared checkout context.
     @MainActor
     func makeViewController(type: String, configuration _: NSDictionary) async throws -> UIViewController? {
-        guard let state = BaseModule.checkoutState else {
+        guard let state = CheckoutCoordinator.shared.checkoutState else {
             print("⚠️ AdyenReactNative: checkoutState is nil — call setup() or setupAdvanced() first")
             throw ModuleException.componentNotRegistered(viewId)
         }
@@ -51,7 +51,7 @@ internal final class ComponentProxy {
     func sendError(error: Error) {
         guard let emitter else { return }
         let errorToSend = emitter.checkErrorType(error)
-        let event: EventName = BaseModule.checkoutState?.isSession == true ? .failSession : .fail
+        let event: EventName = CheckoutCoordinator.shared.checkoutState?.isSession == true ? .failSession : .fail
         emitter.sendEvent(event: event, body: errorToSend.jsonObject)
     }
 

@@ -16,13 +16,13 @@ import com.adyen.checkout.core.components.Checkout
 import com.adyen.checkout.core.components.CheckoutConfiguration
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.threeds2.ThreeDS2Service
-import com.adyenreactnativesdk.CheckoutControllerRegistry
 import com.adyenreactnativesdk.component.base.AppCompatModule
 import com.adyenreactnativesdk.component.base.CheckoutFragment
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.toModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -76,7 +76,7 @@ class ActionModule(
               context = result.checkoutContext,
               callbacks = actionCallbacks(),
               coroutineScope = appCompatActivity.lifecycleScope,
-            ).also { CheckoutControllerRegistry.register(it) }
+            ).also { CheckoutCoordinator.shared.registerRedirectController(it) }
           CheckoutFragment.show(
             fragmentManager = appCompatActivity.supportFragmentManager,
             tag = FRAGMENT_TAG,
@@ -95,7 +95,7 @@ class ActionModule(
   @ReactMethod
   fun hide(success: Boolean?) {
     CheckoutFragment.hide(appCompatActivity.supportFragmentManager, FRAGMENT_TAG)
-    currentController?.let { CheckoutControllerRegistry.unregister(it) }
+    currentController?.let { CheckoutCoordinator.shared.unregisterRedirectController(it) }
     currentController = null
     promise = null
   }

@@ -18,6 +18,31 @@ internal let errorAdditionalDetailsResult = AdditionalDetailsResult.completion(r
 ///   while another is in progress will replace the current session and presenter.
 internal class BaseModule: RCTEventEmitter {
 
+    /// Compatibility accessors for legacy module tests. Storage remains exclusively in
+    /// ``CheckoutCoordinator`` and production lifecycle paths no longer use these names.
+    @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
+    internal static var checkoutState: CheckoutState? {
+        get { CheckoutCoordinator.shared.checkoutState }
+        set { CheckoutCoordinator.shared.checkoutState = newValue }
+    }
+
+    @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
+    internal static var presenterStack: [UIViewController] {
+        get { CheckoutCoordinator.shared.presenterStack }
+        set { CheckoutCoordinator.shared.presenterStack = newValue }
+    }
+
+    @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
+    internal static var currentPresenter: UIViewController? {
+        CheckoutCoordinator.shared.presenterStack.last
+    }
+
+    @available(*, deprecated, message: "Use CheckoutCoordinator.shared")
+    internal static var topPresenterProvider: @MainActor () -> UIViewController? {
+        get { CheckoutCoordinator.shared.topPresenterProvider }
+        set { CheckoutCoordinator.shared.topPresenterProvider = newValue }
+    }
+
     /// Override for testing. When nil, uses self (RCTEventEmitter).
     internal var emitterOverride: EventEmitter?
     internal var emitter: EventEmitter {
@@ -40,9 +65,6 @@ internal class BaseModule: RCTEventEmitter {
         emitter.send(event: event, body: body)
     }
 
-    /// Checkout state set by ``ContextModule.setup()`` / `setupAdvanced()`, reused by downstream modules.
-    internal static var checkoutState: CheckoutState?
-
     private static let sdkVersionLock = NSLock()
     private static var sdkVersionStorage: String?
     internal static var sdkVersion: String? {
@@ -57,20 +79,6 @@ internal class BaseModule: RCTEventEmitter {
             sdkVersionStorage = newValue
         }
     }
-
-    /// Stack of view controllers that have presented payment UI.
-    /// Appended to on each `present(component:)` call; cleared on cleanup.
-    /// Dismissing from the first entry cascades through the whole chain.
-    internal static var presenterStack: [UIViewController] = []
-
-    /// The most-recently-added presenter (used when deciding where to present next).
-    internal static var currentPresenter: UIViewController? {
-        presenterStack.last
-    }
-
-    /// Resolves the topmost view controller when the presenter stack is empty.
-    /// Defaults to `UIViewController.topPresenter`; override in tests to inject a mock.
-    internal static var topPresenterProvider: @MainActor () -> UIViewController? = { UIViewController.topPresenter }
 
     #if DEBUG
         override func invalidate() {
@@ -171,10 +179,10 @@ internal class BaseModule: RCTEventEmitter {
     }
 
     private func cleanUpOnMainThread() {
-        BaseModule.checkoutState = nil
+        CheckoutCoordinator.shared.checkoutState = nil
 
-        let root = BaseModule.presenterStack.first
-        BaseModule.presenterStack.removeAll()
+        let root = CheckoutCoordinator.shared.presenterStack.first
+        CheckoutCoordinator.shared.presenterStack.removeAll()
 
         guard root?.presentedViewController != nil else { return }
         root?.dismiss(animated: true)
@@ -188,11 +196,11 @@ extension BaseModule: PresentationDelegate {
             guard let self else { return }
 
             let presenter: UIViewController
-            if let currentPresenter = BaseModule.currentPresenter {
+            if let currentPresenter = CheckoutCoordinator.shared.presenterStack.last {
                 presenter = currentPresenter
-            } else if let topPresenter = BaseModule.topPresenterProvider() {
+            } else if let topPresenter = CheckoutCoordinator.shared.topPresenterProvider() {
                 presenter = topPresenter
-                BaseModule.presenterStack.append(topPresenter)
+                CheckoutCoordinator.shared.presenterStack.append(topPresenter)
             } else {
                 return self.sendError(error: ModuleException.notKeyWindow)
             }
@@ -204,7 +212,7 @@ extension BaseModule: PresentationDelegate {
                                                                                action: #selector(self.cancelDidPress))
 
             presenter.present(viewController, animated: true)
-            BaseModule.presenterStack.append(viewController)
+            CheckoutCoordinator.shared.presenterStack.append(viewController)
         }
     }
 
@@ -217,7 +225,7 @@ extension BaseModule: PresentationDelegate {
 extension BaseModule: UIAdaptivePresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         // Remove the swiped-away VC from the stack
-        BaseModule.presenterStack.removeAll { $0 === presentationController.presentedViewController }
+        CheckoutCoordinator.shared.presenterStack.removeAll { $0 === presentationController.presentedViewController }
         cancelDidPress()
     }
 }
