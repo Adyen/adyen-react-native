@@ -9,6 +9,7 @@ package com.adyenreactnativesdk.component.base
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.core.components.CheckoutController
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
@@ -37,5 +38,31 @@ class CheckoutFragmentTest {
 
     assertEquals(1, dismissals)
     assertEquals(null, activity.supportFragmentManager.findFragmentByTag("queued-action"))
+  }
+
+  @Test
+  fun `late cleanup for one token-unique tag leaves replacement fragment intact`() {
+    val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
+
+    CheckoutFragment.show(
+      fragmentManager = activity.supportFragmentManager,
+      tag = "standalone-action-action-a",
+      controllerProvider = { mock<CheckoutController>() },
+      onCancelled = null,
+    )
+    activity.supportFragmentManager.executePendingTransactions()
+    CheckoutFragment.show(
+      fragmentManager = activity.supportFragmentManager,
+      tag = "standalone-action-action-b",
+      controllerProvider = { mock<CheckoutController>() },
+      onCancelled = null,
+    )
+    activity.supportFragmentManager.executePendingTransactions()
+
+    CheckoutFragment.hide(activity.supportFragmentManager, "standalone-action-action-a")
+    activity.supportFragmentManager.executePendingTransactions()
+
+    assertEquals(null, activity.supportFragmentManager.findFragmentByTag("standalone-action-action-a"))
+    assertNotNull(activity.supportFragmentManager.findFragmentByTag("standalone-action-action-b"))
   }
 }

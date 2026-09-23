@@ -19,25 +19,23 @@ import org.robolectric.RobolectricTestRunner
 class ActionRedirectRouterTest {
   @After
   fun tearDown() {
-    ActionRedirectRouter.unregister(1)
-    ActionRedirectRouter.unregister(2)
+    ActionRedirectRouter.unregister("action-a")
+    ActionRedirectRouter.unregister("action-b")
   }
 
   @Test
   fun `redirect reaches only the operation that owns the Action route`() {
     var firstOperationCalls = 0
-    var replacementOperationCalls = 0
-    val returnIntent = Intent(Intent.ACTION_VIEW, Uri.parse("myapp://action/payment?redirectResult=result"))
+    val returnIntent =
+      Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse("myapp://action/payment?${ActionRedirectRouter.OPERATION_PARAMETER}=action-a&redirectResult=result"),
+      )
 
-    ActionRedirectRouter.register(1, Uri.parse("myapp://action/payment")) { firstOperationCalls += 1 }
+    assertTrue(ActionRedirectRouter.register("action-a", Uri.parse("myapp://action/payment")) { firstOperationCalls += 1 })
     assertTrue(ActionRedirectRouter.handleReturn(returnIntent))
-    ActionRedirectRouter.unregister(1)
-    ActionRedirectRouter.register(2, Uri.parse("myapp://action/payment")) { replacementOperationCalls += 1 }
-
-    assertTrue(ActionRedirectRouter.handleReturn(returnIntent))
-
     assertTrue(firstOperationCalls == 1)
-    assertTrue(replacementOperationCalls == 1)
+    assertFalse(ActionRedirectRouter.handleReturn(returnIntent))
   }
 
   @Test
@@ -48,7 +46,7 @@ class ActionRedirectRouterTest {
   @Test
   fun `checkout-owned and unrelated returns are not consumed by Action`() {
     var actionCalls = 0
-    ActionRedirectRouter.register(1, Uri.parse("myapp://action/payment")) { actionCalls += 1 }
+    assertTrue(ActionRedirectRouter.register("action-a", Uri.parse("myapp://action/payment")) { actionCalls += 1 })
 
     val checkoutReturn = Intent(Intent.ACTION_VIEW, Uri.parse("myapp://checkout/payment?redirectResult=checkout"))
     val unrelatedReturn = Intent(Intent.ACTION_VIEW, Uri.parse("myapp://other/payment?redirectResult=other"))
@@ -59,19 +57,59 @@ class ActionRedirectRouterTest {
   }
 
   @Test
-  fun `old Action route cannot consume a replacement return`() {
+  fun `foreign owner cannot replace an active route until exact owner unregisters`() {
     var firstOperationCalls = 0
     var replacementOperationCalls = 0
-    val oldReturn = Intent(Intent.ACTION_VIEW, Uri.parse("myapp://action/one?redirectResult=old"))
-    val replacementReturn = Intent(Intent.ACTION_VIEW, Uri.parse("myapp://action/two?redirectResult=new"))
 
-    ActionRedirectRouter.register(1, Uri.parse("myapp://action/one")) { firstOperationCalls += 1 }
-    ActionRedirectRouter.unregister(1)
-    ActionRedirectRouter.register(2, Uri.parse("myapp://action/two")) { replacementOperationCalls += 1 }
+    assertTrue(ActionRedirectRouter.register("action-a", Uri.parse("myapp://action/payment")) { firstOperationCalls += 1 })
+    assertFalse(ActionRedirectRouter.register("action-b", Uri.parse("myapp://action/payment")) { replacementOperationCalls += 1 })
+    ActionRedirectRouter.unregister("action-b")
+    assertFalse(ActionRedirectRouter.register("action-b", Uri.parse("myapp://action/payment")) { replacementOperationCalls += 1 })
 
-    assertFalse(ActionRedirectRouter.handleReturn(oldReturn))
-    assertTrue(ActionRedirectRouter.handleReturn(replacementReturn))
+    ActionRedirectRouter.unregister("action-a")
+    assertTrue(ActionRedirectRouter.register("action-b", Uri.parse("myapp://action/payment")) { replacementOperationCalls += 1 })
+    ActionRedirectRouter.unregister("action-a")
+
+    assertTrue(
+      ActionRedirectRouter.handleReturn(
+        Intent(
+          Intent.ACTION_VIEW,
+          Uri.parse("myapp://action/payment?${ActionRedirectRouter.OPERATION_PARAMETER}=action-b&redirectResult=result"),
+        ),
+      ),
+    )
     assertTrue(firstOperationCalls == 0)
     assertTrue(replacementOperationCalls == 1)
+  }
+
+  @Test
+  fun `stale same-base return remains unconsumed after replacement starts`() {
+    var replacementOperationCalls = 0
+    val staleReturn =
+      Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse("myapp://action/payment?${ActionRedirectRouter.OPERATION_PARAMETER}=action-a&redirectResult=stale"),
+      )
+    val replacementReturn =
+      Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse(
+          "myapp://action/payment?${ActionRedirectRouter.OPERATION_PARAMETER}=action-b&redirectResult=dynamic-result",
+        ),
+      )
+
+    assertTrue(ActionRedirectRouter.register("action-a", Uri.parse("myapp://action/payment")) {})
+    ActionRedirectRouter.unregister("action-a")
+    assertTrue(ActionRedirectRouter.register("action-b", Uri.parse("myapp://action/payment")) { replacementOperationCalls += 1 })
+
+    assertFalse(ActionRedirectRouter.handleReturn(staleReturn))
+    assertTrue(ActionRedirectRouter.handleReturn(replacementReturn))
+    assertFalse(ActionRedirectRouter.handleReturn(replacementReturn))
+    assertTrue(replacementOperationCalls == 1)
+  }
+
+  @Test
+  fun `native operation tokens are process-unique`() {
+    assertTrue(ActionOperationToken.create() != ActionOperationToken.create())
   }
 }

@@ -42,7 +42,6 @@ class ActionModule(
 ) : NativeAdyenActionSpec(reactContext),
   LifecycleEventListener {
   private var activeAction: ActiveAction? = null
-  private var nextOperationId = 0L
 
   init {
     reactContext.addLifecycleEventListener(this)
@@ -80,13 +79,27 @@ class ActionModule(
         promise.reject(ERROR_CANCELLED, "No active host for standalone action")
         return@onMain
       }
-      val operation = ActiveAction(id = ++nextOperationId, promise = promise)
+      val operation = ActiveAction(ownerToken = ActionOperationToken.create(), promise = promise)
+      if (
+        !ActionRedirectRouter.register(
+          ownerToken = operation.ownerToken,
+          returnUri = returnUri,
+          handler = { returnIntent ->
+            if (isUsable(operation)) {
+              operation.controller?.handleReturn(returnIntent)
+            }
+          },
+        )
+      ) {
+        promise.reject(ERROR_BUSY, "A standalone action is already active")
+        return@onMain
+      }
       activeAction = operation
 
       activity.lifecycleScope.launch {
         when (val result = Checkout.setup(action, configuration)) {
           is Checkout.Result.Success -> {
-            if (!isActive(operation)) return@launch
+            if (!isUsable(operation)) return@launch
             val controller =
               CheckoutController(
                 context = result.checkoutContext,
@@ -94,15 +107,10 @@ class ActionModule(
                 coroutineScope = activity.lifecycleScope,
               )
             operation.controller = controller
-            ActionRedirectRouter.register(operation.id, returnUri) { returnIntent ->
-              if (isActive(operation)) {
-                controller.handleReturn(returnIntent)
-              }
-            }
             CheckoutFragment.show(
               fragmentManager = activity.supportFragmentManager,
               tag = operation.fragmentTag,
-              controllerProvider = { if (isActive(operation)) controller else null },
+              controllerProvider = { if (isUsable(operation)) controller else null },
               cancellable = true,
               onCancelled = { cancel(operation) },
             )
@@ -189,10 +197,10 @@ class ActionModule(
   ) {
     if (!isActive(operation) || operation.finishing) return
     operation.finishing = true
-    ActionRedirectRouter.unregister(operation.id)
     operation.controller = null
     val complete: () -> Unit = completion@{
       if (activeAction !== operation) return@completion
+      ActionRedirectRouter.unregister(operation.ownerToken)
       activeAction = null
       settle()
     }
@@ -210,6 +218,8 @@ class ActionModule(
 
   private fun isActive(operation: ActiveAction): Boolean = activeAction === operation
 
+  private fun isUsable(operation: ActiveAction): Boolean = isActive(operation) && !operation.finishing
+
   private fun requiredReturnUri(configuration: JSONObject): Uri {
     val value = configuration.optString(PARAMETER_RETURN_URL)
     val uri = Uri.parse(value)
@@ -224,12 +234,12 @@ class ActionModule(
   }
 
   private class ActiveAction(
-    val id: Long,
+    val ownerToken: String,
     val promise: Promise,
     var controller: CheckoutController? = null,
     var finishing: Boolean = false,
   ) {
-    val fragmentTag = "$FRAGMENT_TAG_PREFIX-$id"
+    val fragmentTag = "$FRAGMENT_TAG_PREFIX-$ownerToken"
   }
 
   private companion object {
