@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk.cse
 
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.action.data.Action
 import com.adyen.checkout.core.action.data.ActionComponentData
@@ -87,7 +88,17 @@ class ActionModule(
         promise.reject(ERROR_CANCELLED, "No active host for standalone action")
         return@onMain
       }
-      val operation = ActiveAction(ownerToken = ActionOperationToken.create(), promise = promise)
+      val ownerToken = ActionOperationToken.create()
+      if (!ActionOwnerRegistry.acquire(ownerToken)) {
+        promise.reject(ERROR_BUSY, "A standalone action is already active")
+        return@onMain
+      }
+      val operation =
+        ActiveAction(
+          ownerToken = ownerToken,
+          promise = promise,
+          fragmentManager = activity.supportFragmentManager,
+        )
       activeAction = operation
 
       activity.lifecycleScope.launch {
@@ -195,15 +206,11 @@ class ActionModule(
     val complete: () -> Unit = completion@{
       if (activeAction !== operation) return@completion
       activeAction = null
+      ActionOwnerRegistry.release(operation.ownerToken)
       settle()
     }
-    val activity = reactContext.currentActivity as? AppCompatActivity
-    if (activity == null) {
-      complete()
-      return
-    }
     CheckoutFragment.hide(
-      fragmentManager = activity.supportFragmentManager,
+      fragmentManager = operation.fragmentManager,
       tag = operation.fragmentTag,
       onDismissed = complete,
     )
@@ -220,6 +227,7 @@ class ActionModule(
   private class ActiveAction(
     val ownerToken: String,
     val promise: Promise,
+    val fragmentManager: FragmentManager,
     var controller: CheckoutController? = null,
     var finishing: Boolean = false,
   ) {
@@ -246,4 +254,29 @@ internal object ActionOperationToken {
   private val nextValue = AtomicLong()
 
   fun create(): String = "action-${nextValue.incrementAndGet()}"
+}
+
+/**
+ * Process-wide reservation for the one standalone Action UI supported by the Android SDK.
+ *
+ * A module instance belongs to a React runtime and can be recreated while a previous runtime is
+ * still dismissing its fragment. Only the exact token that acquired this reservation may release
+ * it, so late cleanup from that previous runtime cannot clear a newer owner's reservation.
+ */
+internal object ActionOwnerRegistry {
+  private var ownerToken: String? = null
+
+  @Synchronized
+  fun acquire(token: String): Boolean {
+    if (ownerToken != null) return false
+    ownerToken = token
+    return true
+  }
+
+  @Synchronized
+  fun release(token: String) {
+    if (ownerToken == token) {
+      ownerToken = null
+    }
+  }
 }

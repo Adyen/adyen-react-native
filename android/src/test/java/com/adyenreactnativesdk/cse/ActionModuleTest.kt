@@ -8,6 +8,8 @@ package com.adyenreactnativesdk.cse
 
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -71,6 +73,28 @@ class ActionModuleTest {
   @Test
   fun `operation cleanup tokens remain process unique`() {
     assert(ActionOperationToken.create() != ActionOperationToken.create())
+  }
+
+  @Test
+  fun `only the exact token can release the process-global action owner`() {
+    val first = ActionOperationToken.create()
+    val second = ActionOperationToken.create()
+
+    assertTrue(ActionOwnerRegistry.acquire(first))
+    assertFalse(ActionOwnerRegistry.acquire(second))
+
+    ActionOwnerRegistry.release(second)
+    assertFalse(ActionOwnerRegistry.acquire(second))
+
+    ActionOwnerRegistry.release(first)
+    assertTrue(ActionOwnerRegistry.acquire(second))
+
+    ActionOwnerRegistry.release(first)
+    assertFalse(ActionOwnerRegistry.acquire(first))
+
+    ActionOwnerRegistry.release(second)
+    assertTrue(ActionOwnerRegistry.acquire(first))
+    ActionOwnerRegistry.release(first)
   }
 
   private fun mainThreadContext(): ReactApplicationContext {
