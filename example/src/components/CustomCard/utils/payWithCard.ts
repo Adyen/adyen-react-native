@@ -24,7 +24,7 @@ export async function payWithCard(
       encryptedExpiryMonth: encryptedCard.expiryMonth,
       encryptedExpiryYear: encryptedCard.expiryYear,
       encryptedSecurityCode: encryptedCard.cvv,
-      threeDS2SdkVersion: AdyenAction.threeDS2SdkVersion,
+      threeDS2SdkVersion: await AdyenAction.getThreeDS2SdkVersion(),
     },
     returnUrl: ENVIRONMENT.returnUrl,
   };

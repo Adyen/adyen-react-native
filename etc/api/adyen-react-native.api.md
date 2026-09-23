@@ -8,9 +8,9 @@ import { default as React_2 } from 'react';
 
 // @public
 export interface ActionModule {
+    getThreeDS2SdkVersion(): Promise<string>;
     handle: (action: PaymentAction, configuration: BaseConfiguration) => Promise<PaymentDetailsData>;
-    hide: (success: boolean) => void;
-    threeDS2SdkVersion: string;
+    hide(): Promise<void>;
 }
 
 // @public

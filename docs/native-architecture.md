@@ -367,20 +367,22 @@ Full availability and capability status is in [FeatureSupport.md](./FeatureSuppo
 
 ## Standalone action
 
-`AdyenAction.handle(action, configuration)` runs an action-only checkout with no `AdyenCheckout`
-handle:
+`AdyenAction.handle(action, configuration)` is a generated standalone Action TurboModule with no
+`AdyenCheckout` handle. It owns one identity-bound operation at a time and rejects overlap with
+`actionBusy`; it does not interact with the checkout coordinator:
 
 - **iOS** (`ios/CSE/ActionModule.swift`): sets up an `ActionOnlyCheckout` with
   `presentationDelegate: self` and calls `checkout.handle(action:)`; UI appears only if the SDK
-  requests presentation. `onAdditionalDetails` resolves the JS promise with the details json;
-  `onComplete` resolves with a result-code object; `onFailure` rejects. `hide(_:)` clears the promise
-  blocks and dismisses.
+  requests presentation. `onAdditionalDetails` resolves its owning JS promise with details JSON;
+  `onComplete` resolves with a result-code object; `onFailure` rejects. `hide()` cancels the active
+  operation, rejects it with `cancelled`, dismisses only Action-owned UI, and resolves after cleanup.
 - **Android** (`android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`): sets up the checkout and presents a `CheckoutFragment`
-  explicitly. `onAdditionalDetails` resolves the promise with the details and otherwise the flow
-  rejects (no `onComplete` result-code resolution). `hide(success)` dismisses the fragment and
-  releases the controller/promise.
+  explicitly. `onAdditionalDetails` resolves its owning promise with details and otherwise the flow
+  rejects (no `onComplete` result-code resolution). `hide()` dismisses the Action-owned fragment,
+  rejects the active promise with `cancelled`, and releases the controller.
 
-On both platforms the `hide` boolean currently has no semantic effect — it is not read.
+Host loss and React-context destruction follow the same cancellation cleanup. Late callbacks check
+the action operation identity and cannot settle a replacement or completed action.
 
 ## Re-setup and failed replacement
 

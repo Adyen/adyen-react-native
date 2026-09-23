@@ -752,10 +752,16 @@ finishes the task.
 
 ## Standalone action
 
-`AdyenAction.handle(action, configuration)` runs an action-only native checkout with no
+`AdyenAction.handle(action, configuration)` runs an action-only generated TurboModule with no
 `AdyenCheckout` handle. It parses inputs, creates action-only native state, handles the action, and
-settles its own promise. A details result precedes the merchant's `/payments/details`, which is
-followed by an explicit `hide(success)`.
+settles only the promise owned by that invocation. A details result precedes the merchant's
+`/payments/details`. `AdyenAction.hide()` is asynchronous and cancels the active action.
+
+Standalone Action uses a **reject-overlap** policy on both platforms. While an action is active, a
+second `handle` rejects with `actionBusy`; it never replaces the first operation. `hide()`, native
+failure, host loss, and React context destruction reject the active `handle` promise once with
+`cancelled` where applicable and release only Action-owned UI, controller, callbacks, and
+references. They never read or mutate the checkout coordinator or an active payment operation.
 
 ```mermaid
 sequenceDiagram
@@ -778,31 +784,28 @@ sequenceDiagram
       ActionMod-->>App: promise resolves with details
       App->>Server: POST /payments/details(data)
       Server-->>App: finalResult
-      App->>Action: hide(success)
+      App->>Action: await hide()
     else iOS onComplete
       SDK->>ActionMod: onComplete(result)
       ActionMod-->>App: promise resolves with result-code object (iOS only)
-      App->>Action: hide(success)
+      App->>Action: await hide()
     else failure after presentation
       SDK->>ActionMod: onFailure(error)
       ActionMod-->>App: promise rejects
-      App->>Action: hide(false)
+      App->>Action: await hide()
     end
   end
 ```
 
-Source: TypeScript `ActionModuleWrapper.handle` returns `nativeModule.handle(action, configuration)`
-and `hide(success)` calls `nativeModule.hide(success)`. Native `handle` first parses the action and
-configuration and rejects on failure before any UI or checkout state exists — so no `hide()` is
-required after a parse/setup rejection. After a successful `Checkout.setup`, Android
-(`android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`) presents a `CheckoutFragment` explicitly, while iOS (`ios/CSE/ActionModule.swift`)
-presents only if `checkout.handle(action:)` requests it through the presentation delegate.
-`onAdditionalDetails` resolves the promise with the details on both platforms; iOS additionally
-resolves an `onComplete` result-code object, whereas Android has no `onComplete` resolution and
-otherwise rejects. `hide` dismisses the UI and releases the controller/promise; its boolean argument
-is currently not read on either platform, so it has no semantic effect. Consumer-owned `hide(false)`
-is required only when native action UI/state may have been created, not after a parse/setup
-rejection.
+Source: `ActionModuleWrapper` serializes action/configuration across the generated boundary and
+parses only its own response. Native `handle` parses before reserving an operation, so parse/setup
+failure creates no UI and needs no cleanup. After successful `Checkout.setup`, Android
+(`android/src/main/java/com/adyenreactnativesdk/cse/ActionModule.kt`) presents its own
+`CheckoutFragment`, while iOS (`ios/CSE/ActionModule.swift`) presents only when
+`checkout.handle(action:)` requests it through the Action-owned presentation delegate.
+`onAdditionalDetails` resolves that operation's promise with details on both platforms; iOS can
+also resolve an `onComplete` result-code object. Late callbacks are ignored after cancellation,
+completion, or host cleanup.
 
 ## Concurrent continuation ambiguity (Android)
 

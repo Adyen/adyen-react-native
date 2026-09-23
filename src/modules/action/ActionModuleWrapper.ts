@@ -1,36 +1,34 @@
-import type { TurboModule } from 'react-native';
 import type {
   BaseConfiguration,
   PaymentAction,
   PaymentDetailsData,
 } from '../../core';
 import type { ActionModule } from './AdyenAction';
-
-/** Native module interface specific to Action */
-interface ActionNativeModule extends TurboModule {
-  handle(
-    action: PaymentAction,
-    configuration: BaseConfiguration
-  ): Promise<PaymentDetailsData>;
-  hide(success: boolean): void;
-  getConstants(): { threeDS2SdkVersion: string };
-}
+import type { Spec as ActionNativeModule } from '../../specs/NativeAdyenAction';
 
 export class ActionModuleWrapper implements ActionModule {
   private readonly nativeModule: ActionNativeModule;
 
-  public threeDS2SdkVersion: string;
-
   constructor(nativeModule: ActionNativeModule) {
     this.nativeModule = nativeModule;
-    this.threeDS2SdkVersion = nativeModule.getConstants().threeDS2SdkVersion;
   }
 
-  handle(action: PaymentAction, configuration: BaseConfiguration) {
-    return this.nativeModule.handle(action, configuration);
+  async getThreeDS2SdkVersion(): Promise<string> {
+    return this.nativeModule.getThreeDS2SdkVersion();
   }
 
-  hide(success: boolean) {
-    this.nativeModule.hide(success);
+  async handle(
+    action: PaymentAction,
+    configuration: BaseConfiguration
+  ): Promise<PaymentDetailsData> {
+    const result = await this.nativeModule.handle(
+      JSON.stringify(action),
+      JSON.stringify(configuration)
+    );
+    return JSON.parse(result) as PaymentDetailsData;
+  }
+
+  hide(): Promise<void> {
+    return this.nativeModule.hide();
   }
 }

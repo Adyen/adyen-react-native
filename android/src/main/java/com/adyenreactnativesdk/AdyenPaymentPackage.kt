@@ -53,8 +53,8 @@ class AdyenPaymentPackage : TurboReactPackage() {
         AndroidCheckoutModule.NAME to moduleInfo<AndroidCheckoutModule>(AndroidCheckoutModule.NAME, turbo = true),
         DROP_IN_MODULE_NAME to moduleInfo<DropInModule>(DROP_IN_MODULE_NAME),
         COMPONENT_MODULE_NAME to moduleInfo<ComponentModule>(COMPONENT_MODULE_NAME),
-        CSE_MODULE_NAME to moduleInfo<AdyenCSEModule>(CSE_MODULE_NAME),
-        ACTION_MODULE_NAME to moduleInfo<ActionModule>(ACTION_MODULE_NAME),
+        CSE_MODULE_NAME to moduleInfo<AdyenCSEModule>(CSE_MODULE_NAME, turbo = true),
+        ACTION_MODULE_NAME to moduleInfo<ActionModule>(ACTION_MODULE_NAME, turbo = true),
       )
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Adyen N.V.
+// Copyright (c) 2026 Adyen N.V.
 //
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
@@ -10,13 +10,9 @@ import AdyenEncryption
 import Foundation
 import React
 
-@objc(AdyenCSE)
-internal final class AdyenCSEModule: NSObject {
-
-    @objc
-    static func requiresMainQueueSetup() -> Bool {
-        true
-    }
+/// Swift implementation backing the generated CSE TurboModule.
+@objc(CSETurboModuleAdapter)
+internal final class CSETurboModuleAdapter: NSObject {
 
     @objc
     func encryptCard(_ payload: NSDictionary,
@@ -26,7 +22,7 @@ internal final class AdyenCSEModule: NSObject {
         do {
             let unencryptedCard = try Card(from: payload)
             let encryptedCard = try CardEncryptor.encrypt(card: unencryptedCard, with: publicKey as String)
-            resolver(encryptedCard.jsonObject)
+            try resolver(jsonString(encryptedCard.jsonObject))
         } catch {
             rejecter(Constant.errorMessage, nil, error)
         }
@@ -37,57 +33,53 @@ internal final class AdyenCSEModule: NSObject {
                     publicKey: NSString,
                     resolver: RCTPromiseResolveBlock,
                     rejecter: RCTPromiseRejectBlock) {
-        let formattedBin = bin.replacingOccurrences(of: " ", with: "")
         do {
-            let encryptedBin = try CardEncryptor.encrypt(bin: formattedBin as String, with: publicKey as String)
-            resolver(encryptedBin)
+            try resolver(CardEncryptor.encrypt(bin: bin.replacingOccurrences(of: " ", with: "") as String,
+                                               with: publicKey as String))
         } catch {
-            rejecter("AdyenCSE", Constant.errorMessage, error)
+            rejecter(Constant.errorMessage, nil, error)
         }
     }
 
     @objc
     func validateCardNumber(_ cardNumber: NSString,
                             enableLuhnCheck: Bool,
-                            resolver: RCTPromiseResolveBlock,
-                            rejecter _: RCTPromiseRejectBlock) {
-        let isValid = CardNumberValidator(
-            isLuhnCheckEnabled: enableLuhnCheck,
-            isEnteredBrandSupported: true
-        ).isValid(cardNumber as String)
-        resolver(isValid)
+                            resolver: RCTPromiseResolveBlock) {
+        resolver(CardNumberValidator(isLuhnCheckEnabled: enableLuhnCheck, isEnteredBrandSupported: true)
+            .isValid(cardNumber as String))
     }
 
     @objc
-    func validateCardExpiryDate(_ expiryMonth: NSString,
-                                expiryYear: NSString,
-                                resolver: RCTPromiseResolveBlock,
-                                rejecter _: RCTPromiseRejectBlock) {
+    func validateCardExpiryMonth(_ expiryMonth: NSString,
+                                 year expiryYear: NSString,
+                                 resolver: RCTPromiseResolveBlock) {
         let yearString = expiryYear as String
-        let isValid: Bool
-        if yearString.count == 2 || yearString.count == 4 {
-            let lastTwoYearChars = String(yearString.suffix(2))
-            isValid = CardExpiryDateValidator().isValid("\(expiryMonth)\(lastTwoYearChars)")
+        let isValid = if yearString.count == 2 || yearString.count == 4 {
+            CardExpiryDateValidator().isValid("\(expiryMonth)\(yearString.suffix(2))")
         } else {
-            isValid = false
+            false
         }
         resolver(isValid)
     }
 
     @objc
     func validateCardSecurityCode(_ securityCode: NSString,
-                                  cardBrand: NSString?,
-                                  resolver: RCTPromiseResolveBlock,
-                                  rejecter _: RCTPromiseRejectBlock) {
-        if let cardBrand = cardBrand as String? {
-            let brand = CardBrand(rawValue: cardBrand)
-            resolver(CardSecurityCodeValidator(cardBrand: brand).isValid(securityCode as String))
+                                  brand cardBrand: NSString?,
+                                  resolver: RCTPromiseResolveBlock) {
+        if let cardBrand {
+            resolver(CardSecurityCodeValidator(cardBrand: CardBrand(rawValue: cardBrand as String))
+                .isValid(securityCode as String))
         } else {
             resolver(CardSecurityCodeValidator().isValid(securityCode as String))
         }
     }
 
     private enum Constant {
-        static var errorMessage = "Encryption failed"
+        static let errorMessage = "Encryption failed"
     }
+}
+
+private func jsonString(_ object: Any) throws -> String {
+    let data = try JSONSerialization.data(withJSONObject: object)
+    return String(decoding: data, as: UTF8.self)
 }

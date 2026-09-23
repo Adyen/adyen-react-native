@@ -6,34 +6,31 @@
 
 package com.adyenreactnativesdk.cse
 
-import androidx.appcompat.app.AppCompatActivity
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import org.junit.Assert.assertNull
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-@Ignore(
-  "ActionModule's companion initializer reads ThreeDS2Service.INSTANCE.sdkVersion, which needs " +
-    "native 3DS2 libraries that Robolectric cannot load, so <clinit> throws before any test body " +
-    "runs. Re-enable by making threeDS2Version lazy, or move this to an instrumentation test.",
-)
 class ActionModuleTest {
-  // TODO(v6): `currentController` can't be seeded directly; this only checks hide() is safe when idle.
   @Test
-  fun `hide leaves no pending controller`() {
-    val activity = Robolectric.buildActivity(AppCompatActivity::class.java).create().get()
-    val reactContext = mock<ReactApplicationContext>()
-    whenever(reactContext.currentActivity).thenReturn(activity)
-    val module = ActionModule(reactContext)
+  fun `hide is idempotent when no standalone action is active`() {
+    val context = mock<ReactApplicationContext>()
+    val promise = mock<Promise>()
+    doAnswer { invocation ->
+      (invocation.arguments[0] as Runnable).run()
+      null
+    }.whenever(context).runOnUiQueueThread(any())
+    val module = ActionModule(context)
 
-    module.hide(true)
+    module.hide(promise)
 
-    assertNull(ActionModule.currentController)
+    verify(promise).resolve(null)
   }
 }

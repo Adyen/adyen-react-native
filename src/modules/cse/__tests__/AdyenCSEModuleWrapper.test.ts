@@ -6,12 +6,11 @@ function createMockCSEModule() {
   return {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
-    encryptCard: jest.fn<() => Promise<any>>().mockResolvedValue({
-      encryptedCardNumber: 'adyenjs_...',
-      encryptedExpiryMonth: 'adyenjs_...',
-      encryptedExpiryYear: 'adyenjs_...',
-      encryptedSecurityCode: 'adyenjs_...',
-    }),
+    encryptCard: jest
+      .fn<() => Promise<string>>()
+      .mockResolvedValue(
+        '{"encryptedCardNumber":"adyenjs_...","encryptedExpiryMonth":"adyenjs_...","encryptedExpiryYear":"adyenjs_...","encryptedSecurityCode":"adyenjs_..."}'
+      ),
     encryptBin: jest
       .fn<() => Promise<string>>()
       .mockResolvedValue('adyenjs_bin_...'),
@@ -48,7 +47,7 @@ describe('AdyenCSEModuleWrapper', () => {
       await wrapper.encryptCard(card, publicKey);
 
       expect(mockNativeModule.encryptCard).toHaveBeenCalledWith(
-        card,
+        JSON.stringify(card),
         publicKey
       );
     });
@@ -60,7 +59,9 @@ describe('AdyenCSEModuleWrapper', () => {
         encryptedExpiryYear: 'adyenjs_expiry_year',
         encryptedSecurityCode: 'adyenjs_cvc',
       };
-      mockNativeModule.encryptCard.mockResolvedValue(expectedResult);
+      mockNativeModule.encryptCard.mockResolvedValue(
+        JSON.stringify(expectedResult)
+      );
 
       const wrapper = new AdyenCSEWrapper(mockNativeModule);
       const result = await wrapper.encryptCard(
@@ -86,7 +87,10 @@ describe('AdyenCSEModuleWrapper', () => {
 
       await wrapper.encryptCard(card as any, 'key');
 
-      expect(mockNativeModule.encryptCard).toHaveBeenCalledWith(card, 'key');
+      expect(mockNativeModule.encryptCard).toHaveBeenCalledWith(
+        JSON.stringify(card),
+        'key'
+      );
     });
 
     test('should propagate errors from native module', async () => {
@@ -131,6 +135,32 @@ describe('AdyenCSEModuleWrapper', () => {
       await wrapper.encryptBin(bin, 'key');
 
       expect(mockNativeModule.encryptBin).toHaveBeenCalledWith(bin, 'key');
+    });
+
+    test('settles concurrent encryption calls independently in reverse order', async () => {
+      let resolveFirst!: (value: string) => void;
+      let resolveSecond!: (value: string) => void;
+      mockNativeModule.encryptBin
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              resolveFirst = resolve;
+            })
+        )
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              resolveSecond = resolve;
+            })
+        );
+      const wrapper = new AdyenCSEWrapper(mockNativeModule);
+      const first = wrapper.encryptBin('411111', 'first-key');
+      const second = wrapper.encryptBin('550000', 'second-key');
+
+      resolveSecond('second-encrypted-bin');
+      await expect(second).resolves.toBe('second-encrypted-bin');
+      resolveFirst('first-encrypted-bin');
+      await expect(first).resolves.toBe('first-encrypted-bin');
     });
 
     test('should propagate errors from native module', async () => {

@@ -141,7 +141,9 @@
         "AdyenComponentView": "ADYAdyenComponentView"
       },
       "modulesProvider": {
-        "AdyenCheckout": "AdyenCheckoutTurboModule"
+        "AdyenCheckout": "AdyenCheckoutTurboModule",
+        "AdyenAction": "AdyenActionTurboModule",
+        "AdyenCSE": "AdyenCSETurboModule"
       }
     }
   }

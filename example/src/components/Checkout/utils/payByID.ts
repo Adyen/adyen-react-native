@@ -22,7 +22,7 @@ export async function payByID(
       type: 'scheme',
       storedPaymentMethodId: id,
       encryptedSecurityCode: encryptedCard.cvv,
-      threeDS2SdkVersion: AdyenAction.threeDS2SdkVersion,
+      threeDS2SdkVersion: await AdyenAction.getThreeDS2SdkVersion(),
     },
     returnUrl: ENVIRONMENT.returnUrl,
   };

@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2023 Adyen N.V.
+ * Copyright (c) 2026 Adyen N.V.
  *
  * This file is open source and available under the MIT license. See the LICENSE file for more info.
  */
 
 package com.adyenreactnativesdk.cse
 
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.action.data.Action
 import com.adyen.checkout.core.action.data.ActionComponentData
@@ -16,120 +17,186 @@ import com.adyen.checkout.core.components.Checkout
 import com.adyen.checkout.core.components.CheckoutConfiguration
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.threeds2.ThreeDS2Service
-import com.adyenreactnativesdk.component.base.AppCompatModule
 import com.adyenreactnativesdk.component.base.CheckoutFragment
 import com.adyenreactnativesdk.component.base.KnownException
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.toModuleException
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
-import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
+import com.adyenreactnativesdk.react.NativeAdyenActionSpec
 import com.adyenreactnativesdk.util.ReactNativeJson
+import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.ReadableMap
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
+/**
+ * Generated standalone Action TurboModule.
+ *
+ * The module owns no payment-checkout state. It accepts one action at a time, rejects overlap
+ * with `actionBusy`, and binds every SDK callback to the operation that created it.
+ */
 class ActionModule(
-  reactContext: ReactApplicationContext?,
-) : AppCompatModule(reactContext) {
-  private var promise: Promise? = null
+  private val reactContext: ReactApplicationContext,
+) : NativeAdyenActionSpec(reactContext),
+  LifecycleEventListener {
+  private var activeAction: ActiveAction? = null
+  private var nextOperationId = 0L
 
-  override fun getName(): String = COMPONENT_NAME
-
-  override fun getConstants(): MutableMap<String, Any> = hashMapOf(THREEDS_VERSION_NAME to threeDS2Version)
-
-  @ReactMethod
-  fun addListener(eventName: String?) { // No JS events expected
+  init {
+    reactContext.addLifecycleEventListener(this)
   }
 
-  @ReactMethod
-  fun removeListeners(count: Int?) { // No JS events expected
-  }
-
-  @ReactMethod
-  fun handle(
-    actionMap: ReadableMap,
-    configuration: ReadableMap,
+  override fun handle(
+    actionJson: String,
+    configurationJson: String,
     promise: Promise,
   ) {
-    this.promise = promise
-    val action: Action
-    val checkoutConfiguration: CheckoutConfiguration
-    try {
-      val jsonObject = ReactNativeJson.convertMapToJson(actionMap)
-      action = Action.SERIALIZER.deserialize(jsonObject)
-      checkoutConfiguration = CheckoutConfigurationFactory.get(configuration)
-    } catch (e: ModuleException) {
-      promise.reject(e.code, e.message, e)
-      return
-    } catch (e: Exception) {
-      promise.reject(PARSING_ERROR, e.message, e)
-      return
-    }
+    onMain {
+      if (activeAction != null) {
+        promise.reject(ERROR_BUSY, "A standalone action is already active")
+        return@onMain
+      }
 
-    appCompatActivity.lifecycleScope.launch {
-      when (val result = Checkout.setup(action, checkoutConfiguration)) {
-        is Checkout.Result.Success -> {
-          currentController =
-            CheckoutController(
-              context = result.checkoutContext,
-              callbacks = actionCallbacks(),
-              coroutineScope = appCompatActivity.lifecycleScope,
-            ).also { CheckoutCoordinator.shared.registerRedirectController(it) }
-          CheckoutFragment.show(
-            fragmentManager = appCompatActivity.supportFragmentManager,
-            tag = FRAGMENT_TAG,
-            controllerProvider = { currentController },
-            cancellable = false,
-          )
-        }
+      val action: Action
+      val configuration: CheckoutConfiguration
+      try {
+        action = Action.SERIALIZER.deserialize(JSONObject(actionJson))
+        configuration = CheckoutConfigurationFactory.get(ReactNativeJson.convertJsonToMap(JSONObject(configurationJson)))
+      } catch (error: ModuleException) {
+        promise.reject(error.code, error.message, error)
+        return@onMain
+      } catch (error: Exception) {
+        promise.reject(ERROR_PARSING, error.message, error)
+        return@onMain
+      }
 
-        is Checkout.Result.Error -> {
-          reject(result.error.toModuleException())
+      val activity = reactContext.currentActivity as? AppCompatActivity
+      if (activity == null) {
+        promise.reject(ERROR_CANCELLED, "No active host for standalone action")
+        return@onMain
+      }
+      val operation = ActiveAction(id = ++nextOperationId, promise = promise)
+      activeAction = operation
+
+      activity.lifecycleScope.launch {
+        when (val result = Checkout.setup(action, configuration)) {
+          is Checkout.Result.Success -> {
+            if (!isActive(operation)) return@launch
+            val controller =
+              CheckoutController(
+                context = result.checkoutContext,
+                callbacks = callbacks(operation),
+                coroutineScope = activity.lifecycleScope,
+              )
+            operation.controller = controller
+            CheckoutFragment.show(
+              fragmentManager = activity.supportFragmentManager,
+              tag = operation.fragmentTag,
+              controllerProvider = { if (isActive(operation)) controller else null },
+              cancellable = true,
+              onCancelled = { cancel(operation) },
+            )
+          }
+
+          is Checkout.Result.Error -> {
+            reject(operation, result.error.toModuleException())
+          }
         }
       }
     }
   }
 
-  @ReactMethod
-  fun hide(success: Boolean?) {
-    CheckoutFragment.hide(appCompatActivity.supportFragmentManager, FRAGMENT_TAG)
-    currentController?.let { CheckoutCoordinator.shared.unregisterRedirectController(it) }
-    currentController = null
-    promise = null
+  override fun hide(promise: Promise) {
+    onMain {
+      activeAction?.let(::cancel)
+      promise.resolve(null)
+    }
   }
 
-  private fun actionCallbacks(): ActionOnlyCheckoutCallbacks =
+  override fun getThreeDS2SdkVersion(promise: Promise) {
+    promise.resolve(ThreeDS2Service.INSTANCE.sdkVersion)
+  }
+
+  override fun onHostResume() = Unit
+
+  override fun onHostPause() = Unit
+
+  override fun onHostDestroy() {
+    onMain { activeAction?.let(::cancel) }
+  }
+
+  override fun invalidate() {
+    reactContext.removeLifecycleEventListener(this)
+    onMain { activeAction?.let(::cancel) }
+    super.invalidate()
+  }
+
+  private fun callbacks(operation: ActiveAction): ActionOnlyCheckoutCallbacks =
     ActionOnlyCheckoutCallbacks(
       onAdditionalDetails = { data ->
-        resolve(data)
+        resolve(operation, ActionComponentData.SERIALIZER.serialize(data).toString())
         AdditionalDetailsResult.Completion(CheckoutResultCode.AUTHORISED.value)
       },
-      onFailure = { error -> reject(error.toModuleException()) },
+      onFailure = { error -> reject(operation, error.toModuleException()) },
     )
 
-  private fun resolve(data: ActionComponentData) {
-    val json = ActionComponentData.SERIALIZER.serialize(data)
-    promise?.resolve(ReactNativeJson.convertJsonToMap(json))
-    promise = null
+  private fun resolve(
+    operation: ActiveAction,
+    value: String,
+  ) {
+    if (!isActive(operation)) return
+    activeAction = null
+    (reactContext.currentActivity as? AppCompatActivity)?.let {
+      CheckoutFragment.hide(it.supportFragmentManager, operation.fragmentTag)
+    }
+    operation.controller = null
+    operation.promise.resolve(value)
   }
 
-  private fun reject(exception: Exception) {
-    val code = (exception as? KnownException)?.code ?: COMPONENT_ERROR
-    promise?.reject(code, exception.message, exception)
-    promise = null
+  private fun reject(
+    operation: ActiveAction,
+    error: Exception,
+  ) {
+    if (!isActive(operation)) return
+    activeAction = null
+    (reactContext.currentActivity as? AppCompatActivity)?.let {
+      CheckoutFragment.hide(it.supportFragmentManager, operation.fragmentTag)
+    }
+    operation.controller = null
+    val knownError = error as? KnownException
+    operation.promise.reject(knownError?.code ?: ERROR_COMPONENT, error.message, error)
   }
 
-  companion object {
-    private const val COMPONENT_NAME = "AdyenAction"
-    private const val FRAGMENT_TAG = "ActionFragment"
-    private var threeDS2Version = ThreeDS2Service.INSTANCE.sdkVersion
-    private const val THREEDS_VERSION_NAME = "threeDS2SdkVersion"
-    private const val COMPONENT_ERROR = "actionError"
-    private const val PARSING_ERROR = "parsingError"
+  private fun cancel(operation: ActiveAction) {
+    if (!isActive(operation)) return
+    activeAction = null
+    (reactContext.currentActivity as? AppCompatActivity)?.let {
+      CheckoutFragment.hide(it.supportFragmentManager, operation.fragmentTag)
+    }
+    operation.controller = null
+    operation.promise.reject(ERROR_CANCELLED, "Standalone action cancelled")
+  }
 
-    internal var currentController: CheckoutController? = null
-      private set
+  private fun isActive(operation: ActiveAction): Boolean = activeAction === operation
+
+  private fun onMain(action: () -> Unit) {
+    reactContext.runOnUiQueueThread(action)
+  }
+
+  private class ActiveAction(
+    val id: Long,
+    val promise: Promise,
+    var controller: CheckoutController? = null,
+  ) {
+    val fragmentTag = "$FRAGMENT_TAG_PREFIX-$id"
+  }
+
+  private companion object {
+    const val FRAGMENT_TAG_PREFIX = "AdyenStandaloneAction"
+    const val ERROR_BUSY = "actionBusy"
+    const val ERROR_CANCELLED = "cancelled"
+    const val ERROR_COMPONENT = "actionError"
+    const val ERROR_PARSING = "parsingError"
   }
 }

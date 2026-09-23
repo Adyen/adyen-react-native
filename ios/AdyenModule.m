@@ -52,46 +52,4 @@ RCT_EXTERN_METHOD(confirm:(nonnull NSString *)viewId
 
 @end
 
-@interface RCT_EXTERN_MODULE(AdyenCSE, NSObject)
-
-RCT_EXTERN_METHOD(encryptCard:(NSDictionary *)card
-                  publicKey:(NSString *)publicKey
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(encryptBin:(NSString *)bin
-                  publicKey:(NSString *)publicKey
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(validateCardNumber:(NSString *)cardNumber
-                  enableLuhnCheck:(BOOL)enableLuhnCheck
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(validateCardExpiryDate:(NSString *)expiryMonth
-                  expiryYear:(NSString *)expiryYear
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(validateCardSecurityCode:(NSString *)securityCode
-                  cardBrand:(nullable NSString *)cardBrand
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-@end
-
-@interface RCT_EXTERN_MODULE(AdyenAction, NSObject)
-
-RCT_EXTERN_METHOD(hide:(nonnull NSNumber *)success)
-
-RCT_EXTERN_METHOD(handle:(NSDictionary *)action
-                  configuration:(NSDictionary *)configurationJSON
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-@end
-
-
-
 
