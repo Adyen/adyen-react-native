@@ -70,5 +70,14 @@ target 'AdyenExample' do
         config.build_settings['SWIFT_VERIFY_EMITTED_MODULE_INTERFACE'] = 'NO'
       end
     end
+
+    # Xcode 27.2 rejects this generated AsyncStorage resource target at iOS 13.4.
+    # Keep the override scoped to the target and aligned with the example app minimum.
+    async_storage_resources = installer.pods_project.targets.find do |target|
+      target.name == 'RNCAsyncStorage-RNCAsyncStorage_resources'
+    end
+    async_storage_resources&.build_configurations&.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+    end
   end
 end
