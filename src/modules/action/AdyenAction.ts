@@ -1,5 +1,5 @@
 import type {
-  BaseConfiguration,
+  Configuration,
   PaymentAction,
   PaymentDetailsData,
 } from '../../core';
@@ -14,10 +14,11 @@ export interface ActionModule {
   /**
    * Handle a payment action received from Adyen API.
    * @param action - The payment action to be handled.
+   * @param configuration - Must include the exact return URL supplied with the payment request.
    */
   handle: (
     action: PaymentAction,
-    configuration: BaseConfiguration
+    configuration: Configuration
   ) => Promise<PaymentDetailsData>;
 
   /**

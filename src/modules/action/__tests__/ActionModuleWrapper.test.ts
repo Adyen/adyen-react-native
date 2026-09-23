@@ -26,6 +26,7 @@ describe('ActionModuleWrapper', () => {
     const configuration = {
       environment: 'test' as const,
       clientKey: 'test_key',
+      returnUrl: 'myapp://action/payment',
     };
 
     await expect(wrapper.handle(action, configuration)).resolves.toEqual({
@@ -44,7 +45,11 @@ describe('ActionModuleWrapper', () => {
     await expect(
       wrapper.handle(
         { type: 'redirect', paymentMethodType: 'ideal' },
-        { environment: 'test' as const, clientKey: 'test_key' }
+        {
+          environment: 'test' as const,
+          clientKey: 'test_key',
+          returnUrl: 'myapp://action/payment',
+        }
       )
     ).rejects.toThrow('actionBusy');
   });
@@ -69,6 +74,7 @@ describe('ActionModuleWrapper', () => {
     const configuration = {
       environment: 'test' as const,
       clientKey: 'test_key',
+      returnUrl: 'myapp://action/payment',
     };
     const first = wrapper.handle(
       { type: 'redirect', paymentMethodType: 'ideal' },

@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.cse
 
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.action.data.Action
@@ -60,9 +61,12 @@ class ActionModule(
 
       val action: Action
       val configuration: CheckoutConfiguration
+      val returnUri: Uri
       try {
         action = Action.SERIALIZER.deserialize(JSONObject(actionJson))
-        configuration = CheckoutConfigurationFactory.get(ReactNativeJson.convertJsonToMap(JSONObject(configurationJson)))
+        val configurationObject = JSONObject(configurationJson)
+        configuration = CheckoutConfigurationFactory.get(ReactNativeJson.convertJsonToMap(configurationObject))
+        returnUri = requiredReturnUri(configurationObject)
       } catch (error: ModuleException) {
         promise.reject(error.code, error.message, error)
         return@onMain
@@ -90,7 +94,7 @@ class ActionModule(
                 coroutineScope = activity.lifecycleScope,
               )
             operation.controller = controller
-            ActionRedirectRouter.register(operation.id) { returnIntent ->
+            ActionRedirectRouter.register(operation.id, returnUri) { returnIntent ->
               if (isActive(operation)) {
                 controller.handleReturn(returnIntent)
               }
@@ -206,6 +210,15 @@ class ActionModule(
 
   private fun isActive(operation: ActiveAction): Boolean = activeAction === operation
 
+  private fun requiredReturnUri(configuration: JSONObject): Uri {
+    val value = configuration.optString(PARAMETER_RETURN_URL)
+    val uri = Uri.parse(value)
+    require(value.isNotBlank() && uri.scheme != null && uri.path != null) {
+      "A standalone Action requires a returnUrl with a scheme and path"
+    }
+    return uri
+  }
+
   private fun onMain(action: () -> Unit) {
     reactContext.runOnUiQueueThread(action)
   }
@@ -225,5 +238,6 @@ class ActionModule(
     const val ERROR_CANCELLED = "cancelled"
     const val ERROR_COMPONENT = "actionError"
     const val ERROR_PARSING = "parsingError"
+    const val PARAMETER_RETURN_URL = "returnUrl"
   }
 }

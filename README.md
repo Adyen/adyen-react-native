@@ -421,6 +421,8 @@ import { AdyenAction } from '@adyen/react-native';
 const data = await AdyenAction.handle(apiResponse.action, {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
+  // Must match the unique returnUrl supplied to the /payments request.
+  returnUrl: 'myapp://payment/action',
 });
 const result = await ApiClient.paymentDetails(data);
 ```

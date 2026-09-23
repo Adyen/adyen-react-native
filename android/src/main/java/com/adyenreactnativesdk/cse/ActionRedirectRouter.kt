@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk.cse
 
 import android.content.Intent
+import android.net.Uri
 
 /**
  * Routes an Android return only to the currently active standalone Action operation.
@@ -20,9 +21,10 @@ internal object ActionRedirectRouter {
 
   fun register(
     operationId: Long,
+    returnUri: Uri,
     handler: (Intent) -> Unit,
   ) {
-    route = Route(operationId, handler)
+    route = Route(operationId, returnUri, handler)
   }
 
   fun unregister(operationId: Long) {
@@ -33,12 +35,21 @@ internal object ActionRedirectRouter {
 
   fun handleReturn(intent: Intent): Boolean {
     val currentRoute = route ?: return false
+    if (!currentRoute.matches(intent.data)) return false
     currentRoute.handler(intent)
     return true
   }
 
   private class Route(
     val operationId: Long,
+    private val returnUri: Uri,
     val handler: (Intent) -> Unit,
-  )
+  ) {
+    fun matches(uri: Uri?): Boolean =
+      uri != null &&
+        uri.scheme == returnUri.scheme &&
+        uri.authority == returnUri.authority &&
+        uri.port == returnUri.port &&
+        uri.path == returnUri.path
+  }
 }

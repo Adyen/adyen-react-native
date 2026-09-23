@@ -148,11 +148,17 @@ class CheckoutFragment : BottomSheetDialogFragment() {
           onDismissed = onDismissed,
         )
       val fragment = fragmentManager.findFragmentByTag(tag) as? CheckoutFragment
-      if (fragment == null) {
+      val committedFragment =
+        fragment
+          ?: run {
+            fragmentManager.executePendingTransactions()
+            fragmentManager.findFragmentByTag(tag) as? CheckoutFragment
+          }
+      if (committedFragment == null) {
         configs.remove(tag)?.onDismissed?.invoke()
         return
       }
-      fragment.dismissAllowingStateLoss()
+      committedFragment.dismissAllowingStateLoss()
     }
   }
 }

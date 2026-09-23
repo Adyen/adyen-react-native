@@ -26,7 +26,7 @@ export async function payWithCard(
       encryptedSecurityCode: encryptedCard.cvv,
       threeDS2SdkVersion: await AdyenAction.getThreeDS2SdkVersion(),
     },
-    returnUrl: ENVIRONMENT.returnUrl,
+    returnUrl: `${ENVIRONMENT.returnUrl}/action`,
   };
 
   let result = await apiClient.payments(paymentData, configuration);
@@ -34,6 +34,7 @@ export async function payWithCard(
     const actionData = await AdyenAction.handle(result.action, {
       environment: ENVIRONMENT.environment,
       clientKey: ENVIRONMENT.clientKey,
+      returnUrl: `${ENVIRONMENT.returnUrl}/action`,
     });
     result = await apiClient.paymentDetails(actionData);
   }

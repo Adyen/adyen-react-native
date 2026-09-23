@@ -1,5 +1,5 @@
 import type {
-  BaseConfiguration,
+  Configuration,
   PaymentAction,
   PaymentDetailsData,
 } from '../../core';
@@ -19,7 +19,7 @@ export class ActionModuleWrapper implements ActionModule {
 
   async handle(
     action: PaymentAction,
-    configuration: BaseConfiguration
+    configuration: Configuration
   ): Promise<PaymentDetailsData> {
     const result = await this.nativeModule.handle(
       JSON.stringify(action),
