@@ -4,320 +4,339 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import type {
-  AdvancedCallbacks,
-  Checkout,
-  Configuration,
-  PaymentMethodsResponse,
-  SessionCallbacks,
-  SessionConfiguration,
-} from '../core';
-import { BeforeSubmitResult } from '../core';
-import { NativeCheckout } from '../modules/context/ContextModule';
-import { AdyenDropIn } from '../modules/dropin/AdyenDropIn';
+import NativeCheckout, {
+  type CheckoutEvent,
+  type CheckoutResponse,
+} from '../specs/NativeAdyenCheckout';
 import {
-  startDropInEventListeners,
-  type EventListenerTarget,
-} from './utils/startEventListeners';
+  type AdvancedCallbacks,
+  type Checkout,
+  type Configuration,
+  type PaymentDetailsData,
+  type PaymentMethodData,
+  type PaymentMethodsResponse,
+  type SessionCallbacks,
+  type SessionConfiguration,
+} from '../core';
 import { checkConfiguration } from './utils/checkConfiguration';
 import { checkPaymentMethodsResponse } from './utils/checkPaymentMethodsResponse';
-import { subscribeApplePayHandlers } from './utils/subscribeApplePayHandlers';
-import { DROP_IN_KEY } from './constants';
-import { createCheckout } from './createCheckout';
-import type { CheckoutHost, CheckoutRuntime, EventHandlers } from './types';
-import type { SubmitResult } from '../core';
+import {
+  createCheckout,
+  type CheckoutCallbacks,
+  type CheckoutHandle,
+} from './createCheckout';
+import { asCheckoutError } from './errors';
+import type { CheckoutLifecycle } from './types';
 
-/** Sends a {@link SubmitResult} back to the suspended native callback awaiting it. */
-function dispatchSubmitResult(result: SubmitResult): void {
-  switch (result.type) {
-    case 'action':
-      NativeCheckout.action(result.action);
-      break;
-    case 'completed':
-      NativeCheckout.completion(result.resultCode);
-      break;
-    case 'retry':
-      NativeCheckout.retry(result.message);
-      break;
+const MERCHANT_CALLBACK_FAILURE = JSON.stringify({
+  type: 'failure',
+  code: 'cancelled',
+});
+
+const eventHandlers = new Map<string, CheckoutHandle>();
+let activeCheckout: CheckoutHandle | undefined;
+let eventSubscription:
+  | {
+      remove(): void;
+    }
+  | undefined;
+
+function parsePayload<T>(payloadJson?: string): T {
+  if (!payloadJson) {
+    return {} as T;
+  }
+  return JSON.parse(payloadJson) as T;
+}
+
+function responseFor(
+  event: CheckoutEvent,
+  payloadJson: string = MERCHANT_CALLBACK_FAILURE
+): CheckoutResponse | undefined {
+  if (!event.operationId || !event.requestId) {
+    return undefined;
+  }
+
+  return {
+    checkoutId: event.checkoutId,
+    operationId: event.operationId,
+    requestId: event.requestId,
+    kind: event.kind,
+    payloadJson,
+  };
+}
+
+function sendResponse(
+  event: CheckoutEvent,
+  payloadJson?: string
+): Promise<void> {
+  const response = responseFor(event, payloadJson);
+  return response ? NativeCheckout.respond(response) : Promise.resolve();
+}
+
+async function settleRequest(
+  event: CheckoutEvent,
+  callback: () => unknown | Promise<unknown>,
+  validate: (result: unknown) => boolean = () => true
+): Promise<void> {
+  try {
+    const result = await callback();
+    if (!validate(result)) {
+      await sendResponse(event);
+      return;
+    }
+    await sendResponse(event, JSON.stringify(result));
+  } catch {
+    // A merchant error must settle the native continuation, rather than leave it suspended.
+    await sendResponse(event);
+  }
+}
+
+function isSubmitResult(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || !('type' in value)) {
+    return false;
+  }
+  return ['action', 'completed', 'retry'].includes(
+    (value as { type?: string }).type ?? ''
+  );
+}
+
+function isBeforeSubmitResult(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || !('type' in value)) {
+    return false;
+  }
+  return ['proceed', 'abort'].includes((value as { type?: string }).type ?? '');
+}
+
+async function settleApplePayRequest(
+  event: CheckoutEvent,
+  invoke: (resolve: (result: unknown) => void) => void
+): Promise<void> {
+  await settleRequest(
+    event,
+    () =>
+      new Promise<unknown>((resolve) => {
+        invoke(resolve);
+      })
+  );
+}
+
+async function dispatchEvent(event: CheckoutEvent): Promise<void> {
+  const checkout = eventHandlers.get(event.checkoutId);
+  if (!checkout || !checkout.isActive()) {
+    return;
+  }
+
+  const callbacks = checkout.callbacks;
+  switch (event.kind) {
+    case 'applePayAuthorization': {
+      const authorize = callbacks.configuration?.applepay?.onAuthorize;
+      if (!authorize) {
+        await sendResponse(event, JSON.stringify({ status: 'success' }));
+        return;
+      }
+      await settleApplePayRequest(event, (resolve) =>
+        authorize(parsePayload(event.payloadJson), {
+          resolve: () => resolve({ status: 'success' }),
+          reject: (errors) => resolve({ status: 'failure', errors }),
+        })
+      );
+      return;
+    }
+    case 'applePayShippingContact': {
+      const update = callbacks.configuration?.applepay?.onShippingContactChange;
+      if (!update) {
+        await sendResponse(event, '{}');
+        return;
+      }
+      await settleApplePayRequest(event, (resolve) =>
+        update(parsePayload(event.payloadJson), resolve)
+      );
+      return;
+    }
+    case 'applePayShippingMethod': {
+      const update = callbacks.configuration?.applepay?.onShippingMethodChange;
+      if (!update) {
+        await sendResponse(event, '{}');
+        return;
+      }
+      await settleApplePayRequest(event, (resolve) =>
+        update(parsePayload(event.payloadJson), resolve)
+      );
+      return;
+    }
+    case 'applePayCouponCode': {
+      const update = callbacks.configuration?.applepay?.onCouponCodeChange;
+      if (!update) {
+        await sendResponse(event, '{}');
+        return;
+      }
+      await settleApplePayRequest(event, (resolve) =>
+        update(parsePayload(event.payloadJson), resolve)
+      );
+      return;
+    }
+    case 'sessionBeforeSubmit':
+      await settleRequest(
+        event,
+        async () =>
+          callbacks.session?.onBeforeSubmit?.(
+            parsePayload(event.payloadJson)
+          ) ?? { type: 'proceed', data: parsePayload(event.payloadJson) },
+        isBeforeSubmitResult
+      );
+      return;
+    case 'advancedSubmit':
+      await settleRequest(
+        event,
+        () =>
+          callbacks.advanced?.onSubmit(
+            parsePayload<PaymentMethodData>(event.payloadJson)
+          ),
+        isSubmitResult
+      );
+      return;
+    case 'advancedAdditionalDetails':
+      await settleRequest(
+        event,
+        () =>
+          callbacks.advanced?.onAdditionalDetails(
+            parsePayload<PaymentDetailsData>(event.payloadJson)
+          ),
+        (result) =>
+          !!result &&
+          typeof result === 'object' &&
+          typeof (result as { resultCode?: unknown }).resultCode === 'string'
+      );
+      return;
+    case 'completion':
+      try {
+        if (checkout.flow === 'sessions') {
+          callbacks.session?.onComplete(parsePayload(event.payloadJson));
+        } else {
+          callbacks.advanced?.onComplete(parsePayload(event.payloadJson));
+        }
+      } finally {
+        checkout.markStale();
+        eventHandlers.delete(event.checkoutId);
+        if (activeCheckout === checkout) activeCheckout = undefined;
+      }
+      return;
+    case 'error':
+      try {
+        if (checkout.flow === 'sessions') {
+          callbacks.session?.onError(parsePayload(event.payloadJson));
+        } else {
+          callbacks.advanced?.onError(parsePayload(event.payloadJson));
+        }
+      } finally {
+        checkout.markStale();
+        eventHandlers.delete(event.checkoutId);
+        if (activeCheckout === checkout) activeCheckout = undefined;
+      }
+      return;
+    default:
+      // Apple Pay and lookup callbacks are added with their platform integrations. Until a
+      // callback is configured, settle any request deterministically instead of retaining it.
+      await sendResponse(event);
+  }
+}
+
+function ensureEventListener(): void {
+  if (eventSubscription) return;
+  eventSubscription = NativeCheckout.onCheckoutEvent(dispatchEvent);
+}
+
+function deactivateActiveCheckout(): void {
+  if (!activeCheckout) return;
+  activeCheckout.markStale();
+  eventHandlers.delete(activeCheckout.checkoutId);
+  activeCheckout = undefined;
+}
+
+async function replaceActiveCheckout(): Promise<void> {
+  const checkout = activeCheckout;
+  deactivateActiveCheckout();
+  if (!checkout) return;
+  try {
+    await NativeCheckout.invalidate(checkout.checkoutId);
+  } catch (error) {
+    throw asCheckoutError(error, 'cleanup');
   }
 }
 
 /**
- * Static entry point for the Adyen checkout. Auto-cleans native resources on terminal callbacks.
+ * Static entry point for the native-owned checkout coordinator.
  *
- * @example
- * ```tsx
- * const checkout = await AdyenCheckout.setup(session, config, callbacks);
- * AdyenDropIn.start(checkout);
- * // or
- * <AdyenComponent checkout={checkout} type="scheme" />
- * // If abandoning without a terminal callback: checkout.invalidate()
- * ```
+ * Returned handles retain only an opaque identity in a closure. They expose portable checkout
+ * data and commands, never the setup configuration or native coordinator state.
  */
 export class AdyenCheckout {
-  private static readonly runtime: CheckoutRuntime = {
-    configuration: null,
-    sessionCallbacks: null,
-    advancedCallbacks: null,
-    subscriptions: new Map(),
-    isCleanedUp: true,
-    hasHandledTerminalEvent: false,
-    eventHandlerRefs: {
-      onSubmit: { current: undefined },
-      onError: { current: undefined },
-      onComplete: { current: undefined },
-      onAdditionalDetails: { current: undefined },
-      config: { current: null },
-    },
-  };
-
-  /** Sets up a session-based checkout flow; returns a {@link Checkout} for Drop-in or embedded components. */
   static async setup(
     session: SessionConfiguration,
     configuration: Configuration,
     callbacks: SessionCallbacks
   ): Promise<Checkout> {
-    // Before re-setup, clear JS-side state; native handles its own state on the new setup call.
-    if (!AdyenCheckout.runtime.isCleanedUp) {
-      AdyenCheckout.clearJSState();
-    }
-
+    ensureEventListener();
+    await replaceActiveCheckout();
     checkConfiguration(configuration);
-    AdyenCheckout.runtime.configuration = configuration;
-    AdyenCheckout.runtime.sessionCallbacks = callbacks;
-    AdyenCheckout.runtime.advancedCallbacks = null;
-    AdyenCheckout.runtime.isCleanedUp = false;
-    AdyenCheckout.runtime.hasHandledTerminalEvent = false;
-    AdyenCheckout.runtime.eventHandlerRefs.config.current = configuration;
-
-    // Session flow: the SDK owns submit and additional details, so those stay unhandled here.
-    AdyenCheckout.wireEventHandlerRefs({
-      onComplete: (result) =>
-        AdyenCheckout.runtime.sessionCallbacks?.onComplete(result),
-      onError: (error) =>
-        AdyenCheckout.runtime.sessionCallbacks?.onError(error),
+    const descriptor = await NativeCheckout.setupSession(
+      JSON.stringify(session),
+      JSON.stringify(configuration)
+    ).catch((error: unknown) => {
+      throw asCheckoutError(error, 'setup');
     });
-
-    // Wire native event listeners
-    // Terminal callbacks — no handler parameter
-    NativeCheckout.removeAllListeners();
-    AdyenCheckout.subscribeSessionTerminalHandlers(callbacks);
-    AdyenCheckout.subscribeCardHandlers();
-    AdyenCheckout.subscribeDropInHandlers();
-    NativeCheckout.assignBeforeSubmitHandler(async (data) => {
-      const result =
-        await AdyenCheckout.runtime.sessionCallbacks?.onBeforeSubmit?.(data);
-      NativeCheckout.provideBeforeSubmitResult(
-        result ?? BeforeSubmitResult.proceed(data)
-      );
-    });
-    subscribeApplePayHandlers(() => AdyenCheckout.runtime.configuration);
-
-    const context = await NativeCheckout.createSession(
-      { id: session.id, sessionData: session.sessionData },
-      configuration
-    );
-    const checkout = createCheckout(
-      context.paymentMethods,
+    return AdyenCheckout.publishCheckout(descriptor, {
+      session: callbacks,
       configuration,
-      AdyenCheckout.checkoutHost()
-    );
-    return checkout;
+    });
   }
 
-  /** Sets up an advanced (merchant-managed) checkout flow; returns a {@link Checkout} for Drop-in or embedded components. */
   static async setupAdvanced(
     paymentMethods: PaymentMethodsResponse,
     configuration: Configuration,
     callbacks: AdvancedCallbacks
   ): Promise<Checkout> {
-    // Before re-setup, clear JS-side state; native handles its own state on the new setup call.
-    if (!AdyenCheckout.runtime.isCleanedUp) {
-      AdyenCheckout.clearJSState();
-    }
-
-    // Advanced flow is the only entry point receiving payment methods from the merchant, so validate here.
+    ensureEventListener();
+    await replaceActiveCheckout();
     checkConfiguration(configuration);
     checkPaymentMethodsResponse(paymentMethods);
-    AdyenCheckout.runtime.configuration = configuration;
-    AdyenCheckout.runtime.advancedCallbacks = callbacks;
-    AdyenCheckout.runtime.sessionCallbacks = null;
-    AdyenCheckout.runtime.isCleanedUp = false;
-    AdyenCheckout.runtime.hasHandledTerminalEvent = false;
-    AdyenCheckout.runtime.eventHandlerRefs.config.current = configuration;
-
-    // Advanced flow: the merchant handles every event, returning results for the intermediate ones.
-    AdyenCheckout.wireEventHandlerRefs({
-      onSubmit: (data) =>
-        AdyenCheckout.runtime.advancedCallbacks?.onSubmit(data),
-      onAdditionalDetails: (data) =>
-        AdyenCheckout.runtime.advancedCallbacks?.onAdditionalDetails(data),
-      onComplete: (result) =>
-        AdyenCheckout.runtime.advancedCallbacks?.onComplete(result),
-      onError: (error) =>
-        AdyenCheckout.runtime.advancedCallbacks?.onError(error),
+    const descriptor = await NativeCheckout.setupAdvanced(
+      JSON.stringify(paymentMethods),
+      JSON.stringify(configuration)
+    ).catch((error: unknown) => {
+      throw asCheckoutError(error, 'setup');
     });
-
-    // Wire native event listeners
-    // Intermediate callbacks — return-based
-    NativeCheckout.removeAllListeners();
-    NativeCheckout.assignSubmitHandler(async ({ paymentData }) => {
-      const payload = {
-        ...paymentData,
-        returnUrl: paymentData.returnUrl ?? configuration.returnUrl,
-      };
-      const result =
-        await AdyenCheckout.runtime.advancedCallbacks?.onSubmit(payload);
-      if (result) {
-        dispatchSubmitResult(result);
-      }
-    });
-    NativeCheckout.assignAdditionalDetailsHandler(async (data) => {
-      const result =
-        await AdyenCheckout.runtime.advancedCallbacks?.onAdditionalDetails(
-          data
-        );
-      if (result) {
-        NativeCheckout.completion(result.resultCode);
-      }
-    });
-    // Terminal callbacks — no handler
-    AdyenCheckout.subscribeAdvancedTerminalHandlers(callbacks);
-    AdyenCheckout.subscribeCardHandlers();
-    AdyenCheckout.subscribeDropInHandlers();
-    subscribeApplePayHandlers(() => AdyenCheckout.runtime.configuration);
-
-    await NativeCheckout.setup(paymentMethods, configuration);
-    const checkout = createCheckout(
-      paymentMethods,
+    return AdyenCheckout.publishCheckout(descriptor, {
+      advanced: callbacks,
       configuration,
-      AdyenCheckout.checkoutHost()
-    );
-    return checkout;
+    });
   }
 
-  /** Lifecycle operations handed to every {@link Checkout} produced by setup. */
-  private static checkoutHost(): CheckoutHost {
-    return {
-      isActive: () => !AdyenCheckout.runtime.isCleanedUp,
-      invalidate: () => AdyenCheckout.cleanup(),
+  private static publishCheckout(
+    descriptor: {
+      checkoutId: string;
+      flow: 'sessions' | 'advanced';
+      paymentMethodsJson: string;
+    },
+    callbacks: CheckoutCallbacks
+  ): Checkout {
+    const paymentMethods = parsePayload<PaymentMethodsResponse>(
+      descriptor.paymentMethodsJson
+    );
+    const lifecycle: CheckoutLifecycle = {
+      onInvalidated: (checkout) => {
+        eventHandlers.delete(checkout.checkoutId);
+        if (activeCheckout === checkout) activeCheckout = undefined;
+      },
     };
-  }
-
-  /** Subscribes card config callbacks (BIN lookup/value); shared by Drop-in, embedded views, headless submit. */
-  private static subscribeCardHandlers(): void {
-    const refs = AdyenCheckout.runtime.eventHandlerRefs;
-    NativeCheckout.assignBinLookupHandler((data) =>
-      refs.config.current?.card?.onBinLookup?.(data)
+    const checkout = createCheckout(
+      descriptor,
+      paymentMethods,
+      callbacks,
+      lifecycle
     );
-    NativeCheckout.assignBinValueHandler((value) =>
-      refs.config.current?.card?.onBinValue?.(value)
-    );
-  }
-
-  private static subscribeSessionTerminalHandlers(
-    callbacks: SessionCallbacks
-  ): void {
-    NativeCheckout.assignCompletionHandler((result) => {
-      AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
-    });
-    NativeCheckout.assignErrorHandler((error) => {
-      AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
-    });
-  }
-
-  private static subscribeAdvancedTerminalHandlers(
-    callbacks: AdvancedCallbacks
-  ): void {
-    NativeCheckout.assignAdvancedCompleteHandler((result) => {
-      AdyenCheckout.handleTerminalEvent(() => callbacks.onComplete(result));
-    });
-    NativeCheckout.assignAdvancedErrorHandler((error) => {
-      AdyenCheckout.handleTerminalEvent(() => callbacks.onError(error));
-    });
-  }
-
-  /**
-   * Subscribes Drop-in-only events (stored-payment removal, partial payments, address lookup).
-   * Core events are excluded — those arrive via context listeners to avoid double invocation.
-   */
-  private static subscribeDropInHandlers(): void {
-    // Replace rather than accumulate, so a re-setup cannot leave two bags listening.
-    AdyenCheckout.runtime.subscriptions
-      .get(DROP_IN_KEY)
-      ?.forEach((s) => s.remove());
-    // AdyenDropIn is typed as DropInModule but is a DropInWrapper at runtime with these listener members.
-    AdyenCheckout.runtime.subscriptions.set(
-      DROP_IN_KEY,
-      startDropInEventListeners(
-        AdyenDropIn as unknown as EventListenerTarget,
-        AdyenCheckout.runtime.eventHandlerRefs
-      )
-    );
-  }
-
-  /**
-   * Points the per-view event handler refs at the active callbacks. Uses refs (read at event
-   * time) so a view subscribed before a re-setup picks up new callbacks without resubscribing.
-   */
-  private static wireEventHandlerRefs(handlers: EventHandlers = {}): void {
-    const refs = AdyenCheckout.runtime.eventHandlerRefs;
-    refs.onSubmit.current = handlers.onSubmit;
-    refs.onAdditionalDetails.current = handlers.onAdditionalDetails;
-    refs.onComplete.current = handlers.onComplete;
-    refs.onError.current = handlers.onError;
-  }
-
-  private static handleTerminalEvent(callback: () => void): void {
-    if (AdyenCheckout.runtime.hasHandledTerminalEvent) {
-      return;
-    }
-    AdyenCheckout.runtime.hasHandledTerminalEvent = true;
-    try {
-      callback();
-    } finally {
-      AdyenCheckout.performAutoCleanup();
-    }
-  }
-
-  /** Clears JS-side state without native cleanup; used on re-setup so native manages its own transition. */
-  private static clearJSState(): void {
-    AdyenCheckout.resetState(false);
-  }
-
-  /**
-   * Tears down the active checkout context, releasing all native resources.
-   * Called only from terminal callbacks (onComplete / onError) via performAutoCleanup().
-   */
-  private static cleanup(): void {
-    if (AdyenCheckout.runtime.isCleanedUp) return;
-    AdyenCheckout.resetState(true);
-  }
-
-  private static resetState(cleanupNativeContext: boolean): void {
-    AdyenCheckout.runtime.subscriptions.forEach((listeners) =>
-      listeners.forEach((s) => s.remove())
-    );
-    AdyenCheckout.runtime.subscriptions.clear();
-    // Remove native event listeners
-    NativeCheckout.removeAllListeners();
-    if (cleanupNativeContext) {
-      NativeCheckout.cleanup();
-    }
-    // Clear state
-    AdyenCheckout.runtime.configuration = null;
-    AdyenCheckout.runtime.sessionCallbacks = null;
-    AdyenCheckout.runtime.advancedCallbacks = null;
-    AdyenCheckout.runtime.isCleanedUp = true;
-    // Suppress any terminal event still queued for the checkout being torn down.
-    AdyenCheckout.runtime.hasHandledTerminalEvent = true;
-    AdyenCheckout.runtime.eventHandlerRefs.config.current = null;
-    AdyenCheckout.wireEventHandlerRefs();
-  }
-
-  // --- Auto-cleanup on terminal callbacks ---
-
-  private static performAutoCleanup(): void {
-    AdyenCheckout.cleanup();
+    activeCheckout = checkout;
+    eventHandlers.set(descriptor.checkoutId, checkout);
+    return checkout.publicHandle;
   }
 }

@@ -4,47 +4,139 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import type { Checkout, Configuration, PaymentMethodsResponse } from '../core';
-import { NativeCheckout } from '../modules/context/ContextModule';
-import type { CheckoutHost } from './types';
+import NativeCheckout, {
+  type CheckoutDescriptor,
+} from '../specs/NativeAdyenCheckout';
+import type {
+  AdvancedCallbacks,
+  Checkout,
+  CheckoutTarget,
+  Configuration,
+  PaymentMethodsResponse,
+  SessionCallbacks,
+} from '../core';
+import { asCheckoutError } from './errors';
+import type { CheckoutLifecycle } from './types';
 
-const inactiveWarning = (method: string): string =>
-  `AdyenCheckout: \`checkout.${method}()\` was ignored because this checkout is no longer active. ` +
-  `Call AdyenCheckout.setup() or AdyenCheckout.setupAdvanced() to start a new checkout.`;
+export interface CheckoutCallbacks {
+  session?: SessionCallbacks;
+  advanced?: AdvancedCallbacks;
+  configuration?: Configuration;
+}
+
+export interface CheckoutHandle {
+  readonly checkoutId: string;
+  readonly flow: 'sessions' | 'advanced';
+  readonly callbacks: CheckoutCallbacks;
+  readonly publicHandle: Checkout;
+  isActive(): boolean;
+  markStale(): void;
+}
+
+const handles = new WeakMap<Checkout, CheckoutHandle>();
+
+/** Resolves a merchant handle to its private bridge metadata. */
+export function checkoutHandleFor(
+  checkout: Checkout
+): CheckoutHandle | undefined {
+  return handles.get(checkout);
+}
+
+function deepFreeze<Value>(value: Value): Value {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    Object.values(value).forEach(deepFreeze);
+  }
+  return value;
+}
+
+function invalidTarget(phase: 'query' | 'presentation'): Promise<never> {
+  return Promise.reject(asCheckoutError({ code: 'invalidTarget', phase }));
+}
+
+function isCheckoutTarget(target: unknown): target is CheckoutTarget {
+  if (!target || typeof target !== 'object') return false;
+  const candidate = target as Record<string, unknown>;
+  return (
+    (candidate.kind === 'paymentMethod' &&
+      typeof candidate.type === 'string' &&
+      candidate.type.length > 0) ||
+    (candidate.kind === 'storedPaymentMethod' &&
+      typeof candidate.id === 'string' &&
+      candidate.id.length > 0)
+  );
+}
 
 /**
- * Produces a {@link Checkout} bound to the shared checkout context; used by `setup()`/`setupAdvanced()`.
- * Kept out of `core` and the public barrel so a `Checkout` can only be obtained after setup resolves.
+ * Builds a public handle backed by one opaque native checkout identity.
+ *
+ * Identity and callbacks remain internal to this closure. The native coordinator remains the
+ * authority for stale, busy, unsupported, and target-resolution errors.
  */
 export function createCheckout(
+  descriptor: CheckoutDescriptor,
   paymentMethods: PaymentMethodsResponse,
-  configuration: Configuration,
-  host: CheckoutHost
-): Checkout {
-  /** Warns and reports `false` when the checkout has already been torn down. */
-  const isActive = (method: string): boolean => {
-    if (host.isActive()) {
-      return true;
+  callbacks: CheckoutCallbacks,
+  lifecycle: CheckoutLifecycle
+): CheckoutHandle {
+  let active = true;
+  const snapshot = deepFreeze(JSON.parse(JSON.stringify(paymentMethods)));
+
+  const run = <Value>(
+    phase: 'query' | 'presentation',
+    target: unknown,
+    command: (validTarget: CheckoutTarget) => Promise<Value>
+  ): Promise<Value> => {
+    if (!active) {
+      return Promise.reject(asCheckoutError({ code: 'staleCheckout', phase }));
     }
-    console.warn(inactiveWarning(method));
-    return false;
+    if (!isCheckoutTarget(target)) {
+      return invalidTarget(phase);
+    }
+    return command(target).catch((error: unknown) => {
+      throw asCheckoutError(error, phase);
+    });
   };
 
-  return {
-    paymentMethods,
-    configuration,
-    isAvailable: async (type: string) =>
-      isActive('isAvailable') ? NativeCheckout.isAvailable(type) : false,
-    requiresUserInteraction: async (type: string) =>
-      isActive('requiresUserInteraction')
-        ? NativeCheckout.requiresUserInteraction(type)
-        : false,
-    submit: (type: string) => {
-      if (isActive('submit')) {
-        NativeCheckout.submit(type);
-      }
+  const handle: CheckoutHandle = {
+    checkoutId: descriptor.checkoutId,
+    flow: descriptor.flow,
+    callbacks,
+    isActive: () => active,
+    markStale: () => {
+      active = false;
     },
-    // Idempotent by design — a repeated or late call is a silent no-op.
-    invalidate: () => host.invalidate(),
+    publicHandle: {
+      flow: descriptor.flow,
+      paymentMethods: snapshot,
+      isAvailable: (target) =>
+        run('query', target, (validTarget) =>
+          NativeCheckout.isAvailable(descriptor.checkoutId, validTarget)
+        ),
+      requiresUserInteraction: (target) =>
+        run('query', target, (validTarget) =>
+          NativeCheckout.requiresUserInteraction(
+            descriptor.checkoutId,
+            validTarget
+          )
+        ),
+      submit: (target) =>
+        run('presentation', target, (validTarget) =>
+          NativeCheckout.submit(descriptor.checkoutId, validTarget)
+        ),
+      invalidate: async () => {
+        if (!active) return;
+        active = false;
+        try {
+          await NativeCheckout.invalidate(descriptor.checkoutId);
+        } catch (error) {
+          throw asCheckoutError(error, 'cleanup');
+        } finally {
+          lifecycle.onInvalidated(handle);
+        }
+      },
+    },
   };
+  handles.set(handle.publicHandle, handle);
+  return handle;
 }

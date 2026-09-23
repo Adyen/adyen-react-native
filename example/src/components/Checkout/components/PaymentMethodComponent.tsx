@@ -25,7 +25,7 @@ const NEEDS_TAP_GATE_HACK = new Set(['applepay']);
 
 /**
  * Renders a payment method embedded `<AdyenComponent>` (needs UI),
- * or a plain button calling `checkout.submit(type)` (direct/headless, or Apple Pay's tap gate).
+ * or a plain button calling `checkout.submit(target)` (direct/headless, or Apple Pay's tap gate).
  * If it isn't offered by the current checkout, or the device/platform reports it unavailable,
  * it renders nothing.
  */
@@ -49,13 +49,17 @@ const PaymentMethodComponent = ({
     let active = true;
     const resolveAvailability = async () => {
       try {
-        const available = await checkout.isAvailable(type);
+        const target = { kind: 'paymentMethod' as const, type };
+        const available = await checkout.isAvailable(target);
         if (!active) return;
         if (!available) {
           setAvailability('unavailable');
           return;
         }
-        const needsInteraction = await checkout.requiresUserInteraction(type);
+        const needsInteraction = await checkout.requiresUserInteraction({
+          kind: 'paymentMethod',
+          type,
+        });
         if (active) {
           setAvailability(needsInteraction ? 'needsInteraction' : 'direct');
         }
@@ -75,7 +79,9 @@ const PaymentMethodComponent = ({
     if (NEEDS_TAP_GATE_HACK.has(type)) {
       setIsOpen(true);
     } else {
-      checkout.submit(type);
+      checkout
+        .submit({ kind: 'paymentMethod', type })
+        .catch(() => setAvailability('unavailable'));
     }
   }, [checkout, type]);
 

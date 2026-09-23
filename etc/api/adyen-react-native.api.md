@@ -65,7 +65,9 @@ export const AdyenAction: ActionModule;
 
 // @public
 export class AdyenCheckout {
+    // (undocumented)
     static setup(session: SessionConfiguration, configuration: Configuration, callbacks: SessionCallbacks): Promise<Checkout>;
+    // (undocumented)
     static setupAdvanced(paymentMethods: PaymentMethodsResponse, configuration: Configuration, callbacks: AdvancedCallbacks): Promise<Checkout>;
 }
 
@@ -74,8 +76,12 @@ export const AdyenComponent: React_2.FC<AdyenComponentProps>;
 
 // @public
 export interface AdyenComponentProps {
+    // (undocumented)
     checkout: Checkout;
-    type: string;
+    // (undocumented)
+    target?: CheckoutTarget;
+    // (undocumented)
+    type?: string;
 }
 
 // @public
@@ -327,13 +333,38 @@ export interface CardsConfiguration {
 
 // @public
 export interface Checkout {
-    readonly configuration: Configuration;
-    invalidate(): void;
-    isAvailable(type: string): Promise<boolean>;
+    readonly flow: 'sessions' | 'advanced';
+    invalidate(): Promise<void>;
+    isAvailable(target: CheckoutTarget): Promise<boolean>;
     readonly paymentMethods: PaymentMethodsResponse;
-    requiresUserInteraction(type: string): Promise<boolean>;
-    submit(type: string): void;
+    requiresUserInteraction(target: CheckoutTarget): Promise<boolean>;
+    submit(target: CheckoutTarget): Promise<void>;
 }
+
+// @public
+export interface CheckoutError {
+    // (undocumented)
+    code: CheckoutErrorCode;
+    // (undocumented)
+    message?: string;
+    // (undocumented)
+    phase: CheckoutErrorPhase;
+}
+
+// @public
+export type CheckoutErrorCode = 'checkoutBusy' | 'operationBusy' | 'staleCheckout' | 'staleRequest' | 'unsupportedCapability' | 'invalidConfiguration' | 'invalidTarget' | 'cancelled';
+
+// @public
+export type CheckoutErrorPhase = 'setup' | 'query' | 'presentation' | 'callback' | 'cleanup';
+
+// @public
+export type CheckoutTarget = {
+    kind: 'paymentMethod';
+    type: string;
+} | {
+    kind: 'storedPaymentMethod';
+    id: string;
+};
 
 // @public
 export interface ConditionalPaymentComponent {

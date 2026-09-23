@@ -451,30 +451,27 @@ export interface ConditionalPaymentComponent {
  * checkout context is ready.
  */
 export interface Checkout {
+  /** The immutable flow selected when this checkout was set up. */
+  readonly flow: 'sessions' | 'advanced';
+
   /** Payment methods available for this checkout. */
   readonly paymentMethods: PaymentMethodsResponse;
 
-  /** The checkout configuration. */
-  readonly configuration: Configuration;
-
   /**
-   * Checks whether a payment method type is available for the shopper.
-   * @param type - The payment method type (e.g. "scheme", "googlepay", "applepay").
+   * Checks whether a target is available for the shopper.
    */
-  isAvailable(type: string): Promise<boolean>;
+  isAvailable(target: CheckoutTarget): Promise<boolean>;
 
   /**
-   * Reports whether the given payment method type needs to display UI before it
+   * Reports whether the target needs to display UI before it
    * can be submitted.
-   * @param type - The payment method type.
    */
-  requiresUserInteraction(type: string): Promise<boolean>;
+  requiresUserInteraction(target: CheckoutTarget): Promise<boolean>;
 
   /**
-   * Submits the given payment method type without displaying UI (headless flow).
-   * @param type - The payment method type.
+   * Submits the target without displaying UI (headless flow).
    */
-  submit(type: string): void;
+  submit(target: CheckoutTarget): Promise<void>;
 
   /**
    * Abandons this checkout and releases all native resources.
@@ -488,5 +485,35 @@ export interface Checkout {
    * been torn down, does nothing. After invalidation this `Checkout` is no
    * longer active and its other methods are ignored.
    */
-  invalidate(): void;
+  invalidate(): Promise<void>;
+}
+
+/**
+ * A portable checkout target. Stored methods retain their exact ID so equal method types never
+ * route by map order or a default instance.
+ */
+export type CheckoutTarget =
+  | { kind: 'paymentMethod'; type: string }
+  | { kind: 'storedPaymentMethod'; id: string };
+
+/** Stable public checkout failure codes. */
+export type CheckoutErrorCode =
+  | 'checkoutBusy'
+  | 'operationBusy'
+  | 'staleCheckout'
+  | 'staleRequest'
+  | 'unsupportedCapability'
+  | 'invalidConfiguration'
+  | 'invalidTarget'
+  | 'cancelled';
+
+/** Phase in which a checkout failure occurred. */
+export type CheckoutErrorPhase =
+  'setup' | 'query' | 'presentation' | 'callback' | 'cleanup';
+
+/** A structured coordinator error with no native or private identity details. */
+export interface CheckoutError {
+  code: CheckoutErrorCode;
+  phase: CheckoutErrorPhase;
+  message?: string;
 }
