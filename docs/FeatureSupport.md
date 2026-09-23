@@ -28,15 +28,15 @@ Statuses below match the branches in [public-api-flows.md](./public-api-flows.md
 availability" means the payment method must be present and, for wallets, pass the device check
 described under [Payment-method and wallet capabilities](#payment-method-and-wallet-capabilities).
 
-| Presenter                    | Flow     | iOS                                     | Android                                   |
-| ---------------------------- | -------- | --------------------------------------- | ----------------------------------------- |
-| Embedded `<AdyenComponent>`  | Session  | supported (subject to availability)     | supported (subject to availability)       |
-| Embedded `<AdyenComponent>`  | Advanced | supported (subject to availability)     | supported (subject to availability)       |
-| Headless `checkout.submit()` | Session  | supported (subject to availability)     | supported (subject to availability)       |
-| Headless `checkout.submit()` | Advanced | supported (subject to availability)     | supported (subject to availability)       |
-| Drop-in                      | Session  | **unsupported** (`notSupported`)        | **unsupported** (explicit v6-alpha error) |
-| Drop-in                      | Advanced | **unsupported** (`notSupported`)        | **legacy-backed** (`dropin.old`)          |
-| Standalone `AdyenAction`     | n/a      | supported (payload differs — see below) | supported (payload differs — see below)   |
+| Presenter                    | Flow     | iOS                                     | Android                                                                             |
+| ---------------------------- | -------- | --------------------------------------- | ----------------------------------------------------------------------------------- |
+| Embedded `<AdyenComponent>`  | Session  | supported (subject to availability)     | supported (subject to availability)                                                 |
+| Embedded `<AdyenComponent>`  | Advanced | supported (subject to availability)     | supported (subject to availability)                                                 |
+| Headless `checkout.submit()` | Session  | supported (subject to availability)     | supported (subject to availability)                                                 |
+| Headless `checkout.submit()` | Advanced | supported (subject to availability)     | supported (subject to availability)                                                 |
+| Drop-in                      | Session  | **unsupported** (`notSupported`)        | **unsupported** (explicit v6-alpha error)                                           |
+| Drop-in                      | Advanced | **unsupported** (`notSupported`)        | **legacy-backed** (`dropin.old`)                                                    |
+| Standalone `AdyenAction`     | n/a      | supported (payload differs — see below) | supported for non-redirect Action kinds; `RedirectAction` is explicitly unsupported |
 
 Notes:
 
@@ -59,9 +59,13 @@ Notes:
   the legacy service, and `completion` tears down the checkout context without resolving the legacy
   service or finishing its background task unless `DropInModule.completion()`/`retry()` are called
   directly. See [Legacy Drop-in limitations](#legacy-drop-in-limitations).
-- **Standalone action** is supported on both platforms with a payload difference: iOS may resolve
-  either the additional-details data or an `onComplete` result-code object, whereas Android resolves
-  only the additional-details data and otherwise rejects. See
+- **Standalone action** is supported on iOS and for Android non-redirect Action kinds, with a
+  payload difference: iOS may resolve either the additional-details data or an `onComplete`
+  result-code object, whereas Android resolves only the additional-details data and otherwise
+  rejects. On pinned Android `6.0.0-alpha.1`, standalone `RedirectAction` rejects asynchronously
+  with `unsupportedCapability` before setup or presentation because the published SDK has no safe
+  per-operation return-correlation hook. It creates no route, fragment, browser launch, or retained
+  Action owner, and leaves the opaque provider URL unchanged. See
   [public-api-flows.md](./public-api-flows.md#standalone-action).
 
 ### Ambiguous routing caveat (Android)

@@ -117,9 +117,9 @@ export interface AnalyticsOptions {
 export type ApplePayAddressFields = 'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email';
 
 // @public
-export interface ApplePayAuthorizationActions {
-    reject: (errors?: ApplePayError[]) => void;
-    resolve: () => void;
+export interface ApplePayAuthorizationRequest {
+    // (undocumented)
+    payment: ApplePayPaymentAuthorization;
 }
 
 // @public
@@ -138,10 +138,10 @@ export interface ApplePayConfiguration {
     couponCode?: string;
     merchantID: string;
     merchantName?: string;
-    onAuthorize?: (payment: ApplePayPaymentAuthorization, actions: ApplePayAuthorizationActions) => void;
-    onCouponCodeChange?: (couponCode: string, resolve: (update: ApplePayCouponCodeUpdateRequest) => void) => void;
-    onShippingContactChange?: (contact: ApplePayPaymentContact, resolve: (update: ApplePayShippingContactUpdateRequest) => void) => void;
-    onShippingMethodChange?: (shippingMethod: ApplePayShippingMethod, resolve: (update: ApplePayShippingMethodUpdateRequest) => void) => void;
+    onAuthorize?: (request: ApplePayAuthorizationRequest) => ApplePayAuthorizationResult | Promise<ApplePayAuthorizationResult>;
+    onCouponCodeChange?: (request: ApplePayCouponCodeRequest) => ApplePayCouponCodeResult | Promise<ApplePayCouponCodeResult>;
+    onShippingContactChange?: (request: ApplePayShippingContactRequest) => ApplePayShippingContactResult | Promise<ApplePayShippingContactResult>;
+    onShippingMethodChange?: (request: ApplePayShippingMethodRequest) => ApplePayShippingMethodResult | Promise<ApplePayShippingMethodResult>;
     recurringPaymentRequest?: ApplePayRecurringPaymentRequest;
     requiredBillingContactFields?: ApplePayAddressFields[];
     requiredShippingContactFields?: ApplePayAddressFields[];
@@ -154,13 +154,13 @@ export interface ApplePayConfiguration {
 }
 
 // @public
-export interface ApplePayCouponCodeEvent {
+export interface ApplePayCouponCodeRequest {
     // (undocumented)
     couponCode: string;
 }
 
 // @public
-export interface ApplePayCouponCodeUpdateRequest {
+export interface ApplePayCouponCodeResult {
     errors?: ApplePayError[];
     paymentSummaryItems?: ApplePaySummaryItem[];
     shippingMethods?: ApplePayShippingMethod[];
@@ -217,7 +217,13 @@ export interface ApplePayRecurringSummaryItem extends ApplePaySummaryItem {
 }
 
 // @public
-export interface ApplePayShippingContactUpdateRequest {
+export interface ApplePayShippingContactRequest {
+    // (undocumented)
+    contact: ApplePayPaymentContact;
+}
+
+// @public
+export interface ApplePayShippingContactResult {
     errors?: ApplePayError[];
     paymentSummaryItems?: ApplePaySummaryItem[];
     shippingMethods?: ApplePayShippingMethod[];
@@ -232,7 +238,13 @@ export interface ApplePayShippingMethod extends ApplePaySummaryItem {
 }
 
 // @public
-export interface ApplePayShippingMethodUpdateRequest {
+export interface ApplePayShippingMethodRequest {
+    // (undocumented)
+    shippingMethod: ApplePayShippingMethod;
+}
+
+// @public
+export interface ApplePayShippingMethodResult {
     paymentSummaryItems?: ApplePaySummaryItem[];
 }
 

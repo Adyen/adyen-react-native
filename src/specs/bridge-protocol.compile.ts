@@ -9,7 +9,18 @@ import type {
   CheckoutTarget,
   Spec as CheckoutSpec,
 } from './NativeAdyenCheckout';
-import { ResultCode, type SessionsResult } from '../core';
+import {
+  ResultCode,
+  type ApplePayAuthorizationRequest,
+  type ApplePayAuthorizationResult,
+  type ApplePayCouponCodeRequest,
+  type ApplePayCouponCodeResult,
+  type ApplePayShippingContactRequest,
+  type ApplePayShippingContactResult,
+  type ApplePayShippingMethodRequest,
+  type ApplePayShippingMethodResult,
+  type SessionsResult,
+} from '../core';
 
 declare const checkout: CheckoutDescriptor;
 declare const checkoutModule: CheckoutSpec;
@@ -42,6 +53,43 @@ const sessionResult: SessionsResult = {
 const missingSessionId: SessionsResult = { resultCode: ResultCode.authorised };
 
 export const sessionResultContract = [sessionResult, missingSessionId];
+
+const applePayAuthorizationRequest: ApplePayAuthorizationRequest = {
+  payment: {},
+};
+const applePayAuthorizationResult: ApplePayAuthorizationResult = {
+  status: 'success',
+};
+const applePayShippingContactRequest: ApplePayShippingContactRequest = {
+  contact: {},
+};
+const applePayShippingContactResult: ApplePayShippingContactResult = {};
+const applePayShippingMethodRequest: ApplePayShippingMethodRequest = {
+  shippingMethod: { label: 'Standard', amount: '5.00' },
+};
+const applePayShippingMethodResult: ApplePayShippingMethodResult = {};
+const applePayCouponCodeRequest: ApplePayCouponCodeRequest = {
+  couponCode: 'SAVE10',
+};
+const applePayCouponCodeResult: ApplePayCouponCodeResult = {};
+
+export const applePayCallbackContract = [
+  applePayAuthorizationRequest,
+  applePayAuthorizationResult,
+  applePayShippingContactRequest,
+  applePayShippingContactResult,
+  applePayShippingMethodRequest,
+  applePayShippingMethodResult,
+  applePayCouponCodeRequest,
+  applePayCouponCodeResult,
+];
+
+type HasLegacyApplePayAuthorizationActions =
+  'ApplePayAuthorizationActions' extends keyof typeof import('../core')
+    ? true
+    : false;
+export const noLegacyApplePayAuthorizationActions: false =
+  false as HasLegacyApplePayAuthorizationActions;
 
 // Checkout descriptors are private bridge metadata, not configuration carriers.
 // @ts-expect-error Removed configuration must not return from native setup.

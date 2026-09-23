@@ -757,6 +757,12 @@ finishes the task.
 settles only the promise owned by that invocation. A details result precedes the merchant's
 `/payments/details`. `AdyenAction.hide()` is asynchronous and cancels the active action.
 
+On pinned Android `6.0.0-alpha.1`, standalone `RedirectAction` is not a supported standalone
+Action kind. It rejects asynchronously with `unsupportedCapability` before setup or presentation:
+the published SDK provides no safe per-operation return-correlation hook. The rejection creates no
+route, UI, browser launch, or retained Action owner and leaves the opaque provider URL unchanged.
+The flow below applies to iOS and supported non-redirect Android Action kinds.
+
 Standalone Action uses a **reject-overlap** policy on both platforms. While an action is active, a
 second `handle` rejects with `actionBusy`; it never replaces the first operation. `hide()`, native
 failure, host loss, and React context destruction reject the active `handle` promise once with

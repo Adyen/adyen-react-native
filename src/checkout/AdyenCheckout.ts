@@ -19,6 +19,10 @@ import {
   type PaymentMethodData,
   type PaymentMethodsResponse,
   type PaymentResult,
+  type ApplePayAuthorizationResult,
+  type ApplePayCouponCodeResult,
+  type ApplePayShippingContactResult,
+  type ApplePayShippingMethodResult,
   type SessionCallbacks,
   type SessionConfiguration,
   type SessionsResult,
@@ -277,24 +281,101 @@ function isShopperName(value: unknown): boolean {
   );
 }
 
+function isApplePayAuthorizationResult(
+  value: unknown
+): value is ApplePayAuthorizationResult {
+  return (
+    isRecord(value) &&
+    (value.status === 'success' || value.status === 'failure') &&
+    isApplePayErrors(value.errors)
+  );
+}
+
+function isApplePayShippingContactResult(
+  value: unknown
+): value is ApplePayShippingContactResult {
+  return (
+    isRecord(value) &&
+    isApplePaySummaryItems(value.paymentSummaryItems) &&
+    isApplePayShippingMethods(value.shippingMethods) &&
+    isApplePayErrors(value.errors)
+  );
+}
+
+function isApplePayShippingMethodResult(
+  value: unknown
+): value is ApplePayShippingMethodResult {
+  return isRecord(value) && isApplePaySummaryItems(value.paymentSummaryItems);
+}
+
+function isApplePayCouponCodeResult(
+  value: unknown
+): value is ApplePayCouponCodeResult {
+  return isApplePayShippingContactResult(value);
+}
+
+function isApplePaySummaryItems(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every(
+        (item) =>
+          isRecord(item) &&
+          typeof item.label === 'string' &&
+          (typeof item.amount === 'string' ||
+            typeof item.amount === 'number') &&
+          (item.type === undefined ||
+            item.type === 'pending' ||
+            item.type === 'final')
+      ))
+  );
+}
+
+function isApplePayShippingMethods(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every(
+        (method) =>
+          isRecord(method) &&
+          typeof method.label === 'string' &&
+          (typeof method.amount === 'string' ||
+            typeof method.amount === 'number') &&
+          (method.type === undefined ||
+            method.type === 'pending' ||
+            method.type === 'final') &&
+          (method.identifier === undefined ||
+            typeof method.identifier === 'string') &&
+          (method.detail === undefined || typeof method.detail === 'string') &&
+          (method.startDate === undefined ||
+            typeof method.startDate === 'string') &&
+          (method.endDate === undefined || typeof method.endDate === 'string')
+      ))
+  );
+}
+
+function isApplePayErrors(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every(
+        (error) =>
+          isRecord(error) &&
+          (error.type === 'shippingAddress' ||
+            error.type === 'billingAddress' ||
+            error.type === 'contactField' ||
+            error.type === 'couponCode') &&
+          (error.field === undefined || typeof error.field === 'string') &&
+          typeof error.message === 'string'
+      ))
+  );
+}
+
 function normalizeTerminalError(): AdyenError {
   return {
     message: 'Checkout failed',
     errorCode: 'checkoutFailed',
   };
-}
-
-async function settleApplePayRequest(
-  event: CheckoutEvent,
-  invoke: (resolve: (result: unknown) => void) => void | Promise<void>
-): Promise<void> {
-  await settleRequest(
-    event,
-    () =>
-      new Promise<unknown>((resolve, reject) => {
-        Promise.resolve(invoke(resolve)).catch(reject);
-      })
-  );
 }
 
 async function dispatchEvent(event: CheckoutEvent): Promise<void> {
@@ -311,11 +392,10 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
         await sendResponse(event, JSON.stringify({ status: 'success' }));
         return;
       }
-      await settleApplePayRequest(event, (resolve) =>
-        authorize(parsePayload(event.payloadJson), {
-          resolve: () => resolve({ status: 'success' }),
-          reject: (errors) => resolve({ status: 'failure', errors }),
-        })
+      await settleRequest(
+        event,
+        () => authorize({ payment: parsePayload(event.payloadJson) }),
+        isApplePayAuthorizationResult
       );
       return;
     }
@@ -325,8 +405,10 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
         await sendResponse(event, '{}');
         return;
       }
-      await settleApplePayRequest(event, (resolve) =>
-        update(parsePayload(event.payloadJson), resolve)
+      await settleRequest(
+        event,
+        () => update({ contact: parsePayload(event.payloadJson) }),
+        isApplePayShippingContactResult
       );
       return;
     }
@@ -336,8 +418,10 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
         await sendResponse(event, '{}');
         return;
       }
-      await settleApplePayRequest(event, (resolve) =>
-        update(parsePayload(event.payloadJson), resolve)
+      await settleRequest(
+        event,
+        () => update({ shippingMethod: parsePayload(event.payloadJson) }),
+        isApplePayShippingMethodResult
       );
       return;
     }
@@ -347,15 +431,19 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
         await sendResponse(event, '{}');
         return;
       }
-      await settleApplePayRequest(event, (resolve) => {
-        const couponCode = parsePayload<{ couponCode?: unknown }>(
-          event.payloadJson
-        ).couponCode;
-        if (typeof couponCode !== 'string') {
-          throw new Error('Invalid Apple Pay coupon code');
-        }
-        return update(couponCode, resolve);
-      });
+      await settleRequest(
+        event,
+        () => {
+          const couponCode = parsePayload<{ couponCode?: unknown }>(
+            event.payloadJson
+          ).couponCode;
+          if (typeof couponCode !== 'string') {
+            throw new Error('Invalid Apple Pay coupon code');
+          }
+          return update({ couponCode });
+        },
+        isApplePayCouponCodeResult
+      );
       return;
     }
     case 'sessionBeforeSubmit': {

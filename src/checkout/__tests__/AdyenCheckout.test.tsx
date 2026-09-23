@@ -209,15 +209,19 @@ describe('AdyenCheckout', () => {
     }
   );
 
-  test('forwards coupon codes as strings and settles rejected Apple Pay callbacks', async () => {
+  test('settles Promise-returning Apple Pay callback results by their correlation tuple', async () => {
     native.setupAdvanced.mockResolvedValueOnce(
       descriptor('checkout-apple-pay')
     );
-    const onCouponCodeChange = jest.fn((_couponCode, resolve) =>
-      resolve({ paymentSummaryItems: [{ label: 'Total', amount: '10.00' }] })
-    );
-    const onAuthorize = jest.fn(async () => {
-      throw new Error('merchant rejected Apple Pay');
+    const onCouponCodeChange = jest.fn(async (request) => {
+      expect(request).toEqual({ couponCode: 'SAVE10' });
+      return { paymentSummaryItems: [{ label: 'Total', amount: '10.00' }] };
+    });
+    const onAuthorize = jest.fn((request) => {
+      expect(request).toEqual({
+        payment: { shippingContact: { countryCode: 'NL' } },
+      });
+      return Promise.resolve({ status: 'success' as const });
     });
     await AdyenCheckout.setupAdvanced(
       { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
@@ -240,10 +244,7 @@ describe('AdyenCheckout', () => {
       kind: 'applePayCouponCode',
       payloadJson: '{"couponCode":"SAVE10"}',
     });
-    expect(onCouponCodeChange).toHaveBeenCalledWith(
-      'SAVE10',
-      expect.any(Function)
-    );
+    expect(onCouponCodeChange).toHaveBeenCalledWith({ couponCode: 'SAVE10' });
     expect(native.respond).toHaveBeenLastCalledWith({
       checkoutId: 'checkout-apple-pay',
       operationId: 'operation-apple-pay',
@@ -265,17 +266,17 @@ describe('AdyenCheckout', () => {
       operationId: 'operation-apple-pay',
       requestId: 'request-authorization',
       kind: 'applePayAuthorization',
-      payloadJson: '{"type":"failure","code":"cancelled"}',
+      payloadJson: '{"status":"success"}',
     });
   });
 
-  test('settles a rejected coupon callback promise once with its correlated failure response', async () => {
+  test('settles a malformed Apple Pay callback result once with its correlated failure response', async () => {
     native.setupAdvanced.mockResolvedValueOnce(
-      descriptor('checkout-rejected-coupon')
+      descriptor('checkout-malformed-coupon')
     );
-    const onCouponCodeChange = jest.fn(async () => {
-      throw new Error('merchant rejected coupon update');
-    });
+    const onCouponCodeChange = jest.fn(() => ({
+      paymentSummaryItems: [{ label: 'Total', amount: 10, type: 'unknown' }],
+    }));
     await AdyenCheckout.setupAdvanced(
       { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
       {
@@ -290,7 +291,7 @@ describe('AdyenCheckout', () => {
     const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
 
     const settlement = eventHandler({
-      checkoutId: 'checkout-rejected-coupon',
+      checkoutId: 'checkout-malformed-coupon',
       operationId: 'operation-apple-pay',
       requestId: 'request-coupon',
       kind: 'applePayCouponCode',
@@ -300,7 +301,7 @@ describe('AdyenCheckout', () => {
     await Promise.resolve();
 
     expect(native.respond).toHaveBeenCalledWith({
-      checkoutId: 'checkout-rejected-coupon',
+      checkoutId: 'checkout-malformed-coupon',
       operationId: 'operation-apple-pay',
       requestId: 'request-coupon',
       kind: 'applePayCouponCode',
@@ -308,6 +309,45 @@ describe('AdyenCheckout', () => {
     });
     await settlement;
     expect(native.respond).toHaveBeenCalledTimes(1);
+  });
+
+  test('settles a thrown Apple Pay callback once with its correlated failure response', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-thrown-authorization')
+    );
+    const onAuthorize = jest.fn(() => {
+      throw new Error('merchant rejected authorization');
+    });
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        applepay: {
+          merchantID: 'merchant.example',
+          onAuthorize,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-thrown-authorization',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{}',
+    });
+
+    expect(onAuthorize).toHaveBeenCalledWith({ payment: {} });
+    expect(native.respond).toHaveBeenCalledTimes(1);
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-thrown-authorization',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
   });
 
   test('normalizes terminal failures to a complete portable error', async () => {

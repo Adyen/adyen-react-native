@@ -27,38 +27,22 @@ export interface ApplePayConfiguration {
   supportsCouponCode?: boolean;
   /** Pre-fill the coupon code field with this value (iOS 15+). */
   couponCode?: string;
-  /**
-   * Called when the shopper selects or updates a shipping contact.
-   * Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet.
-   */
+  /** Called when the shopper selects or updates a shipping contact. */
   onShippingContactChange?: (
-    contact: ApplePayPaymentContact,
-    resolve: (update: ApplePayShippingContactUpdateRequest) => void
-  ) => void;
-  /**
-   * Called when the shopper selects a shipping method.
-   * Call `resolve({ paymentSummaryItems, errors })` to update the sheet.
-   */
+    request: ApplePayShippingContactRequest
+  ) => ApplePayShippingContactResult | Promise<ApplePayShippingContactResult>;
+  /** Called when the shopper selects a shipping method. */
   onShippingMethodChange?: (
-    shippingMethod: ApplePayShippingMethod,
-    resolve: (update: ApplePayShippingMethodUpdateRequest) => void
-  ) => void;
-  /**
-   * Called when the shopper enters or changes a coupon code (iOS 15+).
-   * Call `resolve({ paymentSummaryItems, shippingMethods, errors })` to update the sheet.
-   */
+    request: ApplePayShippingMethodRequest
+  ) => ApplePayShippingMethodResult | Promise<ApplePayShippingMethodResult>;
+  /** Called when the shopper enters or changes a coupon code (iOS 15+). */
   onCouponCodeChange?: (
-    couponCode: string,
-    resolve: (update: ApplePayCouponCodeUpdateRequest) => void
-  ) => void;
-  /**
-   * Called after the shopper authorizes the payment, before it is submitted to Adyen.
-   * Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show validation errors in the sheet.
-   */
+    request: ApplePayCouponCodeRequest
+  ) => ApplePayCouponCodeResult | Promise<ApplePayCouponCodeResult>;
+  /** Called after the shopper authorizes the payment, before it is submitted to Adyen. */
   onAuthorize?: (
-    payment: ApplePayPaymentAuthorization,
-    actions: ApplePayAuthorizationActions
-  ) => void;
+    request: ApplePayAuthorizationRequest
+  ) => ApplePayAuthorizationResult | Promise<ApplePayAuthorizationResult>;
 }
 
 /** Collection of values for address field visibility. */
@@ -174,8 +158,13 @@ export interface ApplePayError {
   message: string;
 }
 
-/** Data passed to the shipping contact callback. */
-export interface ApplePayShippingContactUpdateRequest {
+/** Portable request passed to the shipping contact callback. */
+export interface ApplePayShippingContactRequest {
+  contact: ApplePayPaymentContact;
+}
+
+/** Portable result returned by the shipping contact callback. */
+export interface ApplePayShippingContactResult {
   /** Updated payment summary items. If omitted, the current items are kept. */
   paymentSummaryItems?: ApplePaySummaryItem[];
   /** Updated shipping methods. If omitted, the current methods are kept. */
@@ -184,13 +173,13 @@ export interface ApplePayShippingContactUpdateRequest {
   errors?: ApplePayError[];
 }
 
-/** Payload received from the native coupon code event. */
-export interface ApplePayCouponCodeEvent {
+/** Portable request passed to the coupon code callback. */
+export interface ApplePayCouponCodeRequest {
   couponCode: string;
 }
 
-/** Data passed to the coupon code callback. */
-export interface ApplePayCouponCodeUpdateRequest {
+/** Portable result returned by the coupon code callback. */
+export interface ApplePayCouponCodeResult {
   /** Updated payment summary items. If omitted, the current items are kept. */
   paymentSummaryItems?: ApplePaySummaryItem[];
   /** Updated shipping methods. If omitted, the current methods are kept. */
@@ -199,21 +188,18 @@ export interface ApplePayCouponCodeUpdateRequest {
   errors?: ApplePayError[];
 }
 
-/** Data passed to the shipping method callback. */
-export interface ApplePayShippingMethodUpdateRequest {
+/** Portable request passed to the shipping method callback. */
+export interface ApplePayShippingMethodRequest {
+  shippingMethod: ApplePayShippingMethod;
+}
+
+/** Portable result returned by the shipping method callback. */
+export interface ApplePayShippingMethodResult {
   /** Updated payment summary items. If omitted, the current items are kept. */
   paymentSummaryItems?: ApplePaySummaryItem[];
 }
 
-/** Actions passed to the `onAuthorize` callback. */
-export interface ApplePayAuthorizationActions {
-  /** Approve the payment and proceed to submission. */
-  resolve: () => void;
-  /** Reject the payment with optional field-level errors shown in the sheet. */
-  reject: (errors?: ApplePayError[]) => void;
-}
-
-/** Payment details provided in the authorization callback. */
+/** Payment details provided in the authorization request. */
 export interface ApplePayPaymentAuthorization {
   /** The billing contact if requested. */
   billingContact?: ApplePayPaymentContact;
@@ -223,7 +209,12 @@ export interface ApplePayPaymentAuthorization {
   shippingMethod?: ApplePayShippingMethod;
 }
 
-/** Result forwarded to the native `provideAuthorizationResult` bridge method. */
+/** Portable request passed to the authorization callback. */
+export interface ApplePayAuthorizationRequest {
+  payment: ApplePayPaymentAuthorization;
+}
+
+/** Portable result returned by the authorization callback. */
 export interface ApplePayAuthorizationResult {
   /** Whether the shopper's payment was approved (`success`) or rejected (`failure`). */
   status: 'success' | 'failure';
