@@ -18,7 +18,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.robolectric.RobolectricTestRunner
@@ -39,7 +38,7 @@ class AndroidCheckoutModuleTest {
 
     assertUnsupportedAddressLookup(sessionPromise)
     assertUnsupportedAddressLookup(advancedPromise)
-    verify(context, never()).runOnUiQueueThread(any())
+    verify(context).runOnUiQueueThread(any())
     verifyNoInteractions(messageBus)
     assertNull(CheckoutCoordinator.shared.activeCheckoutId())
     assertNull(CheckoutCoordinator.shared.activeRequest())

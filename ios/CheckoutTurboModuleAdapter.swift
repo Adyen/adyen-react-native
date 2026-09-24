@@ -209,27 +209,29 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         resolver: @escaping RCTPromiseResolveBlock,
         rejecter: @escaping RCTPromiseRejectBlock
     ) {
-        guard owns(checkoutID, rejecter: rejecter) else { return }
-        guard let checkout = CheckoutCoordinator.shared.checkoutState?.checkoutContext else {
-            rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
-            return
-        }
-        do {
-            var presenter: TurboHeadlessPresenter?
-            _ = try CheckoutCoordinator.shared.beginOperation {
-                guard let component = try self.component(for: target, checkout: checkout) else {
-                    throw ModuleException.invalidPaymentMethods
-                }
-                let newPresenter = TurboHeadlessPresenter(component: component)
-                presenter = newPresenter
-                return newPresenter
+        Task { @MainActor in
+            guard owns(checkoutID, rejecter: rejecter) else { return }
+            guard let checkout = CheckoutCoordinator.shared.checkoutState?.checkoutContext else {
+                rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
+                return
             }
-            presenter?.submit()
-            resolver(nil)
-        } catch let error as CoordinatorError {
-            rejecter(error == .operationBusy ? ErrorCode.operationBusy : ErrorCode.staleCheckout, "Checkout is unavailable", nil)
-        } catch {
-            rejecter(ErrorCode.invalidTarget, "Invalid checkout target", error)
+            do {
+                var presenter: TurboHeadlessPresenter?
+                _ = try CheckoutCoordinator.shared.beginOperation {
+                    guard let component = try self.component(for: target, checkout: checkout) else {
+                        throw ModuleException.invalidPaymentMethods
+                    }
+                    let newPresenter = TurboHeadlessPresenter(component: component)
+                    presenter = newPresenter
+                    return newPresenter
+                }
+                presenter?.submit()
+                resolver(nil)
+            } catch let error as CoordinatorError {
+                rejecter(error == .operationBusy ? ErrorCode.operationBusy : ErrorCode.staleCheckout, "Checkout is unavailable", nil)
+            } catch {
+                rejecter(ErrorCode.invalidTarget, "Invalid checkout target", error)
+            }
         }
     }
 

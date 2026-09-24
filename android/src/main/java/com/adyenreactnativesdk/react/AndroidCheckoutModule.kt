@@ -68,25 +68,27 @@ class AndroidCheckoutModule(
 
   init {
     reactContext.addLifecycleEventListener(this)
-    CheckoutCoordinator.shared.configureRuntimeDependencies(
-      CheckoutCoordinatorDependencies(
-        checkoutFactory = UnsupportedCheckoutFactory,
-        presenterFactory = HeadlessPresenterFactory(),
-        eventSink =
-          GeneratedCheckoutEventSink { event ->
-            emitEvent(
-              event.checkoutId,
-              event.operationId,
-              event.requestId,
-              event.kind,
-              event.payloadJson?.let(::JSONObject),
-            )
-          },
-        identityGenerator = UUIDCoordinatorIdentityGenerator,
-        scheduler = MainThreadCheckoutScheduler,
-        hostLauncherAdapter = FragmentCheckoutHostAdapter(reactContext),
-      ),
-    )
+    onMain {
+      CheckoutCoordinator.shared.configureRuntimeDependencies(
+        CheckoutCoordinatorDependencies(
+          checkoutFactory = UnsupportedCheckoutFactory,
+          presenterFactory = HeadlessPresenterFactory(),
+          eventSink =
+            GeneratedCheckoutEventSink { event ->
+              emitEvent(
+                event.checkoutId,
+                event.operationId,
+                event.requestId,
+                event.kind,
+                event.payloadJson?.let(::JSONObject),
+              )
+            },
+          identityGenerator = UUIDCoordinatorIdentityGenerator,
+          scheduler = MainThreadCheckoutScheduler,
+          hostLauncherAdapter = FragmentCheckoutHostAdapter(reactContext),
+        ),
+      )
+    }
   }
 
   override fun setSdkVersion(sdkVersion: String) {

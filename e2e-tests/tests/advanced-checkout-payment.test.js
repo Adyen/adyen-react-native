@@ -5,31 +5,41 @@ const {
   tapBackToHome,
 } = require('../helpers/checkout');
 
+function testId(driver, id) {
+  return driver.isAndroid
+    ? `android=new UiSelector().resourceId("${id}")`
+    : `~${id}`;
+}
+
+function statusId(driver, status) {
+  return driver.isAndroid
+    ? `android=new UiSelector().text("${status}")`
+    : `~validation-status-${status}`;
+}
+
 /**
  * Full card payment through Advanced Checkout (AdyenCheckout.setupAdvanced() + embedded
  * <AdyenComponent type="scheme">), against the real example app. Runs on both Android and iOS.
  */
 async function testAdvancedCheckoutPayment(driver, _isAndroid) {
-  const apiOnlyTab = await driver.$('~tab-API-Only');
+  const apiOnlyTab = await driver.$(testId(driver, 'tab-API-Only'));
   await apiOnlyTab.waitForDisplayed({ timeout: 15000 });
   await apiOnlyTab.click();
 
-  const validationMenu = await driver.$('~menu-item-ValidationRoutes');
+  const validationMenu = await driver.$(
+    testId(driver, 'menu-item-ValidationRoutes')
+  );
   await validationMenu.waitForDisplayed({ timeout: 15000 });
   await validationMenu.click();
 
-  const advancedRoute = await driver.$('~validation-route-advanced');
+  const advancedRoute = await driver.$(
+    testId(driver, 'validation-route-advanced')
+  );
   await advancedRoute.waitForDisplayed({ timeout: 15000 });
   await advancedRoute.click();
 
-  const status = await driver.$('~validation-status');
-  await driver.waitUntil(
-    async () => (await status.getText()) === 'embedded-ready',
-    {
-      timeout: 30000,
-      timeoutMsg: 'Expected the advanced embedded presenter to become ready',
-    }
-  );
+  const status = await driver.$(statusId(driver, 'embedded-ready'));
+  await status.waitForExist({ timeout: 30000 });
 
   await fillCardDetails(driver);
   await tapPayButton(driver);

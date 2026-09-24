@@ -50,7 +50,10 @@ function errorCode(error: unknown): string {
 }
 
 const Status = ({ value }: { value: string }) => (
-  <Text testID="validation-status" accessibilityLabel="validation-status">
+  <Text
+    testID="validation-status"
+    accessibilityLabel={`validation-status-${value}`}
+  >
     {value}
   </Text>
 );
@@ -111,9 +114,12 @@ const ValidationCheckout = ({
   const { apiClient, configuration, navigateToResults } = useAppContext();
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [status, setStatus] = useState('setting-up');
-  const [showPresenter, setShowPresenter] = useState(true);
+  const [showPresenter, setShowPresenter] = useState(
+    () => scenario !== 'lifecycle'
+  );
   const staleCheckout = useRef<Checkout | null>(null);
   const currentCheckout = useRef<Checkout | null>(null);
+  const suppressContentionError = useRef(false);
 
   const onComplete = useCallback(
     async (result: SessionsResult | PaymentResult) => {
@@ -142,6 +148,12 @@ const ValidationCheckout = ({
     },
     []
   );
+
+  const onError = useCallback((error: unknown) => {
+    if (!suppressContentionError.current) {
+      setStatus(`error-${errorCode(error)}`);
+    }
+  }, []);
 
   const baseConfiguration = useMemo(
     () => checkoutConfiguration(configuration),
@@ -186,7 +198,7 @@ const ValidationCheckout = ({
               return { type: 'completed', resultCode: result.resultCode };
             },
             onComplete,
-            onError: (error) => setStatus(`error-${errorCode(error)}`),
+            onError,
           }
         );
         currentCheckout.current = next;
@@ -201,7 +213,7 @@ const ValidationCheckout = ({
           checkoutConfigurationForScenario,
           {
             onComplete,
-            onError: (error) => setStatus(`error-${errorCode(error)}`),
+            onError,
           }
         );
         currentCheckout.current = next;
@@ -222,6 +234,7 @@ const ValidationCheckout = ({
     checkoutConfigurationForScenario,
     configuration,
     onComplete,
+    onError,
     scenario,
   ]);
 
@@ -264,6 +277,7 @@ const ValidationCheckout = ({
 
   const contend = useCallback(async () => {
     if (!checkout) return;
+    suppressContentionError.current = true;
     const target = { kind: 'paymentMethod' as const, type: 'scheme' };
     const [, contender] = await Promise.allSettled([
       checkout.submit(target),
@@ -328,9 +342,11 @@ const ValidationCheckout = ({
         testID="validation-recycle-presenter"
         title="Recycle presenter"
         onPress={() => {
-          setShowPresenter(false);
-          setTimeout(() => setShowPresenter(true), 0);
-          setStatus('presenter-recycled');
+          setShowPresenter(true);
+          setTimeout(() => {
+            setShowPresenter(false);
+            setStatus('presenter-recycled');
+          }, 0);
         }}
       />
       <Button
