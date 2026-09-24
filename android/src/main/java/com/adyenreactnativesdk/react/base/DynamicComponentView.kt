@@ -8,7 +8,7 @@ import android.widget.FrameLayout
 
 private const val TIMEOUT = 250L
 
-class DynamicComponentView(
+open class DynamicComponentView(
   context: Context,
 ) : FrameLayout(context) {
   private val screenDensity = resources.displayMetrics.density
@@ -48,18 +48,14 @@ class DynamicComponentView(
 
   override fun onDetachedFromWindow() {
     super.onDetachedFromWindow()
-    removeCallbacks(resizeRunnable)
-    isViewSet = false
-    oldSize = null
+    onDispose()
     detachListener?.invoke()
   }
 
   /** Explicit disposal from [AdyenComponentViewManager.onDropViewInstance]. */
   fun onDispose() {
     removeCallbacks(resizeRunnable)
-    if (isViewSet) {
-      removeAllViews()
-    }
+    removeAllViews()
     isViewSet = false
     oldSize = null
   }

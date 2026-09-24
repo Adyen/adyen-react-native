@@ -18,6 +18,21 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DynamicComponentViewInstrumentationTest {
   @Test
+  fun detachDisposesOwnedChildBeforeTheStateCanClearItsViewFlag() {
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+
+    instrumentation.runOnMainSync {
+      val view = TestDynamicComponentView(instrumentation.targetContext)
+      view.setView(View(instrumentation.targetContext))
+
+      view.detachForTest()
+
+      assertFalse(view.isViewSet)
+      assertEquals(0, view.childCount)
+    }
+  }
+
+  @Test
   fun recycleDisposesOwnedChildViewExactlyOnce() {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
 
@@ -34,6 +49,14 @@ class DynamicComponentViewInstrumentationTest {
 
       assertFalse(view.isViewSet)
       assertEquals(0, view.childCount)
+    }
+  }
+
+  private class TestDynamicComponentView(
+    context: android.content.Context,
+  ) : DynamicComponentView(context) {
+    fun detachForTest() {
+      onDetachedFromWindow()
     }
   }
 }

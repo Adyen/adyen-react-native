@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import NativeAdyenCheckoutComponentView, {
   type LayoutChangeEvent,
@@ -48,10 +48,23 @@ export const AdyenComponent: React.FC<AdyenComponentProps> = ({
   type,
 }) => {
   const nativeRef = useRef(null);
-  const privatePresenterID = useRef(presenterID()).current;
   const [size, setSize] = useState<LayoutChangeEvent>();
   const handle = checkoutHandleFor(checkout);
   const checkoutTarget = resolveTarget(target, type);
+  const canonicalTargetKey = checkoutTarget
+    ? `${checkoutTarget.kind}:${
+        checkoutTarget.kind === 'paymentMethod'
+          ? checkoutTarget.type
+          : checkoutTarget.id
+      }`
+    : undefined;
+  // This identity belongs to one native registration, rather than one React component instance.
+  // Keep it stable for layout-only renders, but mint a replacement before Fabric changes either
+  // the checkout or canonical SDK target.
+  const privatePresenterID = useMemo(presenterID, [
+    handle?.checkoutId,
+    canonicalTargetKey,
+  ]);
 
   const handleLayoutChange = useCallback(
     (event: { nativeEvent: LayoutChangeEvent }) => setSize(event.nativeEvent),

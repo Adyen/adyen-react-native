@@ -13,6 +13,31 @@ import XCTest
 @MainActor
 final class CheckoutCoordinatorTests: XCTestCase {
 
+    func test_coordinatorPresenterDisposalDetachesMountedFabricChildExactlyOnce() {
+        let host = UIViewController()
+        let proxy = AdyenComponentViewProxy(frame: .zero)
+        host.view.addSubview(proxy)
+        let child = UIViewController()
+        let presenter = ComponentProxy(
+            checkoutID: "checkout",
+            presenterID: "presenter",
+            target: .storedPaymentMethod("stored"),
+            onDispose: { [weak proxy] disposedPresenter in
+                proxy?.presenterDidDispose(disposedPresenter)
+            }
+        )
+
+        proxy.installComponentViewController(child, for: presenter)
+        XCTAssertTrue(child.parent === host)
+        XCTAssertEqual(proxy.arrangedSubviews.count, 1)
+
+        presenter.dispose()
+        presenter.dispose()
+
+        XCTAssertNil(child.parent)
+        XCTAssertTrue(proxy.arrangedSubviews.isEmpty)
+    }
+
     func test_replacementDisposesBeforeCreatingTheNextCheckout() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()

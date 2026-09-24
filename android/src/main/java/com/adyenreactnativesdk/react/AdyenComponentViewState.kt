@@ -73,6 +73,7 @@ class AdyenComponentViewState(
         presenterId = presenterId,
         target = target,
         sessionBeforeSubmitBridge = CheckoutCoordinator.shared.checkoutState?.sessionBeforeSubmitBridge,
+        onDisposeHost = view::onDispose,
       )
     try {
       CheckoutCoordinator.shared.registerPassivePresenter(checkoutId, presenterId, target, presenter)
@@ -143,6 +144,7 @@ private class FabricCoordinatorPresenter(
   private val presenterId: String,
   private val target: CheckoutTarget,
   sessionBeforeSubmitBridge: com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge?,
+  private val onDisposeHost: () -> Unit,
 ) : CoordinatorPresenter {
   private val manager =
     ComponentManager(
@@ -194,6 +196,7 @@ private class FabricCoordinatorPresenter(
     if (disposed) return
     disposed = true
     manager.dispose()
+    onDisposeHost()
     CheckoutCoordinator.shared.unregisterPassivePresenter(checkoutId, presenterId, this)
   }
 }

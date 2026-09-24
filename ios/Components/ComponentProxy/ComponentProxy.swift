@@ -16,12 +16,20 @@ internal final class ComponentProxy: CoordinatorPresenter {
     let checkoutID: String
     let presenterID: String
     private let target: TurboCheckoutTarget
+    private let onDispose: @MainActor (ComponentProxy) -> Void
     private var paymentComponent: CheckoutPaymentComponent?
+    private var isDisposed = false
 
-    init(checkoutID: String, presenterID: String, target: TurboCheckoutTarget) {
+    init(
+        checkoutID: String,
+        presenterID: String,
+        target: TurboCheckoutTarget,
+        onDispose: @escaping @MainActor (ComponentProxy) -> Void = { _ in }
+    ) {
         self.checkoutID = checkoutID
         self.presenterID = presenterID
         self.target = target
+        self.onDispose = onDispose
     }
 
     func matches(
@@ -55,7 +63,10 @@ internal final class ComponentProxy: CoordinatorPresenter {
     // MARK: - Teardown
 
     func dispose() {
+        guard !isDisposed else { return }
+        isDisposed = true
         paymentComponent = nil
+        onDispose(self)
         CheckoutCoordinator.shared.unregisterPassivePresenter(
             checkoutID: checkoutID,
             presenterID: presenterID,

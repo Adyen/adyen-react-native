@@ -9,6 +9,7 @@ import { render } from '@testing-library/react-native';
 import type { Checkout } from '../../core';
 
 const capturedProps: Record<string, unknown> = {};
+const mockCheckoutHandles = new WeakMap<object, { checkoutId: string }>();
 jest.mock('../../specs/NativeAdyenCheckoutComponentView', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -22,7 +23,7 @@ jest.mock('../../specs/NativeAdyenCheckoutComponentView', () => {
 });
 
 jest.mock('../../checkout/createCheckout', () => ({
-  checkoutHandleFor: () => ({ checkoutId: 'private-checkout-id' }),
+  checkoutHandleFor: (checkout: object) => mockCheckoutHandles.get(checkout),
 }));
 
 import { AdyenComponent } from '../AdyenComponent';
@@ -35,6 +36,7 @@ const fakeCheckout = {
   submit: jest.fn(),
   invalidate: jest.fn(),
 } as unknown as Checkout;
+mockCheckoutHandles.set(fakeCheckout, { checkoutId: 'private-checkout-id' });
 
 describe('AdyenComponent', () => {
   beforeEach(() => {
@@ -81,6 +83,30 @@ describe('AdyenComponent', () => {
 
     expect(capturedProps.presenterId).toEqual(expect.any(String));
     expect(capturedProps.presenterId).not.toBe(firstPresenterID);
+  });
+
+  test('keeps its identity for unchanged renders and replaces it with checkout or target props', () => {
+    const replacementCheckout = {
+      ...fakeCheckout,
+      paymentMethods: { paymentMethods: [{ type: 'ideal', name: 'iDEAL' }] },
+    } as Checkout;
+    mockCheckoutHandles.set(replacementCheckout, {
+      checkoutId: 'replacement-checkout-id',
+    });
+    const { rerender } = render(
+      <AdyenComponent checkout={fakeCheckout} type="scheme" />
+    );
+    const initialPresenterID = capturedProps.presenterId;
+
+    rerender(<AdyenComponent checkout={fakeCheckout} type="scheme" />);
+    expect(capturedProps.presenterId).toBe(initialPresenterID);
+
+    rerender(<AdyenComponent checkout={fakeCheckout} type="ideal" />);
+    const targetReplacementPresenterID = capturedProps.presenterId;
+    expect(targetReplacementPresenterID).not.toBe(initialPresenterID);
+
+    rerender(<AdyenComponent checkout={replacementCheckout} type="ideal" />);
+    expect(capturedProps.presenterId).not.toBe(targetReplacementPresenterID);
   });
 
   test('renders nothing for a checkout that did not originate from setup', () => {

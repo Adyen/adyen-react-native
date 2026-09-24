@@ -63,7 +63,10 @@ public final class AdyenComponentViewProxy: UIStackView {
         let controller = ComponentProxy(
             checkoutID: checkoutID,
             presenterID: presenterID,
-            target: target
+            target: target,
+            onDispose: { [weak self] controller in
+                self?.presenterDidDispose(controller)
+            }
         )
         do {
             try CheckoutCoordinator.shared.registerPassivePresenter(
@@ -89,14 +92,7 @@ public final class AdyenComponentViewProxy: UIStackView {
 
     @objc public func dispose() {
         creationGeneration += 1
-        if let childVC = componentViewController {
-            childVC.willMove(toParent: nil)
-            childVC.view.removeFromSuperview()
-            childVC.removeFromParent()
-        }
-        componentView = nil
-        componentViewController = nil
-        lastReportedHeight = 0
+        detachComponentViewController()
         let controller = controller
         self.controller = nil
         controller?.dispose()
@@ -114,8 +110,7 @@ public final class AdyenComponentViewProxy: UIStackView {
                     controller.dispose()
                     return
                 }
-                self.componentViewController = viewController
-                self.embedComponentView(viewController)
+                self.installComponentViewController(viewController, for: controller)
             } catch {
                 guard self.controller === controller,
                       self.creationGeneration == generation else {
@@ -140,6 +135,39 @@ public final class AdyenComponentViewProxy: UIStackView {
     }
 
     // MARK: - View embedding
+
+    /// Installs the child owned by the current Fabric registration. It remains internal so the
+    /// real proxy lifecycle can be exercised without creating a payment component in XCTest.
+    internal func installComponentViewController(
+        _ childVC: UIViewController,
+        for controller: ComponentProxy? = nil
+    ) {
+        if let controller {
+            guard self.controller == nil || self.controller === controller else { return }
+            self.controller = controller
+        }
+        componentViewController = childVC
+        embedComponentView(childVC)
+    }
+
+    internal func presenterDidDispose(_ disposedController: ComponentProxy) {
+        guard controller === disposedController else { return }
+        creationGeneration += 1
+        controller = nil
+        detachComponentViewController()
+    }
+
+    private func detachComponentViewController() {
+        if let childVC = componentViewController {
+            childVC.willMove(toParent: nil)
+            removeArrangedSubview(childVC.view)
+            childVC.view.removeFromSuperview()
+            childVC.removeFromParent()
+        }
+        componentView = nil
+        componentViewController = nil
+        lastReportedHeight = 0
+    }
 
     @MainActor
     private func embedComponentView(_ childVC: UIViewController) {
