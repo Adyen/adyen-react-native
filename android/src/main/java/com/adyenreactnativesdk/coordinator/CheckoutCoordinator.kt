@@ -584,6 +584,21 @@ internal class CheckoutCoordinator(
       if (this.operationId == operationId) presenter?.controller() else null
     }
 
+  /**
+   * Controllers are scoped to their Activity. A system-restored fragment must not resume a
+   * controller from the destroyed host, so terminalize the whole checkout before it can render.
+   */
+  @MainThread
+  fun invalidateRestoredFragment(operationId: String): Boolean =
+    transition {
+      if (this.operationId != operationId || fragmentPresentations[operationId] == null) {
+        false
+      } else {
+        invalidateLocked()
+        true
+      }
+    }
+
   @MainThread
   fun fragmentCancellable(operationId: String): Boolean = transition { fragmentPresentations[operationId]?.cancellable == true }
 

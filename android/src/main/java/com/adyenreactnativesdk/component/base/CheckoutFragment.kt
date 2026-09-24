@@ -56,6 +56,13 @@ class CheckoutFragment : BottomSheetDialogFragment() {
     dialog?.setCanceledOnTouchOutside(false)
 
     val operationId = arguments?.getString(ARG_OPERATION_ID)
+    if (savedInstanceState != null && operationId != null) {
+      // The FragmentManager restored this host for a new Activity. Its controller and redirect
+      // route belonged to the destroyed Activity, so dismiss rather than resurrecting either.
+      CheckoutCoordinator.shared.invalidateRestoredFragment(operationId)
+      dismissAllowingStateLoss()
+      return
+    }
     val fragmentTag = tag
     val coordinatorConfig =
       operationId?.let {
@@ -162,7 +169,9 @@ class CheckoutFragment : BottomSheetDialogFragment() {
 
     /**
      * Shows a checkout-owned host. The only Fragment argument is the private operation ID;
-     * controller ownership remains in [CheckoutCoordinator] across configuration recreation.
+     * controller ownership remains in [CheckoutCoordinator] while its Activity is alive.
+     * Restoring this Fragment after Activity destruction invalidates stale checkout work instead
+     * of resurrecting an Activity-scoped controller.
      */
     fun showCoordinator(
       fragmentManager: FragmentManager,

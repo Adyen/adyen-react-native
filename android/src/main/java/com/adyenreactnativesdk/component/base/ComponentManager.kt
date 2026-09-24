@@ -181,7 +181,7 @@ internal class ComponentManager(
         if (eventSink == null) {
           messageBus?.onException(error.toModuleException())
         } else {
-          eventSink.onError()
+          eventSink.reportTerminalFailure()
         }
         notifyTerminal()
       },
@@ -214,7 +214,7 @@ internal class ComponentManager(
         if (eventSink == null) {
           messageBus?.onSessionException(error.toModuleException())
         } else {
-          eventSink.onError()
+          eventSink.reportTerminalFailure()
         }
         notifyTerminal()
       },
@@ -238,5 +238,16 @@ internal class ComponentManager(
     if (terminalHandled) return
     terminalHandled = true
     onTerminal?.invoke()
+  }
+}
+
+/**
+ * A native failure may be the first callback from an embedded controller. Acquire its anonymous
+ * checkout-level operation before forwarding the terminal error so the presenter can clean up.
+ * A competing callback deliberately emits no merchant event.
+ */
+internal fun ComponentEventSink.reportTerminalFailure() {
+  if (onInteractionStarted()) {
+    onError()
   }
 }

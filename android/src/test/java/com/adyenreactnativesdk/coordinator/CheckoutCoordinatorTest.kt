@@ -588,6 +588,46 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `duplicate stored IDs are rejected without disturbing distinct registrations`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val storedOriginal = Presenter()
+    val regularSurvivor = Presenter()
+    val duplicate = Presenter()
+    coordinator.setup()
+
+    coordinator.registerPassivePresenter(
+      "checkout-1",
+      "stored-original",
+      CheckoutTarget.StoredPaymentMethod("stored-card"),
+      storedOriginal,
+    )
+    coordinator.registerPassivePresenter(
+      "checkout-1",
+      "regular-survivor",
+      CheckoutTarget.PaymentMethod("scheme"),
+      regularSurvivor,
+    )
+
+    try {
+      coordinator.registerPassivePresenter(
+        "checkout-1",
+        "stored-duplicate",
+        CheckoutTarget.StoredPaymentMethod("stored-card"),
+        duplicate,
+      )
+      fail("Expected a duplicate stored ID to reject")
+    } catch (_: IllegalStateException) {
+      assertEquals(2, coordinator.passivePresenterCount())
+      assertTrue(coordinator.isPassivePresenterActive("checkout-1", "stored-original", storedOriginal))
+      assertTrue(coordinator.isPassivePresenterActive("checkout-1", "regular-survivor", regularSurvivor))
+      assertEquals(0, storedOriginal.disposeCount)
+      assertEquals(0, regularSurvivor.disposeCount)
+      assertEquals(0, duplicate.disposeCount)
+    }
+  }
+
+  @Test
   fun `embedded operation acquisition is anonymous and retry releases only embedded ownership`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
@@ -603,6 +643,72 @@ class CheckoutCoordinatorTest {
 
     assertNull(coordinator.activeOperationId())
     assertTrue(coordinator.acquireEmbeddedOperation("checkout-1") != null)
+  }
+
+  @Test
+  fun `first embedded failure acquires terminal ownership and cleans the checkout`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+
+    val operationId = requireNotNull(coordinator.acquireEmbeddedOperation("checkout-1"))
+    coordinator.emitTerminal("checkout-1", "error", """{"errorCode":"checkoutFailed"}""")
+    coordinator.invalidate()
+
+    assertEquals(operationId, "operation-1")
+    assertEquals(
+      listOf("error"),
+      fixture.events
+        .filterIsInstance<CoordinatorEvent.Terminal>()
+        .map { it.kind },
+    )
+    assertNull(coordinator.activeCheckoutId())
+    assertNull(coordinator.activeOperationId())
+    assertEquals(
+      1,
+      fixture.factory.checkouts
+        .single()
+        .disposeCount,
+    )
+    assertEquals(1, fixture.host.releaseCount)
+  }
+
+  @Test
+  fun `restored Activity fragment invalidates stale controller state and permits fresh registration`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val stalePassivePresenter = Presenter()
+    val freshPresenter = Presenter()
+    val redirectController = mock<com.adyen.checkout.core.components.CheckoutController>()
+    coordinator.setup()
+    coordinator.registerPassivePresenter(
+      "checkout-1",
+      "stale-presenter",
+      CheckoutTarget.StoredPaymentMethod("stored-card"),
+      stalePassivePresenter,
+    )
+    val operationId = coordinator.beginOperation()
+    coordinator.registerFragmentPresentation(operationId, cancellable = true, autoSubmit = false, onCancelled = {})
+    coordinator.registerRedirectController(redirectController, operationId)
+
+    assertTrue(coordinator.invalidateRestoredFragment(operationId))
+    assertNull(coordinator.activeCheckoutId())
+    assertNull(coordinator.activeOperationId())
+    assertEquals(1, fixture.presenter.disposeCount)
+    assertEquals(1, stalePassivePresenter.disposeCount)
+    assertFalse(coordinator.handleReturn(Intent()))
+
+    val replacementCheckoutId = coordinator.setup()
+    coordinator.registerPassivePresenter(
+      replacementCheckoutId,
+      "fresh-presenter",
+      CheckoutTarget.StoredPaymentMethod("stored-card"),
+      freshPresenter,
+    )
+
+    assertTrue(coordinator.isPassivePresenterActive(replacementCheckoutId, "fresh-presenter", freshPresenter))
+    assertEquals(0, freshPresenter.disposeCount)
+    assertFalse(coordinator.invalidateRestoredFragment(operationId))
   }
 
   @Test
