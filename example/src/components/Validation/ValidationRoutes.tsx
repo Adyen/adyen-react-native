@@ -293,7 +293,7 @@ const ValidationCheckout = ({
   const validateCse = useCallback(async () => {
     const [number, expiry, securityCode] = await Promise.all([
       AdyenCSE.validateCardNumber('4111111111111111', true),
-      AdyenCSE.validateCardExpiryDate('03', '2030'),
+      AdyenCSE.validateCardExpiryDate('03', '30'),
       AdyenCSE.validateCardSecurityCode('737', 'visa'),
     ]);
     setStatus(

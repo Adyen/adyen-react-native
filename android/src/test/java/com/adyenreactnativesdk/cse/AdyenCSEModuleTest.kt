@@ -27,11 +27,11 @@ class AdyenCSEModuleTest {
     val securityCodePromise = mock<Promise>()
 
     module.validateCardNumber("4111111111111111", true, numberPromise)
-    module.validateCardExpiryDate("03", "2030", expiryPromise)
+    module.validateCardExpiryDate("03", "30", expiryPromise)
     module.validateCardSecurityCode("737", "visa", securityCodePromise)
 
     verify(numberPromise).resolve(eq(true))
-    verify(expiryPromise).resolve(any<Boolean>())
+    verify(expiryPromise).resolve(eq(true))
     verify(securityCodePromise).resolve(eq(true))
     verifyNoMoreInteractions(numberPromise, expiryPromise, securityCodePromise)
   }
