@@ -14,7 +14,6 @@ import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentManager
-import com.adyenreactnativesdk.react.ComponentContract
 import java.util.UUID
 
 /**
@@ -44,6 +43,9 @@ internal interface CoordinatorPresenter {
   fun complete(resultCode: String)
 
   fun retry(message: String?)
+
+  /** The current controller is consulted by an identifier-only fragment after recreation. */
+  fun controller(): CheckoutController? = null
 
   fun dispose()
 }
@@ -122,6 +124,12 @@ internal sealed interface CoordinatorEvent {
     val request: CoordinatorRequest,
   ) : CoordinatorEvent
 
+  data class Terminal(
+    val checkoutId: String,
+    val kind: String,
+    val payloadJson: String?,
+  ) : CoordinatorEvent
+
   data object OperationBusy : CoordinatorEvent
 
   data class CleanedUp(
@@ -141,13 +149,12 @@ internal class CheckoutCoordinator(
     val shared = CheckoutCoordinator()
   }
 
-  /** Legacy module paths delegate state and registries here until their commands migrate. */
+  /** Legacy module paths delegate checkout state here until their commands migrate. */
   var checkoutState: CheckoutState? = null
   private var runtimeDependencies: CheckoutCoordinatorDependencies? = null
   private val dependencies: CheckoutCoordinatorDependencies?
     get() = configuredDependencies ?: runtimeDependencies
-  private val managers = mutableMapOf<String, ComponentManager>()
-  private val consumers = mutableMapOf<String, ComponentContract>()
+  private val passivePresenters = mutableMapOf<String, PassivePresenter>()
   private val redirectControllers = mutableMapOf<String, CheckoutController>()
 
   private var checkout: CoordinatorCheckout? = null
@@ -155,13 +162,28 @@ internal class CheckoutCoordinator(
   private var presenter: CoordinatorPresenter? = null
   private var operationId: String? = null
   private var request: CoordinatorRequest? = null
+  private var requestEventKind: String? = null
+  private var requestResponse: ((String?) -> Unit)? = null
   private var requestCancellation: CoordinatorCancellation? = null
   private var requestCancellationFallback: (() -> Unit)? = null
   private var isSettingUp = false
+  private var isDisposing = false
   private var setupGeneration = 0
+  private val fragmentPresentations = mutableMapOf<String, FragmentPresentation>()
 
   /** The generated module instance currently allowed to tear down this checkout. */
   private var lifecycleOwnerId: String? = null
+
+  private data class PassivePresenter(
+    val checkoutId: String,
+    val presenter: CoordinatorPresenter,
+  )
+
+  private data class FragmentPresentation(
+    val cancellable: Boolean,
+    val autoSubmit: Boolean,
+    val onCancelled: () -> Unit,
+  )
 
   @MainThread
   fun activeCheckoutId(): String? = transition { checkoutId }
@@ -307,6 +329,7 @@ internal class CheckoutCoordinator(
     eventKind: String? = null,
     payloadJson: String? = null,
     cancellationFallback: () -> Unit = {},
+    response: ((String?) -> Unit)? = null,
   ): CoordinatorRequest =
     transition {
       val currentCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
@@ -320,6 +343,8 @@ internal class CheckoutCoordinator(
           kind = kind,
         )
       request = createdRequest
+      requestEventKind = eventKind
+      requestResponse = response
       requestCancellation =
         dependencies?.scheduler?.schedule(timeoutMillis) {
           timeout(createdRequest)
@@ -336,16 +361,33 @@ internal class CheckoutCoordinator(
 
   /** Returns false for stale, duplicate, wrong-kind, or late responses. */
   @MainThread
-  fun resolve(candidate: CoordinatorRequest): Boolean =
-    transition {
-      if (request != candidate) {
-        emit(CoordinatorEvent.StaleRequest(candidate))
-        false
-      } else {
-        settleRequestLocked()
-        true
+  fun resolve(
+    candidate: CoordinatorRequest,
+    payloadJson: String? = null,
+  ): Boolean {
+    var matched = false
+    val response =
+      transition {
+        if (request != candidate) {
+          emit(CoordinatorEvent.StaleRequest(candidate))
+          null
+        } else {
+          matched = true
+          val handler = requestResponse
+          settleRequestLocked()
+          handler
+        }
       }
-    }
+    if (!matched) return false
+    response?.invoke(payloadJson)
+    return true
+  }
+
+  @MainThread
+  fun activeRequest(): CoordinatorRequest? = transition { request }
+
+  @MainThread
+  fun activeRequestEventKind(): String? = transition { requestEventKind }
 
   @MainThread
   fun completeOperation(operationId: String) {
@@ -355,6 +397,7 @@ internal class CheckoutCoordinator(
       presenter?.dispose()
       presenter = null
       this.operationId = null
+      fragmentPresentations.remove(operationId)
     }
   }
 
@@ -382,70 +425,94 @@ internal class CheckoutCoordinator(
     }
   }
 
+  /**
+   * Registers a mounted Fabric view without acquiring the interactive operation slot. The
+   * registration is bound to both opaque identities, so views with the same target remain
+   * independent and a stale view cannot attach to a replacement checkout.
+   */
   @MainThread
-  fun registerManager(
-    id: String,
-    manager: ComponentManager,
+  fun registerPassivePresenter(
+    checkoutId: String,
+    presenterId: String,
+    presenter: CoordinatorPresenter,
   ) {
-    transition { managers[id] = manager }
-  }
-
-  /** Presenter registrations are identities, never payment-method types. */
-  @MainThread
-  fun registerManager(manager: ComponentManager): String =
     transition {
-      val id = nextId(CoordinatorIdentityKind.OPERATION)
-      managers[id] = manager
-      id
-    }
-
-  @MainThread
-  fun unregisterManager(id: String) {
-    transition { managers.remove(id)?.dispose() }
-  }
-
-  @MainThread
-  fun manager(id: String): ComponentManager? = transition { managers[id] }
-
-  @MainThread
-  fun allManagers(): List<ComponentManager> = transition { managers.values.toList() }
-
-  @MainThread
-  fun clearManagers() {
-    transition {
-      clearManagersLocked()
+      check(this.checkoutId == checkoutId) { "Stale checkout" }
+      val existing = passivePresenters[presenterId]
+      check(existing == null || (existing.checkoutId == checkoutId && existing.presenter === presenter)) {
+        "Presenter identity collision"
+      }
+      passivePresenters[presenterId] = PassivePresenter(checkoutId, presenter)
     }
   }
 
+  /**
+   * Delayed recycle/unmount only removes the exact registration it created. A newly mounted view
+   * with a reused Fabric token is therefore left intact.
+   */
   @MainThread
-  fun registerConsumer(
-    id: String,
-    consumer: ComponentContract,
+  fun unregisterPassivePresenter(
+    checkoutId: String,
+    presenterId: String,
+    presenter: CoordinatorPresenter,
   ) {
-    transition { consumers[id] = consumer }
+    transition {
+      val existing = passivePresenters[presenterId] ?: return@transition
+      if (existing.checkoutId == checkoutId && existing.presenter === presenter) {
+        passivePresenters.remove(presenterId)
+        redirectControllers.remove(presenterId)
+      }
+    }
   }
 
   @MainThread
-  fun unregisterConsumer(id: String) {
-    transition { consumers.remove(id) }
-  }
+  fun isPassivePresenterActive(
+    checkoutId: String,
+    presenterId: String,
+    presenter: CoordinatorPresenter,
+  ): Boolean =
+    transition {
+      val existing = passivePresenters[presenterId]
+      this.checkoutId == checkoutId && existing?.checkoutId == checkoutId && existing.presenter === presenter
+    }
 
   @MainThread
-  fun consumer(id: String): ComponentContract? = transition { consumers[id] }
+  fun passivePresenterCount(): Int = transition { passivePresenters.size }
 
+  /**
+   * A passive presenter acquires the shared interactive slot only when it begins payment. The
+   * presenter identity remains the operation owner, preventing redirect or terminal work from
+   * selecting another same-type mounted view.
+   */
   @MainThread
-  fun clearConsumers() {
-    transition { consumers.clear() }
-  }
+  fun beginPassiveOperation(
+    checkoutId: String,
+    presenterId: String,
+    presenter: CoordinatorPresenter,
+  ): String =
+    transition {
+      check(this.checkoutId == checkoutId) { "Stale checkout" }
+      check(operationId == null) {
+        emit(CoordinatorEvent.OperationBusy)
+        "Operation is already active"
+      }
+      val existing = passivePresenters[presenterId]
+      check(existing?.checkoutId == checkoutId && existing.presenter === presenter) { "Stale presenter" }
+      operationId = presenterId
+      this.presenter = presenter
+      presenterId
+    }
 
   @MainThread
   fun registerRedirectController(
     controller: CheckoutController,
-    operationId: String? = this.operationId,
+    ownerId: String,
   ) {
     transition {
-      val owner = operationId ?: return@transition
-      redirectControllers[owner] = controller
+      val isActiveOperation = operationId == ownerId
+      val passiveOwner = passivePresenters[ownerId]
+      check(isActiveOperation || passiveOwner != null) { "Unknown redirect owner" }
+      redirectControllers[ownerId] = controller
     }
   }
 
@@ -464,6 +531,67 @@ internal class CheckoutCoordinator(
       controller.handleReturn(intent)
       true
     }
+
+  /**
+   * Fragment state is coordinator-owned and keyed only by the operation identity. A recreated
+   * [CheckoutFragment] reads this data through these methods; it never carries a controller or
+   * serialized checkout state in arguments.
+   */
+  @MainThread
+  fun registerFragmentPresentation(
+    operationId: String,
+    cancellable: Boolean,
+    autoSubmit: Boolean,
+    onCancelled: () -> Unit,
+  ) {
+    transition {
+      check(this.operationId == operationId && presenter != null) { "Stale operation" }
+      fragmentPresentations[operationId] = FragmentPresentation(cancellable, autoSubmit, onCancelled)
+    }
+  }
+
+  @MainThread
+  fun fragmentController(operationId: String): CheckoutController? =
+    transition {
+      if (this.operationId == operationId) presenter?.controller() else null
+    }
+
+  @MainThread
+  fun fragmentCancellable(operationId: String): Boolean = transition { fragmentPresentations[operationId]?.cancellable == true }
+
+  @MainThread
+  fun fragmentAutoSubmit(operationId: String): Boolean = transition { fragmentPresentations[operationId]?.autoSubmit == true }
+
+  @MainThread
+  fun fragmentCancelled(operationId: String) {
+    val callback =
+      transition {
+        if (this.operationId != operationId || isDisposing) {
+          null
+        } else {
+          fragmentPresentations[operationId]?.onCancelled
+        }
+      }
+    callback?.invoke()
+  }
+
+  @MainThread
+  fun fragmentDismissed(operationId: String) {
+    transition { fragmentPresentations.remove(operationId) }
+  }
+
+  @MainThread
+  fun emitTerminal(
+    checkoutId: String,
+    kind: String,
+    payloadJson: String? = null,
+  ) {
+    transition {
+      if (this.checkoutId == checkoutId) {
+        emit(CoordinatorEvent.Terminal(checkoutId, kind, payloadJson))
+      }
+    }
+  }
 
   private fun replaceLocked(create: () -> CoordinatorCheckout): String {
     check(!isSettingUp) { "Checkout setup is already active" }
@@ -504,30 +632,33 @@ internal class CheckoutCoordinator(
   }
 
   private fun invalidateLocked() {
+    if (isDisposing) return
+    isDisposing = true
     setupGeneration += 1
     isSettingUp = false
     lifecycleOwnerId = null
     settleRequestLocked(invokeFallback = true)
     val currentCheckoutId = checkoutId
-    presenter?.dispose()
-    presenter = null
-    clearManagersLocked()
-    consumers.clear()
-    redirectControllers.clear()
+    try {
+      presenter?.dispose()
+      presenter = null
+      val ownedPassivePresenters = passivePresenters.values.map { it.presenter }
+      passivePresenters.clear()
+      ownedPassivePresenters.forEach { it.dispose() }
+      redirectControllers.clear()
+      fragmentPresentations.clear()
 
-    checkout?.dispose()
-    checkout = null
-    checkoutId = null
-    checkoutState = null
-    currentCheckoutId?.let {
+      checkout?.dispose()
+      checkout = null
       // The host adapter reads the current operation to detach coordinator-owned presentation.
-      // Keep it available until all native resources have been released.
-      dependencies?.hostLauncherAdapter?.releaseCheckoutHost()
+      // Keep it available until the checkout and presenters have been released.
+      currentCheckoutId?.let { dependencies?.hostLauncherAdapter?.releaseCheckoutHost() }
+      checkoutId = null
+      checkoutState = null
       operationId = null
-      emit(CoordinatorEvent.CleanedUp(it))
-    }
-    if (currentCheckoutId == null) {
-      operationId = null
+      currentCheckoutId?.let { emit(CoordinatorEvent.CleanedUp(it)) }
+    } finally {
+      isDisposing = false
     }
   }
 
@@ -543,6 +674,8 @@ internal class CheckoutCoordinator(
     requestCancellation?.cancel()
     requestCancellation = null
     request = null
+    requestEventKind = null
+    requestResponse = null
     val fallback = requestCancellationFallback
     requestCancellationFallback = null
     if (invokeFallback) {
@@ -555,12 +688,6 @@ internal class CheckoutCoordinator(
       "CheckoutCoordinator transitions must run on the main thread"
     }
     return block()
-  }
-
-  private fun clearManagersLocked() {
-    val ownedManagers = managers.values.toList()
-    managers.clear()
-    ownedManagers.forEach { it.dispose() }
   }
 
   private fun nextId(kind: CoordinatorIdentityKind): String = dependencies?.identityGenerator?.next(kind) ?: UUID.randomUUID().toString()

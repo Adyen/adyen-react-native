@@ -9,6 +9,7 @@ package com.adyenreactnativesdk.component.base
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.core.components.CheckoutController
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +19,15 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class CheckoutFragmentTest {
+  @Test
+  fun `coordinator fragment arguments contain only the operation identifier`() {
+    val fragment = CheckoutFragment.forCoordinator("presenter-1")
+
+    assertEquals("presenter-1", fragment.arguments?.getString("operationId"))
+    assertEquals(setOf("operationId"), fragment.arguments?.keySet())
+    assertFalse(fragment.arguments?.containsKey("controller") == true)
+  }
+
   @Test
   fun `hide commits and dismisses a queued fragment before settling`() {
     val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()

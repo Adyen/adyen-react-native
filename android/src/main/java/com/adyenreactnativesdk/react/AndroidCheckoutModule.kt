@@ -62,7 +62,6 @@ class AndroidCheckoutModule(
   LifecycleEventListener {
   /** Binds lifecycle callbacks from this TurboModule instance to its exact coordinator checkout. */
   private val lifecycleOwnerId = UUID.randomUUID().toString()
-  private var pendingResponse: PendingResponse? = null
 
   init {
     reactContext.addLifecycleEventListener(this)
@@ -241,7 +240,6 @@ class AndroidCheckoutModule(
             reject(promise, ERROR_OPERATION_BUSY)
             return@launch
           }
-        val tag = "$FRAGMENT_TAG_PREFIX-$operationId"
         val presenter =
           CheckoutCoordinator.shared.presenter(operationId)
             ?: run {
@@ -256,13 +254,11 @@ class AndroidCheckoutModule(
             reject(promise, ERROR_INVALID_TARGET)
             return@launch
           }
-          CheckoutFragment.show(
+          CheckoutFragment.showCoordinator(
             fragmentManager = activity.supportFragmentManager,
-            tag = tag,
-            controllerProvider = { controller },
+            operationId = operationId,
             autoSubmit = true,
             onCancelled = {
-              clearPendingResponse(operationId)
               emitTerminal(checkoutId, EVENT_ERROR, terminalErrorPayload())
               if (CheckoutCoordinator.shared.activeOperationId() == operationId) {
                 CheckoutCoordinator.shared.invalidate()
@@ -296,8 +292,14 @@ class AndroidCheckoutModule(
     promise: Promise,
   ) {
     onMain {
-      val pending = pendingResponse
-      if (pending == null || !pending.matches(response)) {
+      val request = CheckoutCoordinator.shared.activeRequest()
+      if (
+        request == null ||
+        response.getString(CHECKOUT_ID) != request.checkoutId ||
+        response.getString(OPERATION_ID) != request.operationId ||
+        response.getString(REQUEST_ID) != request.requestId ||
+        response.getString(KIND) != CheckoutCoordinator.shared.activeRequestEventKind()
+      ) {
         reject(promise, ERROR_STALE_RESPONSE)
         return@onMain
       }
@@ -305,26 +307,21 @@ class AndroidCheckoutModule(
         try {
           response.getString(PAYLOAD_JSON)?.let(::JSONObject)
         } catch (_: Exception) {
-          if (CheckoutCoordinator.shared.resolve(pending.request)) {
-            pendingResponse = null
-            pending.resume(null)
-          }
+          CheckoutCoordinator.shared.resolve(request)
           reject(promise, ERROR_INVALID_RESPONSE)
           return@onMain
         }
       if (
-        pending.eventKind == EVENT_ADVANCED_SUBMIT &&
+        CheckoutCoordinator.shared.activeRequestEventKind() == EVENT_ADVANCED_SUBMIT &&
         (payload == null || !AdvancedSubmitResponseValidator.isValid(payload))
       ) {
         reject(promise, ERROR_INVALID_RESPONSE)
         return@onMain
       }
-      if (!CheckoutCoordinator.shared.resolve(pending.request)) {
+      if (!CheckoutCoordinator.shared.resolve(request, payload?.toString())) {
         reject(promise, ERROR_STALE_RESPONSE)
         return@onMain
       }
-      pendingResponse = null
-      pending.resume(payload)
       promise.resolve(null)
     }
   }
@@ -338,7 +335,6 @@ class AndroidCheckoutModule(
         promise.resolve(null)
         return@onMain
       }
-      pendingResponse = null
       CheckoutCoordinator.shared.invalidate()
       promise.resolve(null)
     }
@@ -349,14 +345,12 @@ class AndroidCheckoutModule(
   override fun onHostPause() = Unit
 
   override fun onHostDestroy() {
-    pendingResponse = null
     CheckoutCoordinator.shared.hostDidDisappear(lifecycleOwnerId)
   }
 
   override fun invalidate() {
     reactContext.removeLifecycleEventListener(this)
     onMain {
-      pendingResponse = null
       CheckoutCoordinator.shared.hostDidDisappear(lifecycleOwnerId)
     }
     super.invalidate()
@@ -434,6 +428,8 @@ class AndroidCheckoutModule(
 
   private fun componentEventSink(presentation: CoordinatorPresentation): ComponentEventSink =
     object : ComponentEventSink {
+      override fun onInteractionStarted(): Boolean = true
+
       override fun onAdvancedSubmit(data: PaymentComponentData<*>) {
         createRequest(
           presentation.operationId ?: return,
@@ -487,13 +483,6 @@ class AndroidCheckoutModule(
   private fun pendingPresenter(presentation: CoordinatorPresentation): CoordinatorPresenter? =
     presentation.operationId?.let(CheckoutCoordinator.shared::presenter)
 
-  /** A presenter may only clear the response its own operation created. */
-  private fun clearPendingResponse(operationId: String) {
-    if (pendingResponse?.request?.operationId == operationId) {
-      pendingResponse = null
-    }
-  }
-
   private fun createRequest(
     operationId: String,
     kind: CoordinatorRequestKind,
@@ -501,30 +490,19 @@ class AndroidCheckoutModule(
     payload: JSONObject,
     resume: (JSONObject?) -> Unit,
   ) {
-    var requestId: String? = null
-    val request =
-      try {
-        CheckoutCoordinator.shared.beginRequest(
-          operationId = operationId,
-          kind = kind,
-          timeoutMillis = REQUEST_TIMEOUT_MILLIS,
-          eventKind = eventKind,
-          payloadJson = payload.toString(),
-          cancellationFallback = {
-            if (
-              pendingResponse?.request?.operationId == operationId &&
-              pendingResponse?.request?.requestId == requestId
-            ) {
-              pendingResponse = null
-            }
-            resume(null)
-          },
-        )
-      } catch (_: Exception) {
-        return
-      }
-    requestId = request.requestId
-    pendingResponse = PendingResponse(request, eventKind, resume)
+    try {
+      CheckoutCoordinator.shared.beginRequest(
+        operationId = operationId,
+        kind = kind,
+        timeoutMillis = REQUEST_TIMEOUT_MILLIS,
+        eventKind = eventKind,
+        payloadJson = payload.toString(),
+        cancellationFallback = { resume(null) },
+        response = { response -> resume(response?.let(::JSONObject)) },
+      )
+    } catch (_: Exception) {
+      resume(null)
+    }
   }
 
   private fun emitTerminal(
@@ -582,18 +560,6 @@ class AndroidCheckoutModule(
     reactContext.runOnUiQueueThread(action)
   }
 
-  private data class PendingResponse(
-    val request: CoordinatorRequest,
-    val eventKind: String,
-    val resume: (JSONObject?) -> Unit,
-  ) {
-    fun matches(response: ReadableMap): Boolean =
-      response.getString(CHECKOUT_ID) == request.checkoutId &&
-        response.getString(OPERATION_ID) == request.operationId &&
-        response.getString(REQUEST_ID) == request.requestId &&
-        response.getString(KIND) == eventKind
-  }
-
   private class TurboCheckoutFlow(
     override val checkoutState: CheckoutState,
   ) : CheckoutStateOwner {
@@ -631,14 +597,14 @@ class AndroidCheckoutModule(
           messageBus = messageBus,
           sessionBeforeSubmitBridge = CheckoutCoordinator.shared.checkoutState?.sessionBeforeSubmitBridge,
           eventSink = componentEventSink(presentation),
+          redirectOwnerId = presentation.operationId,
           onTerminal =
             presentation.operationId?.let { operationId ->
               {
-                clearPendingResponse(operationId)
                 if (CheckoutCoordinator.shared.activeOperationId() == operationId) {
                   CheckoutFragment.hide(
                     activityOrThrow().supportFragmentManager,
-                    "$FRAGMENT_TAG_PREFIX-$operationId",
+                    "${CheckoutFragment.COORDINATOR_TAG_PREFIX}-$operationId",
                   )
                   CheckoutCoordinator.shared.invalidate()
                 }
@@ -660,6 +626,8 @@ class AndroidCheckoutModule(
     override fun retry(message: String?) {
       manager?.retry(message)
     }
+
+    override fun controller(): com.adyen.checkout.core.components.CheckoutController? = manager?.checkoutController
 
     override fun dispose() {
       manager?.dispose()
@@ -701,7 +669,10 @@ class AndroidCheckoutModule(
     override fun releaseCheckoutHost() {
       val activity = reactContext.currentActivity as? FragmentActivity ?: return
       val operationId = CheckoutCoordinator.shared.activeOperationId() ?: return
-      CheckoutFragment.hide(activity.supportFragmentManager, "$FRAGMENT_TAG_PREFIX-$operationId")
+      CheckoutFragment.hide(
+        activity.supportFragmentManager,
+        "${CheckoutFragment.COORDINATOR_TAG_PREFIX}-$operationId",
+      )
     }
   }
 
@@ -738,7 +709,6 @@ class AndroidCheckoutModule(
     private const val EVENT_SESSION_BEFORE_SUBMIT = "sessionBeforeSubmit"
     private const val EVENT_COMPLETION = "completion"
     private const val EVENT_ERROR = "error"
-    private const val FRAGMENT_TAG_PREFIX = "TurboCheckout"
     private const val REQUEST_TIMEOUT_MILLIS = 60_000L
     private const val ERROR_INVALID_CONFIGURATION = "invalidConfiguration"
     private const val ERROR_SETUP_FAILED = "invalidConfiguration"

@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.coordinator
 
+import android.content.Intent
 import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyenreactnativesdk.cse.ActionOperationToken
 import com.adyenreactnativesdk.cse.ActionOwnerRegistry
@@ -549,6 +550,59 @@ class CheckoutCoordinatorTest {
     }
 
   @Test
+  fun `same target passive presenters remain independently registered`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val first = Presenter()
+    val second = Presenter()
+    coordinator.setup()
+
+    coordinator.registerPassivePresenter("checkout-1", "presenter-a", first)
+    coordinator.registerPassivePresenter("checkout-1", "presenter-b", second)
+    coordinator.unregisterPassivePresenter("checkout-1", "presenter-a", first)
+
+    assertEquals(1, coordinator.passivePresenterCount())
+    assertFalse(coordinator.isPassivePresenterActive("checkout-1", "presenter-a", first))
+    assertTrue(coordinator.isPassivePresenterActive("checkout-1", "presenter-b", second))
+    assertEquals(0, second.disposeCount)
+  }
+
+  @Test
+  fun `checkout replacement disposes passive presenters and stale unmount cannot remove a replacement`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val oldPresenter = Presenter()
+    val replacementPresenter = Presenter()
+    coordinator.setup()
+    coordinator.registerPassivePresenter("checkout-1", "shared-presenter", oldPresenter)
+    coordinator.setup()
+    coordinator.registerPassivePresenter("checkout-2", "shared-presenter", replacementPresenter)
+
+    coordinator.unregisterPassivePresenter("checkout-1", "shared-presenter", oldPresenter)
+
+    assertEquals(1, oldPresenter.disposeCount)
+    assertTrue(coordinator.isPassivePresenterActive("checkout-2", "shared-presenter", replacementPresenter))
+  }
+
+  @Test
+  fun `redirect return is consumed only by its active passive presenter`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val presenter = Presenter()
+    val controller = mock<com.adyen.checkout.core.components.CheckoutController>()
+    coordinator.setup()
+    coordinator.registerPassivePresenter("checkout-1", "presenter-a", presenter)
+    coordinator.registerRedirectController(controller, "presenter-a")
+    val redirectIntent = Intent()
+
+    assertFalse(coordinator.handleReturn(Intent()))
+    coordinator.beginPassiveOperation("checkout-1", "presenter-a", presenter)
+
+    assertTrue(coordinator.handleReturn(redirectIntent))
+    verify(controller).handleReturn(eq(redirectIntent))
+  }
+
+  @Test
   fun `terminal cleanup only clears the matching operation request`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
@@ -673,6 +727,63 @@ class CheckoutCoordinatorTest {
     assertEquals(1, fixture.host.releaseCount)
   }
 
+  @Test
+  fun `presenter terminal cleanup cannot recursively invalidate an active coordinator disposal`() {
+    val fixture = Fixture()
+    lateinit var coordinator: CheckoutCoordinator
+    var disposeCount = 0
+    val terminalPresenter =
+      object : CoordinatorPresenter {
+        override suspend fun createController(
+          context: com.adyen.checkout.core.common.CheckoutContext,
+          target: CheckoutTarget,
+        ) = null
+
+        override fun handleAction(action: com.adyen.checkout.core.action.data.Action) = Unit
+
+        override fun complete(resultCode: String) = Unit
+
+        override fun retry(message: String?) = Unit
+
+        override fun dispose() {
+          disposeCount += 1
+          coordinator.invalidate()
+        }
+      }
+    coordinator =
+      CheckoutCoordinator(
+        CheckoutCoordinatorDependencies(
+          checkoutFactory = fixture.factory,
+          presenterFactory =
+            object : PresenterFactory(fixture.presenter) {
+              override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter = terminalPresenter
+            },
+          eventSink =
+            object : CheckoutEventSink {
+              override fun emit(event: CoordinatorEvent) {
+                fixture.events += event
+              }
+            },
+          identityGenerator = Identities(),
+          scheduler = fixture.scheduler,
+          hostLauncherAdapter = fixture.host,
+        ),
+      )
+    coordinator.setup()
+    coordinator.beginOperation()
+
+    coordinator.invalidate()
+
+    assertEquals(1, disposeCount)
+    assertNull(coordinator.activeCheckoutId())
+    assertEquals(
+      1,
+      fixture.factory.checkouts
+        .single()
+        .disposeCount,
+    )
+  }
+
   private class Fixture {
     val log = mutableListOf<String>()
     val factory = Factory(log)
@@ -753,7 +864,7 @@ class CheckoutCoordinatorTest {
     }
   }
 
-  private class PresenterFactory(
+  private open class PresenterFactory(
     private val presenter: Presenter,
   ) : com.adyenreactnativesdk.coordinator.PresenterFactory {
     var createCount = 0

@@ -15,6 +15,7 @@ class DynamicComponentView(
   private var oldSize: Size? = null
 
   var layoutListener: LayoutListener? = null
+  var detachListener: (() -> Unit)? = null
   var isViewSet = false
 
   private val resizeRunnable =
@@ -50,6 +51,7 @@ class DynamicComponentView(
     removeCallbacks(resizeRunnable)
     isViewSet = false
     oldSize = null
+    detachListener?.invoke()
   }
 
   /** Explicit disposal from [AdyenComponentViewManager.onDropViewInstance]. */

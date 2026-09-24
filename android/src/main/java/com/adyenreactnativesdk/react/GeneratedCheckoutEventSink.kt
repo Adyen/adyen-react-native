@@ -12,8 +12,8 @@ import com.adyenreactnativesdk.coordinator.CoordinatorEvent
 /** Coordinator event payload ready for the generated Checkout TurboModule event emitter. */
 internal data class GeneratedCheckoutEvent(
   val checkoutId: String,
-  val operationId: String,
-  val requestId: String,
+  val operationId: String?,
+  val requestId: String?,
   val kind: String,
   val payloadJson: String?,
 )
@@ -26,16 +26,35 @@ internal class GeneratedCheckoutEventSink(
   private val emit: (GeneratedCheckoutEvent) -> Unit,
 ) : CheckoutEventSink {
   override fun emit(event: CoordinatorEvent) {
-    val requestEvent = event as? CoordinatorEvent.Request ?: return
-    val kind = requestEvent.eventKind ?: return
-    emit(
-      GeneratedCheckoutEvent(
-        checkoutId = requestEvent.request.checkoutId,
-        operationId = requestEvent.request.operationId,
-        requestId = requestEvent.request.requestId,
-        kind = kind,
-        payloadJson = requestEvent.payloadJson,
-      ),
-    )
+    when (event) {
+      is CoordinatorEvent.Request -> {
+        val kind = event.eventKind ?: return
+        emit(
+          GeneratedCheckoutEvent(
+            checkoutId = event.request.checkoutId,
+            operationId = event.request.operationId,
+            requestId = event.request.requestId,
+            kind = kind,
+            payloadJson = event.payloadJson,
+          ),
+        )
+      }
+
+      is CoordinatorEvent.Terminal -> {
+        emit(
+          GeneratedCheckoutEvent(
+            checkoutId = event.checkoutId,
+            operationId = null,
+            requestId = null,
+            kind = event.kind,
+            payloadJson = event.payloadJson,
+          ),
+        )
+      }
+
+      else -> {
+        Unit
+      }
+    }
   }
 }

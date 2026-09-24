@@ -25,11 +25,16 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentManager
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutPaymentFlow
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /**
  * Generic [BottomSheetDialogFragment] host for [CheckoutPaymentFlow] composable, replacing
- * the former per-flow fragments (`ActionFragment`, `GooglePayFragment`). Configured per-tag via [show].
+ * the former per-flow fragments (`ActionFragment`, `GooglePayFragment`).
+ *
+ * Checkout-owned fragments receive only an operation identifier in arguments. They resolve the
+ * live controller and flags from [CheckoutCoordinator], which lets Android recreate the fragment
+ * without serializing controller state into a Bundle or retaining it in this class.
  */
 class CheckoutFragment : BottomSheetDialogFragment() {
   private var submitted = false
@@ -50,20 +55,36 @@ class CheckoutFragment : BottomSheetDialogFragment() {
     super.onViewCreated(view, savedInstanceState)
     dialog?.setCanceledOnTouchOutside(false)
 
-    val fragmentTag =
-      tag ?: run {
-        dismissAllowingStateLoss()
-        return
+    val operationId = arguments?.getString(ARG_OPERATION_ID)
+    val fragmentTag = tag
+    val coordinatorConfig =
+      operationId?.let {
+        CoordinatorFragmentConfig(
+          controller = CheckoutCoordinator.shared.fragmentController(it),
+          cancellable = CheckoutCoordinator.shared.fragmentCancellable(it),
+          autoSubmit = CheckoutCoordinator.shared.fragmentAutoSubmit(it),
+        )
       }
-    val config =
-      configs[fragmentTag] ?: run {
-        dismissAllowingStateLoss()
-        return
-      }
+    val legacyConfig =
+      fragmentTag?.let(configs::get)
+    val controller =
+      coordinatorConfig?.controller
+        ?: legacyConfig?.controllerProvider?.invoke()
+    val cancellable =
+      coordinatorConfig?.cancellable
+        ?: legacyConfig?.cancellable
+        ?: false
+    val autoSubmit =
+      coordinatorConfig?.autoSubmit
+        ?: legacyConfig?.autoSubmit
+        ?: false
+    if (coordinatorConfig == null && legacyConfig == null) {
+      dismissAllowingStateLoss()
+      return
+    }
 
-    isCancelable = config.cancellable
+    isCancelable = cancellable
 
-    val controller = config.controllerProvider()
     if (controller == null) {
       dismissAllowingStateLoss()
       return
@@ -73,12 +94,12 @@ class CheckoutFragment : BottomSheetDialogFragment() {
       CheckoutPaymentFlow(controller = controller)
       // TODO: temporary close button for actions with no UI of their own (e.g. redirect); revisit
       // once upstream (ui-core) offers a proper cancel/loading affordance.
-      if (config.cancellable) {
+      if (cancellable) {
         CloseButton(onClick = { dialog?.cancel() })
       }
     }
 
-    if (config.autoSubmit && !submitted && !controller.requiresUserInteraction()) {
+    if (autoSubmit && !submitted && !controller.requiresUserInteraction()) {
       submitted = true
       controller.submit()
     }
@@ -86,14 +107,14 @@ class CheckoutFragment : BottomSheetDialogFragment() {
 
   override fun onCancel(dialog: DialogInterface) {
     super.onCancel(dialog)
-    val fragmentTag = tag ?: return
-    configs[fragmentTag]?.onCancelled?.invoke()
+    arguments?.getString(ARG_OPERATION_ID)?.let(CheckoutCoordinator.shared::fragmentCancelled)
+      ?: tag?.let { configs[it]?.onCancelled?.invoke() }
   }
 
   override fun onDismiss(dialog: DialogInterface) {
     super.onDismiss(dialog)
-    val fragmentTag = tag ?: return
-    configs.remove(fragmentTag)?.onDismissed?.invoke()
+    arguments?.getString(ARG_OPERATION_ID)?.let(CheckoutCoordinator.shared::fragmentDismissed)
+      ?: tag?.let { configs.remove(it)?.onDismissed?.invoke() }
   }
 
   @Suppress("ktlint:standard:function-naming")
@@ -111,6 +132,12 @@ class CheckoutFragment : BottomSheetDialogFragment() {
       val autoSubmit: Boolean,
       val onCancelled: (() -> Unit)?,
       val onDismissed: (() -> Unit)? = null,
+    )
+
+    private data class CoordinatorFragmentConfig(
+      val controller: CheckoutController?,
+      val cancellable: Boolean,
+      val autoSubmit: Boolean,
     )
 
     private val configs = mutableMapOf<String, FragmentConfig>()
@@ -133,20 +160,47 @@ class CheckoutFragment : BottomSheetDialogFragment() {
       CheckoutFragment().show(fragmentManager, tag)
     }
 
+    /**
+     * Shows a checkout-owned host. The only Fragment argument is the private operation ID;
+     * controller ownership remains in [CheckoutCoordinator] across configuration recreation.
+     */
+    fun showCoordinator(
+      fragmentManager: FragmentManager,
+      operationId: String,
+      cancellable: Boolean = true,
+      autoSubmit: Boolean = false,
+      onCancelled: () -> Unit,
+    ) {
+      CheckoutCoordinator.shared.registerFragmentPresentation(
+        operationId = operationId,
+        cancellable = cancellable,
+        autoSubmit = autoSubmit,
+        onCancelled = onCancelled,
+      )
+      forCoordinator(operationId).show(fragmentManager, "$COORDINATOR_TAG_PREFIX-$operationId")
+    }
+
+    /** Creates an identifier-only fragment so system recreation resolves live state from the coordinator. */
+    internal fun forCoordinator(operationId: String): CheckoutFragment =
+      CheckoutFragment().apply {
+        arguments =
+          Bundle().apply {
+            putString(ARG_OPERATION_ID, operationId)
+          }
+      }
+
     fun hide(
       fragmentManager: FragmentManager,
       tag: String,
       onDismissed: (() -> Unit)? = null,
     ) {
       val currentConfig = configs[tag]
-      if (currentConfig == null) {
-        onDismissed?.invoke()
-        return
+      currentConfig?.let {
+        configs[tag] =
+          it.copy(
+            onDismissed = onDismissed,
+          )
       }
-      configs[tag] =
-        currentConfig.copy(
-          onDismissed = onDismissed,
-        )
       val fragment = fragmentManager.findFragmentByTag(tag) as? CheckoutFragment
       val committedFragment =
         fragment
@@ -155,10 +209,13 @@ class CheckoutFragment : BottomSheetDialogFragment() {
             fragmentManager.findFragmentByTag(tag) as? CheckoutFragment
           }
       if (committedFragment == null) {
-        configs.remove(tag)?.onDismissed?.invoke()
+        (configs.remove(tag)?.onDismissed ?: onDismissed)?.invoke()
         return
       }
       committedFragment.dismissAllowingStateLoss()
     }
+
+    const val COORDINATOR_TAG_PREFIX = "TurboCheckout"
+    private const val ARG_OPERATION_ID = "operationId"
   }
 }

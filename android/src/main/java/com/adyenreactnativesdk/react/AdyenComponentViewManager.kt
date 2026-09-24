@@ -6,25 +6,22 @@
 
 package com.adyenreactnativesdk.react
 
-import android.util.Log
 import com.adyenreactnativesdk.react.base.DynamicComponentView
-import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
-import com.facebook.react.viewmanagers.AdyenComponentViewManagerDelegate
-import com.facebook.react.viewmanagers.AdyenComponentViewManagerInterface
+import com.facebook.react.viewmanagers.AdyenCheckoutComponentViewManagerDelegate
+import com.facebook.react.viewmanagers.AdyenCheckoutComponentViewManagerInterface
 
 /**
  * Generic Fabric [SimpleViewManager] for the embedded `<AdyenComponent>` view.
  */
 @ReactModule(name = AdyenComponentViewManager.NAME)
-class AdyenComponentViewManager(
-  private val messageBusEmitter: MessageBusEmitter,
-) : SimpleViewManager<DynamicComponentView>(),
-  AdyenComponentViewManagerInterface<DynamicComponentView> {
-  private val delegate: ViewManagerDelegate<DynamicComponentView> = AdyenComponentViewManagerDelegate(this)
+class AdyenComponentViewManager :
+  SimpleViewManager<DynamicComponentView>(),
+  AdyenCheckoutComponentViewManagerInterface<DynamicComponentView> {
+  private val delegate: ViewManagerDelegate<DynamicComponentView> = AdyenCheckoutComponentViewManagerDelegate(this)
   private val viewStates = mutableMapOf<DynamicComponentView, AdyenComponentViewState>()
 
   override fun getDelegate(): ViewManagerDelegate<DynamicComponentView> = delegate
@@ -33,8 +30,9 @@ class AdyenComponentViewManager(
 
   public override fun createViewInstance(context: ThemedReactContext): DynamicComponentView {
     val view = DynamicComponentView(context)
-    val state = AdyenComponentViewState(context, messageBusEmitter)
+    val state = AdyenComponentViewState(context)
     view.layoutListener = state
+    view.detachListener = { state.dispose(view) }
     viewStates[view] = state
     return view
   }
@@ -46,33 +44,44 @@ class AdyenComponentViewManager(
 
   override fun onAfterUpdateTransaction(view: DynamicComponentView) {
     super.onAfterUpdateTransaction(view)
-    if (view.isViewSet) return
-
     val state = viewStates[view] ?: return
-    state.renderView(view)
+    state.updateRegistration(view)
   }
 
-  override fun setType(
+  override fun setCheckoutId(
     view: DynamicComponentView?,
     value: String?,
   ) {
     val state = view?.let { viewStates[it] } ?: return
-    if (value == null) {
-      Log.e(NAME, "type value is null")
-      return
-    }
-    state.type = value
+    state.checkoutId = value
   }
 
-  override fun setConfiguration(
+  override fun setPresenterId(
     view: DynamicComponentView?,
     value: String?,
   ) {
     val state = view?.let { viewStates[it] } ?: return
-    state.configuration = value
+    state.presenterId = value
+  }
+
+  override fun setTargetKind(
+    view: DynamicComponentView?,
+    value: String?,
+  ) {
+    val state = view?.let { viewStates[it] } ?: return
+    state.targetKind = value
+  }
+
+  override fun setTargetValue(
+    view: DynamicComponentView?,
+    value: String?,
+  ) {
+    val state = view?.let { viewStates[it] } ?: return
+    state.targetValue = value
   }
 
   companion object {
-    const val NAME = "AdyenComponentView"
+    /** Must match the Codegen component name in NativeAdyenCheckoutComponentView.ts exactly. */
+    const val NAME = "AdyenCheckoutComponentView"
   }
 }

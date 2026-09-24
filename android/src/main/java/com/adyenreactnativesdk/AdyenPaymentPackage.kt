@@ -6,7 +6,6 @@
 
 package com.adyenreactnativesdk
 
-import com.adyenreactnativesdk.component.ComponentModule
 import com.adyenreactnativesdk.component.base.BaseModule
 import com.adyenreactnativesdk.component.dropin.DropInModule
 import com.adyenreactnativesdk.cse.ActionModule
@@ -27,7 +26,7 @@ class AdyenPaymentPackage : TurboReactPackage() {
     ensureInitialized(reactContext)
 
     return listOf(
-      AdyenComponentViewManager(emitter),
+      AdyenComponentViewManager(),
     )
   }
 
@@ -40,7 +39,6 @@ class AdyenPaymentPackage : TurboReactPackage() {
     return when (name) {
       AndroidCheckoutModule.NAME -> AndroidCheckoutModule(reactContext, messageBus)
       DROP_IN_MODULE_NAME -> DropInModule(reactContext, messageBus)
-      COMPONENT_MODULE_NAME -> ComponentModule(reactContext, messageBus)
       CSE_MODULE_NAME -> AdyenCSEModule(reactContext)
       ACTION_MODULE_NAME -> ActionModule(reactContext)
       else -> null
@@ -52,7 +50,6 @@ class AdyenPaymentPackage : TurboReactPackage() {
       mapOf(
         AndroidCheckoutModule.NAME to moduleInfo<AndroidCheckoutModule>(AndroidCheckoutModule.NAME, turbo = true),
         DROP_IN_MODULE_NAME to moduleInfo<DropInModule>(DROP_IN_MODULE_NAME),
-        COMPONENT_MODULE_NAME to moduleInfo<ComponentModule>(COMPONENT_MODULE_NAME),
         CSE_MODULE_NAME to moduleInfo<AdyenCSEModule>(CSE_MODULE_NAME, turbo = true),
         ACTION_MODULE_NAME to moduleInfo<ActionModule>(ACTION_MODULE_NAME, turbo = true),
       )
@@ -60,7 +57,6 @@ class AdyenPaymentPackage : TurboReactPackage() {
 
   companion object {
     private const val DROP_IN_MODULE_NAME = "AdyenDropIn"
-    private const val COMPONENT_MODULE_NAME = "AdyenComponent"
     private const val CSE_MODULE_NAME = "AdyenCSE"
     private const val ACTION_MODULE_NAME = "AdyenAction"
 

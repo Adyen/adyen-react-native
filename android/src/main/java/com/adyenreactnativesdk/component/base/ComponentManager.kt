@@ -14,6 +14,7 @@ import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.common.CheckoutResultCode
 import com.adyen.checkout.core.components.AdditionalDetailsResult
 import com.adyen.checkout.core.components.AdvancedCheckoutCallbacks
+import com.adyen.checkout.core.components.BeforeSubmitResult
 import com.adyen.checkout.core.components.CheckoutCallbacks
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutTarget
@@ -29,6 +30,9 @@ import kotlin.coroutines.resume
 
 /** Receives native callback data for the generated checkout control module. */
 internal interface ComponentEventSink {
+  /** Invoked at the first native payment callback before a generated request is emitted. */
+  fun onInteractionStarted(): Boolean
+
   fun onAdvancedSubmit(data: PaymentComponentData<*>)
 
   fun onAdvancedAdditionalDetails(data: ActionComponentData)
@@ -45,11 +49,13 @@ internal interface ComponentEventSink {
  */
 internal class ComponentManager(
   private val activity: FragmentActivity,
-  private val messageBus: MessageBus,
+  private val messageBus: MessageBus?,
   private val additionalCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val additionalSessionCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val sessionBeforeSubmitBridge: SessionBeforeSubmitBridge? = null,
   private val eventSink: ComponentEventSink? = null,
+  /** Exact coordinator presenter or operation identity that owns redirect returns. */
+  private val redirectOwnerId: String? = null,
   /** Called on terminal state (complete/failure) so a headless caller can dismiss its UI. */
   private val onTerminal: (() -> Unit)? = null,
 ) {
@@ -74,6 +80,7 @@ internal class ComponentManager(
     context: CheckoutContext,
     target: CheckoutTarget,
   ): CheckoutController? {
+    if (disposed) return null
     val controller =
       when (context) {
         is CheckoutContext.Sessions -> {
@@ -95,12 +102,15 @@ internal class ComponentManager(
         }
 
         else -> {
-          messageBus.onException(ModuleException.Unknown("Unsupported checkout context type"))
+          messageBus?.onException(ModuleException.Unknown("Unsupported checkout context type"))
           null
         }
       }
+    if (disposed) return null
     checkoutController = controller
-    controller?.let { CheckoutCoordinator.shared.registerRedirectController(it) }
+    controller?.let { controller ->
+      redirectOwnerId?.let { CheckoutCoordinator.shared.registerRedirectController(controller, it) }
+    }
     return controller
   }
 
@@ -143,7 +153,6 @@ internal class ComponentManager(
     }
     checkoutController?.let { CheckoutCoordinator.shared.unregisterRedirectController(it) }
     checkoutController = null
-    notifyTerminal()
   }
 
   private fun advancedCallbacks(): AdvancedCheckoutCallbacks {
@@ -152,18 +161,25 @@ internal class ComponentManager(
       onSubmit = { data ->
         suspendCancellableCoroutine { continuation ->
           submitContinuation = continuation
-          eventSink?.onAdvancedSubmit(data) ?: messageBus.onSubmit(data)
+          eventSink?.let {
+            if (it.onInteractionStarted()) {
+              it.onAdvancedSubmit(data)
+            } else {
+              submitContinuation = null
+              continuation.resume(SubmitResult.Retry(null))
+            }
+          } ?: messageBus?.onSubmit(data)
         }
       },
       onAdditionalDetails = { data ->
         suspendCancellableCoroutine { continuation ->
           additionalDetailsContinuation = continuation
-          eventSink?.onAdvancedAdditionalDetails(data) ?: messageBus.onAdditionalDetails(data)
+          eventSink?.onAdvancedAdditionalDetails(data) ?: messageBus?.onAdditionalDetails(data)
         }
       },
       onFailure = { error ->
         if (eventSink == null) {
-          messageBus.onException(error.toModuleException())
+          messageBus?.onException(error.toModuleException())
         } else {
           eventSink.onError()
         }
@@ -171,7 +187,7 @@ internal class ComponentManager(
       },
       onComplete = { result ->
         if (eventSink == null) {
-          messageBus.onFinished(result.resultCode.value)
+          messageBus?.onFinished(result.resultCode.value)
         } else {
           eventSink.onComplete(result.resultCode.value)
         }
@@ -186,21 +202,32 @@ internal class ComponentManager(
     return SessionCheckoutCallbacks(
       onComplete = { result ->
         if (eventSink == null) {
-          messageBus.onFinished(result)
+          messageBus?.onFinished(result)
         } else {
-          eventSink.onSessionComplete(result)
+          if (eventSink.onInteractionStarted()) {
+            eventSink.onSessionComplete(result)
+          }
         }
         notifyTerminal()
       },
       onFailure = { error ->
         if (eventSink == null) {
-          messageBus.onSessionException(error.toModuleException())
+          messageBus?.onSessionException(error.toModuleException())
         } else {
           eventSink.onError()
         }
         notifyTerminal()
       },
-      onBeforeSubmit = sessionBeforeSubmitBridge?.let { bridge -> { data -> bridge.onBeforeSubmit(data) } },
+      onBeforeSubmit =
+        sessionBeforeSubmitBridge?.let { bridge ->
+          { data ->
+            if (eventSink == null || eventSink.onInteractionStarted()) {
+              bridge.onBeforeSubmit(data)
+            } else {
+              BeforeSubmitResult.Abort()
+            }
+          }
+        },
       additionalCallbacksBlock = block ?: defaultBlock,
     )
   }
