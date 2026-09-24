@@ -75,7 +75,7 @@ class AdyenComponentViewState(
         sessionBeforeSubmitBridge = CheckoutCoordinator.shared.checkoutState?.sessionBeforeSubmitBridge,
       )
     try {
-      CheckoutCoordinator.shared.registerPassivePresenter(checkoutId, presenterId, presenter)
+      CheckoutCoordinator.shared.registerPassivePresenter(checkoutId, presenterId, target, presenter)
     } catch (exception: IllegalStateException) {
       Log.w(TAG, "Embedded registration is stale or collides with a live presenter", exception)
       presenter.dispose()
@@ -151,13 +151,8 @@ private class FabricCoordinatorPresenter(
       additionalCallbacks = null,
       additionalSessionCallbacks = null,
       sessionBeforeSubmitBridge = sessionBeforeSubmitBridge,
-      eventSink = FabricComponentEventSink(checkoutId, presenterId, this),
-      redirectOwnerId = presenterId,
-      onTerminal = {
-        if (CheckoutCoordinator.shared.activeOperationId() == presenterId) {
-          CheckoutCoordinator.shared.invalidate()
-        }
-      },
+      eventSink = FabricComponentEventSink(checkoutId, this),
+      redirectOwnerId = null,
     )
   private var disposed = false
 
@@ -189,6 +184,12 @@ private class FabricCoordinatorPresenter(
 
   override fun controller(): CheckoutController? = manager.checkoutController
 
+  fun bindEmbeddedOperation(operationId: String) {
+    manager.checkoutController?.let { controller ->
+      CheckoutCoordinator.shared.registerRedirectController(controller, operationId)
+    }
+  }
+
   override fun dispose() {
     if (disposed) return
     disposed = true
@@ -202,25 +203,31 @@ private class FabricCoordinatorPresenter(
  */
 private class FabricComponentEventSink(
   private val checkoutId: String,
-  private val presenterId: String,
-  private val presenter: CoordinatorPresenter,
+  private val presenter: FabricCoordinatorPresenter,
 ) : ComponentEventSink {
   private var ownsOperation = false
+  private var operationId: String? = null
 
-  override fun onInteractionStarted(): Boolean =
-    try {
-      ownsOperation =
-        if (CheckoutCoordinator.shared.activeOperationId() == presenterId) {
-          true
-        } else {
-          CheckoutCoordinator.shared.beginPassiveOperation(checkoutId, presenterId, presenter)
-          true
-        }
-      ownsOperation
-    } catch (_: IllegalStateException) {
-      ownsOperation = false
-      false
+  override fun onInteractionStarted(): Boolean {
+    operationId?.let { operationId ->
+      if (CheckoutCoordinator.shared.activeOperationId() == operationId) return true
     }
+    val acquiredOperationId = CheckoutCoordinator.shared.acquireEmbeddedOperation(checkoutId)
+    ownsOperation = acquiredOperationId != null
+    operationId = acquiredOperationId
+    acquiredOperationId?.let(presenter::bindEmbeddedOperation)
+    return ownsOperation
+  }
+
+  private fun retryEmbeddedOperation(message: String?) {
+    val activeOperationId = operationId
+    presenter.retry(message)
+    if (activeOperationId != null) {
+      CheckoutCoordinator.shared.releaseEmbeddedOperation(activeOperationId)
+      operationId = null
+      ownsOperation = false
+    }
+  }
 
   override fun onAdvancedSubmit(data: PaymentComponentData<*>) {
     request(
@@ -232,8 +239,8 @@ private class FabricComponentEventSink(
       when (payload.optString(TYPE)) {
         ACTION -> presenter.handleAction(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
         COMPLETED -> presenter.complete(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
-        RETRY -> presenter.retry(payload.optString(MESSAGE).takeIf(String::isNotBlank))
-        else -> presenter.retry(null)
+        RETRY -> retryEmbeddedOperation(payload.optString(MESSAGE).takeIf(String::isNotBlank))
+        else -> retryEmbeddedOperation(null)
       }
     }
   }
@@ -251,32 +258,40 @@ private class FabricComponentEventSink(
   }
 
   override fun onSessionComplete(result: SessionCheckoutResult) {
-    if (!ownsOperation) return
-    CheckoutCoordinator.shared.emitTerminal(
-      checkoutId,
+    terminal(
       EVENT_COMPLETION,
       JSONObject()
-        .put(
-          RESULT_CODE,
-          result.resultCode.value,
-        ).put(SESSION_ID, result.sessionId)
+        .put(RESULT_CODE, result.resultCode.value)
+        .put(SESSION_ID, result.sessionId)
         .put(SESSION_DATA, result.sessionData)
         .toString(),
     )
   }
 
   override fun onComplete(resultCode: String) {
-    if (!ownsOperation) return
-    CheckoutCoordinator.shared.emitTerminal(checkoutId, EVENT_COMPLETION, JSONObject().put(RESULT_CODE, resultCode).toString())
+    terminal(EVENT_COMPLETION, JSONObject().put(RESULT_CODE, resultCode).toString())
   }
 
   override fun onError() {
-    if (!ownsOperation) return
-    CheckoutCoordinator.shared.emitTerminal(
-      checkoutId,
+    terminal(
       EVENT_ERROR,
       JSONObject().put(ERROR_MESSAGE, "Checkout failed").put(ERROR_CODE, "checkoutFailed").toString(),
     )
+  }
+
+  private fun terminal(
+    kind: String,
+    payload: String,
+  ) {
+    if (!ownsOperation) return
+    CheckoutCoordinator.shared.emitTerminal(
+      checkoutId,
+      kind,
+      payload,
+    )
+    CheckoutCoordinator.shared.invalidate()
+    operationId = null
+    ownsOperation = false
   }
 
   private fun request(
@@ -287,7 +302,7 @@ private class FabricComponentEventSink(
   ) {
     try {
       CheckoutCoordinator.shared.beginRequest(
-        operationId = presenterId,
+        operationId = operationId ?: return resume(null),
         kind = kind,
         timeoutMillis = REQUEST_TIMEOUT_MILLIS,
         eventKind = eventKind,

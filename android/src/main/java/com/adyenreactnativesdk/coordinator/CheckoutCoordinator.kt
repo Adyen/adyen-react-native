@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk.coordinator
 
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.MainThread
 import com.adyen.checkout.core.action.data.Action
 import com.adyen.checkout.core.common.CheckoutContext
@@ -147,6 +148,7 @@ internal class CheckoutCoordinator(
   companion object {
     /** The sole process-scoped owner for legacy and coordinator lifecycle state. */
     val shared = CheckoutCoordinator()
+    private const val TAG = "CheckoutCoordinator"
   }
 
   /** Legacy module paths delegate checkout state here until their commands migrate. */
@@ -155,12 +157,14 @@ internal class CheckoutCoordinator(
   private val dependencies: CheckoutCoordinatorDependencies?
     get() = configuredDependencies ?: runtimeDependencies
   private val passivePresenters = mutableMapOf<String, PassivePresenter>()
+  private val passivePresenterIdsByTarget = mutableMapOf<CheckoutTarget, String>()
   private val redirectControllers = mutableMapOf<String, CheckoutController>()
 
   private var checkout: CoordinatorCheckout? = null
   private var checkoutId: String? = null
   private var presenter: CoordinatorPresenter? = null
   private var operationId: String? = null
+  private var operationKind: OperationKind? = null
   private var request: CoordinatorRequest? = null
   private var requestEventKind: String? = null
   private var requestResponse: ((String?) -> Unit)? = null
@@ -176,6 +180,7 @@ internal class CheckoutCoordinator(
 
   private data class PassivePresenter(
     val checkoutId: String,
+    val target: CheckoutTarget,
     val presenter: CoordinatorPresenter,
   )
 
@@ -184,6 +189,11 @@ internal class CheckoutCoordinator(
     val autoSubmit: Boolean,
     val onCancelled: () -> Unit,
   )
+
+  private enum class OperationKind {
+    EXPLICIT,
+    EMBEDDED,
+  }
 
   @MainThread
   fun activeCheckoutId(): String? = transition { checkoutId }
@@ -293,8 +303,40 @@ internal class CheckoutCoordinator(
           )
       presenter = createdPresenter
       operationId = createdOperationId
+      operationKind = OperationKind.EXPLICIT
       createdOperationId
     }
+
+  /**
+   * Acquires an anonymous checkout-level operation at the first embedded SDK callback. There is
+   * intentionally no presenter, target, or registration lookup in this path.
+   */
+  @MainThread
+  fun acquireEmbeddedOperation(checkoutId: String): String? =
+    transition {
+      if (this.checkoutId != checkoutId) return@transition null
+      if (operationId != null) {
+        Log.wtf(TAG, "Assertion failure: competing embedded checkout callback")
+        return@transition null
+      }
+      nextId(CoordinatorIdentityKind.OPERATION).also {
+        operationId = it
+        operationKind = OperationKind.EMBEDDED
+      }
+    }
+
+  /** Advanced retry releases only anonymous embedded ownership. Action/details keep it active. */
+  @MainThread
+  fun releaseEmbeddedOperation(operationId: String) {
+    transition {
+      if (this.operationId != operationId || operationKind != OperationKind.EMBEDDED) return@transition
+      settleRequestLocked(invokeFallback = true)
+      redirectControllers.remove(operationId)
+      fragmentPresentations.remove(operationId)
+      this.operationId = null
+      operationKind = null
+    }
+  }
 
   /**
    * Creates a coordinator-owned temporary presenter for a query and always releases it before
@@ -397,6 +439,7 @@ internal class CheckoutCoordinator(
       presenter?.dispose()
       presenter = null
       this.operationId = null
+      operationKind = null
       fragmentPresentations.remove(operationId)
     }
   }
@@ -427,22 +470,30 @@ internal class CheckoutCoordinator(
 
   /**
    * Registers a mounted Fabric view without acquiring the interactive operation slot. The
-   * registration is bound to both opaque identities, so views with the same target remain
-   * independent and a stale view cannot attach to a replacement checkout.
+   * registration is bound to opaque identities and one canonical SDK-supported target. Regular
+   * targets are exact types and stored targets are exact IDs. TODO: include subtype/funding
+   * source only when a published component-creation API supports that precision.
    */
   @MainThread
   fun registerPassivePresenter(
     checkoutId: String,
     presenterId: String,
+    target: CheckoutTarget,
     presenter: CoordinatorPresenter,
   ) {
     transition {
       check(this.checkoutId == checkoutId) { "Stale checkout" }
       val existing = passivePresenters[presenterId]
-      check(existing == null || (existing.checkoutId == checkoutId && existing.presenter === presenter)) {
+      check(
+        existing == null ||
+          (existing.checkoutId == checkoutId && existing.target == target && existing.presenter === presenter),
+      ) {
         "Presenter identity collision"
       }
-      passivePresenters[presenterId] = PassivePresenter(checkoutId, presenter)
+      if (existing != null) return@transition
+      check(passivePresenterIdsByTarget[target] == null) { "Duplicate embedded checkout target" }
+      passivePresenters[presenterId] = PassivePresenter(checkoutId, target, presenter)
+      passivePresenterIdsByTarget[target] = presenterId
     }
   }
 
@@ -460,6 +511,9 @@ internal class CheckoutCoordinator(
       val existing = passivePresenters[presenterId] ?: return@transition
       if (existing.checkoutId == checkoutId && existing.presenter === presenter) {
         passivePresenters.remove(presenterId)
+        if (passivePresenterIdsByTarget[existing.target] == presenterId) {
+          passivePresenterIdsByTarget.remove(existing.target)
+        }
         redirectControllers.remove(presenterId)
       }
     }
@@ -479,39 +533,13 @@ internal class CheckoutCoordinator(
   @MainThread
   fun passivePresenterCount(): Int = transition { passivePresenters.size }
 
-  /**
-   * A passive presenter acquires the shared interactive slot only when it begins payment. The
-   * presenter identity remains the operation owner, preventing redirect or terminal work from
-   * selecting another same-type mounted view.
-   */
-  @MainThread
-  fun beginPassiveOperation(
-    checkoutId: String,
-    presenterId: String,
-    presenter: CoordinatorPresenter,
-  ): String =
-    transition {
-      check(this.checkoutId == checkoutId) { "Stale checkout" }
-      check(operationId == null) {
-        emit(CoordinatorEvent.OperationBusy)
-        "Operation is already active"
-      }
-      val existing = passivePresenters[presenterId]
-      check(existing?.checkoutId == checkoutId && existing.presenter === presenter) { "Stale presenter" }
-      operationId = presenterId
-      this.presenter = presenter
-      presenterId
-    }
-
   @MainThread
   fun registerRedirectController(
     controller: CheckoutController,
     ownerId: String,
   ) {
     transition {
-      val isActiveOperation = operationId == ownerId
-      val passiveOwner = passivePresenters[ownerId]
-      check(isActiveOperation || passiveOwner != null) { "Unknown redirect owner" }
+      check(operationId == ownerId) { "Stale redirect owner" }
       redirectControllers[ownerId] = controller
     }
   }
@@ -644,6 +672,7 @@ internal class CheckoutCoordinator(
       presenter = null
       val ownedPassivePresenters = passivePresenters.values.map { it.presenter }
       passivePresenters.clear()
+      passivePresenterIdsByTarget.clear()
       ownedPassivePresenters.forEach { it.dispose() }
       redirectControllers.clear()
       fragmentPresentations.clear()
@@ -656,6 +685,7 @@ internal class CheckoutCoordinator(
       checkoutId = null
       checkoutState = null
       operationId = null
+      operationKind = null
       currentCheckoutId?.let { emit(CoordinatorEvent.CleanedUp(it)) }
     } finally {
       isDisposing = false

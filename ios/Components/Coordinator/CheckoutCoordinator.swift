@@ -150,7 +150,9 @@ internal final class CheckoutCoordinator {
     private var activeCheckoutID: String?
     private var activePresenter: CoordinatorPresenter?
     private var activeOperationID: String?
+    private var activeOperationKind: OperationKind?
     private var passivePresenters: [String: PassivePresenter] = [:]
+    private var passivePresenterIDsByTarget: [TurboCheckoutTarget: String] = [:]
     private var activeRequests: [String: PendingRequest] = [:]
     private var setupGeneration = 0
     private var isSettingUp = false
@@ -172,7 +174,19 @@ internal final class CheckoutCoordinator {
 
     private struct PassivePresenter {
         let checkoutID: String
+        let target: TurboCheckoutTarget
         let presenter: CoordinatorPresenter
+    }
+
+    private enum OperationKind {
+        case explicit
+        case embedded
+    }
+
+    internal enum EmbeddedOperationAcquisition {
+        case acquired(String)
+        case explicit(String)
+        case competing
     }
 
     init() {
@@ -294,6 +308,7 @@ internal final class CheckoutCoordinator {
         let operationID = nextID(for: .operation)
         activePresenter = try makePresenter()
         activeOperationID = operationID
+        activeOperationKind = .explicit
         return operationID
     }
 
@@ -304,27 +319,71 @@ internal final class CheckoutCoordinator {
         return try beginOperation()
     }
 
-    /// Registers a mounted Fabric view without acquiring the interactive operation slot. The
-    /// caller supplies both opaque identities, so two views for the same payment target remain
-    /// independent and a stale view cannot attach to a replacement checkout.
+    /// Acquires the checkout-level embedded operation at the first SDK callback. The callback
+    /// carries no source-view identity, so this never consults a presenter registry or target key.
+    /// A competing callback must return the SDK retry outcome without a merchant event.
+    internal func acquireEmbeddedOperation(checkoutID: String) -> String? {
+        switch acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
+        case let .acquired(operationID), let .explicit(operationID):
+            return operationID
+        case .competing:
+            return nil
+        }
+    }
+
+    /// Initial advanced/session callbacks use this result to return the SDK retry/abort outcome
+    /// for an unexpected second embedded callback without emitting a merchant event.
+    internal func acquireInitialEmbeddedOperation(checkoutID: String) -> EmbeddedOperationAcquisition {
+        guard activeCheckoutID == checkoutID else { return .competing }
+        if let activeOperationID {
+            if activeOperationKind == .explicit {
+                return .explicit(activeOperationID)
+            }
+            debugPrint("Assertion failure: competing embedded checkout callback")
+            return .competing
+        }
+        let operationID = nextID(for: .operation)
+        activeOperationID = operationID
+        activeOperationKind = .embedded
+        return .acquired(operationID)
+    }
+
+    /// Advanced retry returns the checkout to its passive embedded state. Action and additional
+    /// details deliberately retain the operation until a terminal callback cleans the checkout.
+    internal func releaseEmbeddedOperation(_ operationID: String) {
+        guard activeOperationID == operationID, activeOperationKind == .embedded else { return }
+        settleRequests(for: operationID)
+        activeOperationID = nil
+        activeOperationKind = nil
+    }
+
+    /// Registers a mounted Fabric view without acquiring the interactive operation slot.
+    ///
+    /// The SDK can only create regular components by exact payment-method type and stored
+    /// components by exact stored ID. TODO: use subtype/funding-source in this key once the
+    /// published native component-creation API accepts that precision.
     internal func registerPassivePresenter(
         checkoutID: String,
         presenterID: String,
+        target: TurboCheckoutTarget,
         presenter: CoordinatorPresenter
     ) throws {
         guard activeCheckoutID == checkoutID else {
             throw CoordinatorError.staleCheckout
         }
         if let existing = passivePresenters[presenterID] {
-            guard existing.presenter === presenter, existing.checkoutID == checkoutID else {
+            guard existing.presenter === presenter,
+                  existing.checkoutID == checkoutID,
+                  existing.target == target else {
                 throw CoordinatorError.presenterIDCollision
             }
             return
         }
-        passivePresenters[presenterID] = PassivePresenter(
-            checkoutID: checkoutID,
-            presenter: presenter
-        )
+        guard passivePresenterIDsByTarget[target] == nil else {
+            throw CoordinatorError.duplicatePresenterTarget
+        }
+        passivePresenters[presenterID] = PassivePresenter(checkoutID: checkoutID, target: target, presenter: presenter)
+        passivePresenterIDsByTarget[target] = presenterID
     }
 
     /// Removal is identity-bound so a delayed recycle or unmount cannot unregister a newer
@@ -340,6 +399,9 @@ internal final class CheckoutCoordinator {
             return
         }
         passivePresenters.removeValue(forKey: presenterID)
+        if passivePresenterIDsByTarget[existing.target] == presenterID {
+            passivePresenterIDsByTarget.removeValue(forKey: existing.target)
+        }
     }
 
     @discardableResult
@@ -399,6 +461,7 @@ internal final class CheckoutCoordinator {
         activePresenter?.dispose()
         activePresenter = nil
         activeOperationID = nil
+        activeOperationKind = nil
     }
 
     /// Native cleanup owns cancellation and host release even when JavaScript does not respond.
@@ -445,8 +508,10 @@ internal final class CheckoutCoordinator {
         activePresenter?.dispose()
         activePresenter = nil
         activeOperationID = nil
+        activeOperationKind = nil
         let presenters = passivePresenters.values.map(\.presenter)
         passivePresenters.removeAll()
+        passivePresenterIDsByTarget.removeAll()
         presenters.forEach { $0.dispose() }
 
         guard let checkoutID = activeCheckoutID else { return }
@@ -514,6 +579,7 @@ internal enum CoordinatorError: Error {
     case staleCheckout
     case staleOperation
     case presenterIDCollision
+    case duplicatePresenterTarget
 }
 
 @MainActor

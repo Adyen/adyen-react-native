@@ -254,7 +254,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
         )
     }
 
-    func test_sameTargetPassivePresentersRemainIndependentUntilTheirOwnUnmount() async throws {
+    func test_distinctCanonicalPassivePresentersRemainIndependentUntilTheirOwnUnmount() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
         let checkoutID = try await coordinator.setup()
@@ -264,11 +264,13 @@ final class CheckoutCoordinatorTests: XCTestCase {
         try coordinator.registerPassivePresenter(
             checkoutID: checkoutID,
             presenterID: "card-first",
+            target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
             presenter: first
         )
         try coordinator.registerPassivePresenter(
             checkoutID: checkoutID,
             presenterID: "card-second",
+            target: .storedPaymentMethod("stored-card"),
             presenter: second
         )
 
@@ -291,6 +293,50 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(second.disposeCount, 1)
     }
 
+    func test_duplicateCanonicalTargetsAreRejectedWithoutReplacingTheOriginalPresenter() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let original = PassivePresenter()
+        let duplicate = PassivePresenter()
+        let target = TurboCheckoutTarget.paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme")))
+
+        try coordinator.registerPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "card-original",
+            target: target,
+            presenter: original
+        )
+
+        XCTAssertThrowsError(
+            try coordinator.registerPassivePresenter(
+                checkoutID: checkoutID,
+                presenterID: "card-duplicate",
+                target: target,
+                presenter: duplicate
+            )
+        )
+        XCTAssertEqual(coordinator.passivePresenterCount, 1)
+        XCTAssertEqual(original.disposeCount, 0)
+        XCTAssertEqual(duplicate.disposeCount, 0)
+    }
+
+    func test_embeddedOperationAcquisitionIsAnonymousAndRetryReleasesOnlyEmbeddedOwnership() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+
+        let operationID = try XCTUnwrap(coordinator.acquireEmbeddedOperation(checkoutID: checkoutID))
+        XCTAssertEqual(coordinator.operationID, operationID)
+        XCTAssertEqual(fixture.presenterFactory.createCount, 0)
+        XCTAssertNil(coordinator.acquireEmbeddedOperation(checkoutID: checkoutID))
+
+        coordinator.releaseEmbeddedOperation(operationID)
+
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertNotNil(coordinator.acquireEmbeddedOperation(checkoutID: checkoutID))
+    }
+
     func test_replacementInvalidatesMountedPresenterWithoutAllowingOldCheckoutToReregister() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -299,6 +345,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
         try coordinator.registerPassivePresenter(
             checkoutID: oldCheckoutID,
             presenterID: "card",
+            target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
             presenter: oldPresenter
         )
 
@@ -310,6 +357,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
             try coordinator.registerPassivePresenter(
                 checkoutID: oldCheckoutID,
                 presenterID: "card",
+                target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
                 presenter: oldPresenter
             )
         )

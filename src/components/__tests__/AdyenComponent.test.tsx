@@ -70,6 +70,19 @@ describe('AdyenComponent', () => {
     });
   });
 
+  test('creates a fresh private lifecycle identity after remount', () => {
+    const first = render(
+      <AdyenComponent checkout={fakeCheckout} type="scheme" />
+    );
+    const firstPresenterID = capturedProps.presenterId;
+
+    first.unmount();
+    render(<AdyenComponent checkout={fakeCheckout} type="scheme" />);
+
+    expect(capturedProps.presenterId).toEqual(expect.any(String));
+    expect(capturedProps.presenterId).not.toBe(firstPresenterID);
+  });
+
   test('renders nothing for a checkout that did not originate from setup', () => {
     const { queryByTestId } = render(
       <AdyenComponent checkout={fakeCheckout} />

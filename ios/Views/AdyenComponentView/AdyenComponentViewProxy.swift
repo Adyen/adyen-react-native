@@ -69,9 +69,11 @@ public final class AdyenComponentViewProxy: UIStackView {
             try CheckoutCoordinator.shared.registerPassivePresenter(
                 checkoutID: checkoutID,
                 presenterID: presenterID,
+                target: target,
                 presenter: controller
             )
         } catch {
+            controller.dispose()
             return
         }
         self.controller = controller

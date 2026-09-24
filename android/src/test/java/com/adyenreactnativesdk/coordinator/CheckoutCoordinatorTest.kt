@@ -550,15 +550,15 @@ class CheckoutCoordinatorTest {
     }
 
   @Test
-  fun `same target passive presenters remain independently registered`() {
+  fun `distinct canonical passive presenters remain independently registered`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
     val first = Presenter()
     val second = Presenter()
     coordinator.setup()
 
-    coordinator.registerPassivePresenter("checkout-1", "presenter-a", first)
-    coordinator.registerPassivePresenter("checkout-1", "presenter-b", second)
+    coordinator.registerPassivePresenter("checkout-1", "presenter-a", CheckoutTarget.PaymentMethod("scheme"), first)
+    coordinator.registerPassivePresenter("checkout-1", "presenter-b", CheckoutTarget.StoredPaymentMethod("stored-card"), second)
     coordinator.unregisterPassivePresenter("checkout-1", "presenter-a", first)
 
     assertEquals(1, coordinator.passivePresenterCount())
@@ -568,15 +568,53 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `duplicate canonical passive targets are rejected without replacing the original`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val original = Presenter()
+    val duplicate = Presenter()
+    coordinator.setup()
+
+    coordinator.registerPassivePresenter("checkout-1", "presenter-a", CheckoutTarget.PaymentMethod("scheme"), original)
+
+    try {
+      coordinator.registerPassivePresenter("checkout-1", "presenter-b", CheckoutTarget.PaymentMethod("scheme"), duplicate)
+      fail("Expected a duplicate canonical target to reject")
+    } catch (_: IllegalStateException) {
+      assertEquals(1, coordinator.passivePresenterCount())
+      assertEquals(0, original.disposeCount)
+      assertEquals(0, duplicate.disposeCount)
+    }
+  }
+
+  @Test
+  fun `embedded operation acquisition is anonymous and retry releases only embedded ownership`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    coordinator.setup()
+
+    val operationId = coordinator.acquireEmbeddedOperation("checkout-1")
+    assertTrue(operationId != null)
+    assertEquals(operationId, coordinator.activeOperationId())
+    assertEquals(0, fixture.presenterFactory.createCount)
+    assertNull(coordinator.acquireEmbeddedOperation("checkout-1"))
+
+    coordinator.releaseEmbeddedOperation(requireNotNull(operationId))
+
+    assertNull(coordinator.activeOperationId())
+    assertTrue(coordinator.acquireEmbeddedOperation("checkout-1") != null)
+  }
+
+  @Test
   fun `checkout replacement disposes passive presenters and stale unmount cannot remove a replacement`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
     val oldPresenter = Presenter()
     val replacementPresenter = Presenter()
     coordinator.setup()
-    coordinator.registerPassivePresenter("checkout-1", "shared-presenter", oldPresenter)
+    coordinator.registerPassivePresenter("checkout-1", "shared-presenter", CheckoutTarget.PaymentMethod("scheme"), oldPresenter)
     coordinator.setup()
-    coordinator.registerPassivePresenter("checkout-2", "shared-presenter", replacementPresenter)
+    coordinator.registerPassivePresenter("checkout-2", "shared-presenter", CheckoutTarget.PaymentMethod("scheme"), replacementPresenter)
 
     coordinator.unregisterPassivePresenter("checkout-1", "shared-presenter", oldPresenter)
 
@@ -591,12 +629,12 @@ class CheckoutCoordinatorTest {
     val presenter = Presenter()
     val controller = mock<com.adyen.checkout.core.components.CheckoutController>()
     coordinator.setup()
-    coordinator.registerPassivePresenter("checkout-1", "presenter-a", presenter)
-    coordinator.registerRedirectController(controller, "presenter-a")
+    coordinator.registerPassivePresenter("checkout-1", "presenter-a", CheckoutTarget.PaymentMethod("scheme"), presenter)
     val redirectIntent = Intent()
 
     assertFalse(coordinator.handleReturn(Intent()))
-    coordinator.beginPassiveOperation("checkout-1", "presenter-a", presenter)
+    val operationId = requireNotNull(coordinator.acquireEmbeddedOperation("checkout-1"))
+    coordinator.registerRedirectController(controller, operationId)
 
     assertTrue(coordinator.handleReturn(redirectIntent))
     verify(controller).handleReturn(eq(redirectIntent))

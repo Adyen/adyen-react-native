@@ -285,6 +285,9 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
             return
         }
         pendingResponses.removeValue(forKey: requestID)
+        if pending.request.kind == .advancedSubmit, payload?["type"] as? String == "retry" {
+            CheckoutCoordinator.shared.releaseEmbeddedOperation(pending.request.operationID)
+        }
         pending.resume(payload)
         resolver(nil)
     }
@@ -322,7 +325,7 @@ private extension CheckoutTurboModuleAdapter {
         _ = checkout
             .onBeforeSubmit { [weak self, weak checkout] data in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout),
-                      let operationID = CheckoutCoordinator.shared.operationID
+                      let operationID = self.acquireInitialEmbeddedOperationForCallback()
                 else {
                     return .abort
                 }
@@ -340,6 +343,7 @@ private extension CheckoutTurboModuleAdapter {
             }
             .onComplete { [weak self, weak checkout] result in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                guard self.ensureOperationForTerminalCallback() != nil else { return }
                 self.emitTerminal(
                     kind: EventKind.completion,
                     payload: [
@@ -351,6 +355,7 @@ private extension CheckoutTurboModuleAdapter {
             }
             .onFailure { [weak self, weak checkout] _ in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                guard self.ensureOperationForTerminalCallback() != nil else { return }
                 self.emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             }
     }
@@ -359,9 +364,16 @@ private extension CheckoutTurboModuleAdapter {
         _ = checkout
             .onSubmit { [weak self, weak checkout] data in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout),
-                      let operationID = CheckoutCoordinator.shared.operationID
+                      let checkoutID = CheckoutCoordinator.shared.checkoutID
                 else {
                     return errorSubmitResult
+                }
+                let operationID: String
+                switch CheckoutCoordinator.shared.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
+                case let .acquired(value), let .explicit(value):
+                    operationID = value
+                case .competing:
+                    return .retry(errorMessage: nil)
                 }
                 return await self.submitBridge.suspend(superseding: errorSubmitResult) { token in
                     self.createRequest(
@@ -394,10 +406,12 @@ private extension CheckoutTurboModuleAdapter {
             }
             .onComplete { [weak self, weak checkout] result in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                guard self.ensureOperationForTerminalCallback() != nil else { return }
                 self.emitTerminal(kind: EventKind.completion, payload: ["resultCode": result.resultCode.rawValue])
             }
             .onFailure { [weak self, weak checkout] _ in
                 guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
+                guard self.ensureOperationForTerminalCallback() != nil else { return }
                 self.emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             }
     }
@@ -437,6 +451,26 @@ private extension CheckoutTurboModuleAdapter {
         Task { @MainActor in
             try? await CheckoutCoordinator.shared.invalidate(checkoutID: checkoutID)
         }
+    }
+
+    /// The first embedded SDK callback acquires an anonymous checkout-level operation. It never
+    /// selects a Fabric registration, target, or source view because the public SDK callback
+    /// does not carry that identity.
+    func acquireInitialEmbeddedOperationForCallback() -> String? {
+        guard let checkoutID = CheckoutCoordinator.shared.checkoutID else { return nil }
+        switch CheckoutCoordinator.shared.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
+        case let .acquired(operationID), let .explicit(operationID):
+            return operationID
+        case .competing:
+            return nil
+        }
+    }
+
+    func ensureOperationForTerminalCallback() -> String? {
+        if let operationID = CheckoutCoordinator.shared.operationID {
+            return operationID
+        }
+        return acquireInitialEmbeddedOperationForCallback()
     }
 
     /// CallbackBridge settles a superseded continuation immediately. Retire its matching broker
@@ -781,7 +815,7 @@ private struct PendingResponse {
     let resume: ([String: Any]?) -> Void
 }
 
-internal enum TurboCheckoutTarget: Equatable {
+internal enum TurboCheckoutTarget: Hashable {
     case paymentMethod(PaymentMethodType)
     case storedPaymentMethod(String)
 }
