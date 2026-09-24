@@ -140,7 +140,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
             target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
             presenter: presenter
         )
-        let operationID = try XCTUnwrap(coordinator.acquireEmbeddedOperation(checkoutID: checkoutID))
+        let operationID = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
         var cancellations = 0
         let request = try coordinator.beginRequest(
             operationID: operationID,
@@ -159,6 +159,66 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.pendingRequestCount, 0)
         XCTAssertNil(coordinator.operationID)
         XCTAssertFalse(coordinator.resolve(request))
+    }
+
+    func test_addressLookupReusesItsDedicatedOperationAcrossSearchesAndSelection() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        var cancelledSearches = 0
+
+        let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+        let initialSearch = try coordinator.beginRequest(
+            operationID: lookupOperation,
+            kind: .addressLookupSearch,
+            timeout: 10,
+            cancellationFallback: { cancelledSearches += 1 }
+        )
+        XCTAssertTrue(coordinator.cancel(initialSearch))
+
+        let repeatedLookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+        let replacementSearch = try coordinator.beginRequest(
+            operationID: repeatedLookupOperation,
+            kind: .addressLookupSearch,
+            timeout: 10
+        )
+        let selection = try coordinator.beginRequest(
+            operationID: repeatedLookupOperation,
+            kind: .addressLookupSelection,
+            timeout: 10
+        )
+
+        XCTAssertEqual(lookupOperation, repeatedLookupOperation)
+        XCTAssertEqual(initialSearch.operationID, replacementSearch.operationID)
+        XCTAssertEqual(replacementSearch.operationID, selection.operationID)
+        XCTAssertEqual(cancelledSearches, 1)
+        XCTAssertFalse(coordinator.resolve(initialSearch))
+        XCTAssertTrue(coordinator.resolve(replacementSearch))
+        XCTAssertTrue(coordinator.resolve(selection))
+
+        coordinator.completeAddressLookupOperation(repeatedLookupOperation)
+
+        XCTAssertNil(coordinator.operationID)
+        switch coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
+        case let .acquired(operationID):
+            XCTAssertNotEqual(operationID, lookupOperation)
+        case .explicit, .competing:
+            XCTFail("A completed lookup must leave the embedded slot available for before-submit")
+        }
+    }
+
+    func test_addressLookupNeverAdoptsAnExplicitOperation() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let explicitOperation = try coordinator.beginOperation(checkoutID: checkoutID)
+
+        XCTAssertThrowsError(try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)) { error in
+            guard case CoordinatorError.operationBusy = error else {
+                return XCTFail("Expected an explicit operation to reject lookup ownership")
+            }
+        }
+        XCTAssertEqual(coordinator.operationID, explicitOperation)
     }
 
     func test_requestBrokerRequiresEveryIdentityAndSettlesEachRequestOnce() async throws {

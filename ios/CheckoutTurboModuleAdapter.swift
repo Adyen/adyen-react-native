@@ -287,6 +287,9 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
             return
         }
         pendingResponses.removeValue(forKey: requestID)
+        if pending.request.kind == .addressLookupSelection {
+            CheckoutCoordinator.shared.completeAddressLookupOperation(pending.request.operationID)
+        }
         if pending.request.kind == .advancedSubmit, payload?["type"] as? String == "retry" {
             CheckoutCoordinator.shared.releaseEmbeddedOperation(pending.request.operationID)
         }
@@ -799,7 +802,7 @@ private extension CheckoutTurboModuleAdapter {
 @MainActor
 private extension CheckoutTurboModuleAdapter {
     func awaitAddressLookup(_ query: String) async -> [AddressLookupResult] {
-        guard let operationID = acquireInitialEmbeddedOperationForCallback() else { return [] }
+        guard let operationID = acquireAddressLookupOperationForCallback() else { return [] }
         return await addressLookupBridge.suspend(superseding: []) { token in
             createRequest(
                 operationID: operationID,
@@ -813,7 +816,7 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func awaitAddressSelection(_ candidate: AddressLookupResult) async throws -> PostalAddress {
-        guard let operationID = CheckoutCoordinator.shared.operationID ?? acquireInitialEmbeddedOperationForCallback() else {
+        guard let operationID = acquireAddressLookupOperationForCallback() else {
             throw AddressLookupError.cancelled
         }
         let response = await addressSelectionBridge.suspend(superseding: .failure(AddressLookupError.cancelled)) { token in
@@ -829,7 +832,15 @@ private extension CheckoutTurboModuleAdapter {
                 self?.addressSelectionBridge.resolve(token, self?.addressSelection(payload) ?? .failure(AddressLookupError.cancelled))
             }
         }
+        CheckoutCoordinator.shared.completeAddressLookupOperation(operationID)
         return try response.get()
+    }
+
+    /// Lookup callbacks have a dedicated owner, rather than adopting whatever payment operation
+    /// might currently be active. This preserves exact request correlation across search updates.
+    func acquireAddressLookupOperationForCallback() -> String? {
+        guard let checkoutID = CheckoutCoordinator.shared.checkoutID else { return nil }
+        return try? CheckoutCoordinator.shared.acquireAddressLookupOperation(checkoutID: checkoutID)
     }
 
     func addressLookupResults(_ payload: [String: Any]?) -> [AddressLookupResult] {

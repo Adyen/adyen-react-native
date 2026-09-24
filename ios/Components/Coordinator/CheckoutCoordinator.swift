@@ -154,7 +154,8 @@ internal final class CheckoutCoordinator {
     private var activeOperationID: String?
     private var activeOperationKind: OperationKind?
     /// Lookup has UI state that survives a completed search while the shopper chooses a
-    /// candidate. Keep its anonymous embedded operation identifiable so unmount can cancel it.
+    /// candidate. It owns a dedicated embedded operation and must never borrow an explicit
+    /// headless/Drop-in operation that happens to be active.
     private var addressLookupOperationID: String?
     private var passivePresenters: [String: PassivePresenter] = [:]
     private var passivePresenterIDsByTarget: [TurboCheckoutTarget: String] = [:]
@@ -186,6 +187,7 @@ internal final class CheckoutCoordinator {
     private enum OperationKind {
         case explicit
         case embedded
+        case addressLookup
     }
 
     internal enum EmbeddedOperationAcquisition {
@@ -362,6 +364,45 @@ internal final class CheckoutCoordinator {
         activeOperationKind = nil
     }
 
+    /// Address lookup is an embedded SDK callback with its own lifecycle. Search callbacks can
+    /// recur while lookup UI remains visible, so each search and the later selection share this
+    /// one operation. An unrelated explicit operation is a contender, never a lookup owner.
+    internal func acquireAddressLookupOperation(checkoutID: String) throws -> String {
+        guard activeCheckoutID == checkoutID else {
+            throw CoordinatorError.staleCheckout
+        }
+        if let addressLookupOperationID {
+            guard activeOperationID == addressLookupOperationID,
+                  activeOperationKind == .addressLookup else {
+                throw CoordinatorError.staleOperation
+            }
+            return addressLookupOperationID
+        }
+        guard activeOperationID == nil else {
+            emit(.operationBusy)
+            throw CoordinatorError.operationBusy
+        }
+        let operationID = nextID(for: .operation)
+        activeOperationID = operationID
+        activeOperationKind = .addressLookup
+        addressLookupOperationID = operationID
+        return operationID
+    }
+
+    /// Selection is the lookup terminal boundary. Its confirmation or rejection must release the
+    /// dedicated operation before a session before-submit callback can acquire a fresh one.
+    internal func completeAddressLookupOperation(_ operationID: String) {
+        guard addressLookupOperationID == operationID,
+              activeOperationID == operationID,
+              activeOperationKind == .addressLookup else {
+            return
+        }
+        settleRequests(for: operationID)
+        activeOperationID = nil
+        activeOperationKind = nil
+        addressLookupOperationID = nil
+    }
+
     /// Registers a mounted Fabric view without acquiring the interactive operation slot.
     ///
     /// The SDK can only create regular components by exact payment-method type and stored
@@ -437,9 +478,6 @@ internal final class CheckoutCoordinator {
             cancellation: cancellation,
             cancellationFallback: cancellationFallback
         )
-        if kind == .addressLookupSearch || kind == .addressLookupSelection {
-            addressLookupOperationID = operationID
-        }
         emit(.request(request))
         return request
     }
@@ -484,7 +522,8 @@ internal final class CheckoutCoordinator {
     internal func cancelAddressLookup(checkoutID: String) {
         guard activeCheckoutID == checkoutID,
               let operationID = addressLookupOperationID,
-              activeOperationID == operationID else {
+              activeOperationID == operationID,
+              activeOperationKind == .addressLookup else {
             return
         }
         let requestIDs = activeRequests.values
@@ -495,10 +534,8 @@ internal final class CheckoutCoordinator {
             .map(\.request.requestID)
         requestIDs.forEach { settle(requestID: $0, invokeFallback: true) }
         addressLookupOperationID = nil
-        if activeOperationKind == .embedded {
-            activeOperationID = nil
-            activeOperationKind = nil
-        }
+        activeOperationID = nil
+        activeOperationKind = nil
     }
 
     /// Native cleanup owns cancellation and host release even when JavaScript does not respond.
