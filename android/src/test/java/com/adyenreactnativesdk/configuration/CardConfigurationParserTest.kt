@@ -10,10 +10,12 @@ import com.adyen.checkout.card.BillingAddressMode
 import com.adyen.checkout.card.FieldVisibility
 import com.adyen.checkout.card.InstallmentOptions
 import com.adyen.checkout.core.common.CardBrand
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -65,6 +67,46 @@ class CardConfigurationParserTest {
 
     // THEN
     assertTrue(cardParser.billingAddressMode is BillingAddressMode.None)
+  }
+
+  @Test
+  fun `lookup mode is explicitly unsupported rather than silently falling back`() {
+    // GIVEN
+    val config = WritableMapMock()
+    config.putString(CardConfigurationParser.ADDRESS_VISIBILITY_KEY, "lookup")
+
+    // WHEN
+    val error =
+      try {
+        CardConfigurationParser(config, "US").validateConfiguration()
+        fail("Expected lookup mode to be rejected")
+        null
+      } catch (exception: ModuleException.UnsupportedAddressLookup) {
+        exception
+      }
+
+    // THEN
+    assertEquals("unsupportedCapability", error?.code)
+  }
+
+  @Test
+  fun `lookup rejection leaves a subsequent supported address mode usable`() {
+    val lookupConfig = WritableMapMock()
+    lookupConfig.putString(CardConfigurationParser.ADDRESS_VISIBILITY_KEY, "lookup")
+    val postalConfig = WritableMapMock()
+    postalConfig.putString(CardConfigurationParser.ADDRESS_VISIBILITY_KEY, "postal")
+
+    try {
+      CardConfigurationParser(lookupConfig, "US").validateConfiguration()
+      fail("Expected lookup mode to be rejected")
+    } catch (_: ModuleException.UnsupportedAddressLookup) {
+      // Expected.
+    }
+
+    val supportedParser = CardConfigurationParser(postalConfig, "US")
+    supportedParser.validateConfiguration()
+
+    assertTrue(supportedParser.billingAddressMode is BillingAddressMode.PostalCode)
   }
 
   @Test

@@ -11,6 +11,7 @@ import com.adyen.checkout.card.InstallmentConfiguration
 import com.adyen.checkout.card.card
 import com.adyen.checkout.core.common.CardBrand
 import com.adyen.checkout.core.components.CheckoutConfiguration
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.facebook.react.bridge.ReadableMap
 
 class CardConfigurationParser(
@@ -46,6 +47,7 @@ class CardConfigurationParser(
   }
 
   fun applyConfiguration(configuration: CheckoutConfiguration) {
+    validateConfiguration()
     configuration.card(
       showCardholderName = holderNameRequired,
       showSecurityCode = showSecurityCode,
@@ -57,6 +59,17 @@ class CardConfigurationParser(
       billingAddressMode = billingAddressMode,
       installmentConfiguration = installmentConfiguration,
     )
+  }
+
+  /**
+   * The pinned Android v6 alpha does not expose delegated address lookup for the presenter path.
+   * Reject before configuring a controller so a lookup request cannot degrade to postal or full
+   * address UI.
+   */
+  fun validateConfiguration() {
+    if (usesAddressLookup) {
+      throw ModuleException.UnsupportedAddressLookup()
+    }
   }
 
   internal val showStorePaymentField: Boolean?
@@ -114,7 +127,8 @@ class CardConfigurationParser(
 
             "none" -> BillingAddressMode.None()
 
-            // TODO: v6 migration - "lookup" and "full" billing address modes not yet available
+            // "full" is not exposed by this v6 alpha. Lookup is rejected by
+            // [validateConfiguration] before this value is read for an active checkout.
             else -> null
           }
         }
@@ -176,4 +190,9 @@ class CardConfigurationParser(
         }
       }
     }
+
+  private val usesAddressLookup: Boolean
+    get() =
+      config.hasKey(ADDRESS_VISIBILITY_KEY) &&
+        config.getString(ADDRESS_VISIBILITY_KEY)?.equals("lookup", ignoreCase = true) == true
 }

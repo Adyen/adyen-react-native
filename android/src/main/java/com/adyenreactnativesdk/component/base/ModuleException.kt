@@ -31,6 +31,12 @@ sealed class ModuleException(
       message = "Not supported on Android",
     )
 
+  class UnsupportedAddressLookup :
+    ModuleException(
+      code = "unsupportedCapability",
+      message = "Address lookup is unsupported by the pinned Android SDK",
+    )
+
   class NoClientKey :
     ModuleException(
       code = "noClientKey",

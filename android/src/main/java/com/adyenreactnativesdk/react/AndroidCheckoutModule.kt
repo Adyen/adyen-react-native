@@ -25,6 +25,7 @@ import com.adyenreactnativesdk.component.base.CheckoutFragment
 import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentEventSink
 import com.adyenreactnativesdk.component.base.ComponentManager
+import com.adyenreactnativesdk.component.base.ModuleException
 import com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
@@ -46,6 +47,7 @@ import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -58,6 +60,7 @@ import java.util.UUID
 class AndroidCheckoutModule(
   private val reactContext: ReactApplicationContext,
   private val messageBus: MessageBus,
+  private val capabilityMetadataFactory: () -> WritableMap = ::WritableNativeMap,
 ) : NativeAdyenCheckoutSpec(reactContext),
   LifecycleEventListener {
   /** Binds lifecycle callbacks from this TurboModule instance to its exact coordinator checkout. */
@@ -96,11 +99,18 @@ class AndroidCheckoutModule(
     configurationJson: String,
     promise: Promise,
   ) {
+    if (usesUnsupportedAddressLookup(configurationJson)) {
+      rejectUnsupportedAddressLookup(promise)
+      return
+    }
     val session: SessionResponse
     val configuration =
       try {
         session = parseSession(sessionJson)
         CheckoutConfigurationFactory.get(ReactNativeJson.convertJsonToMap(JSONObject(configurationJson)))
+      } catch (_: ModuleException.UnsupportedAddressLookup) {
+        rejectUnsupportedAddressLookup(promise)
+        return
       } catch (_: Exception) {
         reject(promise, ERROR_INVALID_CONFIGURATION)
         return
@@ -147,11 +157,18 @@ class AndroidCheckoutModule(
     configurationJson: String,
     promise: Promise,
   ) {
+    if (usesUnsupportedAddressLookup(configurationJson)) {
+      rejectUnsupportedAddressLookup(promise)
+      return
+    }
     val paymentMethods: PaymentMethods
     val configuration =
       try {
         paymentMethods = PaymentMethods.SERIALIZER.deserialize(JSONObject(paymentMethodsJson))
         CheckoutConfigurationFactory.get(ReactNativeJson.convertJsonToMap(JSONObject(configurationJson)))
+      } catch (_: ModuleException.UnsupportedAddressLookup) {
+        rejectUnsupportedAddressLookup(promise)
+        return
       } catch (_: Exception) {
         reject(promise, ERROR_INVALID_CONFIGURATION)
         return
@@ -542,6 +559,19 @@ class AndroidCheckoutModule(
     return SessionResponse(id, sessionData)
   }
 
+  /**
+   * Reject lookup at the bridge boundary before a [CheckoutConfiguration] or controller can be
+   * created. CardConfigurationParser repeats the guard for all other Android callers.
+   */
+  private fun usesUnsupportedAddressLookup(configurationJson: String): Boolean =
+    try {
+      val configuration = JSONObject(configurationJson)
+      val cardConfiguration = configuration.optJSONObject(CARD) ?: configuration
+      cardConfiguration.optString(ADDRESS_VISIBILITY).equals(ADDRESS_LOOKUP, ignoreCase = true)
+    } catch (_: Exception) {
+      false
+    }
+
   private fun activityOrReject(promise: Promise): FragmentActivity? =
     (reactContext.currentActivity as? FragmentActivity)
       ?: run {
@@ -554,6 +584,17 @@ class AndroidCheckoutModule(
     code: String,
   ) {
     promise.reject(code, code)
+  }
+
+  private fun rejectUnsupportedAddressLookup(promise: Promise) {
+    promise.reject(
+      ERROR_UNSUPPORTED_CAPABILITY,
+      "Address lookup is unsupported by the pinned Android SDK",
+      capabilityMetadataFactory().apply {
+        putString(CAPABILITY, ADDRESS_LOOKUP_CAPABILITY)
+        putString(PHASE, PHASE_SETUP)
+      },
+    )
   }
 
   private fun onMain(action: () -> Unit) {
@@ -721,6 +762,14 @@ class AndroidCheckoutModule(
     private const val ERROR_STALE_RESPONSE = "staleRequest"
     private const val ERROR_INVALID_RESPONSE = "staleRequest"
     private const val ERROR_NO_ACTIVITY = "cancelled"
+    private const val ERROR_UNSUPPORTED_CAPABILITY = "unsupportedCapability"
+    private const val CAPABILITY = "capability"
+    private const val ADDRESS_LOOKUP_CAPABILITY = "addressLookup"
+    private const val PHASE = "phase"
+    private const val PHASE_SETUP = "setup"
+    private const val CARD = "card"
+    private const val ADDRESS_VISIBILITY = "addressVisibility"
+    private const val ADDRESS_LOOKUP = "lookup"
   }
 }
 
