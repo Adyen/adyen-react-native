@@ -51,6 +51,8 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     private let shippingContactBridge = CallbackBridge<PKPaymentRequestShippingContactUpdate>()
     private let shippingMethodBridge = CallbackBridge<PKPaymentRequestShippingMethodUpdate>()
     private let couponCodeBridge = CallbackBridge<PKPaymentRequestCouponCodeUpdate>()
+    private let addressLookupBridge = CallbackBridge<[AddressLookupResult]>()
+    private let addressSelectionBridge = CallbackBridge<AddressSelectionResponse>()
     private var currentSummaryItems: [PKPaymentSummaryItem] = []
     private var applePayShippingMethods = ApplePayShippingMethodsState()
 
@@ -494,6 +496,8 @@ private extension CheckoutTurboModuleAdapter {
         shippingContactBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
         shippingMethodBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
         couponCodeBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
+        addressLookupBridge.resolve([])
+        addressSelectionBridge.resolve(.failure(AddressLookupError.cancelled))
     }
 }
 
@@ -621,7 +625,18 @@ private extension CheckoutTurboModuleAdapter {
 private extension CheckoutTurboModuleAdapter {
     func buildCheckoutConfiguration(parser: RootConfigurationParser, configuration: NSDictionary) throws -> CheckoutConfiguration {
         applePayShippingMethods = .init()
-        let cardConfiguration = CardConfigurationParser(configuration: configuration).configuration
+        let cardConfigurationParser = CardConfigurationParser(
+            configuration: configuration,
+            onAddressLookup: { [weak self] query in
+                await self?.awaitAddressLookup(query) ?? []
+            },
+            onAddressSelected: { [weak self] candidate in
+                guard let self else { throw AddressLookupError.cancelled }
+                return try await self.awaitAddressSelection(candidate)
+            }
+        )
+        try cardConfigurationParser.validateAddressLookupConfiguration()
+        let cardConfiguration = cardConfigurationParser.configuration
         let authenticationConfiguration = ThreeDS2ConfigurationParser(configuration: configuration).configuration
         if let applePayConfiguration = try makeApplePayConfiguration(parser: parser, configuration: configuration) {
             return try parser.checkoutConfiguration {
@@ -779,6 +794,67 @@ private extension CheckoutTurboModuleAdapter {
     }
 }
 
+// MARK: - Address lookup
+
+@MainActor
+private extension CheckoutTurboModuleAdapter {
+    func awaitAddressLookup(_ query: String) async -> [AddressLookupResult] {
+        guard let operationID = acquireInitialEmbeddedOperationForCallback() else { return [] }
+        return await addressLookupBridge.suspend(superseding: []) { token in
+            createRequest(
+                operationID: operationID,
+                kind: .addressLookupSearch,
+                eventKind: EventKind.addressLookupSearch,
+                payload: ["query": query]
+            ) { [weak self] payload in
+                self?.addressLookupBridge.resolve(token, self?.addressLookupResults(payload) ?? [])
+            }
+        }
+    }
+
+    func awaitAddressSelection(_ candidate: AddressLookupResult) async throws -> PostalAddress {
+        guard let operationID = CheckoutCoordinator.shared.operationID ?? acquireInitialEmbeddedOperationForCallback() else {
+            throw AddressLookupError.cancelled
+        }
+        let response = await addressSelectionBridge.suspend(superseding: .failure(AddressLookupError.cancelled)) { token in
+            createRequest(
+                operationID: operationID,
+                kind: .addressLookupSelection,
+                eventKind: EventKind.addressLookupSelection,
+                payload: [
+                    "id": candidate.identifier,
+                    "address": candidate.postalAddress.jsonObject
+                ]
+            ) { [weak self] payload in
+                self?.addressSelectionBridge.resolve(token, self?.addressSelection(payload) ?? .failure(AddressLookupError.cancelled))
+            }
+        }
+        return try response.get()
+    }
+
+    func addressLookupResults(_ payload: [String: Any]?) -> [AddressLookupResult] {
+        guard let results = payload?["results"],
+              let data = try? JSONSerialization.data(withJSONObject: results),
+              let decoded = try? JSONDecoder().decode([AddressLookupResult].self, from: data) else {
+            return []
+        }
+        return decoded
+    }
+
+    func addressSelection(_ payload: [String: Any]?) -> AddressSelectionResponse {
+        if let message = payload?["message"] as? String {
+            return .failure(AddressLookupError.rejected(message))
+        }
+        guard payload?["type"] as? String != "reject",
+              let address = payload?["address"],
+              let data = try? JSONSerialization.data(withJSONObject: address),
+              let postalAddress = try? JSONDecoder().decode(PostalAddress.self, from: data) else {
+            return .failure(AddressLookupError.cancelled)
+        }
+        return .success(postalAddress)
+    }
+}
+
 extension CheckoutTurboModuleAdapter: PresentationDelegate {
     func present(component: PresentableComponent) {
         guard let presenter = CheckoutCoordinator.shared.topPresenterProvider() else {
@@ -850,8 +926,38 @@ private enum EventKind {
     static let applePayShippingContact = "applePayShippingContact"
     static let applePayShippingMethod = "applePayShippingMethod"
     static let applePayCouponCode = "applePayCouponCode"
+    static let addressLookupSearch = "addressLookupSearch"
+    static let addressLookupSelection = "addressLookupSelection"
     static let completion = "completion"
     static let error = "error"
+}
+
+private enum AddressSelectionResponse {
+    case success(PostalAddress)
+    case failure(Error)
+
+    func get() throws -> PostalAddress {
+        switch self {
+        case let .success(address):
+            address
+        case let .failure(error):
+            throw error
+        }
+    }
+}
+
+private enum AddressLookupError: LocalizedError {
+    case cancelled
+    case rejected(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .cancelled:
+            "Address lookup was cancelled"
+        case let .rejected(message):
+            message
+        }
+    }
 }
 
 private enum ErrorCode {

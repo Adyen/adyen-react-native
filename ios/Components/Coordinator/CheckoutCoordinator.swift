@@ -76,6 +76,8 @@ internal enum CoordinatorRequestKind: Hashable {
     case advancedSubmit
     case advancedAdditionalDetails
     case sessionBeforeSubmit
+    case addressLookupSearch
+    case addressLookupSelection
     case applePayAuthorization
     case applePayShippingContact
     case applePayShippingMethod
@@ -151,6 +153,9 @@ internal final class CheckoutCoordinator {
     private var activePresenter: CoordinatorPresenter?
     private var activeOperationID: String?
     private var activeOperationKind: OperationKind?
+    /// Lookup has UI state that survives a completed search while the shopper chooses a
+    /// candidate. Keep its anonymous embedded operation identifiable so unmount can cancel it.
+    private var addressLookupOperationID: String?
     private var passivePresenters: [String: PassivePresenter] = [:]
     private var passivePresenterIDsByTarget: [TurboCheckoutTarget: String] = [:]
     private var activeRequests: [String: PendingRequest] = [:]
@@ -402,6 +407,9 @@ internal final class CheckoutCoordinator {
         if passivePresenterIDsByTarget[existing.target] == presenterID {
             passivePresenterIDsByTarget.removeValue(forKey: existing.target)
         }
+        if passivePresenters.isEmpty {
+            cancelAddressLookup(checkoutID: checkoutID)
+        }
     }
 
     @discardableResult
@@ -429,6 +437,9 @@ internal final class CheckoutCoordinator {
             cancellation: cancellation,
             cancellationFallback: cancellationFallback
         )
+        if kind == .addressLookupSearch || kind == .addressLookupSelection {
+            addressLookupOperationID = operationID
+        }
         emit(.request(request))
         return request
     }
@@ -462,6 +473,32 @@ internal final class CheckoutCoordinator {
         activePresenter = nil
         activeOperationID = nil
         activeOperationKind = nil
+        if addressLookupOperationID == operationID {
+            addressLookupOperationID = nil
+        }
+    }
+
+    /// A Fabric view can be removed while the SDK lookup UI is awaiting candidates or a
+    /// confirmation. This is scoped to its active checkout and never lets stale unmounts touch a
+    /// replacement checkout.
+    internal func cancelAddressLookup(checkoutID: String) {
+        guard activeCheckoutID == checkoutID,
+              let operationID = addressLookupOperationID,
+              activeOperationID == operationID else {
+            return
+        }
+        let requestIDs = activeRequests.values
+            .filter {
+                $0.request.operationID == operationID &&
+                    ($0.request.kind == .addressLookupSearch || $0.request.kind == .addressLookupSelection)
+            }
+            .map(\.request.requestID)
+        requestIDs.forEach { settle(requestID: $0, invokeFallback: true) }
+        addressLookupOperationID = nil
+        if activeOperationKind == .embedded {
+            activeOperationID = nil
+            activeOperationKind = nil
+        }
     }
 
     /// Native cleanup owns cancellation and host release even when JavaScript does not respond.
@@ -509,6 +546,7 @@ internal final class CheckoutCoordinator {
         activePresenter = nil
         activeOperationID = nil
         activeOperationKind = nil
+        addressLookupOperationID = nil
         let presenters = passivePresenters.values.map(\.presenter)
         passivePresenters.removeAll()
         passivePresenterIDsByTarget.removeAll()

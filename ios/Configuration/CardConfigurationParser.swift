@@ -71,12 +71,19 @@ public struct CardConfigurationParser {
         case "full":
             return .full(supportedCountryCodes: billingAddressCountryCodes ?? [])
         case "lookup":
-            guard let onAddressLookup else {
-                return .full(supportedCountryCodes: billingAddressCountryCodes ?? [])
-            }
+            guard hasAddressLookupCallbacks, let onAddressLookup else { return .none }
             return .lookup(onAddressLookup: onAddressLookup, onAddressSelected: onAddressSelected)
         default:
             return .none
+        }
+    }
+
+    /// Lookup must never degrade to a different address UI when the merchant callback surface is
+    /// incomplete. The TurboModule calls this before SDK setup, while the `.none` fallback above
+    /// protects any future direct parser use from silently becoming a full-address form.
+    func validateAddressLookupConfiguration() throws {
+        guard !usesAddressLookup || hasAddressLookupCallbacks else {
+            throw CardConfigurationError.addressLookupCallbacksRequired
         }
     }
 
@@ -152,4 +159,22 @@ public struct CardConfigurationParser {
         return value == "show" ? .show : .hide
     }
 
+    private var usesAddressLookup: Bool {
+        (dict[CardKeys.addressVisibility] as? String)?.lowercased() == "lookup"
+    }
+
+    private var hasAddressLookupCallbacks: Bool {
+        dict[CardKeys.addressLookupCallbacksEnabled] as? Bool == true &&
+            onAddressLookup != nil &&
+            onAddressSelected != nil
+    }
+
+}
+
+enum CardConfigurationError: LocalizedError {
+    case addressLookupCallbacksRequired
+
+    var errorDescription: String? {
+        "Address lookup requires onUpdateAddress and onConfirmAddress callbacks"
+    }
 }

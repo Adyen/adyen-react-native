@@ -49,4 +49,14 @@ export const checkConfiguration = (configuration: Configuration) => {
         `The shopper's country code must be in ISO 3166-1 alpha-2 format. Example: "NL" or "US".`
     );
   }
+
+  if (
+    configuration.card?.addressVisibility === 'lookup' &&
+    (typeof configuration.card.onUpdateAddress !== 'function' ||
+      typeof configuration.card.onConfirmAddress !== 'function')
+  ) {
+    throw new Error(
+      'Address lookup requires onUpdateAddress and onConfirmAddress callbacks'
+    );
+  }
 };

@@ -105,6 +105,40 @@ final class CardConfigurationTests: XCTestCase {
         }
     }
 
+    func test_lookupRequiresTheNativeApprovedCallbackPair() {
+        let configuration: NSDictionary = [
+            "card": [
+                "addressVisibility": "lookup",
+                "addressLookupCallbacksEnabled": true
+            ]
+        ]
+        let sut = CardConfigurationParser(configuration: configuration)
+
+        XCTAssertThrowsError(try sut.validateAddressLookupConfiguration())
+        guard case .none = sut.billingAddressMode else {
+            return XCTFail("Lookup must not silently degrade to a different address UI")
+        }
+    }
+
+    func test_lookupUsesPublishedSDKModeWhenTheCallbackPairIsValidated() throws {
+        let configuration: NSDictionary = [
+            "card": [
+                "addressVisibility": "lookup",
+                "addressLookupCallbacksEnabled": true
+            ]
+        ]
+        let sut = CardConfigurationParser(
+            configuration: configuration,
+            onAddressLookup: { _ in [] },
+            onAddressSelected: { result in result.postalAddress }
+        )
+
+        XCTAssertNoThrow(try sut.validateAddressLookupConfiguration())
+        guard case .lookup = sut.billingAddressMode else {
+            return XCTFail("Expected published lookup billing address mode")
+        }
+    }
+
     func test_configuration_setsKoreanAuthenticationMode_toHide() {
         // GIVEN
         let configDict: NSDictionary = ["card": ["kcpVisibility": "hide"]]

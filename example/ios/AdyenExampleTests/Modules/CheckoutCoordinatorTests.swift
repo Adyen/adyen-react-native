@@ -129,6 +129,38 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertTrue(fixture.scheduler.cancellations.allSatisfy(\.cancelled))
     }
 
+    func test_lastPresenterUnmountCancelsItsAddressLookupRequestOnce() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let presenter = PassivePresenter()
+        try coordinator.registerPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "card",
+            target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
+            presenter: presenter
+        )
+        let operationID = try XCTUnwrap(coordinator.acquireEmbeddedOperation(checkoutID: checkoutID))
+        var cancellations = 0
+        let request = try coordinator.beginRequest(
+            operationID: operationID,
+            kind: .addressLookupSearch,
+            timeout: 10,
+            cancellationFallback: { cancellations += 1 }
+        )
+
+        coordinator.unregisterPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "card",
+            presenter: presenter
+        )
+
+        XCTAssertEqual(cancellations, 1)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertFalse(coordinator.resolve(request))
+    }
+
     func test_requestBrokerRequiresEveryIdentityAndSettlesEachRequestOnce() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -473,6 +505,8 @@ final class CheckoutCoordinatorTests: XCTestCase {
             .advancedSubmit,
             .advancedAdditionalDetails,
             .sessionBeforeSubmit,
+            .addressLookupSearch,
+            .addressLookupSelection,
             .applePayAuthorization,
             .applePayShippingContact,
             .applePayShippingMethod,
@@ -541,6 +575,8 @@ final class CheckoutCoordinatorTests: XCTestCase {
             .advancedSubmit,
             .advancedAdditionalDetails,
             .sessionBeforeSubmit,
+            .addressLookupSearch,
+            .addressLookupSelection,
             .applePayAuthorization,
             .applePayShippingContact,
             .applePayShippingMethod,

@@ -23,6 +23,8 @@ import {
   type ApplePayCouponCodeResult,
   type ApplePayShippingContactResult,
   type ApplePayShippingMethodResult,
+  type AddressLookup,
+  type AddressLookupItem,
   type SessionCallbacks,
   type SessionConfiguration,
   type SessionsResult,
@@ -371,6 +373,68 @@ function isApplePayErrors(value: unknown): boolean {
   );
 }
 
+function isAddressLookupItem(value: unknown): value is AddressLookupItem {
+  return (
+    isRecord(value) && typeof value.id === 'string' && isRecord(value.address)
+  );
+}
+
+function nativeConfiguration(configuration: Configuration): Configuration {
+  if (configuration.card?.addressVisibility !== 'lookup') {
+    return configuration;
+  }
+
+  return {
+    ...configuration,
+    card: {
+      ...configuration.card,
+      // This is private native configuration metadata. Callback functions themselves do not
+      // cross the JSON boundary, but native must reject lookup rather than silently changing the
+      // requested address UI if the approved pair was not validated here.
+      addressLookupCallbacksEnabled: true,
+    },
+  } as Configuration;
+}
+
+function validateCheckoutConfiguration(configuration: Configuration): void {
+  try {
+    checkConfiguration(configuration);
+  } catch {
+    throw { code: 'invalidConfiguration', phase: 'setup' };
+  }
+}
+
+function addressLookupFor(event: CheckoutEvent): AddressLookup {
+  let settled = false;
+  const respond = (payload: unknown) => {
+    if (settled) return;
+    settled = true;
+    Promise.resolve(sendResponse(event, JSON.stringify(payload))).catch(
+      () => {}
+    );
+  };
+
+  return {
+    update(results) {
+      if (!Array.isArray(results) || !results.every(isAddressLookupItem)) {
+        respond({ type: 'reject', message: 'Invalid address lookup results' });
+        return;
+      }
+      respond({ results });
+    },
+    confirm(address) {
+      if (!isAddressLookupItem(address)) {
+        respond({ type: 'reject', message: 'Invalid address selection' });
+        return;
+      }
+      respond({ address: address.address });
+    },
+    reject(error) {
+      respond({ type: 'reject', message: error?.message });
+    },
+  };
+}
+
 function normalizeTerminalError(): AdyenError {
   return {
     message: 'Checkout failed',
@@ -456,6 +520,40 @@ async function dispatchEvent(event: CheckoutEvent): Promise<void> {
         },
         isBeforeSubmitResult
       );
+      return;
+    }
+    case 'addressLookupSearch': {
+      const updateAddress = callbacks.configuration?.card?.onUpdateAddress;
+      const query = parsePayload<{ query?: unknown }>(event.payloadJson).query;
+      if (!updateAddress || typeof query !== 'string') {
+        await sendResponse(event);
+        return;
+      }
+      try {
+        const lookup = addressLookupFor(event);
+        Promise.resolve(updateAddress(query, lookup)).catch(() =>
+          lookup.reject({ message: 'Address lookup callback failed' })
+        );
+      } catch {
+        await sendResponse(event);
+      }
+      return;
+    }
+    case 'addressLookupSelection': {
+      const confirmAddress = callbacks.configuration?.card?.onConfirmAddress;
+      const candidate = parsePayload<unknown>(event.payloadJson);
+      if (!confirmAddress || !isAddressLookupItem(candidate)) {
+        await sendResponse(event);
+        return;
+      }
+      try {
+        const lookup = addressLookupFor(event);
+        Promise.resolve(confirmAddress(candidate, lookup)).catch(() =>
+          lookup.reject({ message: 'Address confirmation callback failed' })
+        );
+      } catch {
+        await sendResponse(event);
+      }
       return;
     }
     case 'advancedSubmit':
@@ -565,10 +663,10 @@ export class AdyenCheckout {
     return serializeSetup(async () => {
       ensureEventListener();
       await replaceActiveCheckout();
-      checkConfiguration(configuration);
+      validateCheckoutConfiguration(configuration);
       const descriptor = await NativeCheckout.setupSession(
         JSON.stringify(session),
-        JSON.stringify(configuration)
+        JSON.stringify(nativeConfiguration(configuration))
       ).catch((error: unknown) => {
         throw asCheckoutError(error, 'setup');
       });
@@ -587,11 +685,11 @@ export class AdyenCheckout {
     return serializeSetup(async () => {
       ensureEventListener();
       await replaceActiveCheckout();
-      checkConfiguration(configuration);
+      validateCheckoutConfiguration(configuration);
       checkPaymentMethodsResponse(paymentMethods);
       const descriptor = await NativeCheckout.setupAdvanced(
         JSON.stringify(paymentMethods),
-        JSON.stringify(configuration)
+        JSON.stringify(nativeConfiguration(configuration))
       ).catch((error: unknown) => {
         throw asCheckoutError(error, 'setup');
       });

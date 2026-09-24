@@ -107,6 +107,126 @@ describe('AdyenCheckout', () => {
     });
   });
 
+  test('routes lookup search and selection through distinct correlated requests', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-lookup'));
+    const onUpdateAddress = jest.fn((query, lookup) => {
+      expect(query).toBe('Damrak');
+      lookup.update([
+        {
+          id: 'damrak-1',
+          address: { street: 'Damrak', city: 'Amsterdam', country: 'NL' },
+        },
+      ]);
+    });
+    const onConfirmAddress = jest.fn((candidate, lookup) => {
+      expect(candidate.id).toBe('damrak-1');
+      lookup.confirm(candidate);
+    });
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        card: {
+          addressVisibility: 'lookup',
+          onUpdateAddress,
+          onConfirmAddress,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson: '{"query":"Damrak"}',
+    });
+    await eventHandler({
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-selection',
+      kind: 'addressLookupSelection',
+      payloadJson:
+        '{"id":"damrak-1","address":{"street":"Damrak","city":"Amsterdam","country":"NL"}}',
+    });
+
+    expect(onUpdateAddress).toHaveBeenCalledTimes(1);
+    expect(onConfirmAddress).toHaveBeenCalledTimes(1);
+    expect(native.respond).toHaveBeenNthCalledWith(1, {
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson:
+        '{"results":[{"id":"damrak-1","address":{"street":"Damrak","city":"Amsterdam","country":"NL"}}]}',
+    });
+    expect(native.respond).toHaveBeenNthCalledWith(2, {
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-selection',
+      kind: 'addressLookupSelection',
+      payloadJson:
+        '{"address":{"street":"Damrak","city":"Amsterdam","country":"NL"}}',
+    });
+  });
+
+  test('rejects lookup setup without both merchant callbacks', async () => {
+    await expect(
+      AdyenCheckout.setupAdvanced(
+        { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+        {
+          ...configuration,
+          card: {
+            addressVisibility: 'lookup',
+            onUpdateAddress: () => {},
+          },
+        },
+        callbacks
+      )
+    ).rejects.toEqual({ code: 'invalidConfiguration', phase: 'setup' });
+    expect(native.setupAdvanced).not.toHaveBeenCalled();
+  });
+
+  test('settles a rejecting lookup callback once with its matching request', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-lookup-error')
+    );
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        card: {
+          addressVisibility: 'lookup',
+          onUpdateAddress: () => Promise.reject(new Error('lookup failed')),
+          onConfirmAddress: () => {},
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-lookup-error',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson: '{"query":"Damrak"}',
+    });
+    await Promise.resolve();
+
+    expect(native.respond).toHaveBeenCalledTimes(1);
+    expect(native.respond).toHaveBeenCalledWith({
+      checkoutId: 'checkout-lookup-error',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson:
+        '{"type":"reject","message":"Address lookup callback failed"}',
+    });
+  });
+
   test('rejects malformed before-submit results instead of proceeding', async () => {
     native.setupSession.mockResolvedValueOnce(
       descriptor('checkout-session', 'sessions')

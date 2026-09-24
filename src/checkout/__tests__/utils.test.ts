@@ -141,4 +141,31 @@ describe('checkConfiguration', () => {
     };
     expect(() => checkConfiguration(config)).not.toThrow();
   });
+
+  test('rejects lookup mode without the approved callback pair', () => {
+    expect(() =>
+      checkConfiguration({
+        ...validConfig,
+        card: {
+          addressVisibility: 'lookup',
+          onUpdateAddress: () => {},
+        },
+      })
+    ).toThrow(
+      'Address lookup requires onUpdateAddress and onConfirmAddress callbacks'
+    );
+  });
+
+  test('accepts lookup mode with both address callbacks', () => {
+    expect(() =>
+      checkConfiguration({
+        ...validConfig,
+        card: {
+          addressVisibility: 'lookup',
+          onUpdateAddress: () => {},
+          onConfirmAddress: () => {},
+        },
+      })
+    ).not.toThrow();
+  });
 });
