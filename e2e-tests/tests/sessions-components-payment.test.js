@@ -10,9 +10,26 @@ const {
  * <AdyenComponent type="scheme">), against the real example app. Runs on both Android and iOS.
  */
 async function testSessionsComponentsPayment(driver, _isAndroid) {
-  const menuItem = await driver.$('~menu-item-SessionsComponentsCheckout');
-  await menuItem.waitForDisplayed({ timeout: 15000 });
-  await menuItem.click();
+  const apiOnlyTab = await driver.$('~tab-API-Only');
+  await apiOnlyTab.waitForDisplayed({ timeout: 15000 });
+  await apiOnlyTab.click();
+
+  const validationMenu = await driver.$('~menu-item-ValidationRoutes');
+  await validationMenu.waitForDisplayed({ timeout: 15000 });
+  await validationMenu.click();
+
+  const sessionRoute = await driver.$('~validation-route-sessions');
+  await sessionRoute.waitForDisplayed({ timeout: 15000 });
+  await sessionRoute.click();
+
+  const status = await driver.$('~validation-status');
+  await driver.waitUntil(
+    async () => (await status.getText()) === 'embedded-ready',
+    {
+      timeout: 30000,
+      timeoutMsg: 'Expected the sessions embedded presenter to become ready',
+    }
+  );
 
   await fillCardDetails(driver);
   await tapPayButton(driver);

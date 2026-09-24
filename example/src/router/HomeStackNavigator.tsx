@@ -15,6 +15,7 @@ export type HomeStackParamList = {
   PartialPaymentCheckout: undefined;
   CustomCard: undefined;
   StoredCards: undefined;
+  ValidationRoutes: undefined;
 };
 
 const SettingsButton = ({ onPress }: { onPress: () => void }) => (
@@ -65,6 +66,11 @@ export const HomeStackNavigator = () => {
         name="StoredCards"
         component={Screens.StoredCardsCheckout}
         options={{ title: 'Stored Cards' }}
+      />
+      <HomeStack.Screen
+        name="ValidationRoutes"
+        component={Screens.ValidationRoutes}
+        options={{ title: 'Checkout validation' }}
       />
     </HomeStack.Navigator>
   );

@@ -10,13 +10,26 @@ const {
  * <AdyenComponent type="scheme">), against the real example app. Runs on both Android and iOS.
  */
 async function testAdvancedCheckoutPayment(driver, _isAndroid) {
-  const advancedTab = await driver.$('~tab-Advanced');
-  await advancedTab.waitForDisplayed({ timeout: 15000 });
-  await advancedTab.click();
+  const apiOnlyTab = await driver.$('~tab-API-Only');
+  await apiOnlyTab.waitForDisplayed({ timeout: 15000 });
+  await apiOnlyTab.click();
 
-  const menuItem = await driver.$('~menu-item-AdvancedCheckout');
-  await menuItem.waitForDisplayed({ timeout: 15000 });
-  await menuItem.click();
+  const validationMenu = await driver.$('~menu-item-ValidationRoutes');
+  await validationMenu.waitForDisplayed({ timeout: 15000 });
+  await validationMenu.click();
+
+  const advancedRoute = await driver.$('~validation-route-advanced');
+  await advancedRoute.waitForDisplayed({ timeout: 15000 });
+  await advancedRoute.click();
+
+  const status = await driver.$('~validation-status');
+  await driver.waitUntil(
+    async () => (await status.getText()) === 'embedded-ready',
+    {
+      timeout: 30000,
+      timeoutMsg: 'Expected the advanced embedded presenter to become ready',
+    }
+  );
 
   await fillCardDetails(driver);
   await tapPayButton(driver);

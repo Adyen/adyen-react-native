@@ -38,6 +38,7 @@ const TAB_CONTENT: Record<TabName, PageType[]> = {
   'API-Only': [
     { title: 'Custom Card (CSE)', route: 'CustomCard' },
     { title: 'Stored Cards', route: 'StoredCards' },
+    { title: 'Checkout validation routes', route: 'ValidationRoutes' },
   ],
 };
 

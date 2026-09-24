@@ -7,12 +7,14 @@ const {
 const {
   testAdvancedCheckoutPayment,
 } = require('./tests/advanced-checkout-payment.test');
+const { testValidationRoutes } = require('./tests/validation-routes.test');
 
 // Runs payment-flow tests against the real example/ app (unlike run-appium.js, which uses a
 // scaffolded fixture app). Reuses helpers/driver.js and helpers/utils.js conventions.
 const TESTS = [
   { name: 'Sessions Components (Card)', run: testSessionsComponentsPayment },
   { name: 'Advanced Checkout (Card)', run: testAdvancedCheckoutPayment },
+  { name: 'Validation routes', run: testValidationRoutes },
 ];
 
 function relaunchAndroidApp(appPackage) {
