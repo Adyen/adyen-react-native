@@ -154,6 +154,100 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertTrue(fixture.scheduler.cancellations.allSatisfy(\.cancelled))
     }
 
+    func test_competingEmbeddedCallbackReportsOneDebugAssertionAndDoesNotEmitMerchantRequest() async throws {
+        let fixture = Fixture()
+        var assertions: [String] = []
+        let coordinator = fixture.makeCoordinator { assertions.append($0) }
+        let checkoutID = try await coordinator.setup()
+
+        guard case .acquired = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("The first embedded callback must acquire the operation")
+        }
+        guard case .competing = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("A competing embedded callback must use the native retry path")
+        }
+
+        XCTAssertEqual(assertions, ["Competing embedded checkout callback"])
+        XCTAssertEqual(
+            fixture.events.events.filter {
+                if case .request = $0 { return true }
+                return false
+            }.count,
+            0
+        )
+    }
+
+    func test_lookupSearchTimeoutSettlesFallbackAndReleasesOnlyLookupOwnership() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let lookupPresenter = PassivePresenter()
+        let unrelatedPresenter = PassivePresenter()
+        try registerLookupCapablePresenter(lookupPresenter, checkoutID: checkoutID, coordinator: coordinator)
+        try coordinator.registerPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "stored-card",
+            target: .storedPaymentMethod("stored-card"),
+            presenter: unrelatedPresenter
+        )
+        let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+        var fallbackCount = 0
+        let search = try coordinator.beginRequest(
+            operationID: lookupOperation,
+            kind: .addressLookupSearch,
+            timeout: 10,
+            cancellationFallback: { fallbackCount += 1 }
+        )
+
+        fixture.scheduler.fireLast()
+
+        XCTAssertEqual(fallbackCount, 1)
+        XCTAssertEqual(coordinator.passivePresenterCount, 2)
+        XCTAssertEqual(coordinator.checkoutID, checkoutID)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertFalse(coordinator.resolve(search))
+        guard case .acquired = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("Lookup timeout must permit a fresh embedded operation")
+        }
+    }
+
+    func test_lookupCapableRegistrationRemovalCancelsLookupDespiteUnrelatedPassivePresenter() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let lookupPresenter = PassivePresenter()
+        let unrelatedPresenter = PassivePresenter()
+        try registerLookupCapablePresenter(lookupPresenter, checkoutID: checkoutID, coordinator: coordinator)
+        try coordinator.registerPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "stored-card",
+            target: .storedPaymentMethod("stored-card"),
+            presenter: unrelatedPresenter
+        )
+        let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+        var fallbackCount = 0
+        let search = try coordinator.beginRequest(
+            operationID: lookupOperation,
+            kind: .addressLookupSearch,
+            timeout: 10,
+            cancellationFallback: { fallbackCount += 1 }
+        )
+
+        coordinator.unregisterPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "lookup-card",
+            presenter: lookupPresenter
+        )
+
+        XCTAssertEqual(fallbackCount, 1)
+        XCTAssertEqual(coordinator.passivePresenterCount, 1)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertFalse(coordinator.resolve(search))
+        XCTAssertNoThrow(try coordinator.beginOperation(checkoutID: checkoutID))
+    }
+
     func test_lastPresenterUnmountCancelsItsAddressLookupRequestOnce() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -244,6 +338,37 @@ final class CheckoutCoordinatorTests: XCTestCase {
             }
         }
         XCTAssertEqual(coordinator.operationID, explicitOperation)
+    }
+
+    func test_lookupOwnershipReleasesExactlyOnceForCheckoutCleanupTriggers() async throws {
+        let triggers: [(String, @MainActor (CheckoutCoordinator, String) async throws -> Void)] = [
+            ("replacement", { coordinator, _ in _ = try await coordinator.setup() }),
+            ("invalidation", { coordinator, _ in await coordinator.invalidate() }),
+            ("host loss", { coordinator, _ in await coordinator.hostDidDisappear() }),
+            ("terminal cleanup", { coordinator, _ in await coordinator.invalidate() })
+        ]
+
+        for (name, trigger) in triggers {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            let checkoutID = try await coordinator.setup()
+            let lookupPresenter = PassivePresenter()
+            try registerLookupCapablePresenter(lookupPresenter, checkoutID: checkoutID, coordinator: coordinator)
+            let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+            var fallbackCount = 0
+            let request = try coordinator.beginRequest(
+                operationID: lookupOperation,
+                kind: .addressLookupSelection,
+                timeout: 10,
+                cancellationFallback: { fallbackCount += 1 }
+            )
+
+            try await trigger(coordinator, checkoutID)
+            try await trigger(coordinator, checkoutID)
+
+            XCTAssertEqual(fallbackCount, 1, "\(name) must settle lookup once")
+            XCTAssertFalse(coordinator.resolve(request), "\(name) must retire the lookup request")
+        }
     }
 
     func test_requestBrokerRequiresEveryIdentityAndSettlesEachRequestOnce() async throws {
@@ -807,7 +932,10 @@ final class CheckoutCoordinatorTests: XCTestCase {
             ledger.entries
         }
 
-        func makeCoordinator(eventSink: CheckoutEventSink? = nil) -> CheckoutCoordinator {
+        func makeCoordinator(
+            eventSink: CheckoutEventSink? = nil,
+            debugAssertionReporter: @escaping CheckoutDebugAssertionReporter = { _ in }
+        ) -> CheckoutCoordinator {
             CheckoutCoordinator(
                 dependencies: CheckoutCoordinatorDependencies(
                     checkoutFactory: factory,
@@ -816,7 +944,8 @@ final class CheckoutCoordinatorTests: XCTestCase {
                     identityGenerator: identities,
                     scheduler: scheduler,
                     hostAdapter: host
-                )
+                ),
+                debugAssertionReporter: debugAssertionReporter
             )
         }
     }
@@ -978,6 +1107,20 @@ final class CheckoutCoordinatorTests: XCTestCase {
     private enum TestError: Error {
         case factory
     }
+}
+
+@MainActor
+private func registerLookupCapablePresenter(
+    _ presenter: CoordinatorPresenter,
+    checkoutID: String,
+    coordinator: CheckoutCoordinator
+) throws {
+    try coordinator.registerPassivePresenter(
+        checkoutID: checkoutID,
+        presenterID: "lookup-card",
+        target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
+        presenter: presenter
+    )
 }
 
 @MainActor

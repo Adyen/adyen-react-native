@@ -66,6 +66,17 @@ internal protocol CheckoutHostAdapter {
     func releaseCheckoutHost() async
 }
 
+/// Reports impossible coordinator states in debug builds without coupling the coordinator to a
+/// logging implementation. Tests inject a recorder to verify that the native fallback still wins.
+internal typealias CheckoutDebugAssertionReporter = @MainActor (String) -> Void
+
+@MainActor
+private func reportCheckoutDebugAssertion(_ message: String) {
+    #if DEBUG
+        assertionFailure(message)
+    #endif
+}
+
 internal enum CoordinatorIdentityKind: Hashable {
     case checkout
     case operation
@@ -140,6 +151,7 @@ internal final class CheckoutCoordinator {
     internal var topPresenterProvider: @MainActor () -> UIViewController? = { UIViewController.topPresenter }
 
     private let configuredDependencies: CheckoutCoordinatorDependencies?
+    private let debugAssertionReporter: CheckoutDebugAssertionReporter
     private var runtimeDependencies: CheckoutCoordinatorDependencies?
     private var dependencies: CheckoutCoordinatorDependencies {
         guard let dependencies = configuredDependencies ?? runtimeDependencies else {
@@ -198,10 +210,15 @@ internal final class CheckoutCoordinator {
 
     init() {
         configuredDependencies = nil
+        debugAssertionReporter = reportCheckoutDebugAssertion
     }
 
-    init(dependencies: CheckoutCoordinatorDependencies) {
+    init(
+        dependencies: CheckoutCoordinatorDependencies,
+        debugAssertionReporter: @escaping CheckoutDebugAssertionReporter = reportCheckoutDebugAssertion
+    ) {
         configuredDependencies = dependencies
+        self.debugAssertionReporter = debugAssertionReporter
     }
 
     /// The generated TurboModule installs concrete runtime adapters after its event emitter is
@@ -346,7 +363,7 @@ internal final class CheckoutCoordinator {
             if activeOperationKind == .explicit {
                 return .explicit(activeOperationID)
             }
-            debugPrint("Assertion failure: competing embedded checkout callback")
+            debugAssertionReporter("Competing embedded checkout callback")
             return .competing
         }
         let operationID = nextID(for: .operation)
@@ -448,7 +465,7 @@ internal final class CheckoutCoordinator {
         if passivePresenterIDsByTarget[existing.target] == presenterID {
             passivePresenterIDsByTarget.removeValue(forKey: existing.target)
         }
-        if passivePresenters.isEmpty {
+        if isAddressLookupCapable(existing.target) {
             cancelAddressLookup(checkoutID: checkoutID)
         }
     }
@@ -616,6 +633,9 @@ internal final class CheckoutCoordinator {
         guard activeRequests[request.requestID]?.request == request else { return }
         emit(.staleRequest(request))
         settle(requestID: request.requestID, invokeFallback: true)
+        if request.kind == .addressLookupSearch || request.kind == .addressLookupSelection {
+            completeAddressLookupOperation(request.operationID)
+        }
     }
 
     private func settleRequests(for operationID: String) {
@@ -645,6 +665,15 @@ internal final class CheckoutCoordinator {
     private func emit(_ event: CoordinatorEvent) {
         (configuredDependencies ?? runtimeDependencies)?.eventSink.emit(event)
     }
+
+    /// Lookup configuration is applied to the published card component, whose canonical regular
+    /// type is `scheme`. Stored components and unrelated payment-method registrations cannot own
+    /// its checkout-level lookup operation.
+    private func isAddressLookupCapable(_ target: TurboCheckoutTarget) -> Bool {
+        guard case let .paymentMethod(type) = target else { return false }
+        return type.rawValue == "scheme"
+    }
+
 }
 
 internal enum CoordinatorError: Error {
