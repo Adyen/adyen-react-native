@@ -158,7 +158,14 @@ private class FabricCoordinatorPresenter(
       additionalCallbacks = null,
       additionalSessionCallbacks = null,
       sessionBeforeSubmitBridge = sessionBeforeSubmitBridge,
-      eventSink = FabricComponentEventSink(checkoutId, this),
+      eventSink =
+        FabricComponentEventSink(
+          checkoutId = checkoutId,
+          bindEmbeddedOperation = ::bindEmbeddedOperation,
+          handleAction = ::handleAction,
+          complete = ::complete,
+          retry = ::retry,
+        ),
       redirectOwnerId = null,
     )
   private var disposed = false
@@ -208,10 +215,15 @@ private class FabricCoordinatorPresenter(
 
 /**
  * Uses the coordinator's operation slot and generated event channel, never the legacy MessageBus.
+ * This production Fabric callback router has no registration or target input because embedded
+ * ownership is anonymous.
  */
-private class FabricComponentEventSink(
+internal class FabricComponentEventSink(
   private val checkoutId: String,
-  private val presenter: FabricCoordinatorPresenter,
+  private val bindEmbeddedOperation: (String) -> Unit,
+  private val handleAction: (Action) -> Unit,
+  private val complete: (String) -> Unit,
+  private val retry: (String?) -> Unit,
 ) : ComponentEventSink {
   private var ownsOperation = false
   private var operationId: String? = null
@@ -223,13 +235,13 @@ private class FabricComponentEventSink(
     val acquiredOperationId = CheckoutCoordinator.shared.acquireEmbeddedOperation(checkoutId)
     ownsOperation = acquiredOperationId != null
     operationId = acquiredOperationId
-    acquiredOperationId?.let(presenter::bindEmbeddedOperation)
+    acquiredOperationId?.let(bindEmbeddedOperation)
     return ownsOperation
   }
 
   private fun retryEmbeddedOperation(message: String?) {
     val activeOperationId = operationId
-    presenter.retry(message)
+    retry(message)
     if (activeOperationId != null) {
       CheckoutCoordinator.shared.releaseEmbeddedOperation(activeOperationId)
       operationId = null
@@ -245,8 +257,8 @@ private class FabricComponentEventSink(
     ) { response ->
       val payload = response?.let(::JSONObject) ?: JSONObject()
       when (payload.optString(TYPE)) {
-        ACTION -> presenter.handleAction(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
-        COMPLETED -> presenter.complete(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
+        ACTION -> handleAction(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
+        COMPLETED -> complete(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
         RETRY -> retryEmbeddedOperation(payload.optString(MESSAGE).takeIf(String::isNotBlank))
         else -> retryEmbeddedOperation(null)
       }
@@ -259,7 +271,7 @@ private class FabricComponentEventSink(
       EVENT_ADVANCED_ADDITIONAL_DETAILS,
       ActionComponentData.SERIALIZER.serialize(data),
     ) { response ->
-      presenter.complete(
+      complete(
         response?.let(::JSONObject)?.optString(RESULT_CODE, CheckoutResultCode.ERROR.value) ?: CheckoutResultCode.ERROR.value,
       )
     }

@@ -134,14 +134,7 @@ class AndroidCheckoutModule(
                   lateinit var beforeSubmitBridge: SessionBeforeSubmitBridge
                   beforeSubmitBridge =
                     SessionBeforeSubmitBridge(messageBus) { payload ->
-                      createRequest(
-                        operationId = CheckoutCoordinator.shared.activeOperationId() ?: return@SessionBeforeSubmitBridge,
-                        kind = CoordinatorRequestKind.SESSION_BEFORE_SUBMIT,
-                        eventKind = EVENT_SESSION_BEFORE_SUBMIT,
-                        payload = payload,
-                      ) { response ->
-                        beforeSubmitBridge.provideJson(response ?: JSONObject().put(TYPE, ABORT))
-                      }
+                      SessionBeforeSubmitCallbackRouter.route(beforeSubmitBridge, payload)
                     }
                   TurboCheckoutFlow(CheckoutState(result.checkoutContext, beforeSubmitBridge))
                 }
@@ -832,10 +825,8 @@ class AndroidCheckoutModule(
     private const val RESULT_CODE = "resultCode"
     private const val SESSION_ID = "sessionId"
     private const val SESSION_DATA = "sessionData"
-    private const val ABORT = "abort"
     private const val EVENT_ADVANCED_SUBMIT = "advancedSubmit"
     private const val EVENT_ADVANCED_ADDITIONAL_DETAILS = "advancedAdditionalDetails"
-    private const val EVENT_SESSION_BEFORE_SUBMIT = "sessionBeforeSubmit"
     private const val EVENT_COMPLETION = "completion"
     private const val EVENT_ERROR = "error"
     private const val REQUEST_TIMEOUT_MILLIS = 60_000L
@@ -886,3 +877,40 @@ internal fun parseCheckoutTarget(
       null
     }
   }
+
+/**
+ * Production callback router for a sessions before-submit callback. The request is created from
+ * the active anonymous embedded operation, and a missing, stale, or malformed response aborts.
+ */
+internal object SessionBeforeSubmitCallbackRouter {
+  fun route(
+    bridge: SessionBeforeSubmitBridge,
+    payload: JSONObject,
+  ) {
+    val operationId = CheckoutCoordinator.shared.activeOperationId()
+    if (operationId == null) {
+      bridge.provideJson(abort())
+      return
+    }
+    try {
+      CheckoutCoordinator.shared.beginRequest(
+        operationId = operationId,
+        kind = CoordinatorRequestKind.SESSION_BEFORE_SUBMIT,
+        timeoutMillis = REQUEST_TIMEOUT_MILLIS,
+        eventKind = EVENT_SESSION_BEFORE_SUBMIT,
+        payloadJson = payload.toString(),
+        cancellationFallback = { bridge.provideJson(abort()) },
+        response = { response -> bridge.provideJson(response?.let(::JSONObject) ?: abort()) },
+      )
+    } catch (_: IllegalStateException) {
+      bridge.provideJson(abort())
+    }
+  }
+
+  private fun abort(): JSONObject = JSONObject().put(TYPE, ABORT)
+
+  private const val TYPE = "type"
+  private const val ABORT = "abort"
+  private const val EVENT_SESSION_BEFORE_SUBMIT = "sessionBeforeSubmit"
+  private const val REQUEST_TIMEOUT_MILLIS = 60_000L
+}
