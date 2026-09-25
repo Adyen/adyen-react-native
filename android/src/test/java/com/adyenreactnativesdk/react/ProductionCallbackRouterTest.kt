@@ -130,6 +130,49 @@ class ProductionCallbackRouterTest {
   }
 
   @Test
+  fun `Fabric advanced router completes through respond before terminal cleanup releases ownership`() {
+    val module = module()
+    val completions = mutableListOf<String>()
+    val checkoutId = setupAdvanced()
+    val sink =
+      FabricComponentEventSink(
+        checkoutId = checkoutId,
+        bindEmbeddedOperation = {},
+        handleAction = {},
+        complete = completions::add,
+        retry = {},
+      )
+
+    assertTrue(sink.onInteractionStarted())
+    sink.onAdvancedSubmit(paymentData())
+    val request = requireNotNull(CheckoutCoordinator.shared.activeRequest())
+    module.respond(
+      response(request, """{"type":"completed","resultCode":"Authorised"}"""),
+      PromiseRecorder(),
+    )
+
+    assertEquals(listOf("Authorised"), completions)
+    assertEquals(request.operationId, CheckoutCoordinator.shared.activeOperationId())
+    assertEquals(checkoutId, CheckoutCoordinator.shared.activeCheckoutId())
+
+    sink.onComplete("Authorised")
+
+    assertNull(CheckoutCoordinator.shared.activeCheckoutId())
+    assertEquals(listOf("Authorised"), completions)
+
+    val replacementCheckoutId = setupAdvanced()
+    val replacementSink =
+      FabricComponentEventSink(
+        checkoutId = replacementCheckoutId,
+        bindEmbeddedOperation = {},
+        handleAction = {},
+        complete = {},
+        retry = {},
+      )
+    assertTrue(replacementSink.onInteractionStarted())
+  }
+
+  @Test
   fun `competing Fabric callback routers assert ownership without a second event and retry natively`() {
     val emittedKinds = mutableListOf<String>()
     module(emittedKinds = emittedKinds)
@@ -203,11 +246,11 @@ class ProductionCallbackRouterTest {
   }
 
   @Test
-  fun `Fabric session router emits one normalized terminal and cleans checkout`() {
-    val emittedKinds = mutableListOf<String>()
-    module(emittedKinds = emittedKinds)
+  fun `Fabric session router normalizes terminal payloads and suppresses a late completion after failure`() {
+    val terminalEvents = mutableListOf<CoordinatorEvent.Terminal>()
+    module(terminalEvents = terminalEvents)
     val checkoutId = setupSession()
-    val sink =
+    val completionSink =
       FabricComponentEventSink(
         checkoutId = checkoutId,
         bindEmbeddedOperation = {},
@@ -216,17 +259,57 @@ class ProductionCallbackRouterTest {
         retry = {},
       )
 
-    assertTrue(sink.onInteractionStarted())
-    sink.onSessionComplete(
+    assertTrue(completionSink.onInteractionStarted())
+    completionSink.onSessionComplete(
       SessionCheckoutResult(
         resultCode = CheckoutResultCode.AUTHORISED,
         sessionId = "session-id",
         sessionData = "session-data",
       ),
     )
-    sink.onError()
 
-    assertEquals(listOf("completion"), emittedKinds)
+    assertEquals(1, terminalEvents.size)
+    assertEquals("completion", terminalEvents.single().kind)
+    assertNormalizedPayload(
+      terminalEvents.single().payloadJson,
+      expectedFields =
+        mapOf(
+          "resultCode" to "Authorised",
+          "sessionId" to "session-id",
+          "sessionData" to "session-data",
+        ),
+    )
+    assertNull(CheckoutCoordinator.shared.activeCheckoutId())
+
+    val failureCheckoutId = setupSession()
+    val failureSink =
+      FabricComponentEventSink(
+        checkoutId = failureCheckoutId,
+        bindEmbeddedOperation = {},
+        handleAction = {},
+        complete = {},
+        retry = {},
+      )
+    assertTrue(failureSink.onInteractionStarted())
+    failureSink.onError()
+    failureSink.onSessionComplete(
+      SessionCheckoutResult(
+        resultCode = CheckoutResultCode.AUTHORISED,
+        sessionId = "late-session-id",
+        sessionData = "late-session-data",
+      ),
+    )
+
+    assertEquals(2, terminalEvents.size)
+    assertEquals("error", terminalEvents.last().kind)
+    assertNormalizedPayload(
+      terminalEvents.last().payloadJson,
+      expectedFields =
+        mapOf(
+          "message" to "Checkout failed",
+          "errorCode" to "checkoutFailed",
+        ),
+    )
     assertNull(CheckoutCoordinator.shared.activeCheckoutId())
   }
 
@@ -318,6 +401,7 @@ class ProductionCallbackRouterTest {
   private fun module(
     activity: FragmentActivity? = null,
     emittedKinds: MutableList<String>? = null,
+    terminalEvents: MutableList<CoordinatorEvent.Terminal>? = null,
   ): AndroidCheckoutModule {
     val context = mock<ReactApplicationContext>()
     doAnswer { invocation ->
@@ -346,9 +430,18 @@ class ProductionCallbackRouterTest {
           object : CheckoutEventSink {
             override fun emit(event: CoordinatorEvent) {
               when (event) {
-                is CoordinatorEvent.Request -> event.eventKind?.let { emittedKinds?.add(it) }
-                is CoordinatorEvent.Terminal -> emittedKinds?.add(event.kind)
-                else -> Unit
+                is CoordinatorEvent.Request -> {
+                  event.eventKind?.let { emittedKinds?.add(it) }
+                }
+
+                is CoordinatorEvent.Terminal -> {
+                  emittedKinds?.add(event.kind)
+                  terminalEvents?.add(event)
+                }
+
+                else -> {
+                  Unit
+                }
               }
             }
           },
@@ -373,6 +466,17 @@ class ProductionCallbackRouterTest {
       ),
     )
     return module
+  }
+
+  private fun assertNormalizedPayload(
+    payloadJson: String?,
+    expectedFields: Map<String, String>,
+  ) {
+    val payload = JSONObject(requireNotNull(payloadJson))
+    assertEquals(expectedFields.size, payload.length())
+    expectedFields.forEach { (key, value) ->
+      assertEquals(value, payload.getString(key))
+    }
   }
 
   private fun paymentData(): PaymentComponentData<PaymentMethodDetails> = PaymentComponentData(paymentMethod = null, order = null)
