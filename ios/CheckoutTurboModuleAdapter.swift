@@ -41,6 +41,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     /// This private token binds React runtime teardown to the checkout this module instance owns.
     /// A stale module can outlive a replacement during reload and must not clear that replacement.
     private let lifecycleOwnerID = UUID().uuidString
+    private let assertDropInAvailability: (String) throws -> Void
     private var eventSink: NativeEventSink?
     private var pendingResponses: [String: PendingResponse] = [:]
     private var pendingBeforeSubmitData: BeforeSubmitData?
@@ -57,6 +58,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     private var applePayShippingMethods = ApplePayShippingMethodsState()
 
     override init() {
+        assertDropInAvailability = CheckoutCoordinator.shared.assertDropInAvailability
         super.init()
         CheckoutCoordinator.shared.configureRuntimeDependencies(
             CheckoutCoordinatorDependencies(
@@ -68,6 +70,11 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
                 hostAdapter: TurboCheckoutHostAdapter()
             )
         )
+    }
+
+    internal init(assertDropInAvailability: @escaping (String) throws -> Void) {
+        self.assertDropInAvailability = assertDropInAvailability
+        super.init()
     }
 
     deinit {
@@ -241,8 +248,17 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         resolver _: @escaping RCTPromiseResolveBlock,
         rejecter: @escaping RCTPromiseRejectBlock
     ) {
-        guard owns(checkoutID, rejecter: rejecter) else { return }
-        rejecter(ErrorCode.unsupportedCapability, "Drop-in is not available on this iOS SDK", nil)
+        Task { @MainActor in
+            do {
+                try assertDropInAvailability(checkoutID)
+                rejecter(ErrorCode.unsupportedCapability, "Drop-in is not available on this iOS SDK", nil)
+            } catch let error as CoordinatorError {
+                let code = error == .operationBusy ? ErrorCode.operationBusy : ErrorCode.staleCheckout
+                rejecter(code, "Checkout is unavailable", nil)
+            } catch {
+                rejecter(ErrorCode.staleCheckout, "Checkout is unavailable", nil)
+            }
+        }
     }
 
     @objc

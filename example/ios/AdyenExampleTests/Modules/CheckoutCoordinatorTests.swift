@@ -241,6 +241,62 @@ final class CheckoutCoordinatorTests: XCTestCase {
         }.count, 1)
     }
 
+    func test_dropInAvailabilityChecksBusyAndStaleWithoutAllocatingAnOperationOrRequest() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+
+        XCTAssertNoThrow(try coordinator.assertDropInAvailability(checkoutID: checkoutID))
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+
+        let activeOperationID = try coordinator.beginOperation(checkoutID: checkoutID)
+
+        XCTAssertThrowsError(try coordinator.assertDropInAvailability(checkoutID: checkoutID)) { error in
+            XCTAssertEqual(error as? CoordinatorError, .operationBusy)
+        }
+        XCTAssertEqual(coordinator.operationID, activeOperationID)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+
+        try await coordinator.invalidate(checkoutID: checkoutID)
+
+        XCTAssertThrowsError(try coordinator.assertDropInAvailability(checkoutID: checkoutID)) { error in
+            XCTAssertEqual(error as? CoordinatorError, .staleCheckout)
+        }
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+    }
+
+    func test_dropInUnsupportedCapabilityRejectsAsynchronouslyWithoutEmittingAnEvent() async {
+        var checkedCheckoutIDs: [String] = []
+        let adapter = CheckoutTurboModuleAdapter { checkoutID in
+            checkedCheckoutIDs.append(checkoutID)
+        }
+        var events: [NSDictionary] = []
+        adapter.setEventSink { event in
+            events.append(event)
+        }
+        let rejected = expectation(description: "unsupported Drop-in rejection")
+        var rejectionCode: String?
+        var resolved = false
+
+        adapter.startDropIn(
+            "checkout-id",
+            resolver: { _ in resolved = true },
+            rejecter: { code, _, _ in
+                rejectionCode = code
+                rejected.fulfill()
+            }
+        )
+
+        XCTAssertNil(rejectionCode)
+        await fulfillment(of: [rejected], timeout: 1)
+
+        XCTAssertEqual(checkedCheckoutIDs, ["checkout-id"])
+        XCTAssertEqual(rejectionCode, "unsupportedCapability")
+        XCTAssertFalse(resolved)
+        XCTAssertTrue(events.isEmpty)
+    }
+
     func test_timeoutAndInvalidationCancelRequestsAndReleaseEveryOwnedResource() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()

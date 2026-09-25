@@ -5,6 +5,5 @@ export { default as SessionsDropInCheckout } from './Checkout/SessionsDropInChec
 export { default as SessionsComponentsCheckout } from './Checkout/SessionsComponentsCheckout';
 export { default as AdvancedCheckout } from './Checkout/AdvancedCheckout';
 export { default as Home } from './Home/HomeView';
-export { default as PartialPaymentCheckout } from './Checkout/PartialPaymentCheckout';
 export { default as StoredCardsCheckout } from './Checkout/StoredCardsCheckout';
 export { default as ValidationRoutes } from './Validation/ValidationRoutes';

@@ -51,8 +51,6 @@ Pod::Spec.new do |s|
   # or from its .package.swiftinterface, and its loader for vendored xcframeworks never tries
   # the package interface (only .private/.public) - declaring a matching package name blocks
   # importing the frameworks at all, regardless of whether package-level symbols are even used.
-  # DropIn's use of package-scoped types (PaymentComponent, AnyDropInComponent, Balance, etc.)
-  # is disabled in DropInModule+Delegates.swift for this reason; see the TODOs there.
   s.pod_target_xcconfig = {
     # Adyen.xcframework's own textual swiftinterface does `import AdyenNetworking`. Since
     # AdyenNetworking is a source pod compiled fresh into this build (not vendored), its build

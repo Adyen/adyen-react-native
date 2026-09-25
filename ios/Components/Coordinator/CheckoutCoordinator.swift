@@ -343,6 +343,19 @@ internal final class CheckoutCoordinator {
         return try beginOperation()
     }
 
+    /// Verifies a presentation command can contend for the operation slot without reserving it.
+    /// Unsupported presenters use this to retain stale and busy semantics without allocating
+    /// an operation, request, controller, or UI.
+    internal func assertDropInAvailability(checkoutID: String) throws {
+        guard activeCheckoutID == checkoutID else {
+            throw CoordinatorError.staleCheckout
+        }
+        guard activeOperationID == nil else {
+            emit(.operationBusy)
+            throw CoordinatorError.operationBusy
+        }
+    }
+
     /// Acquires the checkout-level embedded operation at the first SDK callback. The callback
     /// carries no source-view identity, so this never consults a presenter registry or target key.
     /// A competing callback must return the SDK retry outcome without a merchant event.

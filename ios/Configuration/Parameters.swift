@@ -26,14 +26,6 @@ internal enum AnalyticsKeys: SubConfig {
     static let verboseLogs = "verboseLogs"
 }
 
-internal enum DropInKeys: SubConfig {
-    static let rootKey = "dropin"
-    static let showPreselectedStoredPaymentMethod = "showPreselectedStoredPaymentMethod"
-    static let skipListWhenSinglePaymentMethod = "skipListWhenSinglePaymentMethod"
-    static let showRemovePaymentMethodButton = "showRemovePaymentMethodButton"
-    static let title = "title"
-}
-
 internal enum CardKeys: SubConfig {
     static let rootKey = "card"
     static let showStorePaymentField = "showStorePaymentField"
@@ -161,11 +153,6 @@ internal enum ApplePayKeys: SubConfig {
             }
         }
     }
-}
-
-internal enum PartialPaymentKey: SubConfig {
-    static let rootKey = "partialPayment"
-    static let pinRequired = "pinRequired"
 }
 
 internal enum StyleKeys: SubConfig {

@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo, useState } from 'react';
-import { Text, ActivityIndicator, View, Platform } from 'react-native';
-import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
+import { Text, ActivityIndicator, View } from 'react-native';
+import { AdyenCheckout } from '@adyen/react-native';
 import type { AdyenError, Checkout, SessionsResult } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
@@ -42,13 +42,9 @@ const SessionsDropInCheckout = () => {
     let active = true;
     const init = async () => {
       try {
-        const returnUrl = Platform.select({
-          android: await AdyenDropIn.getReturnURL(),
-          default: ENVIRONMENT.returnUrl,
-        });
         const session = await apiClient.requestSession(
           configuration,
-          returnUrl
+          ENVIRONMENT.returnUrl
         );
         const c = await AdyenCheckout.setup(session, config, {
           onComplete: didComplete,

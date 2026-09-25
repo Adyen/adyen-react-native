@@ -1,9 +1,7 @@
 import type { PaymentAmount } from '../types';
 import type { ApplePayConfiguration } from './ApplePayConfiguration';
 import type { CardsConfiguration } from './CardsConfiguration';
-import type { DropInConfiguration } from './DropInConfiguration';
 import type { GooglePayConfiguration } from './GooglePayConfiguration';
-import type { PartialPaymentConfiguration } from './PartialPaymentConfiguration';
 import type { ThreeDSConfiguration } from './ThreeDSConfiguration';
 
 /** Collection of available environments. */
@@ -55,8 +53,6 @@ export interface Configuration extends BaseConfiguration {
   countryCode?: string;
   /** Amount to be displayed on the Pay Button. */
   amount?: PaymentAmount;
-  /** Drop-In configuration. */
-  dropin?: DropInConfiguration;
   /** Card component configuration. */
   card?: CardsConfiguration;
   /** Apple Pay component configuration. */
@@ -65,7 +61,4 @@ export interface Configuration extends BaseConfiguration {
   googlepay?: GooglePayConfiguration;
   /** 3D Secure 2 authentication configuration. */
   threeDS2?: ThreeDSConfiguration;
-  /** Partial payment flow configuration. */
-  // TODO: v6 alpha - not yet supported
-  partialPayment?: PartialPaymentConfiguration;
 }

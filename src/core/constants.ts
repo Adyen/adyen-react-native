@@ -12,14 +12,6 @@ export enum Event {
   onAddressUpdate = 'didUpdateAddressCallback',
   /** Event handler, called when address confirmed called. */
   onAddressConfirm = 'didConfirmAddressCallback',
-  /** Event handler, called when shopper requests to remove stored payment method on DropIn Advanced flow. */
-  onDisableStoredPaymentMethod = 'didDisableStoredPaymentMethodCallback',
-  /** Event handler, called when balance for an order needs to be checked. */
-  onCheckBalance = `didCheckBalanceCallback`,
-  /** Event handler, called when a new order for a partial payment needs to be requested. */
-  onRequestOrder = `didRequestOrderCallback`,
-  /** Event handler, called when the partial payment order was canceled. */
-  onCancelOrder = `didCancelOrderCallback`,
   /** Event handler, called when the BIN lookup data is available. */
   onBinLookup = `didBinLookupCallback`,
   /** Event handler, called when the BIN (first 6 or 8 PAN digits) typed by the shopper in the PAN field changes. */
@@ -88,13 +80,4 @@ export enum ResultCode {
   redirectShopper = 'RedirectShopper',
   /** The payment was refused. You'll receive a `refusalReason` in the same response that indicates why it was refused. */
   refused = 'Refused',
-}
-
-export enum BalanceResultCode {
-  /** Indicates that the balance check was successful. */
-  success = 'Success',
-  /** Indicates that the balance check failed. */
-  failed = 'Failed',
-  /** Commonly indicates that the card did not have enough balance to pay the amount in the request, or that the currency of the balance on the card did not match the currency of the requested amount. */
-  notEnoughBalance = 'NotEnoughBalance',
 }

@@ -21,7 +21,6 @@
 		E741F2012E38DECD000D0F42 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E741F2002E38DEC6000D0F42 /* SceneDelegate.swift */; };
 		E745059C2FF3C380009FC440 /* ComponentModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E745059B2FF3C380009FC440 /* ComponentModuleTests.swift */; };
 		E745059D2FF3C380009FC440 /* BaseModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E745059A2FF3C380009FC440 /* BaseModuleTests.swift */; };
-		E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */; };
 		E77961D02F334E4300728F99 /* BaseAddressLookupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77961CD2F334E4300728F99 /* BaseAddressLookupTests.swift */; };
 		E77961D12F334E4300728F99 /* BaseModuleSenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77961CE2F334E4300728F99 /* BaseModuleSenderTests.swift */; };
 		E77961D22F334E4300728F99 /* MockEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77961CF2F334E4300728F99 /* MockEmitter.swift */; };
@@ -29,7 +28,6 @@
 		E77AE1202E605FCD00607717 /* EncodablePaymentComponentDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77AE11F2E605FCB00607717 /* EncodablePaymentComponentDataTests.swift */; };
 		E77D207A2CDBB31900FED3F0 /* AnalyticsParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77D20772CDBB31900FED3F0 /* AnalyticsParserTests.swift */; };
 		E77D207B2CDBB31900FED3F0 /* RootConfigurationtParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77D20792CDBB31900FED3F0 /* RootConfigurationtParserTests.swift */; };
-		E77D207C2CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77D20782CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift */; };
 		E788D7AD2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E788D7AC2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift */; };
 		E79C3AD02BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79C3ACF2BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift */; };
 		E7C0A0012FF77A5D00C09021 /* ContextModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0A0002FF77A5D00C09021 /* ContextModuleTests.swift */; };
@@ -72,14 +70,12 @@
 		E745059A2FF3C380009FC440 /* BaseModuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseModuleTests.swift; sourceTree = "<group>"; };
 		E745059B2FF3C380009FC440 /* ComponentModuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentModuleTests.swift; sourceTree = "<group>"; };
 		E757C9D727737E6700B62256 /* AdyenExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdyenExample.entitlements; path = AdyenExample/AdyenExample.entitlements; sourceTree = "<group>"; };
-		E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropInConfigurationParserTests.swift; sourceTree = "<group>"; };
 		E77961CD2F334E4300728F99 /* BaseAddressLookupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseAddressLookupTests.swift; sourceTree = "<group>"; };
 		E77961CE2F334E4300728F99 /* BaseModuleSenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseModuleSenderTests.swift; sourceTree = "<group>"; };
 		E77961CF2F334E4300728F99 /* MockEmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockEmitter.swift; sourceTree = "<group>"; };
 		E77961D52F33710B00728F99 /* DummyData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DummyData.swift; sourceTree = "<group>"; };
 		E77AE11F2E605FCB00607717 /* EncodablePaymentComponentDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncodablePaymentComponentDataTests.swift; sourceTree = "<group>"; };
 		E77D20772CDBB31900FED3F0 /* AnalyticsParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsParserTests.swift; sourceTree = "<group>"; };
-		E77D20782CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartialPaymentConfigurationParserTests.swift; sourceTree = "<group>"; };
 		E77D20792CDBB31900FED3F0 /* RootConfigurationtParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootConfigurationtParserTests.swift; sourceTree = "<group>"; };
 		E788D7AC2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ApplePayRecurringConfigurationParserTests.swift; sourceTree = "<group>"; };
 		E79C3ACF2BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThreeDSConfigurationParserTests.swift; sourceTree = "<group>"; };
@@ -201,13 +197,11 @@
 			isa = PBXGroup;
 			children = (
 				E77D20772CDBB31900FED3F0 /* AnalyticsParserTests.swift */,
-				E77D20782CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift */,
 				E77D20792CDBB31900FED3F0 /* RootConfigurationtParserTests.swift */,
 				E788D7AC2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift */,
 				945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */,
 				E79C3ACF2BE161F100FACBCA /* ThreeDSConfigurationParserTests.swift */,
 				94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */,
-				E773B1082BE3B48900638431 /* DropInConfigurationParserTests.swift */,
 			);
 			name = Parsers;
 			sourceTree = "<group>";
@@ -483,14 +477,12 @@
 				94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */,
 				E77D207A2CDBB31900FED3F0 /* AnalyticsParserTests.swift in Sources */,
 				E77D207B2CDBB31900FED3F0 /* RootConfigurationtParserTests.swift in Sources */,
-				E77D207C2CDBB31900FED3F0 /* PartialPaymentConfigurationParserTests.swift in Sources */,
 				E788D7AD2C77515800FE9BC6 /* ApplePayRecurringConfigurationParserTests.swift in Sources */,
 				E732B0CD2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift in Sources */,
 				945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */,
 				E745059C2FF3C380009FC440 /* ComponentModuleTests.swift in Sources */,
 				E745059D2FF3C380009FC440 /* BaseModuleTests.swift in Sources */,
 				E77AE1202E605FCD00607717 /* EncodablePaymentComponentDataTests.swift in Sources */,
-				E773B1092BE3B48900638431 /* DropInConfigurationParserTests.swift in Sources */,
 				E7C0A0012FF77A5D00C09021 /* ContextModuleTests.swift in Sources */,
 				9579D31941BD6DF61630E942 /* CallbackBridgeTests.swift in Sources */,
 				E7F000012026092300000001 /* CheckoutCoordinatorTests.swift in Sources */,

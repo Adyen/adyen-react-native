@@ -13,10 +13,6 @@ internal enum EventName: String, CaseIterable {
     case fail = "didFailCallback"
     case updateAddress = "didUpdateAddressCallback"
     case confirmAddress = "didConfirmAddressCallback"
-    case disableStoredPaymentMethod = "didDisableStoredPaymentMethodCallback"
-    case checkBalance = "didCheckBalanceCallback"
-    case requestOrder = "didRequestOrderCallback"
-    case cancelOrder = "didCancelOrderCallback"
     case binLookup = "didBinLookupCallback"
     case changeBinValue = "didChangeBinValueCallback"
     case completeSession = "didSessionCompleteCallback"
@@ -41,10 +37,6 @@ internal enum EventName: String, CaseIterable {
 
     static var cardEvents: [EventName] {
         [.binLookup, .changeBinValue]
-    }
-
-    static var dropInEvents: [EventName] {
-        [.requestOrder, .cancelOrder, .checkBalance, .disableStoredPaymentMethod]
     }
 
     static var applePayEvents: [EventName] {

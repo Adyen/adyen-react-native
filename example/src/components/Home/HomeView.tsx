@@ -27,14 +27,7 @@ const TAB_CONTENT: Record<TabName, PageType[]> = {
     },
     { title: 'Sessions Components', route: 'SessionsComponentsCheckout' },
   ],
-  'Advanced': [
-    { title: 'Advanced Checkout', route: 'AdvancedCheckout' },
-    {
-      title: 'Partial Payment',
-      route: 'PartialPaymentCheckout',
-      disabled: true,
-    },
-  ],
+  'Advanced': [{ title: 'Advanced Checkout', route: 'AdvancedCheckout' }],
   'API-Only': [
     { title: 'Custom Card (CSE)', route: 'CustomCard' },
     { title: 'Stored Cards', route: 'StoredCards' },

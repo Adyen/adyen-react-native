@@ -51,4 +51,45 @@ describe('AdyenDropIn', () => {
     });
     expect(mockStartDropIn).not.toHaveBeenCalled();
   });
+
+  test('rejects an invalidated checkout without calling native code', async () => {
+    mockCheckoutHandleFor.mockReturnValueOnce({
+      checkoutId: 'stale-checkout-id',
+      isActive: () => false,
+    });
+
+    await expect(AdyenDropIn.start({} as never)).rejects.toEqual({
+      code: 'staleCheckout',
+      phase: 'presentation',
+    });
+    expect(mockStartDropIn).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['unsupportedCapability', { code: 'unsupportedCapability' }],
+    ['operationBusy', { code: 'operationBusy', phase: 'presentation' }],
+  ])(
+    'propagates %s native rejection through the start promise',
+    async (_, error) => {
+      mockCheckoutHandleFor.mockReturnValueOnce({
+        checkoutId: 'private-checkout-id',
+        isActive: () => true,
+      });
+      mockStartDropIn.mockRejectedValueOnce(error);
+
+      await expect(AdyenDropIn.start({} as never)).rejects.toEqual({
+        code: error.code,
+        phase: 'presentation',
+      });
+    }
+  );
+
+  test('does not expose legacy Drop-in commands', () => {
+    expect(AdyenDropIn).toEqual(
+      expect.objectContaining({
+        start: expect.any(Function),
+      })
+    );
+    expect(Object.keys(AdyenDropIn)).toEqual(['start']);
+  });
 });

@@ -253,29 +253,6 @@ export interface SubmitModel {
   extra?: any;
 }
 
-export interface Balance {
-  /**
-   * The balance for the payment method.
-   */
-  balance?: PaymentAmount;
-
-  /**
-   * The maximum spendable balance for a single transaction. Applicable to some gift cards.
-   */
-  transactionLimit?: PaymentAmount;
-}
-
-export interface Order {
-  /** The encrypted order data. */
-  orderData: string;
-
-  /** The pspReference that belongs to the order. */
-  pspReference: string;
-
-  /** The remaining amount to complete the order. */
-  remainingAmount?: PaymentAmount;
-}
-
 /**
  * Represents the response structure specifically for session flow.
  */

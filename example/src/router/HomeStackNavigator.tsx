@@ -12,7 +12,6 @@ export type HomeStackParamList = {
   SessionsDropInCheckout: undefined;
   SessionsComponentsCheckout: undefined;
   AdvancedCheckout: undefined;
-  PartialPaymentCheckout: undefined;
   CustomCard: undefined;
   StoredCards: undefined;
   ValidationRoutes: undefined;
@@ -51,11 +50,6 @@ export const HomeStackNavigator = () => {
         name="AdvancedCheckout"
         component={Screens.AdvancedCheckout}
         options={{ title: 'Advanced Checkout' }}
-      />
-      <HomeStack.Screen
-        name="PartialPaymentCheckout"
-        component={Screens.PartialPaymentCheckout}
-        options={{ title: 'Partial Payment' }}
       />
       <HomeStack.Screen
         name="CustomCard"

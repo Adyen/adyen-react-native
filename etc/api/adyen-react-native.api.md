@@ -258,19 +258,6 @@ export interface ApplePaySummaryItem {
     type?: 'pending' | 'final';
 }
 
-// @public (undocumented)
-export interface Balance {
-    balance?: PaymentAmount;
-    transactionLimit?: PaymentAmount;
-}
-
-// @public (undocumented)
-export enum BalanceResultCode {
-    failed = "Failed",
-    notEnoughBalance = "NotEnoughBalance",
-    success = "Success"
-}
-
 // @public
 export interface BaseConfiguration extends EnvironmentConfiguration {
     analytics?: AnalyticsOptions;
@@ -388,20 +375,9 @@ export interface Configuration extends BaseConfiguration {
     applepay?: ApplePayConfiguration;
     card?: CardsConfiguration;
     countryCode?: string;
-    dropin?: DropInConfiguration;
     googlepay?: GooglePayConfiguration;
-    partialPayment?: PartialPaymentConfiguration;
     returnUrl: string;
     threeDS2?: ThreeDSConfiguration;
-}
-
-// @public (undocumented)
-export interface DropInConfiguration {
-    onDisableStoredPaymentMethod?(storedPaymentMethod: StoredPaymentMethod, resolve: () => void, reject: () => void): void;
-    showPreselectedStoredPaymentMethod?: boolean;
-    showRemovePaymentMethodButton?: boolean;
-    skipListWhenSinglePaymentMethod?: boolean;
-    title?: string;
 }
 
 // @public
@@ -443,12 +419,8 @@ enum Event_2 {
     onBeforeSubmit = "didBeforeSubmitCallback",
     onBinLookup = "didBinLookupCallback",
     onBinValue = "didChangeBinValueCallback",
-    onCancelOrder = "didCancelOrderCallback",
-    onCheckBalance = "didCheckBalanceCallback",
     onComplete = "didCompleteCallback",
-    onDisableStoredPaymentMethod = "didDisableStoredPaymentMethodCallback",
     onError = "didFailCallback",
-    onRequestOrder = "didRequestOrderCallback",
     onSessionComplete = "didSessionCompleteCallback",
     onSessionError = "didSessionErrorCallback",
     onSubmit = "didSubmitCallback"
@@ -517,29 +489,6 @@ export type InstallmentPlan = 'regular' | 'revolving';
 
 // @public (undocumented)
 export const NATIVE_COMPONENTS: string[];
-
-// @public (undocumented)
-export interface Order {
-    orderData: string;
-    pspReference: string;
-    remainingAmount?: PaymentAmount;
-}
-
-// @public (undocumented)
-export interface PartialPaymentComponent extends AdvancedPayment {
-    // (undocumented)
-    provideBalance(success: boolean, balance: Balance | undefined, error: Error | undefined): void;
-    // (undocumented)
-    provideOrder(success: boolean, order: Order | undefined, error: Error | undefined): void;
-}
-
-// @public (undocumented)
-export interface PartialPaymentConfiguration {
-    onBalanceCheck(paymentData: PaymentMethodData_2, resolve: (balance: Balance) => void, reject: (error: Error) => void): void;
-    onOrderCancel(order: Order, shouldUpdatePaymentMethods: boolean, component: PartialPaymentComponent): void;
-    onOrderRequest(resolve: (order: Order) => void, reject: (error: Error) => void): void;
-    pinRequired?: boolean;
-}
 
 // @public (undocumented)
 export interface PaymentAction {
