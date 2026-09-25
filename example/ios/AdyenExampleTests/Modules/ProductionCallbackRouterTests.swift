@@ -25,7 +25,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         let checkoutID = try await coordinator.setup()
 
         let proceed = Task { await adapter.routeSessionBeforeSubmit(["shopperEmail": "shopper@example.test"]) }
-        await waitForPendingResponse(adapter)
+        try await waitForPendingResponse(adapter)
         let request = try await nextRequest(from: &events)
         XCTAssertEqual(request["kind"] as? String, "sessionBeforeSubmit")
         XCTAssertEqual(request["checkoutId"] as? String, checkoutID)
@@ -37,9 +37,14 @@ final class ProductionCallbackRouterTests: XCTestCase {
         let proceedPayload = await proceed.value
         XCTAssertEqual(proceedPayload?["type"] as? String, "proceed")
 
+        adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised", "sessionId": "session"])
+        try await waitForTerminalCleanup(coordinator)
+
+        let abortCheckoutID = try await coordinator.setup()
         let abort = Task { await adapter.routeSessionBeforeSubmit([:]) }
-        await waitForPendingResponse(adapter)
+        try await waitForPendingResponse(adapter)
         let abortRequest = try await nextRequest(from: &events)
+        XCTAssertEqual(abortRequest["checkoutId"] as? String, abortCheckoutID)
         var staleTuple = abortRequest.mutableCopy() as! NSMutableDictionary
         staleTuple["operationId"] = "stale-operation"
         XCTAssertEqual(respond(adapter, to: staleTuple, payload: ["type": "abort"]), "staleRequest")
@@ -47,11 +52,13 @@ final class ProductionCallbackRouterTests: XCTestCase {
         let abortPayload = await abort.value
         XCTAssertEqual(abortPayload?["type"] as? String, "abort")
 
-        adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised", "sessionId": "session"])
-        adapter.routeTerminal(kind: "error", payload: ["message": "must not emit"])
-        await settleTasks()
+        adapter.routeTerminal(kind: "error", payload: ["message": "declined"])
+        try await waitForTerminalCleanup(coordinator)
 
-        XCTAssertEqual(events.compactMap { $0["kind"] as? String }.filter { $0 == "completion" || $0 == "error" }, ["completion"])
+        XCTAssertEqual(
+            events.compactMap { $0["kind"] as? String }.filter { $0 == "completion" || $0 == "error" },
+            ["completion", "error"]
+        )
         XCTAssertNil(coordinator.checkoutID)
     }
 
@@ -66,7 +73,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         let checkoutID = try await coordinator.setup()
 
         let action = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
-        await waitForPendingResponse(adapter)
+        try await waitForPendingResponse(adapter)
         let request = try await nextRequest(from: &events)
         XCTAssertEqual(request["kind"] as? String, "advancedSubmit")
         XCTAssertEqual(coordinator.operationID, request["operationId"] as? String)
@@ -99,7 +106,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         let operationID = try XCTUnwrap(coordinator.operationID)
 
         let details = Task { await adapter.routeAdvancedAdditionalDetails(["details": [:]]) }
-        await waitForPendingResponse(adapter)
+        try await waitForPendingResponse(adapter)
         let detailsRequest = try await nextRequest(from: &events)
         XCTAssertEqual(respond(adapter, to: detailsRequest, payload: ["resultCode": "Authorised"]), nil)
         guard case .completion = await details.value else {
@@ -113,7 +120,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
 
         _ = try await coordinator.setup()
         let malformedResult = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
-        await waitForPendingResponse(adapter)
+        try await waitForPendingResponse(adapter)
         let malformedRequest = try await nextRequest(from: &events)
         var malformed = malformedRequest.mutableCopy() as! NSMutableDictionary
         malformed["payloadJson"] = "{"
@@ -126,7 +133,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
 
         let retryCheckoutID = try await coordinator.setup()
         let retry = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
-        await waitForPendingResponse(adapter)
+        try await waitForPendingResponse(adapter)
         let retryRequest = try await nextRequest(from: &events)
         var stale = retryRequest.mutableCopy() as! NSMutableDictionary
         stale["requestId"] = "stale-request"
@@ -147,6 +154,8 @@ final class ProductionCallbackRouterTests: XCTestCase {
         XCTAssertThrowsError(try coordinator.assertDropInAvailability(checkoutID: retryCheckoutID)) { error in
             XCTAssertEqual(error as? CoordinatorError, .operationBusy)
         }
+        adapter.routeTerminal(kind: "error", payload: ["message": "finished"])
+        try await waitForTerminalCleanup(coordinator)
     }
 
     func test_applePayRoutersSettleEachGeneratedKindOnceWithFallbackAndStaleCoverage() async throws {
@@ -170,7 +179,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
 
         for (kind, router, payload) in routers {
             let task = Task { await router() }
-            await waitForPendingResponse(adapter)
+            try await waitForPendingResponse(adapter)
             let request = try await nextRequest(from: &events)
             XCTAssertEqual(request["kind"] as? String, kind)
             XCTAssertEqual(respond(adapter, to: request, payload: payload), nil)
@@ -179,12 +188,14 @@ final class ProductionCallbackRouterTests: XCTestCase {
         }
 
         let fallback = Task { await adapter.routeApplePayCouponCode("FALLBACK", summaryItems: summary) }
-        await waitForPendingResponse(adapter)
+        try await waitForPendingResponse(adapter)
         let fallbackRequest = try await nextRequest(from: &events)
         var invalidJSON = fallbackRequest.mutableCopy() as! NSMutableDictionary
         invalidJSON["payloadJson"] = "{"
         XCTAssertEqual(respond(adapter, to: invalidJSON, payload: nil), "staleRequest")
         _ = await fallback.value
+        adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised"])
+        try await waitForTerminalCleanup(coordinator)
     }
 
     private func nextRequest(from events: inout [NSDictionary]) async throws -> NSDictionary {
@@ -223,10 +234,24 @@ final class ProductionCallbackRouterTests: XCTestCase {
         }
     }
 
-    private func waitForPendingResponse(_ adapter: CheckoutTurboModuleAdapter) async {
-        while adapter.pendingResponseCount == 0 {
-            await Task.yield()
+    private func waitForPendingResponse(_ adapter: CheckoutTurboModuleAdapter) async throws {
+        for _ in 0 ..< 100 {
+            if adapter.pendingResponseCount > 0 {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(10))
         }
+        throw TestError.timeout
+    }
+
+    private func waitForTerminalCleanup(_ coordinator: CheckoutCoordinator) async throws {
+        for _ in 0 ..< 100 {
+            if coordinator.checkoutID == nil {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        throw TestError.timeout
     }
 }
 

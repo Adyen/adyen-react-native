@@ -84,6 +84,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     }
 
     deinit {
+        let coordinator = coordinator
         let lifecycleOwnerID = lifecycleOwnerID
         Task { @MainActor in
             await coordinator.hostDidDisappear(ownerID: lifecycleOwnerID)
