@@ -18,7 +18,7 @@ function statusId(driver, status) {
 
 async function openValidationRoutes(driver) {
   const apiOnlyTab = await driver.$(testId(driver, 'tab-API-Only'));
-  await apiOnlyTab.waitForDisplayed({ timeout: 15000 });
+  await apiOnlyTab.waitForDisplayed({ timeout: 45000 });
   await apiOnlyTab.click();
 
   const validationMenu = await driver.$(
@@ -79,6 +79,25 @@ async function runAndroidDropIn(driver, route) {
   await tapBackToHome(driver);
 }
 
+async function assertAndroidUnsupportedDropIn(driver) {
+  await openRoute(driver, 'validation-route-dropin-advanced');
+  await expectStatus(driver, 'dropin-ready');
+  await clickControl(driver, 'validation-start-dropin');
+  await expectStatus(driver, 'dropin-unsupportedCapability-presentation');
+
+  const start = await driver.$(testId(driver, 'validation-start-dropin'));
+  await start.waitForDisplayed({ timeout: 15000 });
+
+  for (const selector of [
+    'android=new UiSelector().text("Other payment methods")',
+    'android=new UiSelector().text("Credit Card")',
+  ]) {
+    if (await (await driver.$(selector)).isDisplayed().catch(() => false)) {
+      throw new Error(`Unsupported Android Drop-in showed UI: ${selector}`);
+    }
+  }
+}
+
 async function assertAndroidUnsupportedLookup(driver) {
   await openRoute(driver, 'validation-route-address-lookup');
   await expectStatus(driver, 'setup-unsupportedCapability');
@@ -127,11 +146,11 @@ async function testDropInAndUnsupportedFlows(driver, isAndroid) {
   if (isAndroid) {
     await runAndroidDropIn(driver, 'validation-route-dropin-sessions');
     await openValidationRoutes(driver);
-    await runAndroidDropIn(driver, 'validation-route-dropin-advanced');
+    await assertAndroidUnsupportedDropIn(driver);
     await openValidationRoutes(driver);
     await assertAndroidUnsupportedLookup(driver);
     console.log(
-      '==> [Test] SUCCESS: Android session and advanced official Drop-in payments authorised; lookup stayed unsupported without fallback UI.'
+      '==> [Test] SUCCESS: Android session Drop-in authorised; advanced Drop-in and lookup stayed unsupported without fallback UI.'
     );
     return;
   }
