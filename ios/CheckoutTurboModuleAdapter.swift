@@ -55,6 +55,10 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     private let couponCodeBridge = CallbackBridge<PKPaymentRequestCouponCodeUpdate>()
     private let addressLookupBridge = CallbackBridge<[AddressLookupResult]>()
     private let addressSelectionBridge = CallbackBridge<AddressSelectionResponse>()
+    /// Terminal SDK callbacks can arrive back-to-back before coordinator cleanup dismisses
+    /// owned UI. Retain the checkout identity rather than a cleanup-reset boolean so a stale
+    /// cleanup task cannot suppress terminal delivery for a replacement checkout.
+    private var terminalDeliveryCheckoutID: String?
     private var currentSummaryItems: [PKPaymentSummaryItem] = []
     private var applePayShippingMethods = ApplePayShippingMethodsState()
 
@@ -474,8 +478,13 @@ extension CheckoutTurboModuleAdapter {
     }
 
     func routeTerminal(kind: String, payload: [String: Any]) {
-        guard ensureOperationForTerminalCallback() != nil else { return }
-        emitTerminal(kind: kind, payload: payload)
+        guard let checkoutID = coordinator.checkoutID,
+              ensureOperationForTerminalCallback() != nil,
+              claimTerminalDelivery(for: checkoutID)
+        else {
+            return
+        }
+        emitTerminal(checkoutID: checkoutID, kind: kind, payload: payload)
     }
 
     func createRequest(
@@ -506,13 +515,18 @@ extension CheckoutTurboModuleAdapter {
         }
     }
 
-    func emitTerminal(kind: String, payload: [String: Any]) {
-        guard let checkoutID = coordinator.checkoutID else { return }
+    func emitTerminal(checkoutID: String, kind: String, payload: [String: Any]) {
         let operationID = coordinator.operationID
         emit(checkoutID: checkoutID, operationID: operationID, requestID: nil, kind: kind, payload: payload)
         Task { @MainActor in
             try? await coordinator.invalidate(checkoutID: checkoutID)
         }
+    }
+
+    func claimTerminalDelivery(for checkoutID: String) -> Bool {
+        guard terminalDeliveryCheckoutID != checkoutID else { return false }
+        terminalDeliveryCheckoutID = checkoutID
+        return true
     }
 
     /// The first embedded SDK callback acquires an anonymous checkout-level operation. It never
@@ -533,6 +547,12 @@ extension CheckoutTurboModuleAdapter {
             return operationID
         }
         return acquireInitialEmbeddedOperationForCallback()
+    }
+
+    /// Apple Pay delegates are one callback family. The first callback acquires the anonymous
+    /// embedded operation, and shipping/contact/method/coupon callbacks retain that owner.
+    func acquireApplePayOperationForCallback() -> String? {
+        coordinator.operationID ?? acquireInitialEmbeddedOperationForCallback()
     }
 
     /// CallbackBridge settles a superseded continuation immediately. Retire its matching broker
@@ -750,7 +770,9 @@ extension CheckoutTurboModuleAdapter {
     }
 
     func routeApplePayAuthorization(_ payload: [String: Any]) async -> PKPaymentAuthorizationResult {
-        guard let operationID = coordinator.operationID else { return .init(status: .failure, errors: nil) }
+        guard let operationID = acquireApplePayOperationForCallback() else {
+            return .init(status: .failure, errors: nil)
+        }
         return await authorizationBridge.suspend(superseding: .init(status: .failure, errors: nil)) { token in
             createRequest(
                 operationID: operationID,
@@ -795,8 +817,10 @@ extension CheckoutTurboModuleAdapter {
         summaryItems: [PKPaymentSummaryItem]
     ) async -> PKPaymentRequestShippingMethodUpdate {
         currentSummaryItems = summaryItems
+        guard let operationID = acquireApplePayOperationForCallback() else {
+            return .init(paymentSummaryItems: summaryItems)
+        }
         return await shippingMethodBridge.suspend(superseding: .init(paymentSummaryItems: summaryItems)) { token in
-            guard let operationID = coordinator.operationID else { return }
             self.createRequest(
                 operationID: operationID,
                 kind: .applePayShippingMethod,
@@ -820,8 +844,10 @@ extension CheckoutTurboModuleAdapter {
         summaryItems: [PKPaymentSummaryItem]
     ) async -> PKPaymentRequestCouponCodeUpdate {
         currentSummaryItems = summaryItems
+        guard let operationID = acquireApplePayOperationForCallback() else {
+            return .init(paymentSummaryItems: summaryItems)
+        }
         return await couponCodeBridge.suspend(superseding: .init(paymentSummaryItems: summaryItems)) { token in
-            guard let operationID = coordinator.operationID else { return }
             self.createRequest(
                 operationID: operationID,
                 kind: .applePayCouponCode,
@@ -849,8 +875,10 @@ extension CheckoutTurboModuleAdapter {
         payload: [String: Any],
         resume: @escaping (CallbackBridgeToken<PKPaymentRequestShippingContactUpdate>, [String: Any]?) -> Void
     ) async -> PKPaymentRequestShippingContactUpdate {
-        await bridge.suspend(superseding: .init(paymentSummaryItems: currentSummaryItems)) { token in
-            guard let operationID = coordinator.operationID else { return }
+        guard let operationID = acquireApplePayOperationForCallback() else {
+            return .init(paymentSummaryItems: currentSummaryItems)
+        }
+        return await bridge.suspend(superseding: .init(paymentSummaryItems: currentSummaryItems)) { token in
             createRequest(operationID: operationID, kind: kind, eventKind: eventKind, payload: payload) { response in
                 resume(token, response)
             }
@@ -951,7 +979,7 @@ private extension CheckoutTurboModuleAdapter {
 extension CheckoutTurboModuleAdapter: PresentationDelegate {
     func present(component: PresentableComponent) {
         guard let presenter = coordinator.topPresenterProvider() else {
-            emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
+            routeTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             return
         }
         let viewController = UINavigationController(rootViewController: component.viewController)

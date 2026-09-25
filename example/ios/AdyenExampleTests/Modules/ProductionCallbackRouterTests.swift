@@ -45,7 +45,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         try await waitForPendingResponse(adapter)
         let abortRequest = try await nextRequest(from: &events)
         XCTAssertEqual(abortRequest["checkoutId"] as? String, abortCheckoutID)
-        var staleTuple = abortRequest.mutableCopy() as! NSMutableDictionary
+        var staleTuple = try XCTUnwrap(abortRequest.mutableCopy() as? NSMutableDictionary)
         staleTuple["operationId"] = "stale-operation"
         XCTAssertEqual(respond(adapter, to: staleTuple, payload: ["type": "abort"]), "staleRequest")
         XCTAssertEqual(respond(adapter, to: abortRequest, payload: ["type": "abort"]), nil)
@@ -122,7 +122,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         let malformedResult = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
         try await waitForPendingResponse(adapter)
         let malformedRequest = try await nextRequest(from: &events)
-        var malformed = malformedRequest.mutableCopy() as! NSMutableDictionary
+        var malformed = try XCTUnwrap(malformedRequest.mutableCopy() as? NSMutableDictionary)
         malformed["payloadJson"] = "{"
         XCTAssertEqual(respond(adapter, to: malformed, payload: nil), "staleRequest")
         guard case .completion = await malformedResult.value else {
@@ -135,7 +135,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         let retry = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
         try await waitForPendingResponse(adapter)
         let retryRequest = try await nextRequest(from: &events)
-        var stale = retryRequest.mutableCopy() as! NSMutableDictionary
+        var stale = try XCTUnwrap(retryRequest.mutableCopy() as? NSMutableDictionary)
         stale["requestId"] = "stale-request"
         XCTAssertEqual(respond(adapter, to: stale, payload: ["type": "retry"]), "staleRequest")
         XCTAssertEqual(respond(adapter, to: retryRequest, payload: ["type": "retry"]), nil)
@@ -146,7 +146,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         XCTAssertTrue(coordinator.isActive(checkoutID: retryCheckoutID))
 
         XCTAssertNoThrow(try adapter.routeHeadlessSubmit { FixturePresenter() })
-        coordinator.completeOperation(try XCTUnwrap(coordinator.operationID))
+        try coordinator.completeOperation(XCTUnwrap(coordinator.operationID))
         _ = coordinator.acquireInitialEmbeddedOperation(checkoutID: retryCheckoutID)
         XCTAssertThrowsError(try adapter.routeHeadlessSubmit { FixturePresenter() }) { error in
             XCTAssertEqual(error as? CoordinatorError, .operationBusy)
@@ -158,6 +158,35 @@ final class ProductionCallbackRouterTests: XCTestCase {
         try await waitForTerminalCleanup(coordinator)
     }
 
+    func test_advancedCompletedResponseRetainsOwnershipUntilTerminalCleanup() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.coordinator()
+        let adapter = CheckoutTurboModuleAdapter(coordinator: coordinator) { checkoutID in
+            try coordinator.assertDropInAvailability(checkoutID: checkoutID)
+        }
+        var events: [NSDictionary] = []
+        adapter.setEventSink { events.append($0) }
+        _ = try await coordinator.setup()
+
+        let completed = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
+        try await waitForPendingResponse(adapter)
+        let request = try await nextRequest(from: &events)
+        let operationID = try XCTUnwrap(coordinator.operationID)
+        XCTAssertEqual(
+            respond(adapter, to: request, payload: ["type": "completed", "resultCode": "Authorised"]),
+            nil
+        )
+        guard case let .completion(resultCode) = await completed.value else {
+            return XCTFail("A valid completed response must reach the native adapter")
+        }
+        XCTAssertEqual(resultCode, "Authorised")
+        XCTAssertEqual(coordinator.operationID, operationID)
+
+        adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised"])
+        try await waitForTerminalCleanup(coordinator)
+        XCTAssertNil(coordinator.operationID)
+    }
+
     func test_applePayRoutersSettleEachGeneratedKindOnceWithFallbackAndStaleCoverage() async throws {
         let fixture = Fixture()
         let coordinator = fixture.coordinator()
@@ -166,8 +195,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
         }
         var events: [NSDictionary] = []
         adapter.setEventSink { events.append($0) }
-        let checkoutID = try await coordinator.setup()
-        _ = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID)
+        _ = try await coordinator.setup()
         let summary = [PKPaymentSummaryItem(label: "Total", amount: 1)]
 
         let routers: [(String, () async -> Void, [String: Any])] = [
@@ -177,20 +205,23 @@ final class ProductionCallbackRouterTests: XCTestCase {
             ("applePayCouponCode", { _ = await adapter.routeApplePayCouponCode("SAVE", summaryItems: summary) }, [:])
         ]
 
+        var operationIDs: Set<String> = []
         for (kind, router, payload) in routers {
             let task = Task { await router() }
             try await waitForPendingResponse(adapter)
             let request = try await nextRequest(from: &events)
             XCTAssertEqual(request["kind"] as? String, kind)
+            try operationIDs.insert(XCTUnwrap(request["operationId"] as? String))
             XCTAssertEqual(respond(adapter, to: request, payload: payload), nil)
             await task.value
             XCTAssertEqual(respond(adapter, to: request, payload: payload), "staleRequest")
         }
+        XCTAssertEqual(operationIDs.count, 1)
 
         let fallback = Task { await adapter.routeApplePayCouponCode("FALLBACK", summaryItems: summary) }
         try await waitForPendingResponse(adapter)
         let fallbackRequest = try await nextRequest(from: &events)
-        var invalidJSON = fallbackRequest.mutableCopy() as! NSMutableDictionary
+        var invalidJSON = try XCTUnwrap(fallbackRequest.mutableCopy() as? NSMutableDictionary)
         invalidJSON["payloadJson"] = "{"
         XCTAssertEqual(respond(adapter, to: invalidJSON, payload: nil), "staleRequest")
         _ = await fallback.value
@@ -198,12 +229,53 @@ final class ProductionCallbackRouterTests: XCTestCase {
         try await waitForTerminalCleanup(coordinator)
     }
 
+    func test_terminalDeliveryIsClaimedBeforeAsynchronousCleanupInEitherOrder() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.coordinator()
+        let adapter = CheckoutTurboModuleAdapter(coordinator: coordinator) { checkoutID in
+            try coordinator.assertDropInAvailability(checkoutID: checkoutID)
+        }
+        var events: [NSDictionary] = []
+        adapter.setEventSink { events.append($0) }
+
+        _ = try await coordinator.setup()
+        adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised"])
+        adapter.routeTerminal(kind: "error", payload: ["message": "late failure"])
+        XCTAssertEqual(events.compactMap { $0["kind"] as? String }, ["completion"])
+        try await waitForTerminalCleanup(coordinator)
+
+        _ = try await coordinator.setup()
+        adapter.routeTerminal(kind: "error", payload: ["message": "declined"])
+        adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised"])
+        XCTAssertEqual(events.compactMap { $0["kind"] as? String }, ["completion", "error"])
+        try await waitForTerminalCleanup(coordinator)
+    }
+
+    func test_applePayRoutersReturnApprovedDefaultsWhenNoOperationCanBeAcquired() async {
+        let fixture = Fixture()
+        let coordinator = fixture.coordinator()
+        let adapter = CheckoutTurboModuleAdapter(coordinator: coordinator) { checkoutID in
+            try coordinator.assertDropInAvailability(checkoutID: checkoutID)
+        }
+        let summary = [PKPaymentSummaryItem(label: "Total", amount: 1)]
+
+        let authorization = await adapter.routeApplePayAuthorization([:])
+        let contact = await adapter.routeApplePayShippingContact([:], summaryItems: summary)
+        let method = await adapter.routeApplePayShippingMethod([:], summaryItems: summary)
+        let coupon = await adapter.routeApplePayCouponCode("SAVE", summaryItems: summary)
+
+        XCTAssertEqual(authorization.status, .failure)
+        XCTAssertEqual(contact.paymentSummaryItems.count, summary.count)
+        XCTAssertEqual(method.paymentSummaryItems.count, summary.count)
+        XCTAssertEqual(coupon.paymentSummaryItems.count, summary.count)
+        XCTAssertEqual(adapter.pendingResponseCount, 0)
+    }
+
     private func nextRequest(from events: inout [NSDictionary]) async throws -> NSDictionary {
-        for _ in 0 ..< 100 {
+        for _ in 0..<100 {
             if let event = events.last,
                let requestID = event["requestId"] as? String,
-               observedRequestIDs.insert(requestID).inserted
-            {
+               observedRequestIDs.insert(requestID).inserted {
                 return event
             }
             try? await Task.sleep(for: .milliseconds(10))
@@ -229,13 +301,13 @@ final class ProductionCallbackRouterTests: XCTestCase {
     }
 
     private func settleTasks() async {
-        for _ in 0 ..< 10 {
+        for _ in 0..<10 {
             await Task.yield()
         }
     }
 
     private func waitForPendingResponse(_ adapter: CheckoutTurboModuleAdapter) async throws {
-        for _ in 0 ..< 100 {
+        for _ in 0..<100 {
             if adapter.pendingResponseCount > 0 {
                 return
             }
@@ -245,7 +317,7 @@ final class ProductionCallbackRouterTests: XCTestCase {
     }
 
     private func waitForTerminalCleanup(_ coordinator: CheckoutCoordinator) async throws {
-        for _ in 0 ..< 100 {
+        for _ in 0..<100 {
             if coordinator.checkoutID == nil {
                 return
             }
@@ -280,18 +352,25 @@ private extension ProductionCallbackRouterTests {
 
     @MainActor
     final class FixtureFlow: CoordinatorCheckout {
-        var checkoutState: CheckoutState? { nil }
+        var checkoutState: CheckoutState? {
+            nil
+        }
+
         func dispose() {}
     }
 
     @MainActor
     final class FixtureFactory: CheckoutFactory {
-        func makeCheckout() async throws -> CoordinatorCheckout { FixtureFlow() }
+        func makeCheckout() async throws -> CoordinatorCheckout {
+            FixtureFlow()
+        }
     }
 
     @MainActor
     final class FixturePresenterFactory: PresenterFactory {
-        func makePresenter() -> CoordinatorPresenter { FixturePresenter() }
+        func makePresenter() -> CoordinatorPresenter {
+            FixturePresenter()
+        }
     }
 
     @MainActor
