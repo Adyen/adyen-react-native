@@ -6,6 +6,11 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, extname, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { FIXTURE_KOTLIN_VERSION } from './release-validation-constants.mjs';
+import {
+  kotlinRootSetupFailures,
+  unavailableTargetContradictions,
+} from './release-doc-guards.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const canonicalDocuments = [
@@ -61,15 +66,11 @@ const requiredDocumentationAssertions = [
     document: 'docs/Error codes.md',
     text: 'A known valid target that is unavailable resolves `false` from `isAvailable`.',
   },
-  {
-    document: 'docs/Compatibility.md',
-    text: 'classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")',
-  },
 ];
 
 const requiredFixtureAssertions = [
-  'kotlinVersion = "2.3.21"',
-  'classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")',
+  'configureKotlinBuild',
+  'FIXTURE_KOTLIN_VERSION',
 ];
 
 const failures = [];
@@ -100,6 +101,20 @@ for (const { document, text } of requiredDocumentationAssertions) {
   }
 }
 
+for (const [document, contents] of documentContents) {
+  for (const contradiction of unavailableTargetContradictions(contents)) {
+    failures.push(
+      `${document} incorrectly associates a known valid unavailable target with invalidTarget: ${contradiction}`
+    );
+  }
+}
+
+for (const failure of kotlinRootSetupFailures(
+  documentContents.get('docs/Compatibility.md') ?? ''
+)) {
+  failures.push(`docs/Compatibility.md ${failure}`);
+}
+
 const fixtureContents = readFileSync(
   resolve(root, 'scripts/validate-rn-fixtures.mjs'),
   'utf8'
@@ -110,6 +125,16 @@ for (const text of requiredFixtureAssertions) {
       `scripts/validate-rn-fixtures.mjs is missing required Kotlin fixture assertion: ${text}`
     );
   }
+}
+
+const kotlinConstants = readFileSync(
+  resolve(root, 'scripts/release-validation-constants.mjs'),
+  'utf8'
+);
+if (!kotlinConstants.includes(`'${FIXTURE_KOTLIN_VERSION}'`)) {
+  failures.push(
+    `scripts/release-validation-constants.mjs must define Kotlin ${FIXTURE_KOTLIN_VERSION}.`
+  );
 }
 
 for (const { term, expected } of staleTerms) {

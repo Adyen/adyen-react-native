@@ -7,6 +7,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { configureKotlinBuild } from './configure-fixture-kotlin.mjs';
+import { FIXTURE_KOTLIN_VERSION } from './release-validation-constants.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRuby = '/usr/local/adyen/bin/ruby';
@@ -53,21 +55,10 @@ function run(command, args, cwd) {
 function configureKotlinForAdyen(fixture) {
   const buildFile = join(fixture, 'android/build.gradle');
   const contents = readFileSync(buildFile, 'utf8');
-  const withCompatibleKotlin = contents.replace(
-    /kotlinVersion\s*=\s*["'][^"']+["']/,
-    'kotlinVersion = "2.3.21"'
+  writeFileSync(
+    buildFile,
+    configureKotlinBuild(contents, buildFile, FIXTURE_KOTLIN_VERSION)
   );
-  if (withCompatibleKotlin === contents) {
-    throw new Error(`Unable to set Kotlin 2.3.21 in ${buildFile}.`);
-  }
-  const pinnedPlugin = withCompatibleKotlin.replace(
-    /classpath\(["']org\.jetbrains\.kotlin:kotlin-gradle-plugin["']\)/,
-    'classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")'
-  );
-  if (pinnedPlugin === withCompatibleKotlin) {
-    throw new Error(`Unable to pin Kotlin Gradle plugin in ${buildFile}.`);
-  }
-  writeFileSync(buildFile, pinnedPlugin);
 }
 
 function configureIosMinimumForAdyen(fixture) {
