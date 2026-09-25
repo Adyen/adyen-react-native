@@ -24,9 +24,9 @@ The Android native bridge has been rewritten for Adyen Android SDK 6.0.0-alpha.1
 
 ### Kotlin Version
 
-| Before (v5) | After (v6) |
-|---|---|
-| `2.0.21` / `2.1.20` | `2.3.21` |
+| Before (v5)         | After (v6) |
+| ------------------- | ---------- |
+| `2.0.21` / `2.1.20` | `2.3.21`   |
 
 Kotlin 2.3.21 is required for v6 SDK metadata compatibility. Set in `android/gradle.properties`:
 
@@ -43,8 +43,8 @@ classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:${getExtOrDefault
 
 ### Adyen SDK Version
 
-| Before | After |
-|---|---|
+| Before   | After           |
+| -------- | --------------- |
 | `5.19.0` | `6.0.0-alpha.1` |
 
 Set in `android/dependencies.gradle`:
@@ -80,32 +80,32 @@ With `compose_bom_version = "2026.05.01"` in `dependencies.gradle`.
 
 All Adyen SDK imports have changed. The `com.adyen.checkout.components.core` and `com.adyen.checkout.sessions.core` packages are replaced by `com.adyen.checkout.core.*`.
 
-| v5 Import | v6 Import |
-|---|---|
-| `com.adyen.checkout.components.core.action.Action` | `com.adyen.checkout.core.action.data.Action` |
-| `com.adyen.checkout.components.core.ActionComponentData` | `com.adyen.checkout.core.action.data.ActionComponentData` |
-| `com.adyen.checkout.components.core.PaymentMethodsApiResponse` | `com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods` |
-| `com.adyen.checkout.components.core.PaymentMethod` | `com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethod` |
-| `com.adyen.checkout.components.core.CheckoutConfiguration` | `com.adyen.checkout.core.components.CheckoutConfiguration` |
-| `com.adyen.checkout.sessions.core.CheckoutSession` | `com.adyen.checkout.core.common.CheckoutContext` |
-| `com.adyen.checkout.sessions.core.SessionModel` | `com.adyen.checkout.core.sessions.SessionResponse` |
-| `com.adyen.checkout.sessions.core.SessionPaymentResult` | `com.adyen.checkout.core.components.SessionCheckoutResult` |
-| `com.adyen.checkout.card.CardBrand` | `com.adyen.checkout.core.common.CardBrand` |
-| `com.adyen.checkout.components.core.ComponentError` | `com.adyen.checkout.core.error.CheckoutError` |
-| `com.adyen.checkout.components.core.PaymentComponentState<*>` | `com.adyen.checkout.core.components.data.PaymentComponentData<*>` |
-| `com.adyen.checkout.dropin.DropInResult` / `SessionDropInResult` | `com.adyen.checkout.dropin.DropInResult` (unified sealed) |
-| `com.adyen.checkout.dropin.DropInCallback` | `com.adyen.checkout.dropin.DropInResultCallback` |
+| v5 Import                                                        | v6 Import                                                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `com.adyen.checkout.components.core.action.Action`               | `com.adyen.checkout.core.action.data.Action`                                 |
+| `com.adyen.checkout.components.core.ActionComponentData`         | `com.adyen.checkout.core.action.data.ActionComponentData`                    |
+| `com.adyen.checkout.components.core.PaymentMethodsApiResponse`   | `com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods` |
+| `com.adyen.checkout.components.core.PaymentMethod`               | `com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethod`  |
+| `com.adyen.checkout.components.core.CheckoutConfiguration`       | `com.adyen.checkout.core.components.CheckoutConfiguration`                   |
+| `com.adyen.checkout.sessions.core.CheckoutSession`               | `com.adyen.checkout.core.common.CheckoutContext`                             |
+| `com.adyen.checkout.sessions.core.SessionModel`                  | `com.adyen.checkout.core.sessions.SessionResponse`                           |
+| `com.adyen.checkout.sessions.core.SessionPaymentResult`          | `com.adyen.checkout.core.components.SessionCheckoutResult`                   |
+| `com.adyen.checkout.card.CardBrand`                              | `com.adyen.checkout.core.common.CardBrand`                                   |
+| `com.adyen.checkout.components.core.ComponentError`              | `com.adyen.checkout.core.error.CheckoutError`                                |
+| `com.adyen.checkout.components.core.PaymentComponentState<*>`    | `com.adyen.checkout.core.components.data.PaymentComponentData<*>`            |
+| `com.adyen.checkout.dropin.DropInResult` / `SessionDropInResult` | `com.adyen.checkout.dropin.DropInResult` (unified sealed)                    |
+| `com.adyen.checkout.dropin.DropInCallback`                       | `com.adyen.checkout.dropin.DropInResultCallback`                             |
 
 ### Validator Relocations
 
-| v5 Import | v6 Import |
-|---|---|
-| `com.adyen.checkout.card.CardNumberValidator` | `com.adyen.checkout.core.common.helper.CardNumberValidator` |
-| `com.adyen.checkout.card.CardExpiryDateValidator` | `com.adyen.checkout.core.common.helper.CardExpiryDateValidator` |
-| `com.adyen.checkout.card.CardSecurityCodeValidator` | `com.adyen.checkout.core.common.helper.CardSecurityCodeValidator` |
-| `CardNumberValidationResult` | `com.adyen.checkout.core.common.helper.CardNumberValidationResult` |
-| `CardExpiryDateValidationResult` | `com.adyen.checkout.core.common.helper.CardExpiryDateValidationResult` |
-| `CardSecurityCodeValidationResult` | `com.adyen.checkout.core.common.helper.CardSecurityCodeValidationResult` |
+| v5 Import                                           | v6 Import                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------ |
+| `com.adyen.checkout.card.CardNumberValidator`       | `com.adyen.checkout.core.common.helper.CardNumberValidator`              |
+| `com.adyen.checkout.card.CardExpiryDateValidator`   | `com.adyen.checkout.core.common.helper.CardExpiryDateValidator`          |
+| `com.adyen.checkout.card.CardSecurityCodeValidator` | `com.adyen.checkout.core.common.helper.CardSecurityCodeValidator`        |
+| `CardNumberValidationResult`                        | `com.adyen.checkout.core.common.helper.CardNumberValidationResult`       |
+| `CardExpiryDateValidationResult`                    | `com.adyen.checkout.core.common.helper.CardExpiryDateValidationResult`   |
+| `CardSecurityCodeValidationResult`                  | `com.adyen.checkout.core.common.helper.CardSecurityCodeValidationResult` |
 
 ---
 
@@ -115,26 +115,26 @@ The React Native bridge layer was refactored after the initial v5→v6 native SD
 
 ### Module Renames
 
-| v5 Module (Registered Name) | v6 Module (Registered Name) | Notes |
-|---|---|---|
-| `SetupModule` ("AdyenSetup") | `ContextModule` ("AdyenCheckout") | Unified lifecycle management + headless APIs (session setup, advanced setup, availability checks, submit) |
-| `EmbeddedComponentBusModule` ("AdyenComponentBus") | `ComponentModule` ("AdyenComponent") | View event bus — relays action/completion/retry commands to per-view `ComponentContract` consumers |
+| v5 Module (Registered Name)                        | v6 Module (Registered Name)          | Notes                                                                                                     |
+| -------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `SetupModule` ("AdyenSetup")                       | `ContextModule` ("AdyenCheckout")    | Unified lifecycle management + headless APIs (session setup, advanced setup, availability checks, submit) |
+| `EmbeddedComponentBusModule` ("AdyenComponentBus") | `ComponentModule` ("AdyenComponent") | View event bus — relays action/completion/retry commands to per-view `ComponentContract` consumers        |
 
 ### Modules Removed
 
-| v5 Module | Replacement |
-|---|---|
-| `GooglePayModule` | Google Pay availability checks via `ContextModule.isAvailable("googlepay")`; rendering via `AdyenComponentViewManager` |
-| `ApplePayModuleMock` | Removed — Android mock no longer needed; `ContextModule.isAvailable("applepay")` returns `false` |
-| `InstantModule` | Instant payment methods handled via `ContextModule` headless APIs (`requiresUserInteraction`, `submit`) + `ComponentModule` / `AdyenComponentViewManager` |
-| `SessionHelperModule` | Consolidated into `ContextModule` (`setup()` / `setupAdvanced()` methods) |
+| v5 Module             | Replacement                                                                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GooglePayModule`     | Google Pay availability checks via `ContextModule.isAvailable("googlepay")`; rendering via `AdyenComponentViewManager`                                    |
+| `ApplePayModuleMock`  | Removed — Android mock no longer needed; `ContextModule.isAvailable("applepay")` returns `false`                                                          |
+| `InstantModule`       | Instant payment methods handled via `ContextModule` headless APIs (`requiresUserInteraction`, `submit`) + `ComponentModule` / `AdyenComponentViewManager` |
+| `SessionHelperModule` | Consolidated into `ContextModule` (`setup()` / `setupAdvanced()` methods)                                                                                 |
 
 ### View Manager Renames
 
-| v5 View Manager | v6 View Manager | Notes |
-|---|---|---|
+| v5 View Manager                     | v6 View Manager                                    | Notes                                                      |
+| ----------------------------------- | -------------------------------------------------- | ---------------------------------------------------------- |
 | `CardViewManager` ("AdyenCardView") | `AdyenComponentViewManager` ("AdyenComponentView") | Generic — handles all payment method types via `type` prop |
-| `PlatformPayViewManager` | `AdyenComponentViewManager` ("AdyenComponentView") | Merged into the generic view manager |
+| `PlatformPayViewManager`            | `AdyenComponentViewManager` ("AdyenComponentView") | Merged into the generic view manager                       |
 
 ### Current Module Registration (`AdyenPaymentPackage.kt`)
 
@@ -150,21 +150,21 @@ AdyenComponentViewManager
 
 ## Removed Interfaces and Types
 
-| v5 Type | v6 Replacement | Notes |
-|---|---|---|
-| `ComponentCallback<T>` | `AdvancedCheckoutCallbacks` | Lambdas for `onSubmit`/`onAdditionalDetails`/`onComplete`/`onFailure` |
-| `SessionComponentCallback<T>` | `SessionCheckoutCallbacks` | Lambdas for `onComplete`/`onFailure` |
-| `ActionComponentCallback` | `ActionOnlyCheckoutCallbacks` | Lambdas for `onAdditionalDetails`/`onFailure` |
-| `ComponentError` | `CheckoutError` | Has `CheckoutError.ErrorCode` enum (e.g. `CANCELLED`) |
-| `PaymentComponentState<*>` | `PaymentComponentData<*>` | Used as `onSubmit` parameter |
-| `ComponentAvailableCallback` | Custom `GooglePayAvailability` | See Google Pay section |
-| `DropInCallback` / `SessionDropInCallback` | `DropInResultCallback` | Unified interface with `onDropInResult(DropInResult)` |
-| `DropInResult` / `SessionDropInResult` (v5) | `DropInResult` sealed class | `Completed(resultCode)` / `Failed(error)` / `Cancelled` |
-| `PaymentMethodsApiResponse` | `PaymentMethods` | Renamed; same serializer pattern |
-| `SessionModel` | `SessionResponse` | Constructor: `SessionResponse(id, sessionData)` |
-| `CheckoutSession` | `CheckoutContext.Sessions` | Created via `Checkout.setup()` |
-| `CheckoutSessionProvider` | `Checkout.setup()` | Static factory returning `Checkout.Result<CheckoutContext>` |
-| `CheckoutSessionResult` | `Checkout.Result<T>` | Sealed: `Success(checkoutContext)` / `Error(error)` |
+| v5 Type                                     | v6 Replacement                 | Notes                                                                 |
+| ------------------------------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `ComponentCallback<T>`                      | `AdvancedCheckoutCallbacks`    | Lambdas for `onSubmit`/`onAdditionalDetails`/`onComplete`/`onFailure` |
+| `SessionComponentCallback<T>`               | `SessionCheckoutCallbacks`     | Lambdas for `onComplete`/`onFailure`                                  |
+| `ActionComponentCallback`                   | `ActionOnlyCheckoutCallbacks`  | Lambdas for `onAdditionalDetails`/`onFailure`                         |
+| `ComponentError`                            | `CheckoutError`                | Has `CheckoutError.ErrorCode` enum (e.g. `CANCELLED`)                 |
+| `PaymentComponentState<*>`                  | `PaymentComponentData<*>`      | Used as `onSubmit` parameter                                          |
+| `ComponentAvailableCallback`                | Custom `GooglePayAvailability` | See Google Pay section                                                |
+| `DropInCallback` / `SessionDropInCallback`  | `DropInResultCallback`         | Unified interface with `onDropInResult(DropInResult)`                 |
+| `DropInResult` / `SessionDropInResult` (v5) | `DropInResult` sealed class    | `Completed(resultCode)` / `Failed(error)` / `Cancelled`               |
+| `PaymentMethodsApiResponse`                 | `PaymentMethods`               | Renamed; same serializer pattern                                      |
+| `SessionModel`                              | `SessionResponse`              | Constructor: `SessionResponse(id, sessionData)`                       |
+| `CheckoutSession`                           | `CheckoutContext.Sessions`     | Created via `Checkout.setup()`                                        |
+| `CheckoutSessionProvider`                   | `Checkout.setup()`             | Static factory returning `Checkout.Result<CheckoutContext>`           |
+| `CheckoutSessionResult`                     | `Checkout.Result<T>`           | Sealed: `Success(checkoutContext)` / `Error(error)`                   |
 
 ---
 
@@ -419,6 +419,7 @@ class AdvancedCheckoutService : DropInService() {
 ```
 
 Key differences:
+
 - `onSubmit` and `onAdditionalDetails` are now `suspend` functions that **return** typed results.
 - Uses `suspendCancellableCoroutine` with `CancellableContinuation` to bridge asynchronous JS responses.
 - `sendResult(JSONObject)` / `sendAction(Action)` replaced by returning `SubmitResult.Action(action)`, `SubmitResult.Completion(resultCode)`, or `SubmitResult.Retry(errorMessage)`.
@@ -437,7 +438,7 @@ val dropInLauncher = DropIn.startPayment(activity, resultLauncher)
 // Advanced launch
 DropIn.startPayment(activity, paymentMethods, configuration, AdvancedCheckoutService::class.java)
 
-// Session launch  
+// Session launch
 DropIn.startPayment(activity, session, SessionCheckoutService::class.java)
 ```
 
@@ -463,6 +464,7 @@ DropIn.start(dropInLauncher, sessionContext, SessionCheckoutService::class.java)
 ```
 
 Key differences:
+
 - `DropIn.registerForResult(activity, callback)` returns a `DropInLauncher` (unified, no separate session/advanced launchers).
 - `DropIn.start(launcher, checkoutContext, serviceClass)` replaces `DropIn.startPayment()`.
 - Advanced flow requires `Checkout.setup(paymentMethods, configuration)` first to create a `CheckoutContext`.
@@ -566,6 +568,7 @@ class InstantFragment : BottomSheetDialogFragment() {
 ```
 
 Key differences:
+
 - No `PROVIDER.get()` -- use `CheckoutController(target, context, callbacks, coroutineScope)`.
 - No XML `AdyenComponentView` -- use `ComposeView` + `CheckoutPaymentFlow(controller)`.
 - Single `InstantFragment` replaces all per-method fragment classes.
@@ -615,6 +618,7 @@ internal object CheckoutControllerRegistry {
 ```
 
 Key differences:
+
 - `CheckoutControllerRegistry` replaces the single-reference model with a `WeakHashMap`-based registry.
 - All active controllers receive the intent; only the one with a pending redirect action processes it.
 - Component managers (`GooglePayComponentManager`, `InstantComponentManager`, `CardComponentManager`) register/unregister controllers on create/dispose.
@@ -674,6 +678,7 @@ when (val result = Checkout.setup(sessionResponse, configuration)) {
 ```
 
 Key differences:
+
 - `Checkout.setup(sessionResponse, configuration)` replaces `CheckoutSessionProvider.createSession()`.
 - Returns `Checkout.Result<CheckoutContext.Sessions>` (sealed class, not callback).
 - `SessionResponse(id, sessionData)` replaces `SessionModel`.
@@ -683,49 +688,49 @@ Key differences:
 
 ## Files Added
 
-| File | Purpose |
-|---|---|
-| `CheckoutControllerRegistry.kt` | Tracks active `CheckoutController` instances in a `WeakHashMap` for redirect routing. Dispatches `handleReturn(intent)` to all registered controllers. |
-| `ComponentManager.kt` | Unified manager (in `component/base/`) that builds and drives the v6 `CheckoutController` for all payment methods (card, Google Pay, instant). Manages suspend continuations for the advanced flow. Registers/unregisters with `CheckoutControllerRegistry`. Replaces the former per-method managers (`CardComponentManager`, `GooglePayComponentManager`, `InstantComponentManager`). |
-| `GooglePayAvailability.kt` | Custom Google Pay availability check using Google Play Services + Wallet APIs. Required because v6 removed the public `GooglePayComponent.PROVIDER.isAvailable`. |
-| `ContextModule.kt` | Replaces `SetupModule`. Unified lifecycle + headless API module registered as `"AdyenCheckout"`. Handles session setup, advanced setup, availability checks, `requiresUserInteraction`, and `submit`. |
-| `ComponentModule.kt` | Merged from `EmbeddedComponentBusModule`. View event bus module registered as `"AdyenComponent"`. Relays action/completion/retry commands by viewId to per-view `ComponentContract` consumers. |
-| `AdyenComponentViewManager.kt` | Replaces `CardViewManager` and `PlatformPayViewManager`. Generic view manager registered as `"AdyenComponentView"` that handles all payment method types via the `type` prop. |
-| `AdyenComponentViewState.kt` | Replaces `CardViewState`. Per-view state that owns the `ComponentManager`, renders `CheckoutPaymentFlow` in a `ComposeView`, and implements `ComponentContract` for receiving commands from `ComponentModule`. |
+| File                            | Purpose                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CheckoutControllerRegistry.kt` | Tracks active `CheckoutController` instances in a `WeakHashMap` for redirect routing. Dispatches `handleReturn(intent)` to all registered controllers.                                                                                                                                                                                                                                 |
+| `ComponentManager.kt`           | Unified manager (in `component/base/`) that builds and drives the v6 `CheckoutController` for all payment methods (card, Google Pay, instant). Manages suspend continuations for the advanced flow. Registers/unregisters with `CheckoutControllerRegistry`. Replaces the former per-method managers (`CardComponentManager`, `GooglePayComponentManager`, `InstantComponentManager`). |
+| `GooglePayAvailability.kt`      | Custom Google Pay availability check using Google Play Services + Wallet APIs. Required because v6 removed the public `GooglePayComponent.PROVIDER.isAvailable`.                                                                                                                                                                                                                       |
+| `ContextModule.kt`              | Replaces `SetupModule`. Unified lifecycle + headless API module registered as `"AdyenCheckout"`. Handles session setup, advanced setup, availability checks, `requiresUserInteraction`, and `submit`.                                                                                                                                                                                  |
+| `ComponentModule.kt`            | Merged from `EmbeddedComponentBusModule`. View event bus module registered as `"AdyenComponent"`. Relays action/completion/retry commands by viewId to per-view `ComponentContract` consumers.                                                                                                                                                                                         |
+| `AdyenComponentViewManager.kt`  | Replaces `CardViewManager` and `PlatformPayViewManager`. Generic view manager registered as `"AdyenComponentView"` that handles all payment method types via the `type` prop.                                                                                                                                                                                                          |
+| `AdyenComponentViewState.kt`    | Replaces `CardViewState`. Per-view state that owns the `ComponentManager`, renders `CheckoutPaymentFlow` in a `ComposeView`, and implements `ComponentContract` for receiving commands from `ComponentModule`.                                                                                                                                                                         |
 
 ---
 
 ## Files Removed
 
-| File | Purpose (v5) |
-|---|---|
-| `ComponentSessionCallback.kt` | v5 `SessionComponentCallback` implementation (dead code) |
-| `ComponentAdvancedCallback.kt` | v5 `ComponentCallback` implementation (dead code) |
-| `ComponentData.kt` | v5 component data holder |
-| `AdvancedComponentViewModel.kt` | v5 viewmodel for advanced flow (dead code) |
-| `SessionsComponentViewModel.kt` | v5 viewmodel for sessions flow (dead code) |
-| `BaseViewModel.kt` | v5 base viewmodel class (dead code) |
-| `CardComponentManager.kt` | Replaced by unified `ComponentManager` |
-| `GooglePayComponentManager.kt` | Replaced by unified `ComponentManager` |
-| `InstantComponentManager.kt` | Replaced by unified `ComponentManager` |
-| `BaseInstantComponentFragment.kt` | v5 base class for per-method instant fragments |
-| `BaseComponentFragment.kt` | v5 base class for component fragments |
-| `IInstantFragment.kt` | v5 interface for instant fragments |
-| `InstantFragmentDelegate.kt` | v5 delegate for instant fragment logic |
-| `TwintFragment.kt` | v5 Twint-specific fragment |
-| `IdealFragment.kt` | v5 iDEAL-specific fragment |
-| `PayByBankGlobalFragment.kt` | v5 PayByBank (global) fragment |
-| `PayByBankUSFragment.kt` | v5 PayByBank (US) fragment |
-| `fragment_instant.xml` | v5 XML layout for instant components |
-| `InstantModuleTest.kt` | v5 test for InstantModule |
-| `SetupModule.kt` | Replaced by `ContextModule` |
-| `EmbeddedComponentBusModule.kt` | Replaced by `ComponentModule` |
-| `GooglePayModule.kt` | Removed — consolidated into `ContextModule` headless APIs |
-| `ApplePayModuleMock.kt` | Removed — Android mock no longer needed |
-| `CardViewManager.kt` | Replaced by `AdyenComponentViewManager` |
-| `PlatformPayViewManager.kt` | Replaced by `AdyenComponentViewManager` |
-| `CardViewState.kt` | Replaced by `AdyenComponentViewState` |
-| `PlatformPayView.kt` | Removed — platform pay handled by generic `AdyenComponentViewManager` |
+| File                              | Purpose (v5)                                                          |
+| --------------------------------- | --------------------------------------------------------------------- |
+| `ComponentSessionCallback.kt`     | v5 `SessionComponentCallback` implementation (dead code)              |
+| `ComponentAdvancedCallback.kt`    | v5 `ComponentCallback` implementation (dead code)                     |
+| `ComponentData.kt`                | v5 component data holder                                              |
+| `AdvancedComponentViewModel.kt`   | v5 viewmodel for advanced flow (dead code)                            |
+| `SessionsComponentViewModel.kt`   | v5 viewmodel for sessions flow (dead code)                            |
+| `BaseViewModel.kt`                | v5 base viewmodel class (dead code)                                   |
+| `CardComponentManager.kt`         | Replaced by unified `ComponentManager`                                |
+| `GooglePayComponentManager.kt`    | Replaced by unified `ComponentManager`                                |
+| `InstantComponentManager.kt`      | Replaced by unified `ComponentManager`                                |
+| `BaseInstantComponentFragment.kt` | v5 base class for per-method instant fragments                        |
+| `BaseComponentFragment.kt`        | v5 base class for component fragments                                 |
+| `IInstantFragment.kt`             | v5 interface for instant fragments                                    |
+| `InstantFragmentDelegate.kt`      | v5 delegate for instant fragment logic                                |
+| `TwintFragment.kt`                | v5 Twint-specific fragment                                            |
+| `IdealFragment.kt`                | v5 iDEAL-specific fragment                                            |
+| `PayByBankGlobalFragment.kt`      | v5 PayByBank (global) fragment                                        |
+| `PayByBankUSFragment.kt`          | v5 PayByBank (US) fragment                                            |
+| `fragment_instant.xml`            | v5 XML layout for instant components                                  |
+| `InstantModuleTest.kt`            | v5 test for InstantModule                                             |
+| `SetupModule.kt`                  | Replaced by `ContextModule`                                           |
+| `EmbeddedComponentBusModule.kt`   | Replaced by `ComponentModule`                                         |
+| `GooglePayModule.kt`              | Removed — consolidated into `ContextModule` headless APIs             |
+| `ApplePayModuleMock.kt`           | Removed — Android mock no longer needed                               |
+| `CardViewManager.kt`              | Replaced by `AdyenComponentViewManager`                               |
+| `PlatformPayViewManager.kt`       | Replaced by `AdyenComponentViewManager`                               |
+| `CardViewState.kt`                | Replaced by `AdyenComponentViewState`                                 |
+| `PlatformPayView.kt`              | Removed — platform pay handled by generic `AdyenComponentViewManager` |
 
 ---
 
@@ -861,6 +866,7 @@ Replaces both `CardViewManager` ("AdyenCardView") and `PlatformPayViewManager`. 
 ## Known Alpha Limitations
 
 1. **Partial payments stubbed**: `provideBalance()`, `provideOrder()`, and `providePaymentMethods()` in `DropInModule` are stubbed with `TODO` comments:
+
    ```kotlin
    @ReactMethod
    fun provideBalance(success: Boolean, balance: ReadableMap?, error: ReadableMap?) {
@@ -869,6 +875,7 @@ Replaces both `CardViewManager` ("AdyenCardView") and `PlatformPayViewManager`. 
    ```
 
 2. **Stored payment removal stubbed**: `removeStored()` in `DropInModule` is stubbed:
+
    ```kotlin
    @ReactMethod
    fun removeStored(success: Boolean) {
@@ -877,6 +884,7 @@ Replaces both `CardViewManager` ("AdyenCardView") and `PlatformPayViewManager`. 
    ```
 
 3. **Address lookup stubbed**: `update()` and `confirm()` in both `DropInModule` and `ComponentModule` are stubbed:
+
    ```kotlin
    @ReactMethod
    fun update(viewId: String, array: ReadableArray?) {

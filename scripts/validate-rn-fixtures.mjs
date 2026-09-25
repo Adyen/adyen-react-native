@@ -106,8 +106,35 @@ try {
     cwd: root,
     encoding: 'utf8',
   });
-  const [{ filename }] = JSON.parse(tarball);
+  const [{ filename, integrity, files }] = JSON.parse(tarball);
+  const packedPaths = files.map(({ path }) => path);
+  const requiredPackedPaths = [
+    'lib/commonjs/index.js',
+    'lib/module/index.js',
+    'lib/typescript/src/index.d.ts',
+    'adyen-react-native.podspec',
+    'android/build.gradle',
+  ];
+  const missingPackedPaths = requiredPackedPaths.filter(
+    (path) => !packedPaths.includes(path)
+  );
+  if (missingPackedPaths.length > 0) {
+    throw new Error(
+      `Packed library is missing required runtime files: ${missingPackedPaths.join(', ')}.`
+    );
+  }
+  const forbiddenPackedPaths = packedPaths.filter((path) =>
+    /(?:^|\/)(?:secrets?|credentials?)(?:\.|\/|$)|(?:^|\/)\.env(?:\.|$)/i.test(
+      path
+    )
+  );
+  if (forbiddenPackedPaths.length > 0) {
+    throw new Error(
+      `Packed library contains forbidden credential files: ${forbiddenPackedPaths.join(', ')}.`
+    );
+  }
   packedLibrary = resolve(root, filename);
+  console.log(`Packed library: ${filename} (${integrity}).`);
 
   for (const target of targets) {
     const version = versions[target];
