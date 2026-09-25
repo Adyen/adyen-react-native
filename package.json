@@ -62,6 +62,7 @@
     "api-extractor": "api-extractor run",
     "api-extractor:update": "api-extractor run --local",
     "check:compatibility": "node scripts/check-compatibility-baseline.mjs",
+    "check:pod-toolchain": "node scripts/check-example-pod-toolchain.mjs",
     "validate:docs": "node scripts/validate-docs.mjs",
     "validate:rn-fixtures": "node scripts/validate-rn-fixtures.mjs"
   },

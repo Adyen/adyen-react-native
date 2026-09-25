@@ -19,17 +19,15 @@ yarn
 
 > Since the project relies on Yarn workspaces, you cannot use [`npm`](https://github.com/npm/cli) for development.
 
-You also need to install the required ruby gems for the iOS project with [bundler](https://bundler.io/). To install the gems, run the following command in the root directory:
+To prepare the example's vendored frameworks and install [CocoaPods](https://cocoapods.org/)
+with the repository Ruby 3.2/Bundler toolchain, run this from the repository root:
 
 ```sh
-bundle install
+yarn app pod
 ```
 
-Now, you can install [CocoaPods](https://cocoapods.org/) for the iOS project. To do this, run the following command in the `example/ios` directory:
-
-```sh
-bundle exec pod install
-```
+The command uses the root `Gemfile` and scopes the run to Xcode 27.2 without changing
+your global `xcode-select`.
 
 The [example app](/example/) demonstrates usage of the library. You need to run it to test any changes you make.
 
