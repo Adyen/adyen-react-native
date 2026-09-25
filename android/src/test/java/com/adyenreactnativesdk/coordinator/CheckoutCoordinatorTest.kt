@@ -815,6 +815,58 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
+  fun `drop-in owns one launcher operation and ignores its stale result after cleanup`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val launcher = DropInLauncher()
+    val dropInPresenter = DropInPresenter()
+    fixture.presenterFactory.presenter = dropInPresenter
+    coordinator.setup()
+    coordinator.registerDropInLauncher(launcher)
+
+    val operationId = coordinator.beginDropIn(mock())
+
+    assertEquals("operation-1", operationId)
+    assertEquals(1, launcher.startCount)
+    assertEquals(operationId, coordinator.activeOperationId())
+
+    launcher.finish(CoordinatorDropInResult.Completed("Authorised"))
+
+    assertEquals(listOf(CoordinatorDropInResult.Completed("Authorised")), dropInPresenter.results)
+    assertNull(coordinator.activeOperationId())
+    assertEquals(1, launcher.clearResultCount)
+
+    launcher.finish(CoordinatorDropInResult.Cancelled)
+
+    assertEquals(listOf(CoordinatorDropInResult.Completed("Authorised")), dropInPresenter.results)
+    assertEquals(1, launcher.clearResultCount)
+  }
+
+  @Test
+  fun `drop-in cancellation and failure release their launcher operation once`() {
+    listOf(
+      CoordinatorDropInResult.Cancelled,
+      CoordinatorDropInResult.Failed("presentation failed"),
+    ).forEach { result ->
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      val launcher = DropInLauncher()
+      val dropInPresenter = DropInPresenter()
+      fixture.presenterFactory.presenter = dropInPresenter
+      coordinator.setup()
+      coordinator.registerDropInLauncher(launcher)
+      coordinator.beginDropIn(mock())
+
+      launcher.finish(result)
+      launcher.finish(result)
+
+      assertEquals(listOf(result), dropInPresenter.results)
+      assertNull(coordinator.activeOperationId())
+      assertEquals(1, launcher.clearResultCount)
+    }
+  }
+
+  @Test
   fun `throwing request event delivery rolls back once and permits a fresh request`() {
     val fixture = Fixture()
     var throwsOnNextRequest = true
@@ -1017,7 +1069,7 @@ class CheckoutCoordinatorTest {
     }
   }
 
-  private class Presenter : CoordinatorPresenter {
+  private open class Presenter : CoordinatorPresenter {
     var disposeCount = 0
 
     override suspend fun createController(
@@ -1037,7 +1089,7 @@ class CheckoutCoordinatorTest {
   }
 
   private open class PresenterFactory(
-    private val presenter: Presenter,
+    var presenter: CoordinatorPresenter,
   ) : com.adyenreactnativesdk.coordinator.PresenterFactory {
     var createCount = 0
     val presentations = mutableListOf<CoordinatorPresentation>()
@@ -1046,6 +1098,47 @@ class CheckoutCoordinatorTest {
       createCount += 1
       presentations += presentation
       return presenter
+    }
+  }
+
+  private class DropInPresenter :
+    Presenter(),
+    CoordinatorDropInPresenter {
+    val results = mutableListOf<CoordinatorDropInResult>()
+
+    override suspend fun onDropInSubmit(data: com.adyen.checkout.core.components.data.PaymentComponentData<*>) =
+      com.adyen.checkout.core.components.SubmitResult
+        .Retry(null)
+
+    override suspend fun onDropInAdditionalDetails(data: com.adyen.checkout.core.action.data.ActionComponentData) =
+      com.adyen.checkout.core.components.AdditionalDetailsResult
+        .Completion("Error")
+
+    override fun onDropInResult(result: CoordinatorDropInResult) {
+      results += result
+    }
+  }
+
+  private class DropInLauncher : CoordinatorDropInLauncher {
+    private var callback: ((CoordinatorDropInResult) -> Unit)? = null
+    var startCount = 0
+    var clearResultCount = 0
+
+    override fun start(
+      context: com.adyen.checkout.core.common.CheckoutContext,
+      onResult: (CoordinatorDropInResult) -> Unit,
+    ) {
+      startCount += 1
+      callback = onResult
+    }
+
+    override fun clearResult() {
+      clearResultCount += 1
+      callback = null
+    }
+
+    fun finish(result: CoordinatorDropInResult) {
+      callback?.invoke(result)
     }
   }
 

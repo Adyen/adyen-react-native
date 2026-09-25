@@ -8,20 +8,20 @@ package com.adyenreactnativesdk
 
 import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
-import com.adyenreactnativesdk.component.dropin.DropInModule
+import com.adyenreactnativesdk.component.dropin.CoordinatorDropInLauncher
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 
 /**
- * Umbrella class for setting DropIn and Component specific parameters
+ * Umbrella class for coordinator-owned Android checkout integration.
  */
 object AdyenCheckout {
   /**
-   * Persist a reference to Activity that will present DropIn or Component
-   * @param activity  parent activity for DropIn or Component
+   * Registers the official v6 Drop-in result contract with this activity. The active checkout
+   * coordinator, rather than this facade, owns the returned launcher and clears its result route.
    */
   @JvmStatic
   fun setLauncherActivity(activity: ActivityResultCaller) {
-    DropInModule.register(activity)
+    CheckoutCoordinator.shared.registerDropInLauncher(CoordinatorDropInLauncher(activity))
   }
 
   /**

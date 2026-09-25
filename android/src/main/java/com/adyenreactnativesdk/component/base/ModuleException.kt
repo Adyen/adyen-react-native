@@ -79,13 +79,6 @@ sealed class ModuleException(
       message = "Can not find payment method of types \"${type.joinToString(",")}\" in provided list",
     )
 
-  class NoModuleListener(
-    integration: String,
-  ) : ModuleException(
-      code = "noModuleListener",
-      message = "No DropInService registered for: $integration",
-    )
-
   class Unknown(
     reason: String?,
   ) : ModuleException(

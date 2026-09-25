@@ -12,10 +12,6 @@ enum class EventName(
   SUBMIT("didSubmitCallback"),
   UPDATE_ADDRESS("didUpdateAddressCallback"),
   CONFIRM_ADDRESS("didConfirmAddressCallback"),
-  DISABLE_STORED_PAYMENT_METHOD("didDisableStoredPaymentMethodCallback"),
-  CHECK_BALANCE("didCheckBalanceCallback"),
-  REQUEST_ORDER("didRequestOrderCallback"),
-  CANCEL_ORDER("didCancelOrderCallback"),
   BIN_LOOKUP("didBinLookupCallback"),
   CHANGE_BIN_VALUE("didChangeBinValueCallback"), ;
 
@@ -47,12 +43,4 @@ fun EventName.Companion.cardEvents() =
   listOf(
     EventName.BIN_LOOKUP.value,
     EventName.CHANGE_BIN_VALUE.value,
-  )
-
-fun EventName.Companion.dropInEvents() =
-  listOf(
-    EventName.DISABLE_STORED_PAYMENT_METHOD.value,
-    EventName.CHECK_BALANCE.value,
-    EventName.REQUEST_ORDER.value,
-    EventName.CANCEL_ORDER.value,
   )

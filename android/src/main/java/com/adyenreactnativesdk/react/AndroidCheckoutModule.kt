@@ -14,9 +14,11 @@ import com.adyen.checkout.core.action.data.Action
 import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.common.CheckoutResultCode
+import com.adyen.checkout.core.components.AdditionalDetailsResult
 import com.adyen.checkout.core.components.Checkout
 import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyen.checkout.core.components.SessionCheckoutResult
+import com.adyen.checkout.core.components.SubmitResult
 import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyen.checkout.core.sessions.SessionResponse
@@ -35,6 +37,8 @@ import com.adyenreactnativesdk.coordinator.CheckoutIdentityGenerator
 import com.adyenreactnativesdk.coordinator.CheckoutScheduler
 import com.adyenreactnativesdk.coordinator.CheckoutStateOwner
 import com.adyenreactnativesdk.coordinator.CoordinatorCancellation
+import com.adyenreactnativesdk.coordinator.CoordinatorDropInPresenter
+import com.adyenreactnativesdk.coordinator.CoordinatorDropInResult
 import com.adyenreactnativesdk.coordinator.CoordinatorIdentityKind
 import com.adyenreactnativesdk.coordinator.CoordinatorPresentation
 import com.adyenreactnativesdk.coordinator.CoordinatorPresenter
@@ -52,6 +56,7 @@ import com.facebook.react.bridge.WritableNativeMap
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.UUID
+import kotlin.coroutines.resume
 
 /**
  * Generated checkout control protocol. This is intentionally separate from the legacy event
@@ -298,11 +303,16 @@ class AndroidCheckoutModule(
     promise: Promise,
   ) {
     onMain {
-      if (!CheckoutCoordinator.shared.isActive(checkoutId)) {
-        reject(promise, ERROR_STALE_CHECKOUT)
-        return@onMain
+      val state = activeState(checkoutId, promise) ?: return@onMain
+      activityOrReject(promise) ?: return@onMain
+      try {
+        CheckoutCoordinator.shared.beginDropIn(state.checkoutContext)
+        promise.resolve(null)
+      } catch (_: IllegalStateException) {
+        reject(promise, ERROR_OPERATION_BUSY)
+      } catch (_: Exception) {
+        reject(promise, ERROR_DROP_IN_FAILED)
       }
-      reject(promise, ERROR_DROP_IN_UNSUPPORTED)
     }
   }
 
@@ -548,9 +558,9 @@ class AndroidCheckoutModule(
     )
   }
 
-  private fun terminalErrorPayload(): JSONObject =
+  private fun terminalErrorPayload(message: String = "Checkout failed"): JSONObject =
     JSONObject()
-      .put(ERROR_MESSAGE, "Checkout failed")
+      .put(ERROR_MESSAGE, message)
       .put(ERROR_CODE, "checkoutFailed")
 
   private fun parseSession(json: String): SessionResponse {
@@ -617,7 +627,12 @@ class AndroidCheckoutModule(
   }
 
   private inner class HeadlessPresenterFactory : PresenterFactory {
-    override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter = HeadlessCoordinatorPresenter(presentation)
+    override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter =
+      if (presentation.isDropIn) {
+        DropInCoordinatorPresenter(presentation)
+      } else {
+        HeadlessCoordinatorPresenter(presentation)
+      }
   }
 
   /**
@@ -680,6 +695,112 @@ class AndroidCheckoutModule(
     private fun activityOrThrow(): FragmentActivity =
       reactContext.currentActivity as? FragmentActivity
         ?: error("Headless presenter requires an active FragmentActivity")
+  }
+
+  /**
+   * Official Drop-in service callbacks share the coordinator request broker. The presenter never
+   * reconstructs configuration or payment methods because the launcher receives CheckoutContext.
+   */
+  private inner class DropInCoordinatorPresenter(
+    private val presentation: CoordinatorPresentation,
+  ) : CoordinatorPresenter,
+    CoordinatorDropInPresenter {
+    private var disposed = false
+
+    override suspend fun createController(
+      context: CheckoutContext,
+      target: CheckoutTarget,
+    ): com.adyen.checkout.core.components.CheckoutController? = null
+
+    override fun handleAction(action: Action) = Unit
+
+    override fun complete(resultCode: String) = Unit
+
+    override fun retry(message: String?) = Unit
+
+    override suspend fun onDropInSubmit(data: PaymentComponentData<*>): SubmitResult {
+      if (disposed) return SubmitResult.Retry(null)
+      return kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+        createRequest(
+          operationId = requireNotNull(presentation.operationId),
+          kind = CoordinatorRequestKind.ADVANCED_SUBMIT,
+          eventKind = EVENT_ADVANCED_SUBMIT,
+          payload = PaymentComponentData.SERIALIZER.serialize(data),
+        ) { response ->
+          if (!continuation.isActive) return@createRequest
+          val payload = response ?: JSONObject()
+          continuation.resume(
+            when (payload.optString(TYPE)) {
+              ACTION -> {
+                runCatching {
+                  SubmitResult.Action(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
+                }.getOrElse { SubmitResult.Retry(null) }
+              }
+
+              COMPLETED -> {
+                SubmitResult.Completion(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
+              }
+
+              else -> {
+                SubmitResult.Retry(payload.optString(MESSAGE).takeIf(String::isNotBlank))
+              }
+            },
+          )
+        }
+      }
+    }
+
+    override suspend fun onDropInAdditionalDetails(data: ActionComponentData): AdditionalDetailsResult {
+      if (disposed) return AdditionalDetailsResult.Completion(CheckoutResultCode.ERROR.value)
+      return kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+        createRequest(
+          operationId = requireNotNull(presentation.operationId),
+          kind = CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS,
+          eventKind = EVENT_ADVANCED_ADDITIONAL_DETAILS,
+          payload = ActionComponentData.SERIALIZER.serialize(data),
+        ) { response ->
+          if (continuation.isActive) {
+            continuation.resume(
+              AdditionalDetailsResult.Completion(
+                response?.optString(RESULT_CODE, CheckoutResultCode.ERROR.value) ?: CheckoutResultCode.ERROR.value,
+              ),
+            )
+          }
+        }
+      }
+    }
+
+    override fun onDropInResult(result: CoordinatorDropInResult) {
+      if (disposed) return
+      when (result) {
+        is CoordinatorDropInResult.Completed -> {
+          val state = CheckoutCoordinator.shared.checkoutState ?: return
+          val payload =
+            if (state.isSession) {
+              val session = (state.checkoutContext as CheckoutContext.Sessions).checkoutSession.sessionSetupResponse
+              JSONObject()
+                .put(RESULT_CODE, result.resultCode)
+                .put(SESSION_ID, session.id)
+                .put(SESSION_DATA, session.sessionData)
+            } else {
+              JSONObject().put(RESULT_CODE, result.resultCode)
+            }
+          emitTerminal(presentation.checkoutId, EVENT_COMPLETION, payload)
+        }
+
+        CoordinatorDropInResult.Cancelled -> {
+          emitTerminal(presentation.checkoutId, EVENT_ERROR, terminalErrorPayload("Drop-in cancelled"))
+        }
+
+        is CoordinatorDropInResult.Failed -> {
+          emitTerminal(presentation.checkoutId, EVENT_ERROR, terminalErrorPayload(result.message))
+        }
+      }
+    }
+
+    override fun dispose() {
+      disposed = true
+    }
   }
 
   private object UUIDCoordinatorIdentityGenerator : CheckoutIdentityGenerator {
@@ -760,7 +881,7 @@ class AndroidCheckoutModule(
     private const val ERROR_QUERY_FAILED = "invalidTarget"
     private const val ERROR_OPERATION_BUSY = "operationBusy"
     private const val ERROR_SUBMIT_FAILED = "cancelled"
-    private const val ERROR_DROP_IN_UNSUPPORTED = "unsupportedCapability"
+    private const val ERROR_DROP_IN_FAILED = "cancelled"
     private const val ERROR_STALE_RESPONSE = "staleRequest"
     private const val ERROR_INVALID_RESPONSE = "staleRequest"
     private const val ERROR_NO_ACTIVITY = "cancelled"

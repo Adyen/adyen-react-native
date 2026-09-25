@@ -46,10 +46,6 @@ class EventNameTest {
     assertEquals("didSessionErrorCallback", EventName.SESSION_ERROR.value)
     assertEquals("didUpdateAddressCallback", EventName.UPDATE_ADDRESS.value)
     assertEquals("didConfirmAddressCallback", EventName.CONFIRM_ADDRESS.value)
-    assertEquals("didDisableStoredPaymentMethodCallback", EventName.DISABLE_STORED_PAYMENT_METHOD.value)
-    assertEquals("didCheckBalanceCallback", EventName.CHECK_BALANCE.value)
-    assertEquals("didRequestOrderCallback", EventName.REQUEST_ORDER.value)
-    assertEquals("didCancelOrderCallback", EventName.CANCEL_ORDER.value)
     assertEquals("didBinLookupCallback", EventName.BIN_LOOKUP.value)
     assertEquals("didChangeBinValueCallback", EventName.CHANGE_BIN_VALUE.value)
   }

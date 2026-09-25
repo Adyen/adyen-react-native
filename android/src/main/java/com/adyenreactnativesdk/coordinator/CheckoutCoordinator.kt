@@ -10,9 +10,13 @@ import android.os.Looper
 import android.util.Log
 import androidx.annotation.MainThread
 import com.adyen.checkout.core.action.data.Action
+import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
+import com.adyen.checkout.core.components.AdditionalDetailsResult
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutTarget
+import com.adyen.checkout.core.components.SubmitResult
+import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyenreactnativesdk.component.base.CheckoutState
 import com.adyenreactnativesdk.component.base.ComponentManager
 import java.util.UUID
@@ -51,10 +55,43 @@ internal interface CoordinatorPresenter {
   fun dispose()
 }
 
+/** Official Drop-in result types, decoupled from the SDK's activity-result callback. */
+internal sealed interface CoordinatorDropInResult {
+  data class Completed(
+    val resultCode: String,
+  ) : CoordinatorDropInResult
+
+  data class Failed(
+    val message: String,
+  ) : CoordinatorDropInResult
+
+  data object Cancelled : CoordinatorDropInResult
+}
+
+/** Activity-result registration belongs to the active coordinator, not a static module launcher. */
+internal interface CoordinatorDropInLauncher {
+  fun start(
+    context: CheckoutContext,
+    onResult: (CoordinatorDropInResult) -> Unit,
+  )
+
+  fun clearResult()
+}
+
+/** Drop-in owns its submit/details bridge while its activity is visible. */
+internal interface CoordinatorDropInPresenter {
+  suspend fun onDropInSubmit(data: PaymentComponentData<*>): SubmitResult
+
+  suspend fun onDropInAdditionalDetails(data: ActionComponentData): AdditionalDetailsResult
+
+  fun onDropInResult(result: CoordinatorDropInResult)
+}
+
 /** Private identity supplied to presenter factories, never exposed through the public bridge. */
 internal data class CoordinatorPresentation(
   val checkoutId: String,
   val operationId: String?,
+  val isDropIn: Boolean = false,
 )
 
 internal interface CheckoutEventSink {
@@ -165,6 +202,7 @@ internal class CheckoutCoordinator(
   private var presenter: CoordinatorPresenter? = null
   private var operationId: String? = null
   private var operationKind: OperationKind? = null
+  private var dropInLauncher: CoordinatorDropInLauncher? = null
   private var request: CoordinatorRequest? = null
   private var requestEventKind: String? = null
   private var requestResponse: ((String?) -> Unit)? = null
@@ -193,6 +231,7 @@ internal class CheckoutCoordinator(
   private enum class OperationKind {
     EXPLICIT,
     EMBEDDED,
+    DROP_IN,
   }
 
   @MainThread
@@ -286,26 +325,44 @@ internal class CheckoutCoordinator(
   @MainThread
   fun beginOperation(): String =
     transition {
-      val activeCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
-      check(operationId == null) {
-        emit(CoordinatorEvent.OperationBusy)
-        "Operation is already active"
-      }
-      val createdOperationId = nextId(CoordinatorIdentityKind.OPERATION)
-      val createdPresenter =
-        checkNotNull(dependencies) { "CheckoutCoordinator requires configured dependencies" }
-          .presenterFactory
-          .create(
-            CoordinatorPresentation(
-              checkoutId = activeCheckoutId,
-              operationId = createdOperationId,
-            ),
-          )
-      presenter = createdPresenter
-      operationId = createdOperationId
-      operationKind = OperationKind.EXPLICIT
-      createdOperationId
+      beginOperationLocked(OperationKind.EXPLICIT)
     }
+
+  /** Registers the official activity-result launcher owned by the currently active host. */
+  @MainThread
+  fun registerDropInLauncher(launcher: CoordinatorDropInLauncher) {
+    transition {
+      check(operationId == null) { "Cannot replace a Drop-in launcher while an operation is active" }
+      dropInLauncher?.clearResult()
+      dropInLauncher = launcher
+    }
+  }
+
+  /**
+   * Starts official Drop-in with the exact coordinator-owned [CheckoutContext]. The launcher
+   * callback is identity-bound to this operation, so a late result cannot settle a replacement.
+   */
+  @MainThread
+  fun beginDropIn(context: CheckoutContext): String {
+    val launch =
+      transition {
+        val launcher = checkNotNull(dropInLauncher) { "No Drop-in launcher is registered" }
+        val operationId = beginOperationLocked(OperationKind.DROP_IN)
+        val dropInPresenter =
+          presenter as? CoordinatorDropInPresenter
+            ?: error("Drop-in presenter is not configured")
+        Triple(operationId, launcher, dropInPresenter)
+      }
+    try {
+      launch.second.start(context) { result ->
+        finishDropIn(launch.first, launch.third, result)
+      }
+      return launch.first
+    } catch (exception: Exception) {
+      completeOperation(launch.first)
+      throw exception
+    }
+  }
 
   /**
    * Acquires an anonymous checkout-level operation at the first embedded SDK callback. There is
@@ -431,10 +488,27 @@ internal class CheckoutCoordinator(
   @MainThread
   fun activeRequestEventKind(): String? = transition { requestEventKind }
 
+  /** Service callbacks can reach only the currently active, identity-bound Drop-in presenter. */
+  @MainThread
+  suspend fun onDropInSubmit(data: PaymentComponentData<*>): SubmitResult {
+    val dropInPresenter = transition { presenter as? CoordinatorDropInPresenter }
+    return dropInPresenter?.onDropInSubmit(data) ?: SubmitResult.Retry(null)
+  }
+
+  @MainThread
+  suspend fun onDropInAdditionalDetails(data: ActionComponentData): AdditionalDetailsResult {
+    val dropInPresenter = transition { presenter as? CoordinatorDropInPresenter }
+    return dropInPresenter?.onDropInAdditionalDetails(data)
+      ?: AdditionalDetailsResult.Completion("Error")
+  }
+
   @MainThread
   fun completeOperation(operationId: String) {
     transition {
       if (this.operationId != operationId) return@transition
+      if (operationKind == OperationKind.DROP_IN) {
+        dropInLauncher?.clearResult()
+      }
       settleRequestLocked(invokeFallback = true)
       presenter?.dispose()
       presenter = null
@@ -688,6 +762,9 @@ internal class CheckoutCoordinator(
     try {
       presenter?.dispose()
       presenter = null
+      if (operationKind == OperationKind.DROP_IN) {
+        dropInLauncher?.clearResult()
+      }
       val ownedPassivePresenters = passivePresenters.values.map { it.presenter }
       passivePresenters.clear()
       passivePresenterIdsByTarget.clear()
@@ -729,6 +806,45 @@ internal class CheckoutCoordinator(
     if (invokeFallback) {
       fallback?.invoke()
     }
+  }
+
+  private fun beginOperationLocked(kind: OperationKind): String {
+    val activeCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
+    check(operationId == null) {
+      emit(CoordinatorEvent.OperationBusy)
+      "Operation is already active"
+    }
+    val createdOperationId = nextId(CoordinatorIdentityKind.OPERATION)
+    val createdPresenter =
+      checkNotNull(dependencies) { "CheckoutCoordinator requires configured dependencies" }
+        .presenterFactory
+        .create(
+          CoordinatorPresentation(
+            checkoutId = activeCheckoutId,
+            operationId = createdOperationId,
+            isDropIn = kind == OperationKind.DROP_IN,
+          ),
+        )
+    presenter = createdPresenter
+    operationId = createdOperationId
+    operationKind = kind
+    return createdOperationId
+  }
+
+  private fun finishDropIn(
+    expectedOperationId: String,
+    expectedPresenter: CoordinatorDropInPresenter,
+    result: CoordinatorDropInResult,
+  ) {
+    val matched =
+      transition {
+        operationId == expectedOperationId &&
+          operationKind == OperationKind.DROP_IN &&
+          presenter === expectedPresenter
+      }
+    if (!matched) return
+    expectedPresenter.onDropInResult(result)
+    invalidate()
   }
 
   private inline fun <T> transition(block: () -> T): T {
