@@ -28,13 +28,15 @@ class names or depend on native SDK messages.
 | `staleRequest`          | A callback response does not match the live checkout, operation, request, and kind.      |
 | `unsupportedCapability` | The current platform, flow, SDK version, or device cannot provide the requested feature. |
 | `invalidConfiguration`  | Setup configuration is incomplete or invalid for the requested feature.                  |
-| `invalidTarget`         | A target is malformed, missing, unavailable, or ambiguous.                               |
+| `invalidTarget`         | A target is malformed, missing, unknown, or ambiguous.                                   |
 | `cancelled`             | Native-owned cleanup cancelled the in-flight work.                                       |
 
 Common examples:
 
 - Calling a command on an old handle after setup replacement rejects `staleCheckout`.
 - A concurrent headless submit or Drop-in start rejects `operationBusy`.
+- A known valid target that is unavailable resolves `false` from `isAvailable`. It does not reject
+  `invalidTarget`.
 - Android advanced Drop-in, iOS Drop-in, Android address lookup, and Android standalone redirect
   Action reject `unsupportedCapability` before their unsupported UI starts.
 - `card.addressVisibility: 'lookup'` without both address callbacks rejects

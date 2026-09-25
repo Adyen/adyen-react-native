@@ -52,6 +52,26 @@ const requiredFacts = [
   'stored-method removal',
 ];
 
+const requiredDocumentationAssertions = [
+  {
+    document: 'docs/public-api-flows.md',
+    text: 'A known valid target that is unavailable resolves `false` from `isAvailable`.',
+  },
+  {
+    document: 'docs/Error codes.md',
+    text: 'A known valid target that is unavailable resolves `false` from `isAvailable`.',
+  },
+  {
+    document: 'docs/Compatibility.md',
+    text: 'classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")',
+  },
+];
+
+const requiredFixtureAssertions = [
+  'kotlinVersion = "2.3.21"',
+  'classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")',
+];
+
 const failures = [];
 const documentContents = new Map();
 
@@ -68,6 +88,27 @@ const combined = [...documentContents.values()].join('\n');
 for (const fact of requiredFacts) {
   if (!combined.toLowerCase().includes(fact.toLowerCase())) {
     failures.push(`Canonical documentation is missing required fact: ${fact}`);
+  }
+}
+
+for (const { document, text } of requiredDocumentationAssertions) {
+  const normalizedContents = documentContents
+    .get(document)
+    ?.replace(/\s+/g, ' ');
+  if (!normalizedContents?.includes(text)) {
+    failures.push(`${document} is missing required release assertion: ${text}`);
+  }
+}
+
+const fixtureContents = readFileSync(
+  resolve(root, 'scripts/validate-rn-fixtures.mjs'),
+  'utf8'
+);
+for (const text of requiredFixtureAssertions) {
+  if (!fixtureContents.includes(text)) {
+    failures.push(
+      `scripts/validate-rn-fixtures.mjs is missing required Kotlin fixture assertion: ${text}`
+    );
   }
 }
 

@@ -44,7 +44,8 @@ await checkout.submit(card);
 ```
 
 The `type` prop remains a shorthand for regular methods only. Stored methods must use their exact
-ID. Empty, unknown, malformed, or ambiguous targets reject `invalidTarget`.
+ID. A known valid target that is unavailable resolves `false` from `isAvailable`. Empty, unknown,
+malformed, or ambiguous targets reject `invalidTarget`.
 
 ## Lifecycle and contention
 

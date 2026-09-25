@@ -58,6 +58,24 @@ Library-owned Android versions (not consumer-set): the Adyen Android SDK `6.0.0-
 `8.7.3` (`android/build.gradle`), and the Compose BOM `2026.05.01` (`android/dependencies.gradle`,
 aligned to the version shipped by the Adyen SDK).
 
+### Kotlin compiler and plugin
+
+Set Kotlin `2.3.21` in the consuming Android root project and pin the root Kotlin Gradle plugin to
+that same value. Setting only the Kotlin version is insufficient when the root classpath resolves a
+different plugin version.
+
+```groovy
+buildscript {
+    ext {
+        kotlinVersion = "2.3.21"
+    }
+
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+    }
+}
+```
+
 ### Targeting Android 16 (API level 36)
 
 Google Play requires new phone and tablet app submissions and updates to target Android 16

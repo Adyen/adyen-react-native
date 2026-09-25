@@ -18,7 +18,8 @@ reject `staleCheckout`.
 
 Use `{ kind: 'paymentMethod', type }` for regular methods and
 `{ kind: 'storedPaymentMethod', id }` for stored methods. Queries and `submit()` reject
-`invalidTarget` for malformed or unavailable targets.
+`invalidTarget` for malformed, missing, unknown, or ambiguous targets. A known valid target that
+is unavailable resolves `false` from `isAvailable`.
 
 `AdyenComponent` registers one canonical target per native view. Distinct targets can mount at the
 same time. A duplicate exact regular type or duplicate exact stored ID is rejected. Mounting is

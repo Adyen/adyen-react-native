@@ -9,6 +9,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const repositoryRuby = '/usr/local/adyen/bin/ruby';
+const repositoryBundler = join(
+  process.env.HOME,
+  '.gem/ruby/3.2.0/bin/bundle'
+);
+const fixtureDeveloperDirectory =
+  '/Applications/Xcode_27.2_beta.app/Contents/Developer';
 const packageJson = JSON.parse(
   readFileSync(join(root, 'package.json'), 'utf8')
 );
@@ -33,7 +40,11 @@ if (!/^\d+\.\d+\.\d+$/.test(versions.current)) {
 }
 
 function run(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, stdio: 'inherit' });
+  const result = spawnSync(command, args, {
+    cwd,
+    stdio: 'inherit',
+    env: { ...process.env, DEVELOPER_DIR: fixtureDeveloperDirectory },
+  });
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(' ')} failed in ${cwd}.`);
   }
@@ -187,8 +198,12 @@ try {
       join(fixture, 'android')
     );
     const iosDirectory = join(fixture, 'ios');
-    run('bundle', ['install'], iosDirectory);
-    run('bundle', ['exec', 'pod', 'install'], iosDirectory);
+    run(repositoryRuby, [repositoryBundler, 'install'], iosDirectory);
+    run(
+      repositoryRuby,
+      [repositoryBundler, 'exec', 'pod', 'install'],
+      iosDirectory
+    );
     run(
       'xcodebuild',
       [
