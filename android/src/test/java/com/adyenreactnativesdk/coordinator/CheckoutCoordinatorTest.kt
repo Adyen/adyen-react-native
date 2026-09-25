@@ -674,7 +674,7 @@ class CheckoutCoordinatorTest {
   }
 
   @Test
-  fun `restored Activity fragment invalidates stale controller state and permits fresh registration`() {
+  fun `dismissed restored Activity fragment invalidates stale ownership and permits fresh registration`() {
     val fixture = Fixture()
     val coordinator = fixture.coordinator()
     val stalePassivePresenter = Presenter()
@@ -688,15 +688,42 @@ class CheckoutCoordinatorTest {
       stalePassivePresenter,
     )
     val operationId = coordinator.beginOperation()
+    var requestFallbackCount = 0
+    val request =
+      coordinator.beginRequest(
+        operationId,
+        CoordinatorRequestKind.ADVANCED_SUBMIT,
+        100,
+        cancellationFallback = { requestFallbackCount += 1 },
+      )
     coordinator.registerFragmentPresentation(operationId, cancellable = true, autoSubmit = false, onCancelled = {})
     coordinator.registerRedirectController(redirectController, operationId)
+    coordinator.fragmentDismissed(operationId)
 
     assertTrue(coordinator.invalidateRestoredFragment(operationId))
     assertNull(coordinator.activeCheckoutId())
     assertNull(coordinator.activeOperationId())
+    assertFalse(coordinator.resolve(request))
+    assertEquals(1, requestFallbackCount)
+    assertTrue(
+      fixture.scheduler.cancellations
+        .single()
+        .cancelled,
+    )
     assertEquals(1, fixture.presenter.disposeCount)
     assertEquals(1, stalePassivePresenter.disposeCount)
+    assertEquals(
+      1,
+      fixture.factory.checkouts
+        .single()
+        .disposeCount,
+    )
+    assertEquals(1, fixture.host.releaseCount)
     assertFalse(coordinator.handleReturn(Intent()))
+    assertFalse(coordinator.invalidateRestoredFragment(operationId))
+    assertEquals(1, requestFallbackCount)
+    assertEquals(1, fixture.presenter.disposeCount)
+    assertEquals(1, stalePassivePresenter.disposeCount)
 
     val replacementCheckoutId = coordinator.setup()
     coordinator.registerPassivePresenter(
@@ -709,6 +736,7 @@ class CheckoutCoordinatorTest {
     assertTrue(coordinator.isPassivePresenterActive(replacementCheckoutId, "fresh-presenter", freshPresenter))
     assertEquals(0, freshPresenter.disposeCount)
     assertFalse(coordinator.invalidateRestoredFragment(operationId))
+    assertTrue(coordinator.isActive(replacementCheckoutId))
   }
 
   @Test

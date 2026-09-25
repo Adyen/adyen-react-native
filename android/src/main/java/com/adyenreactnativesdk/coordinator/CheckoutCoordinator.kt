@@ -591,7 +591,10 @@ internal class CheckoutCoordinator(
   @MainThread
   fun invalidateRestoredFragment(operationId: String): Boolean =
     transition {
-      if (this.operationId != operationId || fragmentPresentations[operationId] == null) {
+      // DialogFragment.onDismiss can run while the old Activity is being destroyed, before the
+      // FragmentManager restores this identifier-only fragment. The active operation is the
+      // durable ownership marker; presentation metadata is intentionally transient.
+      if (this.operationId != operationId) {
         false
       } else {
         invalidateLocked()
