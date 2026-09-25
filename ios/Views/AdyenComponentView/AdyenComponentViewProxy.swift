@@ -21,10 +21,25 @@ public final class AdyenComponentViewProxy: UIStackView {
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
     private var creationGeneration = 0
+    private let coordinator: CheckoutCoordinator
+    private let componentFactory: FabricComponentFactory?
 
     @objc public weak var delegate: AdyenComponentViewProxyDelegate?
 
     @objc override public init(frame: CGRect) {
+        coordinator = .shared
+        componentFactory = nil
+        super.init(frame: frame)
+        clipsToBounds = false
+    }
+
+    internal init(
+        frame: CGRect,
+        coordinator: CheckoutCoordinator,
+        componentFactory: FabricComponentFactory
+    ) {
+        self.coordinator = coordinator
+        self.componentFactory = componentFactory
         super.init(frame: frame)
         clipsToBounds = false
     }
@@ -66,10 +81,12 @@ public final class AdyenComponentViewProxy: UIStackView {
             target: target,
             onDispose: { [weak self] controller in
                 self?.presenterDidDispose(controller)
-            }
+            },
+            coordinator: coordinator,
+            componentFactory: componentFactory
         )
         do {
-            try CheckoutCoordinator.shared.registerPassivePresenter(
+            try coordinator.registerPassivePresenter(
                 checkoutID: checkoutID,
                 presenterID: presenterID,
                 target: target,
@@ -104,7 +121,7 @@ public final class AdyenComponentViewProxy: UIStackView {
         Task { @MainActor [weak self, weak controller] in
             guard let self, let controller else { return }
             do {
-                guard let viewController = try controller.makeViewController(),
+                guard let viewController = try await controller.makeViewController(),
                       self.controller === controller,
                       self.creationGeneration == generation else {
                     controller.dispose()

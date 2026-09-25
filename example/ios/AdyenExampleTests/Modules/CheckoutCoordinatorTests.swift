@@ -38,6 +38,111 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertTrue(proxy.arrangedSubviews.isEmpty)
     }
 
+    func test_lateOldFabricFactoryCompletionCannotAttachAfterPropReplacement() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let factory = DeferredFabricComponentFactory()
+        let proxy = AdyenComponentViewProxy(
+            frame: .zero,
+            coordinator: coordinator,
+            componentFactory: factory
+        )
+        let oldChild = UIViewController()
+        let newChild = UIViewController()
+
+        proxy.updateRegistration(
+            checkoutID: checkoutID,
+            presenterID: "presenter-old",
+            targetKind: "storedPaymentMethod",
+            targetValue: "stored-old"
+        )
+        await factory.waitForCreation(count: 1)
+
+        proxy.updateRegistration(
+            checkoutID: checkoutID,
+            presenterID: "presenter-new",
+            targetKind: "storedPaymentMethod",
+            targetValue: "stored-new"
+        )
+        await factory.waitForCreation(count: 2)
+        factory.succeed(oldChild, at: 0)
+        factory.succeed(newChild, at: 1)
+        await waitForFabricTasks()
+
+        XCTAssertEqual(factory.targets, [.storedPaymentMethod("stored-old"), .storedPaymentMethod("stored-new")])
+        XCTAssertEqual(coordinator.passivePresenterCount, 1)
+        XCTAssertNil(oldChild.parent)
+        XCTAssertTrue(proxy.arrangedSubviews.contains(newChild.view))
+        XCTAssertFalse(proxy.arrangedSubviews.contains(oldChild.view))
+    }
+
+    func test_failedReplacementFabricFactoryLeavesViewInactiveAndReleasesCanonicalKey() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let factory = DeferredFabricComponentFactory()
+        let proxy = AdyenComponentViewProxy(
+            frame: .zero,
+            coordinator: coordinator,
+            componentFactory: factory
+        )
+
+        proxy.updateRegistration(
+            checkoutID: checkoutID,
+            presenterID: "presenter-old",
+            targetKind: "storedPaymentMethod",
+            targetValue: "stored"
+        )
+        await factory.waitForCreation(count: 1)
+        factory.succeed(UIViewController(), at: 0)
+        await waitForFabricTasks()
+
+        proxy.updateRegistration(
+            checkoutID: checkoutID,
+            presenterID: "presenter-new",
+            targetKind: "storedPaymentMethod",
+            targetValue: "replacement"
+        )
+        await factory.waitForCreation(count: 2)
+        factory.fail(at: 1)
+        await waitForFabricTasks()
+
+        XCTAssertTrue(proxy.arrangedSubviews.isEmpty)
+        XCTAssertEqual(coordinator.passivePresenterCount, 0)
+
+        let recovered = PassivePresenter()
+        try coordinator.registerPassivePresenter(
+            checkoutID: checkoutID,
+            presenterID: "recovered",
+            target: .storedPaymentMethod("replacement"),
+            presenter: recovered
+        )
+        XCTAssertEqual(coordinator.passivePresenterCount, 1)
+    }
+
+    func test_invalidFabricTupleDoesNotInvokeComponentFactory() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        _ = try await coordinator.setup()
+        let factory = DeferredFabricComponentFactory()
+        let proxy = AdyenComponentViewProxy(
+            frame: .zero,
+            coordinator: coordinator,
+            componentFactory: factory
+        )
+
+        proxy.updateRegistration(
+            checkoutID: nil,
+            presenterID: "presenter",
+            targetKind: "storedPaymentMethod",
+            targetValue: "stored"
+        )
+        await Task.yield()
+
+        XCTAssertTrue(factory.targets.isEmpty)
+    }
+
     func test_replacementDisposesBeforeCreatingTheNextCheckout() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -1025,6 +1130,39 @@ final class CheckoutCoordinatorTests: XCTestCase {
 
         func dispose() {
             disposeCount += 1
+        }
+    }
+
+    @MainActor
+    private final class DeferredFabricComponentFactory: FabricComponentFactory {
+        private var continuations: [CheckedContinuation<UIViewController?, Error>] = []
+        private(set) var targets: [TurboCheckoutTarget] = []
+
+        func makeViewController(for target: TurboCheckoutTarget) async throws -> UIViewController? {
+            targets.append(target)
+            return try await withCheckedThrowingContinuation { continuation in
+                continuations.append(continuation)
+            }
+        }
+
+        func waitForCreation(count: Int) async {
+            while targets.count < count {
+                await Task.yield()
+            }
+        }
+
+        func succeed(_ viewController: UIViewController, at index: Int) {
+            continuations[index].resume(returning: viewController)
+        }
+
+        func fail(at index: Int) {
+            continuations[index].resume(throwing: TestError.factory)
+        }
+    }
+
+    private func waitForFabricTasks() async {
+        for _ in 0 ..< 10 {
+            await Task.yield()
         }
     }
 

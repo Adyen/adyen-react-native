@@ -49,6 +49,7 @@ class AdyenComponentViewState(
 
   private var registration: FabricCoordinatorPresenter? = null
   private var creationGeneration = 0
+  private val registrationCreation = FabricRegistrationCreation<CheckoutController>()
 
   /** Applies the complete Fabric tuple atomically after all prop setters have run. */
   fun updateRegistration(view: DynamicComponentView) {
@@ -93,19 +94,23 @@ class AdyenComponentViewState(
     view.setView(composeView)
 
     activity.lifecycleScope.launch {
-      val controller = presenter.createController(checkoutContext, target)
-      if (
-        controller == null ||
-        registration !== presenter ||
-        creationGeneration != generation ||
-        !CheckoutCoordinator.shared.isPassivePresenterActive(checkoutId, presenterId, presenter)
-      ) {
-        presenter.dispose()
-        return@launch
-      }
-      composeView.setContent {
-        CheckoutPaymentFlow(controller = controller)
-      }
+      registrationCreation.createAndAttach(
+        create = { presenter.createController(checkoutContext, target) },
+        isCurrent = {
+          registration === presenter &&
+            creationGeneration == generation &&
+            CheckoutCoordinator.shared.isPassivePresenterActive(checkoutId, presenterId, presenter)
+        },
+        attach = { controller ->
+          composeView.setContent {
+            CheckoutPaymentFlow(controller = controller)
+          }
+        },
+        dispose = presenter::dispose,
+        onFailure = { exception ->
+          Log.w(TAG, "Embedded controller creation failed", exception)
+        },
+      )
     }
   }
 
