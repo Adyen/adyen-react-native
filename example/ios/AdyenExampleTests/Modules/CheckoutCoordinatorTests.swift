@@ -338,6 +338,62 @@ final class CheckoutCoordinatorTests: XCTestCase {
         )
     }
 
+    func test_embeddedCallbackPathRetainsOwnershipUntilRetryOrTerminalCleanup() async throws {
+        let fixture = Fixture()
+        var assertions: [String] = []
+        let coordinator = fixture.makeCoordinator { assertions.append($0) }
+        let checkoutID = try await coordinator.setup()
+
+        guard case let .acquired(firstOperation) = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("The first embedded callback must acquire anonymously")
+        }
+        XCTAssertEqual(fixture.presenterFactory.createCount, 0)
+        guard case .competing = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("A competing initial callback must receive the native retry path")
+        }
+        XCTAssertEqual(assertions, ["Competing embedded checkout callback"])
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+
+        XCTAssertThrowsError(try coordinator.beginOperation(checkoutID: checkoutID)) { error in
+            XCTAssertEqual(error as? CoordinatorError, .operationBusy)
+        }
+        XCTAssertThrowsError(try coordinator.assertDropInAvailability(checkoutID: checkoutID)) { error in
+            XCTAssertEqual(error as? CoordinatorError, .operationBusy)
+        }
+
+        let retryRequest = try coordinator.beginRequest(
+            operationID: firstOperation,
+            kind: .advancedSubmit,
+            timeout: 10
+        )
+        XCTAssertTrue(coordinator.resolve(retryRequest))
+        coordinator.releaseEmbeddedOperation(firstOperation)
+        XCTAssertNil(coordinator.operationID)
+
+        guard case let .acquired(actionOperation) = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("A retry must release the next embedded acquisition")
+        }
+        let actionRequest = try coordinator.beginRequest(
+            operationID: actionOperation,
+            kind: .advancedSubmit,
+            timeout: 10
+        )
+        XCTAssertTrue(coordinator.resolve(actionRequest))
+        XCTAssertEqual(coordinator.operationID, actionOperation)
+        let detailsRequest = try coordinator.beginRequest(
+            operationID: actionOperation,
+            kind: .advancedAdditionalDetails,
+            timeout: 10
+        )
+        XCTAssertTrue(coordinator.resolve(detailsRequest))
+        XCTAssertEqual(coordinator.operationID, actionOperation)
+
+        try await coordinator.invalidate(checkoutID: checkoutID)
+        XCTAssertNil(coordinator.checkoutID)
+        let freshCheckoutID = try await coordinator.setup()
+        XCTAssertNotEqual(freshCheckoutID, checkoutID)
+    }
+
     func test_lookupSearchTimeoutSettlesFallbackAndReleasesOnlyLookupOwnership() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()

@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk.coordinator
 
 import android.content.Intent
+import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyenreactnativesdk.cse.ActionOperationToken
 import com.adyenreactnativesdk.cse.ActionOwnerRegistry
@@ -643,6 +644,57 @@ class CheckoutCoordinatorTest {
 
     assertNull(coordinator.activeOperationId())
     assertTrue(coordinator.acquireEmbeddedOperation("checkout-1") != null)
+  }
+
+  @Test
+  fun `embedded callback path rejects contenders and retains action details until terminal cleanup`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val checkoutId = coordinator.setup()
+    val launcher = DropInLauncher()
+    coordinator.registerDropInLauncher(launcher)
+
+    val firstOperation = requireNotNull(coordinator.acquireEmbeddedOperation(checkoutId))
+    assertEquals(0, fixture.presenterFactory.createCount)
+    assertNull(coordinator.acquireEmbeddedOperation(checkoutId))
+    assertNull(coordinator.activeRequest())
+
+    try {
+      coordinator.beginOperation()
+      fail("Headless contender must reject without allocation")
+    } catch (_: IllegalStateException) {
+      assertEquals(0, fixture.presenterFactory.createCount)
+      assertEquals(firstOperation, coordinator.activeOperationId())
+    }
+
+    try {
+      coordinator.beginDropIn(mock<CheckoutContext.Sessions>())
+      fail("Drop-in contender must reject without allocation")
+    } catch (_: IllegalStateException) {
+      assertEquals(0, fixture.presenterFactory.createCount)
+      assertEquals(0, launcher.startCount)
+      assertEquals(firstOperation, coordinator.activeOperationId())
+    }
+
+    val retryRequest = coordinator.beginRequest(firstOperation, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+    assertTrue(coordinator.resolve(retryRequest))
+    coordinator.releaseEmbeddedOperation(firstOperation)
+    assertNull(coordinator.activeOperationId())
+
+    val actionOperation = requireNotNull(coordinator.acquireEmbeddedOperation(checkoutId))
+    val actionRequest = coordinator.beginRequest(actionOperation, CoordinatorRequestKind.ADVANCED_SUBMIT, 100)
+    assertTrue(coordinator.resolve(actionRequest))
+    assertEquals(actionOperation, coordinator.activeOperationId())
+    val detailsRequest =
+      coordinator.beginRequest(actionOperation, CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS, 100)
+    assertTrue(coordinator.resolve(detailsRequest))
+    assertEquals(actionOperation, coordinator.activeOperationId())
+
+    coordinator.invalidate()
+    assertNull(coordinator.activeCheckoutId())
+    val freshCheckoutId = coordinator.setup()
+    assertFalse(coordinator.isActive(checkoutId))
+    assertTrue(coordinator.isActive(freshCheckoutId))
   }
 
   @Test

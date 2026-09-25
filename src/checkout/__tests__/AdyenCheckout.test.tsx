@@ -517,6 +517,96 @@ describe('AdyenCheckout', () => {
     });
   });
 
+  test('settles absent, proceed, and abort before-submit callbacks through their active request', async () => {
+    const cases = [
+      {
+        id: 'checkout-session-absent',
+        callback: undefined,
+        expected:
+          '{"type":"proceed","data":{"shopperEmail":"shopper@example.com"}}',
+      },
+      {
+        id: 'checkout-session-proceed',
+        callback: () =>
+          Promise.resolve({
+            type: 'proceed' as const,
+            data: { shopperEmail: 'updated@example.com' },
+          }),
+        expected:
+          '{"type":"proceed","data":{"shopperEmail":"updated@example.com"}}',
+      },
+      {
+        id: 'checkout-session-abort',
+        callback: () => Promise.resolve({ type: 'abort' as const }),
+        expected: '{"type":"abort"}',
+      },
+    ];
+
+    for (const { id, callback, expected } of cases) {
+      native.setupSession.mockResolvedValueOnce(descriptor(id, 'sessions'));
+      await AdyenCheckout.setup(
+        { id: 'session-id', sessionData: 'session-data' },
+        configuration,
+        { ...sessionCallbacks, onBeforeSubmit: callback }
+      );
+      const eventHandler = native.onCheckoutEvent.mock.calls.at(-1)![0];
+
+      await eventHandler({
+        checkoutId: id,
+        operationId: `operation-${id}`,
+        requestId: `request-${id}`,
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{"shopperEmail":"shopper@example.com"}',
+      });
+
+      expect(native.respond).toHaveBeenLastCalledWith({
+        checkoutId: id,
+        operationId: `operation-${id}`,
+        requestId: `request-${id}`,
+        kind: 'sessionBeforeSubmit',
+        payloadJson: expected,
+      });
+    }
+  });
+
+  test('delivers one normalized terminal outcome then permits a fresh checkout', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-session-one-terminal', 'sessions')
+    );
+    const onComplete = jest.fn();
+    const onError = jest.fn();
+    await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      { onComplete, onError }
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls.at(-1)![0];
+
+    await eventHandler({
+      checkoutId: 'checkout-session-one-terminal',
+      kind: 'completion',
+      payloadJson: '{"sessionId":"session-id","resultCode":"Authorised"}',
+    });
+    await eventHandler({
+      checkoutId: 'checkout-session-one-terminal',
+      kind: 'error',
+      payloadJson: '{}',
+    });
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-after-terminal')
+    );
+    await expect(
+      AdyenCheckout.setupAdvanced(
+        { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+        configuration,
+        callbacks
+      )
+    ).resolves.toMatchObject({ flow: 'advanced' });
+  });
+
   test('normalizes advanced terminal payloads before merchant delivery', async () => {
     native.setupAdvanced.mockResolvedValueOnce(
       descriptor('checkout-advanced-terminal')
