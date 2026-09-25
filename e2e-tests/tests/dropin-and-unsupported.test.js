@@ -49,12 +49,10 @@ async function tapAndroidDropInPay(driver) {
   await driver.execute('mobile: performEditorAction', { action: 'done' });
   await driver.hideKeyboard().catch(() => undefined);
   const control = await driver.$(
-    'android=new UiSelector().className("android.widget.Button")'
+    'android=new UiSelector().className("android.view.View").clickable(true).enabled(true).childSelector(new UiSelector().textMatches("(?i)^pay .*"))'
   );
   await control.waitForDisplayed({ timeout: 15000 });
-  await driver.execute('mobile: clickGesture', {
-    elementId: control.elementId,
-  });
+  await control.click();
 }
 
 async function runAndroidDropIn(driver, route) {
