@@ -304,6 +304,12 @@ class AndroidCheckoutModule(
   ) {
     onMain {
       val state = activeState(checkoutId, promise) ?: return@onMain
+      if (!state.isSession) {
+        // TODO(Adyen Android SDK future published version): enable advanced Drop-in when its
+        // callback construction exposes the completion hook that emits DropInResult.Completed.
+        rejectUnsupportedAdvancedDropIn(promise)
+        return@onMain
+      }
       activityOrReject(promise) ?: return@onMain
       try {
         CheckoutCoordinator.shared.beginDropIn(state.checkoutContext)
@@ -609,6 +615,17 @@ class AndroidCheckoutModule(
     )
   }
 
+  private fun rejectUnsupportedAdvancedDropIn(promise: Promise) {
+    promise.reject(
+      ERROR_UNSUPPORTED_CAPABILITY,
+      "Advanced Drop-in is unsupported by Android SDK 6.0.0-alpha.1",
+      capabilityMetadataFactory().apply {
+        putString(CAPABILITY, ADVANCED_DROP_IN_CAPABILITY)
+        putString(PHASE, PHASE_PRESENTATION)
+      },
+    )
+  }
+
   private fun onMain(action: () -> Unit) {
     reactContext.runOnUiQueueThread(action)
   }
@@ -717,58 +734,6 @@ class AndroidCheckoutModule(
     override fun complete(resultCode: String) = Unit
 
     override fun retry(message: String?) = Unit
-
-    override suspend fun onDropInSubmit(data: PaymentComponentData<*>): SubmitResult {
-      if (disposed) return SubmitResult.Retry(null)
-      return kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
-        createRequest(
-          operationId = requireNotNull(presentation.operationId),
-          kind = CoordinatorRequestKind.ADVANCED_SUBMIT,
-          eventKind = EVENT_ADVANCED_SUBMIT,
-          payload = PaymentComponentData.SERIALIZER.serialize(data),
-        ) { response ->
-          if (!continuation.isActive) return@createRequest
-          val payload = response ?: JSONObject()
-          continuation.resume(
-            when (payload.optString(TYPE)) {
-              ACTION -> {
-                runCatching {
-                  SubmitResult.Action(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
-                }.getOrElse { SubmitResult.Retry(null) }
-              }
-
-              COMPLETED -> {
-                SubmitResult.Completion(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
-              }
-
-              else -> {
-                SubmitResult.Retry(payload.optString(MESSAGE).takeIf(String::isNotBlank))
-              }
-            },
-          )
-        }
-      }
-    }
-
-    override suspend fun onDropInAdditionalDetails(data: ActionComponentData): AdditionalDetailsResult {
-      if (disposed) return AdditionalDetailsResult.Completion(CheckoutResultCode.ERROR.value)
-      return kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
-        createRequest(
-          operationId = requireNotNull(presentation.operationId),
-          kind = CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS,
-          eventKind = EVENT_ADVANCED_ADDITIONAL_DETAILS,
-          payload = ActionComponentData.SERIALIZER.serialize(data),
-        ) { response ->
-          if (continuation.isActive) {
-            continuation.resume(
-              AdditionalDetailsResult.Completion(
-                response?.optString(RESULT_CODE, CheckoutResultCode.ERROR.value) ?: CheckoutResultCode.ERROR.value,
-              ),
-            )
-          }
-        }
-      }
-    }
 
     override fun onDropInResult(result: CoordinatorDropInResult) {
       if (disposed) return
@@ -888,8 +853,10 @@ class AndroidCheckoutModule(
     private const val ERROR_UNSUPPORTED_CAPABILITY = "unsupportedCapability"
     private const val CAPABILITY = "capability"
     private const val ADDRESS_LOOKUP_CAPABILITY = "addressLookup"
+    private const val ADVANCED_DROP_IN_CAPABILITY = "advancedDropIn"
     private const val PHASE = "phase"
     private const val PHASE_SETUP = "setup"
+    private const val PHASE_PRESENTATION = "presentation"
     private const val CARD = "card"
     private const val ADDRESS_VISIBILITY = "addressVisibility"
     private const val ADDRESS_LOOKUP = "lookup"

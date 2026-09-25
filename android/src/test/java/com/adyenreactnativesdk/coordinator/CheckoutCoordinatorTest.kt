@@ -868,37 +868,30 @@ class CheckoutCoordinatorTest {
           .Completion("Error"),
         coordinator.onDropInAdditionalDetails(mock()),
       )
-      assertEquals(0, dropInPresenter.submitCount)
-      assertEquals(0, dropInPresenter.additionalDetailsCount)
       assertTrue(fixture.events.isEmpty())
       assertEquals(operationId, coordinator.activeOperationId())
     }
 
   @Test
-  fun `advanced drop-in service callbacks remain bound to the active presenter`() =
-    runBlocking {
-      val fixture = Fixture()
-      val coordinator = fixture.coordinator()
-      val launcher = DropInLauncher()
-      val dropInPresenter = DropInPresenter()
-      fixture.presenterFactory.presenter = dropInPresenter
-      coordinator.setup()
-      coordinator.registerDropInLauncher(launcher)
-      coordinator.beginDropIn(mock<com.adyen.checkout.core.common.CheckoutContext.Advanced>())
+  fun `advanced drop-in rejects before operation presenter or launcher allocation`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val launcher = DropInLauncher()
+    fixture.presenterFactory.presenter = DropInPresenter()
+    coordinator.setup()
+    coordinator.registerDropInLauncher(launcher)
 
-      assertEquals(
-        com.adyen.checkout.core.components.SubmitResult
-          .Retry(null),
-        coordinator.onDropInSubmit(mock()),
-      )
-      assertEquals(
-        com.adyen.checkout.core.components.AdditionalDetailsResult
-          .Completion("Error"),
-        coordinator.onDropInAdditionalDetails(mock()),
-      )
-      assertEquals(1, dropInPresenter.submitCount)
-      assertEquals(1, dropInPresenter.additionalDetailsCount)
+    try {
+      coordinator.beginDropIn(mock<com.adyen.checkout.core.common.CheckoutContext.Advanced>())
+      fail("Expected advanced Drop-in to be unsupported")
+    } catch (_: UnsupportedOperationException) {
+      assertNull(coordinator.activeOperationId())
+      assertNull(coordinator.activeRequest())
+      assertEquals(0, fixture.presenterFactory.createCount)
+      assertEquals(0, launcher.startCount)
+      assertEquals(0, launcher.clearResultCount)
     }
+  }
 
   @Test
   fun `drop-in cancellation and failure release their launcher operation once`() {
@@ -913,7 +906,7 @@ class CheckoutCoordinatorTest {
       fixture.presenterFactory.presenter = dropInPresenter
       coordinator.setup()
       coordinator.registerDropInLauncher(launcher)
-      coordinator.beginDropIn(mock<com.adyen.checkout.core.common.CheckoutContext.Advanced>())
+      coordinator.beginDropIn(mock<com.adyen.checkout.core.common.CheckoutContext.Sessions>())
 
       launcher.finish(result)
       launcher.finish(result)
@@ -1163,18 +1156,6 @@ class CheckoutCoordinatorTest {
     Presenter(),
     CoordinatorDropInPresenter {
     val results = mutableListOf<CoordinatorDropInResult>()
-    var submitCount = 0
-    var additionalDetailsCount = 0
-
-    override suspend fun onDropInSubmit(data: com.adyen.checkout.core.components.data.PaymentComponentData<*>) =
-      com.adyen.checkout.core.components.SubmitResult.Retry(null).also {
-        submitCount += 1
-      }
-
-    override suspend fun onDropInAdditionalDetails(data: com.adyen.checkout.core.action.data.ActionComponentData) =
-      com.adyen.checkout.core.components.AdditionalDetailsResult.Completion("Error").also {
-        additionalDetailsCount += 1
-      }
 
     override fun onDropInResult(result: CoordinatorDropInResult) {
       results += result

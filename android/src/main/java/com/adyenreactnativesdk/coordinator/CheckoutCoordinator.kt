@@ -82,10 +82,6 @@ internal interface CoordinatorDropInLauncher {
 
 /** Drop-in owns its submit/details bridge while its activity is visible. */
 internal interface CoordinatorDropInPresenter {
-  suspend fun onDropInSubmit(data: PaymentComponentData<*>): SubmitResult
-
-  suspend fun onDropInAdditionalDetails(data: ActionComponentData): AdditionalDetailsResult
-
   fun onDropInResult(result: CoordinatorDropInResult)
 }
 
@@ -357,9 +353,17 @@ internal class CheckoutCoordinator(
         val launcher = checkNotNull(dropInLauncher) { "No Drop-in launcher is registered" }
         val kind =
           when (context) {
-            is CheckoutContext.Sessions -> OperationKind.DROP_IN_SESSIONS
-            is CheckoutContext.Advanced -> OperationKind.DROP_IN_ADVANCED
-            is CheckoutContext.ActionOnly -> error("Drop-in does not support action-only checkout contexts")
+            is CheckoutContext.Sessions -> {
+              OperationKind.DROP_IN_SESSIONS
+            }
+
+            is CheckoutContext.Advanced -> {
+              throw UnsupportedOperationException("Advanced Drop-in is unsupported by Android SDK 6.0.0-alpha.1")
+            }
+
+            is CheckoutContext.ActionOnly -> {
+              error("Drop-in does not support action-only checkout contexts")
+            }
           }
         val operationId = beginOperationLocked(kind)
         val dropInPresenter =
@@ -465,7 +469,6 @@ internal class CheckoutCoordinator(
       requestCancellationFallback = cancellationFallback
       try {
         emit(CoordinatorEvent.Request(createdRequest, eventKind, payloadJson))
-        Log.i(TAG, "Checkout request emitted kind=${eventKind ?: kind.name}")
       } catch (exception: Exception) {
         settleRequestLocked(createdRequest, invokeFallback = true)
         throw exception
@@ -489,7 +492,6 @@ internal class CheckoutCoordinator(
           matched = true
           val handler = requestResponse
           settleRequestLocked()
-          Log.i(TAG, "Checkout response matched kind=${candidate.kind.name}")
           handler
         }
       }
@@ -513,46 +515,15 @@ internal class CheckoutCoordinator(
   @MainThread
   suspend fun onDropInSubmit(data: PaymentComponentData<*>): SubmitResult =
     withContext(Dispatchers.Main.immediate) {
-      val dropInPresenter =
-        transition {
-          if (operationKind == OperationKind.DROP_IN_SESSIONS) {
-            Log.w(TAG, "Unexpected session Drop-in service submit callback rejected")
-            null
-          } else if (operationKind == OperationKind.DROP_IN_ADVANCED) {
-            (presenter as? CoordinatorDropInPresenter)
-              ?: run {
-                Log.w(TAG, "Advanced Drop-in service submit callback has no active presenter")
-                null
-              }
-          } else {
-            Log.w(TAG, "Drop-in service submit callback has no active Drop-in operation")
-            null
-          }
-        }
-      dropInPresenter?.onDropInSubmit(data) ?: SubmitResult.Retry(null)
+      transition { Unit }
+      SubmitResult.Retry(null)
     }
 
   @MainThread
   suspend fun onDropInAdditionalDetails(data: ActionComponentData): AdditionalDetailsResult =
     withContext(Dispatchers.Main.immediate) {
-      val dropInPresenter =
-        transition {
-          if (operationKind == OperationKind.DROP_IN_SESSIONS) {
-            Log.w(TAG, "Unexpected session Drop-in service additional-details callback rejected")
-            null
-          } else if (operationKind == OperationKind.DROP_IN_ADVANCED) {
-            (presenter as? CoordinatorDropInPresenter)
-              ?: run {
-                Log.w(TAG, "Advanced Drop-in service details callback has no active presenter")
-                null
-              }
-          } else {
-            Log.w(TAG, "Drop-in service details callback has no active Drop-in operation")
-            null
-          }
-        }
-      dropInPresenter?.onDropInAdditionalDetails(data)
-        ?: AdditionalDetailsResult.Completion("Error")
+      transition { Unit }
+      AdditionalDetailsResult.Completion("Error")
     }
 
   @MainThread
@@ -762,7 +733,6 @@ internal class CheckoutCoordinator(
     transition {
       if (this.checkoutId == checkoutId) {
         emit(CoordinatorEvent.Terminal(checkoutId, kind, payloadJson))
-        Log.i(TAG, "Checkout terminal emitted kind=$kind")
       }
     }
   }
@@ -897,7 +867,6 @@ internal class CheckoutCoordinator(
           presenter === expectedPresenter
       }
     if (!matched) return
-    Log.i(TAG, "Official v6 Drop-in terminal activity result matched")
     expectedPresenter.onDropInResult(result)
     invalidate()
   }
