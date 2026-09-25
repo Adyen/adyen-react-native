@@ -61,7 +61,9 @@
     "start": "rm yarn.lock && yarn && yarn prepare && husky && bash ./scripts/credentials.sh",
     "api-extractor": "api-extractor run",
     "api-extractor:update": "api-extractor run --local",
-    "check:compatibility": "node scripts/check-compatibility-baseline.mjs"
+    "check:compatibility": "node scripts/check-compatibility-baseline.mjs",
+    "validate:docs": "node scripts/validate-docs.mjs",
+    "validate:rn-fixtures": "node scripts/validate-rn-fixtures.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",

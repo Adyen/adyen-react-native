@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "allowUnreachableCode": false,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "paths": {
+      "@adyen/react-native": ["../../src/index"]
+    },
+    "rootDir": "../..",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext"
+  },
+  "include": ["public-api.tsx", "../../src/**/*.ts", "../../src/**/*.tsx"],
+  "exclude": ["../../src/**/__tests__/**"]
+}

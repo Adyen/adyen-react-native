@@ -22,6 +22,9 @@ Declared in `package.json` `peerDependencies`:
 | `react`        | `*`         | Any version compatible with your React Native.                                                                   |
 | `expo`         | `>=56`      | Optional (`peerDependenciesMeta.expo.optional = true`); required only if you use the bundled Expo config plugin. |
 
+React Native 0.81 and earlier are not supported. Both packed consumer fixtures and the active CI
+matrix validate the React Native 0.82.4 floor and the repository's current development version.
+
 ## iOS
 
 - **Deployment target: iOS 16.0.** Declared by `adyen-react-native.podspec`
