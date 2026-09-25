@@ -5,12 +5,13 @@
 //
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Platform, ScrollView, Text, View } from 'react-native';
+import { Button, ScrollView, Text, View } from 'react-native';
 import {
   AdyenAction,
   AdyenCheckout,
   AdyenComponent,
   AdyenCSE,
+  AdyenDropIn,
   type AddressLookup,
   type AddressLookupItem,
   type Checkout,
@@ -33,6 +34,8 @@ type Scenario =
   | 'sessions'
   | 'advanced'
   | 'lookup'
+  | 'dropin-sessions'
+  | 'dropin-advanced'
   | 'headless-sessions'
   | 'headless-advanced'
   | 'lifecycle';
@@ -126,6 +129,16 @@ const ValidationRoutes = ({ navigation }: Props) => {
         onPress={() => setScenario('lookup')}
       />
       <Button
+        testID="validation-route-dropin-sessions"
+        title="Sessions Drop-in"
+        onPress={() => setScenario('dropin-sessions')}
+      />
+      <Button
+        testID="validation-route-dropin-advanced"
+        title="Advanced Drop-in"
+        onPress={() => setScenario('dropin-advanced')}
+      />
+      <Button
         testID="validation-route-lifecycle"
         title="Lifecycle and standalone"
         onPress={() => setScenario('lifecycle')}
@@ -151,7 +164,10 @@ const ValidationCheckout = ({
   const [status, setStatus] = useState('setting-up');
   const [mountedCheckout, setMountedCheckout] = useState<Checkout | null>(null);
   const [showPresenter, setShowPresenter] = useState(
-    () => !HEADLESS_SCENARIOS.includes(scenario)
+    () =>
+      !HEADLESS_SCENARIOS.includes(scenario) &&
+      scenario !== 'dropin-sessions' &&
+      scenario !== 'dropin-advanced'
   );
   const staleCheckout = useRef<Checkout | null>(null);
   const currentCheckout = useRef<Checkout | null>(null);
@@ -159,7 +175,11 @@ const ValidationCheckout = ({
   const standaloneAction = useRef<Promise<unknown> | null>(null);
   const isHeadlessScenario = HEADLESS_SCENARIOS.includes(scenario);
   const isAdvancedScenario =
-    scenario === 'advanced' || scenario === 'headless-advanced';
+    scenario === 'advanced' ||
+    scenario === 'headless-advanced' ||
+    scenario === 'dropin-advanced';
+  const isDropInScenario =
+    scenario === 'dropin-sessions' || scenario === 'dropin-advanced';
 
   const onComplete = useCallback(
     async (result: SessionsResult | PaymentResult) => {
@@ -263,12 +283,12 @@ const ValidationCheckout = ({
       }
       setStatus(
         scenario === 'lookup'
-          ? Platform.OS === 'ios'
-            ? 'lookup-ready'
-            : 'lookup-unsupportedCapability'
-          : isHeadlessScenario
-            ? 'headless-ready'
-            : 'embedded-ready'
+          ? 'lookup-ready'
+          : isDropInScenario
+            ? 'dropin-ready'
+            : isHeadlessScenario
+              ? 'headless-ready'
+              : 'embedded-ready'
       );
     } catch (error) {
       setStatus(`setup-${errorCode(error)}`);
@@ -281,6 +301,7 @@ const ValidationCheckout = ({
     onError,
     scenario,
     isAdvancedScenario,
+    isDropInScenario,
     isHeadlessScenario,
   ]);
 
@@ -344,6 +365,16 @@ const ValidationCheckout = ({
     },
     [checkout]
   );
+
+  const startDropIn = useCallback(async () => {
+    if (!checkout) return;
+    try {
+      await AdyenDropIn.start(checkout);
+      setStatus('dropin-presented');
+    } catch (error) {
+      setStatus(`dropin-${errorCode(error)}-presentation`);
+    }
+  }, [checkout]);
 
   const startFreshCheckout = useCallback(async () => {
     await setup();
@@ -470,6 +501,22 @@ const ValidationCheckout = ({
           });
         }}
       />
+      {isDropInScenario ? (
+        <Button
+          testID="validation-start-dropin"
+          title="Start Drop-in"
+          onPress={() => {
+            startDropIn().catch(() => undefined);
+          }}
+        />
+      ) : null}
+      {scenario === 'lookup' ? (
+        <Button
+          testID="validation-exit-unsupported-lookup"
+          title="Exit unsupported lookup"
+          onPress={onExit}
+        />
+      ) : null}
       <Button
         testID="validation-headless-contention"
         title="Run headless contention"
