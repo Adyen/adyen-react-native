@@ -106,6 +106,12 @@ async function expectCardPaymentVisible(driver) {
   await cardField.waitForDisplayed({ timeout: 30000 });
 }
 
+async function dismissAndroidCardSheet(driver) {
+  const dismiss = await driver.$('android=new UiSelector().text("\u2715")');
+  await dismiss.waitForDisplayed({ timeout: 15000 });
+  await dismiss.click();
+}
+
 async function runHeadlessPayment(driver, routeId) {
   await openRoute(driver, routeId);
   await expectStatus(driver, 'headless-ready');
@@ -201,7 +207,8 @@ async function testValidationRoutes(driver, isAndroid) {
   if (isAndroid) {
     await driver.back();
   } else {
-    await clickControl(driver, 'validation-action-cancel');
+    const cancel = await driver.$('~Cancel');
+    await cancel.click();
   }
   await expectAnyStatus(driver, [
     'standalone-action-cancelled',
@@ -210,7 +217,7 @@ async function testValidationRoutes(driver, isAndroid) {
 
   await clickControl(driver, 'validation-headless-contention');
   if (isAndroid) {
-    await driver.back();
+    await dismissAndroidCardSheet(driver);
   }
   await expectStatus(driver, 'contention-operationBusy');
 
@@ -222,9 +229,11 @@ async function testValidationRoutes(driver, isAndroid) {
   await clickControl(driver, 'validation-start-fresh-checkout');
   await expectStatus(driver, 'fresh-checkout-ready');
   await clickControl(driver, 'validation-start-fresh-headless');
-  await expectCardPaymentVisible(driver);
   if (isAndroid) {
-    await driver.back();
+    await expectCardPaymentVisible(driver);
+    await dismissAndroidCardSheet(driver);
+  } else {
+    await expectStatus(driver, 'fresh-headless-started');
   }
 
   if (isAndroid) {

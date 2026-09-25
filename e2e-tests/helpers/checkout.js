@@ -5,6 +5,18 @@ const TEST_CARD = {
   securityCode: '737',
 };
 
+async function waitForAndroidFieldCount(driver, minimum, timeout) {
+  await driver.waitUntil(
+    async () => (await driver.$$('android.widget.EditText')).length >= minimum,
+    {
+      timeout,
+      interval: 100,
+      timeoutMsg: `Timed out waiting for Android card field ${minimum}`,
+    }
+  );
+  return driver.$$('android.widget.EditText');
+}
+
 /**
  * Fills the card number, expiry and security code fields. Android matches fields by on-screen
  * order (no accessibility-id); iOS uses stable accessibility identifiers.
@@ -55,13 +67,25 @@ async function fillCardDetails(driver, card = TEST_CARD, timeout = 20000) {
   // A headless Android Card uses its SDK-owned sheet. It progressively exposes
   // fields after the focused field's editor action, rather than exposing all
   // three inputs like the embedded Card.
-  for (const value of [card.number, card.expiryDate, card.securityCode]) {
-    fields = await driver.$$('android.widget.EditText');
-    const field = fields[fields.length - 1];
+  for (const [index, value] of [
+    [0, card.number],
+    [1, card.expiryDate],
+    [2, card.securityCode],
+  ]) {
+    fields = await waitForAndroidFieldCount(
+      driver,
+      index + 1,
+      Math.max(1, deadline - Date.now())
+    );
+    const field = fields[index];
     await field.addValue(value);
     if (value !== card.securityCode) {
       await driver.execute('mobile: performEditorAction', { action: 'next' });
-      await driver.pause(500);
+      await waitForAndroidFieldCount(
+        driver,
+        index + 2,
+        Math.max(1, deadline - Date.now())
+      );
     }
   }
 }
