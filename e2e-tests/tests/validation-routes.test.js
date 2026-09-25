@@ -48,6 +48,41 @@ async function clickControl(driver, id) {
   await control.click();
 }
 
+async function openRoute(driver, id) {
+  const route = await driver.$(testId(driver, id));
+  await route.waitForDisplayed({ timeout: 15000 });
+  await route.click();
+}
+
+async function expectOldPresenterInactive(driver) {
+  const oldCardField = driver.isIOS
+    ? await driver.$(
+        '~AdyenCard.FormCardNumberContainerItem.numberItem.textField'
+      )
+    : await driver.$(
+        'android=new UiSelector().className("android.widget.EditText")'
+      );
+
+  await oldCardField.waitForExist({ reverse: true, timeout: 15000 });
+}
+
+async function runHeadlessPayment(driver, routeId) {
+  await openRoute(driver, routeId);
+  await expectStatus(driver, 'headless-ready');
+  await clickControl(driver, 'validation-start-headless');
+  await expectStatus(driver, 'headless-started');
+
+  await fillCardDetails(driver);
+  await tapPayButton(driver);
+  const resultCode = await waitForResultCode(driver);
+  if (!/authorised/i.test(resultCode)) {
+    throw new Error(
+      `Expected an Authorised headless result, got "${resultCode}"`
+    );
+  }
+  await tapBackToHome(driver);
+}
+
 /**
  * Exercises the example-only lifecycle and standalone controls entirely through accessibility
  * selectors. The iOS lookup flow uses the SDK's stable accessibility labels and route state
@@ -99,15 +134,17 @@ async function testValidationRoutes(driver, isAndroid) {
     await openValidationRoutes(driver);
   }
 
-  const lifecycleRoute = await driver.$(
-    testId(driver, 'validation-route-lifecycle')
-  );
-  await lifecycleRoute.waitForDisplayed({ timeout: 15000 });
-  await lifecycleRoute.click();
+  await runHeadlessPayment(driver, 'validation-route-headless-sessions');
+  await openValidationRoutes(driver);
+  await runHeadlessPayment(driver, 'validation-route-headless-advanced');
+  await openValidationRoutes(driver);
+
+  await openRoute(driver, 'validation-route-lifecycle');
   await expectStatus(driver, 'embedded-ready');
 
   await clickControl(driver, 'validation-replace-checkout');
-  await expectStatus(driver, 'checkout-replaced');
+  await expectStatus(driver, 'mounted-presenter-inactive');
+  await expectOldPresenterInactive(driver);
 
   await clickControl(driver, 'validation-submit-stale');
   await expectStatus(driver, 'stale-submit-staleCheckout');
@@ -116,9 +153,15 @@ async function testValidationRoutes(driver, isAndroid) {
   await expectStatus(driver, 'presenter-recycled');
 
   await clickControl(driver, 'validation-cse');
-  await expectStatus(driver, 'cse-validation-complete');
+  await expectStatus(driver, 'cse-encryption-and-validation-complete');
 
-  await clickControl(driver, 'validation-action-cancel');
+  await clickControl(driver, 'validation-start-action');
+  await expectStatus(driver, 'standalone-action-active');
+  if (isAndroid) {
+    await driver.back();
+  } else {
+    await clickControl(driver, 'validation-action-cancel');
+  }
   await expectStatus(driver, 'standalone-action-cancelled');
 
   await clickControl(driver, 'validation-headless-contention');
@@ -127,15 +170,25 @@ async function testValidationRoutes(driver, isAndroid) {
   }
   await expectStatus(driver, 'contention-operationBusy');
 
-  await clickControl(driver, 'validation-invalidate');
-  await expectStatus(driver, 'checkout-invalidated');
+  await clickControl(driver, 'validation-cleanup-contention');
+  await expectStatus(driver, 'contention-owner-cleaned');
+
+  // A stable completed-owner label proves no contender was queued or auto-started.
+  await expectStatus(driver, 'contention-owner-cleaned', 2000);
+  await clickControl(driver, 'validation-start-fresh-checkout');
+  await expectStatus(driver, 'fresh-checkout-ready');
+  await clickControl(driver, 'validation-start-fresh-headless');
+  await expectStatus(driver, 'fresh-headless-started');
+  if (isAndroid) {
+    await driver.back();
+  }
 
   if (isAndroid) {
     await clickControl(driver, 'validation-exit');
   }
 
   console.log(
-    '==> [Test] SUCCESS: Lookup, replacement, stale, contention, lifecycle, Action, and CSE controls are selector-driven.'
+    '==> [Test] SUCCESS: Lookup, headless outcomes, replacement, stale, contention, Action, and CSE controls are selector-driven.'
   );
 }
 

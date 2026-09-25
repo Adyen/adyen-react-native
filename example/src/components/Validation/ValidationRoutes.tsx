@@ -15,6 +15,7 @@ import {
   type AddressLookupItem,
   type Checkout,
   type Configuration,
+  type PaymentAction,
   type PaymentDetailsData,
   type PaymentMethodData,
   type PaymentResult,
@@ -28,8 +29,31 @@ import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { ENVIRONMENT } from '../../Configuration';
 import Styles from '../common/Styles';
 
-type Scenario = 'sessions' | 'advanced' | 'lookup' | 'lifecycle';
+type Scenario =
+  | 'sessions'
+  | 'advanced'
+  | 'lookup'
+  | 'headless-sessions'
+  | 'headless-advanced'
+  | 'lifecycle';
 type Props = NativeStackScreenProps<HomeStackParamList, 'ValidationRoutes'>;
+
+const HEADLESS_SCENARIOS: readonly Scenario[] = [
+  'headless-sessions',
+  'headless-advanced',
+];
+const ACTION_TEST_CARD = {
+  number: '5212345678901234',
+  expiryMonth: '03',
+  expiryYear: '2030',
+  cvv: '737',
+};
+const CSE_TEST_CARD = {
+  number: '4111111111111111',
+  expiryMonth: '03',
+  expiryYear: '2030',
+  cvv: '737',
+};
 
 const LOOKUP_CANDIDATE: AddressLookupItem = {
   id: 'validation-address-candidate',
@@ -86,6 +110,16 @@ const ValidationRoutes = ({ navigation }: Props) => {
         onPress={() => setScenario('advanced')}
       />
       <Button
+        testID="validation-route-headless-sessions"
+        title="Sessions headless"
+        onPress={() => setScenario('headless-sessions')}
+      />
+      <Button
+        testID="validation-route-headless-advanced"
+        title="Advanced headless"
+        onPress={() => setScenario('headless-advanced')}
+      />
+      <Button
         testID="validation-route-address-lookup"
         title="iOS address lookup"
         onPress={() => setScenario('lookup')}
@@ -114,12 +148,17 @@ const ValidationCheckout = ({
   const { apiClient, configuration, navigateToResults } = useAppContext();
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [status, setStatus] = useState('setting-up');
+  const [mountedCheckout, setMountedCheckout] = useState<Checkout | null>(null);
   const [showPresenter, setShowPresenter] = useState(
-    () => scenario !== 'lifecycle'
+    () => !HEADLESS_SCENARIOS.includes(scenario)
   );
   const staleCheckout = useRef<Checkout | null>(null);
   const currentCheckout = useRef<Checkout | null>(null);
   const suppressContentionError = useRef(false);
+  const standaloneAction = useRef<Promise<unknown> | null>(null);
+  const isHeadlessScenario = HEADLESS_SCENARIOS.includes(scenario);
+  const isAdvancedScenario =
+    scenario === 'advanced' || scenario === 'headless-advanced';
 
   const onComplete = useCallback(
     async (result: SessionsResult | PaymentResult) => {
@@ -177,7 +216,7 @@ const ValidationCheckout = ({
   const setup = useCallback(async () => {
     setStatus('setting-up');
     try {
-      if (scenario === 'advanced') {
+      if (isAdvancedScenario) {
         const paymentMethods = await apiClient.paymentMethods(configuration);
         const next = await AdyenCheckout.setupAdvanced(
           paymentMethods,
@@ -203,6 +242,7 @@ const ValidationCheckout = ({
         );
         currentCheckout.current = next;
         setCheckout(next);
+        setMountedCheckout((mounted) => mounted ?? next);
       } else {
         const session = await apiClient.requestSession(
           configuration,
@@ -218,13 +258,16 @@ const ValidationCheckout = ({
         );
         currentCheckout.current = next;
         setCheckout(next);
+        setMountedCheckout((mounted) => mounted ?? next);
       }
       setStatus(
         scenario === 'lookup'
           ? Platform.OS === 'ios'
             ? 'lookup-ready'
             : 'lookup-unsupportedCapability'
-          : 'embedded-ready'
+          : isHeadlessScenario
+            ? 'headless-ready'
+            : 'embedded-ready'
       );
     } catch (error) {
       setStatus(`setup-${errorCode(error)}`);
@@ -236,6 +279,8 @@ const ValidationCheckout = ({
     onComplete,
     onError,
     scenario,
+    isAdvancedScenario,
+    isHeadlessScenario,
   ]);
 
   useEffect(() => {
@@ -251,7 +296,7 @@ const ValidationCheckout = ({
     if (!checkout) return;
     staleCheckout.current = checkout;
     await setup();
-    setStatus('checkout-replaced');
+    setStatus('mounted-presenter-inactive');
   }, [checkout, setup]);
 
   const submitStaleCheckout = useCallback(async () => {
@@ -266,12 +311,12 @@ const ValidationCheckout = ({
     }
   }, []);
 
-  const invalidateCheckout = useCallback(async () => {
+  const cleanupContention = useCallback(async () => {
     try {
       await checkout?.invalidate();
-      setStatus('checkout-invalidated');
+      setStatus('contention-owner-cleaned');
     } catch (error) {
-      setStatus(`invalidate-${errorCode(error)}`);
+      setStatus(`contention-cleanup-${errorCode(error)}`);
     }
   }, [checkout]);
 
@@ -290,21 +335,90 @@ const ValidationCheckout = ({
     );
   }, [checkout]);
 
+  const startHeadless = useCallback(
+    async (fresh = false) => {
+      if (!checkout) return;
+      await checkout.submit({ kind: 'paymentMethod', type: 'scheme' });
+      setStatus(fresh ? 'fresh-headless-started' : 'headless-started');
+    },
+    [checkout]
+  );
+
+  const startFreshCheckout = useCallback(async () => {
+    await setup();
+    setStatus('fresh-checkout-ready');
+  }, [setup]);
+
   const validateCse = useCallback(async () => {
-    const [number, expiry, securityCode] = await Promise.all([
-      AdyenCSE.validateCardNumber('4111111111111111', true),
+    const [encrypted, number, expiry, securityCode] = await Promise.all([
+      AdyenCSE.encryptCard(CSE_TEST_CARD, ENVIRONMENT.publicKey),
+      AdyenCSE.validateCardNumber(CSE_TEST_CARD.number, true),
       AdyenCSE.validateCardExpiryDate('03', '30'),
       AdyenCSE.validateCardSecurityCode('737', 'visa'),
     ]);
     setStatus(
-      number && expiry && securityCode
-        ? 'cse-validation-complete'
+      encrypted.number &&
+        encrypted.expiryMonth &&
+        encrypted.expiryYear &&
+        encrypted.cvv &&
+        number &&
+        expiry &&
+        securityCode
+        ? 'cse-encryption-and-validation-complete'
         : 'cse-validation-failed'
     );
   }, []);
 
+  const startStandaloneAction = useCallback(async () => {
+    setStatus('standalone-action-starting');
+    try {
+      const encrypted = await AdyenCSE.encryptCard(
+        ACTION_TEST_CARD,
+        ENVIRONMENT.publicKey
+      );
+      const result = await apiClient.payments(
+        {
+          paymentMethod: {
+            type: 'scheme',
+            encryptedCardNumber: encrypted.number,
+            encryptedExpiryMonth: encrypted.expiryMonth,
+            encryptedExpiryYear: encrypted.expiryYear,
+            encryptedSecurityCode: encrypted.cvv,
+            threeDS2SdkVersion: await AdyenAction.getThreeDS2SdkVersion(),
+          },
+          returnUrl: `${ENVIRONMENT.returnUrl}/standalone-action`,
+        },
+        configuration,
+        `${ENVIRONMENT.returnUrl}/standalone-action`
+      );
+      if (!result.action) {
+        setStatus('standalone-action-missing-action');
+        return;
+      }
+      const operation = AdyenAction.handle(
+        result.action as PaymentAction,
+        checkoutConfigurationForScenario
+      );
+      standaloneAction.current = operation;
+      setStatus('standalone-action-active');
+      operation.then(
+        () => setStatus('standalone-action-completed'),
+        (error) => {
+          setStatus(
+            errorCode(error) === 'cancelled'
+              ? 'standalone-action-cancelled'
+              : `standalone-action-${errorCode(error)}`
+          );
+        }
+      );
+    } catch (error) {
+      setStatus(`standalone-action-${errorCode(error)}`);
+    }
+  }, [apiClient, checkoutConfigurationForScenario, configuration]);
+
   const cancelStandaloneAction = useCallback(async () => {
     await AdyenAction.hide();
+    await standaloneAction.current?.catch(() => undefined);
     setStatus('standalone-action-cancelled');
   }, []);
 
@@ -312,9 +426,9 @@ const ValidationCheckout = ({
     <ScrollView style={Styles.page} contentContainerStyle={Styles.padded}>
       <Status value={status} />
       <Text testID={`validation-scenario-${scenario}`}>{scenario}</Text>
-      {checkout && showPresenter ? (
+      {mountedCheckout && showPresenter ? (
         <View testID="validation-embedded-presenter">
-          <AdyenComponent checkout={checkout} type="scheme" />
+          <AdyenComponent checkout={mountedCheckout} type="scheme" />
         </View>
       ) : null}
       <Button
@@ -332,13 +446,6 @@ const ValidationCheckout = ({
         }}
       />
       <Button
-        testID="validation-invalidate"
-        title="Invalidate checkout"
-        onPress={() => {
-          invalidateCheckout().catch(() => undefined);
-        }}
-      />
-      <Button
         testID="validation-recycle-presenter"
         title="Recycle presenter"
         onPress={() => {
@@ -350,6 +457,15 @@ const ValidationCheckout = ({
         }}
       />
       <Button
+        testID="validation-start-headless"
+        title="Start headless payment"
+        onPress={() => {
+          startHeadless().catch((error) => {
+            setStatus(`headless-${errorCode(error)}`);
+          });
+        }}
+      />
+      <Button
         testID="validation-headless-contention"
         title="Run headless contention"
         onPress={() => {
@@ -357,10 +473,40 @@ const ValidationCheckout = ({
         }}
       />
       <Button
+        testID="validation-cleanup-contention"
+        title="Clean up contention owner"
+        onPress={() => {
+          cleanupContention().catch(() => undefined);
+        }}
+      />
+      <Button
+        testID="validation-start-fresh-checkout"
+        title="Start fresh checkout"
+        onPress={() => {
+          startFreshCheckout().catch(() => undefined);
+        }}
+      />
+      <Button
+        testID="validation-start-fresh-headless"
+        title="Start fresh headless payment"
+        onPress={() => {
+          startHeadless(true).catch((error) => {
+            setStatus(`fresh-headless-${errorCode(error)}`);
+          });
+        }}
+      />
+      <Button
         testID="validation-cse"
-        title="Validate CSE"
+        title="Encrypt and validate CSE"
         onPress={() => {
           validateCse().catch(() => undefined);
+        }}
+      />
+      <Button
+        testID="validation-start-action"
+        title="Start standalone action"
+        onPress={() => {
+          startStandaloneAction().catch(() => undefined);
         }}
       />
       <Button
