@@ -6,6 +6,7 @@
 
 package com.adyenreactnativesdk.component.dropin
 
+import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.dropin.DropIn
@@ -20,9 +21,14 @@ import com.adyenreactnativesdk.coordinator.CoordinatorDropInResult
 internal class CoordinatorDropInLauncher(
   caller: ActivityResultCaller,
 ) : CoordinatorDropInLauncher {
+  companion object {
+    private const val TAG = "CoordinatorDropIn"
+  }
+
   private var activeResult: ((CoordinatorDropInResult) -> Unit)? = null
   private val launcher =
     DropIn.registerForResult(caller) { result ->
+      Log.i(TAG, "Official v6 Drop-in activity result=${result.javaClass.simpleName}")
       activeResult?.invoke(result.toCoordinatorResult())
     }
 
@@ -34,10 +40,12 @@ internal class CoordinatorDropInLauncher(
     activeResult = onResult
     when (context) {
       is CheckoutContext.Sessions -> {
+        Log.i(TAG, "Official v6 Drop-in starting session callbacks path")
         DropIn.start(launcher, context, CoordinatorDropInService::class.java)
       }
 
       is CheckoutContext.Advanced -> {
+        Log.i(TAG, "Official v6 Drop-in starting advanced service callbacks path")
         DropIn.start(launcher, context, CoordinatorDropInService::class.java)
       }
 
