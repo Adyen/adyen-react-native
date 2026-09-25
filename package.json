@@ -54,7 +54,7 @@
     "test:android": "cd example/android && ./gradlew :adyen_react-native:testDebugUnitTest",
     "test:ios": "xcodebuild test -workspace example/ios/AdyenExample.xcworkspace -scheme AdyenExample -destination \"platform=iOS Simulator,id=$(bash ./e2e-tests/scripts/resolve_ios_simulator.sh)\"",
     "test:native": "yarn test:android && yarn test:ios",
-    "typecheck": "tsc",
+    "typecheck": "tsc && tsc --noEmit -p example/tsconfig.json",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "git clean -fxd",
     "prepare": "bob build && node scripts/generate-package-manifest.js",

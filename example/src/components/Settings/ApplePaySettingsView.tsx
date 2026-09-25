@@ -34,10 +34,6 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
   const [shippingType, setShippingType] = useState<
     ApplePaySettings['shippingType']
   >(existing.shippingType ?? 'shipping');
-  const [debitOnly, setDebitOnly] = useState(
-    existing.merchantCapabilities?.length === 1 &&
-      existing.merchantCapabilities[0] === 'debit'
-  );
 
   const saveAndGoBack = useCallback(() => {
     update({
@@ -46,7 +42,6 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
         merchantName: merchantName || undefined,
         allowOnboarding,
         shippingType,
-        merchantCapabilities: debitOnly ? ['debit'] : undefined,
       },
     });
     navigation.goBack();
@@ -57,7 +52,6 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
     merchantName,
     allowOnboarding,
     shippingType,
-    debitOnly,
   ]);
 
   return (
@@ -82,11 +76,6 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
         value={shippingType ?? 'shipping'}
         options={[...shippingTypes]}
         onChange={setShippingType}
-      />
-      <FormToggle
-        title="Debit Cards Only"
-        value={debitOnly}
-        onValueChange={setDebitOnly}
       />
       <View style={Styles.formAction}>
         <Button title="Save" onPress={saveAndGoBack} />

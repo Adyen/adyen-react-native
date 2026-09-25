@@ -2,15 +2,9 @@ import type {
   PaymentMethodsResponse,
   PaymentMethodData,
   PaymentDetailsData,
-  Order,
   SessionConfiguration,
 } from '@adyen/react-native';
-import type {
-  PaymentConfiguration,
-  PaymentResponse,
-  BalanceResponse,
-  OrderResponse,
-} from './types';
+import type { PaymentConfiguration, PaymentResponse } from './types';
 import type { ApiService } from './ApiService';
 import { CHANNEL } from '../Configuration';
 
@@ -70,8 +64,7 @@ class NetlifyApiClient implements ApiService {
   }
 
   async paymentMethods(
-    configuration: PaymentConfiguration,
-    _order?: Order
+    configuration: PaymentConfiguration
   ): Promise<PaymentMethodsResponse> {
     const body = {
       merchantAccount: configuration.merchantAccount,
@@ -86,33 +79,6 @@ class NetlifyApiClient implements ApiService {
     _sessionResult: string
   ): Promise<PaymentResponse> {
     throw new Error('requestSessionResult not supported via Netlify');
-  }
-
-  async tryRemoveStoredCard(
-    _id: string,
-    _configuration: PaymentConfiguration
-  ): Promise<boolean> {
-    throw new Error('tryRemoveStoredCard not supported via Netlify');
-  }
-
-  async checkBalance(
-    _paymentData: PaymentMethodData,
-    _configuration: PaymentConfiguration
-  ): Promise<BalanceResponse> {
-    throw new Error('checkBalance not supported via Netlify');
-  }
-
-  async requestOrder(
-    _configuration: PaymentConfiguration
-  ): Promise<OrderResponse> {
-    throw new Error('requestOrder not supported via Netlify');
-  }
-
-  async cancelOrder(
-    _order: Order,
-    _configuration: PaymentConfiguration
-  ): Promise<OrderResponse> {
-    throw new Error('cancelOrder not supported via Netlify');
   }
 }
 

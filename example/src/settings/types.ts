@@ -12,19 +12,11 @@ export type CardSettings = {
   showInstallmentAmount?: boolean;
 };
 
-export type DropInSettings = {
-  showPreselectedStoredPaymentMethod?: boolean;
-  skipListWhenSinglePaymentMethod?: boolean;
-  showRemovePaymentMethodButton?: boolean;
-  title?: string;
-};
-
 export type ApplePaySettings = {
   merchantID?: string;
   merchantName?: string;
   allowOnboarding?: boolean;
   shippingType?: 'shipping' | 'delivery' | 'storePickup' | 'servicePickup';
-  merchantCapabilities?: ('debit' | 'credit')[];
 };
 
 export type GooglePaySettings = {
@@ -39,7 +31,6 @@ export type GooglePaySettings = {
 
 export type AppConfiguration = PaymentConfiguration & {
   cardSettings?: CardSettings;
-  dropInSettings?: DropInSettings;
   applePaySettings?: ApplePaySettings;
   googlePaySettings?: GooglePaySettings;
 };

@@ -2,16 +2,10 @@ import type {
   PaymentMethodsResponse,
   PaymentMethodData,
   PaymentDetailsData,
-  Order,
   SessionConfiguration,
 } from '@adyen/react-native';
 import { ENVIRONMENT, CHANNEL } from '../Configuration';
-import type {
-  PaymentConfiguration,
-  PaymentResponse,
-  BalanceResponse,
-  OrderResponse,
-} from './types';
+import type { PaymentConfiguration, PaymentResponse } from './types';
 import type { ApiService } from './ApiService';
 
 class ApiClient implements ApiService {
@@ -86,76 +80,14 @@ class ApiClient implements ApiService {
   };
 
   paymentMethods = (
-    configuration: PaymentConfiguration,
-    order?: Order
+    configuration: PaymentConfiguration
   ): Promise<PaymentMethodsResponse> => {
     const body = {
       ...parseConfig(configuration),
       ...parseAmount(configuration),
       ...serverConfiguration,
-      ...(order && { order: parseOrder(order) }),
     };
     return this.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
-  };
-
-  tryRemoveStoredCard = async (
-    id: string,
-    configuration: PaymentConfiguration
-  ): Promise<boolean> => {
-    let { merchantAccount, shopperReference } = configuration;
-    const url =
-      ENVIRONMENT.url +
-      `storedPaymentMethods/${id}?merchantAccount=${merchantAccount}&shopperReference=${shopperReference}`;
-    const request = new Request(url, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': ENVIRONMENT.apiKey,
-      },
-    });
-    try {
-      const response = await fetch(request);
-      const pspReference = response.headers.get('pspreference');
-      console.debug(`PSP Reference - ${pspReference}`);
-      return response.status === 204;
-    } catch {
-      return false;
-    }
-  };
-
-  checkBalance = async (
-    paymentData: PaymentMethodData,
-    configuration: PaymentConfiguration
-  ): Promise<BalanceResponse> => {
-    const body = {
-      paymentMethod: paymentData.paymentMethod,
-      ...parseAmount(configuration),
-      merchantAccount: configuration.merchantAccount,
-      reference: serverConfiguration.reference,
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'paymentMethods/balance', body);
-  };
-
-  requestOrder = async (
-    configuration: PaymentConfiguration
-  ): Promise<OrderResponse> => {
-    const body = {
-      ...parseAmount(configuration),
-      merchantAccount: configuration.merchantAccount,
-      reference: serverConfiguration.reference,
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'orders', body);
-  };
-
-  cancelOrder = async (
-    order: Order,
-    configuration: PaymentConfiguration
-  ): Promise<OrderResponse> => {
-    const body = {
-      ...(order && { order: parseOrder(order) }),
-      merchantAccount: configuration.merchantAccount,
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
   };
 
   /** @private */
@@ -227,7 +159,6 @@ const parseAmount = (configuration: PaymentConfiguration, data?: any) => ({
     currency: configuration.currency,
   },
 });
-
 const parseConfig = ({
   merchantAccount,
   countryCode,
@@ -238,9 +169,4 @@ const parseConfig = ({
   countryCode,
   shopperReference,
   shopperLocale,
-});
-
-const parseOrder = ({ orderData, pspReference }: any) => ({
-  orderData,
-  pspReference,
 });

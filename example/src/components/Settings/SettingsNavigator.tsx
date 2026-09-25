@@ -1,14 +1,12 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SettingView from './SettingsView';
 import CardSettingsView from './CardSettingsView';
-import DropInSettingsView from './DropInSettingsView';
 import ApplePaySettingsView from './ApplePaySettingsView';
 import GooglePaySettingsView from './GooglePaySettingsView';
 
 export type SettingsStackParamList = {
   GeneralSettings: undefined;
   CardSettings: undefined;
-  DropInSettings: undefined;
   ApplePaySettings: undefined;
   GooglePaySettings: undefined;
 };
@@ -27,11 +25,6 @@ const SettingsNavigator = () => {
         name="CardSettings"
         component={CardSettingsView}
         options={{ title: 'Card Settings' }}
-      />
-      <SettingsStack.Screen
-        name="DropInSettings"
-        component={DropInSettingsView}
-        options={{ title: 'Drop-In Settings' }}
       />
       <SettingsStack.Screen
         name="ApplePaySettings"
