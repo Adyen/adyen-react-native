@@ -96,6 +96,18 @@ async function assertAndroidUnsupportedDropIn(driver) {
       throw new Error(`Unsupported Android Drop-in showed UI: ${selector}`);
     }
   }
+
+  // Keep this advanced checkout active after the rejected Drop-in attempt. A
+  // supported headless Card must still be able to present and dismiss normally.
+  await clickControl(driver, 'validation-start-headless');
+  const cardField = await driver.$(
+    'android=new UiSelector().className("android.widget.EditText")'
+  );
+  await cardField.waitForDisplayed({ timeout: 30000 });
+  const dismiss = await driver.$('android=new UiSelector().text("\u2715")');
+  await dismiss.waitForDisplayed({ timeout: 15000 });
+  await dismiss.click();
+  await cardField.waitForExist({ reverse: true, timeout: 15000 });
 }
 
 async function assertAndroidUnsupportedLookup(driver) {
