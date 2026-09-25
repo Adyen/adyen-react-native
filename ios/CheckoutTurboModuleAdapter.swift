@@ -41,13 +41,14 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     /// This private token binds React runtime teardown to the checkout this module instance owns.
     /// A stale module can outlive a replacement during reload and must not clear that replacement.
     private let lifecycleOwnerID = UUID().uuidString
+    private let coordinator: CheckoutCoordinator
     private let assertDropInAvailability: (String) throws -> Void
     private var eventSink: NativeEventSink?
     private var pendingResponses: [String: PendingResponse] = [:]
     private var pendingBeforeSubmitData: BeforeSubmitData?
     private let submitBridge = CallbackBridge<SubmitResult>()
     private let additionalDetailsBridge = CallbackBridge<AdditionalDetailsResult>()
-    private let beforeSubmitBridge = CallbackBridge<BeforeSubmitResult>()
+    private let beforeSubmitBridge = CallbackBridge<[String: Any]?>()
     private let authorizationBridge = CallbackBridge<PKPaymentAuthorizationResult>()
     private let shippingContactBridge = CallbackBridge<PKPaymentRequestShippingContactUpdate>()
     private let shippingMethodBridge = CallbackBridge<PKPaymentRequestShippingMethodUpdate>()
@@ -58,9 +59,10 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     private var applePayShippingMethods = ApplePayShippingMethodsState()
 
     override init() {
-        assertDropInAvailability = CheckoutCoordinator.shared.assertDropInAvailability
+        coordinator = .shared
+        assertDropInAvailability = coordinator.assertDropInAvailability
         super.init()
-        CheckoutCoordinator.shared.configureRuntimeDependencies(
+        coordinator.configureRuntimeDependencies(
             CheckoutCoordinatorDependencies(
                 checkoutFactory: UnavailableCheckoutFactory(),
                 presenterFactory: TurboPresenterFactory(),
@@ -72,7 +74,11 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         )
     }
 
-    internal init(assertDropInAvailability: @escaping (String) throws -> Void) {
+    internal init(
+        coordinator: CheckoutCoordinator = .shared,
+        assertDropInAvailability: @escaping (String) throws -> Void
+    ) {
+        self.coordinator = coordinator
         self.assertDropInAvailability = assertDropInAvailability
         super.init()
     }
@@ -80,7 +86,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     deinit {
         let lifecycleOwnerID = lifecycleOwnerID
         Task { @MainActor in
-            await CheckoutCoordinator.shared.hostDidDisappear(ownerID: lifecycleOwnerID)
+            await coordinator.hostDidDisappear(ownerID: lifecycleOwnerID)
         }
     }
 
@@ -92,6 +98,10 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     @objc
     func setSdkVersion(_ sdkVersion: String) {
         BaseModule.sdkVersion = sdkVersion
+    }
+
+    internal var pendingResponseCount: Int {
+        pendingResponses.count
     }
 
     @objc
@@ -112,7 +122,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let checkoutID = try await CheckoutCoordinator.shared.setup(ownerID: self.lifecycleOwnerID) {
+                let checkoutID = try await coordinator.setup(ownerID: self.lifecycleOwnerID) {
                     let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                     let checkout = try await Checkout.setup(
                         with: SessionResponse(id: id, sessionData: sessionData),
@@ -127,7 +137,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
                         self?.cancelPendingRequests()
                     }
                 }
-                guard let paymentMethods = CheckoutCoordinator.shared.checkoutState?.checkoutContext.paymentMethods else {
+                guard let paymentMethods = coordinator.checkoutState?.checkoutContext.paymentMethods else {
                     throw ModuleException.invalidPaymentMethods
                 }
                 try resolver(self.descriptor(checkoutID: checkoutID, flow: "sessions", paymentMethods: paymentMethods))
@@ -156,7 +166,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let checkoutID = try await CheckoutCoordinator.shared.setup(ownerID: self.lifecycleOwnerID) {
+                let checkoutID = try await coordinator.setup(ownerID: self.lifecycleOwnerID) {
                     let checkoutConfiguration = try self.buildCheckoutConfiguration(parser: parser, configuration: configuration)
                     let checkout = try await Checkout.setup(
                         with: paymentMethods,
@@ -184,7 +194,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     ) {
         guard owns(checkoutID, rejecter: rejecter) else { return }
         do {
-            try resolver(component(for: target, checkout: CheckoutCoordinator.shared.checkoutState!.checkoutContext) != nil)
+            try resolver(component(for: target, checkout: coordinator.checkoutState!.checkoutContext) != nil)
         } catch {
             rejecter(ErrorCode.invalidTarget, "Invalid checkout target", error)
         }
@@ -199,7 +209,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     ) {
         guard owns(checkoutID, rejecter: rejecter) else { return }
         do {
-            guard let component = try component(for: target, checkout: CheckoutCoordinator.shared.checkoutState!.checkoutContext) else {
+            guard let component = try component(for: target, checkout: coordinator.checkoutState!.checkoutContext) else {
                 resolver(false)
                 return
             }
@@ -218,13 +228,13 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     ) {
         Task { @MainActor in
             guard owns(checkoutID, rejecter: rejecter) else { return }
-            guard let checkout = CheckoutCoordinator.shared.checkoutState?.checkoutContext else {
+            guard let checkout = coordinator.checkoutState?.checkoutContext else {
                 rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
                 return
             }
             do {
                 var presenter: TurboHeadlessPresenter?
-                _ = try CheckoutCoordinator.shared.beginOperation {
+                _ = try routeHeadlessSubmit {
                     guard let component = try self.component(for: target, checkout: checkout) else {
                         throw ModuleException.invalidPaymentMethods
                     }
@@ -240,6 +250,14 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
                 rejecter(ErrorCode.invalidTarget, "Invalid checkout target", error)
             }
         }
+    }
+
+    /// The generated headless command reaches this router only after target parsing. Keeping the
+    /// slot acquisition here makes a busy embedded owner reject before creating a component.
+    func routeHeadlessSubmit(
+        makePresenter: @escaping @MainActor () throws -> CoordinatorPresenter
+    ) throws -> String {
+        try coordinator.beginOperation(makePresenter: makePresenter)
     }
 
     @objc
@@ -286,7 +304,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
                   let object = try? JSONSerialization.jsonObject(with: data),
                   let dictionary = object as? [String: Any]
             else {
-                guard CheckoutCoordinator.shared.resolve(pending.request) else {
+                guard coordinator.resolve(pending.request) else {
                     rejecter(ErrorCode.staleRequest, "Request is no longer active", nil)
                     return
                 }
@@ -300,16 +318,16 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
             payload = nil
         }
 
-        guard CheckoutCoordinator.shared.resolve(pending.request) else {
+        guard coordinator.resolve(pending.request) else {
             rejecter(ErrorCode.staleRequest, "Request is no longer active", nil)
             return
         }
         pendingResponses.removeValue(forKey: requestID)
         if pending.request.kind == .addressLookupSelection {
-            CheckoutCoordinator.shared.completeAddressLookupOperation(pending.request.operationID)
+            coordinator.completeAddressLookupOperation(pending.request.operationID)
         }
         if pending.request.kind == .advancedSubmit, payload?["type"] as? String == "retry" {
-            CheckoutCoordinator.shared.releaseEmbeddedOperation(pending.request.operationID)
+            coordinator.releaseEmbeddedOperation(pending.request.operationID)
         }
         pending.resume(payload)
         resolver(nil)
@@ -323,7 +341,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     ) {
         Task { @MainActor in
             do {
-                try await CheckoutCoordinator.shared.invalidate(checkoutID: checkoutID)
+                try await coordinator.invalidate(checkoutID: checkoutID)
                 resolver(nil)
             } catch {
                 rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
@@ -335,7 +353,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     func hostDidDisappear() {
         let lifecycleOwnerID = lifecycleOwnerID
         Task { @MainActor in
-            await CheckoutCoordinator.shared.hostDidDisappear(ownerID: lifecycleOwnerID)
+            await coordinator.hostDidDisappear(ownerID: lifecycleOwnerID)
         }
     }
 }
@@ -343,31 +361,22 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
 // MARK: - Checkout callbacks and correlated request routing
 
 @MainActor
-private extension CheckoutTurboModuleAdapter {
+extension CheckoutTurboModuleAdapter {
     func configureSessionCallbacks(on checkout: SessionCheckout, sessionData: String) {
         _ = checkout
             .onBeforeSubmit { [weak self, weak checkout] data in
-                guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout),
-                      let operationID = self.acquireInitialEmbeddedOperationForCallback()
-                else {
+                guard let self, let checkout, coordinator.owns(checkout: checkout) else {
                     return .abort
                 }
                 self.pendingBeforeSubmitData = data
-                return await self.beforeSubmitBridge.suspend(superseding: .abort) { token in
-                    self.createRequest(
-                        operationID: operationID,
-                        kind: .sessionBeforeSubmit,
-                        eventKind: EventKind.sessionBeforeSubmit,
-                        payload: self.beforeSubmitPayload(data)
-                    ) { [weak self] payload in
-                        self?.beforeSubmitBridge.resolve(token, self?.beforeSubmitResult(payload) ?? .abort)
-                    }
+                guard let response = await self.routeSessionBeforeSubmit(self.beforeSubmitPayload(data)) else {
+                    return .abort
                 }
+                return self.beforeSubmitResult(response)
             }
             .onComplete { [weak self, weak checkout] result in
-                guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
-                guard self.ensureOperationForTerminalCallback() != nil else { return }
-                self.emitTerminal(
+                guard let self, let checkout, coordinator.owns(checkout: checkout) else { return }
+                self.routeTerminal(
                     kind: EventKind.completion,
                     payload: [
                         "resultCode": result.resultCode.rawValue,
@@ -377,66 +386,95 @@ private extension CheckoutTurboModuleAdapter {
                 )
             }
             .onFailure { [weak self, weak checkout] _ in
-                guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
-                guard self.ensureOperationForTerminalCallback() != nil else { return }
-                self.emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
+                guard let self, let checkout, coordinator.owns(checkout: checkout) else { return }
+                self.routeTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             }
     }
 
     func configureAdvancedCallbacks(on checkout: AdvancedCheckout) {
         _ = checkout
             .onSubmit { [weak self, weak checkout] data in
-                guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout),
-                      let checkoutID = CheckoutCoordinator.shared.checkoutID
+                guard let self, let checkout, coordinator.owns(checkout: checkout),
+                      let result = await self.routeAdvancedSubmit(data.jsonObject)
                 else {
                     return errorSubmitResult
                 }
-                let operationID: String
-                switch CheckoutCoordinator.shared.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
-                case let .acquired(value), let .explicit(value):
-                    operationID = value
-                case .competing:
-                    return .retry(errorMessage: nil)
-                }
-                return await self.submitBridge.suspend(superseding: errorSubmitResult) { token in
-                    self.createRequest(
-                        operationID: operationID,
-                        kind: .advancedSubmit,
-                        eventKind: EventKind.advancedSubmit,
-                        payload: data.jsonObject
-                    ) { [weak self] payload in
-                        self?.submitBridge.resolve(token, self?.submitResult(payload) ?? errorSubmitResult)
-                    }
-                }
+                return result
             }
             .onAdditionalDetails { [weak self, weak checkout] data in
-                guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout),
-                      let operationID = CheckoutCoordinator.shared.operationID
+                guard let self, let checkout, coordinator.owns(checkout: checkout),
+                      let result = await self.routeAdvancedAdditionalDetails(data.jsonObject)
                 else {
                     return errorAdditionalDetailsResult
                 }
-                return await self.additionalDetailsBridge.suspend(superseding: errorAdditionalDetailsResult) { token in
-                    self.createRequest(
-                        operationID: operationID,
-                        kind: .advancedAdditionalDetails,
-                        eventKind: EventKind.advancedAdditionalDetails,
-                        payload: data.jsonObject
-                    ) { [weak self] payload in
-                        let resultCode = payload?["resultCode"] as? String ?? errorResultCode
-                        self?.additionalDetailsBridge.resolve(token, .completion(resultCode: resultCode))
-                    }
-                }
+                return result
             }
             .onComplete { [weak self, weak checkout] result in
-                guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
-                guard self.ensureOperationForTerminalCallback() != nil else { return }
-                self.emitTerminal(kind: EventKind.completion, payload: ["resultCode": result.resultCode.rawValue])
+                guard let self, let checkout, coordinator.owns(checkout: checkout) else { return }
+                self.routeTerminal(kind: EventKind.completion, payload: ["resultCode": result.resultCode.rawValue])
             }
             .onFailure { [weak self, weak checkout] _ in
-                guard let self, let checkout, CheckoutCoordinator.shared.owns(checkout: checkout) else { return }
-                guard self.ensureOperationForTerminalCallback() != nil else { return }
-                self.emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
+                guard let self, let checkout, coordinator.owns(checkout: checkout) else { return }
+                self.routeTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             }
+    }
+
+    /// Production SDK closures call these routers after verifying their checkout instance. They
+    /// deliberately own anonymous embedded acquisition and the correlated bridge, so adapter
+    /// tests exercise the same path rather than coordinator helpers alone.
+    func routeSessionBeforeSubmit(_ payload: [String: Any]) async -> [String: Any]? {
+        guard let operationID = acquireInitialEmbeddedOperationForCallback() else { return nil }
+        return await beforeSubmitBridge.suspend(superseding: nil) { token in
+            createRequest(
+                operationID: operationID,
+                kind: .sessionBeforeSubmit,
+                eventKind: EventKind.sessionBeforeSubmit,
+                payload: payload
+            ) { [weak self] payload in
+                self?.beforeSubmitBridge.resolve(token, payload)
+            }
+        }
+    }
+
+    func routeAdvancedSubmit(_ payload: [String: Any]) async -> SubmitResult? {
+        guard let checkoutID = coordinator.checkoutID else { return nil }
+        let operationID: String
+        switch coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
+        case let .acquired(value), let .explicit(value):
+            operationID = value
+        case .competing:
+            return .retry(errorMessage: nil)
+        }
+        return await submitBridge.suspend(superseding: errorSubmitResult) { token in
+            createRequest(
+                operationID: operationID,
+                kind: .advancedSubmit,
+                eventKind: EventKind.advancedSubmit,
+                payload: payload
+            ) { [weak self] payload in
+                self?.submitBridge.resolve(token, self?.submitResult(payload) ?? errorSubmitResult)
+            }
+        }
+    }
+
+    func routeAdvancedAdditionalDetails(_ payload: [String: Any]) async -> AdditionalDetailsResult? {
+        guard let operationID = coordinator.operationID else { return nil }
+        return await additionalDetailsBridge.suspend(superseding: errorAdditionalDetailsResult) { token in
+            createRequest(
+                operationID: operationID,
+                kind: .advancedAdditionalDetails,
+                eventKind: EventKind.advancedAdditionalDetails,
+                payload: payload
+            ) { [weak self] payload in
+                let resultCode = payload?["resultCode"] as? String ?? errorResultCode
+                self?.additionalDetailsBridge.resolve(token, .completion(resultCode: resultCode))
+            }
+        }
+    }
+
+    func routeTerminal(kind: String, payload: [String: Any]) {
+        guard ensureOperationForTerminalCallback() != nil else { return }
+        emitTerminal(kind: kind, payload: payload)
     }
 
     func createRequest(
@@ -449,7 +487,7 @@ private extension CheckoutTurboModuleAdapter {
         do {
             retireSupersededRequests(of: eventKind)
             var requestID: String?
-            let request = try CheckoutCoordinator.shared.beginRequest(
+            let request = try coordinator.beginRequest(
                 operationID: operationID,
                 kind: kind,
                 timeout: 60
@@ -468,11 +506,11 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func emitTerminal(kind: String, payload: [String: Any]) {
-        guard let checkoutID = CheckoutCoordinator.shared.checkoutID else { return }
-        let operationID = CheckoutCoordinator.shared.operationID
+        guard let checkoutID = coordinator.checkoutID else { return }
+        let operationID = coordinator.operationID
         emit(checkoutID: checkoutID, operationID: operationID, requestID: nil, kind: kind, payload: payload)
         Task { @MainActor in
-            try? await CheckoutCoordinator.shared.invalidate(checkoutID: checkoutID)
+            try? await coordinator.invalidate(checkoutID: checkoutID)
         }
     }
 
@@ -480,8 +518,8 @@ private extension CheckoutTurboModuleAdapter {
     /// selects a Fabric registration, target, or source view because the public SDK callback
     /// does not carry that identity.
     func acquireInitialEmbeddedOperationForCallback() -> String? {
-        guard let checkoutID = CheckoutCoordinator.shared.checkoutID else { return nil }
-        switch CheckoutCoordinator.shared.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
+        guard let checkoutID = coordinator.checkoutID else { return nil }
+        switch coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
         case let .acquired(operationID), let .explicit(operationID):
             return operationID
         case .competing:
@@ -490,7 +528,7 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func ensureOperationForTerminalCallback() -> String? {
-        if let operationID = CheckoutCoordinator.shared.operationID {
+        if let operationID = coordinator.operationID {
             return operationID
         }
         return acquireInitialEmbeddedOperationForCallback()
@@ -502,7 +540,7 @@ private extension CheckoutTurboModuleAdapter {
         let superseded = pendingResponses.values.filter { $0.kind == eventKind }
         for pending in superseded {
             pendingResponses.removeValue(forKey: pending.request.requestID)
-            _ = CheckoutCoordinator.shared.cancel(pending.request)
+            _ = coordinator.cancel(pending.request)
         }
     }
 
@@ -512,7 +550,7 @@ private extension CheckoutTurboModuleAdapter {
         pending.forEach { $0.resume(nil) }
         submitBridge.resolve(errorSubmitResult)
         additionalDetailsBridge.resolve(errorAdditionalDetailsResult)
-        beforeSubmitBridge.resolve(.abort)
+        beforeSubmitBridge.resolve(nil)
         authorizationBridge.resolve(.init(status: .failure, errors: nil))
         shippingContactBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
         shippingMethodBridge.resolve(.init(paymentSummaryItems: currentSummaryItems))
@@ -525,9 +563,9 @@ private extension CheckoutTurboModuleAdapter {
 // MARK: - Target parsing, descriptors, and generated events
 
 @MainActor
-private extension CheckoutTurboModuleAdapter {
+extension CheckoutTurboModuleAdapter {
     func owns(_ checkoutID: String, rejecter: RCTPromiseRejectBlock) -> Bool {
-        guard CheckoutCoordinator.shared.isActive(checkoutID: checkoutID) else {
+        guard coordinator.isActive(checkoutID: checkoutID) else {
             rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
             return false
         }
@@ -643,7 +681,7 @@ private extension CheckoutTurboModuleAdapter {
 // MARK: - Apple Pay
 
 @MainActor
-private extension CheckoutTurboModuleAdapter {
+extension CheckoutTurboModuleAdapter {
     func buildCheckoutConfiguration(parser: RootConfigurationParser, configuration: NSDictionary) throws -> CheckoutConfiguration {
         applePayShippingMethods = .init()
         let cardConfigurationParser = CardConfigurationParser(
@@ -697,19 +735,23 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func awaitAuthorization(_ payment: PKPayment) async -> PKPaymentAuthorizationResult {
-        guard let operationID = CheckoutCoordinator.shared.operationID else { return .init(status: .failure, errors: nil) }
+        var payload: [String: Any] = [:]
+        if let billingContact = payment.billingContact {
+            payload["billingContact"] = billingContact.jsonObject
+        }
+        if let shippingContact = payment.shippingContact {
+            payload["shippingContact"] = shippingContact.jsonObject
+        }
+        if let shippingMethod = payment.shippingMethod {
+            payload["shippingMethod"] = shippingMethod.jsonObject
+        }
+        return await routeApplePayAuthorization(payload)
+    }
+
+    func routeApplePayAuthorization(_ payload: [String: Any]) async -> PKPaymentAuthorizationResult {
+        guard let operationID = coordinator.operationID else { return .init(status: .failure, errors: nil) }
         return await authorizationBridge.suspend(superseding: .init(status: .failure, errors: nil)) { token in
-            var payload: [String: Any] = [:]
-            if let billingContact = payment.billingContact {
-                payload["billingContact"] = billingContact.jsonObject
-            }
-            if let shippingContact = payment.shippingContact {
-                payload["shippingContact"] = shippingContact.jsonObject
-            }
-            if let shippingMethod = payment.shippingMethod {
-                payload["shippingMethod"] = shippingMethod.jsonObject
-            }
-            self.createRequest(
+            createRequest(
                 operationID: operationID,
                 kind: .applePayAuthorization,
                 eventKind: EventKind.applePayAuthorization,
@@ -725,26 +767,40 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func awaitShippingContact(_ contact: PKContact, summaryItems: [PKPaymentSummaryItem]) async -> PKPaymentRequestShippingContactUpdate {
+        await routeApplePayShippingContact(contact.jsonObject, summaryItems: summaryItems)
+    }
+
+    func routeApplePayShippingContact(
+        _ payload: [String: Any],
+        summaryItems: [PKPaymentSummaryItem]
+    ) async -> PKPaymentRequestShippingContactUpdate {
         currentSummaryItems = summaryItems
         return await applePayUpdate(
             bridge: shippingContactBridge,
             kind: .applePayShippingContact,
             eventKind: EventKind.applePayShippingContact,
-            payload: contact.jsonObject
+            payload: payload
         ) { [weak self] token, payload in
             self?.shippingContactBridge.resolve(token, self?.shippingUpdate(payload) ?? .init(paymentSummaryItems: summaryItems))
         }
     }
 
     func awaitShippingMethod(_ method: PKShippingMethod, summaryItems: [PKPaymentSummaryItem]) async -> PKPaymentRequestShippingMethodUpdate {
+        await routeApplePayShippingMethod(method.jsonObject, summaryItems: summaryItems)
+    }
+
+    func routeApplePayShippingMethod(
+        _ payload: [String: Any],
+        summaryItems: [PKPaymentSummaryItem]
+    ) async -> PKPaymentRequestShippingMethodUpdate {
         currentSummaryItems = summaryItems
         return await shippingMethodBridge.suspend(superseding: .init(paymentSummaryItems: summaryItems)) { token in
-            guard let operationID = CheckoutCoordinator.shared.operationID else { return }
+            guard let operationID = coordinator.operationID else { return }
             self.createRequest(
                 operationID: operationID,
                 kind: .applePayShippingMethod,
                 eventKind: EventKind.applePayShippingMethod,
-                payload: method.jsonObject
+                payload: payload
             ) { [weak self] payload in
                 self?.shippingMethodBridge.resolve(
                     token,
@@ -755,9 +811,16 @@ private extension CheckoutTurboModuleAdapter {
     }
 
     func awaitCouponCode(_ couponCode: String, summaryItems: [PKPaymentSummaryItem]) async -> PKPaymentRequestCouponCodeUpdate {
+        await routeApplePayCouponCode(couponCode, summaryItems: summaryItems)
+    }
+
+    func routeApplePayCouponCode(
+        _ couponCode: String,
+        summaryItems: [PKPaymentSummaryItem]
+    ) async -> PKPaymentRequestCouponCodeUpdate {
         currentSummaryItems = summaryItems
         return await couponCodeBridge.suspend(superseding: .init(paymentSummaryItems: summaryItems)) { token in
-            guard let operationID = CheckoutCoordinator.shared.operationID else { return }
+            guard let operationID = coordinator.operationID else { return }
             self.createRequest(
                 operationID: operationID,
                 kind: .applePayCouponCode,
@@ -786,7 +849,7 @@ private extension CheckoutTurboModuleAdapter {
         resume: @escaping (CallbackBridgeToken<PKPaymentRequestShippingContactUpdate>, [String: Any]?) -> Void
     ) async -> PKPaymentRequestShippingContactUpdate {
         await bridge.suspend(superseding: .init(paymentSummaryItems: currentSummaryItems)) { token in
-            guard let operationID = CheckoutCoordinator.shared.operationID else { return }
+            guard let operationID = coordinator.operationID else { return }
             createRequest(operationID: operationID, kind: kind, eventKind: eventKind, payload: payload) { response in
                 resume(token, response)
             }
@@ -850,15 +913,15 @@ private extension CheckoutTurboModuleAdapter {
                 self?.addressSelectionBridge.resolve(token, self?.addressSelection(payload) ?? .failure(AddressLookupError.cancelled))
             }
         }
-        CheckoutCoordinator.shared.completeAddressLookupOperation(operationID)
+        coordinator.completeAddressLookupOperation(operationID)
         return try response.get()
     }
 
     /// Lookup callbacks have a dedicated owner, rather than adopting whatever payment operation
     /// might currently be active. This preserves exact request correlation across search updates.
     func acquireAddressLookupOperationForCallback() -> String? {
-        guard let checkoutID = CheckoutCoordinator.shared.checkoutID else { return nil }
-        return try? CheckoutCoordinator.shared.acquireAddressLookupOperation(checkoutID: checkoutID)
+        guard let checkoutID = coordinator.checkoutID else { return nil }
+        return try? coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
     }
 
     func addressLookupResults(_ payload: [String: Any]?) -> [AddressLookupResult] {
@@ -886,13 +949,13 @@ private extension CheckoutTurboModuleAdapter {
 
 extension CheckoutTurboModuleAdapter: PresentationDelegate {
     func present(component: PresentableComponent) {
-        guard let presenter = CheckoutCoordinator.shared.topPresenterProvider() else {
+        guard let presenter = coordinator.topPresenterProvider() else {
             emitTerminal(kind: EventKind.error, payload: terminalErrorPayload)
             return
         }
         let viewController = UINavigationController(rootViewController: component.viewController)
         presenter.present(viewController, animated: true)
-        CheckoutCoordinator.shared.presenterStack.append(viewController)
+        coordinator.presenterStack.append(viewController)
     }
 }
 
