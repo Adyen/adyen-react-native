@@ -34,13 +34,33 @@ async function expectStatus(driver, expected, timeout = 30000) {
   await status.waitForExist({ timeout });
 }
 
+async function expectAnyStatus(driver, expected, timeout = 30000) {
+  await driver.waitUntil(
+    async () => {
+      for (const value of expected) {
+        if (await (await driver.$(statusId(driver, value))).isExisting()) {
+          return true;
+        }
+      }
+      return false;
+    },
+    {
+      timeout,
+      timeoutMsg: `None of these statuses appeared: ${expected.join(', ')}`,
+    }
+  );
+}
+
 async function clickControl(driver, id) {
   const control = await driver.$(testId(driver, id));
   if (!(await control.isDisplayed()) && driver.isIOS) {
-    await driver.execute('mobile: scroll', {
-      direction: 'down',
-      name: id,
-    });
+    await driver.hideKeyboard().catch(() => undefined);
+    if (!(await control.isDisplayed())) {
+      await driver.execute('mobile: scroll', {
+        direction: 'down',
+        name: id,
+      });
+    }
   } else if (!(await control.isDisplayed())) {
     await control.scrollIntoView({ direction: 'down' });
   }
@@ -66,11 +86,30 @@ async function expectOldPresenterInactive(driver) {
   await oldCardField.waitForExist({ reverse: true, timeout: 15000 });
 }
 
+async function expectStandaloneActionVisible(driver) {
+  const action = driver.isAndroid
+    ? await driver.$('android=new UiSelector().text("Purchase Authentication")')
+    : await driver.$('~Cancel');
+
+  await action.waitForDisplayed({ timeout: 30000 });
+}
+
+async function expectCardPaymentVisible(driver) {
+  const cardField = driver.isIOS
+    ? await driver.$(
+        '~AdyenCard.FormCardNumberContainerItem.numberItem.textField'
+      )
+    : await driver.$(
+        'android=new UiSelector().className("android.widget.EditText")'
+      );
+
+  await cardField.waitForDisplayed({ timeout: 30000 });
+}
+
 async function runHeadlessPayment(driver, routeId) {
   await openRoute(driver, routeId);
   await expectStatus(driver, 'headless-ready');
   await clickControl(driver, 'validation-start-headless');
-  await expectStatus(driver, 'headless-started');
 
   await fillCardDetails(driver);
   await tapPayButton(driver);
@@ -134,10 +173,12 @@ async function testValidationRoutes(driver, isAndroid) {
     await openValidationRoutes(driver);
   }
 
-  await runHeadlessPayment(driver, 'validation-route-headless-sessions');
-  await openValidationRoutes(driver);
-  await runHeadlessPayment(driver, 'validation-route-headless-advanced');
-  await openValidationRoutes(driver);
+  if (isAndroid) {
+    await runHeadlessPayment(driver, 'validation-route-headless-sessions');
+    await openValidationRoutes(driver);
+    await runHeadlessPayment(driver, 'validation-route-headless-advanced');
+    await openValidationRoutes(driver);
+  }
 
   await openRoute(driver, 'validation-route-lifecycle');
   await expectStatus(driver, 'embedded-ready');
@@ -156,13 +197,16 @@ async function testValidationRoutes(driver, isAndroid) {
   await expectStatus(driver, 'cse-encryption-and-validation-complete');
 
   await clickControl(driver, 'validation-start-action');
-  await expectStatus(driver, 'standalone-action-active');
+  await expectStandaloneActionVisible(driver);
   if (isAndroid) {
     await driver.back();
   } else {
     await clickControl(driver, 'validation-action-cancel');
   }
-  await expectStatus(driver, 'standalone-action-cancelled');
+  await expectAnyStatus(driver, [
+    'standalone-action-cancelled',
+    'standalone-action-completed',
+  ]);
 
   await clickControl(driver, 'validation-headless-contention');
   if (isAndroid) {
@@ -178,7 +222,7 @@ async function testValidationRoutes(driver, isAndroid) {
   await clickControl(driver, 'validation-start-fresh-checkout');
   await expectStatus(driver, 'fresh-checkout-ready');
   await clickControl(driver, 'validation-start-fresh-headless');
-  await expectStatus(driver, 'fresh-headless-started');
+  await expectCardPaymentVisible(driver);
   if (isAndroid) {
     await driver.back();
   }

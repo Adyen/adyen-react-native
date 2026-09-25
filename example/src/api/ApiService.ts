@@ -18,7 +18,8 @@ export interface ApiService {
   payments(
     data: PaymentMethodData,
     configuration: PaymentConfiguration,
-    returnUrl?: string
+    returnUrl?: string,
+    forceThreeDS?: boolean
   ): Promise<PaymentResponse>;
 
   paymentDetails(data: PaymentDetailsData): Promise<PaymentResponse>;

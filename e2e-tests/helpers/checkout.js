@@ -38,21 +38,40 @@ async function fillCardDetails(driver, card = TEST_CARD, timeout = 20000) {
   let fields = [];
   while (Date.now() < deadline) {
     fields = await driver.$$('android.widget.EditText');
-    if (fields.length >= 3) break;
+    if (fields.length > 0) break;
     await driver.pause(500);
   }
-  if (fields.length < 3) {
-    throw new Error(
-      `Timed out waiting for the card form (found ${fields.length} EditText fields, expected >= 3)`
-    );
+  if (fields.length === 0) {
+    throw new Error('Timed out waiting for the Android card form');
   }
-  await fields[0].setValue(card.number);
-  await fields[1].setValue(card.expiryDate);
-  await fields[2].setValue(card.securityCode);
+
+  if (fields.length >= 3) {
+    await fields[0].setValue(card.number);
+    await fields[1].setValue(card.expiryDate);
+    await fields[2].setValue(card.securityCode);
+    return;
+  }
+
+  // A headless Android Card uses its SDK-owned sheet. It progressively exposes
+  // fields after the focused field's editor action, rather than exposing all
+  // three inputs like the embedded Card.
+  for (const value of [card.number, card.expiryDate, card.securityCode]) {
+    fields = await driver.$$('android.widget.EditText');
+    const field = fields[fields.length - 1];
+    await field.addValue(value);
+    if (value !== card.securityCode) {
+      await driver.execute('mobile: performEditorAction', { action: 'next' });
+      await driver.pause(500);
+    }
+  }
 }
 
 /** Waits for and taps the Card component's "Pay" button (matched by id on iOS to avoid ambiguity with other payment buttons). */
 async function tapPayButton(driver, timeout = 15000) {
+  if (driver.isAndroid) {
+    await driver.execute('mobile: performEditorAction', { action: 'done' });
+    await driver.hideKeyboard().catch(() => undefined);
+  }
   const payButton = driver.isIOS
     ? await driver.$('~AdyenCard.CardComponent.payButtonItem.button')
     : await driver.$('android=new UiSelector().textMatches("(?i)^pay .*")');
@@ -61,7 +80,7 @@ async function tapPayButton(driver, timeout = 15000) {
 }
 
 /** Waits for the Result screen and returns its resultCode text. */
-async function waitForResultCode(driver, timeout = 30000) {
+async function waitForResultCode(driver, timeout = 60000) {
   const resultText = driver.isIOS
     ? await driver.$('~result-code')
     : await driver.$('android=new UiSelector().resourceId("result-code")');

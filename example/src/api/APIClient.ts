@@ -18,15 +18,21 @@ class ApiClient implements ApiService {
   payments(
     data: PaymentMethodData,
     configuration: PaymentConfiguration,
-    returnUrl?: string
+    returnUrl?: string,
+    forceThreeDS = false
   ): Promise<PaymentResponse> {
-    console.debug(JSON.stringify(data));
     const body = {
       ...data,
       ...parseConfig(configuration),
       ...parseAmount(configuration, data),
       ...serverConfiguration,
       ...paymentConfiguration,
+      ...(forceThreeDS && {
+        authenticationData: {
+          ...paymentConfiguration.authenticationData,
+          attemptAuthentication: 'always',
+        },
+      }),
       returnUrl: returnUrl ?? data.returnUrl,
     };
 
@@ -155,8 +161,6 @@ class ApiClient implements ApiService {
   /** @private */
   private makeRequest = async (url: string, body: any) => {
     const bodyJSON = JSON.stringify(body);
-    console.debug(`Request to: ${url}`);
-    console.debug(`== ${bodyJSON}`);
     const request = new Request(url, {
       method: 'POST',
       headers: {
@@ -167,10 +171,7 @@ class ApiClient implements ApiService {
     });
 
     const response = await fetch(request);
-    const pspReference = response.headers.get('pspreference');
-    console.debug(`PSP Reference - ${pspReference}`);
     const payload = await response.json();
-    console.debug(`Response : ${JSON.stringify(payload, null, ' ')}`);
     if (response.ok) {
       return payload;
     }

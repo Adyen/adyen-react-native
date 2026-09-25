@@ -43,7 +43,8 @@ const HEADLESS_SCENARIOS: readonly Scenario[] = [
   'headless-advanced',
 ];
 const ACTION_TEST_CARD = {
-  number: '5212345678901234',
+  // Adyen's published native mobile 3DS2 challenge card returns a non-redirect Action.
+  number: '5201285565672311',
   expiryMonth: '03',
   expiryYear: '2030',
   cvv: '737',
@@ -389,7 +390,8 @@ const ValidationCheckout = ({
           returnUrl: `${ENVIRONMENT.returnUrl}/standalone-action`,
         },
         configuration,
-        `${ENVIRONMENT.returnUrl}/standalone-action`
+        `${ENVIRONMENT.returnUrl}/standalone-action`,
+        true
       );
       if (!result.action) {
         setStatus('standalone-action-missing-action');
@@ -422,15 +424,18 @@ const ValidationCheckout = ({
     setStatus('standalone-action-cancelled');
   }, []);
 
+  const embeddedPresenter =
+    mountedCheckout && showPresenter ? (
+      <View testID="validation-embedded-presenter">
+        <AdyenComponent checkout={mountedCheckout} type="scheme" />
+      </View>
+    ) : null;
+
   return (
     <ScrollView style={Styles.page} contentContainerStyle={Styles.padded}>
       <Status value={status} />
       <Text testID={`validation-scenario-${scenario}`}>{scenario}</Text>
-      {mountedCheckout && showPresenter ? (
-        <View testID="validation-embedded-presenter">
-          <AdyenComponent checkout={mountedCheckout} type="scheme" />
-        </View>
-      ) : null}
+      {scenario !== 'lifecycle' ? embeddedPresenter : null}
       <Button
         testID="validation-replace-checkout"
         title="Replace checkout"
@@ -517,6 +522,7 @@ const ValidationCheckout = ({
         }}
       />
       <Button testID="validation-exit" title="Exit" onPress={onExit} />
+      {scenario === 'lifecycle' ? embeddedPresenter : null}
     </ScrollView>
   );
 };
