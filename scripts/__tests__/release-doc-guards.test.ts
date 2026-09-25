@@ -68,11 +68,52 @@ describe('release documentation guards', () => {
     ).toEqual([]);
   });
 
+  it('rejects negating resolves-false before a positive invalidTarget claim', () => {
+    const markdown =
+      'A known valid target that is unavailable does not resolve `false` and rejects `invalidTarget`.';
+
+    expect(
+      invoke<string[]>(guards, 'unavailableTargetContradictions', [markdown])
+    ).toHaveLength(1);
+  });
+
+  it('allows a direct never-invalidTarget predicate', () => {
+    const markdown =
+      'A known valid target that is unavailable never returns `invalidTarget`.';
+
+    expect(
+      invoke<string[]>(guards, 'unavailableTargetContradictions', [markdown])
+    ).toEqual([]);
+  });
+
   it.each([
-    ['passes the documented root setup', rootSetup, 0],
+    ['passes Set root setup wording', rootSetup, 0],
+    [
+      'passes Configure root setup wording',
+      rootSetup.replace('Set Kotlin', 'Configure Kotlin'),
+      0,
+    ],
+    [
+      'passes Define root setup wording',
+      rootSetup.replace('Set Kotlin', 'Define Kotlin'),
+      0,
+    ],
     [
       'rejects a non-prescriptive project description',
       rootSetup.replace('Set Kotlin', 'Kotlin is'),
+      1,
+    ],
+    [
+      'rejects optional root setup wording',
+      rootSetup.replace('Set Kotlin', 'If desired, set Kotlin'),
+      1,
+    ],
+    [
+      'rejects negative root plugin wording',
+      rootSetup.replace(
+        'pin the root Kotlin Gradle plugin',
+        'do not pin the root Kotlin Gradle plugin'
+      ),
       1,
     ],
     [

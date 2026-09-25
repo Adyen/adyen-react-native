@@ -34,7 +34,7 @@ function claimUnits(markdown) {
 
 function isExplicitInvalidTargetNegation(unit) {
   return (
-    /\b(?:does not|doesn't|do not|don't|never)\s+(?:\w+\s+){0,4}(?:reject(?:s|ed|ion)?(?:\s+with)?|return(?:s|ed)?|resolve(?:s|d)?(?:\s+(?:to|with))?|use(?:s|d)?)?\s*invalidTarget\b/i.test(
+    /\b(?:does not|doesn't|do not|don't|never)\s+(?:reject(?:s|ed|ion)?(?:\s+with)?|return(?:s|ed)?|resolve(?:s|d)?(?:\s+(?:to|with))?|use(?:s|d)?)\s*invalidTarget\b/i.test(
       unit
     ) || /\b(?:is|are)\s+not\s+(?:an?\s+)?invalidTarget\b/i.test(unit)
   );
@@ -58,15 +58,22 @@ export function unavailableTargetContradictions(markdown) {
 
 export function kotlinRootSetupFailures(markdown) {
   const failures = [];
-  const normalized = normalize(markdown);
-  if (
-    !/\b(?:set|configure|define)\b[\s\S]*?\b(?:consuming\s+)?Android root project\b/i.test(
-      normalized
-    ) ||
-    !/\bpin\b[\s\S]*?\broot\s+(?:Kotlin\s+)?Gradle plugin\b/i.test(normalized)
-  ) {
+  const hasAffirmativeRootSetup = claimUnits(markdown).some((unit) => {
+    const normalized = normalize(unit);
+    return (
+      /^(?:set|configure|define)\s+Kotlin\b/i.test(normalized) &&
+      /\b(?:the\s+)?consuming\s+Android root project\b/i.test(normalized) &&
+      /\bpin\s+(?:the\s+)?root\s+(?:Kotlin\s+)?Gradle plugin\b/i.test(
+        normalized
+      ) &&
+      !/\b(?:do not|don't|never|must not|if desired|optional(?:ly)?|may|can)\b/i.test(
+        normalized
+      )
+    );
+  });
+  if (!hasAffirmativeRootSetup) {
     failures.push(
-      'Kotlin setup must prescribe the consuming Android root project and root Kotlin Gradle plugin.'
+      'Kotlin setup must use one affirmative imperative claim that sets Kotlin in the consuming Android root project and pins the root Kotlin Gradle plugin.'
     );
   }
 
