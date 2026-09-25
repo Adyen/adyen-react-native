@@ -118,7 +118,10 @@ async function assertAndroidUnsupportedLookup(driver) {
   await openRoute(driver, 'validation-route-headless-sessions');
   await expectStatus(driver, 'headless-ready');
   await clickControl(driver, 'validation-start-headless');
-  await expectStatus(driver, 'headless-started');
+  const cardField = await driver.$(
+    'android=new UiSelector().className("android.widget.EditText")'
+  );
+  await cardField.waitForDisplayed({ timeout: 30000 });
   const dismiss = await driver.$('android=new UiSelector().text("\u2715")');
   await dismiss.waitForDisplayed({ timeout: 15000 });
   await dismiss.click();
@@ -147,6 +150,8 @@ async function testDropInAndUnsupportedFlows(driver, isAndroid) {
     await runAndroidDropIn(driver, 'validation-route-dropin-sessions');
     await openValidationRoutes(driver);
     await assertAndroidUnsupportedDropIn(driver);
+    await clickControl(driver, 'validation-exit');
+    await clickControl(driver, 'validation-route-exit');
     await openValidationRoutes(driver);
     await assertAndroidUnsupportedLookup(driver);
     console.log(
