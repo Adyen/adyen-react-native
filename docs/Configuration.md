@@ -129,6 +129,27 @@
 | `existingPaymentMethodRequired` | If set to **true** then the `isReadyToPayResponse` object includes an additional paymentMethodPresent property that describes the visitor's readiness to pay with one or more payment methods specified in **allowedPaymentMethods**.                                                                                                                                                          | No       |
 | `googlePayEnvironment`          | The environment to be used by GooglePay. Should be either **WalletConstants.ENVIRONMENT_TEST** or **WalletConstants.ENVIRONMENT_PRODUCTION**. By default use `environment` from the root.                                                                                                                                                                                                      | No       |
 
+#### Merchant information (Android only)
+
+The optional `googlepay.merchantInfo` object accepts:
+
+| Property | Description | Required |
+| --- | --- | --- |
+| `merchantName` | Merchant display name requested for the Google Pay payment sheet. | No |
+| `merchantId` | Google-issued merchant identifier, distinct from Adyen's `merchantAccount`. | No |
+
+For example, include this in your checkout configuration:
+
+```js
+googlepay: {
+  merchantInfo: {
+    merchantName: 'Example Store',
+  },
+}
+```
+
+Omitting `merchantInfo` preserves the existing native configuration. Supplying it does not replace Google Pay production registration; Google Pay's environment and merchant verification rules still apply.
+
 ## Example
 
 ```js

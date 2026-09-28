@@ -9,6 +9,7 @@ package com.adyenreactnativesdk.configuration
 import android.util.Log
 import com.adyen.checkout.googlepay.BillingAddressParameters
 import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.googlepay.MerchantInfo
 import com.adyen.checkout.googlepay.ShippingAddressParameters
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.ReadableMap
@@ -21,6 +22,7 @@ class GooglePayConfigurationParser(
     internal const val TAG = "GooglePayConfigParser"
     internal const val ROOT_KEY = "googlepay"
     internal const val MERCHANT_ACCOUNT_KEY = "merchantAccount"
+    internal const val MERCHANT_INFO_KEY = "merchantInfo"
     internal const val ALLOWED_CARD_NETWORKS_KEY = "allowedCardNetworks"
     internal const val ALLOWED_AUTH_METHODS_KEY = "allowedAuthMethods"
     internal const val TOTAL_PRICE_STATUS_KEY = "totalPriceStatus"
@@ -77,6 +79,17 @@ class GooglePayConfigurationParser(
       }
     }
 
+  internal val merchantInfo: MerchantInfo?
+    get() {
+      return try {
+        val map = config.getMap(MERCHANT_INFO_KEY)
+        MerchantInfo.SERIALIZER.deserialize(ReactNativeJson.convertMapToJson(map))
+      } catch (e: JSONException) {
+        Log.w(TAG, e.message ?: "Unable to parse merchantInfo")
+        null
+      }
+    }
+
   internal val allowedAuthMethods: List<String>
     get() {
       return config.getArray(ALLOWED_AUTH_METHODS_KEY)?.toArrayList().orEmpty().map {
@@ -85,6 +98,9 @@ class GooglePayConfigurationParser(
     }
 
   fun applyConfiguration(builder: GooglePayConfiguration.Builder) {
+    if (config.hasKey(MERCHANT_INFO_KEY) && !config.isNull(MERCHANT_INFO_KEY)) {
+      merchantInfo?.let { builder.merchantInfo = it }
+    }
     if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
       builder.allowedAuthMethods = allowedAuthMethods
     }
