@@ -510,6 +510,7 @@ export interface GooglePayConfiguration {
     existingPaymentMethodRequired?: boolean;
     googlePayEnvironment?: GooglePayEnvironment;
     merchantAccount?: string;
+    merchantInfo?: GooglePayMerchantInfo;
     shippingAddressParameters?: GooglePayShippingAddressParameters;
     shippingAddressRequired?: boolean;
     totalPriceStatus?: TotalPriceStatus;
@@ -521,6 +522,12 @@ export enum GooglePayEnvironment {
     Production = 1,
     // (undocumented)
     Test = 3
+}
+
+// @public
+export interface GooglePayMerchantInfo {
+    merchantId?: string;
+    merchantName?: string;
 }
 
 // @public (undocumented)
