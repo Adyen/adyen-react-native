@@ -1,148 +1,104 @@
 # Contributing
 
-Contributions are always welcome, no matter how large or small!
+Contributions are welcome. Please read the [code of conduct](./CODE_OF_CONDUCT.md) and be respectful in project discussions.
 
-We want this community to be friendly and respectful to each other. Please follow it in all your interactions with the project. Before contributing, please read the [code of conduct](./CODE_OF_CONDUCT.md).
+## Project layout
 
-## Development workflow
+This repository uses Yarn workspaces:
 
-This project is a monorepo managed using [Yarn workspaces](https://yarnpkg.com/features/workspaces). It contains the following packages:
+- `src/` contains the JavaScript and TypeScript SDK, including the Expo plugin in `src/plugin/` and React Native codegen specs in `src/specs/`.
+- `ios/` and `android/` contain the native SDK integrations.
+- `example/` contains the example app and native test targets.
 
-- The library package in the root directory.
-- An example app in the `example/` directory.
+See [Architecture](docs/Architecture.md) before changing native modules, events, or the SDK's public architecture.
 
-To get started with the project, run `yarn` in the root directory to install the required dependencies for each package:
+## Set up a development checkout
 
-```sh
-yarn
-```
-
-> Since the project relies on Yarn workspaces, you cannot use [`npm`](https://github.com/npm/cli) for development.
-
-You also need to install the required ruby gems for the iOS project with [bundler](https://bundler.io/). To install the gems, run the following command in the root directory:
+Use the Node version in `.nvmrc`. From the repository root, run:
 
 ```sh
-bundle install
+npm start
 ```
 
-Now, you can install [CocoaPods](https://cocoapods.org/) for the iOS project. To do this, run the following command in the `example/ios` directory:
+This bootstraps dependencies, builds the library, installs Git hooks, and generates local example-app configuration. Despite the command name, it does **not** start Metro. The project uses Yarn for its workspace commands.
+
+If dependencies cannot be resolved, do not override the configured package registry; ask a maintainer for help. Bootstrap commands may regenerate lockfiles. Do not include incidental lockfile changes in a pull request.
+
+## Run the example app
+
+The example app uses the local SDK checkout. Start Metro in one terminal:
 
 ```sh
-bundle exec pod install
+yarn app start
 ```
 
-The [example app](/example/) demonstrates usage of the library. You need to run it to test any changes you make.
-
-It is configured to use the local version of the library, so any changes you make to the library's source code will be reflected in the example app. Changes to the library's JavaScript code will be reflected in the example app without a rebuild, but native code changes will require a rebuild of the example app.
-
-If you want to use Android Studio or XCode to edit the native code, you can open the `example/android` or `example/ios` directories respectively in those editors. To edit the Objective-C or Swift files, open `example/ios/ReactNativeExample.xcworkspace` in XCode and find the source files at `Pods > Development Pods > @adyen/react-native`.
-
-To edit the Java or Kotlin files, open `example/android` in Android studio and find the source files at `adyen-react-native` under `Android`.
-
-You can use various commands from the root directory to work with the project.
-
-To start the packager:
+Run the app from another terminal:
 
 ```sh
-yarn example start
+yarn app android
 ```
 
-To run the example app on Android:
+For iOS, prepare the vendored Adyen frameworks and CocoaPods first:
 
 ```sh
-yarn example android
+yarn app pod
+yarn app ios
 ```
 
-To run the example app on iOS:
+If `ios/frameworks/` is missing, `yarn app pod` needs `ADYEN_IOS_PATH` pointing to a local checkout of `adyen-ios` at the version specified by `adyen.ios` in `package.json`:
 
 ```sh
-yarn example ios
+ADYEN_IOS_PATH=/path/to/adyen-ios yarn app pod
 ```
 
-To confirm that the app is running with the new architecture, you can check the Metro logs for a message like this:
+The repository's pod wrapper uses a specific local Xcode, Ruby, and Bundler toolchain. If that toolchain is unavailable, ask a maintainer for the supported setup rather than changing global toolchain settings.
+
+Native changes require rebuilding the example app. You can also open `example/android` in Android Studio or `example/ios/AdyenExample.xcworkspace` in Xcode after installing pods.
+
+Payment flows in the example app require local Adyen test credentials. Keep `example/secrets.json` and other credentials out of commits.
+
+## Test and format changes
+
+Run the checks relevant to the code you changed:
+
+| Changes | Checks |
+| --- | --- |
+| JavaScript or TypeScript | `yarn test`, `yarn lint`, `yarn typecheck` |
+| Android | `yarn test:android`; format Kotlin with `ktlint android -F` |
+| iOS | Run `yarn app pod`, then `yarn test:ios`; format Swift with `swiftformat ios` |
+| Both native platforms | `yarn test:native` after preparing iOS pods |
+
+The Android module has no standalone Gradle wrapper. To compile it through the example app, run:
 
 ```sh
-Running "ReactNativeExample" with {"fabric":true,"initialProps":{"concurrentRoot":true},"rootTag":1}
+cd example/android && ./gradlew :adyen_react-native:compileDebugKotlin
 ```
 
-Note the `"fabric":true` and `"concurrentRoot":true` properties.
+A successful build is useful, but it does not replace running tests. If native tests cannot run because a toolchain or dependency is unavailable, say so in the pull request.
 
-Make sure your code passes TypeScript and ESLint. Run the following to verify:
+When changing behavior across platforms, check that names, error codes, and values remain aligned. Update affected tests in `src/**/__tests__/`, `android/src/test/`, and `example/ios/AdyenExampleTests/`.
 
-```sh
-yarn typecheck
-yarn lint
-```
+## Public TypeScript API changes
 
-To fix formatting errors, run the following:
-
-```sh
-yarn lint --fix
-```
-
-Remember to add tests for your change if possible. Run the unit tests by:
-
-```sh
-yarn test
-```
-
-### Commit message convention
-
-We follow the [conventional commits specification](https://www.conventionalcommits.org/en) for our commit messages:
-
-- `fix`: bug fixes, e.g. fix crash due to deprecated method.
-- `feat`: new features, e.g. add new method to the module.
-- `refactor`: code refactor, e.g. migrate from class components to hooks.
-- `docs`: changes into documentation, e.g. add usage example for the module.
-- `test`: adding or updating tests, e.g. add integration tests using detox.
-- `chore`: tooling changes, e.g. change CI config.
-
-Our pre-commit hooks verify that your commit message matches this format when committing.
-
-### Linting and tests
-
-[ESLint](https://eslint.org/), [Prettier](https://prettier.io/), [TypeScript](https://www.typescriptlang.org/)
-
-We use [TypeScript](https://www.typescriptlang.org/) for type checking, [ESLint](https://eslint.org/) with [Prettier](https://prettier.io/) for linting and formatting the code, and [Jest](https://jestjs.io/) for testing.
-
-Our pre-commit hooks verify that the linter and tests pass when committing.
-
-### Scripts
-
-The `package.json` file contains various scripts for common tasks:
-
-- `yarn`: setup project by installing dependencies.
-- `yarn typecheck`: type-check files with TypeScript.
-- `yarn lint`: lint files with ESLint.
-- `yarn test`: run unit tests with Jest.
-- `yarn example start`: start the Metro server for the example app.
-- `yarn example android`: run the example app on Android.
-- `yarn example ios`: run the example app on iOS.
-- `yarn prepare`: build the library and generate TypeScript declarations.
-- `yarn api-extractor`: check the public TypeScript API against the committed baseline.
-- `yarn api-extractor:update`: regenerate the baseline after intentionally changing the public API.
-
-### Public API changes
-
-The public TypeScript API is tracked in `etc/api/adyen-react-native.api.md`. Before changing or adding an exported type, component, hook, or module, run:
+The committed API report is `etc/api/adyen-react-native.api.md`. For changes to exported types, components, hooks, or modules, run:
 
 ```sh
 yarn prepare
 yarn api-extractor
 ```
 
-If the change is intentional, update the baseline with `yarn api-extractor:update` and include the resulting report diff in the pull request. Use that diff to identify additions, removals, and signature changes when writing release notes. Do not update the report to hide an unintended API change.
+If the API change is intentional, review it for breaking changes, then regenerate the report:
 
-The API report covers the JavaScript/TypeScript package surface only; native iOS and Android API changes still require their corresponding platform review.
+```sh
+yarn api-extractor:update
+```
 
-### Sending a pull request
+Include the generated report diff in your pull request. Do not edit the report manually or update it to hide an unintended change. Native API changes also need platform-specific review.
 
-> **Working on your first pull request?** You can learn how from this _free_ series: [How to Contribute to an Open Source Project on GitHub](https://app.egghead.io/playlists/how-to-contribute-to-an-open-source-project-on-github).
+## Commits and pull requests
 
-When you're sending a pull request:
+Start a focused branch from the latest `develop`. Keep pull requests small enough to review and test independently.
 
-- Prefer small pull requests focused on one change.
-- Verify that linters and tests are passing.
-- Review the documentation to make sure it looks good.
-- Follow the pull request template when opening a pull request.
-- For pull requests that change the API or implementation, discuss with maintainers first by opening an issue.
+Use a commit subject in the form `<type>: <imperative description>`, where `type` is `feat`, `fix`, `chore`, `refactor`, `test`, `docs`, `deprecate`, or `remove`. The Git hooks run checks before commits.
+
+In your pull request, explain what changed and why, link the relevant ticket, and list the tests you ran or could not run. Review documentation and the public API report when applicable. The React Native and Expo end-to-end CI jobs run when the pull request has the `run-e2e-tests` label.

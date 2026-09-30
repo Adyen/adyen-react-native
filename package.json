@@ -9,6 +9,10 @@
   "bugs": {
     "url": "https://support.adyen.com/"
   },
+  "adyen": {
+    "ios": "6.0.0-alpha.1",
+    "android": "6.0.0-alpha.1"
+  },
   "keywords": [
     "adyen",
     "adyen-ios",
@@ -34,6 +38,7 @@
     "LICENSE",
     "!ios/build",
     "!android/build",
+    "!android/**/build",
     "!android/gradle",
     "!android/gradlew",
     "!android/gradlew.bat",
@@ -46,7 +51,10 @@
   "scripts": {
     "app": "yarn workspace @adyen/react-native-example",
     "test": "jest",
-    "typecheck": "tsc",
+    "test:android": "cd example/android && ./gradlew :adyen_react-native:testDebugUnitTest",
+    "test:ios": "xcodebuild test -workspace example/ios/AdyenExample.xcworkspace -scheme AdyenExample -destination \"platform=iOS Simulator,id=$(bash ./e2e-tests/scripts/resolve_ios_simulator.sh)\"",
+    "test:native": "yarn test:android && yarn test:ios",
+    "typecheck": "tsc && tsc --noEmit -p example/tsconfig.json",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "git clean -fxd",
     "prepare": "bob build && node scripts/generate-package-manifest.js",
@@ -75,17 +83,18 @@
     "expo-module-scripts": "^56.0.0",
     "husky": "^9.0.11",
     "jest": "^29.7.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.9.5",
     "react": "19.2.3",
     "react-native": "0.85.0",
     "react-native-builder-bob": "^0.41.0",
     "react-test-renderer": "19.2.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "webdriverio": "^9.31.1"
   },
   "peerDependencies": {
-    "expo": ">=52",
+    "expo": ">=56",
     "react": "*",
-    "react-native": ">=0.76.0"
+    "react-native": ">=0.82"
   },
   "peerDependenciesMeta": {
     "expo": {
@@ -130,8 +139,12 @@
     },
     "ios": {
       "componentProvider": {
-        "PlatformPayView": "ADYPlatformPayView",
-        "CardView": "ADYCardView"
+        "AdyenCheckoutComponentView": "ADYAdyenComponentView"
+      },
+      "modulesProvider": {
+        "AdyenCheckout": "AdyenCheckoutTurboModule",
+        "AdyenAction": "AdyenActionTurboModule",
+        "AdyenCSE": "AdyenCSETurboModule"
       }
     }
   }
