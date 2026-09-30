@@ -98,8 +98,8 @@ class GooglePayConfigurationParser(
     }
 
   fun applyConfiguration(builder: GooglePayConfiguration.Builder) {
-    if (config.hasKey(MERCHANT_INFO_KEY) && !config.isNull(MERCHANT_INFO_KEY)) {
-      merchantInfo?.let { builder.merchantInfo = it }
+    if (config.hasKey(MERCHANT_INFO_KEY)) {
+      builder.merchantInfo = merchantInfo
     }
     if (config.hasKey(ALLOWED_AUTH_METHODS_KEY)) {
       builder.allowedAuthMethods = allowedAuthMethods

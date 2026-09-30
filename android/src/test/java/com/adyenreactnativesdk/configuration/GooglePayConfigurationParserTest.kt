@@ -10,6 +10,7 @@ import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.googlepay.MerchantInfo
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -86,6 +87,23 @@ class GooglePayConfigurationParserTest {
   }
 
   @Test
+  fun test_merchantInfo_allNull() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    val info = WritableMapMock()
+    info.putNull("merchantName")
+    info.putNull("merchantId")
+    config.putMap(GooglePayConfigurationParser.MERCHANT_INFO_KEY, info)
+
+    GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+
+    val captor = argumentCaptor<MerchantInfo>()
+    verify(mockBuilder).merchantInfo = captor.capture()
+    assertEquals(null, captor.firstValue.merchantName)
+    assertEquals(null, captor.firstValue.merchantId)
+  }
+
+  @Test
   fun test_merchantInfo_nested() {
     val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
@@ -105,13 +123,14 @@ class GooglePayConfigurationParserTest {
   }
 
   @Test
-  fun test_merchantInfo_doesNotModifyBuilder_whenNull() {
+  fun test_merchantInfo_throws_whenNull() {
     val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
     val config = WritableMapMock()
     config.putNull(GooglePayConfigurationParser.MERCHANT_INFO_KEY)
 
-    GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
-
+    assertThrows(NullPointerException::class.java) {
+      GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+    }
     verifyNoInteractions(mockBuilder)
   }
 
