@@ -39,7 +39,7 @@ __metadata:
     "@eslint/compat": "npm:^1.2.7"
     "@eslint/eslintrc": "npm:^3.3.3"
     "@eslint/js": "npm:^9.39.2"
-    "@expo/config-plugins": "npm:^57.0.0"
+    "@expo/config-plugins": "npm:^57.0.5"
     "@microsoft/api-extractor": "npm:^7.58.9"
     "@react-native-community/cli": "npm:15.0.1"
     "@react-native/babel-preset": "npm:0.85.0"
@@ -1921,14 +1921,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@expo/config-plugins@npm:^57.0.0":
-  version: 57.0.5
-  resolution: "@expo/config-plugins@npm:57.0.5"
+"@expo/config-plugins@npm:^57.0.5":
+  version: 57.0.9
+  resolution: "@expo/config-plugins@npm:57.0.9"
   dependencies:
     "@expo/config-types": "npm:^57.0.2"
     "@expo/json-file": "npm:~11.0.1"
     "@expo/plist": "npm:^0.8.1"
-    "@expo/require-utils": "npm:^57.0.3"
+    "@expo/require-utils": "npm:^57.0.5"
     "@expo/sdk-runtime-versions": "npm:^1.0.0"
     chalk: "npm:^4.1.2"
     debug: "npm:^4.3.5"
@@ -1938,7 +1938,7 @@ __metadata:
     slugify: "npm:^1.6.6"
     xcode: "npm:^3.0.1"
     xml2js: "npm:0.6.0"
-  checksum: 10c0/cfd3fda274ea0901a8f40963db2df9dbbceafe4c8f43e70e8f759bcbf805ae85b00be0bc9c98c7caae984a73471ab495c13547806f4e775f3f24cdcad2145102
+  checksum: 10c0/a980ceea445860797dd8d5f446b9dd1710b4101a0d9ac362157c9af2f5777ed7365c09c13f2fd42c00252060105e92e44a390841c294d52dbcb0362cac21c5c0
   languageName: node
   linkType: hard
 
@@ -1970,19 +1970,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@expo/require-utils@npm:^57.0.3":
-  version: 57.0.3
-  resolution: "@expo/require-utils@npm:57.0.3"
+"@expo/require-utils@npm:^57.0.5":
+  version: 57.0.5
+  resolution: "@expo/require-utils@npm:57.0.5"
   dependencies:
     "@babel/code-frame": "npm:^7.20.0"
     "@babel/core": "npm:^7.25.2"
     "@babel/plugin-transform-modules-commonjs": "npm:^7.24.8"
   peerDependencies:
-    typescript: ^5.0.0 || ^5.0.0-0 || ^6.0.0
+    typescript: ^5.0.0 || ^5.0.0-0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/9ded59ace66492cebf1c98b93e10a4d96dda1531b35828d7a9dd1a1a7d814e6c25f92542afdc3e080d5d4fbe373bf502e8ef98281839ed186854427d9d964405
+  checksum: 10c0/42841b76d6540098b664bee633e6ef9825ac84041e7c91045bd15a84d6aed4f2ad1f5027da263755a1e2dc2190283e7b7d6c4fb9ec3335c7a87016606b443754
   languageName: node
   linkType: hard
 
