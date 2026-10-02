@@ -1,13 +1,12 @@
+/*
+ * Copyright (c) 2026 Adyen N.V.
+ *
+ * This file is open source and available under the MIT license. See the LICENSE file for more info.
+ */
+
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.adyen3ds2.adyen3DS2
-import com.adyen.checkout.bcmc.bcmc
-import com.adyen.checkout.card.card
-import com.adyen.checkout.components.core.CheckoutConfiguration
-import com.adyen.checkout.dropin.dropIn
-import com.adyen.checkout.giftcard.giftCard
-import com.adyen.checkout.googlepay.googlePay
-import com.adyen.checkout.twint.twint
+import com.adyen.checkout.core.components.CheckoutConfiguration
 import com.adyenreactnativesdk.component.base.ModuleException
 import com.facebook.react.bridge.ReadableMap
 
@@ -25,33 +24,9 @@ object CheckoutConfigurationFactory {
       amount = rootParser.amount,
       analyticsConfiguration = analyticsConfiguration,
     ) {
-      googlePay {
-        setCountryCode(countryCode)
-        val googlePayParser = GooglePayConfigurationParser(json)
-        googlePayParser.applyConfiguration(this)
-      }
-      val cardParser = CardConfigurationParser(json, countryCode)
-      card {
-        cardParser.applyConfiguration(this)
-      }
-      bcmc {
-        cardParser.applyConfiguration(this)
-      }
-      dropIn {
-        val parser = DropInConfigurationParser(json)
-        parser.applyConfiguration(this)
-      }
-      adyen3DS2 {
-        val parser = ThreeDSConfigurationParser(json)
-        parser.applyConfiguration(this)
-      }
-      giftCard {
-        val parser = PartialPaymentParser(json)
-        setPinRequired(parser.pinRequired)
-      }
-      twint {
-        showStorePaymentField = false
-      }
+      CardConfigurationParser(json, countryCode).applyConfiguration(this)
+      GooglePayConfigurationParser(json).applyConfiguration(this, countryCode)
+      ThreeDSConfigurationParser(json).applyConfiguration(this)
     }
   }
 }

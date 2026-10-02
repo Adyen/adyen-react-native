@@ -6,34 +6,151 @@
 
 package com.adyenreactnativesdk.cse
 
-import androidx.appcompat.app.AppCompatActivity
+import com.adyen.checkout.core.components.CheckoutTarget
+import com.adyenreactnativesdk.react.parseCheckoutTarget
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ActionModuleTest {
-  @After
-  fun tearDown() {
-    ActionModule.currentCallback = null
+  @Test
+  fun `generated target parser preserves regular type and exact stored identity`() {
+    assertEquals(
+      CheckoutTarget.PaymentMethod("scheme"),
+      parseCheckoutTarget("paymentMethod", "scheme", null),
+    )
+    assertEquals(
+      CheckoutTarget.StoredPaymentMethod("stored-second"),
+      parseCheckoutTarget("storedPaymentMethod", "scheme", "stored-second"),
+    )
+    assertNull(parseCheckoutTarget("storedPaymentMethod", null, ""))
+    assertNull(parseCheckoutTarget("paymentMethod", " ", null))
+    assertNull(parseCheckoutTarget("unknown", "scheme", "stored-second"))
   }
 
   @Test
-  fun `hide clears currentCallback`() {
-    val activity = Robolectric.buildActivity(AppCompatActivity::class.java).create().get()
-    val reactContext = mock<ReactApplicationContext>()
-    whenever(reactContext.currentActivity).thenReturn(activity)
-    val module = ActionModule(reactContext)
-    ActionModule.currentCallback = module
+  fun `token-free RedirectAction rejects before configuration or presentation setup`() {
+    val context = mainThreadContext()
+    val promise = mock<Promise>()
+    val module = ActionModule(context)
 
-    module.hide(true)
+    module.handle(
+      """
+      {
+        "type": "redirect",
+        "paymentData": "payment-data",
+        "paymentMethodType": "ideal",
+        "method": "GET",
+        "url": "https://issuer.example/redirect?opaque=provider-value"
+      }
+      """.trimIndent(),
+      "not-valid-configuration-json",
+      promise,
+    )
 
-    assertNull(ActionModule.currentCallback)
+    verify(promise).reject(eq("unsupportedCapability"), any<String>())
+  }
+
+  @Test
+  fun `a supported action can start after a rejected RedirectAction`() {
+    val context = mainThreadContext()
+    val redirectPromise = mock<Promise>()
+    val supportedPromise = mock<Promise>()
+    val module = ActionModule(context)
+
+    module.handle("""{"type":"redirect"}""", "not-valid-configuration-json", redirectPromise)
+    module.handle("""{"type":"await"}""", "not-valid-configuration-json", supportedPromise)
+
+    verify(redirectPromise).reject(eq("unsupportedCapability"), any<String>())
+    verify(supportedPromise).reject(eq("parsingError"), any<String>(), any<Exception>())
+  }
+
+  @Test
+  fun `hide is idempotent when no standalone action is active`() {
+    val context = mainThreadContext()
+    val promise = mock<Promise>()
+    val module = ActionModule(context)
+
+    module.hide(promise)
+
+    verify(promise).resolve(null)
+  }
+
+  @Test
+  fun `operation cleanup tokens remain process unique`() {
+    assert(ActionOperationToken.create() != ActionOperationToken.create())
+  }
+
+  @Test
+  fun `only the exact token can release the process-global action owner`() {
+    val first = ActionOperationToken.create()
+    val second = ActionOperationToken.create()
+
+    assertTrue(ActionOwnerRegistry.acquire(first))
+    assertFalse(ActionOwnerRegistry.acquire(second))
+
+    ActionOwnerRegistry.release(second)
+    assertFalse(ActionOwnerRegistry.acquire(second))
+
+    ActionOwnerRegistry.release(first)
+    assertTrue(ActionOwnerRegistry.acquire(second))
+
+    ActionOwnerRegistry.release(first)
+    assertFalse(ActionOwnerRegistry.acquire(first))
+
+    ActionOwnerRegistry.release(second)
+    assertTrue(ActionOwnerRegistry.acquire(first))
+    ActionOwnerRegistry.release(first)
+  }
+
+  @Test
+  fun `stale callback token cannot settle a replacement action promise`() {
+    val first = ActionPromiseRecorder()
+    val second = ActionPromiseRecorder()
+    val firstToken = ActionOperationToken.create()
+    val secondToken = ActionOperationToken.create()
+
+    assertTrue(ActionOwnerRegistry.acquire(firstToken))
+    ActionOwnerRegistry.release(firstToken)
+    assertTrue(ActionOwnerRegistry.acquire(secondToken))
+
+    first.resolveIfOwner(firstToken)
+    second.resolveIfOwner(secondToken)
+
+    assertEquals(0, first.resolutionCount)
+    assertEquals(1, second.resolutionCount)
+    ActionOwnerRegistry.release(secondToken)
+  }
+
+  private class ActionPromiseRecorder {
+    var resolutionCount = 0
+
+    fun resolveIfOwner(token: String) {
+      if (ActionOwnerRegistry.owns(token)) {
+        resolutionCount += 1
+      }
+    }
+  }
+
+  private fun mainThreadContext(): ReactApplicationContext {
+    val context = mock<ReactApplicationContext>()
+    doAnswer { invocation ->
+      (invocation.arguments[0] as Runnable).run()
+      null
+    }.whenever(context).runOnUiQueueThread(any())
+    return context
   }
 }

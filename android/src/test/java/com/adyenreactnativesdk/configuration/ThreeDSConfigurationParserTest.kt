@@ -6,14 +6,11 @@
 
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
+import com.adyen.checkout.core.common.Environment
+import com.adyen.checkout.core.components.CheckoutConfiguration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
-import org.mockito.kotlin.any
 
 class ThreeDSConfigurationParserTest {
   @Test
@@ -29,19 +26,23 @@ class ThreeDSConfigurationParserTest {
   }
 
   @Test
-  fun test_applyConfiguration_doesNotModifyBuilder_whenGivenEmptySubDictionary() {
+  fun test_applyConfiguration_doesNotThrow_whenGivenEmptySubDictionary() {
     // GIVEN
-    val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
     val config = WritableMapMock()
     val threedsConfig = WritableMapMock()
     config.putMap(ThreeDSConfigurationParser.ROOT_KEY, threedsConfig)
+    val configuration =
+      CheckoutConfiguration(
+        environment = Environment.TEST,
+        clientKey = "test_key",
+      )
 
     // WHEN
     val sut = ThreeDSConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
+    sut.applyConfiguration(configuration)
 
     // THEN
-    verify(mockBuilder, times(0)).threeDSRequestorAppURL = any()
+    assertNull(sut.requestorAppUrl)
   }
 
   @Test
@@ -61,21 +62,25 @@ class ThreeDSConfigurationParserTest {
   }
 
   @Test
-  fun test_requestorAppUrl_appliesCorrectValue_whenExplicitlySet() {
+  fun test_applyConfiguration_doesNotThrow_whenRequestorAppUrlIsSet() {
     // GIVEN
-    val mockBuilder = mock(Adyen3DS2Configuration.Builder::class.java)
     val config = WritableMapMock()
     config.putString(
       ThreeDSConfigurationParser.REQUESTOR_APP_URL_KEY,
       "https://testing.com",
     )
+    val configuration =
+      CheckoutConfiguration(
+        environment = Environment.TEST,
+        clientKey = "test_key",
+      )
 
     // WHEN
     val sut = ThreeDSConfigurationParser(config)
-    sut.applyConfiguration(mockBuilder)
+    sut.applyConfiguration(configuration)
 
     // THEN
-    verify(mockBuilder, times(1)).threeDSRequestorAppURL = "https://testing.com"
+    assertEquals("https://testing.com", sut.requestorAppUrl)
   }
 
   @Test

@@ -7,30 +7,25 @@
 package com.adyenreactnativesdk
 
 import android.content.Intent
-import android.util.Log
 import androidx.activity.result.ActivityResultCaller
-import com.adyen.checkout.action.core.internal.ActionHandlingComponent
-import com.adyen.checkout.components.core.internal.Component
-import com.adyenreactnativesdk.component.dropin.DropInModule
-import java.lang.ref.WeakReference
+import com.adyenreactnativesdk.component.dropin.CoordinatorDropInLauncher
+import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 
 /**
- * Umbrella class for setting DropIn and Component specific parameters
+ * Umbrella class for coordinator-owned Android checkout integration.
  */
 object AdyenCheckout {
-  private var currentComponent: WeakReference<Component> = WeakReference(null)
-
   /**
-   * Persist a reference to Activity that will present DropIn or Component
-   * @param activity  parent activity for DropIn or Component
+   * Registers the official v6 Drop-in result contract with this activity. The active checkout
+   * coordinator, rather than this facade, owns the returned launcher and clears its result route.
    */
   @JvmStatic
   fun setLauncherActivity(activity: ActivityResultCaller) {
-    DropInModule.register(activity)
+    CheckoutCoordinator.shared.registerDropInLauncher(CoordinatorDropInLauncher(activity))
   }
 
   /**
-   * Allow Adyen Components to process intents.
+   * Allow Adyen Components to process intents through the coordinator-owned route.
    * @param intent  received redirect intent
    * @return `true` when intent could be handled by AdyenCheckout
    */
@@ -39,44 +34,6 @@ object AdyenCheckout {
     if (intent.data == null) {
       return false
     }
-    val actionHandlingComponent = currentComponent.get() as? ActionHandlingComponent
-    return if (actionHandlingComponent != null) {
-      actionHandlingComponent.handleIntent(intent)
-      true
-    } else {
-      Log.e(TAG, "No Action Handling Component registered")
-      false
-    }
+    return CheckoutCoordinator.shared.handleReturn(intent)
   }
-
-  @JvmStatic
-  internal fun setComponent(component: Component) {
-    currentComponent = WeakReference(component)
-  }
-
-  @JvmStatic
-  internal fun removeComponent() {
-    currentComponent.clear()
-  }
-
-  /**
-   * Allow Adyen Components to process intents.
-   * @param requestCode  received redirect intent
-   * @param resultCode  received redirect intent
-   * @param data  received redirect intent
-   */
-  @Deprecated(
-    message = "Deprecated. This method is kept for backwards compatibility and no longer has any effect.",
-    level = DeprecationLevel.WARNING,
-  )
-  @JvmStatic
-  fun handleActivityResult(
-    requestCode: Int,
-    resultCode: Int,
-    data: Intent?,
-  ) {
-    // TODO: deprecate
-  }
-
-  private const val TAG = "AdyenCheckout"
 }

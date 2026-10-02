@@ -1,10 +1,10 @@
 package com.adyenreactnativesdk.configuration
 
-import com.adyen.checkout.components.core.AnalyticsConfiguration
-import com.adyen.checkout.components.core.AnalyticsLevel
-import com.adyen.checkout.core.AdyenLogLevel
-import com.adyen.checkout.core.AdyenLogger
-import com.adyenreactnativesdk.component.base.BaseModule
+import com.adyen.checkout.core.common.AdyenLogLevel
+import com.adyen.checkout.core.common.AdyenLogger
+import com.adyen.checkout.core.components.AnalyticsConfiguration
+import com.adyen.checkout.core.components.AnalyticsLevel
+import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.facebook.react.bridge.ReadableMap
 
 class AnalyticsParser(
@@ -36,7 +36,7 @@ class AnalyticsParser(
     get() {
       val logLevel = if (verboseLogs) AdyenLogLevel.VERBOSE else AdyenLogLevel.ERROR
       AdyenLogger.setLogLevel(logLevel)
-      BaseModule.configureAnalytics()
+      AdyenPaymentPackage.configureAnalytics()
       return AnalyticsConfiguration(if (analyticsEnabled) AnalyticsLevel.ALL else AnalyticsLevel.NONE)
     }
 }

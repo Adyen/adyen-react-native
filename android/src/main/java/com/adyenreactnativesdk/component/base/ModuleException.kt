@@ -25,10 +25,10 @@ sealed class ModuleException(
       message = "Payment canceled by shopper",
     )
 
-  class NotSupported :
+  class UnsupportedAddressLookup :
     ModuleException(
-      code = "notSupported",
-      message = "Not supported on Android",
+      code = "unsupportedCapability",
+      message = "Address lookup is unsupported by the pinned Android SDK",
     )
 
   class NoClientKey :
@@ -37,86 +37,10 @@ sealed class ModuleException(
       message = "No clientKey in configuration",
     )
 
-  class NoPayment :
-    ModuleException(
-      code = "noPayment",
-      message = "No payment in configuration",
-    )
-
-  class InvalidPaymentMethods(
-    e: Throwable?,
-  ) : ModuleException(
-      code = "invalidPaymentMethods",
-      message = "Can not parse paymentMethods or the list is empty",
-      cause = e,
-    )
-
-  class InvalidAction(
-    e: Throwable?,
-  ) : ModuleException(
-      code = "invalidAction",
-      message = "Can not parse action",
-      cause = e,
-    )
-
-  class NoPaymentMethod(
-    type: String,
-  ) : ModuleException(
-      code = "noPaymentMethod",
-      message = "Can not find payment method of type $type in provided list",
-    )
-
-  class NoPaymentMethods(
-    type: Collection<String>,
-  ) : ModuleException(
-      code = "noPaymentMethod",
-      message = "Can not find payment method of types \"${type.joinToString(",")}\" in provided list",
-    )
-
-  class NoModuleListener(
-    integration: String,
-  ) : ModuleException(
-      code = "noModuleListener",
-      message = "No DropInService registered for: $integration",
-    )
-
   class Unknown(
     reason: String?,
   ) : ModuleException(
       code = "unknown",
       message = reason ?: "Reason unknown",
-    )
-
-  class SessionError(
-    error: Throwable?,
-  ) : ModuleException(
-      code = "session",
-      message = "Something went wrong while starting session",
-      cause = error,
-    )
-
-  class NoActivity :
-    ModuleException(
-      code = "noActivity",
-      message = "Launcher not registered. Please call AdyenCheckout.setLauncherActivity() on MainActivity.onCreate()",
-    )
-
-  class WrongFlow :
-    ModuleException(
-      code = "noActivity",
-      message = "ViewModel callback is inconsistent",
-    )
-
-  class NoConsumer(
-    val name: String,
-  ) : ModuleException(
-      code = "noConsumer",
-      message = "No View is registered in EmbeddedComponentBus as $name",
-    )
-
-  class NoPaymentRegistered :
-    ModuleException(
-      code = "noPaymentRegistered",
-      message = "No `onSubmit` was detected to process this action.",
     )
 }

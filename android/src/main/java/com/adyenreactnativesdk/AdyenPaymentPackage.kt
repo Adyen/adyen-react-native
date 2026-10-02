@@ -6,82 +6,72 @@
 
 package com.adyenreactnativesdk
 
-import com.adyenreactnativesdk.component.EmbeddedComponentBusModule
-import com.adyenreactnativesdk.component.SessionHelperModule
-import com.adyenreactnativesdk.component.applepay.ApplePayModuleMock
-import com.adyenreactnativesdk.component.dropin.DropInModule
-import com.adyenreactnativesdk.component.googlepay.GooglePayModule
-import com.adyenreactnativesdk.component.instant.InstantModule
+import android.annotation.SuppressLint
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatform
+import com.adyen.checkout.core.common.internal.helper.CheckoutPlatformParams
 import com.adyenreactnativesdk.cse.ActionModule
 import com.adyenreactnativesdk.cse.AdyenCSEModule
-import com.adyenreactnativesdk.react.CardViewManager
-import com.adyenreactnativesdk.react.PlatformPayViewManager
-import com.adyenreactnativesdk.util.messaging.MessageBus
-import com.adyenreactnativesdk.util.messaging.MessageBusEmitter
-import com.facebook.react.ReactPackage
+import com.adyenreactnativesdk.react.AdyenComponentViewManager
+import com.adyenreactnativesdk.react.AndroidCheckoutModule
+import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.module.model.ReactModuleInfo
+import com.facebook.react.module.model.ReactModuleInfoProvider
 import com.facebook.react.uimanager.ViewManager
 
-class AdyenPaymentPackage : ReactPackage {
-  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> {
-    ensureInitialized(reactContext)
-    val cardView = CardViewManager(emitter)
-
-    return listOf(
-      PlatformPayViewManager(),
-      cardView,
+class AdyenPaymentPackage : BaseReactPackage() {
+  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<in Nothing, in Nothing>> =
+    listOf(
+      AdyenComponentViewManager(),
     )
+
+  override fun getModule(
+    name: String,
+    reactContext: ReactApplicationContext,
+  ): NativeModule? {
+    configureAnalytics()
+    return when (name) {
+      AndroidCheckoutModule.NAME -> AndroidCheckoutModule(reactContext)
+      AdyenCSEModule.NAME -> AdyenCSEModule(reactContext)
+      ActionModule.NAME -> ActionModule(reactContext)
+      else -> null
+    }
   }
 
-  override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-    ensureInitialized(reactContext)
-    val sharedBus = messageBus
-    return listOf(
-      DropInModule(reactContext, sharedBus),
-      InstantModule(reactContext, sharedBus),
-      GooglePayModule(reactContext, sharedBus),
-      ApplePayModuleMock(reactContext, sharedBus),
-      AdyenCSEModule(reactContext),
-      SessionHelperModule(reactContext, sharedBus),
-      ActionModule(reactContext),
-      EmbeddedComponentBusModule(reactContext, sharedBus),
-    )
-  }
+  override fun getReactModuleInfoProvider(): ReactModuleInfoProvider =
+    ReactModuleInfoProvider {
+      mapOf(
+        AndroidCheckoutModule.NAME to moduleInfo<AndroidCheckoutModule>(AndroidCheckoutModule.NAME, turbo = true),
+        AdyenCSEModule.NAME to moduleInfo<AdyenCSEModule>(AdyenCSEModule.NAME, turbo = true),
+        ActionModule.NAME to moduleInfo<ActionModule>(ActionModule.NAME, turbo = true),
+      )
+    }
 
   companion object {
-    val messageBus: MessageBus
-      get() = _messageBus ?: throw IllegalStateException("AdyenCheckout MessageBus is not initialized")
-
-    val emitter: MessageBusEmitter
-      get() = _emitter ?: throw IllegalStateException("AdyenCheckout MessageBusEmitter is not initialized")
-
-    internal fun messageBusOrNull(): MessageBus? = _messageBus
-
     @Volatile
-    private var _emitter: MessageBusEmitter? = null
+    var sdkVersion: String? = null
+      internal set
 
-    @Volatile
-    private var _messageBus: MessageBus? = null
-
-    @Volatile
-    private var currentContextHashCode: Int = 0
-    private val lock = Any()
-
-    /**
-     * Ensures the shared [MessageBusEmitter] and [MessageBus] are created
-     * for the provided context. Re-creates them when the context changes
-     * (e.g., after hot reload).
-     */
-    internal fun ensureInitialized(context: ReactApplicationContext) {
-      synchronized(lock) {
-        val contextHash = context.hashCode()
-        if (_emitter != null && currentContextHashCode == contextHash) return
-        val newEmitter = MessageBusEmitter(context)
-        _emitter = newEmitter
-        _messageBus = MessageBus(newEmitter)
-        currentContextHashCode = contextHash
+    // This is intended.
+    @SuppressLint("RestrictedApi")
+    fun configureAnalytics() {
+      sdkVersion?.let {
+        CheckoutPlatformParams.overrideForCrossPlatform(CheckoutPlatform.REACT_NATIVE, it)
       }
     }
+
+    private inline fun <reified T> moduleInfo(
+      name: String,
+      turbo: Boolean = false,
+    ): ReactModuleInfo =
+      ReactModuleInfo(
+        name,
+        T::class.java.name,
+        false,
+        false,
+        false,
+        turbo,
+      )
   }
 }
