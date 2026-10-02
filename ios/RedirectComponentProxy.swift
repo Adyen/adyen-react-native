@@ -4,19 +4,23 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import Adyen
+import AdyenCheckout
+#if canImport(AdyenActions)
+    import AdyenCheckout
+#endif
 import Foundation
 
 @objc
 public class RedirectComponentProxy: NSObject {
 
-    @objc
+    @objc @MainActor
     public class func proccessURL(_ url: NSURL) -> Bool {
-        RedirectComponent.applicationDidOpen(from: url as URL)
+        proccessURL(url as URL)
     }
 
+    @MainActor
     public class func proccessURL(_ url: URL) -> Bool {
-        RedirectComponent.applicationDidOpen(from: url)
+        Checkout.handleReturn(url: url)
     }
 
 }

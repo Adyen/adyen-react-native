@@ -13,46 +13,19 @@ import UIKit
 enum ModuleException: LocalizedError, KnownError {
     case canceled
     case noClientKey
-    case noPayment
-    case notSupported
     case invalidPaymentMethods
-    case invalidAction
-    case notKeyWindow
-    case paymentMethodNotFound(PaymentMethod.Type)
-    case balanceCheck(message: String)
-    case orderRequest(message: String)
-    case sessionError
     case invalidClientKey
-    case componentNotRegistered(String)
 
     var errorCode: String {
         switch self {
         case .canceled:
             return "canceledByShopper"
-        case .notSupported:
-            return "notSupported"
         case .noClientKey:
             return "noClientKey"
-        case .noPayment:
-            return "noPayment"
         case .invalidPaymentMethods:
             return "invalidPaymentMethods"
-        case .invalidAction:
-            return "invalidAction"
-        case .paymentMethodNotFound:
-            return "noPaymentMethod"
-        case .notKeyWindow:
-            return "notKeyWindow"
-        case .balanceCheck:
-            return "balanceCheck"
-        case .orderRequest:
-            return "orderRequest"
-        case .sessionError:
-            return "sessionError"
         case .invalidClientKey:
             return "invalidClientKey"
-        case .componentNotRegistered:
-            return "componentNotRegistered"
         }
     }
 
@@ -60,30 +33,12 @@ enum ModuleException: LocalizedError, KnownError {
         switch self {
         case .canceled:
             return "Payment canceled by shopper"
-        case .notSupported:
-            return "Not supported on iOS"
         case .noClientKey:
             return "No clientKey in configuration"
         case .invalidClientKey:
             return "Invalid clientKey"
-        case .noPayment:
-            return "No payment in configuration"
         case .invalidPaymentMethods:
             return "Can not parse paymentMethods or the list is empty"
-        case .invalidAction:
-            return "Can not parse action"
-        case let .paymentMethodNotFound(type):
-            return "Can not find payment method of type \(type) in provided list"
-        case .notKeyWindow:
-            return "Can not find root ViewController"
-        case let .balanceCheck(message):
-            return "Balance check error: \(message)"
-        case let .orderRequest(message):
-            return "Order request error: \(message)"
-        case .sessionError:
-            return "Something went wrong while starting session"
-        case let .componentNotRegistered(type):
-            return "No embedded component registered for type \(type)"
         }
     }
 
@@ -101,7 +56,7 @@ enum ModuleException: LocalizedError, KnownError {
 extension Error {
 
     var isComponentCanceled: Bool {
-        (self as? ComponentError) == ComponentError.cancelled
+        (self as? CheckoutError)?.code == .cancelled
     }
 
     var is3DSCanceled: Bool {

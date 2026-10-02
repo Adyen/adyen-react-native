@@ -8,7 +8,7 @@ import Adyen
 import Foundation
 
 struct ResultDTO {
-    let result: SessionPaymentResultCode
+    let result: CheckoutResultCode
 
     var jsonObject: [String: Any] {
         [

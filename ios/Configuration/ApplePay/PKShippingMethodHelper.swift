@@ -50,6 +50,29 @@ extension PKShippingMethod {
 
         return this
     }
+
+    var jsonObject: [String: Any] {
+        var dict: [String: Any] = [
+            ApplePayKeys.SummaryItem.label: label,
+            ApplePayKeys.SummaryItem.amount: amount.stringValue,
+            ApplePayKeys.SummaryItem.type: type == .pending ? "pending" : "final"
+        ]
+        if let identifier {
+            dict[ApplePayKeys.ShippingMethod.identifier] = identifier
+        }
+        if let detail {
+            dict[ApplePayKeys.ShippingMethod.detail] = detail
+        }
+        if #available(iOS 15.0, *), let range = dateComponentsRange {
+            if let start = Calendar.current.date(from: range.startDateComponents) {
+                dict[ApplePayKeys.ShippingMethod.startDate] = iso8601Formatter.string(from: start)
+            }
+            if let end = Calendar.current.date(from: range.endDateComponents) {
+                dict[ApplePayKeys.ShippingMethod.endDate] = iso8601Formatter.string(from: end)
+            }
+        }
+        return dict
+    }
 }
 
 enum ApplePayShippingType: String {

@@ -96,6 +96,41 @@ extension PKContact {
 
         return postalAddressUpdated ? postalAddress : nil
     }
+
+    var jsonObject: [String: Any] {
+        var dictionary: [String: Any] = [:]
+
+        if let email = self.emailAddress {
+            dictionary[ApplePayKeys.Contact.emailAddress] = email
+        }
+
+        if let phoneNumber = self.phoneNumber {
+            dictionary[ApplePayKeys.Contact.phoneNumber] = phoneNumber.stringValue
+        }
+
+        if let name = self.name {
+            dictionary[ApplePayKeys.Contact.givenName] = name.givenName
+            dictionary[ApplePayKeys.Contact.familyName] = name.familyName
+        }
+
+        if let name = self.name?.phoneticRepresentation {
+            dictionary[ApplePayKeys.Contact.phoneticGivenName] = name.givenName
+            dictionary[ApplePayKeys.Contact.phoneticFamilyName] = name.familyName
+        }
+
+        if let postalAddress = self.postalAddress {
+            dictionary[ApplePayKeys.Contact.addressLines] = postalAddress.street
+            dictionary[ApplePayKeys.Contact.subLocality] = postalAddress.subLocality
+            dictionary[ApplePayKeys.Contact.locality] = postalAddress.city
+            dictionary[ApplePayKeys.Contact.postalCode] = postalAddress.postalCode
+            dictionary[ApplePayKeys.Contact.subAdministrativeArea] = postalAddress.subAdministrativeArea
+            dictionary[ApplePayKeys.Contact.administrativeArea] = postalAddress.state
+            dictionary[ApplePayKeys.Contact.country] = postalAddress.country
+            dictionary[ApplePayKeys.Contact.countryCode] = postalAddress.isoCountryCode
+        }
+
+        return dictionary
+    }
 }
 
 extension PKContactField {
