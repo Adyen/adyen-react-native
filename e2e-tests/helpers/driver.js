@@ -35,6 +35,7 @@ async function createDriver() {
         'appium:automationName': 'UiAutomator2',
         'appium:appPackage': androidAppPackage,
         'appium:appActivity': androidAppActivity,
+        'appium:noReset': true,
         'appium:newCommandTimeout': 120,
         'appium:adbExecTimeout': 120000,
         'appium:uiautomator2ServerInstallTimeout': 120000,
