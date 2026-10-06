@@ -1,104 +1,61 @@
-import { useEffect, useCallback, useState } from 'react';
-import { Text, ActivityIndicator, View, Platform } from 'react-native';
-import { AdyenCheckout, AdyenDropIn } from '@adyen/react-native';
-import type {
-  AdyenError,
-  AdyenComponent,
-  SessionsResult,
-  SessionConfiguration,
-} from '@adyen/react-native';
-import { CheckoutNavigator } from '../../router/CheckoutNavigator';
+import { useCallback, useMemo } from 'react';
+import { View } from 'react-native';
+import { AdyenCheckout } from '@adyen/react-native';
+import type { AdyenError, SessionsResult } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
+import DropInButton from './components/DropInButton';
+import CheckoutContainer from './components/CheckoutContainer';
 import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { processAdyenError } from './utils/processAdyenError';
 import { ENVIRONMENT } from '../../Configuration';
 
 const SessionsDropInCheckout = () => {
-  const { configuration, processResult, navigateToRoot, apiClient } =
+  const { configuration, navigateToResults, navigateToRoot, sessionsApi } =
     useAppContext();
-  const [loading, setLoading] = useState(true);
-  const [initError, setError] = useState<string | undefined>(undefined);
-  const [session, setSession] = useState<SessionConfiguration | undefined>(
-    undefined
+
+  const config = useMemo(
+    () => checkoutConfiguration(configuration),
+    [configuration]
   );
 
-  useEffect(() => {
-    const refreshSession = async () => {
-      try {
-        const returnUrl = Platform.select({
-          android: await AdyenDropIn.getReturnURL(),
-          default: ENVIRONMENT.returnUrl,
-        });
-        const newSession = await apiClient.requestSession(
-          configuration,
-          returnUrl
-        );
-        setSession(newSession);
-      } catch (e) {
-        setError(String(e));
-      } finally {
-        setLoading(false);
-      }
-    };
-    refreshSession();
-  }, [configuration, setSession, setLoading, setError, apiClient]);
-
   const didFail = useCallback(
-    async (error: AdyenError, nativeComponent: AdyenComponent) => {
-      processAdyenError(error, nativeComponent);
+    async (adyenError: AdyenError) => {
+      processAdyenError(adyenError);
       navigateToRoot();
     },
     [navigateToRoot]
   );
 
   const didComplete = useCallback(
-    async (result: SessionsResult, nativeComponent: AdyenComponent) => {
-      if (
-        result.resultCode === 'PresentToShopper' ||
-        apiClient.usesDirectSessionResult
-      ) {
-        processResult(result, nativeComponent);
-        return;
-      }
-      const status = await apiClient.requestSessionResult(
-        result.sessionId,
-        result.sessionResult
-      );
-      processResult(status, nativeComponent);
+    async (result: SessionsResult) => {
+      // TODO: verify server-side via sessionsApi.requestSessionResult once Android forwards a real sessionResult (works on iOS today).
+      navigateToResults(result);
     },
-    [processResult, apiClient]
+    [navigateToResults]
   );
 
-  if (loading) {
-    return (
-      <View style={Styles.centeredContent}>
-        <ActivityIndicator size="large" />
-      </View>
+  const sessionsSetup = useCallback(async () => {
+    const session = await sessionsApi.requestSession(
+      configuration,
+      ENVIRONMENT.returnUrl
     );
-  }
-
-  if (initError) {
-    return (
-      <View style={Styles.centeredContent}>
-        <Text style={Styles.errorText}>{initError}</Text>
-      </View>
-    );
-  }
+    return AdyenCheckout.setup(session, config, {
+      onComplete: didComplete,
+      onError: didFail,
+    });
+  }, [configuration, sessionsApi, config, didComplete, didFail]);
 
   return (
-    <View style={Styles.page}>
-      <TopView />
-      <AdyenCheckout
-        config={checkoutConfiguration(configuration)}
-        session={session}
-        onComplete={didComplete}
-        onError={didFail}
-      >
-        <CheckoutNavigator showDropIn={true} />
-      </AdyenCheckout>
-    </View>
+    <CheckoutContainer setup={sessionsSetup}>
+      {(checkout) => (
+        <View style={Styles.page}>
+          <TopView />
+          <DropInButton checkout={checkout} />
+        </View>
+      )}
+    </CheckoutContainer>
   );
 };
 

@@ -60,6 +60,10 @@ yarn app pod
 yarn app ios
 ```
 
+`yarn app pod` prepares the vendored xcframeworks and runs CocoaPods from the root
+Gemfile with the repository Ruby 3.2/Bundler toolchain. It scopes CocoaPods to Xcode
+27.2 and does not change your global `xcode-select`.
+
 If everything is set up _correctly_, you should see the app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
 
 This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.

@@ -1,6 +1,7 @@
+import AdyenCheckout
 import UIKit
-import Adyen
 
+// TODO: check which approach is needed: SceneDelegate or AppDelegate
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
@@ -21,6 +22,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
-        RedirectComponent.applicationDidOpen(from: url)
+        Checkout.handleReturn(url: url)
     }
 }

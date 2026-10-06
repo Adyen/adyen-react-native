@@ -203,6 +203,9 @@ const Styles = StyleSheet.create({
   fullScreenList: {
     flex: 1,
   },
+  transparentButtonDisabled: {
+    opacity: 0.3,
+  },
 });
 
 export default Styles;

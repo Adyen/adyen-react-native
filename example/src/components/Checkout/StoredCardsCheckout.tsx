@@ -1,17 +1,15 @@
 import { useEffect, useCallback, useState } from 'react';
 import { Text, ActivityIndicator, View, ScrollView } from 'react-native';
 import type { PaymentMethodsResponse } from '@adyen/react-native';
-import { AdyenAction } from '@adyen/react-native';
 import Styles from '../common/Styles';
 import TopView from './components/TopView';
 import StoredPaymentMethodsList from './components/StoredPaymentMethodsList';
 import { useAppContext } from '../../hooks/useAppContext';
-import { processError } from './utils/processError';
 import { payByID } from './utils/payByID';
 import type { StoredCardPaymentMethod } from '../../api/types';
 
 const StoredCardsCheckout = () => {
-  const { configuration, processResult, apiClient } = useAppContext();
+  const { configuration, navigateToResults, advancedApi } = useAppContext();
   const [loading, setLoading] = useState(true);
   const [initError, setError] = useState<string | undefined>(undefined);
   const [paymentMethods, setPaymentMethods] = useState<
@@ -22,7 +20,7 @@ const StoredCardsCheckout = () => {
     const refreshPaymentMethods = async () => {
       try {
         const paymentMethodsResponse =
-          await apiClient.paymentMethods(configuration);
+          await advancedApi.paymentMethods(configuration);
         setPaymentMethods(paymentMethodsResponse);
       } catch (e) {
         setError(String(e));
@@ -31,7 +29,7 @@ const StoredCardsCheckout = () => {
       }
     };
     refreshPaymentMethods();
-  }, [configuration, setPaymentMethods, setLoading, apiClient]);
+  }, [configuration, setPaymentMethods, setLoading, advancedApi]);
 
   const makePayment = useCallback(
     async (storedCard: StoredCardPaymentMethod) => {
@@ -41,14 +39,14 @@ const StoredCardsCheckout = () => {
           storedCard.id,
           cvv,
           configuration,
-          apiClient
+          advancedApi
         );
-        processResult(result, AdyenAction);
+        navigateToResults(result);
       } catch (e) {
-        processError(e, AdyenAction);
+        console.error('Payment error:', e);
       }
     },
-    [configuration, processResult, apiClient]
+    [configuration, navigateToResults, advancedApi]
   );
 
   if (loading) {

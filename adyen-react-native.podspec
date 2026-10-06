@@ -30,6 +30,7 @@ Pod::Spec.new do |s|
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
 
   # Declare dependencies normally provided by the umbrella Adyen pod.
+  # TODO: move to a vendored frameworks
   s.dependency "AdyenNetworking", "3.0.1"
   s.dependency "Adyen3DS2", "2.4.4"
 

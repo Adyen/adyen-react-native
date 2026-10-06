@@ -23,15 +23,6 @@ export const checkoutConfiguration = (config: AppConfiguration) => {
       enabled: true,
       verboseLogs: true,
     },
-    dropin: {
-      showPreselectedStoredPaymentMethod:
-        config.dropInSettings?.showPreselectedStoredPaymentMethod,
-      skipListWhenSinglePaymentMethod:
-        config.dropInSettings?.skipListWhenSinglePaymentMethod,
-      showRemovePaymentMethodButton:
-        config.dropInSettings?.showRemovePaymentMethodButton ?? true,
-      title: config.dropInSettings?.title,
-    },
     card: {
       holderNameRequired: config.cardSettings?.holderNameRequired,
       addressVisibility: config.cardSettings?.addressVisibility,

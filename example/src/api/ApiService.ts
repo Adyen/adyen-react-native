@@ -2,26 +2,13 @@ import type {
   PaymentMethodsResponse,
   PaymentMethodData,
   PaymentDetailsData,
-  Order,
   SessionConfiguration,
 } from '@adyen/react-native';
-import type {
-  PaymentConfiguration,
-  PaymentResponse,
-  BalanceResponse,
-  OrderResponse,
-} from './types';
+import type { PaymentConfiguration, PaymentResponse } from './types';
 
-export interface ApiService {
+/** Merchant-server calls used by the Sessions flow. */
+export interface SessionsApiService {
   usesDirectSessionResult?: boolean;
-
-  payments(
-    data: PaymentMethodData,
-    configuration: PaymentConfiguration,
-    returnUrl?: string
-  ): Promise<PaymentResponse>;
-
-  paymentDetails(data: PaymentDetailsData): Promise<PaymentResponse>;
 
   requestSession(
     configuration: PaymentConfiguration,
@@ -32,26 +19,20 @@ export interface ApiService {
     sessionId: string,
     sessionResult: string
   ): Promise<PaymentResponse>;
+}
 
+/** Merchant-server calls used by the Advanced flow. */
+export interface AdvancedApiService {
   paymentMethods(
-    configuration: PaymentConfiguration,
-    order?: Order
+    configuration: PaymentConfiguration
   ): Promise<PaymentMethodsResponse>;
 
-  tryRemoveStoredCard(
-    id: string,
-    configuration: PaymentConfiguration
-  ): Promise<boolean>;
+  payments(
+    data: PaymentMethodData,
+    configuration: PaymentConfiguration,
+    returnUrl?: string,
+    forceThreeDS?: boolean
+  ): Promise<PaymentResponse>;
 
-  checkBalance(
-    paymentData: PaymentMethodData,
-    configuration: PaymentConfiguration
-  ): Promise<BalanceResponse>;
-
-  requestOrder(configuration: PaymentConfiguration): Promise<OrderResponse>;
-
-  cancelOrder(
-    order: Order,
-    configuration: PaymentConfiguration
-  ): Promise<OrderResponse>;
+  paymentDetails(data: PaymentDetailsData): Promise<PaymentResponse>;
 }

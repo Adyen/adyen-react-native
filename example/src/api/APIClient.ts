@@ -2,184 +2,11 @@ import type {
   PaymentMethodsResponse,
   PaymentMethodData,
   PaymentDetailsData,
-  Order,
   SessionConfiguration,
 } from '@adyen/react-native';
 import { ENVIRONMENT, CHANNEL } from '../Configuration';
-import type {
-  PaymentConfiguration,
-  PaymentResponse,
-  BalanceResponse,
-  OrderResponse,
-} from './types';
-import type { ApiService } from './ApiService';
-
-class ApiClient implements ApiService {
-  payments(
-    data: PaymentMethodData,
-    configuration: PaymentConfiguration,
-    returnUrl?: string
-  ): Promise<PaymentResponse> {
-    console.debug(JSON.stringify(data));
-    const body = {
-      ...data,
-      ...parseConfig(configuration),
-      ...parseAmount(configuration, data),
-      ...serverConfiguration,
-      ...paymentConfiguration,
-      returnUrl: returnUrl ?? data.returnUrl,
-    };
-
-    return this.makeRequest(ENVIRONMENT.url + 'payments', body);
-  }
-
-  paymentDetails = (data: PaymentDetailsData): Promise<PaymentResponse> => {
-    return this.makeRequest(ENVIRONMENT.url + 'payments/details', data);
-  };
-
-  requestSession = (
-    configuration: PaymentConfiguration,
-    returnUrl: string
-  ): Promise<SessionConfiguration> => {
-    const body = {
-      ...parseConfig(configuration),
-      ...parseAmount(configuration),
-      ...serverConfiguration,
-      ...paymentConfiguration,
-      returnUrl: returnUrl,
-      showRemovePaymentMethodButton: true,
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'sessions', body);
-  };
-
-  requestSessionResult = async (
-    sessionId: string,
-    sessionResult: string
-  ): Promise<PaymentResponse> => {
-    const url =
-      ENVIRONMENT.url +
-      'sessions/' +
-      sessionId +
-      `?sessionResult=${sessionResult}`;
-    const request = new Request(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': ENVIRONMENT.apiKey,
-      },
-    });
-
-    const response = await fetch(request);
-    if (!response.ok) {
-      throw new Error(
-        `Network Error ${response.status}: ${response.statusText}`
-      );
-    }
-    const payload = await response.json();
-    return { resultCode: payload.status };
-  };
-
-  paymentMethods = (
-    configuration: PaymentConfiguration,
-    order?: Order
-  ): Promise<PaymentMethodsResponse> => {
-    const body = {
-      ...parseConfig(configuration),
-      ...parseAmount(configuration),
-      ...serverConfiguration,
-      ...(order && { order: parseOrder(order) }),
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
-  };
-
-  tryRemoveStoredCard = async (
-    id: string,
-    configuration: PaymentConfiguration
-  ): Promise<boolean> => {
-    let { merchantAccount, shopperReference } = configuration;
-    const url =
-      ENVIRONMENT.url +
-      `storedPaymentMethods/${id}?merchantAccount=${merchantAccount}&shopperReference=${shopperReference}`;
-    const request = new Request(url, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': ENVIRONMENT.apiKey,
-      },
-    });
-    try {
-      const response = await fetch(request);
-      const pspReference = response.headers.get('pspreference');
-      console.debug(`PSP Reference - ${pspReference}`);
-      return response.status === 204;
-    } catch {
-      return false;
-    }
-  };
-
-  checkBalance = async (
-    paymentData: PaymentMethodData,
-    configuration: PaymentConfiguration
-  ): Promise<BalanceResponse> => {
-    const body = {
-      paymentMethod: paymentData.paymentMethod,
-      ...parseAmount(configuration),
-      merchantAccount: configuration.merchantAccount,
-      reference: serverConfiguration.reference,
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'paymentMethods/balance', body);
-  };
-
-  requestOrder = async (
-    configuration: PaymentConfiguration
-  ): Promise<OrderResponse> => {
-    const body = {
-      ...parseAmount(configuration),
-      merchantAccount: configuration.merchantAccount,
-      reference: serverConfiguration.reference,
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'orders', body);
-  };
-
-  cancelOrder = async (
-    order: Order,
-    configuration: PaymentConfiguration
-  ): Promise<OrderResponse> => {
-    const body = {
-      ...(order && { order: parseOrder(order) }),
-      merchantAccount: configuration.merchantAccount,
-    };
-    return this.makeRequest(ENVIRONMENT.url + 'orders/cancel', body);
-  };
-
-  /** @private */
-  private makeRequest = async (url: string, body: any) => {
-    const bodyJSON = JSON.stringify(body);
-    console.debug(`Request to: ${url}`);
-    console.debug(`== ${bodyJSON}`);
-    const request = new Request(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': ENVIRONMENT.apiKey,
-      },
-      body: bodyJSON,
-    });
-
-    const response = await fetch(request);
-    const pspReference = response.headers.get('pspreference');
-    console.debug(`PSP Reference - ${pspReference}`);
-    const payload = await response.json();
-    console.debug(`Response : ${JSON.stringify(payload, null, ' ')}`);
-    if (response.ok) {
-      return payload;
-    }
-    throw new Error(`Network Error ${response.status}:
-          ${payload.message ?? JSON.stringify(payload)}`);
-  };
-}
-
-export default new ApiClient();
+import type { PaymentConfiguration, PaymentResponse } from './types';
+import type { AdvancedApiService, SessionsApiService } from './ApiService';
 
 const serverConfiguration = {
   channel: CHANNEL,
@@ -239,7 +66,110 @@ const parseConfig = ({
   shopperLocale,
 });
 
-const parseOrder = ({ orderData, pspReference }: any) => ({
-  orderData,
-  pspReference,
-});
+const makeRequest = async (url: string, body: any) => {
+  const bodyJSON = JSON.stringify(body);
+  const request = new Request(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': ENVIRONMENT.apiKey,
+    },
+    body: bodyJSON,
+  });
+
+  const response = await fetch(request);
+  const payload = await response.json();
+  if (response.ok) {
+    return payload;
+  }
+  throw new Error(`Network Error ${response.status}:
+          ${payload.message ?? JSON.stringify(payload)}`);
+};
+
+class SessionsApiClient implements SessionsApiService {
+  requestSession = (
+    configuration: PaymentConfiguration,
+    returnUrl: string
+  ): Promise<SessionConfiguration> => {
+    const body = {
+      ...parseConfig(configuration),
+      ...parseAmount(configuration),
+      ...serverConfiguration,
+      ...paymentConfiguration,
+      returnUrl: returnUrl,
+      showRemovePaymentMethodButton: true,
+    };
+    return makeRequest(ENVIRONMENT.url + 'sessions', body);
+  };
+
+  requestSessionResult = async (
+    sessionId: string,
+    sessionResult: string
+  ): Promise<PaymentResponse> => {
+    const url =
+      ENVIRONMENT.url +
+      'sessions/' +
+      sessionId +
+      `?sessionResult=${encodeURIComponent(sessionResult)}`;
+    const request = new Request(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': ENVIRONMENT.apiKey,
+      },
+    });
+
+    const response = await fetch(request);
+    if (!response.ok) {
+      throw new Error(
+        `Network Error ${response.status}: ${response.statusText}`
+      );
+    }
+    const payload = await response.json();
+    return { resultCode: payload.status };
+  };
+}
+
+class AdvancedApiClient implements AdvancedApiService {
+  paymentMethods = (
+    configuration: PaymentConfiguration
+  ): Promise<PaymentMethodsResponse> => {
+    const body = {
+      ...parseConfig(configuration),
+      ...parseAmount(configuration),
+      ...serverConfiguration,
+    };
+    return makeRequest(ENVIRONMENT.url + 'paymentMethods', body);
+  };
+
+  payments(
+    data: PaymentMethodData,
+    configuration: PaymentConfiguration,
+    returnUrl?: string,
+    forceThreeDS = false
+  ): Promise<PaymentResponse> {
+    const body = {
+      ...data,
+      ...parseConfig(configuration),
+      ...parseAmount(configuration, data),
+      ...serverConfiguration,
+      ...paymentConfiguration,
+      ...(forceThreeDS && {
+        authenticationData: {
+          ...paymentConfiguration.authenticationData,
+          attemptAuthentication: 'always',
+        },
+      }),
+      returnUrl: returnUrl ?? data.returnUrl,
+    };
+
+    return makeRequest(ENVIRONMENT.url + 'payments', body);
+  }
+
+  paymentDetails = (data: PaymentDetailsData): Promise<PaymentResponse> => {
+    return makeRequest(ENVIRONMENT.url + 'payments/details', data);
+  };
+}
+
+export const sessionsApiClient = new SessionsApiClient();
+export const advancedApiClient = new AdvancedApiClient();

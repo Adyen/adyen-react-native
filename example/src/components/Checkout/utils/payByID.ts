@@ -5,13 +5,13 @@ import {
 } from '@adyen/react-native';
 import type { PaymentConfiguration } from '../../../api/types';
 import { ENVIRONMENT } from '../../../Configuration';
-import type { ApiService } from '../../../api/ApiService';
+import type { AdvancedApiService } from '../../../api/ApiService';
 
 export async function payByID(
   id: string,
   cvv: string,
   configuration: PaymentConfiguration,
-  apiClient: ApiService
+  advancedApi: AdvancedApiService
 ) {
   const encryptedCard = await AdyenCSE.encryptCard(
     { cvv },
@@ -22,19 +22,20 @@ export async function payByID(
       type: 'scheme',
       storedPaymentMethodId: id,
       encryptedSecurityCode: encryptedCard.cvv,
-      threeDS2SdkVersion: AdyenAction.threeDS2SdkVersion,
+      threeDS2SdkVersion: await AdyenAction.getThreeDS2SdkVersion(),
     },
-    returnUrl: ENVIRONMENT.returnUrl,
+    returnUrl: `${ENVIRONMENT.returnUrl}/action`,
   };
 
-  let result = await apiClient.payments(paymentData, configuration);
+  let result = await advancedApi.payments(paymentData, configuration);
   if (result.action) {
     const actionData = await AdyenAction.handle(result.action, {
       environment: ENVIRONMENT.environment,
       clientKey: ENVIRONMENT.clientKey,
+      returnUrl: `${ENVIRONMENT.returnUrl}/action`,
     });
 
-    result = await apiClient.paymentDetails(actionData);
+    result = await advancedApi.paymentDetails(actionData);
   }
   return result;
 }

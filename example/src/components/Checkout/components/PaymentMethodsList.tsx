@@ -1,43 +1,47 @@
-import { useAdyenCheckout, type PaymentMethod } from '@adyen/react-native';
+//
+// Copyright (c) 2026 Adyen N.V.
+//
+// This file is open source and available under the MIT license. See the LICENSE file for more info.
+//
+
 import { View } from 'react-native';
-import AdaptiveText from '../../common/AdaptiveText';
-import PaymentMethodListItem from './PaymentMethodListItem';
+import { AdyenComponent } from '@adyen/react-native';
+import type { Checkout } from '@adyen/react-native';
 import Styles from '../../common/Styles';
+import AdaptiveText from '../../common/AdaptiveText';
+import PageScrollView from '../../common/PageScrollView';
+import TopView from './TopView';
+import PaymentMethodComponent from './PaymentMethodComponent';
 
 interface PaymentMethodsListProps {
-  title: string;
-  paymentMethods: PaymentMethod[] | undefined;
+  checkout: Checkout;
 }
 
-const PaymentMethodsList = ({
-  title,
-  paymentMethods,
-}: PaymentMethodsListProps) => {
-  const { start } = useAdyenCheckout();
-
-  if (!paymentMethods) {
-    return null;
-  }
-
-  return (
-    <View>
-      <AdaptiveText style={Styles.paddedTitle}>{title}</AdaptiveText>
-      {paymentMethods.map((paymentMethod) => {
-        return (
-          <PaymentMethodListItem
-            key={paymentMethod.type + paymentMethod.name}
-            title={paymentMethod.name}
-            icon={icon(paymentMethod)}
-            onPress={() => start(paymentMethod.type)}
-          />
-        );
-      })}
-    </View>
-  );
-};
-
-function icon(paymentMethod: PaymentMethod) {
-  return paymentMethod.type === 'scheme' ? 'card' : paymentMethod.type;
-}
+/** Embedded card form plus the example's other payment methods, for either flow. */
+const PaymentMethodsList = ({ checkout }: PaymentMethodsListProps) => (
+  <View style={Styles.page}>
+    <TopView />
+    <PageScrollView>
+      <AdaptiveText style={Styles.paddedTitle}>Card</AdaptiveText>
+      <AdyenComponent checkout={checkout} type="scheme" />
+      <PaymentMethodComponent
+        checkout={checkout}
+        type="applepay"
+        title="Pay with Apple Pay"
+      />
+      <PaymentMethodComponent checkout={checkout} type="googlepay" />
+      <PaymentMethodComponent
+        checkout={checkout}
+        type="paypal"
+        title="Pay with PayPal"
+      />
+      <PaymentMethodComponent
+        checkout={checkout}
+        type="klarna_paynow"
+        title="Pay with Klarna"
+      />
+    </PageScrollView>
+  </View>
+);
 
 export default PaymentMethodsList;

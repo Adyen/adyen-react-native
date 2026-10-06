@@ -104,14 +104,6 @@ const SettingView = ({ navigation }: Props) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={Styles.transparentButton}
-        onPress={() => navigation.navigate('DropInSettings')}
-      >
-        <AdaptiveText style={Styles.transparentButtonText}>
-          Drop-In Settings
-        </AdaptiveText>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={Styles.transparentButton}
         onPress={() => navigation.navigate('ApplePaySettings')}
       >
         <AdaptiveText style={Styles.transparentButtonText}>

@@ -11,21 +11,18 @@ import {
 import type { AppConfiguration } from '../settings/types';
 import type { PaymentResponse } from '../api/types';
 import type { NavigationContainerRef } from '@react-navigation/native';
-import type { AdyenComponent } from '@adyen/react-native';
-import type { ApiService } from '../api/ApiService';
+
+import type { AdvancedApiService, SessionsApiService } from '../api/ApiService';
 import type { ConfigProvider } from '../config/ConfigProvider';
-import { isSuccess } from '../components/utilities/isSuccess';
 import { RootStackParamList } from '../router/RootStackNavigator';
 
 type AppContextType = {
   configuration: AppConfiguration;
-  apiClient: ApiService;
+  sessionsApi: SessionsApiService;
+  advancedApi: AdvancedApiService;
   save: (config: AppConfiguration) => void;
   update: (partial: Partial<AppConfiguration>) => void;
-  processResult: (
-    result: PaymentResponse,
-    nativeComponent: AdyenComponent
-  ) => void;
+  navigateToResults: (result: PaymentResponse) => void;
   navigateToRoot: () => void;
   navigateToSettings: () => void;
 };
@@ -42,7 +39,8 @@ export const useAppContext = () => {
 
 type AppContextProp = {
   configProvider: ConfigProvider;
-  apiClient: ApiService;
+  sessionsApi: SessionsApiService;
+  advancedApi: AdvancedApiService;
   onError: (error: Error) => void;
   navigationRef: NavigationContainerRef<RootStackParamList>;
 };
@@ -79,10 +77,8 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
     [props.configProvider]
   );
 
-  const processResult = useCallback(
-    (result: PaymentResponse, nativeComponent: AdyenComponent) => {
-      const success = isSuccess(result.resultCode);
-      nativeComponent.hide(success);
+  const navigateToResults = useCallback(
+    (result: PaymentResponse) => {
       if (navigationRef.isReady()) {
         navigationRef.navigate('Result', { resultCode: result.resultCode });
       }
@@ -108,19 +104,21 @@ const AppContextProvider = (props: PropsWithChildren<AppContextProp>) => {
   const appState = useMemo<AppContextType>(
     () => ({
       configuration: config,
-      apiClient: props.apiClient,
+      sessionsApi: props.sessionsApi,
+      advancedApi: props.advancedApi,
       save: saveConfiguration,
       update: updateConfiguration,
-      processResult,
+      navigateToResults,
       navigateToRoot,
       navigateToSettings,
     }),
     [
       config,
-      props.apiClient,
+      props.sessionsApi,
+      props.advancedApi,
       saveConfiguration,
       updateConfiguration,
-      processResult,
+      navigateToResults,
       navigateToRoot,
       navigateToSettings,
     ]
