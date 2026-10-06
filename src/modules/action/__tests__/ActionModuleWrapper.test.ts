@@ -1,147 +1,131 @@
-import { describe, expect, test, jest, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { ActionModuleWrapper } from '../ActionModuleWrapper';
 
-/** Mock ActionNativeModule */
 function createMockActionNativeModule() {
   return {
-    addListener: jest.fn(),
-    removeListeners: jest.fn(),
     handle: jest
-      .fn<() => Promise<any>>()
-      .mockResolvedValue({ resultCode: 'Authorised' }),
-    hide: jest.fn(),
-    getConstants: jest
-      .fn<() => { threeDS2SdkVersion: string }>()
-      .mockReturnValue({ threeDS2SdkVersion: '2.2.0' }),
-  } as any;
+      .fn<() => Promise<string>>()
+      .mockResolvedValue('{"resultCode":"Authorised"}'),
+    hide: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    getThreeDS2SdkVersion: jest
+      .fn<() => Promise<string>>()
+      .mockResolvedValue('2.2.0'),
+  };
 }
 
 describe('ActionModuleWrapper', () => {
-  let mockNativeModule: ReturnType<typeof createMockActionNativeModule>;
+  let nativeModule: ReturnType<typeof createMockActionNativeModule>;
 
   beforeEach(() => {
-    mockNativeModule = createMockActionNativeModule();
+    nativeModule = createMockActionNativeModule();
   });
 
-  describe('constructor', () => {
-    test('should store native module reference', () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      expect(wrapper.nativeModule).toBe(mockNativeModule);
-    });
+  test('serializes handle payloads and parses the generated response', async () => {
+    const wrapper = new ActionModuleWrapper(nativeModule);
+    const action = { type: 'threeDS2', paymentMethodType: 'scheme' };
+    const configuration = {
+      environment: 'test' as const,
+      clientKey: 'test_key',
+      returnUrl: 'myapp://action/payment',
+    };
 
-    test('should read threeDS2SdkVersion from getConstants', () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      expect(mockNativeModule.getConstants).toHaveBeenCalled();
-      expect(wrapper.threeDS2SdkVersion).toBe('2.2.0');
+    await expect(wrapper.handle(action, configuration)).resolves.toEqual({
+      resultCode: 'Authorised',
     });
-
-    test('should handle different SDK versions', () => {
-      mockNativeModule.getConstants.mockReturnValue({
-        threeDS2SdkVersion: '2.3.1',
-      });
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      expect(wrapper.threeDS2SdkVersion).toBe('2.3.1');
-    });
+    expect(nativeModule.handle).toHaveBeenCalledWith(
+      JSON.stringify(action),
+      JSON.stringify(configuration)
+    );
   });
 
-  describe('handle', () => {
-    test('should call native module handle with action and configuration', async () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      const action = {
-        type: 'redirect',
-        paymentMethodType: 'ideal',
-        url: 'https://example.com',
-      };
-      const config = {
+  test('propagates a handle rejection without converting it to a no-op', async () => {
+    nativeModule.handle.mockRejectedValueOnce(new Error('actionBusy'));
+    const wrapper = new ActionModuleWrapper(nativeModule);
+
+    await expect(
+      wrapper.handle(
+        { type: 'threeDS2', paymentMethodType: 'scheme' },
+        {
+          environment: 'test' as const,
+          clientKey: 'test_key',
+          returnUrl: 'myapp://action/payment',
+        }
+      )
+    ).rejects.toThrow('actionBusy');
+  });
+
+  test('normalizes token-free RedirectAction capability rejection with presentation metadata', async () => {
+    nativeModule.handle.mockRejectedValueOnce({
+      code: 'unsupportedCapability',
+    });
+    const wrapper = new ActionModuleWrapper(nativeModule);
+    const action = {
+      type: 'redirect',
+      paymentMethodType: 'ideal',
+      url: 'https://issuer.example/redirect?opaque=provider-value',
+    };
+
+    await expect(
+      wrapper.handle(action, {
         environment: 'test' as const,
         clientKey: 'test_key',
-      };
-
-      await wrapper.handle(action, config);
-
-      expect(mockNativeModule.handle).toHaveBeenCalledWith(action, config);
+        returnUrl: 'myapp://action/payment',
+      })
+    ).rejects.toEqual({
+      code: 'unsupportedCapability',
+      phase: 'presentation',
     });
-
-    test('should return promise with payment details data', async () => {
-      const expectedResult = {
-        resultCode: 'Authorised',
-        details: { some: 'data' },
-      };
-      mockNativeModule.handle.mockResolvedValue(expectedResult);
-
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      const result = await wrapper.handle(
-        { type: 'threeDS2', paymentMethodType: 'scheme' },
-        { environment: 'test' as const, clientKey: 'key' }
-      );
-
-      expect(result).toEqual(expectedResult);
-    });
-
-    test('should handle threeDS2 action', async () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      const threeDS2Action = {
-        type: 'threeDS2',
-        paymentMethodType: 'scheme',
-        token: 'test_token',
-        subtype: 'fingerprint',
-      };
-      const config = {
-        environment: 'live-eu' as const,
-        clientKey: 'live_key',
-      };
-
-      await wrapper.handle(threeDS2Action, config);
-
-      expect(mockNativeModule.handle).toHaveBeenCalledWith(
-        threeDS2Action,
-        config
-      );
-    });
-
-    test('should propagate errors from native module', async () => {
-      const error = new Error('Action handling failed');
-      mockNativeModule.handle.mockRejectedValue(error);
-
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-
-      await expect(
-        wrapper.handle(
-          { type: 'redirect', paymentMethodType: 'ideal' },
-          { environment: 'test' as const, clientKey: 'key' }
-        )
-      ).rejects.toThrow('Action handling failed');
-    });
+    expect(JSON.parse(nativeModule.handle.mock.calls[0][0])).toEqual(action);
   });
 
-  describe('hide', () => {
-    test('should call native module hide with success true', () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      wrapper.hide(true);
-      expect(mockNativeModule.hide).toHaveBeenCalledWith(true);
-    });
+  test('keeps each generated handle promise bound to its own native result', async () => {
+    let resolveFirst!: (value: string) => void;
+    let resolveSecond!: (value: string) => void;
+    nativeModule.handle
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          })
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve;
+          })
+      );
+    const wrapper = new ActionModuleWrapper(nativeModule);
+    const configuration = {
+      environment: 'test' as const,
+      clientKey: 'test_key',
+      returnUrl: 'myapp://action/payment',
+    };
+    const first = wrapper.handle(
+      { type: 'threeDS2', paymentMethodType: 'scheme' },
+      configuration
+    );
+    const second = wrapper.handle(
+      { type: 'threeDS2', paymentMethodType: 'scheme' },
+      configuration
+    );
 
-    test('should call native module hide with success false', () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      wrapper.hide(false);
-      expect(mockNativeModule.hide).toHaveBeenCalledWith(false);
-    });
+    resolveSecond('{"resultCode":"Second"}');
+    await expect(second).resolves.toEqual({ resultCode: 'Second' });
+    resolveFirst('{"resultCode":"First"}');
+    await expect(first).resolves.toEqual({ resultCode: 'First' });
   });
 
-  describe('ActionModule interface', () => {
-    test('should implement threeDS2SdkVersion property', () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      expect(typeof wrapper.threeDS2SdkVersion).toBe('string');
-    });
+  test('uses the generated asynchronous cancellation command', async () => {
+    const wrapper = new ActionModuleWrapper(nativeModule);
 
-    test('should implement handle method', () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      expect(typeof wrapper.handle).toBe('function');
-    });
+    await expect(wrapper.hide()).resolves.toBeUndefined();
+    expect(nativeModule.hide).toHaveBeenCalledWith();
+  });
 
-    test('should implement hide method', () => {
-      const wrapper = new ActionModuleWrapper(mockNativeModule);
-      expect(typeof wrapper.hide).toBe('function');
-    });
+  test('reads the 3DS2 SDK version through the generated module', async () => {
+    const wrapper = new ActionModuleWrapper(nativeModule);
+
+    await expect(wrapper.getThreeDS2SdkVersion()).resolves.toBe('2.2.0');
+    expect(nativeModule.getThreeDS2SdkVersion).toHaveBeenCalledWith();
   });
 });

@@ -11,7 +11,7 @@ describe('setApplicationOpenUrlSwift', () => {
     const functionDefinition =
       /public override func application\(\s* _ app: UIApplication,\s* open url: URL,\s* options: \[UIApplication\.OpenURLOptionsKey: Any\] = \[:\]\s* \) -> Bool {/;
     const expectedReturn =
-      /return RedirectComponent\.applicationDidOpen\(from: url\) \|\| super\.application\(app, open: url, options: options\) \|\| RCTLinkingManager\.application\(app, open: url, options: options\)/;
+      /return ADYRedirectComponent\.applicationDidOpen\(url\) \|\| super\.application\(app, open: url, options: options\) \|\| RCTLinkingManager\.application\(app, open: url, options: options\)/;
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
   });
@@ -22,7 +22,7 @@ describe('setApplicationOpenUrlSwift', () => {
     const functionDefinition =
       /public override func application\(\s* _ app: UIApplication,\s* open url: URL,\s* options: \[UIApplication\.OpenURLOptionsKey: Any\] = \[:\]\s* \) -> Bool {/;
     const expectedReturn =
-      /return RedirectComponent\.applicationDidOpen\(from: url\) \|\| super\.application\(app, open: url, options: options\) \|\| RCTLinkingManager\.application\(app, open: url, options: options\)/;
+      /return ADYRedirectComponent\.applicationDidOpen\(url\) \|\| super\.application\(app, open: url, options: options\) \|\| RCTLinkingManager\.application\(app, open: url, options: options\)/;
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
 
@@ -37,7 +37,7 @@ describe('setApplicationOpenUrlSwift', () => {
     const functionDefinition =
       /public override func application\(\s* _ app: UIApplication,\s* open url: URL,\s* options: \[UIApplication\.OpenURLOptionsKey: Any\] = \[:\]\s* \) -> Bool {/;
     const expectedReturn =
-      /return RedirectComponent\.applicationDidOpen\(from: url\) \|\| super\.application\(app, open: url, options: options\)/;
+      /return ADYRedirectComponent\.applicationDidOpen\(url\) \|\| super\.application\(app, open: url, options: options\)/;
     expect(result).toMatch(functionDefinition);
     expect(result).toMatch(expectedReturn);
   });

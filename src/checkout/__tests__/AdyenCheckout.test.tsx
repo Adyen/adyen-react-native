@@ -1,0 +1,839 @@
+//
+// Copyright (c) 2026 Adyen N.V.
+//
+// This file is open source and available under the MIT license. See the LICENSE file for more info.
+//
+
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+
+// Untyped mocks: these tests drive the bridge with arbitrary payloads.
+type AnyFn = (...args: any[]) => any;
+
+jest.mock('../../specs/NativeAdyenCheckout', () => ({
+  __esModule: true,
+  default: {
+    setupSession: jest.fn<AnyFn>(),
+    setupAdvanced: jest.fn<AnyFn>(),
+    isAvailable: jest.fn<AnyFn>(),
+    requiresUserInteraction: jest.fn<AnyFn>(),
+    submit: jest.fn<AnyFn>(),
+    invalidate: jest.fn<AnyFn>(),
+    respond: jest.fn<AnyFn>(),
+    startDropIn: jest.fn<AnyFn>(),
+    onCheckoutEvent: jest.fn<AnyFn>(),
+  },
+}));
+
+import { AdyenCheckout } from '..';
+
+const native = require('../../specs/NativeAdyenCheckout').default as {
+  setupSession: jest.Mock<AnyFn>;
+  setupAdvanced: jest.Mock<AnyFn>;
+  isAvailable: jest.Mock<AnyFn>;
+  requiresUserInteraction: jest.Mock<AnyFn>;
+  submit: jest.Mock<AnyFn>;
+  invalidate: jest.Mock<AnyFn>;
+  respond: jest.Mock<AnyFn>;
+  onCheckoutEvent: jest.Mock<AnyFn>;
+};
+
+const configuration = {
+  environment: 'test' as const,
+  clientKey: 'test_ABCDEFGH',
+  returnUrl: 'myapp://checkout',
+};
+const callbacks = {
+  onSubmit: jest.fn<AnyFn>(),
+  onAdditionalDetails: jest.fn<AnyFn>(),
+  onComplete: jest.fn<AnyFn>(),
+  onError: jest.fn<AnyFn>(),
+};
+const sessionCallbacks = {
+  onComplete: jest.fn<AnyFn>(),
+  onError: jest.fn<AnyFn>(),
+  onBeforeSubmit: jest.fn<AnyFn>(),
+};
+
+function descriptor(id: string, flow: 'sessions' | 'advanced' = 'advanced') {
+  return {
+    checkoutId: id,
+    flow,
+    paymentMethodsJson:
+      '{"paymentMethods":[{"type":"scheme","name":"Card"}],"storedPaymentMethods":[{"id":"one","type":"scheme","name":"Stored card"}]}',
+  };
+}
+
+describe('AdyenCheckout', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('publishes only portable immutable checkout data', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-one'));
+    const checkout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+
+    expect(checkout.flow).toBe('advanced');
+    expect(Object.isFrozen(checkout.paymentMethods)).toBe(true);
+    expect(checkout).not.toHaveProperty('configuration');
+    expect(checkout).not.toHaveProperty('checkoutId');
+  });
+
+  test('settles a rejecting merchant callback with its correlated failure response', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-events'));
+    callbacks.onSubmit.mockRejectedValueOnce(new Error('merchant failed'));
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-events',
+      operationId: 'operation-events',
+      requestId: 'request-events',
+      kind: 'advancedSubmit',
+      payloadJson:
+        '{"paymentMethod":{"type":"scheme"},"returnUrl":"app://return"}',
+    });
+
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-events',
+      operationId: 'operation-events',
+      requestId: 'request-events',
+      kind: 'advancedSubmit',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test('routes lookup search and selection through distinct correlated requests', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-lookup'));
+    const onUpdateAddress = jest.fn<AnyFn>((query, lookup) => {
+      expect(query).toBe('Damrak');
+      lookup.update([
+        {
+          id: 'damrak-1',
+          address: { street: 'Damrak', city: 'Amsterdam', country: 'NL' },
+        },
+      ]);
+    });
+    const onConfirmAddress = jest.fn<AnyFn>((candidate, lookup) => {
+      expect(candidate.id).toBe('damrak-1');
+      lookup.confirm(candidate);
+    });
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        card: {
+          addressVisibility: 'lookup',
+          onUpdateAddress,
+          onConfirmAddress,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson: '{"query":"Damrak"}',
+    });
+    await eventHandler({
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-selection',
+      kind: 'addressLookupSelection',
+      payloadJson:
+        '{"id":"damrak-1","address":{"street":"Damrak","city":"Amsterdam","country":"NL"}}',
+    });
+
+    expect(onUpdateAddress).toHaveBeenCalledTimes(1);
+    expect(onConfirmAddress).toHaveBeenCalledTimes(1);
+    expect(native.respond).toHaveBeenNthCalledWith(1, {
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson:
+        '{"results":[{"id":"damrak-1","address":{"street":"Damrak","city":"Amsterdam","country":"NL"}}]}',
+    });
+    expect(native.respond).toHaveBeenNthCalledWith(2, {
+      checkoutId: 'checkout-lookup',
+      operationId: 'operation-lookup',
+      requestId: 'request-selection',
+      kind: 'addressLookupSelection',
+      payloadJson:
+        '{"address":{"street":"Damrak","city":"Amsterdam","country":"NL"}}',
+    });
+  });
+
+  test('rejects lookup setup without both merchant callbacks', async () => {
+    await expect(
+      AdyenCheckout.setupAdvanced(
+        { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+        {
+          ...configuration,
+          card: {
+            addressVisibility: 'lookup',
+            onUpdateAddress: () => {},
+          },
+        },
+        callbacks
+      )
+    ).rejects.toEqual({ code: 'invalidConfiguration', phase: 'setup' });
+    expect(native.setupAdvanced).not.toHaveBeenCalled();
+  });
+
+  test('settles a rejecting lookup callback once with its matching request', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-lookup-error')
+    );
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        card: {
+          addressVisibility: 'lookup',
+          onUpdateAddress: () => Promise.reject(new Error('lookup failed')),
+          onConfirmAddress: () => {},
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-lookup-error',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson: '{"query":"Damrak"}',
+    });
+    await Promise.resolve();
+
+    expect(native.respond).toHaveBeenCalledTimes(1);
+    expect(native.respond).toHaveBeenCalledWith({
+      checkoutId: 'checkout-lookup-error',
+      operationId: 'operation-lookup',
+      requestId: 'request-search',
+      kind: 'addressLookupSearch',
+      payloadJson:
+        '{"type":"reject","message":"Address lookup callback failed"}',
+    });
+  });
+
+  test('rejects malformed before-submit results instead of proceeding', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-session', 'sessions')
+    );
+    sessionCallbacks.onBeforeSubmit.mockResolvedValueOnce({ type: 'proceed' });
+    await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      sessionCallbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-session',
+      operationId: 'operation-session',
+      requestId: 'request-session',
+      kind: 'sessionBeforeSubmit',
+      payloadJson: '{"shopperEmail":"shopper@example.com"}',
+    });
+
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-session',
+      operationId: 'operation-session',
+      requestId: 'request-session',
+      kind: 'sessionBeforeSubmit',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test.each([['not-an-object'], [['array']], [null]])(
+    'rejects configured before-submit results whose data is not an object (%j)',
+    async (data) => {
+      native.setupSession.mockResolvedValueOnce(
+        descriptor('checkout-session-shopper-name', 'sessions')
+      );
+      sessionCallbacks.onBeforeSubmit.mockResolvedValueOnce({
+        type: 'proceed',
+        data,
+      });
+      await AdyenCheckout.setup(
+        { id: 'session-id', sessionData: 'session-data' },
+        configuration,
+        sessionCallbacks
+      );
+      const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+      await eventHandler({
+        checkoutId: 'checkout-session-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{}',
+      });
+
+      expect(native.respond).toHaveBeenLastCalledWith({
+        checkoutId: 'checkout-session-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{"type":"failure","code":"cancelled"}',
+      });
+    }
+  );
+
+  test.each([{ shopperName: {} }, { shopperName: { firstName: 'Ada' } }])(
+    'accepts empty and partial shopper names in configured before-submit results',
+    async (data) => {
+      native.setupSession.mockResolvedValueOnce(
+        descriptor('checkout-session-valid-shopper-name', 'sessions')
+      );
+      sessionCallbacks.onBeforeSubmit.mockResolvedValueOnce({
+        type: 'proceed',
+        data,
+      });
+      await AdyenCheckout.setup(
+        { id: 'session-id', sessionData: 'session-data' },
+        configuration,
+        sessionCallbacks
+      );
+      const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+      await eventHandler({
+        checkoutId: 'checkout-session-valid-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{}',
+      });
+
+      expect(native.respond).toHaveBeenLastCalledWith({
+        checkoutId: 'checkout-session-valid-shopper-name',
+        operationId: 'operation-session',
+        requestId: 'request-session',
+        kind: 'sessionBeforeSubmit',
+        payloadJson: JSON.stringify({ type: 'proceed', data }),
+      });
+    }
+  );
+
+  test('settles Promise-returning Apple Pay callback results by their correlation tuple', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-apple-pay')
+    );
+    const onCouponCodeChange = jest.fn<AnyFn>(async (request) => {
+      expect(request).toEqual({ couponCode: 'SAVE10' });
+      return { paymentSummaryItems: [{ label: 'Total', amount: '10.00' }] };
+    });
+    const onAuthorize = jest.fn<AnyFn>((request) => {
+      expect(request).toEqual({
+        payment: { shippingContact: { countryCode: 'NL' } },
+      });
+      return Promise.resolve({ status: 'success' as const });
+    });
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        applepay: {
+          merchantID: 'merchant.example',
+          onCouponCodeChange,
+          onAuthorize,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson: '{"couponCode":"SAVE10"}',
+    });
+    expect(onCouponCodeChange).toHaveBeenCalledWith({ couponCode: 'SAVE10' });
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson:
+        '{"paymentSummaryItems":[{"label":"Total","amount":"10.00"}]}',
+    });
+
+    await eventHandler({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{"shippingContact":{"countryCode":"NL"}}',
+    });
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-apple-pay',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{"status":"success"}',
+    });
+  });
+
+  test('settles a malformed Apple Pay callback result once with its correlated failure response', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-malformed-coupon')
+    );
+    const onCouponCodeChange = jest.fn<AnyFn>(() => ({
+      paymentSummaryItems: [{ label: 'Total', amount: 10, type: 'unknown' }],
+    }));
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        applepay: {
+          merchantID: 'merchant.example',
+          onCouponCodeChange,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    const settlement = eventHandler({
+      checkoutId: 'checkout-malformed-coupon',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson: '{"couponCode":"SAVE10"}',
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(native.respond).toHaveBeenCalledWith({
+      checkoutId: 'checkout-malformed-coupon',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-coupon',
+      kind: 'applePayCouponCode',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+    await settlement;
+    expect(native.respond).toHaveBeenCalledTimes(1);
+  });
+
+  test('settles a thrown Apple Pay callback once with its correlated failure response', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-thrown-authorization')
+    );
+    const onAuthorize = jest.fn<AnyFn>(() => {
+      throw new Error('merchant rejected authorization');
+    });
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      {
+        ...configuration,
+        applepay: {
+          merchantID: 'merchant.example',
+          onAuthorize,
+        },
+      },
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-thrown-authorization',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{}',
+    });
+
+    expect(onAuthorize).toHaveBeenCalledWith({ payment: {} });
+    expect(native.respond).toHaveBeenCalledTimes(1);
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-thrown-authorization',
+      operationId: 'operation-apple-pay',
+      requestId: 'request-authorization',
+      kind: 'applePayAuthorization',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test('normalizes terminal failures to a complete portable error', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-error'));
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-error',
+      kind: 'error',
+      payloadJson:
+        '{"message":"CheckoutCoordinator<private-checkout-id> failed","errorCode":"nativePrivateError"}',
+    });
+
+    expect(callbacks.onError).toHaveBeenCalledWith({
+      message: 'Checkout failed',
+      errorCode: 'checkoutFailed',
+    });
+  });
+
+  test('delivers session terminal payloads that carry the required fields', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-session-terminal', 'sessions')
+    );
+    await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      sessionCallbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-session-terminal',
+      kind: 'completion',
+      payloadJson:
+        '{"sessionId":"session-id","resultCode":"Authorised","sessionData":"session-data"}',
+    });
+
+    expect(sessionCallbacks.onComplete).toHaveBeenCalledWith({
+      sessionId: 'session-id',
+      resultCode: 'Authorised',
+      sessionData: 'session-data',
+    });
+  });
+
+  test('does not deliver a session terminal payload without its required fields', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-session-invalid-terminal', 'sessions')
+    );
+    await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      sessionCallbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await expect(
+      eventHandler({
+        checkoutId: 'checkout-session-invalid-terminal',
+        kind: 'completion',
+        payloadJson: '{"resultCode":"Authorised"}',
+      })
+    ).rejects.toThrow('Invalid session terminal payload');
+    expect(sessionCallbacks.onComplete).not.toHaveBeenCalled();
+  });
+
+  test('settles absent, proceed, and abort before-submit callbacks through their active request', async () => {
+    const cases = [
+      {
+        id: 'checkout-session-absent',
+        callback: undefined,
+        expected:
+          '{"type":"proceed","data":{"shopperEmail":"shopper@example.com"}}',
+      },
+      {
+        id: 'checkout-session-proceed',
+        callback: () =>
+          Promise.resolve({
+            type: 'proceed' as const,
+            data: { shopperEmail: 'updated@example.com' },
+          }),
+        expected:
+          '{"type":"proceed","data":{"shopperEmail":"updated@example.com"}}',
+      },
+      {
+        id: 'checkout-session-abort',
+        callback: () => Promise.resolve({ type: 'abort' as const }),
+        expected: '{"type":"abort"}',
+      },
+    ];
+
+    for (const { id, callback, expected } of cases) {
+      native.setupSession.mockResolvedValueOnce(descriptor(id, 'sessions'));
+      await AdyenCheckout.setup(
+        { id: 'session-id', sessionData: 'session-data' },
+        configuration,
+        { ...sessionCallbacks, onBeforeSubmit: callback }
+      );
+      const eventHandler = native.onCheckoutEvent.mock.calls.at(-1)![0];
+
+      await eventHandler({
+        checkoutId: id,
+        operationId: `operation-${id}`,
+        requestId: `request-${id}`,
+        kind: 'sessionBeforeSubmit',
+        payloadJson: '{"shopperEmail":"shopper@example.com"}',
+      });
+
+      expect(native.respond).toHaveBeenLastCalledWith({
+        checkoutId: id,
+        operationId: `operation-${id}`,
+        requestId: `request-${id}`,
+        kind: 'sessionBeforeSubmit',
+        payloadJson: expected,
+      });
+    }
+  });
+
+  test('delivers one normalized terminal outcome then permits a fresh checkout', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-session-one-terminal', 'sessions')
+    );
+    const onComplete = jest.fn<AnyFn>();
+    const onError = jest.fn<AnyFn>();
+    await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      { onComplete, onError }
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls.at(-1)![0];
+
+    await eventHandler({
+      checkoutId: 'checkout-session-one-terminal',
+      kind: 'completion',
+      payloadJson: '{"sessionId":"session-id","resultCode":"Authorised"}',
+    });
+    await eventHandler({
+      checkoutId: 'checkout-session-one-terminal',
+      kind: 'error',
+      payloadJson: '{}',
+    });
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-after-terminal')
+    );
+    await expect(
+      AdyenCheckout.setupAdvanced(
+        { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+        configuration,
+        callbacks
+      )
+    ).resolves.toMatchObject({ flow: 'advanced' });
+  });
+
+  test('delivers advanced terminal payloads as sent by native', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-advanced-terminal')
+    );
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-advanced-terminal',
+      kind: 'completion',
+      payloadJson: '{"resultCode":"Authorised"}',
+    });
+
+    expect(callbacks.onComplete).toHaveBeenCalledWith({
+      resultCode: 'Authorised',
+    });
+  });
+
+  test.each([
+    { type: 'action' },
+    { type: 'action', action: { type: 'threeDS2' } },
+    { type: 'action', action: { paymentMethodType: 'scheme' } },
+    { type: 'completed' },
+    { type: 'completed', resultCode: 1 },
+    { type: 'retry', message: 1 },
+    { type: 'unknown' },
+  ])('rejects malformed advanced submit result %j', async (result) => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-invalid-submit')
+    );
+    callbacks.onSubmit.mockResolvedValueOnce(result);
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-invalid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: '{}',
+    });
+
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-invalid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: '{"type":"failure","code":"cancelled"}',
+    });
+  });
+
+  test.each([
+    {
+      type: 'action',
+      action: { type: 'threeDS2', paymentMethodType: 'scheme' },
+    },
+    { type: 'completed', resultCode: 'Authorised' },
+    { type: 'retry' },
+    { type: 'retry', message: 'Try again' },
+  ])('forwards valid advanced submit result %j', async (result) => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-valid-submit')
+    );
+    callbacks.onSubmit.mockResolvedValueOnce(result);
+    await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+
+    await eventHandler({
+      checkoutId: 'checkout-valid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: '{}',
+    });
+
+    expect(native.respond).toHaveBeenLastCalledWith({
+      checkoutId: 'checkout-valid-submit',
+      operationId: 'operation-submit',
+      requestId: 'request-submit',
+      kind: 'advancedSubmit',
+      payloadJson: JSON.stringify(result),
+    });
+  });
+
+  test('stales the old handle before replacement and leaves it stale after a failed replacement', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-two'));
+    const oldCheckout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    native.setupAdvanced.mockRejectedValueOnce({
+      code: 'invalidConfiguration',
+      phase: 'setup',
+    });
+
+    await expect(
+      AdyenCheckout.setupAdvanced(
+        { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+        configuration,
+        callbacks
+      )
+    ).rejects.toMatchObject({ code: 'invalidConfiguration', phase: 'setup' });
+    await expect(
+      oldCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
+    ).rejects.toMatchObject({ code: 'staleCheckout', phase: 'presentation' });
+  });
+
+  test('drops stale checkout query, submit, response, and event inputs without touching the current checkout', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-old'));
+    const oldCheckout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0][0];
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-current'));
+    const currentCheckout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+
+    await expect(
+      oldCheckout.isAvailable({ kind: 'paymentMethod', type: 'scheme' })
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'query' });
+    await expect(
+      oldCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'presentation' });
+    await eventHandler({
+      checkoutId: 'checkout-old',
+      operationId: 'operation-old',
+      requestId: 'request-old',
+      kind: 'advancedSubmit',
+      payloadJson: '{}',
+    });
+
+    expect(native.respond).not.toHaveBeenCalled();
+    expect(callbacks.onSubmit).not.toHaveBeenCalled();
+    native.isAvailable.mockResolvedValueOnce(true);
+    await expect(
+      currentCheckout.isAvailable({ kind: 'paymentMethod', type: 'scheme' })
+    ).resolves.toBe(true);
+  });
+
+  test('serializes overlapping setup calls before beginning replacement', async () => {
+    let resolveFirstSetup:
+      ((value: ReturnType<typeof descriptor>) => void) | undefined;
+    native.setupAdvanced.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirstSetup = resolve;
+        })
+    );
+    native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-second'));
+
+    const first = AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const second = AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+
+    await new Promise(setImmediate);
+    expect(native.setupAdvanced).toHaveBeenCalledTimes(1);
+    expect(resolveFirstSetup).toBeDefined();
+    resolveFirstSetup!(descriptor('checkout-first'));
+    const firstCheckout = await first;
+    const secondCheckout = await second;
+
+    expect(native.invalidate).toHaveBeenCalledWith('checkout-first');
+    await expect(
+      firstCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'presentation' });
+    expect(secondCheckout.flow).toBe('advanced');
+  });
+
+  test('drops native error messages that could expose private details', async () => {
+    native.setupAdvanced.mockRejectedValueOnce({
+      code: 'staleCheckout',
+      phase: 'setup',
+      message: 'CheckoutCoordinator<checkout-private-id>',
+    });
+
+    await expect(
+      AdyenCheckout.setupAdvanced(
+        { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+        configuration,
+        callbacks
+      )
+    ).rejects.toEqual({ code: 'staleCheckout', phase: 'setup' });
+  });
+});

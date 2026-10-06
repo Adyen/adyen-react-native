@@ -2,6 +2,19 @@ import type { Configuration } from './configurations/Configuration';
 import type { ResultCode } from './constants';
 
 /**
+ * Methods for responding to advanced payment flow events.
+ * Used by modules that handle payment actions, completions, and retries.
+ */
+export interface AdvancedPayment {
+  /** Forward a payment action to the SDK for handling. */
+  action(action: PaymentAction): void;
+  /** Signal that the payment flow reached a final result. */
+  completion(resultCode: string): void;
+  /** Let the shopper retry the payment. */
+  retry(message?: string): void;
+}
+
+/**
  * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments#responses-200-action API Explorer /payments action}
  */
 export interface PaymentAction {
@@ -206,6 +219,20 @@ export interface PaymentDetailsData {
 }
 
 /**
+ * Result of a merchant `/payments` or `/payments/details` call, forwarded to the native bridge to
+ * resume a Drop-in advanced-flow submission.
+ * {@link https://docs.adyen.com/api-explorer/Checkout/70/post/payments API Explorer /payments response}
+ */
+export interface PaymentResult {
+  /** The result code indicating the payment outcome. */
+  resultCode?: ResultCode;
+  /** An action to be handled by the component when the payment requires additional steps. */
+  action?: PaymentAction;
+  /** The reason a payment was refused, optionally surfaced to the shopper before a retry. */
+  refusalReason?: string;
+}
+
+/**
  * Session configuration
  */
 export interface SessionConfiguration {
@@ -226,29 +253,6 @@ export interface SubmitModel {
   extra?: any;
 }
 
-export interface Balance {
-  /**
-   * The balance for the payment method.
-   */
-  balance?: PaymentAmount;
-
-  /**
-   * The maximum spendable balance for a single transaction. Applicable to some gift cards.
-   */
-  transactionLimit?: PaymentAmount;
-}
-
-export interface Order {
-  /** The encrypted order data. */
-  orderData: string;
-
-  /** The pspReference that belongs to the order. */
-  pspReference: string;
-
-  /** The remaining amount to complete the order. */
-  remainingAmount?: PaymentAmount;
-}
-
 /**
  * Represents the response structure specifically for session flow.
  */
@@ -261,7 +265,7 @@ export type SessionsResult = {
    * An encoded string that can be used to get the payment outcome on your server.
    * @description Use this value with the new `/sessions/id` endpoint as a query string on your server to get a synchronous result for your payment.
    */
-  sessionResult: string;
+  sessionResult?: string;
   /**
    * The primary result code indicating the overall status of the session operation.
    */
@@ -269,38 +273,139 @@ export type SessionsResult = {
   /**
    * The session data.
    */
-  sessionData: string;
+  sessionData?: string;
 };
 
 /**
- * Options for dismissing the payment component.
+ * Result returned from the `onSubmit` callback.
+ * Exactly one variant must be returned to continue the payment flow.
  */
-export interface HideOption {
-  /** Alert message after dismiss. Used for Android DropIn and Components only */
-  message?: string;
+export type SubmitResult =
+  | { readonly type: 'action'; readonly action: PaymentAction }
+  | { readonly type: 'completed'; readonly resultCode: string }
+  | { readonly type: 'retry'; readonly message?: string };
+
+/**
+ * Factory for creating {@link (SubmitResult:type)} values.
+ *
+ * @example
+ * ```ts
+ * onSubmit: async (data) => {
+ *   const response = await fetch('/payments', { body: JSON.stringify(data) });
+ *   if (response.action) return SubmitResult.action(response.action);
+ *   return SubmitResult.completed(response.resultCode);
+ * }
+ * ```
+ */
+export const SubmitResult = {
+  /** Forward a payment action to the SDK for handling (3DS2, redirect, etc.). */
+  action: (action: PaymentAction): SubmitResult => ({ type: 'action', action }),
+  /** Signal that the payment flow reached a final result. */
+  completed: (resultCode: string): SubmitResult => ({
+    type: 'completed',
+    resultCode,
+  }),
+  /** Let the shopper retry the payment, optionally showing a message. */
+  retry: (message?: string): SubmitResult => ({ type: 'retry', message }),
+} as const;
+
+/**
+ * Result returned from the `onAdditionalDetails` callback.
+ */
+export interface AdditionalDetailsResult {
+  readonly resultCode: string;
 }
 
 /**
- * Universal interface for an Adyen Native module.
+ * Factory for creating {@link (AdditionalDetailsResult:interface)} values.
  */
-export interface AdyenComponent {
-  /**
-   * Dismiss the component from the screen.
-   * @param success - Indicates whether the component was dismissed successfully.
-   * @param option - Additional options for dismissing the component (optional).
-   */
-  hide(success: boolean, option?: HideOption): void;
+export const AdditionalDetailsResult = {
+  /** Signal that the additional details flow reached a final result. */
+  completed: (resultCode: string): AdditionalDetailsResult => ({ resultCode }),
+} as const;
+
+/**
+ * Result returned from the `onBeforeSubmit` callback.
+ * Return `proceed` to continue or `abort` to cancel the submission.
+ */
+export type BeforeSubmitResult =
+  | {
+      readonly type: 'proceed';
+      readonly data: BeforeSubmitData;
+      readonly sessionData?: string;
+    }
+  | { readonly type: 'abort' };
+
+/**
+ * Factory for creating {@link (BeforeSubmitResult:type)} values.
+ */
+export const BeforeSubmitResult = {
+  /** Continue with the (optionally modified) data. */
+  proceed: (
+    data: BeforeSubmitData,
+    sessionData?: string
+  ): BeforeSubmitResult => ({ type: 'proceed', data, sessionData }),
+  /** Abort the payment submission. */
+  abort: (): BeforeSubmitResult => ({ type: 'abort' }),
+} as const;
+
+/**
+ * Data provided to the `onBeforeSubmit` callback before a session payment is submitted.
+ * The consumer can inspect or modify shopper fields before proceeding.
+ */
+export interface BeforeSubmitData {
+  billingAddress?: object;
+  deliveryAddress?: object;
+  shopperName?: { firstName?: string; lastName?: string };
+  shopperEmail?: string;
 }
 
 /**
- * Describes an Adyen Component capable of handling payment actions.
+ * Callbacks for the sessions flow, provided to `setup()`.
  */
-export interface AdyenActionComponent extends AdyenComponent {
+export interface SessionCallbacks {
+  /** Called when the session flow completes successfully. Terminal — no further action needed. */
+  onComplete(result: SessionsResult): void;
+
+  /** Called when the session flow fails. Terminal — no further action needed. */
+  onError(error: AdyenError): void;
+
   /**
-   * Handle a payment action received by the component.
-   * @param action - The payment action to be handled.
+   * Optional. Called before a payment is submitted in the session flow.
+   * Intermediate — return a result to proceed or abort.
+   * @param data - Shopper data that will be submitted.
+   * @returns A {@link (BeforeSubmitResult:type)} indicating whether to proceed or abort.
    */
-  handle(action: PaymentAction): void;
+  onBeforeSubmit?(data: BeforeSubmitData): Promise<BeforeSubmitResult>;
+}
+
+/**
+ * Callbacks for the advanced flow, provided to `setupAdvanced()`.
+ */
+export interface AdvancedCallbacks {
+  /**
+   * Called when the shopper submits a payment. Return the result of your
+   * `/payments` call to continue the flow.
+   * @param data - The payment method data to submit.
+   * @returns A {@link (SubmitResult:type)} indicating the next step (action, completed, or retry).
+   */
+  onSubmit(data: PaymentMethodData): Promise<SubmitResult>;
+
+  /**
+   * Called when additional details are needed. Return the result of your
+   * `/payments/details` call to finish the flow.
+   * @param data - The additional payment details.
+   * @returns An {@link (AdditionalDetailsResult:interface)} with the final result code.
+   */
+  onAdditionalDetails(
+    data: PaymentDetailsData
+  ): Promise<AdditionalDetailsResult>;
+
+  /** Called when the advanced flow completes successfully. Terminal — no further action needed. */
+  onComplete(result: PaymentResult): void;
+
+  /** Called when the advanced flow fails. Terminal — no further action needed. */
+  onError(error: AdyenError): void;
 }
 
 /**
@@ -311,4 +416,79 @@ export interface ConditionalPaymentComponent {
     paymentMethods: PaymentMethod,
     configuration: Configuration
   ): Promise<boolean>;
+}
+
+/**
+ * The entry point for interacting with a configured checkout.
+ *
+ * A `Checkout` is only ever obtained by awaiting `AdyenCheckout.setup()` or
+ * `AdyenCheckout.setupAdvanced()` — it has no public constructor. Because it
+ * exists only after setup resolves, its methods cannot be called before the
+ * checkout context is ready.
+ */
+export interface Checkout {
+  /** The immutable flow selected when this checkout was set up. */
+  readonly flow: 'sessions' | 'advanced';
+
+  /** Payment methods available for this checkout. */
+  readonly paymentMethods: PaymentMethodsResponse;
+
+  /**
+   * Checks whether a target is available for the shopper.
+   */
+  isAvailable(target: CheckoutTarget): Promise<boolean>;
+
+  /**
+   * Reports whether the target needs to display UI before it
+   * can be submitted.
+   */
+  requiresUserInteraction(target: CheckoutTarget): Promise<boolean>;
+
+  /**
+   * Submits the target without displaying UI (headless flow).
+   */
+  submit(target: CheckoutTarget): Promise<void>;
+
+  /**
+   * Abandons this checkout and releases all native resources.
+   *
+   * Call this when the shopper leaves the payment flow without it reaching a
+   * terminal callback (`onComplete` / `onError`) — for example when navigating
+   * away from a checkout screen. Terminal callbacks already clean up
+   * automatically, so `invalidate()` is only needed for abandoned flows.
+   *
+   * Idempotent: calling it more than once, or after the checkout has already
+   * been torn down, does nothing. After invalidation this `Checkout` is no
+   * longer active and its other methods are ignored.
+   */
+  invalidate(): Promise<void>;
+}
+
+/**
+ * A portable checkout target. Stored methods retain their exact ID so equal method types never
+ * route by map order or a default instance.
+ */
+export type CheckoutTarget =
+  | { kind: 'paymentMethod'; type: string }
+  | { kind: 'storedPaymentMethod'; id: string };
+
+/** Stable public checkout failure codes. */
+export type CheckoutErrorCode =
+  | 'checkoutBusy'
+  | 'operationBusy'
+  | 'staleCheckout'
+  | 'staleRequest'
+  | 'unsupportedCapability'
+  | 'invalidConfiguration'
+  | 'invalidTarget'
+  | 'cancelled';
+
+/** Phase in which a checkout failure occurred. */
+export type CheckoutErrorPhase =
+  'setup' | 'query' | 'presentation' | 'callback' | 'cleanup';
+
+/** A structured coordinator error with no native or private identity details. */
+export interface CheckoutError {
+  code: CheckoutErrorCode;
+  phase: CheckoutErrorPhase;
 }

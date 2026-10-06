@@ -1,5 +1,4 @@
-import { NativeModules } from 'react-native';
-import { ModuleMock } from '../base/ModuleMock';
+import NativeAdyenCSE from '../../specs/NativeAdyenCSE';
 import { AdyenCSEWrapper } from './AdyenCSEModuleWrapper';
 import type { Card } from './types';
 
@@ -31,6 +30,4 @@ export interface AdyenCSEModule {
 }
 
 /** Encryption helper. */
-export const AdyenCSE: AdyenCSEModule = new AdyenCSEWrapper(
-  NativeModules.AdyenCSE ?? ModuleMock
-);
+export const AdyenCSE: AdyenCSEModule = new AdyenCSEWrapper(NativeAdyenCSE);

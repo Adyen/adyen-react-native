@@ -1,9 +1,6 @@
-import type { TurboModule } from 'react-native';
 import type { Card } from './types';
 import type { AdyenCSEModule } from './AdyenCSEModule';
-
-/** Native module interface specific to CSE */
-interface CSENativeModule extends TurboModule, AdyenCSEModule {}
+import type { Spec as CSENativeModule } from '../../specs/NativeAdyenCSE';
 
 export class AdyenCSEWrapper implements AdyenCSEModule {
   private readonly nativeModule: CSENativeModule;
@@ -13,8 +10,12 @@ export class AdyenCSEWrapper implements AdyenCSEModule {
   }
 
   /** Method to encrypt card. */
-  encryptCard(payload: Card, publicKey: string): Promise<Card> {
-    return this.nativeModule.encryptCard(payload, publicKey);
+  async encryptCard(payload: Card, publicKey: string): Promise<Card> {
+    const encryptedCard = await this.nativeModule.encryptCard(
+      JSON.stringify(payload),
+      publicKey
+    );
+    return JSON.parse(encryptedCard) as Card;
   }
 
   /** Method to encrypt BIN(first 6-11 digits of the card). */

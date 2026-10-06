@@ -6,7 +6,7 @@ describe('setImportSwift', () => {
   test('should return the original content if the import already exists', () => {
     const originalContents = `
 import Expo
-import Adyen
+import adyen_react_native
 import React
     `;
     const result = setImportSwift(originalContents);
@@ -22,7 +22,7 @@ import React
     `;
     const expectedContents = `
 import Expo
-import Adyen
+import adyen_react_native
 import React
     `;
     const result = setImportSwift(originalContents);
@@ -58,7 +58,7 @@ import React_RCTAppDelegate
 `;
     const expectedContents = `
 import UIKit
-import Adyen
+import adyen_react_native
 import React
 import React_RCTAppDelegate
 `;
