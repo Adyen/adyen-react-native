@@ -17,6 +17,12 @@ extension UIView {
         return nil
     }
 
+    /// Stops this view and all the views inside it from growing their layout margins with the safe area.
+    func ignoreSafeAreaInLayoutMargins() {
+        insetsLayoutMarginsFromSafeArea = false
+        subviews.forEach { $0.ignoreSafeAreaInLayoutMargins() }
+    }
+
     var parentViewController: UIViewController? {
         var responder: UIResponder? = self
         while let nextResponder = responder?.next {
