@@ -15,8 +15,8 @@ jest.mock('../../specs/NativeAdyenCheckout', () => ({
     setupSession: jest.fn<AnyFn>(),
     setupAdvanced: jest.fn<AnyFn>(),
     isAvailable: jest.fn<AnyFn>(),
-    requiresUserInteraction: jest.fn<AnyFn>(),
-    submit: jest.fn<AnyFn>(),
+    createController: jest.fn<AnyFn>(),
+    submitController: jest.fn<AnyFn>(),
     invalidate: jest.fn<AnyFn>(),
     respond: jest.fn<AnyFn>(),
     startDropIn: jest.fn<AnyFn>(),
@@ -30,8 +30,8 @@ const native = require('../../specs/NativeAdyenCheckout').default as {
   setupSession: jest.Mock<AnyFn>;
   setupAdvanced: jest.Mock<AnyFn>;
   isAvailable: jest.Mock<AnyFn>;
-  requiresUserInteraction: jest.Mock<AnyFn>;
-  submit: jest.Mock<AnyFn>;
+  createController: jest.Mock<AnyFn>;
+  submitController: jest.Mock<AnyFn>;
   invalidate: jest.Mock<AnyFn>;
   respond: jest.Mock<AnyFn>;
   onCheckoutEvent: jest.Mock<AnyFn>;
@@ -59,7 +59,7 @@ function descriptor(id: string, flow: 'sessions' | 'advanced' = 'advanced') {
     checkoutId: id,
     flow,
     paymentMethodsJson:
-      '{"paymentMethods":[{"type":"scheme","name":"Card"}],"storedPaymentMethods":[{"id":"one","type":"scheme","name":"Stored card"}]}',
+      '{"paymentMethods":[{"id":"pm-scheme","type":"scheme","name":"Card"}],"storedPaymentMethods":[{"id":"one","type":"scheme","name":"Stored card"}]}',
   };
 }
 
@@ -78,6 +78,12 @@ describe('AdyenCheckout', () => {
 
     expect(checkout.flow).toBe('advanced');
     expect(Object.isFrozen(checkout.paymentMethods)).toBe(true);
+    expect(checkout.paymentMethods.regular.first()).toEqual({
+      id: 'pm-scheme',
+      type: 'scheme',
+      name: 'Card',
+    });
+    expect(checkout.paymentMethods.stored.first()?.id).toBe('one');
     expect(checkout).not.toHaveProperty('configuration');
     expect(checkout).not.toHaveProperty('checkoutId');
   });
@@ -726,11 +732,17 @@ describe('AdyenCheckout', () => {
 
   test('stales the old handle before replacement and leaves it stale after a failed replacement', async () => {
     native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-two'));
+    native.createController.mockResolvedValueOnce({
+      controllerId: 'controller-two',
+      requiresUserInteraction: false,
+    });
     const oldCheckout = await AdyenCheckout.setupAdvanced(
       { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
       configuration,
       callbacks
     );
+    const scheme = oldCheckout.paymentMethods.regular.first()!;
+    const oldController = await oldCheckout.createController(scheme);
     native.setupAdvanced.mockRejectedValueOnce({
       code: 'invalidConfiguration',
       phase: 'setup',
@@ -743,12 +755,19 @@ describe('AdyenCheckout', () => {
         callbacks
       )
     ).rejects.toMatchObject({ code: 'invalidConfiguration', phase: 'setup' });
-    await expect(
-      oldCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
-    ).rejects.toMatchObject({ code: 'staleCheckout', phase: 'presentation' });
+    expect(native.invalidate).toHaveBeenCalledWith('checkout-two');
+    await expect(oldController.submit()).rejects.toEqual({
+      code: 'staleCheckout',
+      phase: 'presentation',
+    });
+    await expect(oldCheckout.createController(scheme)).rejects.toEqual({
+      code: 'staleCheckout',
+      phase: 'presentation',
+    });
+    expect(native.submitController).not.toHaveBeenCalled();
   });
 
-  test('drops stale checkout query, submit, response, and event inputs without touching the current checkout', async () => {
+  test('drops stale checkout query, controller, response, and event inputs without touching the current checkout', async () => {
     native.setupAdvanced.mockResolvedValueOnce(descriptor('checkout-old'));
     const oldCheckout = await AdyenCheckout.setupAdvanced(
       { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
@@ -763,12 +782,15 @@ describe('AdyenCheckout', () => {
       callbacks
     );
 
-    await expect(
-      oldCheckout.isAvailable({ kind: 'paymentMethod', type: 'scheme' })
-    ).rejects.toEqual({ code: 'staleCheckout', phase: 'query' });
-    await expect(
-      oldCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
-    ).rejects.toEqual({ code: 'staleCheckout', phase: 'presentation' });
+    const oldScheme = oldCheckout.paymentMethods.regular.first()!;
+    await expect(oldCheckout.isAvailable(oldScheme)).rejects.toEqual({
+      code: 'staleCheckout',
+      phase: 'query',
+    });
+    await expect(oldCheckout.createController(oldScheme)).rejects.toEqual({
+      code: 'staleCheckout',
+      phase: 'presentation',
+    });
     await eventHandler({
       checkoutId: 'checkout-old',
       operationId: 'operation-old',
@@ -779,10 +801,17 @@ describe('AdyenCheckout', () => {
 
     expect(native.respond).not.toHaveBeenCalled();
     expect(callbacks.onSubmit).not.toHaveBeenCalled();
+    expect(native.createController).not.toHaveBeenCalled();
     native.isAvailable.mockResolvedValueOnce(true);
     await expect(
-      currentCheckout.isAvailable({ kind: 'paymentMethod', type: 'scheme' })
+      currentCheckout.isAvailable(
+        currentCheckout.paymentMethods.regular.first()!
+      )
     ).resolves.toBe(true);
+    expect(native.isAvailable).toHaveBeenCalledWith(
+      'checkout-current',
+      'pm-scheme'
+    );
   });
 
   test('serializes overlapping setup calls before beginning replacement', async () => {
@@ -816,9 +845,176 @@ describe('AdyenCheckout', () => {
 
     expect(native.invalidate).toHaveBeenCalledWith('checkout-first');
     await expect(
-      firstCheckout.submit({ kind: 'paymentMethod', type: 'scheme' })
+      firstCheckout.createController(
+        firstCheckout.paymentMethods.regular.first()!
+      )
     ).rejects.toEqual({ code: 'staleCheckout', phase: 'presentation' });
     expect(secondCheckout.flow).toBe('advanced');
+  });
+
+  test.each([
+    ['without ids', '{"paymentMethods":[{"type":"scheme","name":"Card"}]}'],
+    [
+      'with duplicate ids',
+      '{"paymentMethods":[{"id":"a","type":"giftcard"},{"id":"a","type":"giftcard"}]}',
+    ],
+  ])(
+    'rejects setup and releases the native checkout when payment methods arrive %s',
+    async (_, paymentMethodsJson) => {
+      native.setupAdvanced.mockResolvedValueOnce({
+        checkoutId: 'checkout-without-ids',
+        flow: 'advanced',
+        paymentMethodsJson,
+      });
+      native.invalidate.mockResolvedValue(undefined);
+
+      await expect(
+        AdyenCheckout.setupAdvanced(
+          { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+          configuration,
+          callbacks
+        )
+      ).rejects.toEqual({ code: 'invalidConfiguration', phase: 'setup' });
+      expect(native.invalidate).toHaveBeenCalledWith('checkout-without-ids');
+
+      const eventHandler = native.onCheckoutEvent.mock.calls[0]![0];
+      await eventHandler({
+        checkoutId: 'checkout-without-ids',
+        operationId: 'operation-orphan',
+        requestId: 'request-orphan',
+        kind: 'advancedSubmit',
+        payloadJson: '{}',
+      });
+      expect(callbacks.onSubmit).not.toHaveBeenCalled();
+
+      native.setupAdvanced.mockResolvedValueOnce(
+        descriptor('checkout-after-invalid-snapshot')
+      );
+      await expect(
+        AdyenCheckout.setupAdvanced(
+          { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+          configuration,
+          callbacks
+        )
+      ).resolves.toMatchObject({ flow: 'advanced' });
+    }
+  );
+
+  test.each([{ returnUrl: '' }, { clientKey: 'invalid-client-key' }])(
+    'rejects invalid configuration %j before native setup',
+    async (override) => {
+      await expect(
+        AdyenCheckout.setupAdvanced(
+          { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+          { ...configuration, ...override },
+          callbacks
+        )
+      ).rejects.toEqual({ code: 'invalidConfiguration', phase: 'setup' });
+      expect(native.setupAdvanced).not.toHaveBeenCalled();
+    }
+  );
+
+  test('creates and submits controllers through the active checkout identity', async () => {
+    native.setupSession.mockResolvedValueOnce(
+      descriptor('checkout-controller', 'sessions')
+    );
+    native.createController.mockResolvedValueOnce({
+      controllerId: 'controller-private',
+      requiresUserInteraction: false,
+    });
+    native.submitController.mockResolvedValueOnce(undefined);
+    const checkout = await AdyenCheckout.setup(
+      { id: 'session-id', sessionData: 'session-data' },
+      configuration,
+      sessionCallbacks
+    );
+    const stored = checkout.paymentMethods.stored.first()!;
+
+    const controller = await checkout.createController(stored);
+    await expect(checkout.createController(stored)).resolves.toBe(controller);
+    await controller.submit();
+
+    expect(native.createController).toHaveBeenCalledTimes(1);
+    expect(native.createController).toHaveBeenCalledWith(
+      'checkout-controller',
+      'one'
+    );
+    expect(native.submitController).toHaveBeenCalledWith(
+      'checkout-controller',
+      'controller-private'
+    );
+    expect(controller.paymentMethod).toBe(stored);
+    expect(controller.requiresUserInteraction).toBe(false);
+  });
+
+  test('stales the checkout and its controllers after exactly one terminal callback', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-terminal-controllers')
+    );
+    native.createController.mockResolvedValueOnce({
+      controllerId: 'controller-terminal',
+      requiresUserInteraction: true,
+    });
+    const checkout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const controller = await checkout.createController(
+      checkout.paymentMethods.regular.first()!
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0]![0];
+
+    await eventHandler({
+      checkoutId: 'checkout-terminal-controllers',
+      kind: 'error',
+      payloadJson: '{}',
+    });
+    await eventHandler({
+      checkoutId: 'checkout-terminal-controllers',
+      kind: 'completion',
+      payloadJson: '{"resultCode":"Authorised"}',
+    });
+
+    expect(callbacks.onError).toHaveBeenCalledTimes(1);
+    expect(callbacks.onComplete).not.toHaveBeenCalled();
+    await expect(controller.submit()).rejects.toEqual({
+      code: 'staleCheckout',
+      phase: 'presentation',
+    });
+    expect(native.submitController).not.toHaveBeenCalled();
+  });
+
+  test('drops events after explicit invalidation', async () => {
+    native.setupAdvanced.mockResolvedValueOnce(
+      descriptor('checkout-invalidated')
+    );
+    native.invalidate.mockResolvedValueOnce(undefined);
+    const checkout = await AdyenCheckout.setupAdvanced(
+      { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
+      configuration,
+      callbacks
+    );
+    const eventHandler = native.onCheckoutEvent.mock.calls[0]![0];
+
+    await checkout.invalidate();
+    await eventHandler({
+      checkoutId: 'checkout-invalidated',
+      operationId: 'operation-late',
+      requestId: 'request-late',
+      kind: 'advancedSubmit',
+      payloadJson: '{}',
+    });
+    await eventHandler({
+      checkoutId: 'checkout-invalidated',
+      kind: 'completion',
+      payloadJson: '{"resultCode":"Authorised"}',
+    });
+
+    expect(native.invalidate).toHaveBeenCalledWith('checkout-invalidated');
+    expect(callbacks.onSubmit).not.toHaveBeenCalled();
+    expect(callbacks.onComplete).not.toHaveBeenCalled();
+    expect(native.respond).not.toHaveBeenCalled();
   });
 
   test('drops native error messages that could expose private details', async () => {

@@ -7,7 +7,7 @@
 import type {
   CheckoutEvent,
   CheckoutResponse,
-  CheckoutTarget,
+  ControllerDescriptor,
   Spec as CheckoutSpec,
 } from '../NativeAdyenCheckout';
 import type { Spec as ActionSpec } from '../NativeAdyenAction';
@@ -22,12 +22,15 @@ type Equal<Left, Right> =
     : false;
 type Expect<Value extends true> = Value;
 type IsPromise<Value> = Value extends Promise<unknown> ? true : false;
+type Has<Shape, Key extends PropertyKey> = Key extends keyof Shape
+  ? true
+  : false;
 
 describe('generated bridge protocol', () => {
   it('keeps checkout controls and correlation fields explicit', () => {
-    const target: CheckoutTarget = {
-      kind: 'storedPaymentMethod',
-      id: 'stored-method-id',
+    const controller: ControllerDescriptor = {
+      controllerId: 'controller-id',
+      requiresUserInteraction: true,
     };
     const event: CheckoutEvent = {
       checkoutId: 'checkout-id',
@@ -38,14 +41,47 @@ describe('generated bridge protocol', () => {
     };
     const response: CheckoutResponse = {
       checkoutId: event.checkoutId,
-      operationId: event.operationId,
-      requestId: event.requestId,
+      operationId: event.operationId!,
+      requestId: event.requestId!,
       kind: event.kind,
       payloadJson: '{"type":"completed","resultCode":"Authorised"}',
     };
 
-    expect(target.kind).toBe('storedPaymentMethod');
+    expect(controller.requiresUserInteraction).toBe(true);
     expect(response.payloadJson).toContain('Authorised');
+  });
+
+  it('addresses payment methods by id and controllers by controller id', () => {
+    type IsAvailableByID = Expect<
+      Equal<Parameters<CheckoutSpec['isAvailable']>, [string, string]>
+    >;
+    type CreateControllerByID = Expect<
+      Equal<Parameters<CheckoutSpec['createController']>, [string, string]>
+    >;
+    type CreateControllerDescriptor = Expect<
+      Equal<
+        ReturnType<CheckoutSpec['createController']>,
+        Promise<ControllerDescriptor>
+      >
+    >;
+    type SubmitControllerByID = Expect<
+      Equal<Parameters<CheckoutSpec['submitController']>, [string, string]>
+    >;
+    type NoTargetQuery = Expect<
+      Equal<Has<CheckoutSpec, 'requiresUserInteraction'>, false>
+    >;
+    type NoTargetSubmit = Expect<Equal<Has<CheckoutSpec, 'submit'>, false>>;
+
+    const contracts: [
+      IsAvailableByID,
+      CreateControllerByID,
+      CreateControllerDescriptor,
+      SubmitControllerByID,
+      NoTargetQuery,
+      NoTargetSubmit,
+    ] = [true, true, true, true, true, true];
+
+    expect(contracts).toHaveLength(6);
   });
 
   it('models commands as asynchronous TurboModule calls', () => {
@@ -55,8 +91,20 @@ describe('generated bridge protocol', () => {
     type CheckoutSetupIsAsync = Expect<
       IsPromise<ReturnType<CheckoutSpec['setupSession']>>
     >;
-    type CheckoutSubmitIsAsync = Expect<
-      IsPromise<ReturnType<CheckoutSpec['submit']>>
+    type CheckoutAdvancedSetupIsAsync = Expect<
+      IsPromise<ReturnType<CheckoutSpec['setupAdvanced']>>
+    >;
+    type CheckoutIsAvailableIsAsync = Expect<
+      IsPromise<ReturnType<CheckoutSpec['isAvailable']>>
+    >;
+    type CheckoutCreateControllerIsAsync = Expect<
+      IsPromise<ReturnType<CheckoutSpec['createController']>>
+    >;
+    type CheckoutSubmitControllerIsAsync = Expect<
+      IsPromise<ReturnType<CheckoutSpec['submitController']>>
+    >;
+    type CheckoutStartDropInIsAsync = Expect<
+      IsPromise<ReturnType<CheckoutSpec['startDropIn']>>
     >;
     type CheckoutInvalidateIsAsync = Expect<
       IsPromise<ReturnType<CheckoutSpec['invalidate']>>
@@ -78,40 +126,63 @@ describe('generated bridge protocol', () => {
     const contracts: [
       SDKVersionIsGenerated,
       CheckoutSetupIsAsync,
-      CheckoutSubmitIsAsync,
+      CheckoutAdvancedSetupIsAsync,
+      CheckoutIsAvailableIsAsync,
+      CheckoutCreateControllerIsAsync,
+      CheckoutSubmitControllerIsAsync,
+      CheckoutStartDropInIsAsync,
       CheckoutInvalidateIsAsync,
       CheckoutResponseIsAsync,
       ActionHandleIsAsync,
       ActionHideIsAsync,
       CSEEncryptCardIsAsync,
       CSEValidateSecurityCodeIsAsync,
-    ] = [true, true, true, true, true, true, true, true, true];
+    ] = [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ];
 
-    expect(contracts).toHaveLength(9);
+    expect(contracts).toHaveLength(13);
   });
 
-  it('keeps Fabric registration identity-bound without configuration', () => {
-    type HasConfiguration = 'configuration' extends keyof NativeProps
-      ? true
-      : false;
-    type NoConfiguration = Expect<Equal<HasConfiguration, false>>;
-    type HasCheckoutIdentity = Expect<
-      Equal<'checkoutId' extends keyof NativeProps ? true : false, true>
+  it('binds Fabric views to a checkout and controller identity only', () => {
+    type NoConfiguration = Expect<
+      Equal<Has<NativeProps, 'configuration'>, false>
     >;
-    type HasPresenterIdentity = Expect<
-      Equal<'presenterId' extends keyof NativeProps ? true : false, true>
+    type HasCheckoutIdentity = Expect<Equal<NativeProps['checkoutId'], string>>;
+    type HasControllerIdentity = Expect<
+      Equal<NativeProps['controllerId'], string>
     >;
-    type HasTargetKind = Expect<
-      Equal<'targetKind' extends keyof NativeProps ? true : false, true>
+    type NoPresenterIdentity = Expect<
+      Equal<Has<NativeProps, 'presenterId'>, false>
+    >;
+    type NoTargetKind = Expect<Equal<Has<NativeProps, 'targetKind'>, false>>;
+    type NoTargetValue = Expect<Equal<Has<NativeProps, 'targetValue'>, false>>;
+    type KeepsLayoutEvents = Expect<
+      Equal<Has<NativeProps, 'onLayoutChange'>, true>
     >;
 
     const contracts: [
       NoConfiguration,
       HasCheckoutIdentity,
-      HasPresenterIdentity,
-      HasTargetKind,
-    ] = [true, true, true, true];
+      HasControllerIdentity,
+      NoPresenterIdentity,
+      NoTargetKind,
+      NoTargetValue,
+      KeepsLayoutEvents,
+    ] = [true, true, true, true, true, true, true];
 
-    expect(contracts).toHaveLength(4);
+    expect(contracts).toHaveLength(7);
   });
 });

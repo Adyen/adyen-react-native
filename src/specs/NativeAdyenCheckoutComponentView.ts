@@ -9,10 +9,7 @@ import type { ViewProps } from 'react-native';
 import type {
   DirectEventHandler,
   Int32,
-  WithDefault,
 } from 'react-native/Libraries/Types/CodegenTypes';
-
-export type CheckoutTargetKind = 'paymentMethod' | 'storedPaymentMethod';
 
 export type LayoutChangeEvent = {
   width: Int32;
@@ -20,17 +17,15 @@ export type LayoutChangeEvent = {
 };
 
 /**
- * Fabric registration surface for an embedded checkout presenter.
+ * Fabric registration surface for an embedded payment-method controller.
  *
- * Every registration is bound to opaque internal checkout and presenter identities. `targetValue`
- * carries a payment-method type or stored-method ID according to `targetKind`; checkout
- * configuration deliberately does not cross Fabric.
+ * The view binds to an existing native controller by its opaque checkout and controller
+ * identities. It never creates or disposes the controller, and checkout configuration
+ * deliberately does not cross Fabric.
  */
 export interface NativeProps extends ViewProps {
   checkoutId: string;
-  presenterId: string;
-  targetKind?: WithDefault<CheckoutTargetKind, 'paymentMethod'>;
-  targetValue: string;
+  controllerId: string;
   onLayoutChange?: DirectEventHandler<LayoutChangeEvent>;
 }
 

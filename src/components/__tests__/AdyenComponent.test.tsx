@@ -6,15 +6,19 @@
 
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { render } from '@testing-library/react-native';
-import type { Checkout } from '../../core';
+import type { Controller } from '../../core';
 
 const capturedProps: Record<string, unknown> = {};
-const mockCheckoutHandles = new WeakMap<object, { checkoutId: string }>();
+const mockControllerHandles = new WeakMap<
+  object,
+  { checkoutId: string; controllerId: string; isActive(): boolean }
+>();
 jest.mock('../../specs/NativeAdyenCheckoutComponentView', () => {
   const React = require('react');
   const { View } = require('react-native');
   const Comp = React.forwardRef(
     (props: Record<string, unknown>, ref: unknown) => {
+      for (const key of Object.keys(capturedProps)) delete capturedProps[key];
       Object.assign(capturedProps, props);
       return React.createElement(View, { ref, testID: 'native-adyen-view' });
     }
@@ -22,97 +26,107 @@ jest.mock('../../specs/NativeAdyenCheckoutComponentView', () => {
   return { __esModule: true, default: Comp };
 });
 
-jest.mock('../../checkout/createCheckout', () => ({
-  checkoutHandleFor: (checkout: object) => mockCheckoutHandles.get(checkout),
+jest.mock('../../checkout/createController', () => ({
+  controllerHandleFor: (controller: object) =>
+    mockControllerHandles.get(controller),
 }));
 
 import { AdyenComponent } from '../AdyenComponent';
 
-const fakeCheckout = {
-  flow: 'advanced',
-  paymentMethods: { paymentMethods: [{ type: 'scheme', name: 'Card' }] },
-  isAvailable: jest.fn(),
-  requiresUserInteraction: jest.fn(),
-  submit: jest.fn(),
-  invalidate: jest.fn(),
-} as unknown as Checkout;
-mockCheckoutHandles.set(fakeCheckout, { checkoutId: 'private-checkout-id' });
+function fakeController(
+  controllerId: string,
+  requiresUserInteraction = true
+): Controller {
+  const controller = {
+    paymentMethod: { id: `pm-${controllerId}`, type: 'scheme', name: 'Card' },
+    requiresUserInteraction,
+    submit: jest.fn(),
+  } as unknown as Controller;
+  mockControllerHandles.set(controller, {
+    checkoutId: 'private-checkout-id',
+    controllerId,
+    isActive: () => true,
+  });
+  return controller;
+}
 
 describe('AdyenComponent', () => {
   beforeEach(() => {
     for (const key of Object.keys(capturedProps)) delete capturedProps[key];
   });
 
-  test('binds the native view to private checkout and presenter identities', () => {
+  test('binds the native view to the private checkout and controller identities', () => {
     const { getByTestId } = render(
-      <AdyenComponent checkout={fakeCheckout} type="scheme" />
+      <AdyenComponent controller={fakeController('controller-one')} />
     );
 
     expect(getByTestId('native-adyen-view')).toBeTruthy();
     expect(capturedProps).toMatchObject({
       checkoutId: 'private-checkout-id',
-      targetKind: 'paymentMethod',
-      targetValue: 'scheme',
+      controllerId: 'controller-one',
     });
-    expect(capturedProps).not.toHaveProperty('configuration');
-    expect(capturedProps.presenterId).toEqual(expect.any(String));
+    expect(capturedProps.onLayoutChange).toEqual(expect.any(Function));
   });
 
-  test('preserves the exact stored payment method ID', () => {
+  test('forwards no target, presenter, or configuration props', () => {
+    render(<AdyenComponent controller={fakeController('controller-two')} />);
+
+    for (const key of [
+      'presenterId',
+      'targetKind',
+      'targetValue',
+      'configuration',
+      'controller',
+      'paymentMethod',
+    ]) {
+      expect(capturedProps).not.toHaveProperty(key);
+    }
+  });
+
+  test('passes view props and merges the style', () => {
     render(
       <AdyenComponent
-        checkout={fakeCheckout}
-        target={{ kind: 'storedPaymentMethod', id: 'stored-one' }}
+        controller={fakeController('controller-style')}
+        testID="card-view"
+        style={{ marginTop: 8 }}
       />
     );
 
-    expect(capturedProps).toMatchObject({
-      targetKind: 'storedPaymentMethod',
-      targetValue: 'stored-one',
-    });
+    expect(capturedProps.testID).toBe('card-view');
+    expect(capturedProps.style).toEqual([
+      expect.objectContaining({ width: '100%' }),
+      { marginTop: 8 },
+      { height: undefined },
+    ]);
   });
 
-  test('creates a fresh private lifecycle identity after remount', () => {
-    const first = render(
-      <AdyenComponent checkout={fakeCheckout} type="scheme" />
-    );
-    const firstPresenterID = capturedProps.presenterId;
-
-    first.unmount();
-    render(<AdyenComponent checkout={fakeCheckout} type="scheme" />);
-
-    expect(capturedProps.presenterId).toEqual(expect.any(String));
-    expect(capturedProps.presenterId).not.toBe(firstPresenterID);
-  });
-
-  test('keeps its identity for unchanged renders and replaces it with checkout or target props', () => {
-    const replacementCheckout = {
-      ...fakeCheckout,
-      paymentMethods: { paymentMethods: [{ type: 'ideal', name: 'iDEAL' }] },
-    } as Checkout;
-    mockCheckoutHandles.set(replacementCheckout, {
-      checkoutId: 'replacement-checkout-id',
-    });
+  test('rebinds when the controller changes', () => {
     const { rerender } = render(
-      <AdyenComponent checkout={fakeCheckout} type="scheme" />
+      <AdyenComponent controller={fakeController('controller-a')} />
     );
-    const initialPresenterID = capturedProps.presenterId;
+    expect(capturedProps.controllerId).toBe('controller-a');
 
-    rerender(<AdyenComponent checkout={fakeCheckout} type="scheme" />);
-    expect(capturedProps.presenterId).toBe(initialPresenterID);
+    rerender(<AdyenComponent controller={fakeController('controller-b')} />);
 
-    rerender(<AdyenComponent checkout={fakeCheckout} type="ideal" />);
-    const targetReplacementPresenterID = capturedProps.presenterId;
-    expect(targetReplacementPresenterID).not.toBe(initialPresenterID);
-
-    rerender(<AdyenComponent checkout={replacementCheckout} type="ideal" />);
-    expect(capturedProps.presenterId).not.toBe(targetReplacementPresenterID);
+    expect(capturedProps.controllerId).toBe('controller-b');
   });
 
-  test('renders nothing for a checkout that did not originate from setup', () => {
+  test('renders nothing for a controller without UI', () => {
     const { queryByTestId } = render(
-      <AdyenComponent checkout={fakeCheckout} />
+      <AdyenComponent controller={fakeController('headless', false)} />
     );
+
+    expect(queryByTestId('native-adyen-view')).toBeNull();
+  });
+
+  test('renders nothing for a controller that did not originate from a checkout', () => {
+    const foreign = {
+      paymentMethod: { id: 'pm', type: 'scheme', name: 'Card' },
+      requiresUserInteraction: true,
+      submit: jest.fn(),
+    } as unknown as Controller;
+
+    const { queryByTestId } = render(<AdyenComponent controller={foreign} />);
 
     expect(queryByTestId('native-adyen-view')).toBeNull();
   });

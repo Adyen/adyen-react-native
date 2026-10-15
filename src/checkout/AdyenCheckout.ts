@@ -5,6 +5,7 @@
 //
 
 import NativeCheckout, {
+  type CheckoutDescriptor,
   type CheckoutEvent,
   type CheckoutResponse,
 } from '../specs/NativeAdyenCheckout';
@@ -17,6 +18,7 @@ import {
   type PaymentDetailsData,
   type PaymentMethodData,
   type PaymentMethodsResponse,
+  type PaymentMethodsView,
   type AddressLookup,
   type SessionCallbacks,
   type SessionConfiguration,
@@ -46,6 +48,7 @@ import {
   type CheckoutHandle,
 } from './createCheckout';
 import { asCheckoutError } from './errors';
+import { createPaymentMethodsView } from './paymentMethodsView';
 import type { CheckoutLifecycle } from './types';
 
 const MERCHANT_CALLBACK_FAILURE = JSON.stringify({
@@ -419,17 +422,22 @@ export class AdyenCheckout {
     });
   }
 
-  private static publishCheckout(
-    descriptor: {
-      checkoutId: string;
-      flow: 'sessions' | 'advanced';
-      paymentMethodsJson: string;
-    },
+  private static async publishCheckout(
+    descriptor: CheckoutDescriptor,
     callbacks: CheckoutCallbacks
-  ): Checkout {
-    const paymentMethods = parsePayload<PaymentMethodsResponse>(
-      descriptor.paymentMethodsJson
-    );
+  ): Promise<Checkout> {
+    let paymentMethods: PaymentMethodsView;
+    try {
+      paymentMethods = createPaymentMethodsView(descriptor.paymentMethodsJson);
+    } catch (error) {
+      // The native checkout already exists; release it so a rejected setup leaves no residue.
+      try {
+        await NativeCheckout.invalidate(descriptor.checkoutId);
+      } catch {
+        // The setup failure is the error the caller needs; cleanup is best effort.
+      }
+      throw asCheckoutError(error, 'setup');
+    }
     const lifecycle: CheckoutLifecycle = {
       onInvalidated: (checkout) => {
         eventHandlers.delete(checkout.checkoutId);

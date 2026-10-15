@@ -5,6 +5,7 @@
 ```ts
 
 import { default as React_2 } from 'react';
+import { ViewProps } from 'react-native';
 
 // @public
 export interface ActionModule {
@@ -54,13 +55,6 @@ export interface AdvancedCallbacks {
 }
 
 // @public
-export interface AdvancedPayment {
-    action(action: PaymentAction): void;
-    completion(resultCode: string): void;
-    retry(message?: string): void;
-}
-
-// @public
 export const AdyenAction: ActionModule;
 
 // @public
@@ -75,13 +69,8 @@ export class AdyenCheckout {
 export const AdyenComponent: React_2.FC<AdyenComponentProps>;
 
 // @public
-export interface AdyenComponentProps {
-    // (undocumented)
-    checkout: Checkout;
-    // (undocumented)
-    target?: CheckoutTarget;
-    // (undocumented)
-    type?: string;
+export interface AdyenComponentProps extends ViewProps {
+    controller: Controller;
 }
 
 // @public
@@ -336,12 +325,11 @@ export interface CardsConfiguration {
 
 // @public
 export interface Checkout {
+    createController(paymentMethod: CheckoutPaymentMethod): Promise<Controller>;
     readonly flow: 'sessions' | 'advanced';
     invalidate(): Promise<void>;
-    isAvailable(target: CheckoutTarget): Promise<boolean>;
-    readonly paymentMethods: PaymentMethodsResponse;
-    requiresUserInteraction(target: CheckoutTarget): Promise<boolean>;
-    submit(target: CheckoutTarget): Promise<void>;
+    isAvailable(paymentMethod: CheckoutPaymentMethod): Promise<boolean>;
+    readonly paymentMethods: PaymentMethodsView;
 }
 
 // @public
@@ -359,18 +347,8 @@ export type CheckoutErrorCode = 'checkoutBusy' | 'operationBusy' | 'staleCheckou
 export type CheckoutErrorPhase = 'setup' | 'query' | 'presentation' | 'callback' | 'cleanup';
 
 // @public
-export type CheckoutTarget = {
-    kind: 'paymentMethod';
-    type: string;
-} | {
-    kind: 'storedPaymentMethod';
-    id: string;
-};
-
-// @public
-export interface ConditionalPaymentComponent {
-    // (undocumented)
-    isAvailable(paymentMethods: PaymentMethod, configuration: Configuration): Promise<boolean>;
+export interface CheckoutPaymentMethod extends PaymentMethod {
+    readonly id: string;
 }
 
 // @public
@@ -382,6 +360,13 @@ export interface Configuration extends BaseConfiguration {
     googlepay?: GooglePayConfiguration;
     returnUrl: string;
     threeDS2?: ThreeDSConfiguration;
+}
+
+// @public
+export interface Controller {
+    readonly paymentMethod: CheckoutPaymentMethod;
+    readonly requiresUserInteraction: boolean;
+    submit(): Promise<void>;
 }
 
 // @public
@@ -569,9 +554,22 @@ export interface PaymentMethodGroup {
 }
 
 // @public
+export interface PaymentMethodList<T> {
+    [Symbol.iterator](): IterableIterator<T>;
+    first(predicate?: (paymentMethod: T) => boolean): T | undefined;
+    readonly length: number;
+}
+
+// @public
 export interface PaymentMethodsResponse {
     paymentMethods: PaymentMethod[];
     storedPaymentMethods?: StoredPaymentMethod[];
+}
+
+// @public
+export interface PaymentMethodsView {
+    readonly regular: PaymentMethodList<CheckoutPaymentMethod>;
+    readonly stored: PaymentMethodList<StoredPaymentMethod>;
 }
 
 // @public
@@ -631,17 +629,9 @@ export type SessionsResult = {
 };
 
 // @public (undocumented)
-export interface StoredPaymentMethod extends PaymentMethod {
+export interface StoredPaymentMethod extends CheckoutPaymentMethod {
     id: string;
     supportedShopperInteractions: string[];
-}
-
-// @public (undocumented)
-export interface SubmitModel {
-    // (undocumented)
-    extra?: any;
-    // (undocumented)
-    paymentData: PaymentMethodData_2;
 }
 
 // @public

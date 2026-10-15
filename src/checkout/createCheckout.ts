@@ -10,13 +10,17 @@ import NativeCheckout, {
 import type {
   AdvancedCallbacks,
   Checkout,
-  CheckoutTarget,
+  CheckoutErrorPhase,
+  CheckoutPaymentMethod,
   Configuration,
-  PaymentMethodsResponse,
+  Controller,
+  PaymentMethodsView,
   SessionCallbacks,
 } from '../core';
 import { asCheckoutError } from './errors';
+import { createController, isControllerDescriptor } from './createController';
 import type { CheckoutLifecycle } from './types';
+import { isRecord } from './utils/isRecord';
 
 export interface CheckoutCallbacks {
   session?: SessionCallbacks;
@@ -42,82 +46,88 @@ export function checkoutHandleFor(
   return handles.get(checkout);
 }
 
-function deepFreeze<Value>(value: Value): Value {
-  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    Object.freeze(value);
-    Object.values(value).forEach(deepFreeze);
+function indexById(
+  paymentMethods: PaymentMethodsView
+): Map<string, CheckoutPaymentMethod> {
+  const index = new Map<string, CheckoutPaymentMethod>();
+  for (const paymentMethod of paymentMethods.regular) {
+    index.set(paymentMethod.id, paymentMethod);
   }
-  return value;
-}
-
-function invalidTarget(phase: 'query' | 'presentation'): Promise<never> {
-  return Promise.reject(asCheckoutError({ code: 'invalidTarget', phase }));
-}
-
-function isCheckoutTarget(target: unknown): target is CheckoutTarget {
-  if (!target || typeof target !== 'object') return false;
-  const candidate = target as Record<string, unknown>;
-  const keys = Object.keys(candidate);
-  if (keys.length !== 2 || !keys.includes('kind')) return false;
-  return (
-    (candidate.kind === 'paymentMethod' &&
-      typeof candidate.type === 'string' &&
-      candidate.type.trim().length > 0 &&
-      keys.includes('type')) ||
-    (candidate.kind === 'storedPaymentMethod' &&
-      typeof candidate.id === 'string' &&
-      candidate.id.trim().length > 0 &&
-      keys.includes('id'))
-  );
-}
-
-function isKnownTarget(
-  target: CheckoutTarget,
-  paymentMethods: PaymentMethodsResponse
-): boolean {
-  if (target.kind === 'paymentMethod') {
-    return (
-      paymentMethods.paymentMethods?.some(
-        (paymentMethod) => paymentMethod.type === target.type
-      ) ?? false
-    );
+  for (const paymentMethod of paymentMethods.stored) {
+    index.set(paymentMethod.id, paymentMethod);
   }
-  return (
-    paymentMethods.storedPaymentMethods?.some(
-      (paymentMethod) => paymentMethod.id === target.id
-    ) ?? false
-  );
+  return index;
 }
 
 /**
  * Builds a public handle backed by one opaque native checkout identity.
  *
- * Identity and callbacks remain internal to this closure. The native coordinator remains the
- * authority for stale, busy, unsupported, and target-resolution errors.
+ * Identity and callbacks remain internal to this closure. Payment methods are resolved by `id`
+ * against the published snapshot before any command reaches native code; the native coordinator
+ * remains the authority for stale, busy, and unsupported errors.
  */
 export function createCheckout(
   descriptor: CheckoutDescriptor,
-  paymentMethods: PaymentMethodsResponse,
+  paymentMethods: PaymentMethodsView,
   callbacks: CheckoutCallbacks,
   lifecycle: CheckoutLifecycle
 ): CheckoutHandle {
   let active = true;
-  const snapshot = deepFreeze(JSON.parse(JSON.stringify(paymentMethods)));
+  const knownPaymentMethods = indexById(paymentMethods);
+  const controllers = new Map<string, Promise<Controller>>();
 
-  const run = <Value>(
-    phase: 'query' | 'presentation',
-    target: unknown,
-    command: (validTarget: CheckoutTarget) => Promise<Value>
+  const resolve = <Value>(
+    phase: CheckoutErrorPhase,
+    paymentMethod: unknown,
+    command: (known: CheckoutPaymentMethod) => Promise<Value>
   ): Promise<Value> => {
     if (!active) {
       return Promise.reject(asCheckoutError({ code: 'staleCheckout', phase }));
     }
-    if (!isCheckoutTarget(target) || !isKnownTarget(target, snapshot)) {
-      return invalidTarget(phase);
+    const known =
+      isRecord(paymentMethod) && typeof paymentMethod.id === 'string'
+        ? knownPaymentMethods.get(paymentMethod.id)
+        : undefined;
+    if (!known) {
+      return Promise.reject(asCheckoutError({ code: 'invalidTarget', phase }));
     }
-    return command(target).catch((error: unknown) => {
-      throw asCheckoutError(error, phase);
+    return command(known);
+  };
+
+  const createControllerFor = (
+    paymentMethod: CheckoutPaymentMethod
+  ): Promise<Controller> => {
+    const existing = controllers.get(paymentMethod.id);
+    if (existing) return existing;
+
+    const creation = NativeCheckout.createController(
+      descriptor.checkoutId,
+      paymentMethod.id
+    ).then(
+      (native) => {
+        if (!active) {
+          throw asCheckoutError({
+            code: 'staleCheckout',
+            phase: 'presentation',
+          });
+        }
+        if (!isControllerDescriptor(native)) {
+          throw asCheckoutError({ code: 'cancelled', phase: 'presentation' });
+        }
+        return createController(handle, paymentMethod, native);
+      },
+      (error: unknown) => {
+        throw asCheckoutError(error, 'presentation');
+      }
+    );
+    controllers.set(paymentMethod.id, creation);
+    // A failed creation must not be cached, so a later call can retry.
+    creation.catch(() => {
+      if (controllers.get(paymentMethod.id) === creation) {
+        controllers.delete(paymentMethod.id);
+      }
     });
+    return creation;
   };
 
   const handle: CheckoutHandle = {
@@ -127,28 +137,24 @@ export function createCheckout(
     isActive: () => active,
     markStale: () => {
       active = false;
+      controllers.clear();
     },
-    publicHandle: {
+    publicHandle: Object.freeze({
       flow: descriptor.flow,
-      paymentMethods: snapshot,
-      isAvailable: (target) =>
-        run('query', target, (validTarget) =>
-          NativeCheckout.isAvailable(descriptor.checkoutId, validTarget)
-        ),
-      requiresUserInteraction: (target) =>
-        run('query', target, (validTarget) =>
-          NativeCheckout.requiresUserInteraction(
-            descriptor.checkoutId,
-            validTarget
+      paymentMethods,
+      isAvailable: (paymentMethod: CheckoutPaymentMethod) =>
+        resolve('query', paymentMethod, (known) =>
+          NativeCheckout.isAvailable(descriptor.checkoutId, known.id).catch(
+            (error: unknown) => {
+              throw asCheckoutError(error, 'query');
+            }
           )
         ),
-      submit: (target) =>
-        run('presentation', target, (validTarget) =>
-          NativeCheckout.submit(descriptor.checkoutId, validTarget)
-        ),
+      createController: (paymentMethod: CheckoutPaymentMethod) =>
+        resolve('presentation', paymentMethod, createControllerFor),
       invalidate: async () => {
         if (!active) return;
-        active = false;
+        handle.markStale();
         try {
           await NativeCheckout.invalidate(descriptor.checkoutId);
         } catch (error) {
@@ -157,7 +163,7 @@ export function createCheckout(
           lifecycle.onInvalidated(handle);
         }
       },
-    },
+    }),
   };
   handles.set(handle.publicHandle, handle);
   return handle;
