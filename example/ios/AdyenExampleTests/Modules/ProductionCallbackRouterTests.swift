@@ -145,10 +145,10 @@ final class ProductionCallbackRouterTests: XCTestCase {
         XCTAssertNil(coordinator.operationID)
         XCTAssertTrue(coordinator.isActive(checkoutID: retryCheckoutID))
 
-        XCTAssertNoThrow(try adapter.routeHeadlessSubmit { FixturePresenter() })
+        XCTAssertNoThrow(try coordinator.beginOperation(checkoutID: retryCheckoutID))
         try coordinator.completeOperation(XCTUnwrap(coordinator.operationID))
         _ = coordinator.acquireInitialEmbeddedOperation(checkoutID: retryCheckoutID)
-        XCTAssertThrowsError(try adapter.routeHeadlessSubmit { FixturePresenter() }) { error in
+        XCTAssertThrowsError(try coordinator.beginOperation(checkoutID: retryCheckoutID)) { error in
             XCTAssertEqual(error as? CoordinatorError, .operationBusy)
         }
         XCTAssertThrowsError(try coordinator.assertDropInAvailability(checkoutID: retryCheckoutID)) { error in

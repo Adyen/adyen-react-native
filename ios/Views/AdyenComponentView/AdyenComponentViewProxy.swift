@@ -11,7 +11,10 @@ import UIKit
     func onLayoutChange(width: CGFloat, height: CGFloat)
 }
 
-/// Backing UIKit view for an identity-bound Fabric `<AdyenComponent>` registration.
+/// Backing UIKit view for a Fabric `<AdyenComponent>` bound to one registry controller.
+///
+/// The view never creates or disposes a controller: it embeds the controller's existing view
+/// controller on attach and only detaches on unmount.
 @objc(AdyenComponentViewProxy)
 @MainActor
 public final class AdyenComponentViewProxy: UIStackView {
@@ -20,26 +23,18 @@ public final class AdyenComponentViewProxy: UIStackView {
     private var componentViewController: UIViewController?
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
-    private var creationGeneration = 0
     private let coordinator: CheckoutCoordinator
-    private let componentFactory: FabricComponentFactory?
 
     @objc public weak var delegate: AdyenComponentViewProxyDelegate?
 
     @objc override public init(frame: CGRect) {
         coordinator = .shared
-        componentFactory = nil
         super.init(frame: frame)
         clipsToBounds = false
     }
 
-    internal init(
-        frame: CGRect,
-        coordinator: CheckoutCoordinator,
-        componentFactory: FabricComponentFactory
-    ) {
+    internal init(frame: CGRect, coordinator: CheckoutCoordinator) {
         self.coordinator = coordinator
-        self.componentFactory = componentFactory
         super.init(frame: frame)
         clipsToBounds = false
     }
@@ -49,57 +44,35 @@ public final class AdyenComponentViewProxy: UIStackView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Fabric updates the complete binding as one tuple. Disposing first prevents an old
-    /// checkout/target controller from surviving long enough to attach after replacement.
-    @objc public func updateRegistration(
-        checkoutID: String?,
-        presenterID: String?,
-        targetKind: String?,
-        targetValue: String?
-    ) {
+    internal var boundControllerID: String? {
+        controller?.controllerID
+    }
+
+    /// Fabric delivers the checkout and controller identities together. A changed pair releases
+    /// the previous controller before binding the new one. Unknown, stale, or already-bound
+    /// controllers leave the view empty.
+    @objc public func updateBinding(checkoutID: String?, controllerID: String?) {
         guard let checkoutID, !checkoutID.isEmpty,
-              let presenterID, !presenterID.isEmpty,
-              let targetKind,
-              let targetValue, !targetValue.isEmpty,
-              let target = makeTarget(kind: targetKind, value: targetValue) else {
-            dispose()
+              let controllerID, !controllerID.isEmpty else {
+            detach()
+            return
+        }
+        if let controller, !controller.isDisposed,
+           controller.checkoutID == checkoutID,
+           controller.controllerID == controllerID {
             return
         }
 
-        if let controller, controller.matches(
-            checkoutID: checkoutID,
-            presenterID: presenterID,
-            target: target
-        ) {
-            return
-        }
-
-        dispose()
-        let controller = ComponentProxy(
-            checkoutID: checkoutID,
-            presenterID: presenterID,
-            target: target,
-            onDispose: { [weak self] controller in
-                self?.presenterDidDispose(controller)
-            },
-            coordinator: coordinator,
-            componentFactory: componentFactory
-        )
-        do {
-            try coordinator.registerPassivePresenter(
-                checkoutID: checkoutID,
-                presenterID: presenterID,
-                target: target,
-                presenter: controller
-            )
-        } catch {
-            controller.dispose()
+        detach()
+        guard let controller = try? coordinator.controller(checkoutID: checkoutID, controllerID: controllerID),
+              (try? controller.bind(self)) != nil else {
             return
         }
         self.controller = controller
-        creationGeneration += 1
-        let generation = creationGeneration
-        createComponentView(controller, generation: generation)
+        if let viewController = controller.viewController {
+            componentViewController = viewController
+            embedComponentView(viewController)
+        }
     }
 
     override public func layoutSubviews() {
@@ -107,75 +80,21 @@ public final class AdyenComponentViewProxy: UIStackView {
         reportContentHeight()
     }
 
-    @objc public func dispose() {
-        creationGeneration += 1
+    /// Releases the binding without disposing the controller, which stays registered until its
+    /// checkout is torn down and can be bound again by another view.
+    @objc public func detach() {
         detachComponentViewController()
-        let controller = controller
+        guard let controller else { return }
         self.controller = nil
-        controller?.dispose()
-    }
-
-    // MARK: - Component initialization
-
-    private func createComponentView(_ controller: ComponentProxy, generation: Int) {
-        Task { @MainActor [weak self, weak controller] in
-            guard let self, let controller else { return }
-            do {
-                guard let viewController = try await controller.makeViewController(),
-                      self.controller === controller,
-                      self.creationGeneration == generation else {
-                    controller.dispose()
-                    return
-                }
-                self.installComponentViewController(viewController, for: controller)
-            } catch {
-                guard self.controller === controller,
-                      self.creationGeneration == generation else {
-                    return
-                }
-                self.controller = nil
-                controller.dispose()
-            }
-        }
-    }
-
-    private func makeTarget(kind: String, value: String) -> TurboCheckoutTarget? {
-        switch kind {
-        case "paymentMethod":
-            guard let type = PaymentMethodType(rawValue: value) else { return nil }
-            return .paymentMethod(type)
-        case "storedPaymentMethod":
-            return .storedPaymentMethod(value)
-        default:
-            return nil
+        if controller.unbind(self) {
+            coordinator.controllerDidDetach(controller)
         }
     }
 
     // MARK: - View embedding
 
-    /// Installs the child owned by the current Fabric registration. It remains internal so the
-    /// real proxy lifecycle can be exercised without creating a payment component in XCTest.
-    internal func installComponentViewController(
-        _ childVC: UIViewController,
-        for controller: ComponentProxy? = nil
-    ) {
-        if let controller {
-            guard self.controller == nil || self.controller === controller else { return }
-            self.controller = controller
-        }
-        componentViewController = childVC
-        embedComponentView(childVC)
-    }
-
-    internal func presenterDidDispose(_ disposedController: ComponentProxy) {
-        guard controller === disposedController else { return }
-        creationGeneration += 1
-        controller = nil
-        detachComponentViewController()
-    }
-
     private func detachComponentViewController() {
-        if let childVC = componentViewController {
+        if let childVC = componentViewController, childVC.view.superview === self {
             childVC.willMove(toParent: nil)
             removeArrangedSubview(childVC.view)
             childVC.view.removeFromSuperview()
@@ -220,5 +139,13 @@ public final class AdyenComponentViewProxy: UIStackView {
         guard abs(size.height - lastReportedHeight) > 1 else { return }
         lastReportedHeight = size.height
         delegate?.onLayoutChange(width: size.width, height: size.height)
+    }
+}
+
+extension AdyenComponentViewProxy: ControllerViewBinding {
+    func controllerDidDispose(_ disposedController: ComponentProxy) {
+        guard controller === disposedController else { return }
+        controller = nil
+        detachComponentViewController()
     }
 }

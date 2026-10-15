@@ -8,74 +8,88 @@ import Adyen
 import AdyenCheckout
 import UIKit
 
-/// Internal Fabric-only component creation seam. It is supplied by the native view proxy and
-/// exists solely to make asynchronous replacement races deterministic in XCTest.
+/// The SDK component surface a controller relies on. It is a seam so XCTest can register
+/// controllers without building SDK components.
 @MainActor
-internal protocol FabricComponentFactory: AnyObject {
-    func makeViewController(for target: TurboCheckoutTarget) async throws -> UIViewController?
+internal protocol PaymentComponentHandle: AnyObject {
+    var viewController: UIViewController? { get }
+    func submit()
 }
 
-/// Per-view controller for one identity-bound Fabric registration. The coordinator owns the
-/// registry; this presenter owns only the component created for its checkout/target tuple.
+extension CheckoutPaymentComponent: PaymentComponentHandle {}
+
+/// A Fabric view currently displaying a controller's component.
 @MainActor
-internal final class ComponentProxy: CoordinatorPresenter {
+internal protocol ControllerViewBinding: AnyObject {
+    func controllerDidDispose(_ controller: ComponentProxy)
+}
+
+/// Registry-owned controller holding exactly one eagerly created payment component.
+///
+/// The coordinator is the only owner. Views bind and detach without affecting the component's
+/// lifetime; only coordinator teardown disposes it.
+@MainActor
+internal final class ComponentProxy {
 
     let checkoutID: String
-    let presenterID: String
-    private let target: TurboCheckoutTarget
-    private let onDispose: @MainActor (ComponentProxy) -> Void
-    private let coordinator: CheckoutCoordinator
-    private let componentFactory: FabricComponentFactory?
-    private var paymentComponent: CheckoutPaymentComponent?
-    private var isDisposed = false
+    let controllerID: String
+    let paymentMethodID: String
+    let paymentMethod: CatalogPaymentMethod
+    let requiresUserInteraction: Bool
+
+    private var component: PaymentComponentHandle?
+    /// Read once at creation: several SDK components build a new view controller per access,
+    /// and every bound view must embed the instance that `requiresUserInteraction` reported.
+    private(set) var viewController: UIViewController?
+    private weak var boundView: ControllerViewBinding?
+    private(set) var isDisposed = false
 
     init(
         checkoutID: String,
-        presenterID: String,
-        target: TurboCheckoutTarget,
-        onDispose: @escaping @MainActor (ComponentProxy) -> Void = { _ in },
-        coordinator: CheckoutCoordinator = .shared,
-        componentFactory: FabricComponentFactory? = nil
+        controllerID: String,
+        paymentMethodID: String,
+        paymentMethod: CatalogPaymentMethod,
+        component: PaymentComponentHandle
     ) {
         self.checkoutID = checkoutID
-        self.presenterID = presenterID
-        self.target = target
-        self.onDispose = onDispose
-        self.coordinator = coordinator
-        self.componentFactory = componentFactory
+        self.controllerID = controllerID
+        self.paymentMethodID = paymentMethodID
+        self.paymentMethod = paymentMethod
+        self.component = component
+        let viewController = component.viewController
+        self.viewController = viewController
+        requiresUserInteraction = viewController != nil
     }
 
-    func matches(
-        checkoutID: String,
-        presenterID: String,
-        target: TurboCheckoutTarget
-    ) -> Bool {
-        self.checkoutID == checkoutID && self.presenterID == presenterID && self.target == target
+    var isBound: Bool {
+        boundView != nil
     }
 
-    // MARK: - Component creation
+    // MARK: - View binding
 
-    /// Builds the payment component only while this exact checkout registration remains active.
-    func makeViewController() async throws -> UIViewController? {
-        guard coordinator.isActive(checkoutID: checkoutID) else {
-            throw CoordinatorError.staleCheckout
+    /// One live view per controller. Binding the view that already holds it is a no-op.
+    func bind(_ view: ControllerViewBinding) throws {
+        guard !isDisposed else { throw CoordinatorError.staleCheckout }
+        if let boundView {
+            guard boundView === view else { throw CoordinatorError.controllerAlreadyBound }
+            return
         }
-        if let componentFactory {
-            return try await componentFactory.makeViewController(for: target)
-        }
-        guard let checkout = coordinator.checkoutState?.checkoutContext else {
-            throw CoordinatorError.staleCheckout
-        }
+        boundView = view
+    }
 
-        let component: CheckoutPaymentComponent
-        switch target {
-        case let .paymentMethod(type):
-            component = try checkout.createPaymentComponent(for: type)
-        case let .storedPaymentMethod(id):
-            component = try checkout.createPaymentComponent(for: id)
-        }
-        paymentComponent = component
-        return component.viewController
+    /// Returns true only when `view` was the bound view, so a stale view cannot release a
+    /// newer binding.
+    @discardableResult
+    func unbind(_ view: ControllerViewBinding) -> Bool {
+        guard boundView === view else { return false }
+        boundView = nil
+        return true
+    }
+
+    // MARK: - Submission
+
+    func submit() {
+        component?.submit()
     }
 
     // MARK: - Teardown
@@ -83,12 +97,10 @@ internal final class ComponentProxy: CoordinatorPresenter {
     func dispose() {
         guard !isDisposed else { return }
         isDisposed = true
-        paymentComponent = nil
-        onDispose(self)
-        coordinator.unregisterPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: presenterID,
-            presenter: self
-        )
+        let view = boundView
+        boundView = nil
+        view?.controllerDidDispose(self)
+        viewController = nil
+        component = nil
     }
 }

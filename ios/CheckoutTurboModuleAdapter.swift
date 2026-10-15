@@ -144,10 +144,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
                         self?.cancelPendingRequests()
                     }
                 }
-                guard let paymentMethods = coordinator.checkoutState?.checkoutContext.paymentMethods else {
-                    throw ModuleException.invalidPaymentMethods
-                }
-                try resolver(self.descriptor(checkoutID: checkoutID, flow: "sessions", paymentMethods: paymentMethods))
+                try resolver(self.descriptor(checkoutID: checkoutID, flow: "sessions"))
             } catch {
                 rejecter(ErrorCode.invalidConfiguration, "Checkout setup failed", error)
             }
@@ -185,7 +182,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
                         self?.cancelPendingRequests()
                     }
                 }
-                try resolver(self.descriptor(checkoutID: checkoutID, flow: "advanced", paymentMethods: paymentMethods))
+                try resolver(self.descriptor(checkoutID: checkoutID, flow: "advanced"))
             } catch {
                 rejecter(ErrorCode.invalidConfiguration, "Checkout setup failed", error)
             }
@@ -195,76 +192,56 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     @objc
     func isAvailable(
         _ checkoutID: String,
-        target: NSDictionary,
-        resolver: @escaping RCTPromiseResolveBlock,
-        rejecter: @escaping RCTPromiseRejectBlock
-    ) {
-        guard owns(checkoutID, rejecter: rejecter) else { return }
-        do {
-            try resolver(component(for: target, checkout: coordinator.checkoutState!.checkoutContext) != nil)
-        } catch {
-            rejecter(ErrorCode.invalidTarget, "Invalid checkout target", error)
-        }
-    }
-
-    @objc
-    func requiresUserInteraction(
-        _ checkoutID: String,
-        target: NSDictionary,
-        resolver: @escaping RCTPromiseResolveBlock,
-        rejecter: @escaping RCTPromiseRejectBlock
-    ) {
-        guard owns(checkoutID, rejecter: rejecter) else { return }
-        do {
-            guard let component = try component(for: target, checkout: coordinator.checkoutState!.checkoutContext) else {
-                resolver(false)
-                return
-            }
-            resolver(component.requiresUserInteraction)
-        } catch {
-            rejecter(ErrorCode.invalidTarget, "Invalid checkout target", error)
-        }
-    }
-
-    @objc
-    func submit(
-        _ checkoutID: String,
-        target: NSDictionary,
+        paymentMethodID: String,
         resolver: @escaping RCTPromiseResolveBlock,
         rejecter: @escaping RCTPromiseRejectBlock
     ) {
         Task { @MainActor in
-            guard owns(checkoutID, rejecter: rejecter) else { return }
-            guard let checkout = coordinator.checkoutState?.checkoutContext else {
-                rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
-                return
-            }
             do {
-                var presenter: TurboHeadlessPresenter?
-                _ = try routeHeadlessSubmit {
-                    guard let component = try self.component(for: target, checkout: checkout) else {
-                        throw ModuleException.invalidPaymentMethods
-                    }
-                    let newPresenter = TurboHeadlessPresenter(component: component)
-                    presenter = newPresenter
-                    return newPresenter
-                }
-                presenter?.submit()
-                resolver(nil)
-            } catch let error as CoordinatorError {
-                rejecter(error == .operationBusy ? ErrorCode.operationBusy : ErrorCode.staleCheckout, "Checkout is unavailable", nil)
+                try resolver(coordinator.isAvailable(checkoutID: checkoutID, paymentMethodID: paymentMethodID))
             } catch {
-                rejecter(ErrorCode.invalidTarget, "Invalid checkout target", error)
+                reject(error, rejecter: rejecter)
             }
         }
     }
 
-    /// The generated headless command reaches this router only after target parsing. Keeping the
-    /// slot acquisition here makes a busy embedded owner reject before creating a component.
-    func routeHeadlessSubmit(
-        makePresenter: @escaping @MainActor () throws -> CoordinatorPresenter
-    ) throws -> String {
-        try coordinator.beginOperation(makePresenter: makePresenter)
+    @objc
+    func createController(
+        _ checkoutID: String,
+        paymentMethodID: String,
+        resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        Task { @MainActor in
+            do {
+                let controller = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: paymentMethodID)
+                resolver([
+                    "controllerId": controller.controllerID,
+                    "requiresUserInteraction": controller.requiresUserInteraction
+                ] as NSDictionary)
+            } catch {
+                reject(error, rejecter: rejecter)
+            }
+        }
+    }
+
+    /// Resolves once the registry component has been asked to submit; the payment outcome
+    /// arrives through the checkout event channel.
+    @objc
+    func submitController(
+        _ checkoutID: String,
+        controllerID: String,
+        resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        Task { @MainActor in
+            do {
+                try coordinator.submitController(checkoutID: checkoutID, controllerID: controllerID)
+                resolver(nil)
+            } catch {
+                reject(error, rejecter: rejecter)
+            }
+        }
     }
 
     @objc
@@ -334,7 +311,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
             coordinator.completeAddressLookupOperation(pending.request.operationID)
         }
         if pending.request.kind == .advancedSubmit, payload?["type"] as? String == "retry" {
-            coordinator.releaseEmbeddedOperation(pending.request.operationID)
+            coordinator.releaseRetriedOperation(pending.request.operationID)
         }
         pending.resume(payload)
         resolver(nil)
@@ -583,37 +560,32 @@ extension CheckoutTurboModuleAdapter {
     }
 }
 
-// MARK: - Target parsing, descriptors, and generated events
+// MARK: - Descriptors, error mapping, and generated events
 
 @MainActor
 extension CheckoutTurboModuleAdapter {
-    func owns(_ checkoutID: String, rejecter: RCTPromiseRejectBlock) -> Bool {
-        guard coordinator.isActive(checkoutID: checkoutID) else {
-            rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
-            return false
+    func descriptor(checkoutID: String, flow: String) throws -> NSDictionary {
+        guard coordinator.isActive(checkoutID: checkoutID),
+              let catalog = coordinator.paymentMethodCatalog else {
+            throw ModuleException.invalidPaymentMethods
         }
-        return true
-    }
-
-    func descriptor(checkoutID: String, flow: String, paymentMethods: PaymentMethods) throws -> NSDictionary {
-        try [
+        return try [
             "checkoutId": checkoutID,
             "flow": flow,
-            "paymentMethodsJson": jsonString(paymentMethods.jsonObject)
+            "paymentMethodsJson": jsonString(catalog.paymentMethodsJSON)
         ]
     }
 
-    func resolvePaymentTarget(_ target: NSDictionary) throws -> TurboCheckoutTarget {
-        try resolveCheckoutTarget(target)
-    }
-
-    func component(for target: NSDictionary, checkout: PaymentCheckout) throws -> CheckoutPaymentComponent? {
-        switch try resolvePaymentTarget(target) {
-        case let .paymentMethod(type):
-            guard checkout.paymentMethods?.paymentMethod(ofType: type) != nil else { return nil }
-            return try checkout.createPaymentComponent(for: type)
-        case let .storedPaymentMethod(identifier):
-            return try checkout.createPaymentComponent(for: identifier)
+    func reject(_ error: Error, rejecter: RCTPromiseRejectBlock) {
+        switch error as? CoordinatorError {
+        case .operationBusy:
+            rejecter(ErrorCode.operationBusy, "Another checkout operation is in progress", nil)
+        case .invalidTarget:
+            rejecter(ErrorCode.invalidTarget, "Payment method is not part of this checkout", nil)
+        case .unsupportedPaymentMethod:
+            rejecter(ErrorCode.unsupportedCapability, "Payment method has no native component", nil)
+        default:
+            rejecter(ErrorCode.staleCheckout, "Checkout is no longer active", nil)
         }
     }
 
@@ -991,54 +963,10 @@ extension CheckoutTurboModuleAdapter: PresentationDelegate {
 }
 
 @MainActor
-private final class TurboHeadlessPresenter: CoordinatorPresenter {
-    private var component: CheckoutPaymentComponent?
-
-    init(component: CheckoutPaymentComponent) {
-        self.component = component
-    }
-
-    func submit() {
-        component?.submit()
-    }
-
-    func dispose() {
-        component = nil
-    }
-}
-
-@MainActor
 private struct PendingResponse {
     let request: CoordinatorRequest
     let kind: String
     let resume: ([String: Any]?) -> Void
-}
-
-internal enum TurboCheckoutTarget: Hashable {
-    case paymentMethod(PaymentMethodType)
-    case storedPaymentMethod(String)
-}
-
-internal func resolveCheckoutTarget(_ target: NSDictionary) throws -> TurboCheckoutTarget {
-    guard let kind = target["kind"] as? String else {
-        throw ModuleException.invalidPaymentMethods
-    }
-    switch kind {
-    case "paymentMethod":
-        guard let type = target["type"] as? String, !type.isEmpty,
-              let paymentMethodType = PaymentMethodType(rawValue: type)
-        else {
-            throw ModuleException.invalidPaymentMethods
-        }
-        return .paymentMethod(paymentMethodType)
-    case "storedPaymentMethod":
-        guard let id = target["id"] as? String, !id.isEmpty else {
-            throw ModuleException.invalidPaymentMethods
-        }
-        return .storedPaymentMethod(id)
-    default:
-        throw ModuleException.invalidPaymentMethods
-    }
 }
 
 private enum EventKind {

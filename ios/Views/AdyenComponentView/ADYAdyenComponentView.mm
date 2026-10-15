@@ -48,22 +48,16 @@ using namespace facebook::react;
            oldProps:(Props::Shared const &)oldProps {
   const auto &newViewProps = *std::static_pointer_cast<AdyenCheckoutComponentViewProps const>(props);
 
-  const auto targetKindString = toString(newViewProps.targetKind);
   NSString *checkoutID = [NSString stringWithUTF8String:newViewProps.checkoutId.c_str()];
-  NSString *presenterID = [NSString stringWithUTF8String:newViewProps.presenterId.c_str()];
-  NSString *targetKind = [NSString stringWithUTF8String:targetKindString.c_str()];
-  NSString *targetValue = [NSString stringWithUTF8String:newViewProps.targetValue.c_str()];
-  [_proxy updateRegistrationWithCheckoutID:checkoutID
-                               presenterID:presenterID
-                                targetKind:targetKind
-                               targetValue:targetValue];
+  NSString *controllerID = [NSString stringWithUTF8String:newViewProps.controllerId.c_str()];
+  [_proxy updateBindingWithCheckoutID:checkoutID controllerID:controllerID];
 
   [super updateProps:props oldProps:oldProps];
 }
 
 - (void)prepareForRecycle {
   [super prepareForRecycle];
-  [_proxy dispose];
+  [_proxy detach];
 }
 
 #pragma mark - AdyenComponentViewProxyDelegate

@@ -28,7 +28,20 @@ internal protocol CheckoutFactory {
 @MainActor
 internal protocol CoordinatorCheckout: AnyObject {
     var checkoutState: CheckoutState? { get }
+    /// The id snapshot published to JavaScript. Every controller resolves its payment method here.
+    var paymentMethodCatalog: PaymentMethodCatalog? { get }
+    func makePaymentComponent(for paymentMethod: CatalogPaymentMethod) throws -> PaymentComponentHandle
     func dispose()
+}
+
+extension CoordinatorCheckout {
+    var paymentMethodCatalog: PaymentMethodCatalog? {
+        nil
+    }
+
+    func makePaymentComponent(for _: CatalogPaymentMethod) throws -> PaymentComponentHandle {
+        throw CoordinatorError.unsupportedPaymentMethod
+    }
 }
 
 @MainActor
@@ -79,6 +92,7 @@ private func reportCheckoutDebugAssertion(_ message: String) {
 
 internal enum CoordinatorIdentityKind: Hashable {
     case checkout
+    case controller
     case operation
     case request
 }
@@ -116,16 +130,28 @@ internal enum CoordinatorEvent: Equatable {
 internal final class NativeCheckoutFlow: CoordinatorCheckout {
 
     let checkoutContext: PaymentCheckout
+    let paymentMethodCatalog: PaymentMethodCatalog?
     private let disposeResources: @MainActor () -> Void
     private var isDisposed = false
 
     init(checkoutContext: PaymentCheckout, disposeResources: @escaping @MainActor () -> Void) {
         self.checkoutContext = checkoutContext
+        paymentMethodCatalog = checkoutContext.paymentMethods.map { PaymentMethodCatalog(paymentMethods: $0) }
         self.disposeResources = disposeResources
     }
 
     var checkoutState: CheckoutState? {
         CheckoutState(checkoutContext: checkoutContext)
+    }
+
+    func makePaymentComponent(for paymentMethod: CatalogPaymentMethod) throws -> PaymentComponentHandle {
+        switch paymentMethod {
+        case let .regular(_, type, isFirstOfType):
+            guard isFirstOfType else { throw CoordinatorError.unsupportedPaymentMethod }
+            return try checkoutContext.createPaymentComponent(for: type)
+        case let .stored(identifier):
+            return try checkoutContext.createPaymentComponent(for: identifier)
+        }
     }
 
     func dispose() {
@@ -169,8 +195,12 @@ internal final class CheckoutCoordinator {
     /// candidate. It owns a dedicated embedded operation and must never borrow an explicit
     /// headless/Drop-in operation that happens to be active.
     private var addressLookupOperationID: String?
-    private var passivePresenters: [String: PassivePresenter] = [:]
-    private var passivePresenterIDsByTarget: [TurboCheckoutTarget: String] = [:]
+    /// Controllers of the active checkout, keyed by controller id. A payment method id maps to
+    /// at most one controller, which makes creation idempotent.
+    private var controllers: [String: ComponentProxy] = [:]
+    private var controllerIDsByPaymentMethodID: [String: String] = [:]
+    /// Payment methods whose component creation failed, so availability stays a pure query.
+    private var unsupportedPaymentMethodIDs: Set<String> = []
     private var activeRequests: [String: PendingRequest] = [:]
     private var setupGeneration = 0
     private var isSettingUp = false
@@ -188,12 +218,6 @@ internal final class CheckoutCoordinator {
         let request: CoordinatorRequest
         let cancellation: CoordinatorCancellation?
         let cancellationFallback: @MainActor () -> Void
-    }
-
-    private struct PassivePresenter {
-        let checkoutID: String
-        let target: TurboCheckoutTarget
-        let presenter: CoordinatorPresenter
     }
 
     private enum OperationKind {
@@ -240,8 +264,12 @@ internal final class CheckoutCoordinator {
         activeRequests.count
     }
 
-    internal var passivePresenterCount: Int {
-        passivePresenters.count
+    internal var controllerCount: Int {
+        controllers.count
+    }
+
+    internal var paymentMethodCatalog: PaymentMethodCatalog? {
+        activeCheckout?.paymentMethodCatalog
     }
 
     internal func isActive(checkoutID: String) -> Bool {
@@ -394,6 +422,20 @@ internal final class CheckoutCoordinator {
         activeOperationKind = nil
     }
 
+    /// A retry also ends an explicit controller submission; otherwise the slot would stay
+    /// reserved after the shopper is handed back to the form.
+    internal func releaseRetriedOperation(_ operationID: String) {
+        guard activeOperationID == operationID else { return }
+        switch activeOperationKind {
+        case .embedded:
+            releaseEmbeddedOperation(operationID)
+        case .explicit:
+            completeOperation(operationID)
+        case .addressLookup, nil:
+            return
+        }
+    }
+
     /// Address lookup is an embedded SDK callback with its own lifecycle. Search callbacks can
     /// recur while lookup UI remains visible, so each search and the later selection share this
     /// one operation. An unrelated explicit operation is a contender, never a lookup owner.
@@ -433,54 +475,84 @@ internal final class CheckoutCoordinator {
         addressLookupOperationID = nil
     }
 
-    /// Registers a mounted Fabric view without acquiring the interactive operation slot.
-    ///
-    /// The SDK can only create regular components by exact payment-method type and stored
-    /// components by exact stored ID. TODO: use subtype/funding-source in this key once the
-    /// published native component-creation API accepts that precision.
-    internal func registerPassivePresenter(
-        checkoutID: String,
-        presenterID: String,
-        target: TurboCheckoutTarget,
-        presenter: CoordinatorPresenter
-    ) throws {
+    // MARK: - Controller registry
+
+    /// Returns the controller for `paymentMethodID`, creating its component eagerly on first use.
+    /// Unknown ids are `invalidTarget`; payment methods without a native component are
+    /// `unsupportedPaymentMethod`.
+    internal func createController(checkoutID: String, paymentMethodID: String) throws -> ComponentProxy {
+        guard activeCheckoutID == checkoutID, let activeCheckout else {
+            throw CoordinatorError.staleCheckout
+        }
+        guard let paymentMethod = activeCheckout.paymentMethodCatalog?.paymentMethod(for: paymentMethodID) else {
+            throw CoordinatorError.invalidTarget
+        }
+        if let controllerID = controllerIDsByPaymentMethodID[paymentMethodID],
+           let controller = controllers[controllerID] {
+            return controller
+        }
+        guard !unsupportedPaymentMethodIDs.contains(paymentMethodID) else {
+            throw CoordinatorError.unsupportedPaymentMethod
+        }
+
+        let component: PaymentComponentHandle
+        do {
+            component = try activeCheckout.makePaymentComponent(for: paymentMethod)
+        } catch {
+            unsupportedPaymentMethodIDs.insert(paymentMethodID)
+            throw CoordinatorError.unsupportedPaymentMethod
+        }
+        let controller = ComponentProxy(
+            checkoutID: checkoutID,
+            controllerID: nextID(for: .controller),
+            paymentMethodID: paymentMethodID,
+            paymentMethod: paymentMethod,
+            component: component
+        )
+        controllers[controller.controllerID] = controller
+        controllerIDsByPaymentMethodID[paymentMethodID] = controller.controllerID
+        return controller
+    }
+
+    /// Availability is answered by the component `createController` will publish, so no probe
+    /// component is built and discarded.
+    internal func isAvailable(checkoutID: String, paymentMethodID: String) throws -> Bool {
+        do {
+            _ = try createController(checkoutID: checkoutID, paymentMethodID: paymentMethodID)
+            return true
+        } catch CoordinatorError.unsupportedPaymentMethod {
+            return false
+        }
+    }
+
+    internal func controller(checkoutID: String, controllerID: String) throws -> ComponentProxy {
         guard activeCheckoutID == checkoutID else {
             throw CoordinatorError.staleCheckout
         }
-        if let existing = passivePresenters[presenterID] {
-            guard existing.presenter === presenter,
-                  existing.checkoutID == checkoutID,
-                  existing.target == target else {
-                throw CoordinatorError.presenterIDCollision
-            }
-            return
+        guard let controller = controllers[controllerID] else {
+            throw CoordinatorError.invalidTarget
         }
-        guard passivePresenterIDsByTarget[target] == nil else {
-            throw CoordinatorError.duplicatePresenterTarget
-        }
-        passivePresenters[presenterID] = PassivePresenter(checkoutID: checkoutID, target: target, presenter: presenter)
-        passivePresenterIDsByTarget[target] = presenterID
+        return controller
     }
 
-    /// Removal is identity-bound so a delayed recycle or unmount cannot unregister a newer
-    /// presenter that happens to reuse the same Fabric registration token.
-    internal func unregisterPassivePresenter(
-        checkoutID: String,
-        presenterID: String,
-        presenter: CoordinatorPresenter
-    ) {
-        guard let existing = passivePresenters[presenterID],
-              existing.checkoutID == checkoutID,
-              existing.presenter === presenter else {
+    /// Headless submission of a registry controller. The slot is reserved before the component is
+    /// asked to submit, so a busy contender never reaches the SDK.
+    @discardableResult
+    internal func submitController(checkoutID: String, controllerID: String) throws -> String {
+        let controller = try controller(checkoutID: checkoutID, controllerID: controllerID)
+        let operationID = try beginOperation { NoopCoordinatorPresenter() }
+        controller.submit()
+        return operationID
+    }
+
+    /// A detached card view can no longer show lookup UI, so its pending lookup is cancelled
+    /// while the controller itself stays registered.
+    internal func controllerDidDetach(_ controller: ComponentProxy) {
+        guard controllers[controller.controllerID] === controller,
+              controller.paymentMethod.supportsAddressLookup else {
             return
         }
-        passivePresenters.removeValue(forKey: presenterID)
-        if passivePresenterIDsByTarget[existing.target] == presenterID {
-            passivePresenterIDsByTarget.removeValue(forKey: existing.target)
-        }
-        if isAddressLookupCapable(existing.target) {
-            cancelAddressLookup(checkoutID: checkoutID)
-        }
+        cancelAddressLookup(checkoutID: controller.checkoutID)
     }
 
     @discardableResult
@@ -614,10 +686,11 @@ internal final class CheckoutCoordinator {
         activeOperationID = nil
         activeOperationKind = nil
         addressLookupOperationID = nil
-        let presenters = passivePresenters.values.map(\.presenter)
-        passivePresenters.removeAll()
-        passivePresenterIDsByTarget.removeAll()
-        presenters.forEach { $0.dispose() }
+        let registeredControllers = Array(controllers.values)
+        controllers.removeAll()
+        controllerIDsByPaymentMethodID.removeAll()
+        unsupportedPaymentMethodIDs.removeAll()
+        registeredControllers.forEach { $0.dispose() }
 
         guard let checkoutID = activeCheckoutID else { return }
         activeCheckout?.dispose()
@@ -679,14 +752,6 @@ internal final class CheckoutCoordinator {
         (configuredDependencies ?? runtimeDependencies)?.eventSink.emit(event)
     }
 
-    /// Lookup configuration is applied to the published card component, whose canonical regular
-    /// type is `scheme`. Stored components and unrelated payment-method registrations cannot own
-    /// its checkout-level lookup operation.
-    private func isAddressLookupCapable(_ target: TurboCheckoutTarget) -> Bool {
-        guard case let .paymentMethod(type) = target else { return false }
-        return type.rawValue == "scheme"
-    }
-
 }
 
 internal enum CoordinatorError: Error {
@@ -695,8 +760,9 @@ internal enum CoordinatorError: Error {
     case operationBusy
     case staleCheckout
     case staleOperation
-    case presenterIDCollision
-    case duplicatePresenterTarget
+    case invalidTarget
+    case unsupportedPaymentMethod
+    case controllerAlreadyBound
 }
 
 @MainActor

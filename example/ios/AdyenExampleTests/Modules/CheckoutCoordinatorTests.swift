@@ -4,144 +4,14 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-@testable import adyen_react_native
 import Adyen
+@testable import adyen_react_native
 import AdyenCheckout
 import UIKit
 import XCTest
 
 @MainActor
 final class CheckoutCoordinatorTests: XCTestCase {
-
-    func test_coordinatorPresenterDisposalDetachesMountedFabricChildExactlyOnce() {
-        let host = UIViewController()
-        let proxy = AdyenComponentViewProxy(frame: .zero)
-        host.view.addSubview(proxy)
-        let child = UIViewController()
-        let presenter = ComponentProxy(
-            checkoutID: "checkout",
-            presenterID: "presenter",
-            target: .storedPaymentMethod("stored"),
-            onDispose: { [weak proxy] disposedPresenter in
-                proxy?.presenterDidDispose(disposedPresenter)
-            }
-        )
-
-        proxy.installComponentViewController(child, for: presenter)
-        XCTAssertTrue(child.parent === host)
-        XCTAssertEqual(proxy.arrangedSubviews.count, 1)
-
-        presenter.dispose()
-        presenter.dispose()
-
-        XCTAssertNil(child.parent)
-        XCTAssertTrue(proxy.arrangedSubviews.isEmpty)
-    }
-
-    func test_lateOldFabricFactoryCompletionCannotAttachAfterPropReplacement() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let checkoutID = try await coordinator.setup()
-        let factory = DeferredFabricComponentFactory()
-        let proxy = AdyenComponentViewProxy(
-            frame: .zero,
-            coordinator: coordinator,
-            componentFactory: factory
-        )
-        let oldChild = UIViewController()
-        let newChild = UIViewController()
-
-        proxy.updateRegistration(
-            checkoutID: checkoutID,
-            presenterID: "presenter-old",
-            targetKind: "storedPaymentMethod",
-            targetValue: "stored-old"
-        )
-        await factory.waitForCreation(count: 1)
-
-        proxy.updateRegistration(
-            checkoutID: checkoutID,
-            presenterID: "presenter-new",
-            targetKind: "storedPaymentMethod",
-            targetValue: "stored-new"
-        )
-        await factory.waitForCreation(count: 2)
-        factory.succeed(oldChild, at: 0)
-        factory.succeed(newChild, at: 1)
-        await waitForFabricTasks()
-
-        XCTAssertEqual(factory.targets, [.storedPaymentMethod("stored-old"), .storedPaymentMethod("stored-new")])
-        XCTAssertEqual(coordinator.passivePresenterCount, 1)
-        XCTAssertNil(oldChild.parent)
-        XCTAssertTrue(proxy.arrangedSubviews.contains(newChild.view))
-        XCTAssertFalse(proxy.arrangedSubviews.contains(oldChild.view))
-    }
-
-    func test_failedReplacementFabricFactoryLeavesViewInactiveAndReleasesCanonicalKey() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let checkoutID = try await coordinator.setup()
-        let factory = DeferredFabricComponentFactory()
-        let proxy = AdyenComponentViewProxy(
-            frame: .zero,
-            coordinator: coordinator,
-            componentFactory: factory
-        )
-
-        proxy.updateRegistration(
-            checkoutID: checkoutID,
-            presenterID: "presenter-old",
-            targetKind: "storedPaymentMethod",
-            targetValue: "stored"
-        )
-        await factory.waitForCreation(count: 1)
-        factory.succeed(UIViewController(), at: 0)
-        await waitForFabricTasks()
-
-        proxy.updateRegistration(
-            checkoutID: checkoutID,
-            presenterID: "presenter-new",
-            targetKind: "storedPaymentMethod",
-            targetValue: "replacement"
-        )
-        await factory.waitForCreation(count: 2)
-        factory.fail(at: 1)
-        await waitForFabricTasks()
-
-        XCTAssertTrue(proxy.arrangedSubviews.isEmpty)
-        XCTAssertEqual(coordinator.passivePresenterCount, 0)
-
-        let recovered = PassivePresenter()
-        try coordinator.registerPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "recovered",
-            target: .storedPaymentMethod("replacement"),
-            presenter: recovered
-        )
-        XCTAssertEqual(coordinator.passivePresenterCount, 1)
-    }
-
-    func test_invalidFabricTupleDoesNotInvokeComponentFactory() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        _ = try await coordinator.setup()
-        let factory = DeferredFabricComponentFactory()
-        let proxy = AdyenComponentViewProxy(
-            frame: .zero,
-            coordinator: coordinator,
-            componentFactory: factory
-        )
-
-        proxy.updateRegistration(
-            checkoutID: nil,
-            presenterID: "presenter",
-            targetKind: "storedPaymentMethod",
-            targetValue: "stored"
-        )
-        await Task.yield()
-
-        XCTAssertTrue(factory.targets.isEmpty)
-    }
 
     func test_replacementDisposesBeforeCreatingTheNextCheckout() async throws {
         let fixture = Fixture()
@@ -331,7 +201,9 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(assertions, ["Competing embedded checkout callback"])
         XCTAssertEqual(
             fixture.events.events.filter {
-                if case .request = $0 { return true }
+                if case .request = $0 {
+                    return true
+                }
                 return false
             }.count,
             0
@@ -394,109 +266,6 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertNotEqual(freshCheckoutID, checkoutID)
     }
 
-    func test_lookupSearchTimeoutSettlesFallbackAndReleasesOnlyLookupOwnership() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let checkoutID = try await coordinator.setup()
-        let lookupPresenter = PassivePresenter()
-        let unrelatedPresenter = PassivePresenter()
-        try registerLookupCapablePresenter(lookupPresenter, checkoutID: checkoutID, coordinator: coordinator)
-        try coordinator.registerPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "stored-card",
-            target: .storedPaymentMethod("stored-card"),
-            presenter: unrelatedPresenter
-        )
-        let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
-        var fallbackCount = 0
-        let search = try coordinator.beginRequest(
-            operationID: lookupOperation,
-            kind: .addressLookupSearch,
-            timeout: 10,
-            cancellationFallback: { fallbackCount += 1 }
-        )
-
-        fixture.scheduler.fireLast()
-
-        XCTAssertEqual(fallbackCount, 1)
-        XCTAssertEqual(coordinator.passivePresenterCount, 2)
-        XCTAssertEqual(coordinator.checkoutID, checkoutID)
-        XCTAssertEqual(coordinator.pendingRequestCount, 0)
-        XCTAssertNil(coordinator.operationID)
-        XCTAssertFalse(coordinator.resolve(search))
-        guard case .acquired = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
-            return XCTFail("Lookup timeout must permit a fresh embedded operation")
-        }
-    }
-
-    func test_lookupCapableRegistrationRemovalCancelsLookupDespiteUnrelatedPassivePresenter() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let checkoutID = try await coordinator.setup()
-        let lookupPresenter = PassivePresenter()
-        let unrelatedPresenter = PassivePresenter()
-        try registerLookupCapablePresenter(lookupPresenter, checkoutID: checkoutID, coordinator: coordinator)
-        try coordinator.registerPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "stored-card",
-            target: .storedPaymentMethod("stored-card"),
-            presenter: unrelatedPresenter
-        )
-        let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
-        var fallbackCount = 0
-        let search = try coordinator.beginRequest(
-            operationID: lookupOperation,
-            kind: .addressLookupSearch,
-            timeout: 10,
-            cancellationFallback: { fallbackCount += 1 }
-        )
-
-        coordinator.unregisterPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "lookup-card",
-            presenter: lookupPresenter
-        )
-
-        XCTAssertEqual(fallbackCount, 1)
-        XCTAssertEqual(coordinator.passivePresenterCount, 1)
-        XCTAssertEqual(coordinator.pendingRequestCount, 0)
-        XCTAssertNil(coordinator.operationID)
-        XCTAssertFalse(coordinator.resolve(search))
-        XCTAssertNoThrow(try coordinator.beginOperation(checkoutID: checkoutID))
-    }
-
-    func test_lastPresenterUnmountCancelsItsAddressLookupRequestOnce() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let checkoutID = try await coordinator.setup()
-        let presenter = PassivePresenter()
-        try coordinator.registerPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "card",
-            target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
-            presenter: presenter
-        )
-        let operationID = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
-        var cancellations = 0
-        let request = try coordinator.beginRequest(
-            operationID: operationID,
-            kind: .addressLookupSearch,
-            timeout: 10,
-            cancellationFallback: { cancellations += 1 }
-        )
-
-        coordinator.unregisterPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "card",
-            presenter: presenter
-        )
-
-        XCTAssertEqual(cancellations, 1)
-        XCTAssertEqual(coordinator.pendingRequestCount, 0)
-        XCTAssertNil(coordinator.operationID)
-        XCTAssertFalse(coordinator.resolve(request))
-    }
-
     func test_addressLookupReusesItsDedicatedOperationAcrossSearchesAndSelection() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -555,37 +324,6 @@ final class CheckoutCoordinatorTests: XCTestCase {
             }
         }
         XCTAssertEqual(coordinator.operationID, explicitOperation)
-    }
-
-    func test_lookupOwnershipReleasesExactlyOnceForCheckoutCleanupTriggers() async throws {
-        let triggers: [(String, @MainActor (CheckoutCoordinator, String) async throws -> Void)] = [
-            ("replacement", { coordinator, _ in _ = try await coordinator.setup() }),
-            ("invalidation", { coordinator, _ in await coordinator.invalidate() }),
-            ("host loss", { coordinator, _ in await coordinator.hostDidDisappear() }),
-            ("terminal cleanup", { coordinator, _ in await coordinator.invalidate() })
-        ]
-
-        for (name, trigger) in triggers {
-            let fixture = Fixture()
-            let coordinator = fixture.makeCoordinator()
-            let checkoutID = try await coordinator.setup()
-            let lookupPresenter = PassivePresenter()
-            try registerLookupCapablePresenter(lookupPresenter, checkoutID: checkoutID, coordinator: coordinator)
-            let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
-            var fallbackCount = 0
-            let request = try coordinator.beginRequest(
-                operationID: lookupOperation,
-                kind: .addressLookupSelection,
-                timeout: 10,
-                cancellationFallback: { fallbackCount += 1 }
-            )
-
-            try await trigger(coordinator, checkoutID)
-            try await trigger(coordinator, checkoutID)
-
-            XCTAssertEqual(fallbackCount, 1, "\(name) must settle lookup once")
-            XCTAssertFalse(coordinator.resolve(request), "\(name) must retire the lookup request")
-        }
     }
 
     func test_requestBrokerRequiresEveryIdentityAndSettlesEachRequestOnce() async throws {
@@ -713,73 +451,6 @@ final class CheckoutCoordinatorTests: XCTestCase {
         )
     }
 
-    func test_distinctCanonicalPassivePresentersRemainIndependentUntilTheirOwnUnmount() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let checkoutID = try await coordinator.setup()
-        let first = PassivePresenter()
-        let second = PassivePresenter()
-
-        try coordinator.registerPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "card-first",
-            target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
-            presenter: first
-        )
-        try coordinator.registerPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "card-second",
-            target: .storedPaymentMethod("stored-card"),
-            presenter: second
-        )
-
-        XCTAssertEqual(coordinator.passivePresenterCount, 2)
-        XCTAssertNil(coordinator.operationID)
-
-        coordinator.unregisterPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "card-first",
-            presenter: first
-        )
-
-        XCTAssertEqual(coordinator.passivePresenterCount, 1)
-        XCTAssertEqual(first.disposeCount, 0)
-        XCTAssertEqual(second.disposeCount, 0)
-
-        await coordinator.invalidate()
-
-        XCTAssertEqual(first.disposeCount, 0)
-        XCTAssertEqual(second.disposeCount, 1)
-    }
-
-    func test_duplicateCanonicalTargetsAreRejectedWithoutReplacingTheOriginalPresenter() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let checkoutID = try await coordinator.setup()
-        let original = PassivePresenter()
-        let duplicate = PassivePresenter()
-        let target = TurboCheckoutTarget.paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme")))
-
-        try coordinator.registerPassivePresenter(
-            checkoutID: checkoutID,
-            presenterID: "card-original",
-            target: target,
-            presenter: original
-        )
-
-        XCTAssertThrowsError(
-            try coordinator.registerPassivePresenter(
-                checkoutID: checkoutID,
-                presenterID: "card-duplicate",
-                target: target,
-                presenter: duplicate
-            )
-        )
-        XCTAssertEqual(coordinator.passivePresenterCount, 1)
-        XCTAssertEqual(original.disposeCount, 0)
-        XCTAssertEqual(duplicate.disposeCount, 0)
-    }
-
     func test_embeddedOperationAcquisitionIsAnonymousAndRetryReleasesOnlyEmbeddedOwnership() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -794,34 +465,6 @@ final class CheckoutCoordinatorTests: XCTestCase {
 
         XCTAssertNil(coordinator.operationID)
         XCTAssertNotNil(coordinator.acquireEmbeddedOperation(checkoutID: checkoutID))
-    }
-
-    func test_replacementInvalidatesMountedPresenterWithoutAllowingOldCheckoutToReregister() async throws {
-        let fixture = Fixture()
-        let coordinator = fixture.makeCoordinator()
-        let oldCheckoutID = try await coordinator.setup()
-        let oldPresenter = PassivePresenter()
-        try coordinator.registerPassivePresenter(
-            checkoutID: oldCheckoutID,
-            presenterID: "card",
-            target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
-            presenter: oldPresenter
-        )
-
-        let replacementID = try await coordinator.setup()
-        XCTAssertEqual(oldPresenter.disposeCount, 1)
-        XCTAssertEqual(coordinator.passivePresenterCount, 0)
-
-        XCTAssertThrowsError(
-            try coordinator.registerPassivePresenter(
-                checkoutID: oldCheckoutID,
-                presenterID: "card",
-                target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
-                presenter: oldPresenter
-            )
-        )
-        XCTAssertEqual(coordinator.checkoutID, replacementID)
-        XCTAssertEqual(coordinator.passivePresenterCount, 0)
     }
 
     func test_invalidationWaitsForCoordinatorOwnedHostDismissal() async throws {
@@ -892,39 +535,6 @@ final class CheckoutCoordinatorTests: XCTestCase {
         await coordinator.hostDidDisappear(ownerID: "module-b")
         XCTAssertEqual(fixture.factory.checkouts.map(\.disposeCount), [1, 1])
         XCTAssertEqual(fixture.host.releaseCount, 2)
-    }
-
-    func test_generatedTargetParserPreservesRegularTypeAndExactStoredIdentity() throws {
-        switch try resolveCheckoutTarget(["kind": "paymentMethod", "type": "scheme"]) {
-        case let .paymentMethod(type):
-            XCTAssertEqual(type.rawValue, "scheme")
-        case .storedPaymentMethod:
-            XCTFail("Expected a regular payment method target")
-        }
-        switch try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": "stored-second"]) {
-        case .paymentMethod:
-            XCTFail("Expected a stored payment method target")
-        case let .storedPaymentMethod(id):
-            XCTAssertEqual(id, "stored-second")
-        }
-        XCTAssertThrowsError(try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": ""]))
-        XCTAssertThrowsError(try resolveCheckoutTarget(["kind": "unknown", "type": "scheme"]))
-    }
-
-    func test_sameTypeStoredIDsRetainExactNativeQueryAndSubmitOutcomes() throws {
-        let availableStoredIDs: Set<String> = ["stored-first", "stored-second"]
-        let scheme = try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))
-        let first = try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": "stored-first"])
-        let second = try resolveCheckoutTarget(["kind": "storedPaymentMethod", "id": "stored-second"])
-        var submitted: [TurboCheckoutTarget] = []
-
-        XCTAssertTrue(isNativeTargetAvailable(first, paymentMethodTypes: [scheme], storedIDs: availableStoredIDs))
-        XCTAssertTrue(isNativeTargetAvailable(second, paymentMethodTypes: [scheme], storedIDs: availableStoredIDs))
-        submitNativeTarget(first, submitted: &submitted)
-        submitNativeTarget(second, submitted: &submitted)
-
-        XCTAssertEqual(submitted, [first, second])
-        XCTAssertFalse(isNativeTargetAvailable(.storedPaymentMethod("missing"), paymentMethodTypes: [scheme], storedIDs: availableStoredIDs))
     }
 
     func test_everySupportedRequestKindRequiresItsExactCorrelationTuple() async throws {
@@ -1032,7 +642,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
                 _ = try await coordinator.setup()
                 var fallbackCount = 0
                 let request = try coordinator.beginRequest(
-                    operationID: try coordinator.beginOperation(),
+                    operationID: coordinator.beginOperation(),
                     kind: kind,
                     timeout: 10,
                     cancellationFallback: { fallbackCount += 1 }
@@ -1108,23 +718,553 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.checkoutID)
     }
 
-    func test_representativeSessionAndAdvancedHeadlessTargetsHaveCoordinatorOwnedIdentities() async throws {
-        let scheme = try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))
-        let targets: [(String, TurboCheckoutTarget)] = [
-            ("sessions", .paymentMethod(scheme)),
-            ("advanced", .storedPaymentMethod("stored-second"))
+    // MARK: - Payment method identity
+
+    func test_catalogStampsUniqueIDsOnRegularMethodsAndKeepsStoredIdentity() throws {
+        let paymentMethods = fixturePaymentMethods()
+        let catalog = PaymentMethodCatalog(paymentMethods: paymentMethods)
+        let other = PaymentMethodCatalog(paymentMethods: paymentMethods)
+
+        XCTAssertEqual(catalog.regularIDs.count, 4)
+        XCTAssertEqual(Set(catalog.regularIDs).count, 4)
+        XCTAssertTrue(catalog.regularIDs.allSatisfy { !$0.isEmpty })
+        XCTAssertTrue(Set(catalog.regularIDs).isDisjoint(with: other.regularIDs))
+        XCTAssertEqual(catalog.storedIDs, ["stored-card"])
+
+        let regularJSON = try XCTUnwrap(catalog.paymentMethodsJSON["paymentMethods"] as? [[String: Any]])
+        XCTAssertEqual(regularJSON.compactMap { $0["id"] as? String }, catalog.regularIDs)
+        XCTAssertEqual(regularJSON.compactMap { $0["brand"] as? String }, ["givex", "svs"])
+        let storedJSON = try XCTUnwrap(catalog.paymentMethodsJSON["storedPaymentMethods"] as? [[String: Any]])
+        XCTAssertEqual(storedJSON.compactMap { $0["id"] as? String }, ["stored-card"])
+
+        let giftcard = try XCTUnwrap(PaymentMethodType(rawValue: "giftcard"))
+        XCTAssertEqual(catalog.paymentMethod(for: catalog.regularIDs[2]), .regular(index: 2, type: giftcard, isFirstOfType: true))
+        XCTAssertEqual(catalog.paymentMethod(for: catalog.regularIDs[3]), .regular(index: 3, type: giftcard, isFirstOfType: false))
+        XCTAssertEqual(catalog.paymentMethod(for: "stored-card"), .stored(identifier: "stored-card"))
+        XCTAssertNil(catalog.paymentMethod(for: "foreign"))
+    }
+
+    func test_catalogNeverPublishesDuplicateOrEmptyIDs() {
+        var minted = ["", "same", "same", "same", "same"]
+        let catalog = PaymentMethodCatalog(paymentMethods: fixturePaymentMethods()) {
+            minted.isEmpty ? "" : minted.removeFirst()
+        }
+
+        XCTAssertEqual(Set(catalog.regularIDs).count, 4)
+        XCTAssertFalse(catalog.regularIDs.contains(""))
+        XCTAssertFalse(catalog.regularIDs.contains("stored-card"))
+    }
+
+    func test_adapterDescriptorPublishesTheActiveCheckoutsStampedPaymentMethods() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let adapter = makeAdapter(coordinator)
+        let checkoutID = try await coordinator.setup()
+
+        let descriptor = try adapter.descriptor(checkoutID: checkoutID, flow: "advanced")
+        let json = try XCTUnwrap(descriptor["paymentMethodsJson"] as? String)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        let regular = try XCTUnwrap(object["paymentMethods"] as? [[String: Any]])
+
+        XCTAssertEqual(descriptor["checkoutId"] as? String, checkoutID)
+        XCTAssertEqual(descriptor["flow"] as? String, "advanced")
+        XCTAssertEqual(regular.compactMap { $0["id"] as? String }, ["checkout1-pm-1", "checkout1-pm-2", "checkout1-pm-3", "checkout1-pm-4"])
+        XCTAssertThrowsError(try adapter.descriptor(checkoutID: "stale", flow: "advanced"))
+    }
+
+    func test_unknownPaymentMethodIDRejectsInvalidTargetWithoutCreatingComponents() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let oldCheckoutID = try await coordinator.setup()
+        let checkoutID = try await coordinator.setup()
+
+        XCTAssertThrowsError(try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "foreign")) { error in
+            XCTAssertEqual(error as? CoordinatorError, .invalidTarget)
+        }
+        XCTAssertThrowsError(try coordinator.isAvailable(checkoutID: checkoutID, paymentMethodID: "foreign")) { error in
+            XCTAssertEqual(error as? CoordinatorError, .invalidTarget)
+        }
+        XCTAssertThrowsError(try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")) { error in
+            XCTAssertEqual(error as? CoordinatorError, .invalidTarget, "ids of a replaced checkout are foreign")
+        }
+        XCTAssertThrowsError(try coordinator.createController(checkoutID: oldCheckoutID, paymentMethodID: "checkout2-pm-1")) { error in
+            XCTAssertEqual(error as? CoordinatorError, .staleCheckout)
+        }
+        XCTAssertTrue(fixture.factory.checkouts.allSatisfy(\.createdComponents.isEmpty))
+        XCTAssertEqual(coordinator.controllerCount, 0)
+
+        let controller = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout2-pm-1")
+        let created = try XCTUnwrap(fixture.factory.checkouts.last?.createdComponents.first)
+        XCTAssertEqual(created.paymentMethod, try .regular(index: 0, type: XCTUnwrap(PaymentMethodType(rawValue: "scheme")), isFirstOfType: true))
+        XCTAssertEqual(controller.paymentMethodID, "checkout2-pm-1")
+    }
+
+    // MARK: - Controller registry
+
+    func test_createControllerEagerlyBuildsOneComponentPerPaymentMethodID() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+
+        let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        XCTAssertEqual(checkout.createdComponents.count, 1, "the component exists before any view mounts")
+        XCTAssertTrue(card.requiresUserInteraction)
+        XCTAssertTrue(card.viewController === checkout.createdComponents[0].component.viewController)
+
+        let again = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        XCTAssertTrue(again === card)
+        XCTAssertEqual(checkout.createdComponents.count, 1)
+
+        let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+        let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
+        XCTAssertFalse(instant.requiresUserInteraction)
+        XCTAssertNil(instant.viewController)
+        XCTAssertTrue(stored.requiresUserInteraction)
+        XCTAssertEqual(checkout.createdComponents.map(\.paymentMethod).last, .stored(identifier: "stored-card"))
+
+        XCTAssertEqual(coordinator.controllerCount, 3)
+        XCTAssertEqual(Set([card.controllerID, instant.controllerID, stored.controllerID]).count, 3)
+        XCTAssertTrue(try coordinator.controller(checkoutID: checkoutID, controllerID: card.controllerID) === card)
+        XCTAssertNil(coordinator.operationID, "creation never reserves the operation slot")
+    }
+
+    func test_isAvailableResolvesFalseForPresentButNonCreatablePaymentMethods() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+
+        XCTAssertFalse(try coordinator.isAvailable(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-3"))
+        XCTAssertFalse(try coordinator.isAvailable(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-3"))
+        XCTAssertThrowsError(try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-3")) { error in
+            XCTAssertEqual(error as? CoordinatorError, .unsupportedPaymentMethod)
+        }
+
+        XCTAssertTrue(try coordinator.isAvailable(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1"))
+        let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        XCTAssertEqual(checkout.createdComponents.count, 1, "availability reuses the component it created")
+        XCTAssertTrue(card.viewController === checkout.createdComponents[0].component.viewController)
+        XCTAssertEqual(coordinator.controllerCount, 1)
+    }
+
+    func test_sameTypeInstancesGetDistinctControllers() async throws {
+        let fixture = Fixture()
+        fixture.factory.unsupportedTypes = []
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+
+        let first = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-3")
+        let second = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-4")
+
+        XCTAssertNotEqual(first.controllerID, second.controllerID)
+        XCTAssertEqual(checkout.createdComponents.map(\.paymentMethod), [first.paymentMethod, second.paymentMethod])
+        guard case .regular(index: 2, _, _) = first.paymentMethod,
+              case .regular(index: 3, _, _) = second.paymentMethod else {
+            return XCTFail("Each controller must resolve its exact instance")
+        }
+    }
+
+    // MARK: - Fabric binding
+
+    func test_viewEmbedsTheExistingComponentAndDetachesWithoutDisposing() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+        let controller = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let child = try XCTUnwrap(controller.viewController)
+        let host = UIViewController()
+        let proxy = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        host.view.addSubview(proxy)
+
+        proxy.updateBinding(checkoutID: checkoutID, controllerID: controller.controllerID)
+        proxy.updateBinding(checkoutID: checkoutID, controllerID: controller.controllerID)
+
+        XCTAssertEqual(checkout.createdComponents.count, 1, "mounting never creates a component")
+        XCTAssertEqual(proxy.boundControllerID, controller.controllerID)
+        XCTAssertTrue(child.parent === host)
+        XCTAssertEqual(proxy.arrangedSubviews, [child.view])
+
+        proxy.detach()
+        proxy.detach()
+
+        XCTAssertNil(child.parent)
+        XCTAssertTrue(proxy.arrangedSubviews.isEmpty)
+        XCTAssertFalse(controller.isDisposed)
+        XCTAssertFalse(controller.isBound)
+        XCTAssertEqual(coordinator.controllerCount, 1)
+
+        let remounted = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        host.view.addSubview(remounted)
+        remounted.updateBinding(checkoutID: checkoutID, controllerID: controller.controllerID)
+        XCTAssertEqual(remounted.arrangedSubviews, [child.view])
+        XCTAssertTrue(child.parent === host)
+    }
+
+    func test_secondLiveViewCannotBindTheSameControllerUntilTheFirstDetaches() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let controller = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let child = try XCTUnwrap(controller.viewController)
+        let first = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        let second = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+
+        first.updateBinding(checkoutID: checkoutID, controllerID: controller.controllerID)
+        second.updateBinding(checkoutID: checkoutID, controllerID: controller.controllerID)
+
+        XCTAssertNil(second.boundControllerID)
+        XCTAssertTrue(second.arrangedSubviews.isEmpty)
+        XCTAssertEqual(first.arrangedSubviews, [child.view])
+        XCTAssertThrowsError(try controller.bind(RecordingBinding())) { error in
+            XCTAssertEqual(error as? CoordinatorError, .controllerAlreadyBound)
+        }
+
+        second.detach()
+        XCTAssertTrue(controller.isBound, "a rejected view cannot release another view's binding")
+
+        first.detach()
+        second.updateBinding(checkoutID: checkoutID, controllerID: controller.controllerID)
+        XCTAssertEqual(second.boundControllerID, controller.controllerID)
+        XCTAssertEqual(second.arrangedSubviews, [child.view])
+    }
+
+    func test_distinctControllersMountSimultaneouslyAndPropChangesRebind() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
+        let first = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        let second = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+
+        first.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
+        second.updateBinding(checkoutID: checkoutID, controllerID: stored.controllerID)
+        XCTAssertTrue(card.isBound)
+        XCTAssertTrue(stored.isBound)
+
+        second.updateBinding(checkoutID: checkoutID, controllerID: "unknown")
+        XCTAssertFalse(stored.isBound)
+        XCTAssertNil(second.boundControllerID)
+        second.updateBinding(checkoutID: "stale", controllerID: stored.controllerID)
+        XCTAssertNil(second.boundControllerID)
+        second.updateBinding(checkoutID: nil, controllerID: nil)
+        XCTAssertNil(second.boundControllerID)
+
+        first.updateBinding(checkoutID: checkoutID, controllerID: stored.controllerID)
+        XCTAssertFalse(card.isBound)
+        XCTAssertEqual(first.arrangedSubviews, try [XCTUnwrap(stored.viewController).view])
+        XCTAssertFalse(card.isDisposed)
+        XCTAssertFalse(stored.isDisposed)
+    }
+
+    func test_controllerDisposalOnEveryTeardownPathIsExactlyOnceAndDetachesViews() async throws {
+        let triggers: [(String, @MainActor (CheckoutCoordinator, String) async throws -> Void)] = [
+            ("invalidate", { coordinator, checkoutID in try? await coordinator.invalidate(checkoutID: checkoutID) }),
+            ("replacement", { coordinator, _ in _ = try await coordinator.setup() }),
+            ("terminal", { coordinator, _ in await coordinator.invalidate() }),
+            ("host loss", { coordinator, _ in await coordinator.hostDidDisappear() })
         ]
 
-        for (_, target) in targets {
+        for (name, trigger) in triggers {
             let fixture = Fixture()
             let coordinator = fixture.makeCoordinator()
-            _ = try await coordinator.setup()
-            let operation = try coordinator.beginOperation()
+            let checkoutID = try await coordinator.setup()
+            let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+            let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
+            let child = try XCTUnwrap(card.viewController)
+            let proxy = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+            proxy.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
+            let storedRecorder = RecordingBinding()
+            try stored.bind(storedRecorder)
 
-            XCTAssertTrue(isNativeTargetAvailable(target, paymentMethodTypes: [scheme], storedIDs: ["stored-second"]))
-            XCTAssertEqual(coordinator.operationID, operation)
-            coordinator.completeOperation(operation)
-            XCTAssertEqual(fixture.presenter.disposeCount, 1)
+            try await trigger(coordinator, checkoutID)
+            try await trigger(coordinator, checkoutID)
+
+            XCTAssertTrue(card.isDisposed, name)
+            XCTAssertTrue(stored.isDisposed, name)
+            XCTAssertEqual(storedRecorder.disposals, 1, "\(name) must dispose each controller once")
+            XCTAssertNil(proxy.boundControllerID, name)
+            XCTAssertTrue(proxy.arrangedSubviews.isEmpty, name)
+            XCTAssertNil(child.view.superview, name)
+            XCTAssertThrowsError(try coordinator.controller(checkoutID: checkoutID, controllerID: card.controllerID), name) { error in
+                XCTAssertEqual(error as? CoordinatorError, .staleCheckout)
+            }
+            proxy.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
+            XCTAssertNil(proxy.boundControllerID, "\(name) must not let a stale controller rebind")
+        }
+    }
+
+    func test_replacementDisposesControllersBeforeCreatingTheNextCheckout() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let oldCheckoutID = try await coordinator.setup()
+        let controller = try coordinator.createController(checkoutID: oldCheckoutID, paymentMethodID: "checkout1-pm-1")
+        let recorder = RecordingBinding()
+        recorder.ledger = fixture.ledger
+        try controller.bind(recorder)
+
+        let replacementID = try await coordinator.setup()
+
+        XCTAssertEqual(fixture.log, ["create-1", "controller-disposed", "dispose-1", "host-release", "create-2"])
+        XCTAssertEqual(coordinator.controllerCount, 0)
+        XCTAssertThrowsError(try coordinator.submitController(checkoutID: oldCheckoutID, controllerID: controller.controllerID)) { error in
+            XCTAssertEqual(error as? CoordinatorError, .staleCheckout)
+        }
+        XCTAssertThrowsError(try coordinator.createController(checkoutID: oldCheckoutID, paymentMethodID: "checkout1-pm-1")) { error in
+            XCTAssertEqual(error as? CoordinatorError, .staleCheckout)
+        }
+        let replacement = try coordinator.createController(checkoutID: replacementID, paymentMethodID: "checkout2-pm-1")
+        XCTAssertNotEqual(replacement.controllerID, controller.controllerID)
+
+        fixture.factory.shouldFail = true
+        do {
+            _ = try await coordinator.setup()
+            XCTFail("Expected the replacement to fail")
+        } catch {
+            XCTAssertNil(coordinator.checkoutID)
+            XCTAssertTrue(replacement.isDisposed)
+            XCTAssertEqual(coordinator.controllerCount, 0)
+            XCTAssertNil(coordinator.paymentMethodCatalog)
+        }
+    }
+
+    // MARK: - Headless submit
+
+    func test_submitControllerUsesTheRegistryComponentThroughTheOperationSlot() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+        let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+        let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let instantComponent = checkout.createdComponents[0].component
+        let cardComponent = checkout.createdComponents[1].component
+
+        let operationID = try coordinator.submitController(checkoutID: checkoutID, controllerID: instant.controllerID)
+
+        XCTAssertEqual(instantComponent.submitCount, 1)
+        XCTAssertEqual(checkout.createdComponents.count, 2, "submit never creates a component")
+        XCTAssertEqual(fixture.presenterFactory.createCount, 0)
+        XCTAssertEqual(coordinator.operationID, operationID)
+
+        XCTAssertThrowsError(try coordinator.submitController(checkoutID: checkoutID, controllerID: card.controllerID)) { error in
+            XCTAssertEqual(error as? CoordinatorError, .operationBusy)
+        }
+        XCTAssertEqual(cardComponent.submitCount, 0)
+        XCTAssertThrowsError(try coordinator.submitController(checkoutID: checkoutID, controllerID: "unknown")) { error in
+            XCTAssertEqual(error as? CoordinatorError, .invalidTarget)
+        }
+
+        guard case let .explicit(adopted) = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("The SDK submit callback must adopt the controller operation")
+        }
+        XCTAssertEqual(adopted, operationID)
+        let retry = try coordinator.beginRequest(operationID: operationID, kind: .advancedSubmit, timeout: 10)
+        XCTAssertTrue(coordinator.resolve(retry))
+        coordinator.releaseRetriedOperation(operationID)
+        XCTAssertNil(coordinator.operationID, "a retry must not wedge the slot")
+        XCTAssertFalse(instant.isDisposed, "releasing the slot never disposes the controller")
+
+        try coordinator.submitController(checkoutID: checkoutID, controllerID: card.controllerID)
+        XCTAssertEqual(cardComponent.submitCount, 1)
+    }
+
+    func test_cleanupSettlesPendingControllerRequestsOnceWithoutListeners() async throws {
+        let triggers: [(String, @MainActor (CheckoutCoordinator) async throws -> Void)] = [
+            ("invalidate", { coordinator in await coordinator.invalidate() }),
+            ("replacement", { coordinator in _ = try await coordinator.setup() }),
+            ("host loss", { coordinator in await coordinator.hostDidDisappear() })
+        ]
+
+        for (name, trigger) in triggers {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator(eventSink: DiscardingEventSink())
+            let checkoutID = try await coordinator.setup()
+            let controller = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+            let operationID = try coordinator.submitController(checkoutID: checkoutID, controllerID: controller.controllerID)
+            var fallbacks = 0
+            let submit = try coordinator.beginRequest(
+                operationID: operationID,
+                kind: .advancedSubmit,
+                timeout: 10,
+                cancellationFallback: { fallbacks += 1 }
+            )
+            let details = try coordinator.beginRequest(
+                operationID: operationID,
+                kind: .advancedAdditionalDetails,
+                timeout: 10,
+                cancellationFallback: { fallbacks += 1 }
+            )
+
+            try await trigger(coordinator)
+            try await trigger(coordinator)
+
+            XCTAssertEqual(fallbacks, 2, "\(name) must settle each request once")
+            XCTAssertEqual(coordinator.pendingRequestCount, 0, name)
+            XCTAssertFalse(coordinator.resolve(submit), name)
+            XCTAssertFalse(coordinator.resolve(details), name)
+            XCTAssertTrue(controller.isDisposed, name)
+            XCTAssertTrue(fixture.scheduler.cancellations.allSatisfy(\.cancelled), name)
+        }
+    }
+
+    // MARK: - Adapter commands
+
+    func test_adapterControllerCommandsResolveDescriptorsAndMapErrors() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let adapter = makeAdapter(coordinator)
+        let checkoutID = try await coordinator.setup()
+
+        let created = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+        let descriptor = try XCTUnwrap(created.value as? NSDictionary)
+        let controllerID = try XCTUnwrap(descriptor["controllerId"] as? String)
+        XCTAssertEqual(descriptor["requiresUserInteraction"] as? Bool, true)
+        let again = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+        XCTAssertEqual((again.value as? NSDictionary)?["controllerId"] as? String, controllerID)
+        let instant = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-2", resolver: $0, rejecter: $1) }
+        XCTAssertEqual((instant.value as? NSDictionary)?["requiresUserInteraction"] as? Bool, false)
+
+        let available = await settle { adapter.isAvailable(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+        XCTAssertEqual(available.value as? Bool, true)
+        let unavailable = await settle { adapter.isAvailable(checkoutID, paymentMethodID: "checkout1-pm-3", resolver: $0, rejecter: $1) }
+        XCTAssertEqual(unavailable.value as? Bool, false)
+        XCTAssertNil(unavailable.code)
+        let foreign = await settle { adapter.isAvailable(checkoutID, paymentMethodID: "foreign", resolver: $0, rejecter: $1) }
+        XCTAssertEqual(foreign.code, "invalidTarget")
+        let foreignController = await settle { adapter.createController(checkoutID, paymentMethodID: "foreign", resolver: $0, rejecter: $1) }
+        XCTAssertEqual(foreignController.code, "invalidTarget")
+        let unsupported = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-3", resolver: $0, rejecter: $1) }
+        XCTAssertEqual(unsupported.code, "unsupportedCapability")
+
+        let submitted = await settle { adapter.submitController(checkoutID, controllerID: controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertTrue(submitted.resolved)
+        XCTAssertEqual(fixture.factory.checkouts.last?.createdComponents.first?.component.submitCount, 1)
+        let busy = await settle { adapter.submitController(checkoutID, controllerID: controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertEqual(busy.code, "operationBusy")
+
+        await coordinator.invalidate()
+        let stale = await settle { adapter.submitController(checkoutID, controllerID: controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertEqual(stale.code, "staleCheckout")
+        let staleAvailability = await settle { adapter.isAvailable(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+        XCTAssertEqual(staleAvailability.code, "staleCheckout")
+        let staleCreation = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+        XCTAssertEqual(staleCreation.code, "staleCheckout")
+    }
+
+    // MARK: - Address lookup ownership
+
+    func test_detachingTheCardViewCancelsLookupButKeepsTheController() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
+        let cardView = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        let storedView = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        cardView.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
+        storedView.updateBinding(checkoutID: checkoutID, controllerID: stored.controllerID)
+        let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+        var fallbacks = 0
+        let search = try coordinator.beginRequest(
+            operationID: lookupOperation,
+            kind: .addressLookupSearch,
+            timeout: 10,
+            cancellationFallback: { fallbacks += 1 }
+        )
+
+        storedView.detach()
+        XCTAssertEqual(fallbacks, 0, "an unrelated view cannot cancel lookup")
+        XCTAssertEqual(coordinator.operationID, lookupOperation)
+
+        cardView.detach()
+        XCTAssertEqual(fallbacks, 1)
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertFalse(coordinator.resolve(search))
+        XCTAssertEqual(coordinator.controllerCount, 2)
+        XCTAssertFalse(card.isDisposed)
+    }
+
+    func test_lookupSearchTimeoutSettlesFallbackAndReleasesOnlyLookupOwnership() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        _ = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+        var fallbackCount = 0
+        let search = try coordinator.beginRequest(
+            operationID: lookupOperation,
+            kind: .addressLookupSearch,
+            timeout: 10,
+            cancellationFallback: { fallbackCount += 1 }
+        )
+
+        fixture.scheduler.fireLast()
+
+        XCTAssertEqual(fallbackCount, 1)
+        XCTAssertEqual(coordinator.controllerCount, 1)
+        XCTAssertEqual(coordinator.checkoutID, checkoutID)
+        XCTAssertEqual(coordinator.pendingRequestCount, 0)
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertFalse(coordinator.resolve(search))
+        guard case .acquired = coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) else {
+            return XCTFail("Lookup timeout must permit a fresh embedded operation")
+        }
+    }
+
+    func test_lookupOwnershipReleasesExactlyOnceForCheckoutCleanupTriggers() async throws {
+        let triggers: [(String, @MainActor (CheckoutCoordinator, String) async throws -> Void)] = [
+            ("replacement", { coordinator, _ in _ = try await coordinator.setup() }),
+            ("invalidation", { coordinator, _ in await coordinator.invalidate() }),
+            ("host loss", { coordinator, _ in await coordinator.hostDidDisappear() }),
+            ("terminal cleanup", { coordinator, checkoutID in try? await coordinator.invalidate(checkoutID: checkoutID) })
+        ]
+
+        for (name, trigger) in triggers {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            let checkoutID = try await coordinator.setup()
+            _ = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+            let lookupOperation = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+            var fallbackCount = 0
+            let request = try coordinator.beginRequest(
+                operationID: lookupOperation,
+                kind: .addressLookupSelection,
+                timeout: 10,
+                cancellationFallback: { fallbackCount += 1 }
+            )
+
+            try await trigger(coordinator, checkoutID)
+            try await trigger(coordinator, checkoutID)
+
+            XCTAssertEqual(fallbackCount, 1, "\(name) must settle lookup once")
+            XCTAssertFalse(coordinator.resolve(request), "\(name) must retire the lookup request")
+        }
+    }
+
+    private func makeAdapter(_ coordinator: CheckoutCoordinator) -> CheckoutTurboModuleAdapter {
+        CheckoutTurboModuleAdapter(coordinator: coordinator) { checkoutID in
+            try coordinator.assertDropInAvailability(checkoutID: checkoutID)
+        }
+    }
+
+    private struct PromiseOutcome {
+        var resolved = false
+        var value: Any?
+        var code: String?
+    }
+
+    private func settle(
+        _ call: (@escaping (Any?) -> Void, @escaping (String?, String?, Error?) -> Void) -> Void
+    ) async -> PromiseOutcome {
+        await withCheckedContinuation { continuation in
+            call(
+                { value in continuation.resume(returning: PromiseOutcome(resolved: true, value: value)) },
+                { code, _, _ in continuation.resume(returning: PromiseOutcome(code: code)) }
+            )
         }
     }
 
@@ -1171,6 +1311,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
     private final class Factory: CheckoutFactory {
         let ledger: Ledger
         var shouldFail = false
+        var unsupportedTypes: Set<String> = ["giftcard"]
         var onCreate: (@MainActor () async -> Void)?
         private(set) var checkouts: [Checkout] = []
 
@@ -1184,7 +1325,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
                 ledger.entries.append("create-failed")
                 throw TestError.factory
             }
-            let checkout = Checkout(ledger: ledger, number: checkouts.count + 1)
+            let checkout = Checkout(ledger: ledger, number: checkouts.count + 1, unsupportedTypes: unsupportedTypes)
             checkouts.append(checkout)
             return checkout
         }
@@ -1194,16 +1335,38 @@ final class CheckoutCoordinatorTests: XCTestCase {
     private final class Checkout: CoordinatorCheckout {
         let ledger: Ledger
         let number: Int
+        let paymentMethodCatalog: PaymentMethodCatalog?
+        private let unsupportedTypes: Set<String>
         private(set) var disposeCount = 0
+        private(set) var createdComponents: [(paymentMethod: CatalogPaymentMethod, component: FakeComponent)] = []
 
-        init(ledger: Ledger, number: Int) {
+        init(ledger: Ledger, number: Int, unsupportedTypes: Set<String>) {
             self.ledger = ledger
             self.number = number
+            self.unsupportedTypes = unsupportedTypes
+            var nextID = 0
+            paymentMethodCatalog = PaymentMethodCatalog(paymentMethods: fixturePaymentMethods()) {
+                nextID += 1
+                return "checkout\(number)-pm-\(nextID)"
+            }
             ledger.entries.append("create-\(number)")
         }
 
         var checkoutState: CheckoutState? {
             nil
+        }
+
+        func makePaymentComponent(for paymentMethod: CatalogPaymentMethod) throws -> PaymentComponentHandle {
+            let component: FakeComponent
+            switch paymentMethod {
+            case let .regular(_, type, _):
+                guard !unsupportedTypes.contains(type.rawValue) else { throw TestError.factory }
+                component = FakeComponent(hasView: type.rawValue != "paypal")
+            case .stored:
+                component = FakeComponent(hasView: true)
+            }
+            createdComponents.append((paymentMethod, component))
+            return component
         }
 
         func dispose() {
@@ -1237,44 +1400,27 @@ final class CheckoutCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    private final class PassivePresenter: CoordinatorPresenter {
-        private(set) var disposeCount = 0
+    private final class FakeComponent: PaymentComponentHandle {
+        let viewController: UIViewController?
+        private(set) var submitCount = 0
 
-        func dispose() {
-            disposeCount += 1
+        init(hasView: Bool) {
+            viewController = hasView ? UIViewController() : nil
+        }
+
+        func submit() {
+            submitCount += 1
         }
     }
 
     @MainActor
-    private final class DeferredFabricComponentFactory: FabricComponentFactory {
-        private var continuations: [CheckedContinuation<UIViewController?, Error>] = []
-        private(set) var targets: [TurboCheckoutTarget] = []
+    private final class RecordingBinding: ControllerViewBinding {
+        var ledger: Ledger?
+        private(set) var disposals = 0
 
-        func makeViewController(for target: TurboCheckoutTarget) async throws -> UIViewController? {
-            targets.append(target)
-            return try await withCheckedThrowingContinuation { continuation in
-                continuations.append(continuation)
-            }
-        }
-
-        func waitForCreation(count: Int) async {
-            while targets.count < count {
-                await Task.yield()
-            }
-        }
-
-        func succeed(_ viewController: UIViewController, at index: Int) {
-            continuations[index].resume(returning: viewController)
-        }
-
-        func fail(at index: Int) {
-            continuations[index].resume(throwing: TestError.factory)
-        }
-    }
-
-    private func waitForFabricTasks() async {
-        for _ in 0 ..< 10 {
-            await Task.yield()
+        func controllerDidDispose(_: ComponentProxy) {
+            disposals += 1
+            ledger?.entries.append("controller-disposed")
         }
     }
 
@@ -1301,6 +1447,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
             nextByKind[kind] = next
             switch kind {
             case .checkout: return "checkout-\(next)"
+            case .controller: return "controller-\(next)"
             case .operation: return "operation-\(next)"
             case .request: return "request-\(next)"
             }
@@ -1359,37 +1506,30 @@ final class CheckoutCoordinatorTests: XCTestCase {
     }
 }
 
-@MainActor
-private func registerLookupCapablePresenter(
-    _ presenter: CoordinatorPresenter,
-    checkoutID: String,
-    coordinator: CheckoutCoordinator
-) throws {
-    try coordinator.registerPassivePresenter(
-        checkoutID: checkoutID,
-        presenterID: "lookup-card",
-        target: .paymentMethod(try XCTUnwrap(PaymentMethodType(rawValue: "scheme"))),
-        presenter: presenter
-    )
-}
-
-@MainActor
-private func isNativeTargetAvailable(
-    _ target: TurboCheckoutTarget,
-    paymentMethodTypes: Set<PaymentMethodType>,
-    storedIDs: Set<String>
-) -> Bool {
-    switch target {
-    case let .paymentMethod(type):
-        paymentMethodTypes.contains(type)
-    case let .storedPaymentMethod(id):
-        storedIDs.contains(id)
-    }
-}
-
-@MainActor
-private func submitNativeTarget(_ target: TurboCheckoutTarget, submitted: inout [TurboCheckoutTarget]) {
-    submitted.append(target)
+private func fixturePaymentMethods() -> PaymentMethods {
+    let json: [String: Any] = [
+        "paymentMethods": [
+            ["type": "scheme", "name": "Cards", "brands": ["visa", "mc"]],
+            ["type": "paypal", "name": "PayPal"],
+            ["type": "giftcard", "name": "Givex", "brand": "givex"],
+            ["type": "giftcard", "name": "SVS", "brand": "svs"]
+        ],
+        "storedPaymentMethods": [
+            [
+                "type": "scheme",
+                "id": "stored-card",
+                "name": "VISA",
+                "brand": "visa",
+                "lastFour": "1111",
+                "expiryMonth": "03",
+                "expiryYear": "2030",
+                "holderName": "Checkout Shopper",
+                "supportedShopperInteractions": ["Ecommerce", "ContAuth"]
+            ]
+        ]
+    ]
+    // swiftlint:disable:next force_try
+    return try! (json as NSDictionary).decode()
 }
 
 @MainActor

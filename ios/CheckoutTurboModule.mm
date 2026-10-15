@@ -22,17 +22,17 @@
              resolver:(RCTPromiseResolveBlock)resolve
              rejecter:(RCTPromiseRejectBlock)reject;
 - (void)isAvailable:(NSString *)checkoutID
-              target:(NSDictionary *)target
-           resolver:(RCTPromiseResolveBlock)resolve
-           rejecter:(RCTPromiseRejectBlock)reject;
-- (void)requiresUserInteraction:(NSString *)checkoutID
-                          target:(NSDictionary *)target
-                       resolver:(RCTPromiseResolveBlock)resolve
-                       rejecter:(RCTPromiseRejectBlock)reject;
-- (void)submit:(NSString *)checkoutID
-         target:(NSDictionary *)target
-       resolver:(RCTPromiseResolveBlock)resolve
-       rejecter:(RCTPromiseRejectBlock)reject;
+     paymentMethodID:(NSString *)paymentMethodID
+            resolver:(RCTPromiseResolveBlock)resolve
+            rejecter:(RCTPromiseRejectBlock)reject;
+- (void)createController:(NSString *)checkoutID
+         paymentMethodID:(NSString *)paymentMethodID
+                resolver:(RCTPromiseResolveBlock)resolve
+                rejecter:(RCTPromiseRejectBlock)reject;
+- (void)submitController:(NSString *)checkoutID
+            controllerID:(NSString *)controllerID
+                resolver:(RCTPromiseResolveBlock)resolve
+                rejecter:(RCTPromiseRejectBlock)reject;
 - (void)startDropIn:(NSString *)checkoutID
             resolver:(RCTPromiseResolveBlock)resolve
             rejecter:(RCTPromiseRejectBlock)reject;
@@ -119,27 +119,27 @@
 }
 
 - (void)isAvailable:(NSString *)checkoutId
-             target:(NSDictionary *)target
+    paymentMethodId:(NSString *)paymentMethodId
             resolve:(RCTPromiseResolveBlock)resolve
              reject:(RCTPromiseRejectBlock)reject
 {
-  [_adapter isAvailable:checkoutId target:target resolver:resolve rejecter:reject];
+  [_adapter isAvailable:checkoutId paymentMethodID:paymentMethodId resolver:resolve rejecter:reject];
 }
 
-- (void)requiresUserInteraction:(NSString *)checkoutId
-                         target:(NSDictionary *)target
-                        resolve:(RCTPromiseResolveBlock)resolve
-                         reject:(RCTPromiseRejectBlock)reject
+- (void)createController:(NSString *)checkoutId
+         paymentMethodId:(NSString *)paymentMethodId
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject
 {
-  [_adapter requiresUserInteraction:checkoutId target:target resolver:resolve rejecter:reject];
+  [_adapter createController:checkoutId paymentMethodID:paymentMethodId resolver:resolve rejecter:reject];
 }
 
-- (void)submit:(NSString *)checkoutId
-        target:(NSDictionary *)target
-       resolve:(RCTPromiseResolveBlock)resolve
-        reject:(RCTPromiseRejectBlock)reject
+- (void)submitController:(NSString *)checkoutId
+            controllerId:(NSString *)controllerId
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject
 {
-  [_adapter submit:checkoutId target:target resolver:resolve rejecter:reject];
+  [_adapter submitController:checkoutId controllerID:controllerId resolver:resolve rejecter:reject];
 }
 
 - (void)startDropIn:(NSString *)checkoutId
