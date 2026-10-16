@@ -25,6 +25,9 @@ import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -92,6 +95,7 @@ internal class ComponentManager(
 
   private var submitContinuation: CancellableContinuation<SubmitResult>? = null
   private var additionalDetailsContinuation: CancellableContinuation<AdditionalDetailsResult>? = null
+  private var controllerScope: CoroutineScope? = null
   private var disposed = false
   private var isCreating = false
   private var creationFailed = false
@@ -101,9 +105,10 @@ internal class ComponentManager(
     get() = submitContinuation != null || additionalDetailsContinuation != null
 
   /**
-   * Creates the controller eagerly. The pinned SDK reports a payment method it cannot build by
-   * returning a failed controller that fires `onFailure` synchronously during construction; that
-   * failure means "not creatable" here and is never forwarded as a checkout terminal error.
+   * Creates the controller eagerly. The pinned SDK reports a payment method it cannot build in
+   * two ways: a failed controller that fires `onFailure` synchronously during construction, or a
+   * component factory that throws (e.g. Google Pay without a gateway merchant id). Both mean
+   * "not creatable" here and are never forwarded as a checkout terminal error.
    */
   fun createController(
     context: CheckoutContext,
@@ -117,19 +122,35 @@ internal class ComponentManager(
         is CheckoutContext.Advanced -> advancedCallbacks()
         else -> return null
       }
+    // A child scope lets a failed construction cancel whatever the SDK already launched without
+    // cancelling the activity scope shared by every other controller.
+    val scope = controllerScope()
     isCreating = true
     val controller =
       try {
-        controllerFactory.create(target, context, callbacks, activity.lifecycleScope)
+        controllerFactory.create(target, context, callbacks, scope)
+      } catch (_: Exception) {
+        null
       } finally {
         isCreating = false
       }
     if (disposed || creationFailed || controller == null) {
+      creationFailed = true
+      scope.cancel()
       dispose()
       return null
     }
+    controllerScope = scope
     checkoutController = controller
     return controller
+  }
+
+  /** Releases a controller whose construction succeeded but which cannot be registered. */
+  fun discardController() {
+    creationFailed = true
+    controllerScope?.cancel()
+    controllerScope = null
+    dispose()
   }
 
   fun handleAction(action: Action) {
@@ -226,8 +247,14 @@ internal class ComponentManager(
 
   private val defaultBlock: CheckoutCallbacks.() -> Unit = {}
 
+  private fun controllerScope(): CoroutineScope {
+    val parent = activity.lifecycleScope.coroutineContext
+    return CoroutineScope(parent + SupervisorJob(parent[Job]))
+  }
+
   private fun onFailure() {
-    if (isCreating) {
+    // The SDK may still hold the callbacks of an abandoned construction; its failures stay silent.
+    if (isCreating || creationFailed) {
       creationFailed = true
       return
     }

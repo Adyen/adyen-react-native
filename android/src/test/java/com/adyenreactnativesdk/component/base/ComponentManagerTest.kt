@@ -7,6 +7,7 @@
 package com.adyenreactnativesdk.component.base
 
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.components.AdditionalDetailsResult
@@ -17,13 +18,19 @@ import com.adyen.checkout.core.components.SessionCheckoutResult
 import com.adyen.checkout.core.components.SubmitResult
 import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyen.checkout.core.error.CheckoutError
+import com.adyen.checkout.core.error.internal.GenericError
 import com.adyenreactnativesdk.react.sdkField
 import com.adyenreactnativesdk.react.submit
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -75,6 +82,75 @@ class ComponentManagerTest {
     val controller = manager.createController(mock<CheckoutContext.Advanced>(), CheckoutTarget.PaymentMethod("giftcard"))
 
     assertNull(controller)
+    assertNull(manager.checkoutController)
+    assertTrue(sink.calls.isEmpty())
+  }
+
+  @Test
+  fun `a throwing SDK factory is not creatable and cancels work it launched`() {
+    val sink = RecordingSink()
+    val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
+    var launched: Job? = null
+    var sdkCallbacks: CheckoutCallbacks? = null
+    val manager =
+      ComponentManager(
+        activity = activity,
+        eventSink = sink,
+        controllerFactory = { _, _, callbacks, scope ->
+          sdkCallbacks = callbacks
+          launched = scope.launch { awaitCancellation() }
+          throw GenericError("Gateway merchant id is missing")
+        },
+      )
+
+    val controller = manager.createController(mock<CheckoutContext.Advanced>(), CheckoutTarget.PaymentMethod("googlepay"))
+    checkNotNull(sdkCallbacks).sdkField<(CheckoutError) -> Unit>("onFailure").invoke(mock())
+
+    assertNull(controller)
+    assertNull(manager.checkoutController)
+    assertTrue(checkNotNull(launched).isCancelled)
+    assertTrue("the shared activity scope survives", activity.lifecycleScope.isActive)
+    assertTrue("a late failure from an abandoned construction stays silent", sink.calls.isEmpty())
+    assertNull(manager.createController(mock<CheckoutContext.Advanced>(), CheckoutTarget.PaymentMethod("googlepay")))
+  }
+
+  @Test
+  fun `an SDK factory that reports failure and then throws is not creatable`() {
+    val sink = RecordingSink()
+    val manager =
+      manager(sink) { callbacks ->
+        callbacks.sdkField<(CheckoutError) -> Unit>("onFailure").invoke(mock())
+        throw GenericError("Construction failed")
+      }
+
+    assertNull(manager.createController(mock<CheckoutContext.Advanced>(), CheckoutTarget.PaymentMethod("googlepay")))
+    assertNull(manager.checkoutController)
+    assertTrue(sink.calls.isEmpty())
+  }
+
+  @Test
+  fun `discarding a created controller cancels its scope and silences later failures`() {
+    val sink = RecordingSink()
+    var launched: Job? = null
+    var sdkCallbacks: CheckoutCallbacks? = null
+    val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
+    val manager =
+      ComponentManager(
+        activity = activity,
+        eventSink = sink,
+        controllerFactory = { _, _, callbacks, scope ->
+          sdkCallbacks = callbacks
+          launched = scope.launch { awaitCancellation() }
+          mock<CheckoutController>()
+        },
+      )
+    assertNotNull(manager.createController(mock<CheckoutContext.Advanced>(), CheckoutTarget.PaymentMethod("scheme")))
+    assertFalse(checkNotNull(launched).isCancelled)
+
+    manager.discardController()
+    checkNotNull(sdkCallbacks).sdkField<(CheckoutError) -> Unit>("onFailure").invoke(mock())
+
+    assertTrue(checkNotNull(launched).isCancelled)
     assertNull(manager.checkoutController)
     assertTrue(sink.calls.isEmpty())
   }

@@ -81,7 +81,13 @@ internal class ComponentController private constructor(
     ): ComponentController? {
       val owner = ComponentController(activity, checkoutId, state.sessionBeforeSubmitBridge, controllerFactory)
       val controller = owner.manager.createController(state.checkoutContext, target) ?: return null
-      owner.requiresUserInteraction = controller.requiresUserInteraction()
+      owner.requiresUserInteraction =
+        try {
+          controller.requiresUserInteraction()
+        } catch (_: Exception) {
+          owner.manager.discardController()
+          return null
+        }
       return owner
     }
   }

@@ -15,6 +15,7 @@ import com.adyen.checkout.core.components.SubmitResult
 import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyen.checkout.core.error.CheckoutError
+import com.adyen.checkout.core.error.internal.GenericError
 import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.CheckoutFragment
 import com.adyenreactnativesdk.component.base.CheckoutState
@@ -41,7 +42,10 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.After
@@ -195,6 +199,80 @@ class AndroidCheckoutModuleTest {
     assertEquals("creation is attempted once and remembered", 1, harness.factory.targets.size)
     assertTrue(harness.events.none { it is CoordinatorEvent.Terminal })
     assertTrue(CheckoutCoordinator.shared.isActive(checkoutId))
+    assertEquals(0, CheckoutCoordinator.shared.controllerCount())
+  }
+
+  @Test
+  fun `a throwing SDK factory resolves unavailable once, cleans up, and leaves checkout usable`() {
+    val harness = Harness(ControllerFactory(throwingTypes = setOf("paypal")))
+    val checkoutId = harness.setupAdvanced()
+    val ids = harness.regularIds(checkoutId)
+
+    val available = harness.isAvailable(checkoutId, ids.getValue("paypal"))
+    val created = harness.createController(checkoutId, ids.getValue("paypal"))
+    val availableAgain = harness.isAvailable(checkoutId, ids.getValue("paypal"))
+
+    assertEquals(false, available.value)
+    assertNull(available.code)
+    assertEquals(1, available.settlements)
+    assertUnsupportedPaymentMethod(created)
+    assertEquals(1, created.settlements)
+    assertEquals(false, availableAgain.value)
+    assertEquals(1, availableAgain.settlements)
+    assertEquals("the unavailable id is cached", 1, harness.factory.targets.size)
+    assertTrue(
+      harness.factory.launchedJobs
+        .single()
+        .isCancelled,
+    )
+    assertTrue(harness.events.none { it is CoordinatorEvent.Terminal })
+    assertTrue(CheckoutCoordinator.shared.isActive(checkoutId))
+    assertEquals(0, CheckoutCoordinator.shared.controllerCount())
+
+    val card = harness.createController(checkoutId, ids.getValue("scheme"))
+    assertNotNull(card.controllerId())
+    assertEquals(1, card.settlements)
+    assertEquals(1, CheckoutCoordinator.shared.controllerCount())
+  }
+
+  @Test
+  fun `createController on a throwing SDK factory rejects unsupportedCapability exactly once`() {
+    val harness = Harness(ControllerFactory(throwingTypes = setOf("paypal")))
+    val checkoutId = harness.setupAdvanced()
+    val paypalId = harness.regularIds(checkoutId).getValue("paypal")
+
+    val created = harness.createController(checkoutId, paypalId)
+    val available = harness.isAvailable(checkoutId, paypalId)
+
+    assertUnsupportedPaymentMethod(created)
+    assertEquals(1, created.settlements)
+    assertEquals(false, available.value)
+    assertEquals(1, available.settlements)
+    assertEquals(1, harness.factory.targets.size)
+    assertTrue(harness.events.none { it is CoordinatorEvent.Terminal })
+    assertEquals(0, CheckoutCoordinator.shared.controllerCount())
+  }
+
+  @Test
+  fun `a controller whose interaction query throws is discarded and unavailable`() {
+    val harness = Harness(ControllerFactory(throwingInteractionTypes = setOf("paypal")))
+    val checkoutId = harness.setupAdvanced()
+    val paypalId = harness.regularIds(checkoutId).getValue("paypal")
+
+    val available = harness.isAvailable(checkoutId, paypalId)
+    val created = harness.createController(checkoutId, paypalId)
+
+    assertEquals(false, available.value)
+    assertEquals(1, available.settlements)
+    assertUnsupportedPaymentMethod(created)
+    assertEquals(1, created.settlements)
+    assertTrue(
+      harness.factory.launchedJobs
+        .single()
+        .isCancelled,
+    )
+    assertEquals(1, harness.factory.targets.size)
+    assertTrue(harness.events.none { it is CoordinatorEvent.Terminal })
     assertEquals(0, CheckoutCoordinator.shared.controllerCount())
   }
 
@@ -420,14 +498,20 @@ class AndroidCheckoutModuleTest {
     ): PromiseRecorder = PromiseRecorder().also { module.createController(checkoutId, paymentMethodId, it) }
   }
 
-  /** SDK seam: builds a mock controller per target, or reports failure like the pinned SDK does. */
+  /**
+   * SDK seam: builds a mock controller per target, or fails construction through either channel
+   * the pinned SDK uses: a synchronous `onFailure` callback or a throwing component factory.
+   */
   private class ControllerFactory(
     private val failingTypes: Set<String> = emptySet(),
     private val headlessTypes: Set<String> = emptySet(),
+    private val throwingTypes: Set<String> = emptySet(),
+    private val throwingInteractionTypes: Set<String> = emptySet(),
   ) : NativeControllerFactory {
     val targets = mutableListOf<CheckoutTarget>()
     val controllers = mutableListOf<CheckoutController>()
     val callbacks = mutableListOf<CheckoutCallbacks>()
+    val launchedJobs = mutableListOf<Job>()
 
     override fun create(
       target: CheckoutTarget,
@@ -442,9 +526,19 @@ class AndroidCheckoutModuleTest {
         callbacks.sdkField<(CheckoutError) -> Unit>("onFailure").invoke(mock())
         return mock()
       }
+      if (type in throwingTypes) {
+        // Mirrors GooglePayComponentParamsMapper throwing after the SDK started construction work.
+        launchedJobs += coroutineScope.launch { awaitCancellation() }
+        throw GenericError("Gateway merchant id is missing")
+      }
       this.callbacks += callbacks
       return mock<CheckoutController>().also { controller ->
-        whenever(controller.requiresUserInteraction()).thenReturn(type !in headlessTypes)
+        if (type in throwingInteractionTypes) {
+          launchedJobs += coroutineScope.launch { awaitCancellation() }
+          whenever(controller.requiresUserInteraction()).thenThrow(IllegalStateException("Component is broken"))
+        } else {
+          whenever(controller.requiresUserInteraction()).thenReturn(type !in headlessTypes)
+        }
         controllers += controller
       }
     }
@@ -462,6 +556,7 @@ class AndroidCheckoutModuleTest {
     var code: String? = null
     var message: String? = null
     var metadata: WritableMap? = null
+    var settlements = 0
 
     fun resolvedMap(): ReadableMap {
       assertNull("unexpected rejection $code", code)
@@ -471,6 +566,7 @@ class AndroidCheckoutModuleTest {
     fun controllerId(): String = checkNotNull(resolvedMap().getString("controllerId"))
 
     override fun resolve(value: Any?) {
+      settlements += 1
       resolved = true
       this.value = value
     }
@@ -479,6 +575,7 @@ class AndroidCheckoutModuleTest {
       code: String?,
       message: String?,
     ) {
+      settlements += 1
       this.code = code
       this.message = message
     }
@@ -486,37 +583,50 @@ class AndroidCheckoutModuleTest {
     override fun reject(
       code: String?,
       throwable: Throwable?,
-    ) = Unit
+    ) {
+      settlements += 1
+    }
 
     override fun reject(
       code: String?,
       message: String?,
       throwable: Throwable?,
-    ) = Unit
+    ) {
+      settlements += 1
+    }
 
-    override fun reject(throwable: Throwable) = Unit
+    override fun reject(throwable: Throwable) {
+      settlements += 1
+    }
 
     override fun reject(
       throwable: Throwable,
       userInfo: WritableMap,
-    ) = Unit
+    ) {
+      settlements += 1
+    }
 
     override fun reject(
       code: String?,
       userInfo: WritableMap,
-    ) = Unit
+    ) {
+      settlements += 1
+    }
 
     override fun reject(
       code: String?,
       throwable: Throwable?,
       userInfo: WritableMap,
-    ) = Unit
+    ) {
+      settlements += 1
+    }
 
     override fun reject(
       code: String?,
       message: String?,
       userInfo: WritableMap,
     ) {
+      settlements += 1
       this.code = code
       this.message = message
       metadata = userInfo
@@ -527,10 +637,14 @@ class AndroidCheckoutModuleTest {
       message: String?,
       throwable: Throwable?,
       userInfo: WritableMap?,
-    ) = Unit
+    ) {
+      settlements += 1
+    }
 
     @Deprecated("Required to implement Promise")
-    override fun reject(message: String) = Unit
+    override fun reject(message: String) {
+      settlements += 1
+    }
   }
 
   private companion object {

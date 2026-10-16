@@ -21,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -236,6 +237,29 @@ class CheckoutCoordinatorTest {
     assertNull(second)
     assertEquals(1, creations)
     assertEquals(0, coordinator.controllerCount())
+  }
+
+  @Test
+  fun `a throwing creation is contained and remembered unavailable while checkout stays usable`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val checkoutId = coordinator.setup()
+    var creations = 0
+
+    val first =
+      coordinator.registerController(checkoutId, "googlepay") {
+        creations += 1
+        throw IllegalStateException("Gateway merchant id is missing")
+      }
+    val second = coordinator.registerController(checkoutId, "googlepay") { FakeController().also { creations += 1 } }
+    val card = coordinator.registerController(checkoutId, "card") { FakeController() }
+
+    assertNull(first)
+    assertNull(second)
+    assertEquals(1, creations)
+    assertNotNull(card)
+    assertEquals(1, coordinator.controllerCount())
+    assertTrue(coordinator.isActive(checkoutId))
   }
 
   @Test

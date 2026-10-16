@@ -630,7 +630,14 @@ internal class CheckoutCoordinator(
         }
       }
       if (paymentMethodId in unavailablePaymentMethodIds) return@transition null
-      val created = create()
+      // A throwing factory means the instance is not creatable; caching it keeps an availability
+      // probe from ever re-entering the SDK or escaping the bridge runnable.
+      val created =
+        try {
+          create()
+        } catch (_: Exception) {
+          null
+        }
       if (this.checkoutId != checkoutId || isDisposing) {
         created?.dispose()
         throw StaleCheckoutException()
