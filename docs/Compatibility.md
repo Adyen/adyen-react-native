@@ -8,7 +8,7 @@ separates three kinds of requirement:
   supplies fallbacks.
 - **Library-owned** — versions this library pins internally; you neither set nor override them.
 
-For what each platform and flow can actually do at runtime see [FeatureSupport.md](./FeatureSupport.md),
+For what each platform and flow can actually do at runtime see [Architecture.md](./Architecture.md#capabilities),
 for configuration options see [Configuration.md](./Configuration.md), and for upgrade steps see
 [MigrationGuide.md](./MigrationGuide.md).
 

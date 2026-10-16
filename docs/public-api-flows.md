@@ -6,24 +6,53 @@ These flows describe public behavior. Internal identities are intentionally not 
 
 ```text
 await setup(A) -> A active
-await setup(B) -> dispose A -> create B -> B active
-await setup(C fails) -> dispose B -> create C fails -> idle
+await setup(B) -> dispose A and its controllers -> create B -> B active
+await setup(C fails) -> dispose B and its controllers -> create C fails -> idle
 ```
 
 Setup is serialized. A handle resolves only after native setup commits. Replacement disposes the old
-checkout before the new factory runs. Failed replacement leaves idle. Commands from an older handle
-reject `staleCheckout`.
+checkout before the new factory runs. Failed replacement leaves idle. Commands from an older handle,
+or from any controller it created, reject `staleCheckout`.
 
-## Targets and embedded views
+## Payment methods and controllers
 
-Use `{ kind: 'paymentMethod', type }` for regular methods and
-`{ kind: 'storedPaymentMethod', id }` for stored methods. Queries and `submit()` reject
-`invalidTarget` for malformed, missing, unknown, or ambiguous targets. A known valid target that
-is unavailable resolves `false` from `isAvailable`.
+`checkout.paymentMethods` is a frozen snapshot grouped into `regular` and `stored` lists. Each list
+has `length`, can be iterated with `for...of` or spread, and offers `first(predicate?)`. Every entry
+has an `id`: native mints one for each regular method during setup, and stored methods keep their
+API id.
 
-`AdyenComponent` registers one canonical target per native view. Distinct targets can mount at the
-same time. A duplicate exact regular type or duplicate exact stored ID is rejected. Mounting is
-passive; the first checkout-level embedded payment callback acquires the operation slot.
+```ts
+const card = checkout.paymentMethods.regular.first((pm) => pm.type === 'scheme');
+const storedCard = checkout.paymentMethods.stored.first();
+
+if (card && (await checkout.isAvailable(card))) {
+  const controller = await checkout.createController(card);
+}
+```
+
+`isAvailable(pm)` resolves `false` when a payment method of this checkout cannot be created on the
+current platform or pinned SDK. `isAvailable` and `createController` reject `invalidTarget` for a
+payment method whose `id` is not part of this checkout's snapshot. Regular ids are minted per setup,
+so a regular payment method taken from an older checkout is rejected. `createController` rejects `unsupportedCapability` for a payment method that
+`isAvailable` reports as unavailable.
+
+`createController(pm)` creates the native component eagerly and is idempotent: the same payment
+method always resolves to the same `Controller`. `controller.requiresUserInteraction` is known
+synchronously once the promise resolves.
+
+## Embedded views
+
+```tsx
+<AdyenComponent controller={controller} />
+```
+
+`AdyenComponent` displays the controller's native UI. Mounting and unmounting neither create nor
+dispose the controller, so a view can be remounted. One controller renders in at most one live view;
+a second simultaneous view stays empty. Different controllers can mount at the same time, including
+two payment methods of the same type where the platform supports both. The view renders nothing for
+a controller that does not require user interaction.
+
+Mounting is passive; the first checkout-level embedded payment callback acquires the operation slot.
 
 ## Session and advanced callbacks
 
@@ -34,13 +63,19 @@ callback is correlated to the active operation. Merchant throw, rejection, inval
 or host loss settles it through native cleanup.
 
 One terminal callback, `onComplete` or `onError`, is delivered at most once. Terminal delivery
-cleans the checkout. An abandoned flow uses `await checkout.invalidate()`.
+cleans the checkout and all its controllers. An abandoned flow uses `await checkout.invalidate()`.
 
-## Headless and Drop-in
+## Headless submit and Drop-in
 
-`isAvailable`, `requiresUserInteraction`, and `submit` are asynchronous. Only one interactive
-operation is active. A competing explicit headless or Drop-in action rejects `operationBusy`; it is
-not queued.
+```ts
+const controller = await checkout.createController(paymentMethod);
+await controller.submit();
+```
+
+`controller.submit()` resolves once submission has started; the outcome arrives through the checkout
+callbacks. A controller that requires user interaction and has no mounted view presents its UI in a
+native sheet. Only one interactive operation is active. A competing `submit()` or Drop-in start
+rejects `operationBusy`; it is not queued.
 
 `await AdyenDropIn.start(checkout)` is asynchronous and identity-only. Android session Drop-in
 launches through official v6 APIs. Android advanced Drop-in rejects `unsupportedCapability` before

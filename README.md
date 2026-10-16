@@ -15,8 +15,8 @@ Adyen React Native provides the building blocks to create a checkout experience 
 and accept their preferred payment methods.
 
 The library supports identity-bound embedded Components, headless payment submission, and a thin
-Drop-in façade. See [Feature support](docs/FeatureSupport.md) for the platform and flow support
-matrix before choosing an integration.
+Drop-in façade. See [Capabilities](docs/Architecture.md#capabilities) for the platform and flow
+support before choosing an integration.
 
 ## Table of Contents
 
@@ -220,56 +220,58 @@ const configuration: Configuration = {
 ### Return URL
 
 Use a custom URL scheme, App Link, or Universal Link that your application owns as `returnUrl`.
-Pass it explicitly when your server creates either a `/sessions` or `/payments` request. To use Drop-In derive it from a Drop-in API:
+Pass it explicitly when your server creates either a `/sessions` or `/payments` request, and set
+the same value in `Configuration.returnUrl`.
 
-```js
-const dropInReturnUrl = Platform.select({
-  ios: 'myapp://payment',
-  android: await AdyenDropIn.getReturnURL(),
-});
-```
+## Opening Payment component
 
-## Opening Payment component // TODO
-
-Set up a checkout first, then render `AdyenComponent` with a `CheckoutTarget`. Use the payment
-method `type` for regular methods and the exact stored payment method `id` for stored methods.
+Set up a checkout first, then create a controller for the payment method you want to show.
+`checkout.paymentMethods` groups the checkout's payment methods into `regular` and `stored` lists.
+Every entry has an `id`, so pass the entries from these lists back to the checkout rather than
+building payment method objects yourself.
 
 ```tsx
+import { useEffect, useState } from 'react';
 import {
-  AdyenCheckout,
   AdyenComponent,
+  type Checkout,
+  type Controller,
 } from '@adyen/react-native';
 
-const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
+function CardPayment({ checkout }: { checkout: Checkout }) {
+  const [controller, setController] = useState<Controller>();
 
-// Scenario 1: Render whole list of payment methods
+  useEffect(() => {
+    const card = checkout.paymentMethods.regular.first(
+      (pm) => pm.type === 'scheme'
+    );
+    if (card) {
+      checkout.createController(card).then(setController, console.error);
+    }
+  }, [checkout]);
 
-for (const pm of checkout.paymentMethods.regular) {
-  const controller = await checkout.createController(pm);
-  return <AdyenComponent controller={controller} />; // Render Forms and buttons
+  return controller ? <AdyenComponent controller={controller} /> : null;
 }
-
-// Scenario 2: Render specific payment method
-
-const openBanking = checkout.paymentMethods.regular.first((pm) => pm.type === 'openBanking');
-const controller = await checkout.createController(openBanking);
-if (controller.requiresUserInput) {
-  // Present the component
-  return <AdyenComponent controller={controller} />;
-} else {
-  // Auto-submit
-  await controller.submit();
-}
-
-// Scenario 3: DropIn
-
-AdyenDropIn.start(checkout);
-
 ```
 
-You can use `controller.requiresUserInteraction` and `await controller.submit()` for headless
-flows. All checkout commands are asynchronous. A checkout has one interactive operation at a time,
-so competing explicit headless or Drop-in starts reject with `operationBusy`.
+`createController` creates the native component eagerly and returns the same `Controller` for the
+same payment method. When `controller.requiresUserInteraction` is `false`, submit it without UI:
+
+```ts
+const openBanking = checkout.paymentMethods.regular.first(
+  (pm) => pm.type === 'openBanking'
+);
+if (openBanking && (await checkout.isAvailable(openBanking))) {
+  const controller = await checkout.createController(openBanking);
+  if (!controller.requiresUserInteraction) {
+    await controller.submit();
+  }
+}
+```
+
+All checkout commands are asynchronous. A checkout has one interactive operation at a time, so
+competing `controller.submit()` or Drop-in starts reject with `operationBusy`. Controllers are
+released together with their checkout.
 
 ### Sessions Flow
 
@@ -299,7 +301,7 @@ const callbacks: SessionCallbacks = {
 
 const checkout = await AdyenCheckout.setup(session, configuration, callbacks);
 
-// Render <AdyenComponent checkout={checkout} target={card} /> in React.
+// Create controllers and render <AdyenComponent controller={controller} /> in React.
 // Call this when the checkout screen is abandoned before a terminal callback.
 await checkout.invalidate();
 ```
@@ -381,7 +383,7 @@ await AdyenAction.hide();
 
 On Android, standalone `RedirectAction` is unsupported on `6.0.0-alpha.1` because the published
 SDK has no safe return-correlation hook. Supported non-redirect Action kinds remain available. See
-[Feature support](docs/FeatureSupport.md) for the platform-qualified behavior.
+[Capabilities](docs/Architecture.md#capabilities) for the platform-qualified behavior.
 
 # Documentation
 
@@ -392,7 +394,6 @@ SDK has no safe return-correlation hook. Supported non-redirect Action kinds rem
 - [Native architecture](docs/native-architecture.md)
 - [Public API flows](docs/public-api-flows.md)
 - [Configuration][configuration]
-- [Feature support](docs/FeatureSupport.md)
 - [Localization][localization]
 - [UI customization][customization]
 - [Error codes](docs/Error%20codes.md)
