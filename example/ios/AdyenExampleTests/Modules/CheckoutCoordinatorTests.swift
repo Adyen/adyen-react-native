@@ -1578,8 +1578,14 @@ final class CheckoutCoordinatorTests: XCTestCase {
                 let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
                 let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
                 let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
-                try card.bind(RecordingBinding())
-                try stored.bind(RecordingBinding())
+                // Controllers hold their view weakly; the bindings must outlive the iteration so
+                // mounted submits stay off the sheet path, which depends on the host app's window.
+                let cardView = RecordingBinding()
+                let storedView = RecordingBinding()
+                try card.bind(cardView)
+                try stored.bind(storedView)
+                defer { withExtendedLifetime((cardView, storedView)) {} }
+                XCTAssertTrue(card.isBound && stored.isBound, label)
 
                 let ownerController: ComponentProxy
                 var shopperSubmit: ShopperSubmit?
