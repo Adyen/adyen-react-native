@@ -12,6 +12,7 @@ const {
   testDropInAndUnsupportedFlows,
 } = require('./tests/dropin-and-unsupported.test');
 const { testExampleNavigation } = require('./tests/example-navigation.test');
+const { testCapabilityRoutes } = require('./tests/capability-routes.test');
 
 // Runs payment-flow tests against the real example/ app (unlike run-appium.js, which uses a
 // scaffolded fixture app). Reuses helpers/driver.js and helpers/utils.js conventions.
@@ -24,6 +25,7 @@ const TESTS = [
     run: testDropInAndUnsupportedFlows,
   },
   { name: 'Validation routes', run: testValidationRoutes },
+  { name: 'Capability routes', run: testCapabilityRoutes },
 ];
 
 function relaunchAndroidApp(appPackage) {

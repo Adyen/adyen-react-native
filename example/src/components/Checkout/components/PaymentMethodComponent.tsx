@@ -13,6 +13,7 @@ import type {
   Controller,
 } from '@adyen/react-native';
 import Styles from '../../common/Styles';
+import AdaptiveText from '../../common/AdaptiveText';
 
 interface PaymentMethodComponentProps {
   checkout: Checkout;
@@ -29,8 +30,8 @@ const SUBMIT_ON_TAP = new Set(['applepay']);
 
 /**
  * Renders an embedded `<AdyenComponent>` for a controller that needs UI, or a button calling
- * `controller.submit()` for one that does not (and for Apple Pay). Renders nothing when the
- * payment method is unavailable on this device or platform.
+ * `controller.submit()` for one that does not (and for Apple Pay). A payment method that is
+ * unavailable on this device or platform stays listed as a disabled entry without controls.
  */
 const PaymentMethodComponent = ({
   checkout,
@@ -39,13 +40,18 @@ const PaymentMethodComponent = ({
   header,
 }: PaymentMethodComponentProps) => {
   const [controller, setController] = useState<Controller | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     setController(null);
+    setUnavailable(false);
     let active = true;
     const resolveController = async () => {
       try {
-        if (!(await checkout.isAvailable(paymentMethod))) return;
+        if (!(await checkout.isAvailable(paymentMethod))) {
+          if (active) setUnavailable(true);
+          return;
+        }
         const created = await checkout.createController(paymentMethod);
         if (active) {
           setController(created);
@@ -53,6 +59,7 @@ const PaymentMethodComponent = ({
       } catch {
         if (active) {
           setController(null);
+          setUnavailable(true);
         }
       }
     };
@@ -66,6 +73,24 @@ const PaymentMethodComponent = ({
     controller?.submit().catch(() => setController(null));
   }, [controller]);
 
+  const name = title ?? paymentMethod.name ?? paymentMethod.type;
+  const entryId = `payment-method-${paymentMethod.id}`;
+
+  if (unavailable) {
+    return (
+      <View
+        style={Styles.padded}
+        testID={entryId}
+        accessibilityLabel={`${entryId}-unavailable`}
+        accessibilityState={{ disabled: true }}
+      >
+        <AdaptiveText style={Styles.paddedTitle}>
+          {`${name} (unavailable)`}
+        </AdaptiveText>
+      </View>
+    );
+  }
+
   if (!controller) {
     return null;
   }
@@ -75,24 +100,24 @@ const PaymentMethodComponent = ({
     !SUBMIT_ON_TAP.has(paymentMethod.type)
   ) {
     return (
-      <>
+      <View testID={entryId} collapsable={false}>
         {header}
         <AdyenComponent controller={controller} />
-      </>
+      </View>
     );
   }
 
   return (
-    <>
+    <View testID={entryId} collapsable={false}>
       {header}
       <View style={Styles.padded}>
         <Button
           testID={`submit-${paymentMethod.type}`}
-          title={title ?? paymentMethod.name ?? paymentMethod.type}
+          title={name}
           onPress={onPress}
         />
       </View>
-    </>
+    </View>
   );
 };
 

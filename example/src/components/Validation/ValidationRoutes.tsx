@@ -30,6 +30,10 @@ import { useAppContext } from '../../hooks/useAppContext';
 import { checkoutConfiguration } from '../../settings/checkoutConfiguration';
 import { ENVIRONMENT } from '../../Configuration';
 import Styles from '../common/Styles';
+import { cardController, errorCode, Status, wait } from './ValidationShared';
+import CapabilityValidation, {
+  type CapabilityScenario,
+} from './CapabilityValidation';
 
 type Scenario =
   | 'sessions'
@@ -73,42 +77,19 @@ const LOOKUP_CANDIDATE: AddressLookupItem = {
   },
 };
 
-function errorCode(error: unknown): string {
-  if (error && typeof error === 'object' && 'code' in error) {
-    return String(error.code);
-  }
-  return 'error';
-}
-
-function cardController(checkout: Checkout): Promise<Controller> {
-  const card = checkout.paymentMethods.regular.first(
-    (paymentMethod) => paymentMethod.type === 'scheme'
-  );
-  if (!card) {
-    return Promise.reject(
-      Object.assign(new Error('No card payment method'), {
-        code: 'invalidTarget',
-      })
-    );
-  }
-  return checkout.createController(card);
-}
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-const Status = ({ value }: { value: string }) => (
-  <Text
-    testID="validation-status"
-    accessibilityLabel={`validation-status-${value}`}
-  >
-    {value}
-  </Text>
-);
-
 const ValidationRoutes = ({ navigation }: Props) => {
   const [scenario, setScenario] = useState<Scenario | null>(null);
+  const [capabilityScenario, setCapabilityScenario] =
+    useState<CapabilityScenario | null>(null);
+
+  if (capabilityScenario) {
+    return (
+      <CapabilityValidation
+        scenario={capabilityScenario}
+        onExit={() => setCapabilityScenario(null)}
+      />
+    );
+  }
 
   if (scenario) {
     return (
@@ -165,6 +146,26 @@ const ValidationRoutes = ({ navigation }: Props) => {
         onPress={() => setScenario('lifecycle')}
       />
       <Button
+        testID="validation-route-stored"
+        title="Stored card controller"
+        onPress={() => setCapabilityScenario('stored')}
+      />
+      <Button
+        testID="validation-route-multi-mount"
+        title="Two mounted controllers"
+        onPress={() => setCapabilityScenario('multi-mount')}
+      />
+      <Button
+        testID="validation-route-giftcards"
+        title="Gift card instances"
+        onPress={() => setCapabilityScenario('giftcards')}
+      />
+      <Button
+        testID="validation-route-auto-submit"
+        title="No-input auto-submit"
+        onPress={() => setCapabilityScenario('auto-submit')}
+      />
+      <Button
         testID="validation-route-exit"
         title="Back to Home"
         onPress={() => navigation.goBack()}
@@ -200,6 +201,16 @@ const ValidationCheckout = ({
   const currentCheckout = useRef<Checkout | null>(null);
   const suppressContentionError = useRef(false);
   const standaloneAction = useRef<Promise<unknown> | null>(null);
+  const contention = useRef<{
+    startedAt: number;
+    contenderCode?: string;
+    contenderSettledAt?: number;
+    ownerEndedAt?: number;
+  } | null>(null);
+  const [contentionOrder, setContentionOrder] = useState<{
+    value: string;
+    detail: string;
+  } | null>(null);
 
   const onComplete = useCallback(
     async (result: SessionsResult | PaymentResult) => {
@@ -230,6 +241,24 @@ const ValidationCheckout = ({
   );
 
   const onError = useCallback((error: unknown) => {
+    const race = contention.current;
+    if (race && race.ownerEndedAt === undefined) {
+      // The owner's terminal event marks the end of its operation, so a contender that settled
+      // before it was rejected while the owner was still active.
+      const ownerEndedAt = Date.now();
+      race.ownerEndedAt = ownerEndedAt;
+      const { contenderSettledAt } = race;
+      const settledFirst =
+        contenderSettledAt !== undefined && contenderSettledAt <= ownerEndedAt;
+      setContentionOrder({
+        value: settledFirst
+          ? `${race.contenderCode}-while-owner-active`
+          : 'owner-ended-before-contender',
+        detail: `contender +${
+          settledFirst ? contenderSettledAt - race.startedAt : '?'
+        } ms, owner ended +${ownerEndedAt - race.startedAt} ms`,
+      });
+    }
     if (!suppressContentionError.current) {
       setStatus(`error-${errorCode(error)}`);
     }
@@ -368,30 +397,36 @@ const ValidationCheckout = ({
     }
   }, []);
 
+  // Runs on the active checkout so invalidate() itself, not an earlier replacement, makes the
+  // handle stale.
   const runStaleCommands = useCallback(async () => {
-    const stale = staleCheckout.current;
-    if (!stale) {
+    const active = checkout;
+    const card = active?.paymentMethods.regular.first(
+      (paymentMethod) => paymentMethod.type === 'scheme'
+    );
+    if (!active || !card) {
       setStatus('stale-commands-missing');
       return;
     }
+    let controller: Controller;
     try {
-      await stale.invalidate();
-      await stale.invalidate();
+      controller = await active.createController(card);
+    } catch (error) {
+      setStatus(`stale-commands-active-${errorCode(error)}`);
+      return;
+    }
+    try {
+      await active.invalidate();
+      await active.invalidate();
     } catch (error) {
       setStatus(`stale-commands-invalidate-${errorCode(error)}`);
       return;
     }
-    const card = stale.paymentMethods.regular.first(
-      (paymentMethod) => paymentMethod.type === 'scheme'
-    );
-    if (!card) {
-      setStatus('stale-commands-missing');
-      return;
-    }
     const outcomes = await Promise.allSettled([
-      stale.createController(card),
-      stale.isAvailable(card),
-      AdyenDropIn.start(stale),
+      controller.submit(),
+      active.createController(card),
+      active.isAvailable(card),
+      AdyenDropIn.start(active),
     ]);
     const codes = outcomes.map((outcome) =>
       outcome.status === 'rejected' ? errorCode(outcome.reason) : 'resolved'
@@ -401,7 +436,7 @@ const ValidationCheckout = ({
         ? 'stale-commands-staleCheckout'
         : `stale-commands-${codes.join('-')}`
     );
-  }, []);
+  }, [checkout]);
 
   const recyclePresenter = useCallback(async () => {
     if (!checkout) return;
@@ -450,16 +485,37 @@ const ValidationCheckout = ({
     if (!checkout) return;
     suppressContentionError.current = true;
     const controller = await cardController(checkout);
-    const [, contender] = await Promise.allSettled([
-      controller.submit(),
-      controller.submit(),
-    ]);
-    setStatus(
-      contender.status === 'rejected'
-        ? `contention-${errorCode(contender.reason)}`
-        : 'contention-unexpected'
+    const race: NonNullable<typeof contention.current> = {
+      startedAt: Date.now(),
+    };
+    contention.current = race;
+    setContentionOrder(null);
+    const settleContender = (code: string) => {
+      race.contenderCode = code;
+      race.contenderSettledAt = Date.now();
+      setStatus(`contention-${code}`);
+    };
+    // The owner keeps its sheet open until the shopper acts, so the contender outcome is
+    // published as soon as the contender settles rather than after both promises.
+    controller.submit().catch(() => undefined);
+    await controller.submit().then(
+      () => settleContender('unexpected'),
+      (error) => settleContender(errorCode(error))
     );
   }, [checkout]);
+
+  const doubleCreateController = useCallback(async () => {
+    if (!checkout) return;
+    const [first, second] = await Promise.all([
+      cardController(checkout),
+      cardController(checkout),
+    ]);
+    setStatus(
+      first === second && first === presentedController
+        ? 'controller-idempotent'
+        : 'controller-duplicated'
+    );
+  }, [checkout, presentedController]);
 
   const startHeadless = useCallback(
     async (fresh = false) => {
@@ -570,6 +626,14 @@ const ValidationCheckout = ({
   return (
     <ScrollView style={Styles.page} contentContainerStyle={Styles.padded}>
       <Status value={status} />
+      {contentionOrder ? (
+        <Text
+          testID="validation-contention-order"
+          accessibilityLabel={`validation-contention-order-${contentionOrder.value}`}
+        >
+          {`${contentionOrder.value} (${contentionOrder.detail})`}
+        </Text>
+      ) : null}
       <Text testID={`validation-scenario-${scenario}`}>{scenario}</Text>
       {scenario !== 'lifecycle' ? embeddedPresenter : null}
       <Button
@@ -608,6 +672,15 @@ const ValidationCheckout = ({
         onPress={() => {
           remountPresenter().catch((error) => {
             setStatus(`presenter-remount-${errorCode(error)}`);
+          });
+        }}
+      />
+      <Button
+        testID="validation-double-create"
+        title="Create card controller twice"
+        onPress={() => {
+          doubleCreateController().catch((error) => {
+            setStatus(`controller-create-${errorCode(error)}`);
           });
         }}
       />

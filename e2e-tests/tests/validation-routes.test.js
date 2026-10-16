@@ -143,11 +143,73 @@ async function expectCardPaymentVisible(driver) {
 }
 
 async function dismissCardSheet(driver) {
-  const dismiss = driver.isAndroid
-    ? await driver.$('android=new UiSelector().text("\u2715")')
-    : await driver.$('~AdyenReactNative.ControllerSheet.cancel');
+  const dismiss = await driver.$(cardSheetDismissSelector(driver));
   await dismiss.waitForDisplayed({ timeout: 15000 });
   await tapUntilGone(dismiss, 'The card sheet did not close');
+}
+
+function cardSheetDismissSelector(driver) {
+  return driver.isAndroid
+    ? 'android=new UiSelector().text("\u2715")'
+    : '~AdyenReactNative.ControllerSheet.cancel';
+}
+
+const CONTENTION_SAMPLES = 4;
+const CONTENTION_SAMPLE_INTERVAL_MS = 500;
+
+/**
+ * Samples the owner's sheet across a ~2 s window while contention is in progress. On iOS the
+ * busy status must coexist with the open sheet on every sample. Android's modal bottom sheet
+ * hides the activity window from the accessibility tree (even with enableMultiWindows), so there
+ * the sheet must stay open on every sample and the ordering is proven afterwards by
+ * expectContenderRejectedWhileOwnerActive.
+ */
+async function expectContentionWhileOwnerActive(driver) {
+  const ownerSheetOpen = async () =>
+    (await driver.$(cardSheetDismissSelector(driver))).isDisplayed();
+  const sampleReady = driver.isAndroid
+    ? ownerSheetOpen
+    : async () =>
+        (await (
+          await driver.$(statusId(driver, 'contention-operationBusy'))
+        ).isExisting()) && (await ownerSheetOpen());
+  await driver.waitUntil(sampleReady, {
+    timeout: 15000,
+    interval: 250,
+    timeoutMsg: driver.isAndroid
+      ? 'The contention owner sheet did not open'
+      : 'contention-operationBusy did not appear while the owner sheet was open',
+  });
+  for (let sample = 1; sample <= CONTENTION_SAMPLES; sample += 1) {
+    await driver.pause(CONTENTION_SAMPLE_INTERVAL_MS);
+    if (!(await sampleReady())) {
+      throw new Error(
+        driver.isAndroid
+          ? `Contention sample ${sample}: the owner sheet closed while contention was in progress`
+          : `Contention sample ${sample}: busy status and owner sheet were not both present`
+      );
+    }
+  }
+  console.log(
+    driver.isAndroid
+      ? `==> [Test] Contention owner sheet stayed open across ${CONTENTION_SAMPLES} samples`
+      : `==> [Test] contention-operationBusy stable with the owner sheet open across ${CONTENTION_SAMPLES} samples`
+  );
+}
+
+/**
+ * The route records when the contender settles and when the owner's terminal event arrives;
+ * this label only appears when the contender was rejected before the owner operation ended.
+ */
+async function expectContenderRejectedWhileOwnerActive(driver) {
+  const value = 'operationBusy-while-owner-active';
+  const order = await driver.$(
+    driver.isAndroid
+      ? `android=new UiSelector().textStartsWith("${value} (")`
+      : `~validation-contention-order-${value}`
+  );
+  await order.waitForExist({ timeout: 15000 });
+  console.log(`==> [Test] Contention order: ${await order.getText()}`);
 }
 
 async function runHeadlessPayment(driver, routeId) {
@@ -224,6 +286,9 @@ async function testValidationRoutes(driver, isAndroid) {
 
   await openRoute(driver, 'validation-route-lifecycle');
   await expectStatus(driver, 'embedded-ready');
+  // The presenter must be attached before replacement can prove it becomes inactive; on iOS a
+  // tap that lands while the card view is still attaching is dropped.
+  await expectEmbeddedCardAttached(driver);
 
   await clickControl(driver, 'validation-replace-checkout');
   await expectStatus(driver, 'mounted-presenter-inactive');
@@ -232,15 +297,28 @@ async function testValidationRoutes(driver, isAndroid) {
   await clickControl(driver, 'validation-submit-stale');
   await expectStatus(driver, 'stale-submit-staleCheckout');
 
-  // invalidate() stays idempotent; createController, isAvailable and Drop-in on the replaced
-  // checkout all reject staleCheckout.
+  // The stale commands invalidate an ACTIVE checkout twice (idempotent), then controller.submit,
+  // createController, isAvailable and Drop-in on it all reject staleCheckout.
+  await clickControl(driver, 'validation-start-fresh-checkout');
+  await expectStatus(driver, 'fresh-checkout-ready');
   await clickControl(driver, 'validation-stale-commands');
   await expectStatus(driver, 'stale-commands-staleCheckout');
+  await clickControl(driver, 'validation-start-fresh-checkout');
+  await expectStatus(driver, 'fresh-checkout-ready');
 
   await clickControl(driver, 'validation-recycle-presenter');
   await expectStatus(driver, 'presenter-recycled');
 
   // After several mount/unmount cycles the same controller still re-attaches its native view.
+  await clickControl(driver, 'validation-remount-presenter');
+  await expectStatus(driver, 'presenter-remounted');
+  await expectEmbeddedCardAttached(driver);
+  // Re-rendering the same payment method twice yields the mounted controller instance.
+  await clickControl(driver, 'validation-double-create');
+  await expectStatus(driver, 'controller-idempotent');
+  await clickControl(driver, 'validation-unmount-presenter');
+  await expectStatus(driver, 'presenter-unmounted');
+  await expectOldPresenterInactive(driver);
   await clickControl(driver, 'validation-remount-presenter');
   await expectStatus(driver, 'presenter-remounted');
   await expectEmbeddedCardAttached(driver);
@@ -264,8 +342,10 @@ async function testValidationRoutes(driver, isAndroid) {
   ]);
 
   await clickControl(driver, 'validation-headless-contention');
+  await expectContentionWhileOwnerActive(driver);
   await dismissCardSheet(driver);
   await expectStatus(driver, 'contention-operationBusy');
+  await expectContenderRejectedWhileOwnerActive(driver);
 
   await clickControl(driver, 'validation-cleanup-contention');
   await expectStatus(driver, 'contention-owner-cleaned');
@@ -284,4 +364,11 @@ async function testValidationRoutes(driver, isAndroid) {
   );
 }
 
-module.exports = { testValidationRoutes };
+module.exports = {
+  testValidationRoutes,
+  testId,
+  statusId,
+  openValidationRoutes,
+  expectStatus,
+  clickControl,
+};
