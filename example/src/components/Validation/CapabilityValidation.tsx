@@ -107,9 +107,20 @@ const CapabilityValidation = ({
   const [giftcards, setGiftcards] = useState<GiftcardProbe[]>([]);
   const phase = useRef<Phase>('store');
   const currentCheckout = useRef<Checkout | null>(null);
+  const routeActive = useRef(true);
+  const setupGeneration = useRef(0);
 
-  const setup = useCallback(async (): Promise<Checkout> => {
+  /**
+   * Resolves `null` when the route exited or a newer setup started while this one was pending.
+   * `setupAdvanced` replaces the app-wide checkout, so a late setup must never run after exit,
+   * and a checkout that finishes after exit is released at once instead of being kept.
+   */
+  const setup = useCallback(async (): Promise<Checkout | null> => {
+    const generation = ++setupGeneration.current;
+    const isCurrent = () =>
+      routeActive.current && generation === setupGeneration.current;
     const paymentMethods = await advancedApi.paymentMethods(configuration);
+    if (!isCurrent()) return null;
     const next = await AdyenCheckout.setupAdvanced(
       paymentMethods,
       checkoutConfiguration(configuration),
@@ -149,6 +160,10 @@ const CapabilityValidation = ({
         onError: (error) => setStatus(`error-${errorCode(error)}`),
       }
     );
+    if (!isCurrent()) {
+      next.invalidate().catch(() => undefined);
+      return null;
+    }
     currentCheckout.current = next;
     setCheckout(next);
     return next;
@@ -235,8 +250,10 @@ const CapabilityValidation = ({
   }, []);
 
   useEffect(() => {
+    routeActive.current = true;
     const prepare = async () => {
       const next = await setup();
+      if (!next) return;
       switch (scenario) {
         case 'stored':
           return prepareStore(next);
@@ -250,6 +267,7 @@ const CapabilityValidation = ({
     };
     prepare().catch((error) => setStatus(`setup-${errorCode(error)}`));
     return () => {
+      routeActive.current = false;
       currentCheckout.current?.invalidate().catch(() => undefined);
     };
     // The route prepares exactly once and cleans up the checkout active when it unmounts.
@@ -261,6 +279,7 @@ const CapabilityValidation = ({
     setMounted([]);
     setStatus('setting-up');
     const next = await setup();
+    if (!next) return;
     const stored = Array.from(next.paymentMethods.stored).find(
       (paymentMethod) =>
         paymentMethod.type === 'scheme' &&
