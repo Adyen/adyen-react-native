@@ -10,6 +10,11 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
+  # CocoaPods integration is deprecated in favor of Swift Package Manager (ios/Package.swift,
+  # React Native >= 0.87). The podspec stays functional for Expo and other CocoaPods-based apps;
+  # `deprecated` only makes `pod install` print a warning.
+  s.deprecated   = true
+
   s.platform     = :ios, "12.0"
   s.source       = { :git => "https://github.com/Adyen/adyen-react-native.git", :tag => "#{s.version}" }
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
