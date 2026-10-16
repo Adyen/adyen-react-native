@@ -130,8 +130,11 @@ Add `@adyen/react-native` plugin to your `app.json`:
    - If your app does not use SPM yet, convert it once from the app's root directory:
 
      ```bash
-     npx react-native spm add
+     npx react-native spm add --deintegrate
+     rm -f ios/Podfile ios/Podfile.lock
      ```
+
+     React Native 0.87 templates create a CocoaPods-integrated Xcode project, even if you never ran `pod install`, and `spm add` refuses to convert such a project without `--deintegrate`. The flag removes the CocoaPods build phases and references from the Xcode project; it needs the `pod` command on your `PATH`. Add `--yes` to skip the confirmation prompt in non-interactive environments such as CI. The conversion leaves `ios/Podfile` and `ios/Podfile.lock` behind unused, so delete them. Without a Podfile, `@react-native-community/cli` 20.x no longer detects the iOS project; see [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for the CLI config wrapper that React Native's SPM tooling needs.
 
    - After adding or updating `@adyen/react-native`, refresh the generated packages:
 
@@ -197,7 +200,7 @@ func application(_ application: UIApplication, continue userActivity: NSUserActi
 
 **Migrating to SPM** (React Native 0.87.1 or newer):
 
-1. From the app's root directory, run `npx react-native spm add --deintegrate`. It removes the CocoaPods wiring from your Xcode project and links all autolinked packages, including `@adyen/react-native`, through SPM. Every native dependency of your app needs SPM support; `npx react-native spm scaffold` generates a stopgap `Package.swift` for dependencies that lack one.
+1. Run the one-time conversion from step 1 of the [iOS Setup](#manual-integration): `npx react-native spm add --deintegrate` from the app's root directory, then delete the leftover `ios/Podfile` and `ios/Podfile.lock`. It removes the CocoaPods wiring from your Xcode project and links all autolinked packages, including `@adyen/react-native`, through SPM. Every native dependency of your app needs SPM support; `npx react-native spm scaffold` generates a stopgap `Package.swift` for dependencies that lack one.
 2. Open the `.xcodeproj` instead of the `.xcworkspace` from now on.
 3. Add `import adyen_react_native` next to `import Adyen` in every Swift file that uses `RedirectComponent` or `DropInComponent`. Use unqualified type names, for example `DropInComponent.Style` instead of `Adyen.DropInComponent.Style`.
 
