@@ -56,9 +56,11 @@ yarn app android
 
 ```bash
 # using Yarn
-yarn app pod
+yarn app spm-scaffold
 yarn app ios
 ```
+
+The iOS project uses Swift Package Manager (no CocoaPods). `yarn app spm-scaffold` writes the Package.swift stopgap for dependencies that do not ship one (currently `@react-native-async-storage/async-storage`) into `node_modules`, so run it again after every `yarn install`.
 
 If everything is set up _correctly_, you should see the app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
 

@@ -19,23 +19,25 @@ yarn
 
 > Since the project relies on Yarn workspaces, you cannot use [`npm`](https://github.com/npm/cli) for development.
 
-You also need to install the required ruby gems for the iOS project with [bundler](https://bundler.io/). To install the gems, run the following command in the root directory:
+The example iOS project uses Swift Package Manager through React Native's SPM integration; it has no Podfile. `@react-native-async-storage/async-storage` does not ship a `Package.swift`, so React Native generates a stopgap manifest for it inside `node_modules`. Run this after every `yarn install` (a fresh install removes the generated manifest, and the iOS build then fails in its "Sync SPM Autolinking" phase):
 
 ```sh
-bundle install
+yarn app spm-scaffold
 ```
 
-Now, you can install [CocoaPods](https://cocoapods.org/) for the iOS project. To do this, run the following command in the `example/ios` directory:
+If the iOS build uses stale codegen or autolinking output after a dependency change, refresh it from the `example` directory:
 
 ```sh
-bundle exec pod install
+npx react-native spm update
 ```
+
+Because there is no Podfile, `@react-native-community/cli` does not detect the iOS project. React Native's SPM tooling therefore reads the CLI config through `example/scripts/spm-cli-config.js` (pinned as `configCommand` in `example/ios/AdyenExample.xcodeproj/.spm-injected.json`), and `yarn app ios` uses `example/scripts/run-ios.js` instead of `react-native run-ios`. `spm update` rewrites `HERMES_CLI_PATH` in `project.pbxproj` to an absolute path on your machine; do not commit that change.
 
 The [example app](/example/) demonstrates usage of the library. You need to run it to test any changes you make.
 
 It is configured to use the local version of the library, so any changes you make to the library's source code will be reflected in the example app. Changes to the library's JavaScript code will be reflected in the example app without a rebuild, but native code changes will require a rebuild of the example app.
 
-If you want to use Android Studio or XCode to edit the native code, you can open the `example/android` or `example/ios` directories respectively in those editors. To edit the Objective-C or Swift files, open `example/ios/ReactNativeExample.xcworkspace` in XCode and find the source files at `Pods > Development Pods > @adyen/react-native`.
+If you want to use Android Studio or XCode to edit the native code, you can open the `example/android` or `example/ios` directories respectively in those editors. To edit the Objective-C or Swift files, open `example/ios/AdyenExample.xcodeproj` in Xcode. The library's native sources live in the repository's `ios/` directory and appear under `Package Dependencies` once Xcode resolves the packages.
 
 To edit the Java or Kotlin files, open `example/android` in Android studio and find the source files at `adyen-react-native` under `Android`.
 
