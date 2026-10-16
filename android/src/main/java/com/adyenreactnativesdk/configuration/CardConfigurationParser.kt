@@ -25,6 +25,7 @@ class CardConfigurationParser(
   companion object {
     const val TAG = "CardConfigurationParser"
     const val ROOT_KEY = "card"
+    const val SHOW_SUBMIT_BUTTON_KEY = "showSubmitButton"
     const val SHOW_STORE_PAYMENT_FIELD_KEY = "showStorePaymentField"
     const val HOLDER_NAME_REQUIRED_KEY = "holderNameRequired"
     const val HIDE_CVC_STORED_CARD_KEY = "hideCvcStoredCard"
@@ -50,6 +51,7 @@ class CardConfigurationParser(
 
   fun applyConfiguration(builder: CardConfiguration.Builder) {
     supportedCardTypes?.let { builder.supportedCardBrands = it }
+    showSubmitButton?.let { builder.isSubmitButtonVisible = it }
     showStorePaymentField?.let { builder.isStorePaymentFieldVisible = it }
     hideCvcStoredCard?.let { builder.isHideCvcStoredCard = it }
     hideCvc?.let { builder.isHideCvc = it }
@@ -64,6 +66,14 @@ class CardConfigurationParser(
     showStorePaymentField?.let { builder.showStorePaymentField = it }
     holderNameRequired?.let { builder.isHolderNameRequired = it }
   }
+
+  private val showSubmitButton: Boolean?
+    get() =
+      if (config.hasKey(SHOW_SUBMIT_BUTTON_KEY)) {
+        config.getBoolean(SHOW_SUBMIT_BUTTON_KEY)
+      } else {
+        null
+      }
 
   private val showStorePaymentField: Boolean?
     get() =

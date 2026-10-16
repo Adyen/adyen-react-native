@@ -18,6 +18,14 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     /// Per-viewId delegate proxies
     private var delegates: [String: EmbeddedComponentDelegateProxy] = [:]
 
+    private struct ComponentHandlers {
+        let submit: () -> Void
+        let stopLoading: () -> Void
+    }
+
+    /// Per-viewId handlers for externally submitted embedded components
+    private var componentHandlers: [String: ComponentHandlers] = [:]
+
     /// Shared action handler for all embedded views
     private var actionHandler: AdyenActionComponent?
 
@@ -39,14 +47,23 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
 
     // MARK: - Registration
 
-    func register(viewId: String) -> EmbeddedComponentDelegateProxy {
+    func register(
+        viewId: String,
+        submitHandler: @escaping () -> Void,
+        stopLoadingHandler: @escaping () -> Void
+    ) -> EmbeddedComponentDelegateProxy {
         let proxy = EmbeddedComponentDelegateProxy(viewId: viewId, bus: self)
         delegates[viewId] = proxy
+        componentHandlers[viewId] = ComponentHandlers(
+            submit: submitHandler,
+            stopLoading: stopLoadingHandler
+        )
         return proxy
     }
 
     func unregister(viewId: String) {
         delegates.removeValue(forKey: viewId)
+        componentHandlers.removeValue(forKey: viewId)
         lookupHandlers.removeValue(forKey: viewId)
         lookupCompletionHandlers.removeValue(forKey: viewId)
         if delegates.isEmpty {
@@ -97,6 +114,13 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     }
 
     // MARK: - ViewId-routed commands (called from JS)
+
+    @objc
+    func submit(_ viewId: String) {
+        ensureMainThread { [weak self] in
+            self?.performSubmit(viewId)
+        }
+    }
 
     @objc
     func handle(_ viewId: String, action actionDict: NSDictionary?) {
@@ -163,6 +187,14 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
         }
     }
 
+    private func performSubmit(_ viewId: String) {
+        guard let submitHandler = componentHandlers[viewId]?.submit else {
+            sendError(error: ModuleException.componentNotRegistered(viewId))
+            return
+        }
+        submitHandler()
+    }
+
     private func performUpdate(_ viewId: String, results: NSArray?) {
         guard let lookupHandler = lookupHandlers[viewId] else { return }
 
@@ -188,14 +220,19 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     }
 
     private func performHide(_ viewId: String, success: NSNumber) {
-        unregister(viewId: viewId)
-        if delegates.isEmpty {
-            dismiss(success.boolValue)
+        if success.boolValue {
+            unregister(viewId: viewId)
+            if delegates.isEmpty {
+                dismiss(true)
+            }
+        } else {
+            componentHandlers[viewId]?.stopLoading()
         }
     }
 
     private func performCleanUp() {
         delegates.removeAll()
+        componentHandlers.removeAll()
         subscribedViews.removeAll()
         actionHandler?.cancelIfNeeded()
         actionHandler = nil

@@ -48,6 +48,15 @@ class EmbeddedComponentBusModule(
   }
 
   @ReactMethod
+  fun submit(viewId: String) {
+    val consumer =
+      getConsumer(viewId)
+        ?: return sendError(ModuleException.NoConsumer(viewId))
+
+    consumer.onSubmit()
+  }
+
+  @ReactMethod
   fun handle(
     viewId: String,
     actionMap: ReadableMap?,
@@ -107,7 +116,11 @@ class EmbeddedComponentBusModule(
     success: Boolean,
     message: ReadableMap?,
   ) {
-    Companion.unregister(viewId)
+    if (success) {
+      Companion.unregister(viewId)
+    } else {
+      getConsumer(viewId)?.onStopLoading()
+    }
     if (subscribedViews.isEmpty()) {
       cleanup()
     }

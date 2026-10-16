@@ -5,7 +5,7 @@
 //
 
 @_spi(AdyenInternal) import Adyen
-import adyen_react_native
+@testable import adyen_react_native
 import PassKit
 import XCTest
 
@@ -40,6 +40,28 @@ final class CardConfigurationTests: XCTestCase {
         
         // THEN
         XCTAssertNotNil(sut.configuration)
+    }
+
+    func test_configuration_showsSubmitButtonByDefault() {
+        // GIVEN
+        let configDict: NSDictionary = ["card": [:]]
+
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+
+        // THEN
+        XCTAssertTrue(sut.showsSubmitButton)
+    }
+
+    func test_configuration_hidesSubmitButton_whenConfigured() {
+        // GIVEN
+        let configDict: NSDictionary = ["card": ["showSubmitButton": false]]
+
+        // WHEN
+        let sut = CardConfigurationParser(configuration: configDict, delegate: mockAddressLookupProvider)
+
+        // THEN
+        XCTAssertFalse(sut.showsSubmitButton)
     }
 
     func test_configuration_setsShowStorePaymentField_whenProvided() {

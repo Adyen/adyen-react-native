@@ -149,6 +149,8 @@ RCT_EXTERN_METHOD(subscribe:(nonnull NSString *)viewId)
 
 RCT_EXTERN_METHOD(unsubscribe:(nonnull NSString *)viewId)
 
+RCT_EXTERN_METHOD(submit:(nonnull NSString *)viewId)
+
 RCT_EXTERN_METHOD(hide:(nonnull NSString *)viewId
                   success:(nonnull NSNumber *)success
                   event:(NSDictionary *)event)
@@ -164,5 +166,4 @@ RCT_EXTERN_METHOD(confirm:(nonnull NSString *)viewId
                   address:(nullable NSDictionary *)address)
 
 @end
-
 

@@ -36,6 +36,7 @@ class CardConfigurationParserTest {
     sut.applyConfiguration(mockBuilder)
 
     // THEN
+    verify(mockBuilder, times(0)).setSubmitButtonVisible(any())
     verify(mockBuilder, times(0)).setShowStorePaymentField(any())
     verify(mockBuilder, times(0)).setHolderNameRequired(any())
     verify(mockBuilder, times(0)).setHideCvc(any())
@@ -111,6 +112,7 @@ class CardConfigurationParserTest {
   fun testApplyConfiguration() {
     // GIVEN
     val config = WritableMapMock()
+    config.putBoolean(CardConfigurationParser.SHOW_SUBMIT_BUTTON_KEY, false)
     config.putBoolean(CardConfigurationParser.SHOW_STORE_PAYMENT_FIELD_KEY, false)
     config.putBoolean(CardConfigurationParser.HOLDER_NAME_REQUIRED_KEY, true)
     config.putBoolean(CardConfigurationParser.HIDE_CVC_KEY, true)
@@ -135,6 +137,7 @@ class CardConfigurationParserTest {
     val mockBuilder = mock(CardConfiguration.Builder::class.java)
     sut.applyConfiguration(mockBuilder)
 
+    verify(mockBuilder, times(1)).isSubmitButtonVisible = false
     verify(mockBuilder, times(1)).isStorePaymentFieldVisible = false
     verify(mockBuilder, times(1)).isHolderNameRequired = true
     verify(mockBuilder, times(1)).isHideCvc = true

@@ -36,6 +36,7 @@ internal enum DropInKeys: SubConfig {
 
 internal enum CardKeys: SubConfig {
     static let rootKey = "card"
+    static let showSubmitButton = "showSubmitButton"
     static let showStorePaymentField = "showStorePaymentField"
     static let holderNameRequired = "holderNameRequired"
     static let hideCvcStoredCard = "hideCvcStoredCard"
