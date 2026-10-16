@@ -24,5 +24,10 @@ Pod::Spec.new do |s|
   s.dependency "Adyen", '5.26.0'
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
 
+  # The generated adyen_react_native-Swift.h exposes the public RCTEventEmitter subclasses and so
+  # emits `@import React;`. With prebuilt React Native core (Expo default), the React framework
+  # module includes non-modular Pods headers, which is an error in ObjC explicit-module builds.
+  s.pod_target_xcconfig = { "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES" => "YES" }
+
   install_modules_dependencies(s)
 end
