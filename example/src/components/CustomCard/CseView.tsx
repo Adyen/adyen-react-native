@@ -89,15 +89,30 @@ const CseView = () => {
 
   return (
     <ScrollView style={[Styles.page, Styles.padded]}>
-      <CardNumberInput onChangeText={setNumber} style={Styles.padded} />
+      <CardNumberInput
+        testID="cse-card-number"
+        onChangeText={setNumber}
+        style={Styles.padded}
+      />
       <View style={[Styles.horizontalContent]}>
-        <ExpiryDateInput onChangeText={setExpiryDate} />
+        <ExpiryDateInput
+          testID="cse-expiry-date"
+          onChangeText={setExpiryDate}
+        />
         <View style={Styles.horizontalSpace} />
-        <SecureCodeInput bin={number.slice(0, 8)} onChangeText={setCvv} />
+        <SecureCodeInput
+          testID="cse-security-code"
+          bin={number.slice(0, 8)}
+          onChangeText={setCvv}
+        />
       </View>
 
       <View style={[Styles.topPadded]}>
-        <Button onPress={() => tryEncryptCard()} title={'Pay ' + amountLabel} />
+        <Button
+          testID="cse-pay-button"
+          onPress={() => tryEncryptCard()}
+          title={'Pay ' + amountLabel}
+        />
       </View>
     </ScrollView>
   );

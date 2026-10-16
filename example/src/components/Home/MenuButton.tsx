@@ -3,11 +3,16 @@ import Styles from '../common/Styles';
 
 type MenuButtonProps = {
   title: string;
+  testID?: string;
   onPress: () => void;
 };
 
-const MenuButton = ({ title, onPress }: MenuButtonProps) => (
-  <TouchableOpacity style={Styles.transparentButton} onPress={onPress}>
+const MenuButton = ({ title, testID, onPress }: MenuButtonProps) => (
+  <TouchableOpacity
+    testID={testID}
+    style={Styles.transparentButton}
+    onPress={onPress}
+  >
     <Text style={Styles.transparentButtonText}>{title}</Text>
   </TouchableOpacity>
 );

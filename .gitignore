@@ -104,3 +104,8 @@ example/package-lock.json
 example/secrets.json
 example/android/gradlew.bat
 example/android/gradle/gradle-daemon-jvm.properties
+
+# Appium e2e artifacts (screenshots, page sources) and Metro logs
+appium_*.png
+appium_*.xml
+example/metro.log

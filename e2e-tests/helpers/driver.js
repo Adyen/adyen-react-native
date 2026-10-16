@@ -53,6 +53,9 @@ async function createDriver() {
         'appium:skipUnlock': true,
         'appium:waitForQuiescence': false,
         'appium:simpleIsVisibleCheck': true,
+        ...(process.env.WDA_LOCAL_PORT
+          ? { 'appium:wdaLocalPort': Number(process.env.WDA_LOCAL_PORT) }
+          : {}),
       };
 
   const driver = await remote({
