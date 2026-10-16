@@ -57,12 +57,7 @@
 
 ### Partial payments
 
-| Parameter        | Description                                                                                                                                                                        | Required |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `pinRequired`    | Indicates whether the security code field should be shown. Defaults to `true`.                                                                                                     | No       |
-| `onBalanceCheck` | Invoked when the payment component requires a balance check. Call the [paymentMethods/balance](https://docs.adyen.com/api-explorer/Checkout/68/post/paymentMethods/balance) API.   | No       |
-| `onOrderRequest` | Invoked when the payment component requires a partial payment order object. Call the [/orders](https://docs.adyen.com/api-explorer/Checkout/68/post/orders) API.                   | No       |
-| `onOrderCancel`  | Invoked when the payment component needs to cancel the order. Call the  [orders/cancel](https://docs.adyen.com/api-explorer/Checkout/68/post/orders/cancel) API.                   | No       |
+`Configuration` has no partial payments section. Partial payments, gift card balance checks, and order operations are absent from the shipped public surface. See [Architecture.md](Architecture.md#capabilities) for current platform support.
 
 ### ApplePay component
 
