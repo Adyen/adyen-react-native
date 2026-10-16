@@ -67,7 +67,7 @@ let package = Package(
                 .product(name: "AdyenSession", package: "adyen-ios")
             ] + reactHeaders,
             path: ".",
-            exclude: objcSources + objcHeaders + ["AdyenExample.xctestplan"],
+            exclude: objcSources + objcHeaders,
             resources: [.copy("PrivacyInfo.xcprivacy")],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
@@ -76,7 +76,7 @@ let package = Package(
             dependencies: ["adyen_react_native"] + reactHeaders,
             path: ".",
             // Xcode bundles any .xcprivacy under a target's path; the Swift target owns the manifest.
-            exclude: ["PrivacyInfo.xcprivacy", "AdyenExample.xctestplan"],
+            exclude: ["PrivacyInfo.xcprivacy"],
             sources: objcSources,
             publicHeadersPath: "include",
             cSettings: [

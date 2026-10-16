@@ -5,15 +5,16 @@ import { withAdyenIos } from './withAdyenIos';
 const pkg = require('@adyen/react-native/package.json');
 
 export type AdyenPluginProps = {
-  merchantIdentifier: string | string[] | undefined;
-  useFrameworks: boolean;
+  merchantIdentifier?: string | string[];
+  /**
+   * @deprecated No longer needed: the generated Objective-C import works with and without
+   * `use_frameworks!`. The value is ignored and will be removed in a future major version.
+   */
+  useFrameworks?: boolean;
 };
 
 const withAdyen: ConfigPlugin<AdyenPluginProps> = (config, props) => {
-  config = withAdyenIos(
-    config,
-    props ?? { merchantIdentifier: undefined, useFrameworks: false }
-  );
+  config = withAdyenIos(config, props ?? {});
   config = withAdyenAndroid(config);
   return config;
 };

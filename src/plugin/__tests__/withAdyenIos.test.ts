@@ -2,7 +2,11 @@ import { withAdyenIos } from '../withAdyenIos';
 import { describe, it, expect } from '@jest/globals';
 
 // Import the mocked functions to spy on them
-import { withAppDelegate, withEntitlementsPlist } from '@expo/config-plugins';
+import {
+  WarningAggregator,
+  withAppDelegate,
+  withEntitlementsPlist,
+} from '@expo/config-plugins';
 import { setEntitlements } from '../setEntitlements';
 import { setImport } from '../setImport';
 import { setApplicationOpenUrl } from '../setApplicationOpenUrl';
@@ -17,6 +21,7 @@ jest.mock('@expo/config-plugins', () => ({
   // allowing us to test the logic within the callback.
   withAppDelegate: jest.fn((config, modifier) => modifier(config)),
   withEntitlementsPlist: jest.fn((config, modifier) => modifier(config)),
+  WarningAggregator: { addWarningIOS: jest.fn() },
 }));
 
 jest.mock('../setEntitlements', () => ({
@@ -61,7 +66,6 @@ jest.mock('../setApplicationContinueUserActivitySwift', () => ({
 const merchantIdentifier = 'merchant.com.example.test';
 const mockPluginSettings = {
   merchantIdentifier: merchantIdentifier,
-  useFrameworks: false,
 };
 
 describe('withAdyenIos', () => {
@@ -77,10 +81,7 @@ describe('withAdyenIos', () => {
       modResults: { contents: '// This is an Objective-C AppDelegate' },
     };
 
-    const result = withAdyenIos(config, {
-      merchantIdentifier: undefined,
-      useFrameworks: false,
-    });
+    const result = withAdyenIos(config, {});
 
     // Check that the correct HOF was called
     expect(withAppDelegate).toHaveBeenCalled();
@@ -158,10 +159,7 @@ describe('withAdyenIos', () => {
       modResults: { contents: '// AppDelegate content' },
     };
 
-    withAdyenIos(config, {
-      merchantIdentifier: '',
-      useFrameworks: false,
-    });
+    withAdyenIos(config, { merchantIdentifier: '' });
 
     // Check that the entitlements HOF was NOT called
     expect(withEntitlementsPlist).not.toHaveBeenCalled();
@@ -205,5 +203,33 @@ describe('withAdyenIos', () => {
 
     // Check that the content is unchanged
     expect(result.modResults.contents).toBe(originalContent);
+  });
+
+  it('should warn that useFrameworks is deprecated when it is set', async () => {
+    const config = {
+      name: 'test-app',
+      slug: 'test-app',
+      modResults: { contents: '// This is an Objective-C AppDelegate' },
+    };
+
+    withAdyenIos(config, { useFrameworks: true });
+
+    expect(WarningAggregator.addWarningIOS).toHaveBeenCalledWith(
+      '@adyen/react-native.useFrameworks',
+      expect.stringContaining('deprecated')
+    );
+    expect(setImport).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it('should not warn when useFrameworks is omitted', async () => {
+    const config = {
+      name: 'test-app',
+      slug: 'test-app',
+      modResults: { contents: '// This is an Objective-C AppDelegate' },
+    };
+
+    withAdyenIos(config, mockPluginSettings);
+
+    expect(WarningAggregator.addWarningIOS).not.toHaveBeenCalled();
   });
 });
