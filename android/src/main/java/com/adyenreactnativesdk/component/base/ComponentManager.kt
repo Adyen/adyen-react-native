@@ -24,6 +24,7 @@ import com.adyen.checkout.core.components.SubmitResult
 import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -43,8 +44,40 @@ internal interface ComponentEventSink {
   fun onError()
 }
 
+/** Constructs the SDK controller; an internal seam so native tests can supply doubles. */
+internal fun interface NativeControllerFactory {
+  fun create(
+    target: CheckoutTarget,
+    context: CheckoutContext,
+    callbacks: CheckoutCallbacks,
+    coroutineScope: CoroutineScope,
+  ): CheckoutController?
+}
+
+internal object SdkControllerFactory : NativeControllerFactory {
+  override fun create(
+    target: CheckoutTarget,
+    context: CheckoutContext,
+    callbacks: CheckoutCallbacks,
+    coroutineScope: CoroutineScope,
+  ): CheckoutController? =
+    when (context) {
+      is CheckoutContext.Sessions -> {
+        CheckoutController(target, context, callbacks as SessionCheckoutCallbacks, coroutineScope)
+      }
+
+      is CheckoutContext.Advanced -> {
+        CheckoutController(target, context, callbacks as AdvancedCheckoutCallbacks, coroutineScope)
+      }
+
+      else -> {
+        null
+      }
+    }
+}
+
 /**
- * Builds and drives a [CheckoutController] for any payment method.
+ * Builds and drives one [CheckoutController] for one exact payment method instance.
  */
 internal class ComponentManager(
   private val activity: FragmentActivity,
@@ -52,10 +85,7 @@ internal class ComponentManager(
   private val additionalCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val additionalSessionCallbacks: (CheckoutCallbacks.() -> Unit)? = null,
   private val sessionBeforeSubmitBridge: SessionBeforeSubmitBridge? = null,
-  /** Exact coordinator presenter or operation identity that owns redirect returns. */
-  private val redirectOwnerId: String? = null,
-  /** Called on terminal state (complete/failure) so a headless caller can dismiss its UI. */
-  private val onTerminal: (() -> Unit)? = null,
+  private val controllerFactory: NativeControllerFactory = SdkControllerFactory,
 ) {
   var checkoutController: CheckoutController? = null
     private set
@@ -63,46 +93,42 @@ internal class ComponentManager(
   private var submitContinuation: CancellableContinuation<SubmitResult>? = null
   private var additionalDetailsContinuation: CancellableContinuation<AdditionalDetailsResult>? = null
   private var disposed = false
-  private var terminalHandled = false
+  private var isCreating = false
+  private var creationFailed = false
 
   /** Whether this manager is suspended waiting on a submit/additionalDetails result from JS. */
   val isAwaitingResult: Boolean
     get() = submitContinuation != null || additionalDetailsContinuation != null
 
-  suspend fun createController(
+  /**
+   * Creates the controller eagerly. The pinned SDK reports a payment method it cannot build by
+   * returning a failed controller that fires `onFailure` synchronously during construction; that
+   * failure means "not creatable" here and is never forwarded as a checkout terminal error.
+   */
+  fun createController(
     context: CheckoutContext,
     target: CheckoutTarget,
   ): CheckoutController? {
     if (disposed) return null
-    val controller =
+    check(checkoutController == null) { "Controller is already created" }
+    val callbacks: CheckoutCallbacks =
       when (context) {
-        is CheckoutContext.Sessions -> {
-          CheckoutController(
-            target = target,
-            context = context,
-            callbacks = sessionCallbacks(),
-            coroutineScope = activity.lifecycleScope,
-          )
-        }
-
-        is CheckoutContext.Advanced -> {
-          CheckoutController(
-            target = target,
-            context = context,
-            callbacks = advancedCallbacks(),
-            coroutineScope = activity.lifecycleScope,
-          )
-        }
-
-        else -> {
-          null
-        }
+        is CheckoutContext.Sessions -> sessionCallbacks()
+        is CheckoutContext.Advanced -> advancedCallbacks()
+        else -> return null
       }
-    if (disposed) return null
-    checkoutController = controller
-    controller?.let { controller ->
-      redirectOwnerId?.let { CheckoutCoordinator.shared.registerRedirectController(controller, it) }
+    isCreating = true
+    val controller =
+      try {
+        controllerFactory.create(target, context, callbacks, activity.lifecycleScope)
+      } finally {
+        isCreating = false
+      }
+    if (disposed || creationFailed || controller == null) {
+      dispose()
+      return null
     }
+    checkoutController = controller
     return controller
   }
 
@@ -167,13 +193,9 @@ internal class ComponentManager(
           eventSink.onAdvancedAdditionalDetails(data)
         }
       },
-      onFailure = { _ ->
-        eventSink.reportTerminalFailure()
-        notifyTerminal()
-      },
+      onFailure = { _ -> onFailure() },
       onComplete = { result ->
         eventSink.onComplete(result.resultCode.value)
-        notifyTerminal()
       },
       additionalCallbacksBlock = block ?: defaultBlock,
     )
@@ -186,12 +208,8 @@ internal class ComponentManager(
         if (eventSink.onInteractionStarted()) {
           eventSink.onSessionComplete(result)
         }
-        notifyTerminal()
       },
-      onFailure = { _ ->
-        eventSink.reportTerminalFailure()
-        notifyTerminal()
-      },
+      onFailure = { _ -> onFailure() },
       onBeforeSubmit =
         sessionBeforeSubmitBridge?.let { bridge ->
           { data ->
@@ -208,10 +226,12 @@ internal class ComponentManager(
 
   private val defaultBlock: CheckoutCallbacks.() -> Unit = {}
 
-  private fun notifyTerminal() {
-    if (terminalHandled) return
-    terminalHandled = true
-    onTerminal?.invoke()
+  private fun onFailure() {
+    if (isCreating) {
+      creationFailed = true
+      return
+    }
+    eventSink.reportTerminalFailure()
   }
 }
 

@@ -7,114 +7,82 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Button, View } from 'react-native';
 import { AdyenComponent } from '@adyen/react-native';
-import type { Checkout } from '@adyen/react-native';
+import type {
+  Checkout,
+  CheckoutPaymentMethod,
+  Controller,
+} from '@adyen/react-native';
 import Styles from '../../common/Styles';
 
 interface PaymentMethodComponentProps {
   checkout: Checkout;
-  type: string;
-  /** Button title for direct/headless methods (and Apple Pay's tap gate). */
+  paymentMethod: CheckoutPaymentMethod;
+  /** Button title for methods submitted on tap. */
   title?: string;
 }
 
-type Availability = 'unavailable' | 'needsInteraction' | 'direct';
-
-// TODO: Apple Pay's native component presents the sheet immediately on mount (no inline button
-// like Google Pay), so we gate it behind our own tap button until the SDK adds one.
-const NEEDS_TAP_GATE_HACK = new Set(['applepay']);
+// Apple Pay's native component presents the payment sheet as soon as its view is mounted, so
+// the shopper starts it from a button that calls `controller.submit()` instead.
+const SUBMIT_ON_TAP = new Set(['applepay']);
 
 /**
- * Renders a payment method embedded `<AdyenComponent>` (needs UI),
- * or a plain button calling `checkout.submit(target)` (direct/headless, or Apple Pay's tap gate).
- * If it isn't offered by the current checkout, or the device/platform reports it unavailable,
- * it renders nothing.
+ * Renders an embedded `<AdyenComponent>` for a controller that needs UI, or a button calling
+ * `controller.submit()` for one that does not (and for Apple Pay). Renders nothing when the
+ * payment method is unavailable on this device or platform.
  */
 const PaymentMethodComponent = ({
   checkout,
-  type,
+  paymentMethod,
   title,
 }: PaymentMethodComponentProps) => {
-  const isOffered = (checkout.paymentMethods.paymentMethods ?? []).some(
-    (paymentMethod) => paymentMethod.type === type
-  );
-  const [availability, setAvailability] = useState<Availability | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [controller, setController] = useState<Controller | null>(null);
 
   useEffect(() => {
-    setIsOpen(false);
-    if (!isOffered) {
-      setAvailability(null);
-      return;
-    }
+    setController(null);
     let active = true;
-    const resolveAvailability = async () => {
+    const resolveController = async () => {
       try {
-        const target = { kind: 'paymentMethod' as const, type };
-        const available = await checkout.isAvailable(target);
-        if (!active) return;
-        if (!available) {
-          setAvailability('unavailable');
-          return;
-        }
-        const needsInteraction = await checkout.requiresUserInteraction({
-          kind: 'paymentMethod',
-          type,
-        });
+        if (!(await checkout.isAvailable(paymentMethod))) return;
+        const created = await checkout.createController(paymentMethod);
         if (active) {
-          setAvailability(needsInteraction ? 'needsInteraction' : 'direct');
+          setController(created);
         }
       } catch {
         if (active) {
-          setAvailability('unavailable');
+          setController(null);
         }
       }
     };
-    resolveAvailability();
+    resolveController();
     return () => {
       active = false;
     };
-  }, [checkout, type, isOffered]);
+  }, [checkout, paymentMethod]);
 
   const onPress = useCallback(() => {
-    if (NEEDS_TAP_GATE_HACK.has(type)) {
-      setIsOpen(true);
-    } else {
-      checkout
-        .submit({ kind: 'paymentMethod', type })
-        .catch(() => setAvailability('unavailable'));
-    }
-  }, [checkout, type]);
+    controller?.submit().catch(() => setController(null));
+  }, [controller]);
 
-  if (availability === 'needsInteraction' && NEEDS_TAP_GATE_HACK.has(type)) {
-    return isOpen ? (
-      <AdyenComponent checkout={checkout} type={type} />
-    ) : (
-      <View style={Styles.padded}>
-        <Button
-          testID={`submit-${type}`}
-          title={title ?? type}
-          onPress={onPress}
-        />
-      </View>
-    );
+  if (!controller) {
+    return null;
   }
 
-  switch (availability) {
-    case 'needsInteraction':
-      return <AdyenComponent checkout={checkout} type={type} />;
-    case 'direct':
-      return (
-        <View style={Styles.padded}>
-          <Button
-            testID={`submit-${type}`}
-            title={title ?? type}
-            onPress={onPress}
-          />
-        </View>
-      );
-    default:
-      return null;
+  if (
+    controller.requiresUserInteraction &&
+    !SUBMIT_ON_TAP.has(paymentMethod.type)
+  ) {
+    return <AdyenComponent controller={controller} />;
   }
+
+  return (
+    <View style={Styles.padded}>
+      <Button
+        testID={`submit-${paymentMethod.type}`}
+        title={title ?? paymentMethod.name ?? paymentMethod.type}
+        onPress={onPress}
+      />
+    </View>
+  );
 };
 
 export default PaymentMethodComponent;

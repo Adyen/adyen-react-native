@@ -7,7 +7,6 @@
 package com.adyenreactnativesdk.component.base
 
 import com.adyen.checkout.core.common.CheckoutContext
-import com.facebook.react.bridge.ReadableMap
 
 /**
  * Holds per-checkout shared state owned by the checkout coordinator.
@@ -18,4 +17,7 @@ internal data class CheckoutState(
 ) {
   /** Whether this checkout was created via the session flow. */
   val isSession: Boolean get() = checkoutContext is CheckoutContext.Sessions
+
+  /** Ids are minted once per checkout, the first time the snapshot is published or queried. */
+  val paymentMethods: PaymentMethodCatalog by lazy { PaymentMethodCatalog.from(checkoutContext) }
 }

@@ -9,12 +9,10 @@ package com.adyenreactnativesdk.coordinator
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.MainThread
-import com.adyen.checkout.core.action.data.Action
 import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.components.AdditionalDetailsResult
 import com.adyen.checkout.core.components.CheckoutController
-import com.adyen.checkout.core.components.CheckoutTarget
 import com.adyen.checkout.core.components.SubmitResult
 import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyenreactnativesdk.component.base.CheckoutState
@@ -38,23 +36,52 @@ internal interface PresenterFactory {
   fun create(presentation: CoordinatorPresentation): CoordinatorPresenter
 }
 
+/** Owner of the interactive operation slot. It never owns a payment-method controller. */
 internal interface CoordinatorPresenter {
-  suspend fun createController(
-    context: CheckoutContext,
-    target: CheckoutTarget,
-  ): CheckoutController?
-
-  fun handleAction(action: Action)
-
-  fun complete(resultCode: String)
-
-  fun retry(message: String?)
-
   /** The current controller is consulted by an identifier-only fragment after recreation. */
   fun controller(): CheckoutController? = null
 
   fun dispose()
 }
+
+/**
+ * One native payment-method controller owned by the coordinator registry. It lives exactly as
+ * long as its checkout and is disposed once by the coordinator.
+ */
+internal interface RegisteredController {
+  /** The SDK controller rendered by views and fragments; absent only for test doubles. */
+  val checkoutController: CheckoutController?
+
+  /** Resolved once, when the native controller is created. */
+  val requiresUserInteraction: Boolean
+
+  /** Routes this controller's callbacks to an explicit (submit) operation. */
+  fun bindOperation(operationId: String)
+
+  /** Stops routing callbacks to [operationId]; a later callback may claim an embedded slot. */
+  fun releaseOperation(operationId: String)
+
+  fun dispose()
+}
+
+/** A mounted view rendering a registry controller. The coordinator detaches it on disposal. */
+internal fun interface ControllerViewBinding {
+  fun detach()
+}
+
+internal data class ControllerRegistration(
+  val controllerId: String,
+  val requiresUserInteraction: Boolean,
+)
+
+/** The command addressed a checkout that is no longer the active one. */
+internal class StaleCheckoutException : IllegalStateException("Stale checkout")
+
+/** The command addressed a controller identity that this checkout never registered. */
+internal class UnknownControllerException : IllegalStateException("Unknown controller")
+
+/** Another live view already renders this controller. */
+internal class ControllerAlreadyBoundException : IllegalStateException("Controller is already bound to a view")
 
 /** Official Drop-in result types, decoupled from the SDK's activity-result callback. */
 internal sealed interface CoordinatorDropInResult {
@@ -127,6 +154,7 @@ internal enum class CoordinatorIdentityKind {
   CHECKOUT,
   OPERATION,
   REQUEST,
+  CONTROLLER,
 }
 
 internal enum class CoordinatorRequestKind {
@@ -190,8 +218,9 @@ internal class CheckoutCoordinator(
   private var runtimeDependencies: CheckoutCoordinatorDependencies? = null
   private val dependencies: CheckoutCoordinatorDependencies?
     get() = configuredDependencies ?: runtimeDependencies
-  private val passivePresenters = mutableMapOf<String, PassivePresenter>()
-  private val passivePresenterIdsByTarget = mutableMapOf<CheckoutTarget, String>()
+  private val controllers = mutableMapOf<String, ControllerEntry>()
+  private val controllerIdsByPaymentMethodId = mutableMapOf<String, String>()
+  private val unavailablePaymentMethodIds = mutableSetOf<String>()
   private val redirectControllers = mutableMapOf<String, CheckoutController>()
 
   private var checkout: CoordinatorCheckout? = null
@@ -213,11 +242,28 @@ internal class CheckoutCoordinator(
   /** The generated module instance currently allowed to tear down this checkout. */
   private var lifecycleOwnerId: String? = null
 
-  private data class PassivePresenter(
+  private class ControllerEntry(
     val checkoutId: String,
-    val target: CheckoutTarget,
-    val presenter: CoordinatorPresenter,
-  )
+    val controller: RegisteredController,
+  ) {
+    var view: ControllerViewBinding? = null
+  }
+
+  /** Lends a registry controller to one explicit operation without transferring ownership. */
+  private class ControllerOperationPresenter(
+    private val operationId: String,
+    private val registered: RegisteredController,
+  ) : CoordinatorPresenter {
+    private var released = false
+
+    override fun controller(): CheckoutController? = if (released) null else registered.checkoutController
+
+    override fun dispose() {
+      if (released) return
+      released = true
+      registered.releaseOperation(operationId)
+    }
+  }
 
   private data class FragmentPresentation(
     val cancellable: Boolean,
@@ -325,11 +371,30 @@ internal class CheckoutCoordinator(
     }
   }
 
+  /**
+   * Starts an explicit submit with the EXISTING registry controller. The controller is lent to
+   * the operation presenter and remains registry-owned when the operation ends.
+   */
   @MainThread
-  fun beginOperation(): String =
+  fun beginControllerOperation(
+    checkoutId: String,
+    controllerId: String,
+  ): String =
     transition {
-      beginOperationLocked(OperationKind.EXPLICIT)
+      if (this.checkoutId != checkoutId || isDisposing) throw StaleCheckoutException()
+      val entry = controllers[controllerId]?.takeIf { it.checkoutId == checkoutId } ?: throw UnknownControllerException()
+      val createdOperationId =
+        beginOperationLocked(OperationKind.EXPLICIT) { operationId ->
+          ControllerOperationPresenter(operationId, entry.controller)
+        }
+      entry.controller.bindOperation(createdOperationId)
+      entry.controller.checkoutController?.let { redirectControllers[createdOperationId] = it }
+      createdOperationId
     }
+
+  /** Whether [controllerId] is currently rendered by a mounted view. */
+  @MainThread
+  fun isControllerBound(controllerId: String): Boolean = transition { controllers[controllerId]?.view != null }
 
   /** Registers the official activity-result launcher owned by the currently active host. */
   @MainThread
@@ -411,31 +476,6 @@ internal class CheckoutCoordinator(
       operationKind = null
     }
   }
-
-  /**
-   * Creates a coordinator-owned temporary presenter for a query and always releases it before
-   * returning. Queries do not acquire the interactive operation slot.
-   */
-  suspend fun <T> withQueryPresenter(block: suspend (CoordinatorPresenter) -> T): T {
-    val queryPresenter =
-      transition {
-        val activeCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
-        checkNotNull(dependencies) { "CheckoutCoordinator requires configured dependencies" }
-          .presenterFactory
-          .create(CoordinatorPresentation(checkoutId = activeCheckoutId, operationId = null))
-      }
-    return try {
-      block(queryPresenter)
-    } finally {
-      transition { queryPresenter.dispose() }
-    }
-  }
-
-  @MainThread
-  fun presenter(operationId: String): CoordinatorPresenter? =
-    transition {
-      if (this.operationId == operationId) presenter else null
-    }
 
   @MainThread
   fun beginRequest(
@@ -535,6 +575,11 @@ internal class CheckoutCoordinator(
       settleRequestLocked(invokeFallback = true)
       presenter?.dispose()
       presenter = null
+      // The host adapter resolves the bottom sheet from the still-active operation identity.
+      if (fragmentPresentations.containsKey(operationId)) {
+        dependencies?.hostLauncherAdapter?.releaseCheckoutHost()
+      }
+      redirectControllers.remove(operationId)
       this.operationId = null
       operationKind = null
       fragmentPresentations.remove(operationId)
@@ -566,69 +611,76 @@ internal class CheckoutCoordinator(
   }
 
   /**
-   * Registers a mounted Fabric view without acquiring the interactive operation slot. The
-   * registration is bound to opaque identities and one canonical SDK-supported target. Regular
-   * targets are exact types and stored targets are exact IDs. TODO: include subtype/funding
-   * source only when a published component-creation API supports that precision.
+   * Returns the registry controller for [paymentMethodId], creating it eagerly on first use.
+   * Creation is idempotent per payment method id, so availability checks and controller creation
+   * share one native controller. [create] returns null when the SDK cannot build a component for
+   * the exact instance; that result is remembered for the lifetime of the checkout.
    */
   @MainThread
-  fun registerPassivePresenter(
+  fun registerController(
     checkoutId: String,
-    presenterId: String,
-    target: CheckoutTarget,
-    presenter: CoordinatorPresenter,
-  ) {
+    paymentMethodId: String,
+    create: () -> RegisteredController?,
+  ): ControllerRegistration? =
     transition {
-      check(this.checkoutId == checkoutId) { "Stale checkout" }
-      val existing = passivePresenters[presenterId]
-      check(
-        existing == null ||
-          (existing.checkoutId == checkoutId && existing.target == target && existing.presenter === presenter),
-      ) {
-        "Presenter identity collision"
+      if (this.checkoutId != checkoutId || isDisposing) throw StaleCheckoutException()
+      controllerIdsByPaymentMethodId[paymentMethodId]?.let { controllerId ->
+        controllers[controllerId]?.let { entry ->
+          return@transition ControllerRegistration(controllerId, entry.controller.requiresUserInteraction)
+        }
       }
-      if (existing != null) return@transition
-      check(passivePresenterIdsByTarget[target] == null) { "Duplicate embedded checkout target" }
-      passivePresenters[presenterId] = PassivePresenter(checkoutId, target, presenter)
-      passivePresenterIdsByTarget[target] = presenterId
+      if (paymentMethodId in unavailablePaymentMethodIds) return@transition null
+      val created = create()
+      if (this.checkoutId != checkoutId || isDisposing) {
+        created?.dispose()
+        throw StaleCheckoutException()
+      }
+      if (created == null) {
+        unavailablePaymentMethodIds += paymentMethodId
+        return@transition null
+      }
+      val controllerId = nextId(CoordinatorIdentityKind.CONTROLLER)
+      controllers[controllerId] = ControllerEntry(checkoutId, created)
+      controllerIdsByPaymentMethodId[paymentMethodId] = controllerId
+      ControllerRegistration(controllerId, created.requiresUserInteraction)
     }
-  }
 
   /**
-   * Delayed recycle/unmount only removes the exact registration it created. A newly mounted view
-   * with a reused Fabric token is therefore left intact.
+   * Binds a mounted view to an existing registry controller. A controller renders in at most one
+   * live view; a second simultaneous bind rejects, while re-binding after [unbindControllerView]
+   * is allowed. Binding never creates a controller.
    */
   @MainThread
-  fun unregisterPassivePresenter(
+  fun bindControllerView(
     checkoutId: String,
-    presenterId: String,
-    presenter: CoordinatorPresenter,
+    controllerId: String,
+    binding: ControllerViewBinding,
+  ): RegisteredController =
+    transition {
+      if (this.checkoutId != checkoutId || isDisposing) throw StaleCheckoutException()
+      val entry = controllers[controllerId]?.takeIf { it.checkoutId == checkoutId } ?: throw UnknownControllerException()
+      val current = entry.view
+      if (current != null && current !== binding) throw ControllerAlreadyBoundException()
+      entry.view = binding
+      entry.controller
+    }
+
+  /** Unmount detaches only the exact binding it created; the controller stays registered. */
+  @MainThread
+  fun unbindControllerView(
+    controllerId: String,
+    binding: ControllerViewBinding,
   ) {
     transition {
-      val existing = passivePresenters[presenterId] ?: return@transition
-      if (existing.checkoutId == checkoutId && existing.presenter === presenter) {
-        passivePresenters.remove(presenterId)
-        if (passivePresenterIdsByTarget[existing.target] == presenterId) {
-          passivePresenterIdsByTarget.remove(existing.target)
-        }
-        redirectControllers.remove(presenterId)
+      val entry = controllers[controllerId] ?: return@transition
+      if (entry.view === binding) {
+        entry.view = null
       }
     }
   }
 
   @MainThread
-  fun isPassivePresenterActive(
-    checkoutId: String,
-    presenterId: String,
-    presenter: CoordinatorPresenter,
-  ): Boolean =
-    transition {
-      val existing = passivePresenters[presenterId]
-      this.checkoutId == checkoutId && existing?.checkoutId == checkoutId && existing.presenter === presenter
-    }
-
-  @MainThread
-  fun passivePresenterCount(): Int = transition { passivePresenters.size }
+  fun controllerCount(): Int = transition { controllers.size }
 
   @MainThread
   fun registerRedirectController(
@@ -788,10 +840,16 @@ internal class CheckoutCoordinator(
       if (operationKind?.isDropIn == true) {
         dropInLauncher?.clearResult()
       }
-      val ownedPassivePresenters = passivePresenters.values.map { it.presenter }
-      passivePresenters.clear()
-      passivePresenterIdsByTarget.clear()
-      ownedPassivePresenters.forEach { it.dispose() }
+      // Request fallbacks above resume pending SDK callbacks before their controllers go away.
+      val ownedControllers = controllers.values.toList()
+      controllers.clear()
+      controllerIdsByPaymentMethodId.clear()
+      unavailablePaymentMethodIds.clear()
+      ownedControllers.forEach { entry ->
+        entry.view?.detach()
+        entry.view = null
+        entry.controller.dispose()
+      }
       redirectControllers.clear()
       fragmentPresentations.clear()
 
@@ -831,7 +889,10 @@ internal class CheckoutCoordinator(
     }
   }
 
-  private fun beginOperationLocked(kind: OperationKind): String {
+  private fun beginOperationLocked(
+    kind: OperationKind,
+    createPresenter: ((String) -> CoordinatorPresenter)? = null,
+  ): String {
     val activeCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
     check(operationId == null) {
       emit(CoordinatorEvent.OperationBusy)
@@ -839,15 +900,16 @@ internal class CheckoutCoordinator(
     }
     val createdOperationId = nextId(CoordinatorIdentityKind.OPERATION)
     val createdPresenter =
-      checkNotNull(dependencies) { "CheckoutCoordinator requires configured dependencies" }
-        .presenterFactory
-        .create(
-          CoordinatorPresentation(
-            checkoutId = activeCheckoutId,
-            operationId = createdOperationId,
-            isDropIn = kind.isDropIn,
-          ),
-        )
+      createPresenter?.invoke(createdOperationId)
+        ?: checkNotNull(dependencies) { "CheckoutCoordinator requires configured dependencies" }
+          .presenterFactory
+          .create(
+            CoordinatorPresentation(
+              checkoutId = activeCheckoutId,
+              operationId = createdOperationId,
+              isDropIn = kind.isDropIn,
+            ),
+          )
     presenter = createdPresenter
     operationId = createdOperationId
     operationKind = kind

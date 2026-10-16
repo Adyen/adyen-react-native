@@ -16,6 +16,7 @@ import {
   type AddressLookupItem,
   type Checkout,
   type Configuration,
+  type Controller,
   type PaymentAction,
   type PaymentDetailsData,
   type PaymentMethodData,
@@ -45,6 +46,8 @@ const HEADLESS_SCENARIOS: readonly Scenario[] = [
   'headless-sessions',
   'headless-advanced',
 ];
+// Gives the native view time to bind and detach between recycle steps.
+const RECYCLE_STEP_MS = 250;
 const ACTION_TEST_CARD = {
   // Adyen's published native mobile 3DS2 challenge card returns a non-redirect Action.
   number: '5201285565672311',
@@ -75,6 +78,24 @@ function errorCode(error: unknown): string {
     return String(error.code);
   }
   return 'error';
+}
+
+function cardController(checkout: Checkout): Promise<Controller> {
+  const card = checkout.paymentMethods.regular.first(
+    (paymentMethod) => paymentMethod.type === 'scheme'
+  );
+  if (!card) {
+    return Promise.reject(
+      Object.assign(new Error('No card payment method'), {
+        code: 'invalidTarget',
+      })
+    );
+  }
+  return checkout.createController(card);
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 const Status = ({ value }: { value: string }) => (
@@ -163,17 +184,6 @@ const ValidationCheckout = ({
     useAppContext();
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [status, setStatus] = useState('setting-up');
-  const [mountedCheckout, setMountedCheckout] = useState<Checkout | null>(null);
-  const [showPresenter, setShowPresenter] = useState(
-    () =>
-      !HEADLESS_SCENARIOS.includes(scenario) &&
-      scenario !== 'dropin-sessions' &&
-      scenario !== 'dropin-advanced'
-  );
-  const staleCheckout = useRef<Checkout | null>(null);
-  const currentCheckout = useRef<Checkout | null>(null);
-  const suppressContentionError = useRef(false);
-  const standaloneAction = useRef<Promise<unknown> | null>(null);
   const isHeadlessScenario = HEADLESS_SCENARIOS.includes(scenario);
   const isAdvancedScenario =
     scenario === 'advanced' ||
@@ -181,6 +191,15 @@ const ValidationCheckout = ({
     scenario === 'dropin-advanced';
   const isDropInScenario =
     scenario === 'dropin-sessions' || scenario === 'dropin-advanced';
+  const isEmbeddedScenario = !isHeadlessScenario && !isDropInScenario;
+  const [presentedController, setPresentedController] =
+    useState<Controller | null>(null);
+  const [showPresenter, setShowPresenter] = useState(isEmbeddedScenario);
+  const staleCheckout = useRef<Checkout | null>(null);
+  const staleController = useRef<Controller | null>(null);
+  const currentCheckout = useRef<Checkout | null>(null);
+  const suppressContentionError = useRef(false);
+  const standaloneAction = useRef<Promise<unknown> | null>(null);
 
   const onComplete = useCallback(
     async (result: SessionsResult | PaymentResult) => {
@@ -235,52 +254,63 @@ const ValidationCheckout = ({
     };
   }, [baseConfiguration, onConfirmLookup, onLookup, scenario]);
 
-  const setup = useCallback(async () => {
-    setStatus('setting-up');
-    try {
-      if (isAdvancedScenario) {
-        const paymentMethods = await advancedApi.paymentMethods(configuration);
-        const next = await AdyenCheckout.setupAdvanced(
-          paymentMethods,
-          checkoutConfigurationForScenario,
-          {
-            onSubmit: async (data: PaymentMethodData) => {
-              const result = await advancedApi.payments(
-                data,
-                configuration,
-                data.returnUrl
-              );
-              return result.action
-                ? { type: 'action', action: result.action }
-                : { type: 'completed', resultCode: result.resultCode };
-            },
-            onAdditionalDetails: async (data: PaymentDetailsData) => {
-              const result = await advancedApi.paymentDetails(data);
-              return { type: 'completed', resultCode: result.resultCode };
-            },
-            onComplete,
-            onError,
-          }
-        );
+  const setup = useCallback(
+    async (mountPresenter = false) => {
+      setStatus('setting-up');
+      let next: Checkout;
+      try {
+        if (isAdvancedScenario) {
+          const paymentMethods =
+            await advancedApi.paymentMethods(configuration);
+          next = await AdyenCheckout.setupAdvanced(
+            paymentMethods,
+            checkoutConfigurationForScenario,
+            {
+              onSubmit: async (data: PaymentMethodData) => {
+                const result = await advancedApi.payments(
+                  data,
+                  configuration,
+                  data.returnUrl
+                );
+                return result.action
+                  ? { type: 'action', action: result.action }
+                  : { type: 'completed', resultCode: result.resultCode };
+              },
+              onAdditionalDetails: async (data: PaymentDetailsData) => {
+                const result = await advancedApi.paymentDetails(data);
+                return { type: 'completed', resultCode: result.resultCode };
+              },
+              onComplete,
+              onError,
+            }
+          );
+        } else {
+          const session = await sessionsApi.requestSession(
+            configuration,
+            ENVIRONMENT.returnUrl
+          );
+          next = await AdyenCheckout.setup(
+            session,
+            checkoutConfigurationForScenario,
+            {
+              onComplete,
+              onError,
+            }
+          );
+        }
         currentCheckout.current = next;
         setCheckout(next);
-        setMountedCheckout((mounted) => mounted ?? next);
-      } else {
-        const session = await sessionsApi.requestSession(
-          configuration,
-          ENVIRONMENT.returnUrl
-        );
-        const next = await AdyenCheckout.setup(
-          session,
-          checkoutConfigurationForScenario,
-          {
-            onComplete,
-            onError,
-          }
-        );
-        currentCheckout.current = next;
-        setCheckout(next);
-        setMountedCheckout((mounted) => mounted ?? next);
+      } catch (error) {
+        setStatus(`setup-${errorCode(error)}`);
+        return;
+      }
+      if (mountPresenter && isEmbeddedScenario) {
+        try {
+          setPresentedController(await cardController(next));
+        } catch (error) {
+          setStatus(`embedded-${errorCode(error)}`);
+          return;
+        }
       }
       setStatus(
         scenario === 'lookup'
@@ -291,24 +321,24 @@ const ValidationCheckout = ({
               ? 'headless-ready'
               : 'embedded-ready'
       );
-    } catch (error) {
-      setStatus(`setup-${errorCode(error)}`);
-    }
-  }, [
-    sessionsApi,
-    advancedApi,
-    checkoutConfigurationForScenario,
-    configuration,
-    onComplete,
-    onError,
-    scenario,
-    isAdvancedScenario,
-    isDropInScenario,
-    isHeadlessScenario,
-  ]);
+    },
+    [
+      sessionsApi,
+      advancedApi,
+      checkoutConfigurationForScenario,
+      configuration,
+      onComplete,
+      onError,
+      scenario,
+      isAdvancedScenario,
+      isDropInScenario,
+      isEmbeddedScenario,
+      isHeadlessScenario,
+    ]
+  );
 
   useEffect(() => {
-    setup().catch(() => undefined);
+    setup(true).catch(() => undefined);
     return () => {
       currentCheckout.current?.invalidate().catch(() => undefined);
     };
@@ -319,21 +349,41 @@ const ValidationCheckout = ({
   const replaceCheckout = useCallback(async () => {
     if (!checkout) return;
     staleCheckout.current = checkout;
+    staleController.current = await cardController(checkout).catch(() => null);
     await setup();
     setStatus('mounted-presenter-inactive');
   }, [checkout, setup]);
 
   const submitStaleCheckout = useCallback(async () => {
     try {
-      await staleCheckout.current?.submit({
-        kind: 'paymentMethod',
-        type: 'scheme',
-      });
+      const stale =
+        staleController.current ??
+        (staleCheckout.current
+          ? await cardController(staleCheckout.current)
+          : null);
+      await stale?.submit();
       setStatus('stale-submit-unexpected');
     } catch (error) {
       setStatus(`stale-submit-${errorCode(error)}`);
     }
   }, []);
+
+  const recyclePresenter = useCallback(async () => {
+    if (!checkout) return;
+    const controller = await cardController(checkout);
+    setPresentedController(controller);
+    setShowPresenter(true);
+    await wait(RECYCLE_STEP_MS);
+    setShowPresenter(false);
+    await wait(RECYCLE_STEP_MS);
+    setShowPresenter(true);
+    await wait(RECYCLE_STEP_MS);
+    setShowPresenter(false);
+    const again = await cardController(checkout);
+    setStatus(
+      again === controller ? 'presenter-recycled' : 'presenter-duplicated'
+    );
+  }, [checkout]);
 
   const cleanupContention = useCallback(async () => {
     try {
@@ -347,10 +397,10 @@ const ValidationCheckout = ({
   const contend = useCallback(async () => {
     if (!checkout) return;
     suppressContentionError.current = true;
-    const target = { kind: 'paymentMethod' as const, type: 'scheme' };
+    const controller = await cardController(checkout);
     const [, contender] = await Promise.allSettled([
-      checkout.submit(target),
-      checkout.submit(target),
+      controller.submit(),
+      controller.submit(),
     ]);
     setStatus(
       contender.status === 'rejected'
@@ -362,7 +412,8 @@ const ValidationCheckout = ({
   const startHeadless = useCallback(
     async (fresh = false) => {
       if (!checkout) return;
-      await checkout.submit({ kind: 'paymentMethod', type: 'scheme' });
+      const controller = await cardController(checkout);
+      await controller.submit();
       setStatus(fresh ? 'fresh-headless-started' : 'headless-started');
     },
     [checkout]
@@ -458,9 +509,9 @@ const ValidationCheckout = ({
   }, []);
 
   const embeddedPresenter =
-    mountedCheckout && showPresenter ? (
+    presentedController && showPresenter ? (
       <View testID="validation-embedded-presenter">
-        <AdyenComponent checkout={mountedCheckout} type="scheme" />
+        <AdyenComponent controller={presentedController} />
       </View>
     ) : null;
 
@@ -487,11 +538,9 @@ const ValidationCheckout = ({
         testID="validation-recycle-presenter"
         title="Recycle presenter"
         onPress={() => {
-          setShowPresenter(true);
-          setTimeout(() => {
-            setShowPresenter(false);
-            setStatus('presenter-recycled');
-          }, 0);
+          recyclePresenter().catch((error) => {
+            setStatus(`presenter-recycle-${errorCode(error)}`);
+          });
         }}
       />
       <Button

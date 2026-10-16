@@ -12,12 +12,15 @@ import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
 import com.adyen.checkout.core.common.CheckoutResultCode
 import com.adyen.checkout.core.components.BeforeSubmitResult
+import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.SessionCheckoutResult
 import com.adyen.checkout.core.components.data.BeforeSubmitData
 import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyen.checkout.core.components.paymentmethod.PaymentMethodDetails
 import com.adyenreactnativesdk.component.base.CheckoutState
+import com.adyenreactnativesdk.component.base.ControllerEventSink
+import com.adyenreactnativesdk.component.base.SdkControllerFactory
 import com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinatorDependencies
@@ -35,6 +38,7 @@ import com.adyenreactnativesdk.coordinator.CoordinatorEvent
 import com.adyenreactnativesdk.coordinator.CoordinatorIdentityKind
 import com.adyenreactnativesdk.coordinator.CoordinatorRequest
 import com.adyenreactnativesdk.coordinator.PresenterFactory
+import com.adyenreactnativesdk.coordinator.RegisteredController
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -77,7 +81,7 @@ class ProductionCallbackRouterTest {
     val retries = mutableListOf<String?>()
     val checkoutId = setupAdvanced()
     val sink =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = checkoutId,
         bindEmbeddedOperation = {},
         handleAction = actions::add,
@@ -111,7 +115,7 @@ class ProductionCallbackRouterTest {
 
     val retryCheckoutId = setupAdvanced()
     val retrySink =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = retryCheckoutId,
         bindEmbeddedOperation = {},
         handleAction = actions::add,
@@ -134,7 +138,7 @@ class ProductionCallbackRouterTest {
     val completions = mutableListOf<String>()
     val checkoutId = setupAdvanced()
     val sink =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = checkoutId,
         bindEmbeddedOperation = {},
         handleAction = {},
@@ -161,7 +165,7 @@ class ProductionCallbackRouterTest {
 
     val replacementCheckoutId = setupAdvanced()
     val replacementSink =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = replacementCheckoutId,
         bindEmbeddedOperation = {},
         handleAction = {},
@@ -179,7 +183,7 @@ class ProductionCallbackRouterTest {
     val firstRetries = mutableListOf<String?>()
     val competingRetries = mutableListOf<String?>()
     val first =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = checkoutId,
         bindEmbeddedOperation = {},
         handleAction = {},
@@ -187,7 +191,7 @@ class ProductionCallbackRouterTest {
         retry = firstRetries::add,
       )
     val competing =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = checkoutId,
         bindEmbeddedOperation = {},
         handleAction = {},
@@ -226,21 +230,66 @@ class ProductionCallbackRouterTest {
   }
 
   @Test
-  fun `active Fabric operation rejects generated headless submit without queuing it`() {
+  fun `active Fabric operation rejects generated controller submit without queuing it`() {
     val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
     val module = module(activity)
     val checkoutId = setupAdvancedWithCard()
+    val controller = RegistryController()
+    val registration =
+      checkNotNull(CheckoutCoordinator.shared.registerController(checkoutId, "card-id") { controller })
     assertTrue(CheckoutCoordinator.shared.acquireEmbeddedOperation(checkoutId) != null)
     val promise = PromiseRecorder()
-    val target =
-      JavaOnlyMap().apply {
-        putString("kind", "paymentMethod")
-        putString("type", "scheme")
-      }
 
-    module.submit(checkoutId, target, promise)
+    module.submitController(checkoutId, registration.controllerId, promise)
 
     assertEquals("operationBusy", promise.code)
+    assertTrue(controller.boundOperations.isEmpty())
+    assertTrue(CheckoutCoordinator.shared.isActive(checkoutId))
+  }
+
+  @Test
+  fun `explicit controller router keeps action details and ends the operation on retry`() {
+    val module = module()
+    val checkoutId = setupAdvanced()
+    val controller = RegistryController()
+    val registration =
+      checkNotNull(CheckoutCoordinator.shared.registerController(checkoutId, "card-id") { controller })
+    val operationId = CheckoutCoordinator.shared.beginControllerOperation(checkoutId, registration.controllerId)
+    val actions = mutableListOf<Action>()
+    val retries = mutableListOf<String?>()
+    val sink =
+      ControllerEventSink(
+        checkoutId = checkoutId,
+        bindEmbeddedOperation = { error("An explicit operation must not claim an embedded one") },
+        handleAction = actions::add,
+        complete = {},
+        retry = retries::add,
+      )
+    sink.bindExplicitOperation(operationId)
+
+    assertTrue(sink.onInteractionStarted())
+    sink.onAdvancedSubmit(paymentData())
+    val actionRequest = requireNotNull(CheckoutCoordinator.shared.activeRequest())
+    assertEquals(operationId, actionRequest.operationId)
+    module.respond(
+      response(
+        actionRequest,
+        """{"type":"action","action":{"type":"redirect","paymentMethodType":"scheme","url":"https://example.test"}}""",
+      ),
+      PromiseRecorder(),
+    )
+    assertEquals(1, actions.size)
+    assertEquals(operationId, CheckoutCoordinator.shared.activeOperationId())
+
+    assertTrue(sink.onInteractionStarted())
+    sink.onAdvancedSubmit(paymentData())
+    val retryRequest = requireNotNull(CheckoutCoordinator.shared.activeRequest())
+    module.respond(response(retryRequest, """{"type":"retry","message":"Declined"}"""), PromiseRecorder())
+
+    assertEquals(listOf<String?>("Declined"), retries)
+    assertNull(CheckoutCoordinator.shared.activeOperationId())
+    assertEquals(listOf(operationId), controller.releasedOperations)
+    assertEquals(0, controller.disposeCount)
     assertTrue(CheckoutCoordinator.shared.isActive(checkoutId))
   }
 
@@ -250,7 +299,7 @@ class ProductionCallbackRouterTest {
     module(terminalEvents = terminalEvents)
     val checkoutId = setupSession()
     val completionSink =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = checkoutId,
         bindEmbeddedOperation = {},
         handleAction = {},
@@ -282,7 +331,7 @@ class ProductionCallbackRouterTest {
 
     val failureCheckoutId = setupSession()
     val failureSink =
-      FabricComponentEventSink(
+      ControllerEventSink(
         checkoutId = failureCheckoutId,
         bindEmbeddedOperation = {},
         handleAction = {},
@@ -319,7 +368,7 @@ class ProductionCallbackRouterTest {
       val checkoutId = setupAdvanced()
       val retries = mutableListOf<String?>()
       val sink =
-        FabricComponentEventSink(
+        ControllerEventSink(
           checkoutId = checkoutId,
           bindEmbeddedOperation = {},
           handleAction = {},
@@ -411,7 +460,8 @@ class ProductionCallbackRouterTest {
     val module =
       AndroidCheckoutModule(
         reactContext = context,
-        capabilityMetadataFactory = { JavaOnlyMap() },
+        mapFactory = { JavaOnlyMap() },
+        controllerFactory = SdkControllerFactory,
       )
     CheckoutCoordinator.shared.configureRuntimeDependencies(
       CheckoutCoordinatorDependencies(
@@ -502,6 +552,26 @@ class ProductionCallbackRouterTest {
     override val checkoutState: CheckoutState,
   ) : CheckoutStateOwner {
     override fun dispose() = Unit
+  }
+
+  private class RegistryController : RegisteredController {
+    val boundOperations = mutableListOf<String>()
+    val releasedOperations = mutableListOf<String>()
+    var disposeCount = 0
+    override val checkoutController: CheckoutController? = null
+    override val requiresUserInteraction: Boolean = true
+
+    override fun bindOperation(operationId: String) {
+      boundOperations += operationId
+    }
+
+    override fun releaseOperation(operationId: String) {
+      releasedOperations += operationId
+    }
+
+    override fun dispose() {
+      disposeCount += 1
+    }
   }
 
   private class DropInLauncher : CoordinatorDropInLauncher {

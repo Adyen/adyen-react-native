@@ -10,24 +10,17 @@ import android.os.Handler
 import android.os.Looper
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import com.adyen.checkout.core.action.data.Action
-import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
-import com.adyen.checkout.core.common.CheckoutResultCode
-import com.adyen.checkout.core.components.AdditionalDetailsResult
 import com.adyen.checkout.core.components.Checkout
-import com.adyen.checkout.core.components.CheckoutTarget
-import com.adyen.checkout.core.components.SessionCheckoutResult
-import com.adyen.checkout.core.components.SubmitResult
-import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyen.checkout.core.sessions.SessionResponse
 import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.CheckoutFragment
 import com.adyenreactnativesdk.component.base.CheckoutState
-import com.adyenreactnativesdk.component.base.ComponentEventSink
-import com.adyenreactnativesdk.component.base.ComponentManager
+import com.adyenreactnativesdk.component.base.ComponentController
 import com.adyenreactnativesdk.component.base.ModuleException
+import com.adyenreactnativesdk.component.base.NativeControllerFactory
+import com.adyenreactnativesdk.component.base.SdkControllerFactory
 import com.adyenreactnativesdk.component.base.SessionBeforeSubmitBridge
 import com.adyenreactnativesdk.configuration.CheckoutConfigurationFactory
 import com.adyenreactnativesdk.coordinator.CheckoutCoordinator
@@ -36,15 +29,17 @@ import com.adyenreactnativesdk.coordinator.CheckoutHostLauncherAdapter
 import com.adyenreactnativesdk.coordinator.CheckoutIdentityGenerator
 import com.adyenreactnativesdk.coordinator.CheckoutScheduler
 import com.adyenreactnativesdk.coordinator.CheckoutStateOwner
+import com.adyenreactnativesdk.coordinator.ControllerRegistration
 import com.adyenreactnativesdk.coordinator.CoordinatorCancellation
 import com.adyenreactnativesdk.coordinator.CoordinatorDropInPresenter
 import com.adyenreactnativesdk.coordinator.CoordinatorDropInResult
 import com.adyenreactnativesdk.coordinator.CoordinatorIdentityKind
 import com.adyenreactnativesdk.coordinator.CoordinatorPresentation
 import com.adyenreactnativesdk.coordinator.CoordinatorPresenter
-import com.adyenreactnativesdk.coordinator.CoordinatorRequest
 import com.adyenreactnativesdk.coordinator.CoordinatorRequestKind
 import com.adyenreactnativesdk.coordinator.PresenterFactory
+import com.adyenreactnativesdk.coordinator.StaleCheckoutException
+import com.adyenreactnativesdk.coordinator.UnknownControllerException
 import com.adyenreactnativesdk.util.ReactNativeJson
 import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
@@ -55,16 +50,18 @@ import com.facebook.react.bridge.WritableNativeMap
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.UUID
-import kotlin.coroutines.resume
 
 /**
  * Generated checkout control protocol. Owns the opaque checkout identity and emits typed, correlated bridge events.
  */
-class AndroidCheckoutModule(
+class AndroidCheckoutModule internal constructor(
   private val reactContext: ReactApplicationContext,
-  private val capabilityMetadataFactory: () -> WritableMap = ::WritableNativeMap,
+  private val mapFactory: () -> WritableMap,
+  private val controllerFactory: NativeControllerFactory,
 ) : NativeAdyenCheckoutSpec(reactContext),
   LifecycleEventListener {
+  constructor(reactContext: ReactApplicationContext) : this(reactContext, ::WritableNativeMap, SdkControllerFactory)
+
   /** Binds lifecycle callbacks from this TurboModule instance to its exact coordinator checkout. */
   private val lifecycleOwnerId = UUID.randomUUID().toString()
 
@@ -74,7 +71,7 @@ class AndroidCheckoutModule(
       CheckoutCoordinator.shared.configureRuntimeDependencies(
         CheckoutCoordinatorDependencies(
           checkoutFactory = UnsupportedCheckoutFactory,
-          presenterFactory = HeadlessPresenterFactory(),
+          presenterFactory = DropInPresenterFactory(),
           eventSink =
             GeneratedCheckoutEventSink { event ->
               emitEvent(
@@ -192,82 +189,72 @@ class AndroidCheckoutModule(
 
   override fun isAvailable(
     checkoutId: String,
-    target: ReadableMap,
+    paymentMethodId: String,
     promise: Promise,
   ) {
     onMain {
-      val state = activeState(checkoutId, promise) ?: return@onMain
-      val checkoutTarget = parseTarget(target, promise) ?: return@onMain
-      if (!hasTarget(state.checkoutContext, checkoutTarget)) {
-        reject(promise, ERROR_INVALID_TARGET)
-        return@onMain
-      }
-      promise.resolve(hasTarget(state.checkoutContext, checkoutTarget))
+      val registration = resolveController(checkoutId, paymentMethodId, promise) ?: return@onMain
+      promise.resolve(registration.isPresent)
     }
   }
 
-  override fun requiresUserInteraction(
+  override fun createController(
     checkoutId: String,
-    target: ReadableMap,
+    paymentMethodId: String,
     promise: Promise,
   ) {
     onMain {
-      val activity = activityOrReject(promise) ?: return@onMain
-      activity.lifecycleScope.launch {
-        val state = activeState(checkoutId, promise) ?: return@launch
-        val checkoutTarget = parseTarget(target, promise) ?: return@launch
-        if (!hasTarget(state.checkoutContext, checkoutTarget)) {
-          reject(promise, ERROR_INVALID_TARGET)
-          return@launch
+      val registration = resolveController(checkoutId, paymentMethodId, promise) ?: return@onMain
+      val controller =
+        registration.orNull() ?: run {
+          rejectUnsupportedPaymentMethod(promise)
+          return@onMain
         }
-        try {
-          val requiresInteraction =
-            CheckoutCoordinator.shared.withQueryPresenter { presenter ->
-              presenter.createController(state.checkoutContext, checkoutTarget)?.requiresUserInteraction() == true
-            }
-          promise.resolve(requiresInteraction)
-        } catch (_: Exception) {
-          reject(promise, ERROR_QUERY_FAILED)
-        }
-      }
+      promise.resolve(
+        mapFactory().apply {
+          putString(CONTROLLER_ID, controller.controllerId)
+          putBoolean(REQUIRES_USER_INTERACTION, controller.requiresUserInteraction)
+        },
+      )
     }
   }
 
-  override fun submit(
+  /**
+   * Submits with the EXISTING registry controller. A controller rendered by a mounted view
+   * submits in place; otherwise the bottom sheet hosts the same controller so input or actions
+   * can surface, and auto-submits when no input is required.
+   */
+  override fun submitController(
     checkoutId: String,
-    target: ReadableMap,
+    controllerId: String,
     promise: Promise,
   ) {
     onMain {
+      activeState(checkoutId, promise) ?: return@onMain
       val activity = activityOrReject(promise) ?: return@onMain
-      activity.lifecycleScope.launch {
-        val state = activeState(checkoutId, promise) ?: return@launch
-        val checkoutTarget = parseTarget(target, promise) ?: return@launch
-        if (!hasTarget(state.checkoutContext, checkoutTarget)) {
-          reject(promise, ERROR_INVALID_TARGET)
-          return@launch
-        }
-        val operationId =
-          try {
-            CheckoutCoordinator.shared.beginOperation()
-          } catch (_: Exception) {
-            reject(promise, ERROR_OPERATION_BUSY)
-            return@launch
-          }
-        val presenter =
-          CheckoutCoordinator.shared.presenter(operationId)
-            ?: run {
-              CheckoutCoordinator.shared.completeOperation(operationId)
-              reject(promise, ERROR_SUBMIT_FAILED)
-              return@launch
-            }
+      val operationId =
         try {
-          val controller = presenter.createController(state.checkoutContext, checkoutTarget)
-          if (controller == null) {
-            CheckoutCoordinator.shared.completeOperation(operationId)
-            reject(promise, ERROR_INVALID_TARGET)
-            return@launch
-          }
+          CheckoutCoordinator.shared.beginControllerOperation(checkoutId, controllerId)
+        } catch (_: StaleCheckoutException) {
+          reject(promise, ERROR_STALE_CHECKOUT)
+          return@onMain
+        } catch (_: UnknownControllerException) {
+          reject(promise, ERROR_INVALID_TARGET)
+          return@onMain
+        } catch (_: IllegalStateException) {
+          reject(promise, ERROR_OPERATION_BUSY)
+          return@onMain
+        }
+      try {
+        val controller = CheckoutCoordinator.shared.fragmentController(operationId)
+        if (controller == null) {
+          CheckoutCoordinator.shared.completeOperation(operationId)
+          reject(promise, ERROR_SUBMIT_FAILED)
+          return@onMain
+        }
+        if (CheckoutCoordinator.shared.isControllerBound(controllerId)) {
+          controller.submit()
+        } else {
           CheckoutFragment.showCoordinator(
             fragmentManager = activity.supportFragmentManager,
             operationId = operationId,
@@ -279,11 +266,11 @@ class AndroidCheckoutModule(
               }
             },
           )
-          promise.resolve(null)
-        } catch (_: Exception) {
-          CheckoutCoordinator.shared.completeOperation(operationId)
-          reject(promise, ERROR_SUBMIT_FAILED)
         }
+        promise.resolve(null)
+      } catch (_: Exception) {
+        CheckoutCoordinator.shared.completeOperation(operationId)
+        reject(promise, ERROR_SUBMIT_FAILED)
       }
     }
   }
@@ -396,33 +383,34 @@ class AndroidCheckoutModule(
       }
   }
 
-  private fun parseTarget(
-    source: ReadableMap,
+  /**
+   * Resolves [paymentMethodId] to its registry controller, eagerly creating it for the exact
+   * instance. Rejects (and returns null) for stale checkouts and foreign ids; a present but
+   * non-creatable payment method yields [ControllerLookup.Unavailable].
+   */
+  private fun resolveController(
+    checkoutId: String,
+    paymentMethodId: String,
     promise: Promise,
-  ): CheckoutTarget? =
-    parseCheckoutTarget(
-      kind = source.getString(KIND),
-      paymentMethodType = source.getString(TYPE),
-      storedPaymentMethodId = source.getString(ID),
-    ) ?: run {
-      reject(promise, ERROR_INVALID_TARGET)
-      null
-    }
-
-  private fun hasTarget(
-    context: CheckoutContext,
-    target: CheckoutTarget,
-  ): Boolean {
-    val paymentMethods =
-      when (context) {
-        is CheckoutContext.Sessions -> context.checkoutSession.sessionSetupResponse.paymentMethods
-        is CheckoutContext.Advanced -> context.paymentMethods
-        else -> null
+  ): ControllerLookup? {
+    val state = activeState(checkoutId, promise) ?: return null
+    val paymentMethod =
+      state.paymentMethods.paymentMethod(paymentMethodId) ?: run {
+        reject(promise, ERROR_INVALID_TARGET)
+        return null
       }
-    return when (target) {
-      is CheckoutTarget.PaymentMethod -> paymentMethods?.paymentMethods?.any { it.type == target.type } == true
-      is CheckoutTarget.StoredPaymentMethod -> paymentMethods?.storedPaymentMethods?.any { it.id == target.id } == true
-      else -> false
+    val activity = activityOrReject(promise) ?: return null
+    return try {
+      val registration =
+        CheckoutCoordinator.shared.registerController(checkoutId, paymentMethodId) {
+          state.paymentMethods.exactTarget(paymentMethod)?.let { target ->
+            ComponentController.create(activity, checkoutId, state, target, controllerFactory)
+          }
+        }
+      registration?.let(ControllerLookup::Available) ?: ControllerLookup.Unavailable
+    } catch (_: StaleCheckoutException) {
+      reject(promise, ERROR_STALE_CHECKOUT)
+      null
     }
   }
 
@@ -435,100 +423,19 @@ class AndroidCheckoutModule(
         reject(promise, ERROR_SETUP_FAILED)
         return
       }
-    val context = state.checkoutContext
-    val paymentMethods =
-      when (context) {
-        is CheckoutContext.Sessions -> context.checkoutSession.sessionSetupResponse.paymentMethods
-        is CheckoutContext.Advanced -> context.paymentMethods
-        else -> null
-      }
-    val descriptor =
-      WritableNativeMap().apply {
-        putString(CHECKOUT_ID, checkoutId)
-        putString(FLOW, if (state.isSession) FLOW_SESSIONS else FLOW_ADVANCED)
-        putString(PAYMENT_METHODS_JSON, PaymentMethods.SERIALIZER.serialize(paymentMethods ?: PaymentMethods()).toString())
-      }
-    promise.resolve(descriptor)
+    promise.resolve(checkoutDescriptor(checkoutId, state))
   }
 
-  private fun componentEventSink(presentation: CoordinatorPresentation): ComponentEventSink =
-    object : ComponentEventSink {
-      override fun onInteractionStarted(): Boolean = true
-
-      override fun onAdvancedSubmit(data: PaymentComponentData<*>) {
-        createRequest(
-          presentation.operationId ?: return,
-          CoordinatorRequestKind.ADVANCED_SUBMIT,
-          EVENT_ADVANCED_SUBMIT,
-          PaymentComponentData.SERIALIZER.serialize(data),
-        ) { response ->
-          val payload = response ?: JSONObject()
-          when (payload.optString(TYPE)) {
-            ACTION -> pendingPresenter(presentation)?.handleAction(Action.SERIALIZER.deserialize(payload.getJSONObject(ACTION)))
-            COMPLETED -> pendingPresenter(presentation)?.complete(payload.optString(RESULT_CODE, CheckoutResultCode.ERROR.value))
-            RETRY -> pendingPresenter(presentation)?.retry(payload.optString(MESSAGE).takeIf(String::isNotBlank))
-            else -> pendingPresenter(presentation)?.retry(null)
-          }
-        }
-      }
-
-      override fun onAdvancedAdditionalDetails(data: ActionComponentData) {
-        createRequest(
-          presentation.operationId ?: return,
-          CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS,
-          EVENT_ADVANCED_ADDITIONAL_DETAILS,
-          ActionComponentData.SERIALIZER.serialize(data),
-        ) { response ->
-          pendingPresenter(presentation)?.complete(
-            response?.optString(RESULT_CODE, CheckoutResultCode.ERROR.value) ?: CheckoutResultCode.ERROR.value,
-          )
-        }
-      }
-
-      override fun onSessionComplete(result: SessionCheckoutResult) {
-        emitTerminal(
-          presentation.checkoutId,
-          EVENT_COMPLETION,
-          JSONObject()
-            .put(RESULT_CODE, result.resultCode.value)
-            .put(SESSION_ID, result.sessionId)
-            .put(SESSION_DATA, result.sessionData),
-        )
-      }
-
-      override fun onComplete(resultCode: String) {
-        emitTerminal(presentation.checkoutId, EVENT_COMPLETION, JSONObject().put(RESULT_CODE, resultCode))
-      }
-
-      override fun onError() {
-        emitTerminal(presentation.checkoutId, EVENT_ERROR, terminalErrorPayload())
-      }
+  /** The published snapshot carries the ids minted by the checkout's [CheckoutState.paymentMethods]. */
+  internal fun checkoutDescriptor(
+    checkoutId: String,
+    state: CheckoutState,
+  ): WritableMap =
+    mapFactory().apply {
+      putString(CHECKOUT_ID, checkoutId)
+      putString(FLOW, if (state.isSession) FLOW_SESSIONS else FLOW_ADVANCED)
+      putString(PAYMENT_METHODS_JSON, state.paymentMethods.paymentMethodsJson.toString())
     }
-
-  private fun pendingPresenter(presentation: CoordinatorPresentation): CoordinatorPresenter? =
-    presentation.operationId?.let(CheckoutCoordinator.shared::presenter)
-
-  private fun createRequest(
-    operationId: String,
-    kind: CoordinatorRequestKind,
-    eventKind: String,
-    payload: JSONObject,
-    resume: (JSONObject?) -> Unit,
-  ) {
-    try {
-      CheckoutCoordinator.shared.beginRequest(
-        operationId = operationId,
-        kind = kind,
-        timeoutMillis = REQUEST_TIMEOUT_MILLIS,
-        eventKind = eventKind,
-        payloadJson = payload.toString(),
-        cancellationFallback = { resume(null) },
-        response = { response -> resume(response?.let(::JSONObject)) },
-      )
-    } catch (_: Exception) {
-      resume(null)
-    }
-  }
 
   private fun emitTerminal(
     checkoutId: String,
@@ -598,7 +505,7 @@ class AndroidCheckoutModule(
     promise.reject(
       ERROR_UNSUPPORTED_CAPABILITY,
       "Address lookup is unsupported by the pinned Android SDK",
-      capabilityMetadataFactory().apply {
+      mapFactory().apply {
         putString(CAPABILITY, ADDRESS_LOOKUP_CAPABILITY)
         putString(PHASE, PHASE_SETUP)
       },
@@ -609,8 +516,19 @@ class AndroidCheckoutModule(
     promise.reject(
       ERROR_UNSUPPORTED_CAPABILITY,
       "Advanced Drop-in is unsupported by Android SDK 6.0.0-alpha.1",
-      capabilityMetadataFactory().apply {
+      mapFactory().apply {
         putString(CAPABILITY, ADVANCED_DROP_IN_CAPABILITY)
+        putString(PHASE, PHASE_PRESENTATION)
+      },
+    )
+  }
+
+  private fun rejectUnsupportedPaymentMethod(promise: Promise) {
+    promise.reject(
+      ERROR_UNSUPPORTED_CAPABILITY,
+      "Payment method has no native component on the pinned Android SDK",
+      mapFactory().apply {
+        putString(CAPABILITY, PAYMENT_METHOD_CAPABILITY)
         putString(PHASE, PHASE_PRESENTATION)
       },
     )
@@ -633,74 +551,11 @@ class AndroidCheckoutModule(
       error("AndroidCheckoutModule supplies setup candidates directly")
   }
 
-  private inner class HeadlessPresenterFactory : PresenterFactory {
-    override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter =
-      if (presentation.isDropIn) {
-        DropInCoordinatorPresenter(presentation)
-      } else {
-        HeadlessCoordinatorPresenter(presentation)
-      }
-  }
-
-  /**
-   * Owns the controller for one headless operation or a temporary query. The coordinator creates
-   * and disposes this presenter, so production code never builds an untracked controller.
-   */
-  private inner class HeadlessCoordinatorPresenter(
-    private val presentation: CoordinatorPresentation,
-  ) : CoordinatorPresenter {
-    private var manager: ComponentManager? = null
-
-    override suspend fun createController(
-      context: CheckoutContext,
-      target: CheckoutTarget,
-    ): com.adyen.checkout.core.components.CheckoutController? {
-      check(manager == null) { "Presenter controller is already created" }
-      val createdManager =
-        ComponentManager(
-          activity = activityOrThrow(),
-          sessionBeforeSubmitBridge = CheckoutCoordinator.shared.checkoutState?.sessionBeforeSubmitBridge,
-          eventSink = componentEventSink(presentation),
-          redirectOwnerId = presentation.operationId,
-          onTerminal =
-            presentation.operationId?.let { operationId ->
-              {
-                if (CheckoutCoordinator.shared.activeOperationId() == operationId) {
-                  CheckoutFragment.hide(
-                    activityOrThrow().supportFragmentManager,
-                    "${CheckoutFragment.COORDINATOR_TAG_PREFIX}-$operationId",
-                  )
-                  CheckoutCoordinator.shared.invalidate()
-                }
-              }
-            },
-        )
-      manager = createdManager
-      return createdManager.createController(context, target)
+  private inner class DropInPresenterFactory : PresenterFactory {
+    override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter {
+      check(presentation.isDropIn) { "Explicit operations borrow a registry controller" }
+      return DropInCoordinatorPresenter(presentation)
     }
-
-    override fun handleAction(action: Action) {
-      manager?.handleAction(action)
-    }
-
-    override fun complete(resultCode: String) {
-      manager?.completion(resultCode)
-    }
-
-    override fun retry(message: String?) {
-      manager?.retry(message)
-    }
-
-    override fun controller(): com.adyen.checkout.core.components.CheckoutController? = manager?.checkoutController
-
-    override fun dispose() {
-      manager?.dispose()
-      manager = null
-    }
-
-    private fun activityOrThrow(): FragmentActivity =
-      reactContext.currentActivity as? FragmentActivity
-        ?: error("Headless presenter requires an active FragmentActivity")
   }
 
   /**
@@ -712,17 +567,6 @@ class AndroidCheckoutModule(
   ) : CoordinatorPresenter,
     CoordinatorDropInPresenter {
     private var disposed = false
-
-    override suspend fun createController(
-      context: CheckoutContext,
-      target: CheckoutTarget,
-    ): com.adyen.checkout.core.components.CheckoutController? = null
-
-    override fun handleAction(action: Action) = Unit
-
-    override fun complete(resultCode: String) = Unit
-
-    override fun retry(message: String?) = Unit
 
     override fun onDropInResult(result: CoordinatorDropInResult) {
       if (disposed) return
@@ -808,8 +652,8 @@ class AndroidCheckoutModule(
     private const val FLOW = "flow"
     private const val FLOW_SESSIONS = "sessions"
     private const val FLOW_ADVANCED = "advanced"
-    private const val PAYMENT_METHOD = "paymentMethod"
-    private const val STORED_PAYMENT_METHOD = "storedPaymentMethod"
+    private const val CONTROLLER_ID = "controllerId"
+    private const val REQUIRES_USER_INTERACTION = "requiresUserInteraction"
     private const val TYPE = "type"
     private const val ID = "id"
     private const val ACTION = "action"
@@ -830,7 +674,6 @@ class AndroidCheckoutModule(
     private const val ERROR_SETUP_FAILED = "invalidConfiguration"
     private const val ERROR_STALE_CHECKOUT = "staleCheckout"
     private const val ERROR_INVALID_TARGET = "invalidTarget"
-    private const val ERROR_QUERY_FAILED = "invalidTarget"
     private const val ERROR_OPERATION_BUSY = "operationBusy"
     private const val ERROR_SUBMIT_FAILED = "cancelled"
     private const val ERROR_DROP_IN_FAILED = "cancelled"
@@ -841,6 +684,7 @@ class AndroidCheckoutModule(
     private const val CAPABILITY = "capability"
     private const val ADDRESS_LOOKUP_CAPABILITY = "addressLookup"
     private const val ADVANCED_DROP_IN_CAPABILITY = "advancedDropIn"
+    private const val PAYMENT_METHOD_CAPABILITY = "paymentMethod"
     private const val PHASE = "phase"
     private const val PHASE_SETUP = "setup"
     private const val PHASE_PRESENTATION = "presentation"
@@ -849,30 +693,6 @@ class AndroidCheckoutModule(
     private const val ADDRESS_LOOKUP = "lookup"
   }
 }
-
-/** Converts only the generated target discriminant and its identity-bearing value. */
-internal fun parseCheckoutTarget(
-  kind: String?,
-  paymentMethodType: String?,
-  storedPaymentMethodId: String?,
-): CheckoutTarget? =
-  when (kind) {
-    "paymentMethod" -> {
-      paymentMethodType
-        ?.takeIf(String::isNotBlank)
-        ?.let(CheckoutTarget::PaymentMethod)
-    }
-
-    "storedPaymentMethod" -> {
-      storedPaymentMethodId
-        ?.takeIf(String::isNotBlank)
-        ?.let(CheckoutTarget::StoredPaymentMethod)
-    }
-
-    else -> {
-      null
-    }
-  }
 
 /**
  * Production callback router for a sessions before-submit callback. The request is created from
@@ -909,4 +729,21 @@ internal object SessionBeforeSubmitCallbackRouter {
   private const val ABORT = "abort"
   private const val EVENT_SESSION_BEFORE_SUBMIT = "sessionBeforeSubmit"
   private const val REQUEST_TIMEOUT_MILLIS = 60_000L
+}
+
+/** Outcome of resolving a known payment method id to its registry controller. */
+private sealed interface ControllerLookup {
+  val isPresent: Boolean
+
+  fun orNull(): ControllerRegistration? = (this as? Available)?.registration
+
+  data class Available(
+    val registration: ControllerRegistration,
+  ) : ControllerLookup {
+    override val isPresent: Boolean = true
+  }
+
+  data object Unavailable : ControllerLookup {
+    override val isPresent: Boolean = false
+  }
 }

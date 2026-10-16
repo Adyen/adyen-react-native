@@ -56,28 +56,12 @@ class AdyenComponentViewManager :
     state.checkoutId = value
   }
 
-  override fun setPresenterId(
+  override fun setControllerId(
     view: DynamicComponentView?,
     value: String?,
   ) {
     val state = view?.let { viewStates[it] } ?: return
-    state.presenterId = value
-  }
-
-  override fun setTargetKind(
-    view: DynamicComponentView?,
-    value: String?,
-  ) {
-    val state = view?.let { viewStates[it] } ?: return
-    state.targetKind = value
-  }
-
-  override fun setTargetValue(
-    view: DynamicComponentView?,
-    value: String?,
-  ) {
-    val state = view?.let { viewStates[it] } ?: return
-    state.targetValue = value
+    state.controllerId = value
   }
 
   companion object {
