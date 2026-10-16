@@ -51,9 +51,9 @@ internal class ApplePayModule: BaseModuleSender {
             let context = try parser.fetchContext(session: BaseModule.session)
             guard let payment = context.payment else { throw ModuleException.noPayment }
             let applepayConfig = try applePayParser.buildConfiguration(payment: payment)
-            applePayComponent = try Adyen.ApplePayComponent(paymentMethod: paymentMethod,
-                                                            context: context,
-                                                            configuration: applepayConfig)
+            applePayComponent = try ApplePayComponent(paymentMethod: paymentMethod,
+                                                      context: context,
+                                                      configuration: applepayConfig)
         } catch {
             return sendError(error: error)
         }
@@ -69,7 +69,9 @@ internal class ApplePayModule: BaseModuleSender {
     override func cleanUp() {
         shippingContactHandler = nil
         shippingMethodHandler = nil
-        if #available(iOS 15.0, *) { couponCodeHandler = nil }
+        if #available(iOS 15.0, *) {
+            couponCodeHandler = nil
+        }
         authorizationHandler = nil
         currentApplePayPayment = nil
         currentShippingMethods = []

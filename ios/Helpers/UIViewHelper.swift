@@ -4,6 +4,8 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
+import UIKit
+
 extension UIView {
     func findSubview<T: UIView>() -> T? {
         for subview in subviews {

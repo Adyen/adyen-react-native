@@ -32,15 +32,15 @@ extension BaseModuleSender: ActionComponentDelegate {
 }
 
 extension BaseModuleSender: CardComponentDelegate {
-    func didSubmit(lastFour _: String, finalBIN _: String, component _: Adyen.CardComponent) {
+    func didSubmit(lastFour _: String, finalBIN _: String, component _: CardComponent) {
         /* No Callback implemented */
     }
 
-    func didChangeBIN(_ value: String, component _: Adyen.CardComponent) {
+    func didChangeBIN(_ value: String, component _: CardComponent) {
         sendEvent(event: .changeBinValue, body: value)
     }
 
-    func didChangeCardBrand(_ value: [Adyen.CardBrand]?, component _: Adyen.CardComponent) {
+    func didChangeCardBrand(_ value: [CardBrand]?, component _: CardComponent) {
         guard let value, !value.isEmpty else { return }
         let jsonData = value.map { BinLookupDataDTO(brand: $0.type.rawValue).jsonObject }
         sendEvent(event: .binLookup, body: jsonData)

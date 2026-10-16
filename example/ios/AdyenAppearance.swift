@@ -11,7 +11,7 @@ import Foundation
 /// Please make sure that the name of the class exactly matches.
 /// SDK will use reflection to find the class with this exact name.
 class AdyenAppearance: AdyenAppearanceProvider {
-    static func createStyle() -> Adyen.DropInComponent.Style {
+    static func createStyle() -> DropInComponent.Style {
         .init(tintColor: .systemTeal)
     }
 }

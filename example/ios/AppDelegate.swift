@@ -1,4 +1,5 @@
 import Adyen
+import adyen_react_native
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider

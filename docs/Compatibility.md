@@ -1,3 +1,12 @@
+## iOS: Swift Package Manager
+
+`@adyen/react-native` ships its own `ios/Package.swift` for React Native's Swift Package Manager (SPM) autolinking. CocoaPods (`adyen-react-native.podspec`) keeps working.
+
+* SPM integration requires **React Native 0.87.1 or newer** (`npx react-native spm add`). Older versions and Expo prebuild projects must use CocoaPods.
+* React Native marks SPM support as experimental in 0.87.
+* The package resolves [Adyen iOS](https://github.com/Adyen/adyen-ios) from GitHub at the exact version the podspec pins (5.26.0) and declares iOS 15 as its minimum, matching React Native's SPM autolinking floor.
+* Adyen iOS splits into several modules under SPM (`Adyen`, `AdyenActions`, `AdyenDropIn`, ...), while the CocoaPod is the single `Adyen` module. App code that only does `import Adyen` and uses `RedirectComponent` or `DropInComponent` must also `import adyen_react_native`, which re-exports those modules. This import works with CocoaPods as well. Do not qualify those types with the `Adyen.` module prefix (for example, write `DropInComponent.Style`, not `Adyen.DropInComponent.Style`).
+
 ## Android API level
 
 Google Play requires new Android phone and tablet app submissions and updates to target Android 16 (API level 36) or higher. See [Google Play's target API level requirement](https://developer.android.com/google/play/requirements/target-sdk). This is set by the consuming application, not this library; configure the Android app that consumes `@adyen/react-native` with:
