@@ -7,40 +7,40 @@
 import Adyen
 
 extension BaseModuleSender: PaymentComponentDelegate {
-    func didSubmit(_ data: Adyen.PaymentComponentData, from _: any Adyen.PaymentComponent) {
+    public func didSubmit(_ data: Adyen.PaymentComponentData, from _: any Adyen.PaymentComponent) {
         sendSubmitEvent(data: data)
     }
 
-    func didFail(with error: any Error, from _: any Adyen.PaymentComponent) {
+    public func didFail(with error: any Error, from _: any Adyen.PaymentComponent) {
         sendError(error: error)
     }
 }
 
 extension BaseModuleSender: ActionComponentDelegate {
 
-    internal func didFail(with error: Error, from _: ActionComponent) {
+    public func didFail(with error: Error, from _: ActionComponent) {
         sendError(error: error)
     }
 
-    internal func didComplete(from _: ActionComponent) {
+    public func didComplete(from _: ActionComponent) {
         sendCompleteEvent()
     }
 
-    internal func didProvide(_ data: ActionComponentData, from _: ActionComponent) {
+    public func didProvide(_ data: ActionComponentData, from _: ActionComponent) {
         sendProvideEvent(actionData: data)
     }
 }
 
 extension BaseModuleSender: CardComponentDelegate {
-    func didSubmit(lastFour _: String, finalBIN _: String, component _: CardComponent) {
+    public func didSubmit(lastFour _: String, finalBIN _: String, component _: CardComponent) {
         /* No Callback implemented */
     }
 
-    func didChangeBIN(_ value: String, component _: CardComponent) {
+    public func didChangeBIN(_ value: String, component _: CardComponent) {
         sendEvent(event: .changeBinValue, body: value)
     }
 
-    func didChangeCardBrand(_ value: [CardBrand]?, component _: CardComponent) {
+    public func didChangeCardBrand(_ value: [CardBrand]?, component _: CardComponent) {
         guard let value, !value.isEmpty else { return }
         let jsonData = value.map { BinLookupDataDTO(brand: $0.type.rawValue).jsonObject }
         sendEvent(event: .binLookup, body: jsonData)

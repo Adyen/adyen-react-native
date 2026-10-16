@@ -11,7 +11,7 @@ import React
 ///
 /// All mutable state is main-thread-only; access is routed through `ensureMainThread(_:)`.
 @objc(AdyenComponentBus)
-internal final class EmbeddedComponentBusModule: BaseAddressModule {
+public final class EmbeddedComponentBusModule: BaseAddressModule {
 
     static var shared: EmbeddedComponentBusModule?
 
@@ -28,7 +28,7 @@ internal final class EmbeddedComponentBusModule: BaseAddressModule {
     private var lookupHandlers: [String: ([LookupAddressModel]) -> Void] = [:]
     private var lookupCompletionHandlers: [String: (Result<PostalAddress, Error>) -> Void] = [:]
 
-    override func supportedEvents() -> [String]! {
+    override public func supportedEvents() -> [String]! {
         super.supportedEvents() + EventName.cardEvents.map(\.rawValue)
     }
 
