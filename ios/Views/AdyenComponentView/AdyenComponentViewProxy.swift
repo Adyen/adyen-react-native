@@ -25,6 +25,7 @@ public final class AdyenComponentViewProxy: UIStackView {
     private var lastReportedHeight: CGFloat = 0
     private var originalTranslatesAutoresizingMask = true
     private var originalScrollState: ScrollState?
+    private var contentSizeObservation: NSKeyValueObservation?
     private let coordinator: CheckoutCoordinator
 
     @objc public weak var delegate: AdyenComponentViewProxyDelegate?
@@ -103,6 +104,7 @@ public final class AdyenComponentViewProxy: UIStackView {
             childVC.removeFromParent()
             restoreEmbeddingChanges(in: childVC.view)
         }
+        contentSizeObservation = nil
         componentView = nil
         componentViewController = nil
         lastReportedHeight = 0
@@ -131,6 +133,9 @@ public final class AdyenComponentViewProxy: UIStackView {
         formView.isScrollEnabled = false
         formView.alwaysBounceVertical = false
         formView.contentInsetAdjustmentBehavior = .never
+        contentSizeObservation = formView.observe(\.contentSize, options: [.new]) { [weak self] _, _ in
+            MainActor.assumeIsolated { self?.setNeedsLayout() }
+        }
     }
 
     /// The controller outlives this view and its view controller can be presented on its own
@@ -170,8 +175,15 @@ public final class AdyenComponentViewProxy: UIStackView {
 
     // MARK: - Layout reporting
 
+    /// Some component view controllers (for example the stored card form) do not publish a
+    /// `preferredContentSize`; their height then comes from the content of their scroll view.
     private var preferredContentSize: CGSize {
-        componentViewController?.preferredContentSize ?? .zero
+        let preferred = componentViewController?.preferredContentSize ?? .zero
+        guard preferred.height <= 0, let scrollView = originalScrollState?.scrollView else {
+            return preferred
+        }
+        scrollView.layoutIfNeeded()
+        return CGSize(width: bounds.width, height: scrollView.contentSize.height)
     }
 
     private func reportContentHeight() {

@@ -20,11 +20,7 @@ const TABS: TabName[] = ['Sessions', 'Advanced', 'API-Only'];
 
 const TAB_CONTENT: Record<TabName, PageType[]> = {
   'Sessions': [
-    {
-      title: 'Sessions DropIn',
-      route: 'SessionsDropInCheckout',
-      disabled: true,
-    },
+    { title: 'Sessions DropIn', route: 'SessionsDropInCheckout' },
     { title: 'Sessions Components', route: 'SessionsComponentsCheckout' },
   ],
   'Advanced': [{ title: 'Advanced Checkout', route: 'AdvancedCheckout' }],

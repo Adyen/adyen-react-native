@@ -64,7 +64,10 @@ async function runAndroidDropIn(driver, route) {
   );
   await otherPaymentMethods.waitForDisplayed({ timeout: 30000 });
   await otherPaymentMethods.click();
-  const card = await driver.$('android=new UiSelector().text("Credit Card")');
+  // Stored payment methods of the shopper push the card entry below the fold.
+  const card = await driver.$(
+    'android=new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector().text("Credit Card"))'
+  );
   await card.waitForDisplayed({ timeout: 30000 });
   await card.click();
   await fillCardDetails(driver);

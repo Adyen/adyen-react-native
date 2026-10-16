@@ -60,7 +60,7 @@ async function createDriver() {
     protocol: 'http',
     hostname: '127.0.0.1',
     path: '/',
-    port: 4723,
+    port: Number(process.env.APPIUM_PORT) || 4723,
     connectionRetryTimeout,
     connectionRetryCount,
     capabilities: capabilities,

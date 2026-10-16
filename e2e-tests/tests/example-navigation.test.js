@@ -71,7 +71,14 @@ async function navigateBackTo(driver, selector) {
   throw new Error(`Back navigation did not return to ${selector}`);
 }
 
+// Drop-in is only verified as rendered; the button is never tapped because iOS rejects Drop-in.
 const SCREENS = [
+  {
+    tab: 'Sessions',
+    route: 'SessionsDropInCheckout',
+    description: 'Sessions Drop-in button',
+    expect: (driver) => [testId(driver, 'dropin-button')],
+  },
   {
     tab: 'Sessions',
     route: 'SessionsComponentsCheckout',
@@ -119,12 +126,6 @@ async function testExampleNavigation(driver, _isAndroid) {
   for (const tab of ['Sessions', 'Advanced', 'API-Only']) {
     await openTab(driver, tab);
   }
-
-  await openTab(driver, 'Sessions');
-  const dropInItem = await driver.$(
-    testId(driver, 'menu-item-SessionsDropInCheckout')
-  );
-  await dropInItem.waitForDisplayed({ timeout: 15000 });
 
   for (const screen of SCREENS) {
     await visitScreen(driver, screen);

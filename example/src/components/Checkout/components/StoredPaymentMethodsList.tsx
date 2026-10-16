@@ -1,77 +1,73 @@
-import type { StoredPaymentMethod } from '@adyen/react-native';
 import { useMemo } from 'react';
 import { View } from 'react-native';
+import type { Checkout } from '@adyen/react-native';
 import type { StoredCardPaymentMethod } from '../../../api/types';
 import AdaptiveText from '../../common/AdaptiveText';
 import PaymentMethodListItem from './PaymentMethodListItem';
+import PaymentMethodComponent from './PaymentMethodComponent';
 import Styles from '../../common/Styles';
 
 interface StoredPaymentMethodsListProps {
-  storedPaymentMethods: StoredPaymentMethod[] | undefined;
-  makePayment: (storedCard: StoredCardPaymentMethod) => void;
+  checkout: Checkout;
 }
 
+const SUPPORTED_STORED_TYPES = new Set(['scheme']);
+
+/**
+ * Renders a controller for every supported stored payment method of the checkout, or an empty
+ * state when the shopper has none.
+ */
 const StoredPaymentMethodsList = ({
-  storedPaymentMethods,
-  makePayment,
+  checkout,
 }: StoredPaymentMethodsListProps) => {
-  const storedCards = useMemo(() => {
-    return (
-      storedPaymentMethods
-        ?.filter((paymentMethod) => paymentMethod.type === 'scheme')
-        .map((paymentMethod) => paymentMethod as StoredCardPaymentMethod) ?? []
-    );
-  }, [storedPaymentMethods]);
+  const storedCards = useMemo(
+    () =>
+      Array.from(checkout.paymentMethods.stored)
+        .filter((paymentMethod) =>
+          SUPPORTED_STORED_TYPES.has(paymentMethod.type)
+        )
+        .map((paymentMethod) => paymentMethod as StoredCardPaymentMethod),
+    [checkout]
+  );
 
   if (storedCards.length === 0) {
-    return null;
+    return (
+      <View style={Styles.centeredContent}>
+        <AdaptiveText style={Styles.paddedTitle}>
+          No stored payment methods available. Please add a card first.
+        </AdaptiveText>
+      </View>
+    );
   }
 
   return (
     <View>
       <AdaptiveText style={Styles.paddedTitle}>Stored payments</AdaptiveText>
-      {storedCards.map((paymentMethod) => {
-        return (
-          <PaymentMethodListItem
-            key={`${paymentMethod.id}`}
-            title={storedTitle(paymentMethod)}
-            subtitle={storedSubtitle(paymentMethod)}
-            icon={storedIcon(paymentMethod)}
-            onPress={() => makePayment(paymentMethod)}
-          />
-        );
-      })}
+      {storedCards.map((paymentMethod) => (
+        <PaymentMethodComponent
+          key={paymentMethod.id}
+          checkout={checkout}
+          paymentMethod={paymentMethod}
+          title={`Pay with ${storedTitle(paymentMethod)}`}
+          header={
+            <PaymentMethodListItem
+              title={storedTitle(paymentMethod)}
+              subtitle={storedSubtitle(paymentMethod)}
+              icon={paymentMethod.brand ?? 'card'}
+            />
+          }
+        />
+      ))}
     </View>
   );
 };
 
-function storedIcon(paymentMethod: StoredCardPaymentMethod): string {
-  switch (paymentMethod.type) {
-    case 'scheme':
-      return `${paymentMethod.brand ?? 'card'}`;
-    default:
-      return `${paymentMethod.type}`;
-  }
-}
-
-function storedSubtitle(
-  paymentMethod: StoredCardPaymentMethod
-): string | undefined {
-  switch (paymentMethod.type) {
-    case 'scheme':
-      return `exp ${paymentMethod.expiryMonth}/${paymentMethod.expiryYear}`;
-    default:
-      return undefined;
-  }
+function storedSubtitle(paymentMethod: StoredCardPaymentMethod): string {
+  return `exp ${paymentMethod.expiryMonth}/${paymentMethod.expiryYear}`;
 }
 
 function storedTitle(paymentMethod: StoredCardPaymentMethod): string {
-  switch (paymentMethod.type) {
-    case 'scheme':
-      return `**** **** **** ${paymentMethod.lastFour}`;
-    default:
-      return `${paymentMethod.name}`;
-  }
+  return `**** ${paymentMethod.lastFour}`;
 }
 
 export default StoredPaymentMethodsList;

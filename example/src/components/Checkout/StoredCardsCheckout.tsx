@@ -1,91 +1,25 @@
-import { useEffect, useCallback, useState } from 'react';
-import { Text, ActivityIndicator, View, ScrollView } from 'react-native';
-import type { PaymentMethodsResponse } from '@adyen/react-native';
+import { View } from 'react-native';
 import Styles from '../common/Styles';
+import PageScrollView from '../common/PageScrollView';
 import TopView from './components/TopView';
+import CheckoutContainer from './components/CheckoutContainer';
 import StoredPaymentMethodsList from './components/StoredPaymentMethodsList';
-import { useAppContext } from '../../hooks/useAppContext';
-import { payByID } from './utils/payByID';
-import type { StoredCardPaymentMethod } from '../../api/types';
+import { useAdvancedCheckoutSetup } from '../../hooks/useAdvancedCheckoutSetup';
 
 const StoredCardsCheckout = () => {
-  const { configuration, navigateToResults, advancedApi } = useAppContext();
-  const [loading, setLoading] = useState(true);
-  const [initError, setError] = useState<string | undefined>(undefined);
-  const [paymentMethods, setPaymentMethods] = useState<
-    PaymentMethodsResponse | undefined
-  >(undefined);
-
-  useEffect(() => {
-    const refreshPaymentMethods = async () => {
-      try {
-        const paymentMethodsResponse =
-          await advancedApi.paymentMethods(configuration);
-        setPaymentMethods(paymentMethodsResponse);
-      } catch (e) {
-        setError(String(e));
-      } finally {
-        setLoading(false);
-      }
-    };
-    refreshPaymentMethods();
-  }, [configuration, setPaymentMethods, setLoading, advancedApi]);
-
-  const makePayment = useCallback(
-    async (storedCard: StoredCardPaymentMethod) => {
-      try {
-        const cvv = '737';
-        const result = await payByID(
-          storedCard.id,
-          cvv,
-          configuration,
-          advancedApi
-        );
-        navigateToResults(result);
-      } catch (e) {
-        console.error('Payment error:', e);
-      }
-    },
-    [configuration, navigateToResults, advancedApi]
-  );
-
-  if (loading) {
-    return (
-      <View style={Styles.centeredContent}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  if (initError) {
-    return (
-      <View style={Styles.centeredContent}>
-        <Text style={Styles.errorText}>{initError}</Text>
-      </View>
-    );
-  }
-
-  if (!paymentMethods || paymentMethods.storedPaymentMethods?.length === 0) {
-    return (
-      <View style={Styles.centeredContent}>
-        <Text>
-          No stored payment methods available. Please add a card first.
-        </Text>
-      </View>
-    );
-  }
+  const advancedSetup = useAdvancedCheckoutSetup();
 
   return (
-    <View style={Styles.page}>
-      <TopView />
-      <ScrollView>
-        <StoredPaymentMethodsList
-          storedPaymentMethods={paymentMethods.storedPaymentMethods}
-          makePayment={makePayment}
-        />
-        <View style={Styles.scrollBottomPadding} />
-      </ScrollView>
-    </View>
+    <CheckoutContainer setup={advancedSetup}>
+      {(checkout) => (
+        <View style={Styles.page}>
+          <TopView />
+          <PageScrollView>
+            <StoredPaymentMethodsList checkout={checkout} />
+          </PageScrollView>
+        </View>
+      )}
+    </CheckoutContainer>
   );
 };
 

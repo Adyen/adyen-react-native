@@ -4,7 +4,7 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import { Button, View } from 'react-native';
 import { AdyenComponent } from '@adyen/react-native';
 import type {
@@ -19,6 +19,8 @@ interface PaymentMethodComponentProps {
   paymentMethod: CheckoutPaymentMethod;
   /** Button title for methods submitted on tap. */
   title?: string;
+  /** Rendered above the payment method once its controller is available. */
+  header?: ReactNode;
 }
 
 // Apple Pay's native component presents the payment sheet as soon as its view is mounted, so
@@ -34,6 +36,7 @@ const PaymentMethodComponent = ({
   checkout,
   paymentMethod,
   title,
+  header,
 }: PaymentMethodComponentProps) => {
   const [controller, setController] = useState<Controller | null>(null);
 
@@ -71,17 +74,25 @@ const PaymentMethodComponent = ({
     controller.requiresUserInteraction &&
     !SUBMIT_ON_TAP.has(paymentMethod.type)
   ) {
-    return <AdyenComponent controller={controller} />;
+    return (
+      <>
+        {header}
+        <AdyenComponent controller={controller} />
+      </>
+    );
   }
 
   return (
-    <View style={Styles.padded}>
-      <Button
-        testID={`submit-${paymentMethod.type}`}
-        title={title ?? paymentMethod.name ?? paymentMethod.type}
-        onPress={onPress}
-      />
-    </View>
+    <>
+      {header}
+      <View style={Styles.padded}>
+        <Button
+          testID={`submit-${paymentMethod.type}`}
+          title={title ?? paymentMethod.name ?? paymentMethod.type}
+          onPress={onPress}
+        />
+      </View>
+    </>
   );
 };
 
