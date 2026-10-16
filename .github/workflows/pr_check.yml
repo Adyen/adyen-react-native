@@ -74,7 +74,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['56', '57']
+        # SDK 56 is left out: its expo-modules-jsi (56.0.x) fails to compile
+        # with the Xcode 27 Swift compiler; SDK 57 (expo-modules-jsi 57.1) builds.
+        version: ['57']
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'expo'
