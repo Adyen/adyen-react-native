@@ -37,6 +37,7 @@ import com.adyenreactnativesdk.coordinator.CoordinatorIdentityKind
 import com.adyenreactnativesdk.coordinator.CoordinatorPresentation
 import com.adyenreactnativesdk.coordinator.CoordinatorPresenter
 import com.adyenreactnativesdk.coordinator.CoordinatorRequestKind
+import com.adyenreactnativesdk.coordinator.OperationBusyException
 import com.adyenreactnativesdk.coordinator.PresenterFactory
 import com.adyenreactnativesdk.coordinator.StaleCheckoutException
 import com.adyenreactnativesdk.coordinator.UnknownControllerException
@@ -63,7 +64,7 @@ class AndroidCheckoutModule internal constructor(
   constructor(reactContext: ReactApplicationContext) : this(reactContext, ::WritableNativeMap, SdkControllerFactory)
 
   /** Binds lifecycle callbacks from this TurboModule instance to its exact coordinator checkout. */
-  private val lifecycleOwnerId = UUID.randomUUID().toString()
+  internal val lifecycleOwnerId = UUID.randomUUID().toString()
 
   init {
     reactContext.addLifecycleEventListener(this)
@@ -241,8 +242,11 @@ class AndroidCheckoutModule internal constructor(
         } catch (_: UnknownControllerException) {
           reject(promise, ERROR_INVALID_TARGET)
           return@onMain
-        } catch (_: IllegalStateException) {
+        } catch (_: OperationBusyException) {
           reject(promise, ERROR_OPERATION_BUSY)
+          return@onMain
+        } catch (_: Exception) {
+          reject(promise, ERROR_SUBMIT_FAILED)
           return@onMain
         }
       try {
@@ -260,10 +264,7 @@ class AndroidCheckoutModule internal constructor(
             operationId = operationId,
             autoSubmit = true,
             onCancelled = {
-              emitTerminal(checkoutId, EVENT_ERROR, terminalErrorPayload())
-              if (CheckoutCoordinator.shared.activeOperationId() == operationId) {
-                CheckoutCoordinator.shared.invalidate()
-              }
+              CheckoutCoordinator.shared.terminateOperation(checkoutId, operationId, EVENT_ERROR, terminalErrorPayload().toString())
             },
           )
         }
@@ -291,7 +292,7 @@ class AndroidCheckoutModule internal constructor(
       try {
         CheckoutCoordinator.shared.beginDropIn(state.checkoutContext)
         promise.resolve(null)
-      } catch (_: IllegalStateException) {
+      } catch (_: OperationBusyException) {
         reject(promise, ERROR_OPERATION_BUSY)
       } catch (_: Exception) {
         reject(promise, ERROR_DROP_IN_FAILED)
@@ -625,7 +626,7 @@ class AndroidCheckoutModule internal constructor(
     }
   }
 
-  private class FragmentCheckoutHostAdapter(
+  internal class FragmentCheckoutHostAdapter(
     private val reactContext: ReactApplicationContext,
   ) : CheckoutHostLauncherAdapter {
     override fun releaseCheckoutHost() {

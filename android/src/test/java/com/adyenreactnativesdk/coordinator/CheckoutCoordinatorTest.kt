@@ -429,6 +429,150 @@ class CheckoutCoordinatorTest {
     assertEquals(0, replacementView.detachCount)
   }
 
+  @Test
+  fun `a throwing controller disposal or view detach cannot skip the rest of the teardown`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val checkoutId = coordinator.setup()
+    val throwing = FakeController(log = fixture.log, name = "throwing")
+    throwing.onDispose = { error("SDK disposal failed") }
+    coordinator.registerController(checkoutId, "pm-throwing") { throwing }
+    val brokenView = fixture.register(coordinator, "pm-broken-view", name = "broken-view")
+    coordinator.bindControllerView(checkoutId, brokenView.controllerId) { error("View detach failed") }
+    val other = fixture.register(coordinator, "pm-other", name = "other")
+    var fallbacks = 0
+    val operationId = requireNotNull(coordinator.acquireEmbeddedOperation(checkoutId))
+    coordinator.beginRequest(operationId, CoordinatorRequestKind.ADVANCED_SUBMIT, 100, cancellationFallback = { fallbacks += 1 })
+
+    coordinator.invalidate()
+    coordinator.invalidate()
+
+    assertEquals(1, fallbacks)
+    assertEquals(1, throwing.disposeCount)
+    assertEquals(1, brokenView.controller.disposeCount)
+    assertEquals(1, other.controller.disposeCount)
+    assertNull(coordinator.activeCheckoutId())
+    assertNull(coordinator.activeOperationId())
+    assertEquals(0, coordinator.controllerCount())
+    assertEquals(
+      1,
+      fixture.factory.checkouts
+        .single()
+        .disposeCount,
+    )
+    assertEquals(1, fixture.host.releaseCount)
+    assertEquals(listOf(checkoutId), fixture.events.filterIsInstance<CoordinatorEvent.CleanedUp>().map { it.checkoutId })
+    assertTrue(coordinator.isActive(coordinator.setup()))
+  }
+
+  @Test
+  fun `a stale operation cannot terminate the active or a replacement checkout`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val oldCheckoutId = coordinator.setup()
+    val old = fixture.register(coordinator, "pm-card")
+    val oldOperation = requireNotNull(coordinator.acquireEmbeddedOperation(oldCheckoutId))
+    coordinator.releaseEmbeddedOperation(oldOperation)
+    val current = coordinator.beginControllerOperation(oldCheckoutId, old.controllerId)
+
+    assertFalse(coordinator.terminateOperation(oldCheckoutId, oldOperation, "completion"))
+    assertTrue(coordinator.isActive(oldCheckoutId))
+    assertEquals(current, coordinator.activeOperationId())
+
+    coordinator.invalidate()
+    val replacementId = coordinator.setup()
+    val replacement = fixture.register(coordinator, "pm-card")
+    val replacementOperation = coordinator.beginControllerOperation(replacementId, replacement.controllerId)
+
+    assertFalse(coordinator.terminateOperation(oldCheckoutId, current, "completion"))
+    assertFalse(coordinator.terminateOperation(replacementId, current, "error"))
+    assertTrue(fixture.events.none { it is CoordinatorEvent.Terminal })
+    assertTrue(coordinator.isActive(replacementId))
+
+    assertTrue(coordinator.terminateOperation(replacementId, replacementOperation, "completion", "{}"))
+    assertFalse(coordinator.terminateOperation(replacementId, replacementOperation, "completion", "{}"))
+    assertEquals(
+      listOf(replacementId to "completion"),
+      fixture.events.filterIsInstance<CoordinatorEvent.Terminal>().map { it.checkoutId to it.kind },
+    )
+    assertNull(coordinator.activeCheckoutId())
+    assertEquals(1, replacement.controller.disposeCount)
+    assertEquals(1, old.controller.disposeCount)
+  }
+
+  @Test
+  fun `controller ids from a torn down checkout are rejected after every teardown path`() {
+    teardownCauses().forEach { (cause, trigger) ->
+      val fixture = Fixture()
+      val coordinator = fixture.coordinator()
+      val oldCheckoutId = coordinator.setup()
+      val old = fixture.register(coordinator, "pm-card")
+      val oldView = ViewBinding()
+      coordinator.bindControllerView(oldCheckoutId, old.controllerId, oldView)
+      requireNotNull(coordinator.acquireEmbeddedOperation(oldCheckoutId))
+
+      trigger(coordinator, oldCheckoutId)
+      val checkoutId = coordinator.activeCheckoutId() ?: coordinator.setup()
+
+      expect<StaleCheckoutException> { coordinator.registerController(oldCheckoutId, "pm-card") { FakeController() } }
+      expect<StaleCheckoutException> { coordinator.beginControllerOperation(oldCheckoutId, old.controllerId) }
+      expect<StaleCheckoutException> { coordinator.bindControllerView(oldCheckoutId, old.controllerId, ViewBinding()) }
+      expect<UnknownControllerException> { coordinator.beginControllerOperation(checkoutId, old.controllerId) }
+      expect<UnknownControllerException> { coordinator.bindControllerView(checkoutId, old.controllerId, oldView) }
+      coordinator.unbindControllerView(old.controllerId, oldView)
+
+      assertNull("$cause must not leave an operation for the stale controller", coordinator.activeOperationId())
+      assertTrue("$cause must not bind the stale controller", old.controller.boundOperations.isEmpty())
+      assertFalse(coordinator.isControllerBound(old.controllerId))
+      assertEquals("$cause must dispose the stale controller once", 1, old.controller.disposeCount)
+      assertEquals("$cause must detach the stale view once", 1, oldView.detachCount)
+      assertEquals("$cause must only count the original creation", 1, fixture.creations)
+
+      val fresh = fixture.register(coordinator, "pm-card")
+      assertNotEquals(old.controllerId, fresh.controllerId)
+      assertSame(fresh.controller, coordinator.bindControllerView(checkoutId, fresh.controllerId, oldView))
+      assertEquals(1, oldView.detachCount)
+    }
+  }
+
+  @Test
+  fun `an explicit operation is released before its borrowed controller is disposed on every teardown path`() {
+    (teardownCauses() + ("restored-fragment" to { coordinator: CheckoutCoordinator, _: String -> restoreFragment(coordinator) }))
+      .forEach { (cause, trigger) ->
+        val fixture = Fixture()
+        val coordinator = fixture.coordinator()
+        val checkoutId = coordinator.setup()
+        val sdkController = mock<CheckoutController>()
+        val registered =
+          fixture.register(coordinator, "pm-ideal", FakeController(checkoutController = sdkController, log = fixture.log, name = "ideal"))
+        val operationId = coordinator.beginControllerOperation(checkoutId, registered.controllerId)
+        coordinator.registerFragmentPresentation(operationId, cancellable = true, autoSubmit = true, onCancelled = {})
+        val request =
+          coordinator.beginRequest(
+            operationId,
+            CoordinatorRequestKind.ADVANCED_ADDITIONAL_DETAILS,
+            100,
+            cancellationFallback = { fixture.log += "fallback" },
+          )
+        fixture.log.clear()
+
+        trigger(coordinator, checkoutId)
+        coordinator.invalidate()
+
+        assertEquals(
+          "$cause must settle, release, then dispose",
+          listOf("fallback", "release-ideal", "dispose-ideal"),
+          fixture.log.filter { it == "fallback" || it.endsWith("-ideal") },
+        )
+        assertEquals(listOf(operationId), registered.controller.releasedOperations)
+        assertFalse(coordinator.resolve(request))
+        assertNull(coordinator.fragmentController(operationId))
+        assertFalse(coordinator.fragmentAutoSubmit(operationId))
+        assertFalse("$cause must unregister the operation redirect", coordinator.handleReturn(Intent()))
+        verify(sdkController, never()).handleReturn(org.mockito.kotlin.any())
+      }
+  }
+
   // endregion
 
   // region Explicit controller operations
@@ -563,6 +707,30 @@ class CheckoutCoordinatorTest {
         assertTrue(begin(contender, contenderController.controllerId) != null)
       }
     }
+  }
+
+  @Test
+  fun `only slot contention reports operationBusy`() {
+    val fixture = Fixture()
+    val coordinator = fixture.coordinator()
+    val checkoutId = coordinator.setup()
+    fixture.presenterFactory.presenter = DropInPresenter()
+    val card = fixture.register(coordinator, "pm-card")
+
+    val missingLauncher = runCatching { coordinator.beginDropIn(mock<CheckoutContext.Sessions>()) }.exceptionOrNull()
+    assertNotNull(missingLauncher)
+    assertFalse("a missing launcher is not contention", missingLauncher is OperationBusyException)
+    assertTrue(fixture.events.none { it is CoordinatorEvent.OperationBusy })
+    assertNull(coordinator.activeOperationId())
+
+    coordinator.registerDropInLauncher(DropInLauncher())
+    val operationId = coordinator.beginControllerOperation(checkoutId, card.controllerId)
+
+    expect<OperationBusyException> { coordinator.beginDropIn(mock<CheckoutContext.Sessions>()) }
+    expect<OperationBusyException> { coordinator.beginControllerOperation(checkoutId, card.controllerId) }
+    assertEquals(2, fixture.events.count { it is CoordinatorEvent.OperationBusy })
+    assertEquals(operationId, coordinator.activeOperationId())
+    assertEquals(listOf(operationId), card.controller.boundOperations)
   }
 
   @Test
@@ -1227,6 +1395,22 @@ class CheckoutCoordinatorTest {
 
   // endregion
 
+  /** The four checkout teardown paths every registered controller must survive exactly once. */
+  private fun teardownCauses(): List<Pair<String, (CheckoutCoordinator, String) -> Unit>> =
+    listOf(
+      "invalidation" to { coordinator, _ -> coordinator.invalidate() },
+      "replacement" to { coordinator, _ -> coordinator.setup() },
+      "terminal" to { coordinator, checkoutId ->
+        coordinator.emitTerminal(checkoutId, "completion", """{"resultCode":"Authorised"}""")
+        coordinator.invalidate()
+      },
+      "host-loss" to { coordinator, _ -> coordinator.hostDidDisappear() },
+    )
+
+  private fun restoreFragment(coordinator: CheckoutCoordinator) {
+    assertTrue(coordinator.invalidateRestoredFragment(checkNotNull(coordinator.activeOperationId())))
+  }
+
   private inline fun <reified T : Throwable> expect(block: () -> Unit) {
     try {
       block()
@@ -1327,6 +1511,7 @@ class CheckoutCoordinatorTest {
 
     override fun releaseOperation(operationId: String) {
       releasedOperations += operationId
+      log?.add("release-$name")
     }
 
     override fun dispose() {

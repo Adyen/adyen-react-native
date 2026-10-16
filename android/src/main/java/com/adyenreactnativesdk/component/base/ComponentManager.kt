@@ -192,6 +192,10 @@ internal class ComponentManager(
     }
     checkoutController?.let { CheckoutCoordinator.shared.unregisterRedirectController(it) }
     checkoutController = null
+    // Resuming first releases every suspended callback exactly once; cancelling the child scope
+    // then stops work the disposed controller still has in flight without touching its siblings.
+    controllerScope?.cancel()
+    controllerScope = null
   }
 
   private fun advancedCallbacks(): AdvancedCheckoutCallbacks {

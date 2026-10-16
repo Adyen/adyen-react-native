@@ -83,6 +83,9 @@ internal class UnknownControllerException : IllegalStateException("Unknown contr
 /** Another live view already renders this controller. */
 internal class ControllerAlreadyBoundException : IllegalStateException("Controller is already bound to a view")
 
+/** Another interactive operation owns the single operation slot. */
+internal class OperationBusyException : IllegalStateException("Operation is already active")
+
 /** Official Drop-in result types, decoupled from the SDK's activity-result callback. */
 internal sealed interface CoordinatorDropInResult {
   data class Completed(
@@ -795,6 +798,27 @@ internal class CheckoutCoordinator(
     }
   }
 
+  /**
+   * Emits the terminal and cleans the checkout only while [operationId] still owns the slot of
+   * [checkoutId]. Late callbacks from a disposed controller keep their stale operation identity
+   * and must not end a replacement checkout.
+   */
+  @MainThread
+  fun terminateOperation(
+    checkoutId: String,
+    operationId: String,
+    kind: String,
+    payloadJson: String? = null,
+  ): Boolean =
+    transition {
+      if (this.checkoutId != checkoutId || this.operationId != operationId || isDisposing) {
+        return@transition false
+      }
+      emit(CoordinatorEvent.Terminal(checkoutId, kind, payloadJson))
+      invalidateLocked()
+      true
+    }
+
   private fun replaceLocked(create: () -> CoordinatorCheckout): String {
     check(!isSettingUp) { "Checkout setup is already active" }
     invalidateLocked()
@@ -852,10 +876,20 @@ internal class CheckoutCoordinator(
       controllers.clear()
       controllerIdsByPaymentMethodId.clear()
       unavailablePaymentMethodIds.clear()
+      // One failing controller must not leave the rest of the registry, or the checkout itself,
+      // undisposed: there is no later teardown that would reach them.
       ownedControllers.forEach { entry ->
-        entry.view?.detach()
+        try {
+          entry.view?.detach()
+        } catch (exception: Exception) {
+          Log.e(TAG, "Controller view detach failed", exception)
+        }
         entry.view = null
-        entry.controller.dispose()
+        try {
+          entry.controller.dispose()
+        } catch (exception: Exception) {
+          Log.e(TAG, "Controller disposal failed", exception)
+        }
       }
       redirectControllers.clear()
       fragmentPresentations.clear()
@@ -901,9 +935,9 @@ internal class CheckoutCoordinator(
     createPresenter: ((String) -> CoordinatorPresenter)? = null,
   ): String {
     val activeCheckoutId = checkNotNull(checkoutId) { "No active checkout" }
-    check(operationId == null) {
+    if (operationId != null) {
       emit(CoordinatorEvent.OperationBusy)
-      "Operation is already active"
+      throw OperationBusyException()
     }
     val createdOperationId = nextId(CoordinatorIdentityKind.OPERATION)
     val createdPresenter =

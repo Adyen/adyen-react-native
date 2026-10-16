@@ -207,13 +207,9 @@ internal class ControllerEventSink(
     kind: String,
     payload: String,
   ) {
-    if (!ownsOperation) return
-    CheckoutCoordinator.shared.emitTerminal(
-      checkoutId,
-      kind,
-      payload,
-    )
-    CheckoutCoordinator.shared.invalidate()
+    val ownedOperationId = operationId
+    if (!ownsOperation || ownedOperationId == null) return
+    CheckoutCoordinator.shared.terminateOperation(checkoutId, ownedOperationId, kind, payload)
     operationId = null
     ownsOperation = false
     isExplicit = false

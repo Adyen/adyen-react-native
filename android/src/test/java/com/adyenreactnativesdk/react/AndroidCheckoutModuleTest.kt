@@ -6,16 +6,24 @@
 
 package com.adyenreactnativesdk.react
 
+import android.content.Intent
 import androidx.fragment.app.FragmentActivity
+import com.adyen.checkout.core.action.data.ActionComponentData
 import com.adyen.checkout.core.common.CheckoutContext
+import com.adyen.checkout.core.common.CheckoutResultCode
+import com.adyen.checkout.core.components.AdditionalDetailsResult
+import com.adyen.checkout.core.components.AdvancedCheckoutResult
 import com.adyen.checkout.core.components.CheckoutCallbacks
 import com.adyen.checkout.core.components.CheckoutController
 import com.adyen.checkout.core.components.CheckoutTarget
+import com.adyen.checkout.core.components.SessionCheckoutResult
 import com.adyen.checkout.core.components.SubmitResult
 import com.adyen.checkout.core.components.data.PaymentComponentData
 import com.adyen.checkout.core.components.data.model.paymentmethod.PaymentMethods
 import com.adyen.checkout.core.error.CheckoutError
 import com.adyen.checkout.core.error.internal.GenericError
+import com.adyen.checkout.core.sessions.CheckoutSession
+import com.adyen.checkout.core.sessions.internal.data.model.SessionSetupResponse
 import com.adyenreactnativesdk.AdyenPaymentPackage
 import com.adyenreactnativesdk.component.base.CheckoutFragment
 import com.adyenreactnativesdk.component.base.CheckoutState
@@ -31,9 +39,13 @@ import com.adyenreactnativesdk.coordinator.CheckoutStateOwner
 import com.adyenreactnativesdk.coordinator.ControllerViewBinding
 import com.adyenreactnativesdk.coordinator.CoordinatorCancellation
 import com.adyenreactnativesdk.coordinator.CoordinatorCheckout
+import com.adyenreactnativesdk.coordinator.CoordinatorDropInLauncher
+import com.adyenreactnativesdk.coordinator.CoordinatorDropInPresenter
+import com.adyenreactnativesdk.coordinator.CoordinatorDropInResult
 import com.adyenreactnativesdk.coordinator.CoordinatorEvent
 import com.adyenreactnativesdk.coordinator.CoordinatorIdentityKind
 import com.adyenreactnativesdk.coordinator.CoordinatorPresentation
+import com.adyenreactnativesdk.coordinator.CoordinatorPresenter
 import com.adyenreactnativesdk.coordinator.PresenterFactory
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
@@ -402,6 +414,282 @@ class AndroidCheckoutModuleTest {
       assertEquals("staleCheckout", harness.isAvailable(checkoutId, cardId).code)
     }
 
+  // region Registry semantics with real controller owners
+
+  @Test
+  fun `every teardown path settles a suspended controller continuation once and unregisters its redirect`() =
+    runBlocking {
+      val causes =
+        listOf<Pair<String, (Harness, String) -> Unit>>(
+          "invalidation" to { harness, checkoutId -> harness.module.invalidate(checkoutId, PromiseRecorder()) },
+          "replacement" to { harness, _ -> harness.setupAdvanced() },
+          "terminal" to { harness, _ ->
+            harness.factory.callbacks
+              .first()
+              .sdkField<(CheckoutError) -> Unit>("onFailure")
+              .invoke(mock())
+          },
+          "host-loss" to { harness, _ -> harness.module.onHostDestroy() },
+        )
+
+      causes.forEach { (cause, trigger) ->
+        CheckoutCoordinator.shared.invalidate()
+        val harness = Harness(ControllerFactory(headlessTypes = setOf("paypal"), launchWork = true))
+        val checkoutId = harness.setupAdvanced(owned = true)
+        val ids = harness.regularIds(checkoutId)
+        val cardId = ids.getValue("scheme")
+        val card = harness.createController(checkoutId, cardId).controllerId()
+        val paypal = harness.createController(checkoutId, ids.getValue("paypal")).controllerId()
+        var detaches = 0
+        CheckoutCoordinator.shared.bindControllerView(checkoutId, card, ControllerViewBinding { detaches += 1 })
+        assertTrue(harness.submitController(checkoutId, card).resolved)
+        val cardCallbacks = harness.factory.callbacks.first()
+        val submit = async(start = CoroutineStart.UNDISPATCHED) { cardCallbacks.submit(paymentData()) }
+        harness.respond(checkNotNull(CheckoutCoordinator.shared.activeRequest()), ACTION_RESPONSE)
+        assertTrue(submit.await() is SubmitResult.Action)
+        val details =
+          async(start = CoroutineStart.UNDISPATCHED) {
+            cardCallbacks.additionalDetails(ActionComponentData(details = null, paymentData = "payment-data"))
+          }
+        assertNotNull(CheckoutCoordinator.shared.activeRequest())
+        assertTrue("$cause: the redirect routes to the submitting controller", CheckoutCoordinator.shared.handleReturn(Intent()))
+        harness.events.clear()
+
+        trigger(harness, checkoutId)
+        harness.module.invalidate(checkoutId, PromiseRecorder())
+
+        assertEquals(cause, AdditionalDetailsResult.Completion(CheckoutResultCode.ERROR.value), details.await())
+        assertFalse("$cause must unregister the redirect", CheckoutCoordinator.shared.handleReturn(Intent()))
+        assertEquals("$cause must detach the mounted view once", 1, detaches)
+        assertEquals(2, harness.factory.launchedJobs.size)
+        assertTrue("$cause must stop every disposed controller", harness.factory.launchedJobs.all { it.isCancelled })
+        assertFalse(CheckoutCoordinator.shared.isActive(checkoutId))
+        assertEquals(
+          "$cause must emit at most its own terminal",
+          if (cause == "terminal") 1 else 0,
+          harness.events.count { it is CoordinatorEvent.Terminal },
+        )
+        assertEquals("staleCheckout", harness.submitController(checkoutId, card).code)
+        assertEquals("staleCheckout", harness.createController(checkoutId, cardId).code)
+        CheckoutCoordinator.shared.activeCheckoutId()?.let { replacement ->
+          assertEquals("invalidTarget", harness.submitController(replacement, paypal).code)
+        }
+        verify(harness.factory.controllers.first(), times(1)).submit()
+        verify(harness.factory.controllers.last(), times(0)).submit()
+      }
+    }
+
+  @Test
+  fun `queued createController and isAvailable calls for one payment method share one controller`() {
+    val harness = Harness()
+    val checkoutId = harness.setupAdvanced()
+    val ids = harness.regularIds(checkoutId)
+    harness.deferUi = true
+
+    val first = harness.createController(checkoutId, ids.getValue("scheme"))
+    val available = harness.isAvailable(checkoutId, ids.getValue("scheme"))
+    val second = harness.createController(checkoutId, ids.getValue("scheme"))
+    val paypal = harness.createController(checkoutId, ids.getValue("paypal"))
+    assertEquals(4, harness.uiQueue.size)
+    assertTrue(harness.factory.targets.isEmpty())
+    harness.drainUi()
+
+    assertEquals(first.controllerId(), second.controllerId())
+    assertNotEquals(first.controllerId(), paypal.controllerId())
+    assertEquals(true, available.value)
+    assertEquals(listOf(1, 1, 1, 1), listOf(first, available, second, paypal).map { it.settlements })
+    assertEquals(
+      listOf<CheckoutTarget>(CheckoutTarget.PaymentMethod("scheme"), CheckoutTarget.PaymentMethod("paypal")),
+      harness.factory.targets,
+    )
+    assertEquals(2, CheckoutCoordinator.shared.controllerCount())
+
+    harness.deferUi = true
+    val invalidated = PromiseRecorder().also { harness.module.invalidate(checkoutId, it) }
+    val late = harness.createController(checkoutId, harness.idsOfType(checkoutId, "giftcard").first())
+    harness.drainUi()
+
+    assertTrue(invalidated.resolved)
+    assertEquals("staleCheckout", late.code)
+    assertEquals(2, harness.factory.targets.size)
+    assertEquals(0, CheckoutCoordinator.shared.controllerCount())
+  }
+
+  @Test
+  fun `explicit submit and Drop-in exclude each other and a competing mounted callback without queueing`() {
+    val dropInPresenter =
+      object : CoordinatorPresenter, CoordinatorDropInPresenter {
+        override fun onDropInResult(result: CoordinatorDropInResult) = Unit
+
+        override fun dispose() = Unit
+      }
+    val harness =
+      Harness(
+        presenterFactory =
+          object : PresenterFactory {
+            override fun create(presentation: CoordinatorPresentation): CoordinatorPresenter = dropInPresenter
+          },
+      )
+    val launcher = RecordingDropInLauncher()
+    CheckoutCoordinator.shared.registerDropInLauncher(launcher)
+    val checkoutId = harness.setupSession()
+    val ids = harness.regularIds(checkoutId)
+    val card = harness.createController(checkoutId, ids.getValue("scheme")).controllerId()
+    val paypal = harness.createController(checkoutId, ids.getValue("paypal")).controllerId()
+    CheckoutCoordinator.shared.bindControllerView(checkoutId, card, ControllerViewBinding {})
+    CheckoutCoordinator.shared.bindControllerView(checkoutId, paypal, ControllerViewBinding {})
+
+    assertTrue(harness.submitController(checkoutId, card).resolved)
+    val explicitOperation = checkNotNull(CheckoutCoordinator.shared.activeOperationId())
+    assertEquals("operationBusy", PromiseRecorder().also { harness.module.startDropIn(checkoutId, it) }.code)
+    assertEquals(0, launcher.startCount)
+    harness.factory.callbacks[1]
+      .sdkField<(SessionCheckoutResult) -> Unit>("onComplete")
+      .invoke(SessionCheckoutResult(CheckoutResultCode.AUTHORISED, "session-id", "session-data"))
+    assertTrue("a competing mounted callback cannot end the checkout", harness.events.none { it is CoordinatorEvent.Terminal })
+    assertEquals(explicitOperation, CheckoutCoordinator.shared.activeOperationId())
+
+    CheckoutCoordinator.shared.completeOperation(explicitOperation)
+    assertTrue(PromiseRecorder().also { harness.module.startDropIn(checkoutId, it) }.resolved)
+    val dropInOperation = checkNotNull(CheckoutCoordinator.shared.activeOperationId())
+
+    assertEquals("operationBusy", harness.submitController(checkoutId, paypal).code)
+    assertEquals("operationBusy", harness.submitController(checkoutId, card).code)
+    assertEquals(1, launcher.startCount)
+    assertEquals(dropInOperation, CheckoutCoordinator.shared.activeOperationId())
+    verify(harness.factory.controllers[0], times(1)).submit()
+    verify(harness.factory.controllers[1], times(0)).submit()
+    assertTrue(harness.sheetTags().isEmpty())
+  }
+
+  @Test
+  fun `controller-owned requests settle only with their exact tuple while a competing controller retries natively`() =
+    runBlocking {
+      val harness = Harness()
+      val checkoutId = harness.setupAdvanced()
+      val ids = harness.regularIds(checkoutId)
+      val card = harness.createController(checkoutId, ids.getValue("scheme")).controllerId()
+      val paypal = harness.createController(checkoutId, ids.getValue("paypal")).controllerId()
+      CheckoutCoordinator.shared.bindControllerView(checkoutId, card, ControllerViewBinding {})
+      CheckoutCoordinator.shared.bindControllerView(checkoutId, paypal, ControllerViewBinding {})
+      harness.submitController(checkoutId, card)
+      val operationId = checkNotNull(CheckoutCoordinator.shared.activeOperationId())
+      val (cardCallbacks, paypalCallbacks) = harness.factory.callbacks
+
+      val cardSubmit = async(start = CoroutineStart.UNDISPATCHED) { cardCallbacks.submit(paymentData()) }
+      val request = checkNotNull(CheckoutCoordinator.shared.activeRequest())
+      val competing = async(start = CoroutineStart.UNDISPATCHED) { paypalCallbacks.submit(paymentData()) }
+
+      assertEquals(operationId, request.operationId)
+      assertEquals(SubmitResult.Retry(null), competing.await())
+      assertEquals("the competing controller cannot supersede the request", request, CheckoutCoordinator.shared.activeRequest())
+      assertEquals(1, harness.events.count { it is CoordinatorEvent.Request })
+      listOf(
+        request.copy(checkoutId = "forged-checkout"),
+        request.copy(operationId = "forged-operation"),
+        request.copy(requestId = "forged-request"),
+      ).forEach { forged ->
+        assertEquals("staleRequest", harness.respond(forged, """{"type":"retry"}""").code)
+      }
+      assertEquals("staleRequest", harness.respond(request, """{"resultCode":"Authorised"}""", "advancedAdditionalDetails").code)
+      assertFalse(cardSubmit.isCompleted)
+
+      assertTrue(harness.respond(request, """{"type":"retry","message":"Declined"}""").resolved)
+      assertEquals(SubmitResult.Retry("Declined"), cardSubmit.await())
+      assertEquals("staleRequest", harness.respond(request, """{"type":"completed","resultCode":"Authorised"}""").code)
+
+      val paypalSubmit = async(start = CoroutineStart.UNDISPATCHED) { paypalCallbacks.submit(paymentData()) }
+      val next = checkNotNull(CheckoutCoordinator.shared.activeRequest())
+      assertNotEquals(operationId, next.operationId)
+      assertEquals("staleRequest", harness.respond(request, """{"type":"completed","resultCode":"Authorised"}""").code)
+      assertFalse(paypalSubmit.isCompleted)
+      assertTrue(harness.respond(next, """{"type":"completed","resultCode":"Authorised"}""").resolved)
+      assertEquals(SubmitResult.Completion("Authorised"), paypalSubmit.await())
+    }
+
+  @Test
+  fun `an unmounted controller keeps one bottom sheet while it needs UI mid-submit and reuses it after retry`() =
+    runBlocking {
+      val harness = Harness(ControllerFactory(headlessTypes = setOf("paypal")), productionHost = true)
+      val checkoutId = harness.setupAdvanced()
+      val paypal = harness.createController(checkoutId, harness.regularIds(checkoutId).getValue("paypal")).controllerId()
+      val sdkController = harness.factory.controllers.single()
+      val callbacks = harness.factory.callbacks.single()
+
+      assertTrue(harness.submitController(checkoutId, paypal).resolved)
+      val declined = checkNotNull(CheckoutCoordinator.shared.activeOperationId())
+      assertEquals(listOf<String?>("${CheckoutFragment.COORDINATOR_TAG_PREFIX}-$declined"), harness.sheetTags())
+      verify(sdkController, times(1)).submit()
+      val firstSubmit = async(start = CoroutineStart.UNDISPATCHED) { callbacks.submit(paymentData()) }
+      harness.respond(checkNotNull(CheckoutCoordinator.shared.activeRequest()), """{"type":"retry"}""")
+      assertEquals(SubmitResult.Retry(null), firstSubmit.await())
+      assertNull(CheckoutCoordinator.shared.activeOperationId())
+      assertTrue("retry releases the sheet with its operation", harness.sheetTags().isEmpty())
+
+      assertTrue(harness.submitController(checkoutId, paypal).resolved)
+      val operationId = checkNotNull(CheckoutCoordinator.shared.activeOperationId())
+      val sheet = listOf<String?>("${CheckoutFragment.COORDINATOR_TAG_PREFIX}-$operationId")
+      assertEquals(sheet, harness.sheetTags())
+      verify(sdkController, times(2)).submit()
+      val submit = async(start = CoroutineStart.UNDISPATCHED) { callbacks.submit(paymentData()) }
+      harness.respond(checkNotNull(CheckoutCoordinator.shared.activeRequest()), ACTION_RESPONSE)
+      assertTrue(submit.await() is SubmitResult.Action)
+      assertEquals("the action renders in the same sheet", sheet, harness.sheetTags())
+      assertEquals(sdkController, CheckoutCoordinator.shared.fragmentController(operationId))
+      val details =
+        async(start = CoroutineStart.UNDISPATCHED) {
+          callbacks.additionalDetails(ActionComponentData(details = null, paymentData = "payment-data"))
+        }
+      harness.respond(
+        checkNotNull(CheckoutCoordinator.shared.activeRequest()),
+        """{"resultCode":"Authorised"}""",
+        "advancedAdditionalDetails",
+      )
+      assertEquals(AdditionalDetailsResult.Completion("Authorised"), details.await())
+      assertEquals(operationId, CheckoutCoordinator.shared.activeOperationId())
+      assertEquals(sheet, harness.sheetTags())
+
+      callbacks
+        .sdkField<(AdvancedCheckoutResult) -> Unit>("onComplete")
+        .invoke(AdvancedCheckoutResult(CheckoutResultCode.AUTHORISED))
+
+      assertEquals(listOf("completion"), harness.events.filterIsInstance<CoordinatorEvent.Terminal>().map { it.kind })
+      assertNull(CheckoutCoordinator.shared.activeCheckoutId())
+      assertTrue("terminal cleanup releases the sheet", harness.sheetTags().isEmpty())
+      assertEquals(1, harness.factory.targets.size)
+      assertEquals(0, CheckoutCoordinator.shared.controllerCount())
+    }
+
+  @Test
+  fun `an unmounted interactive controller waits for shopper input in its sheet and submits within the operation`() =
+    runBlocking {
+      val harness = Harness(productionHost = true)
+      val checkoutId = harness.setupAdvanced()
+      val card = harness.createController(checkoutId, harness.regularIds(checkoutId).getValue("scheme"))
+      assertTrue(card.resolvedMap().getBoolean("requiresUserInteraction"))
+
+      assertTrue(harness.submitController(checkoutId, card.controllerId()).resolved)
+      val operationId = checkNotNull(CheckoutCoordinator.shared.activeOperationId())
+      assertEquals(listOf<String?>("${CheckoutFragment.COORDINATOR_TAG_PREFIX}-$operationId"), harness.sheetTags())
+      verify(harness.factory.controllers.single(), times(0)).submit()
+      assertNull("no submit happens before the shopper acts", CheckoutCoordinator.shared.activeRequest())
+
+      val submit =
+        async(start = CoroutineStart.UNDISPATCHED) {
+          harness.factory.callbacks
+            .single()
+            .submit(paymentData())
+        }
+      assertEquals(operationId, CheckoutCoordinator.shared.activeRequest()?.operationId)
+      harness.module.invalidate(checkoutId, PromiseRecorder())
+
+      assertEquals(SubmitResult.Retry(null), submit.await())
+      assertTrue(harness.sheetTags().isEmpty())
+      assertEquals(0, CheckoutCoordinator.shared.controllerCount())
+    }
+
+  // endregion
+
   private fun assertUnsupportedPaymentMethod(promise: PromiseRecorder) {
     assertEquals("unsupportedCapability", promise.code)
     assertEquals("paymentMethod", promise.metadata?.getString("capability"))
@@ -415,15 +703,32 @@ class AndroidCheckoutModuleTest {
     assertEquals("setup", promise.metadata?.getString("phase"))
   }
 
+  /**
+   * [productionHost] installs the module's bottom-sheet host adapter so sheet presentation and
+   * release run through production code. [deferUi] queues bridge runnables, modelling several
+   * JavaScript calls arriving before the UI queue drains.
+   */
   private class Harness(
     val factory: ControllerFactory = ControllerFactory(),
+    presenterFactory: PresenterFactory =
+      object : PresenterFactory {
+        override fun create(presentation: CoordinatorPresentation) = error("Controller submits must not allocate a presenter")
+      },
+    productionHost: Boolean = false,
   ) {
     val activity: FragmentActivity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
     val events = mutableListOf<CoordinatorEvent>()
+    val uiQueue = ArrayDeque<Runnable>()
+    var deferUi = false
     val module: AndroidCheckoutModule
 
     init {
-      val context = mainThreadContext()
+      val context = mock<ReactApplicationContext>()
+      doAnswer { invocation ->
+        val runnable = invocation.arguments[0] as Runnable
+        if (deferUi) uiQueue.addLast(runnable) else runnable.run()
+        null
+      }.whenever(context).runOnUiQueueThread(any())
       whenever(context.currentActivity).thenReturn(activity)
       module = AndroidCheckoutModule(context, { JavaOnlyMap() }, factory)
       CheckoutCoordinator.shared.configureRuntimeDependencies(
@@ -432,10 +737,7 @@ class AndroidCheckoutModuleTest {
             object : CheckoutFactory {
               override fun create(): CoordinatorCheckout = error("Fixture setup supplies the checkout")
             },
-          presenterFactory =
-            object : PresenterFactory {
-              override fun create(presentation: CoordinatorPresentation) = error("Controller submits must not allocate a presenter")
-            },
+          presenterFactory = presenterFactory,
           eventSink =
             object : CheckoutEventSink {
               override fun emit(event: CoordinatorEvent) {
@@ -457,25 +759,66 @@ class AndroidCheckoutModuleTest {
                 }
             },
           hostLauncherAdapter =
-            object : CheckoutHostLauncherAdapter {
-              override fun releaseCheckoutHost() = Unit
+            if (productionHost) {
+              AndroidCheckoutModule.FragmentCheckoutHostAdapter(context)
+            } else {
+              object : CheckoutHostLauncherAdapter {
+                override fun releaseCheckoutHost() = Unit
+              }
             },
         ),
       )
     }
 
-    fun setupAdvanced(): String {
+    fun drainUi() {
+      deferUi = false
+      while (uiQueue.isNotEmpty()) uiQueue.removeFirst().run()
+    }
+
+    /** [owned] binds the checkout to this module instance, as the generated setup methods do. */
+    fun setupAdvanced(owned: Boolean = false): String {
       val context = mock<CheckoutContext.Advanced>()
       whenever(context.paymentMethods).thenReturn(PaymentMethods.SERIALIZER.deserialize(JSONObject(PAYMENT_METHODS)))
+      if (!owned) return CheckoutCoordinator.shared.setup { StateOwner(CheckoutState(context)) }
+      return runBlocking {
+        CheckoutCoordinator.shared.setupAsync(ownerId = module.lifecycleOwnerId) { StateOwner(CheckoutState(context)) }
+      }
+    }
+
+    fun setupSession(): String {
+      val setupResponse = mock<SessionSetupResponse>()
+      whenever(setupResponse.paymentMethods).thenReturn(PaymentMethods.SERIALIZER.deserialize(JSONObject(PAYMENT_METHODS)))
+      val session = mock<CheckoutSession>()
+      whenever(session.sessionSetupResponse).thenReturn(setupResponse)
+      val context = mock<CheckoutContext.Sessions>()
+      whenever(context.checkoutSession).thenReturn(session)
       return CheckoutCoordinator.shared.setup { StateOwner(CheckoutState(context)) }
     }
+
+    fun sheetTags(): List<String?> {
+      activity.supportFragmentManager.executePendingTransactions()
+      return activity.supportFragmentManager.fragments
+        .filterIsInstance<CheckoutFragment>()
+        .map { it.tag }
+    }
+
+    fun submitController(
+      checkoutId: String,
+      controllerId: String,
+    ): PromiseRecorder = PromiseRecorder().also { module.submitController(checkoutId, controllerId, it) }
+
+    fun respond(
+      request: com.adyenreactnativesdk.coordinator.CoordinatorRequest,
+      payload: String,
+      kind: String = "advancedSubmit",
+    ): PromiseRecorder = PromiseRecorder().also { module.respond(response(request, payload, kind), it) }
 
     /** Ids as JavaScript receives them: read back from the published descriptor. */
     fun publishedRegular(checkoutId: String): List<Pair<String, String>> {
       val state = checkNotNull(CheckoutCoordinator.shared.checkoutState)
       val descriptor = module.checkoutDescriptor(checkoutId, state)
       assertEquals(checkoutId, descriptor.getString("checkoutId"))
-      assertEquals("advanced", descriptor.getString("flow"))
+      assertEquals(if (state.isSession) "sessions" else "advanced", descriptor.getString("flow"))
       val regular = JSONObject(checkNotNull(descriptor.getString("paymentMethodsJson"))).getJSONArray("paymentMethods")
       return (0 until regular.length()).map { regular.getJSONObject(it).let { pm -> pm.getString("type") to pm.getString("id") } }
     }
@@ -507,6 +850,7 @@ class AndroidCheckoutModuleTest {
     private val headlessTypes: Set<String> = emptySet(),
     private val throwingTypes: Set<String> = emptySet(),
     private val throwingInteractionTypes: Set<String> = emptySet(),
+    private val launchWork: Boolean = false,
   ) : NativeControllerFactory {
     val targets = mutableListOf<CheckoutTarget>()
     val controllers = mutableListOf<CheckoutController>()
@@ -532,6 +876,10 @@ class AndroidCheckoutModuleTest {
         throw GenericError("Gateway merchant id is missing")
       }
       this.callbacks += callbacks
+      if (launchWork) {
+        // A live SDK controller keeps work running in the scope it was handed.
+        launchedJobs += coroutineScope.launch { awaitCancellation() }
+      }
       return mock<CheckoutController>().also { controller ->
         if (type in throwingInteractionTypes) {
           launchedJobs += coroutineScope.launch { awaitCancellation() }
@@ -548,6 +896,19 @@ class AndroidCheckoutModuleTest {
     override val checkoutState: CheckoutState,
   ) : CheckoutStateOwner {
     override fun dispose() = Unit
+  }
+
+  private class RecordingDropInLauncher : CoordinatorDropInLauncher {
+    var startCount = 0
+
+    override fun start(
+      context: CheckoutContext,
+      onResult: (CoordinatorDropInResult) -> Unit,
+    ) {
+      startCount += 1
+    }
+
+    override fun clearResult() = Unit
   }
 
   private class PromiseRecorder : Promise {
@@ -673,14 +1034,18 @@ class AndroidCheckoutModuleTest {
     fun response(
       request: com.adyenreactnativesdk.coordinator.CoordinatorRequest,
       payload: String,
+      kind: String = "advancedSubmit",
     ): JavaOnlyMap =
       JavaOnlyMap().apply {
         putString("checkoutId", request.checkoutId)
         putString("operationId", request.operationId)
         putString("requestId", request.requestId)
-        putString("kind", "advancedSubmit")
+        putString("kind", kind)
         putString("payloadJson", payload)
       }
+
+    const val ACTION_RESPONSE =
+      """{"type":"action","action":{"type":"redirect","paymentMethodType":"scheme","url":"https://example.test"}}"""
   }
 }
 
@@ -695,3 +1060,6 @@ internal fun <T> CheckoutCallbacks.sdkField(name: String): T =
 @Suppress("UNCHECKED_CAST")
 internal suspend fun CheckoutCallbacks.submit(data: PaymentComponentData<*>): SubmitResult =
   sdkField<suspend (PaymentComponentData<*>) -> SubmitResult>("onSubmit").invoke(data)
+
+internal suspend fun CheckoutCallbacks.additionalDetails(data: ActionComponentData): AdditionalDetailsResult =
+  sdkField<suspend (ActionComponentData) -> AdditionalDetailsResult>("onAdditionalDetails").invoke(data)

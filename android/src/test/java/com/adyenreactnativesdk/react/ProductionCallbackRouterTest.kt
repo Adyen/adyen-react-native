@@ -294,6 +294,72 @@ class ProductionCallbackRouterTest {
   }
 
   @Test
+  fun `a disposed controller router cannot claim or terminate the replacement checkout`() {
+    val emittedKinds = mutableListOf<String>()
+    module(emittedKinds = emittedKinds)
+    val checkoutId = setupAdvanced()
+    val controller = RegistryController()
+    val registration =
+      checkNotNull(CheckoutCoordinator.shared.registerController(checkoutId, "card-id") { controller })
+    val operationId = CheckoutCoordinator.shared.beginControllerOperation(checkoutId, registration.controllerId)
+    val retries = mutableListOf<String?>()
+    val completions = mutableListOf<String>()
+    val sink =
+      ControllerEventSink(
+        checkoutId = checkoutId,
+        bindEmbeddedOperation = { error("A stale router must not claim an embedded operation") },
+        handleAction = {},
+        complete = completions::add,
+        retry = retries::add,
+      )
+    sink.bindExplicitOperation(operationId)
+    val embeddedSink =
+      ControllerEventSink(
+        checkoutId = checkoutId,
+        bindEmbeddedOperation = {},
+        handleAction = {},
+        complete = completions::add,
+        retry = retries::add,
+      )
+
+    CheckoutCoordinator.shared.invalidate()
+    val replacementId = setupAdvanced()
+    // Late SDK callbacks from the disposed controller arrive while the router still believes it
+    // owns its (now stale) operation.
+    sink.onComplete("Authorised")
+    sink.onError()
+    assertFalse(sink.onInteractionStarted())
+    sink.onAdvancedAdditionalDetails(ActionComponentData(details = null, paymentData = "late"))
+
+    assertEquals(listOf(operationId), controller.releasedOperations)
+    assertEquals(1, controller.disposeCount)
+    assertEquals(listOf(CheckoutResultCode.ERROR.value), completions)
+    assertTrue(emittedKinds.isEmpty())
+    assertTrue("a stale explicit router must not invalidate the replacement", CheckoutCoordinator.shared.isActive(replacementId))
+
+    val embeddedReplacement = setupAdvanced()
+    assertFalse("a router of a torn down checkout cannot claim a newer one", embeddedSink.onInteractionStarted())
+    val claimingSink =
+      ControllerEventSink(
+        checkoutId = embeddedReplacement,
+        bindEmbeddedOperation = {},
+        handleAction = {},
+        complete = {},
+        retry = {},
+      )
+    assertTrue(claimingSink.onInteractionStarted())
+    CheckoutCoordinator.shared.invalidate()
+    val finalReplacement = setupAdvanced()
+    claimingSink.onComplete("Authorised")
+    claimingSink.onError()
+
+    assertTrue(emittedKinds.isEmpty())
+    assertTrue("a stale embedded router must not invalidate the replacement", CheckoutCoordinator.shared.isActive(finalReplacement))
+    assertNull(CheckoutCoordinator.shared.activeOperationId())
+    assertNull(CheckoutCoordinator.shared.activeRequest())
+  }
+
+  @Test
   fun `Fabric session router normalizes terminal payloads and suppresses a late completion after failure`() {
     val terminalEvents = mutableListOf<CoordinatorEvent.Terminal>()
     module(terminalEvents = terminalEvents)
