@@ -960,43 +960,6 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertFalse(stored.isDisposed)
     }
 
-    func test_controllerDisposalOnEveryTeardownPathIsExactlyOnceAndDetachesViews() async throws {
-        let triggers: [(String, @MainActor (CheckoutCoordinator, String) async throws -> Void)] = [
-            ("invalidate", { coordinator, checkoutID in try? await coordinator.invalidate(checkoutID: checkoutID) }),
-            ("replacement", { coordinator, _ in _ = try await coordinator.setup() }),
-            ("terminal", { coordinator, _ in await coordinator.invalidate() }),
-            ("host loss", { coordinator, _ in await coordinator.hostDidDisappear() })
-        ]
-
-        for (name, trigger) in triggers {
-            let fixture = Fixture()
-            let coordinator = fixture.makeCoordinator()
-            let checkoutID = try await coordinator.setup()
-            let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
-            let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
-            let child = try XCTUnwrap(card.viewController)
-            let proxy = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
-            proxy.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
-            let storedRecorder = RecordingBinding()
-            try stored.bind(storedRecorder)
-
-            try await trigger(coordinator, checkoutID)
-            try await trigger(coordinator, checkoutID)
-
-            XCTAssertTrue(card.isDisposed, name)
-            XCTAssertTrue(stored.isDisposed, name)
-            XCTAssertEqual(storedRecorder.disposals, 1, "\(name) must dispose each controller once")
-            XCTAssertNil(proxy.boundControllerID, name)
-            XCTAssertTrue(proxy.arrangedSubviews.isEmpty, name)
-            XCTAssertNil(child.view.superview, name)
-            XCTAssertThrowsError(try coordinator.controller(checkoutID: checkoutID, controllerID: card.controllerID), name) { error in
-                XCTAssertEqual(error as? CoordinatorError, .staleCheckout)
-            }
-            proxy.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
-            XCTAssertNil(proxy.boundControllerID, "\(name) must not let a stale controller rebind")
-        }
-    }
-
     func test_replacementDisposesControllersBeforeCreatingTheNextCheckout() async throws {
         let fixture = Fixture()
         let coordinator = fixture.makeCoordinator()
@@ -1400,6 +1363,723 @@ final class CheckoutCoordinatorTests: XCTestCase {
         events.compactMap { $0["kind"] as? String }.filter { $0 == "error" || $0 == "completion" }
     }
 
+    // MARK: - Registry semantics: teardown matrix
+
+    func test_everyTeardownPathDisposesEachRegisteredControllerOnceAfterDetachingItsViews() async throws {
+        for path in TeardownPath.allCases {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            let adapter = makeAdapter(coordinator)
+            let checkoutID = try await setUpOwnedCheckout(coordinator, fixture)
+            let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+
+            XCTAssertTrue(try coordinator.isAvailable(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2"), "\(path)")
+            let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+            let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+            let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
+            let cardForm = try XCTUnwrap(card.viewController)
+            let host = UIViewController()
+            let cardView = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+            host.view.addSubview(cardView)
+            cardView.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
+            XCTAssertTrue(cardForm.parent === host, "\(path)")
+            let storedView = RecordingBinding()
+            storedView.ledger = fixture.ledger
+            try stored.bind(storedView)
+            var stateAtCheckoutDisposal: [Bool]?
+            checkout.onDispose = {
+                stateAtCheckoutDisposal = [
+                    instant.isDisposed,
+                    card.isDisposed,
+                    stored.isDisposed,
+                    cardView.arrangedSubviews.isEmpty,
+                    cardForm.parent == nil
+                ]
+            }
+
+            try await tearDown(path, coordinator, adapter, fixture, checkoutID: checkoutID)
+            try await tearDown(path, coordinator, adapter, fixture, checkoutID: checkoutID)
+
+            XCTAssertEqual(
+                stateAtCheckoutDisposal,
+                [true, true, true, true, true],
+                "\(path): controllers are disposed and views detached before the checkout is disposed"
+            )
+            let log = fixture.log
+            XCTAssertEqual(log.filter { $0 == "controller-disposed" }.count, 1, "\(path)")
+            XCTAssertEqual(log.filter { $0 == "dispose-1" }.count, 1, "\(path)")
+            let controllerDisposal = try XCTUnwrap(log.firstIndex(of: "controller-disposed"), "\(path)")
+            let checkoutDisposal = try XCTUnwrap(log.firstIndex(of: "dispose-1"), "\(path)")
+            let hostRelease = try XCTUnwrap(log.firstIndex(of: "host-release"), "\(path)")
+            XCTAssertLessThan(controllerDisposal, checkoutDisposal, "\(path)")
+            XCTAssertLessThan(checkoutDisposal, hostRelease, "\(path)")
+            XCTAssertEqual(checkout.disposeCount, 1, "\(path)")
+            XCTAssertEqual(fixture.cleanups(of: checkoutID), 1, "\(path)")
+            XCTAssertEqual(checkout.createdComponents.count, 3, "\(path): availability registered the controller creation reused")
+            XCTAssertEqual(coordinator.controllerCount, 0, "\(path)")
+            for controller in [instant, card, stored] {
+                XCTAssertTrue(controller.isDisposed, "\(path)")
+                XCTAssertFalse(controller.isBound, "\(path)")
+                XCTAssertNil(controller.viewController, "\(path)")
+            }
+            XCTAssertNil(cardView.boundControllerID, "\(path)")
+            XCTAssertTrue(cardView.arrangedSubviews.isEmpty, "\(path)")
+            XCTAssertNil(cardForm.parent, "\(path)")
+            XCTAssertNil(cardForm.view.superview, "\(path)")
+
+            cardView.detach()
+            stored.dispose()
+            XCTAssertEqual(storedView.disposals, 1, "\(path): disposal is idempotent per controller")
+        }
+    }
+
+    func test_controllerWorkStartedFromADisposalCallbackIsRejectedAsStale() async throws {
+        for path in TeardownPath.allCases {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            let adapter = makeAdapter(coordinator)
+            let checkoutID = try await setUpOwnedCheckout(coordinator, fixture)
+            let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+            let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+            var outcomes: [String] = []
+            let view = RecordingBinding()
+            view.onDispose = { _ in
+                outcomes = [
+                    outcome { _ = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card") },
+                    outcome { _ = try coordinator.isAvailable(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2") },
+                    outcome { try coordinator.submitController(checkoutID: checkoutID, controllerID: card.controllerID) },
+                    outcome { _ = try coordinator.beginOperation(checkoutID: checkoutID) },
+                    outcome { try coordinator.assertDropInAvailability(checkoutID: checkoutID) },
+                    coordinator.acquireEmbeddedOperation(checkoutID: checkoutID) == nil ? "competing" : "acquired"
+                ]
+            }
+            try card.bind(view)
+
+            try await tearDown(path, coordinator, adapter, fixture, checkoutID: checkoutID)
+
+            XCTAssertEqual(
+                outcomes,
+                Array(repeating: "staleCheckout", count: 5) + ["competing"],
+                "\(path): a torn-down checkout accepts no new work"
+            )
+            XCTAssertEqual(view.disposals, 1, "\(path)")
+            XCTAssertEqual(checkout.createdComponents.count, 1, "\(path)")
+            XCTAssertEqual(coordinator.controllerCount, 0, "\(path): nothing leaks into the next registry")
+            XCTAssertNil(coordinator.operationID, "\(path): nothing leaks into the next operation slot")
+        }
+    }
+
+    func test_concurrentCreateAndAvailabilityCallsShareOneControllerPerPaymentMethod() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let adapter = makeAdapter(coordinator)
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+        let settled = expectation(description: "every call settles")
+        settled.expectedFulfillmentCount = 16
+        var controllerIDs: [String] = []
+        var availability: [String: [Bool]] = [:]
+        var rejections: [String: [String]] = [:]
+
+        for paymentMethodID in ["checkout1-pm-1", "checkout1-pm-3"] {
+            for _ in 0..<4 {
+                adapter.createController(
+                    checkoutID,
+                    paymentMethodID: paymentMethodID,
+                    resolver: { value in
+                        if let controllerID = (value as? NSDictionary)?["controllerId"] as? String {
+                            controllerIDs.append(controllerID)
+                        }
+                        settled.fulfill()
+                    },
+                    rejecter: { code, _, _ in
+                        rejections[paymentMethodID, default: []].append(code ?? "")
+                        settled.fulfill()
+                    }
+                )
+                adapter.isAvailable(
+                    checkoutID,
+                    paymentMethodID: paymentMethodID,
+                    resolver: { value in
+                        availability[paymentMethodID, default: []].append(value as? Bool ?? false)
+                        settled.fulfill()
+                    },
+                    rejecter: { code, _, _ in
+                        rejections[paymentMethodID, default: []].append(code ?? "")
+                        settled.fulfill()
+                    }
+                )
+            }
+        }
+        await fulfillment(of: [settled], timeout: 2)
+
+        XCTAssertEqual(controllerIDs.count, 4)
+        XCTAssertEqual(Set(controllerIDs).count, 1, "duplicate creation resolves the same controller")
+        XCTAssertEqual(availability["checkout1-pm-1"], [true, true, true, true])
+        XCTAssertEqual(availability["checkout1-pm-3"], [false, false, false, false])
+        XCTAssertEqual(rejections["checkout1-pm-3"], Array(repeating: "unsupportedCapability", count: 4))
+        XCTAssertNil(rejections["checkout1-pm-1"])
+        XCTAssertEqual(checkout.makeAttempts, 2, "each payment method is built at most once")
+        XCTAssertEqual(checkout.createdComponents.count, 1)
+        XCTAssertEqual(coordinator.controllerCount, 1)
+
+        let controller = try coordinator.controller(checkoutID: checkoutID, controllerID: XCTUnwrap(controllerIDs.first))
+        let view = RecordingBinding()
+        try controller.bind(view)
+        await coordinator.invalidate()
+        await coordinator.invalidate()
+        XCTAssertEqual(view.disposals, 1)
+    }
+
+    func test_creationQueuedBehindTeardownRejectsStaleAndNeverOutlivesTheCheckout() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let adapter = makeAdapter(coordinator)
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+        let settled = expectation(description: "every call settles")
+        settled.expectedFulfillmentCount = 3
+        var outcomes: [String] = []
+        let resolve: (String) -> (Any?) -> Void = { label in
+            { _ in
+                outcomes.append(label)
+                settled.fulfill()
+            }
+        }
+        let reject: (String?, String?, Error?) -> Void = { code, _, _ in
+            outcomes.append(code ?? "")
+            settled.fulfill()
+        }
+
+        adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: resolve("created"), rejecter: reject)
+        adapter.invalidate(checkoutID, resolver: resolve("invalidated"), rejecter: reject)
+        adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-2", resolver: resolve("created"), rejecter: reject)
+        await fulfillment(of: [settled], timeout: 2)
+
+        XCTAssertEqual(outcomes.sorted(), ["created", "invalidated", "staleCheckout"])
+        XCTAssertEqual(checkout.createdComponents.count, 1)
+        XCTAssertEqual(coordinator.controllerCount, 0)
+        XCTAssertNil(coordinator.checkoutID)
+    }
+
+    // MARK: - Registry semantics: operation slot
+
+    func test_operationSlotRejectsEveryContenderUntilItsOwnerReleasesIt() async throws {
+        for owner in SlotOwner.allCases {
+            for contender in SlotContender.allCases {
+                let label = "\(owner) vs \(contender)"
+                let fixture = Fixture()
+                let coordinator = fixture.makeCoordinator()
+                let adapter = makeAdapter(coordinator)
+                var events: [NSDictionary] = []
+                adapter.setEventSink { events.append($0) }
+                let checkoutID = try await coordinator.setup()
+                let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+                let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+                let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+                let stored = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "stored-card")
+                try card.bind(RecordingBinding())
+                try stored.bind(RecordingBinding())
+
+                let ownerController: ComponentProxy
+                var shopperSubmit: ShopperSubmit?
+                switch owner {
+                case .explicitHeadless, .explicitMounted:
+                    ownerController = owner == .explicitHeadless ? instant : card
+                    let submitted = await submitCode(adapter, checkoutID, ownerController)
+                    XCTAssertEqual(submitted, "ok", label)
+                    shopperSubmit = try await startShopperSubmit(adapter, events: { events })
+                case .embedded:
+                    ownerController = card
+                    shopperSubmit = try await startShopperSubmit(adapter, events: { events })
+                case .addressLookup:
+                    ownerController = card
+                    _ = try coordinator.acquireAddressLookupOperation(checkoutID: checkoutID)
+                }
+                let ownerOperation = try XCTUnwrap(coordinator.operationID, label)
+                if let shopperSubmit {
+                    XCTAssertEqual(
+                        shopperSubmit.request["operationId"] as? String,
+                        ownerOperation,
+                        "\(label): the callback claims the owner's operation"
+                    )
+                }
+                let submitCounts = checkout.createdComponents.map(\.component.submitCount)
+                let pendingResponses = adapter.pendingResponseCount
+
+                let contended = await contend(contender, adapter, coordinator, checkoutID: checkoutID, owner: ownerController, other: stored)
+
+                let isExplicitOwner = owner == .explicitHeadless || owner == .explicitMounted
+                let expectedContention = switch contender {
+                case .sameController, .otherController, .dropIn: "operationBusy"
+                case .embeddedCallback: isExplicitOwner ? "adopted:\(ownerOperation)" : "competing"
+                }
+                XCTAssertEqual(contended, expectedContention, label)
+                XCTAssertEqual(coordinator.operationID, ownerOperation, "\(label): the owner keeps the slot")
+                XCTAssertEqual(
+                    checkout.createdComponents.map(\.component.submitCount),
+                    submitCounts,
+                    "\(label): a contender never reaches the SDK"
+                )
+                XCTAssertEqual(adapter.pendingResponseCount, pendingResponses, label)
+                XCTAssertEqual(fixture.presenterFactory.createCount, 0, label)
+
+                if let shopperSubmit {
+                    XCTAssertNil(respond(adapter, to: shopperSubmit.request, payloadJSON: retryPayload), label)
+                    guard case .retry = await shopperSubmit.task.value else {
+                        XCTFail("\(label): the owner's retry must reach the SDK")
+                        continue
+                    }
+                } else {
+                    coordinator.completeAddressLookupOperation(ownerOperation)
+                }
+                XCTAssertNil(coordinator.operationID, "\(label): releasing the owner frees the slot")
+
+                let released = await contend(contender, adapter, coordinator, checkoutID: checkoutID, owner: ownerController, other: stored)
+                let expectedAfterRelease = switch contender {
+                case .sameController, .otherController: "ok"
+                case .dropIn: "unsupportedCapability"
+                case .embeddedCallback: "acquired"
+                }
+                XCTAssertEqual(released, expectedAfterRelease, label)
+            }
+        }
+    }
+
+    func test_resubmittingTheSameControllerIsBusyUntilRetryTerminalOrCleanupReleasesIt() async throws {
+        for release in ExplicitRelease.allCases {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            let adapter = makeAdapter(coordinator)
+            var events: [NSDictionary] = []
+            adapter.setEventSink { events.append($0) }
+            let checkoutID = try await coordinator.setup()
+            let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+            let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+            let component = try XCTUnwrap(checkout.createdComponents.first?.component)
+
+            var submitted = await submitCode(adapter, checkoutID, instant)
+            XCTAssertEqual(submitted, "ok", "\(release)")
+            let operationID = try XCTUnwrap(coordinator.operationID)
+            submitted = await submitCode(adapter, checkoutID, instant)
+            XCTAssertEqual(submitted, "operationBusy", "\(release): a re-submit never starts a second operation")
+            let shopperSubmit = try await startShopperSubmit(adapter, events: { events })
+            XCTAssertEqual(shopperSubmit.request["operationId"] as? String, operationID, "\(release)")
+            submitted = await submitCode(adapter, checkoutID, instant)
+            XCTAssertEqual(submitted, "operationBusy", "\(release)")
+            XCTAssertEqual(component.submitCount, 1, "\(release)")
+            XCTAssertEqual(coordinator.operationID, operationID, "\(release)")
+
+            switch release {
+            case .retry:
+                XCTAssertNil(respond(adapter, to: shopperSubmit.request, payloadJSON: retryPayload))
+                guard case .retry = await shopperSubmit.task.value else {
+                    XCTFail("The merchant retry must reach the SDK")
+                    continue
+                }
+                XCTAssertNil(coordinator.operationID, "a retry releases the slot")
+                submitted = await submitCode(adapter, checkoutID, instant)
+                XCTAssertEqual(submitted, "ok", "the controller can submit again after a retry")
+                XCTAssertEqual(component.submitCount, 2)
+                let nextOperationID = try XCTUnwrap(coordinator.operationID)
+                XCTAssertNotEqual(nextOperationID, operationID)
+                submitted = await submitCode(adapter, checkoutID, instant)
+                XCTAssertEqual(submitted, "operationBusy", "the new submission owns the slot again")
+                XCTAssertFalse(instant.isDisposed)
+            case .terminal:
+                XCTAssertNil(respond(adapter, to: shopperSubmit.request, payloadJSON: actionPayload))
+                guard case .action = await shopperSubmit.task.value else {
+                    XCTFail("The action must reach the SDK")
+                    continue
+                }
+                XCTAssertEqual(coordinator.operationID, operationID, "an action keeps the slot")
+                submitted = await submitCode(adapter, checkoutID, instant)
+                XCTAssertEqual(submitted, "operationBusy")
+
+                let eventCount = events.count
+                let details = Task { await adapter.routeAdvancedAdditionalDetails(["details": [:]]) }
+                let detailsRequest = try await awaitRequest("advancedAdditionalDetails", after: eventCount, events: { events })
+                XCTAssertEqual(detailsRequest["operationId"] as? String, operationID)
+                XCTAssertNil(respond(adapter, to: detailsRequest, payloadJSON: #"{"resultCode":"Authorised"}"#))
+                _ = await details.value
+                submitted = await submitCode(adapter, checkoutID, instant)
+                XCTAssertEqual(submitted, "operationBusy", "additional details keep the slot")
+
+                adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised"])
+                XCTAssertEqual(events.last?["kind"] as? String, "completion")
+                XCTAssertEqual(events.last?["operationId"] as? String, operationID, "the terminal belongs to the submission")
+                try await waitForCleanup(coordinator)
+                submitted = await submitCode(adapter, checkoutID, instant)
+                XCTAssertEqual(submitted, "staleCheckout")
+            case .cleanup:
+                await coordinator.invalidate()
+                guard case let .completion(resultCode) = await shopperSubmit.task.value else {
+                    XCTFail("Cleanup must settle the suspended submit")
+                    continue
+                }
+                XCTAssertEqual(resultCode, errorResultCode)
+                submitted = await submitCode(adapter, checkoutID, instant)
+                XCTAssertEqual(submitted, "staleCheckout")
+            }
+            if release != .retry {
+                XCTAssertTrue(instant.isDisposed, "\(release)")
+                XCTAssertEqual(component.submitCount, 1, "\(release)")
+                XCTAssertNil(coordinator.operationID, "\(release)")
+            }
+        }
+    }
+
+    // MARK: - Registry semantics: request correlation
+
+    func test_controllerOwnedRequestsSettleOnlyFromTheirCurrentExactResponse() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let adapter = makeAdapter(coordinator)
+        var events: [NSDictionary] = []
+        adapter.setEventSink { events.append($0) }
+        let checkoutID = try await coordinator.setup()
+        let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+        let submitted = await submitCode(adapter, checkoutID, instant)
+        XCTAssertEqual(submitted, "ok")
+        let operationID = try XCTUnwrap(coordinator.operationID)
+
+        let first = try await startShopperSubmit(adapter, events: { events })
+        XCTAssertEqual(first.request["checkoutId"] as? String, checkoutID)
+        XCTAssertEqual(first.request["operationId"] as? String, operationID)
+
+        let forgeries: [(String, [String: Any], [String])] = [
+            ("checkout", ["checkoutId": "forged"], []),
+            ("operation", ["operationId": "forged"], []),
+            ("request", ["requestId": "forged"], []),
+            ("kind", ["kind": "advancedAdditionalDetails"], []),
+            ("missing operation", [:], ["operationId"]),
+            ("missing request", [:], ["requestId"])
+        ]
+        for (name, overrides, removals) in forgeries {
+            XCTAssertEqual(
+                respond(adapter, to: first.request, payloadJSON: retryPayload, overriding: overrides, removing: removals),
+                "staleRequest",
+                "a forged \(name) cannot settle the request"
+            )
+        }
+        XCTAssertEqual(adapter.pendingResponseCount, 1)
+        XCTAssertEqual(coordinator.pendingRequestCount, 1)
+        XCTAssertEqual(coordinator.operationID, operationID, "a forged retry cannot release the slot")
+
+        let second = try await startShopperSubmit(adapter, events: { events })
+        guard case let .completion(supersededCode) = await first.task.value else {
+            return XCTFail("A superseded callback must settle with the native error result")
+        }
+        XCTAssertEqual(supersededCode, errorResultCode)
+        XCTAssertEqual(second.request["operationId"] as? String, operationID)
+        XCTAssertNotEqual(second.request["requestId"] as? String, first.request["requestId"] as? String)
+        XCTAssertEqual(
+            respond(adapter, to: first.request, payloadJSON: retryPayload),
+            "staleRequest",
+            "a superseded response cannot settle its successor"
+        )
+        XCTAssertEqual(adapter.pendingResponseCount, 1)
+        XCTAssertEqual(coordinator.operationID, operationID)
+
+        fixture.scheduler.fireLast()
+        guard case let .completion(timedOutCode) = await second.task.value else {
+            return XCTFail("A timed-out callback must settle with the native error result")
+        }
+        XCTAssertEqual(timedOutCode, errorResultCode)
+        XCTAssertEqual(respond(adapter, to: second.request, payloadJSON: retryPayload), "staleRequest", "a late response is stale")
+        XCTAssertEqual(coordinator.operationID, operationID, "a late retry cannot release the slot")
+
+        let third = try await startShopperSubmit(adapter, events: { events })
+        XCTAssertNil(respond(adapter, to: third.request, payloadJSON: actionPayload))
+        XCTAssertEqual(respond(adapter, to: third.request, payloadJSON: retryPayload), "staleRequest", "a duplicate response is stale")
+        guard case .action = await third.task.value else {
+            return XCTFail("The exact response must settle the current callback")
+        }
+
+        let eventCount = events.count
+        let details = Task { await adapter.routeAdvancedAdditionalDetails(["details": [:]]) }
+        let detailsRequest = try await awaitRequest("advancedAdditionalDetails", after: eventCount, events: { events })
+        let replacementID = try await coordinator.setup()
+        guard case let .completion(cleanedUpCode) = await details.value else {
+            return XCTFail("Replacement must settle the suspended callback")
+        }
+        XCTAssertEqual(cleanedUpCode, errorResultCode)
+        XCTAssertEqual(respond(adapter, to: detailsRequest, payloadJSON: #"{"resultCode":"Authorised"}"#), "staleRequest")
+        XCTAssertEqual(
+            respond(
+                adapter,
+                to: detailsRequest,
+                payloadJSON: #"{"resultCode":"Authorised"}"#,
+                overriding: ["checkoutId": replacementID]
+            ),
+            "staleRequest",
+            "a response cannot be replayed into the replacement checkout"
+        )
+        XCTAssertTrue(coordinator.isActive(checkoutID: replacementID))
+        XCTAssertNil(coordinator.operationID)
+        XCTAssertEqual(adapter.pendingResponseCount, 0)
+        XCTAssertTrue(instant.isDisposed)
+    }
+
+    // MARK: - Registry semantics: interaction and stale identities
+
+    func test_requiresUserInteractionReportsTheViewControllerReadOnceAtCreation() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let adapter = makeAdapter(coordinator)
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+        let fresh = FreshViewComponent()
+        let headless = FakeComponent(hasView: false)
+        checkout.componentOverride = { paymentMethod -> PaymentComponentHandle? in
+            switch paymentMethod {
+            case .regular(index: 0, _, _): return fresh
+            case .regular(index: 1, _, _): return headless
+            default: return nil
+            }
+        }
+
+        let interactive = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+        let instant = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-2", resolver: $0, rejecter: $1) }
+        let stored = await settle { adapter.createController(checkoutID, paymentMethodID: "stored-card", resolver: $0, rejecter: $1) }
+        XCTAssertEqual((interactive.value as? NSDictionary)?["requiresUserInteraction"] as? Bool, true)
+        XCTAssertEqual((instant.value as? NSDictionary)?["requiresUserInteraction"] as? Bool, false)
+        XCTAssertEqual((stored.value as? NSDictionary)?["requiresUserInteraction"] as? Bool, true)
+        XCTAssertEqual(fresh.viewControllerAccesses, 1)
+
+        let card = try coordinator.controller(
+            checkoutID: checkoutID,
+            controllerID: XCTUnwrap((interactive.value as? NSDictionary)?["controllerId"] as? String)
+        )
+        let form = try XCTUnwrap(card.viewController)
+        XCTAssertTrue(card.viewController === form)
+        let host = UIViewController()
+        let cardView = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        host.view.addSubview(cardView)
+        cardView.updateBinding(checkoutID: checkoutID, controllerID: card.controllerID)
+        XCTAssertEqual(cardView.arrangedSubviews, [form.view], "the view embeds the instance creation reported")
+        cardView.detach()
+
+        var presented: UIViewController?
+        let operationID = try coordinator.submitController(checkoutID: checkoutID, controllerID: card.controllerID) { controller in
+            presented = controller.viewController
+            return Presenter()
+        }
+        XCTAssertTrue(presented === form, "an unbound submit presents the instance creation reported")
+        XCTAssertEqual(fresh.viewControllerAccesses, 1, "binding and presenting never rebuild the form")
+        XCTAssertEqual(fresh.submitCount, 0)
+        coordinator.completeOperation(operationID)
+
+        let headlessController = try coordinator.controller(
+            checkoutID: checkoutID,
+            controllerID: XCTUnwrap((instant.value as? NSDictionary)?["controllerId"] as? String)
+        )
+        XCTAssertFalse(headlessController.requiresUserInteraction)
+        XCTAssertNil(headlessController.viewController)
+        try coordinator.submitController(checkoutID: checkoutID, controllerID: headlessController.controllerID) { _ in
+            XCTFail("A controller without UI must not be presented")
+            return Presenter()
+        }
+        XCTAssertEqual(headless.submitCount, 1)
+        let headlessView = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+        headlessView.updateBinding(checkoutID: checkoutID, controllerID: headlessController.controllerID)
+        XCTAssertEqual(headlessView.boundControllerID, headlessController.controllerID)
+        XCTAssertTrue(headlessView.arrangedSubviews.isEmpty)
+
+        await coordinator.invalidate()
+        XCTAssertNil(card.viewController)
+        XCTAssertNil(headlessView.boundControllerID)
+    }
+
+    func test_staleControllerIDsRejectAfterEveryTeardownPath() async throws {
+        for path in TeardownPath.allCases {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            let adapter = makeAdapter(coordinator)
+            let staleCheckoutID = try await setUpOwnedCheckout(coordinator, fixture)
+            let card = try coordinator.createController(checkoutID: staleCheckoutID, paymentMethodID: "checkout1-pm-1")
+            let instant = try coordinator.createController(checkoutID: staleCheckoutID, paymentMethodID: "checkout1-pm-2")
+
+            try await tearDown(path, coordinator, adapter, fixture, checkoutID: staleCheckoutID)
+
+            var staleCodes: [String] = []
+            for controller in [card, instant] {
+                let submitted = await submitCode(adapter, staleCheckoutID, controller)
+                staleCodes.append(submitted)
+            }
+            let created = await settle { adapter.createController(staleCheckoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+            let available = await settle { adapter.isAvailable(staleCheckoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+            let dropIn = await settle { adapter.startDropIn(staleCheckoutID, resolver: $0, rejecter: $1) }
+            let invalidated = await settle { adapter.invalidate(staleCheckoutID, resolver: $0, rejecter: $1) }
+            staleCodes += [created, available, dropIn, invalidated].map { $0.code ?? "resolved" }
+            XCTAssertEqual(staleCodes, Array(repeating: "staleCheckout", count: 6), "\(path)")
+            let staleView = AdyenComponentViewProxy(frame: .zero, coordinator: coordinator)
+            staleView.updateBinding(checkoutID: staleCheckoutID, controllerID: card.controllerID)
+            XCTAssertNil(staleView.boundControllerID, "\(path)")
+
+            let currentID: String
+            if let replacementID = coordinator.checkoutID {
+                currentID = replacementID
+            } else {
+                currentID = try await setUpOwnedCheckout(coordinator, fixture)
+            }
+            XCTAssertNotEqual(currentID, staleCheckoutID, "\(path)")
+            let crossSubmit = await settle { adapter.submitController(currentID, controllerID: card.controllerID, resolver: $0, rejecter: $1) }
+            let crossCreate = await settle { adapter.createController(currentID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+            let crossAvailability = await settle { adapter.isAvailable(currentID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
+            XCTAssertEqual(
+                [crossSubmit, crossCreate, crossAvailability].map { $0.code ?? "resolved" },
+                ["invalidTarget", "invalidTarget", "invalidTarget"],
+                "\(path): a stale identity is foreign to the next checkout"
+            )
+            staleView.updateBinding(checkoutID: currentID, controllerID: card.controllerID)
+            XCTAssertNil(staleView.boundControllerID, "\(path)")
+            XCTAssertNil(coordinator.operationID, "\(path)")
+            XCTAssertEqual(coordinator.controllerCount, 0, "\(path)")
+            XCTAssertTrue(card.isDisposed && instant.isDisposed, "\(path)")
+        }
+    }
+
+    private static let moduleOwner = "module-a"
+    private let retryPayload = #"{"type":"retry"}"#
+    private let actionPayload = #"{"type":"action","action":{"type":"redirect","paymentMethodType":"scheme","url":"https://example.test"}}"#
+
+    private enum TeardownPath: CaseIterable {
+        case invalidate
+        case replacement
+        case terminal
+        case hostLoss
+    }
+
+    private enum SlotOwner: CaseIterable {
+        case explicitHeadless
+        case explicitMounted
+        case embedded
+        case addressLookup
+    }
+
+    private enum SlotContender: CaseIterable {
+        case sameController
+        case otherController
+        case dropIn
+        case embeddedCallback
+    }
+
+    private enum ExplicitRelease: CaseIterable {
+        case retry
+        case terminal
+        case cleanup
+    }
+
+    private struct ShopperSubmit {
+        let task: Task<SubmitResult?, Never>
+        let request: NSDictionary
+    }
+
+    private func setUpOwnedCheckout(_ coordinator: CheckoutCoordinator, _ fixture: Fixture) async throws -> String {
+        try await coordinator.setup(ownerID: Self.moduleOwner) {
+            try await fixture.factory.makeCheckout()
+        }
+    }
+
+    /// Drives each teardown path through the entry point production uses for it.
+    private func tearDown(
+        _ path: TeardownPath,
+        _ coordinator: CheckoutCoordinator,
+        _ adapter: CheckoutTurboModuleAdapter,
+        _ fixture: Fixture,
+        checkoutID: String
+    ) async throws {
+        switch path {
+        case .invalidate:
+            _ = await settle { adapter.invalidate(checkoutID, resolver: $0, rejecter: $1) }
+        case .replacement:
+            _ = try await setUpOwnedCheckout(coordinator, fixture)
+        case .terminal:
+            adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised"])
+        case .hostLoss:
+            await coordinator.hostDidDisappear(ownerID: Self.moduleOwner)
+        }
+        try await waitUntil("\(path) cleanup") { fixture.cleanups(of: checkoutID) > 0 }
+    }
+
+    private func contend(
+        _ contender: SlotContender,
+        _ adapter: CheckoutTurboModuleAdapter,
+        _ coordinator: CheckoutCoordinator,
+        checkoutID: String,
+        owner: ComponentProxy,
+        other: ComponentProxy
+    ) async -> String {
+        switch contender {
+        case .sameController:
+            return await submitCode(adapter, checkoutID, owner)
+        case .otherController:
+            return await submitCode(adapter, checkoutID, other)
+        case .dropIn:
+            let outcome = await settle { adapter.startDropIn(checkoutID, resolver: $0, rejecter: $1) }
+            return outcome.resolved ? "ok" : outcome.code ?? "unknown"
+        case .embeddedCallback:
+            switch coordinator.acquireInitialEmbeddedOperation(checkoutID: checkoutID) {
+            case let .explicit(operationID): return "adopted:\(operationID)"
+            case .acquired: return "acquired"
+            case .competing: return "competing"
+            }
+        }
+    }
+
+    private func submitCode(_ adapter: CheckoutTurboModuleAdapter, _ checkoutID: String, _ controller: ComponentProxy) async -> String {
+        let outcome = await settle { adapter.submitController(checkoutID, controllerID: controller.controllerID, resolver: $0, rejecter: $1) }
+        return outcome.resolved ? "ok" : outcome.code ?? "unknown"
+    }
+
+    /// Simulates the SDK submit callback a shopper triggers and returns its emitted request.
+    private func startShopperSubmit(
+        _ adapter: CheckoutTurboModuleAdapter,
+        events: @escaping () -> [NSDictionary]
+    ) async throws -> ShopperSubmit {
+        let eventCount = events().count
+        let task = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
+        let request = try await awaitRequest("advancedSubmit", after: eventCount, events: events)
+        return ShopperSubmit(task: task, request: request)
+    }
+
+    private func awaitRequest(_ kind: String, after eventCount: Int, events: () -> [NSDictionary]) async throws -> NSDictionary {
+        for _ in 0..<100 {
+            if let request = events().dropFirst(eventCount).last(where: { $0["kind"] as? String == kind && $0["requestId"] != nil }) {
+                return request
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        throw TestError.timeout
+    }
+
+    private func respond(
+        _ adapter: CheckoutTurboModuleAdapter,
+        to request: NSDictionary,
+        payloadJSON: String,
+        overriding overrides: [String: Any] = [:],
+        removing removals: [String] = []
+    ) -> String? {
+        let response = NSMutableDictionary(dictionary: request)
+        response["payloadJson"] = payloadJSON
+        overrides.forEach { response[$0.key] = $0.value }
+        removals.forEach { response.removeObject(forKey: $0) }
+        var rejection: String?
+        adapter.respond(response, resolver: { _ in }) { code, _, _ in rejection = code }
+        return rejection
+    }
+
+    private func waitUntil(_ description: String, _ condition: () -> Bool) async throws {
+        for _ in 0..<100 {
+            if condition() {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTFail("Timed out waiting for \(description)")
+    }
+
     // MARK: - Address lookup ownership
 
     func test_detachingTheCardViewCancelsLookupButKeepsTheController() async throws {
@@ -1534,6 +2214,10 @@ final class CheckoutCoordinatorTests: XCTestCase {
             ledger.entries
         }
 
+        func cleanups(of checkoutID: String) -> Int {
+            events.events.filter { $0 == .cleanedUp(checkoutID: checkoutID) }.count
+        }
+
         func makeCoordinator(
             eventSink: CheckoutEventSink? = nil,
             debugAssertionReporter: @escaping CheckoutDebugAssertionReporter = { _ in }
@@ -1583,7 +2267,11 @@ final class CheckoutCoordinatorTests: XCTestCase {
         let paymentMethodCatalog: PaymentMethodCatalog?
         private let unsupportedTypes: Set<String>
         private(set) var disposeCount = 0
+        private(set) var makeAttempts = 0
         private(set) var createdComponents: [(paymentMethod: CatalogPaymentMethod, component: FakeComponent)] = []
+        var onDispose: (@MainActor () -> Void)?
+        /// Replaces the default fake for components whose view controller access must be observed.
+        var componentOverride: (@MainActor (CatalogPaymentMethod) -> PaymentComponentHandle?)?
 
         init(ledger: Ledger, number: Int, unsupportedTypes: Set<String>) {
             self.ledger = ledger
@@ -1602,6 +2290,10 @@ final class CheckoutCoordinatorTests: XCTestCase {
         }
 
         func makePaymentComponent(for paymentMethod: CatalogPaymentMethod) throws -> PaymentComponentHandle {
+            makeAttempts += 1
+            if let override = componentOverride?(paymentMethod) {
+                return override
+            }
             let component: FakeComponent
             switch paymentMethod {
             case let .regular(_, type, _):
@@ -1617,6 +2309,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
         func dispose() {
             disposeCount += 1
             ledger.entries.append("dispose-\(number)")
+            onDispose?()
         }
     }
 
@@ -1661,11 +2354,29 @@ final class CheckoutCoordinatorTests: XCTestCase {
     @MainActor
     private final class RecordingBinding: ControllerViewBinding {
         var ledger: Ledger?
+        var onDispose: (@MainActor (ComponentProxy) -> Void)?
         private(set) var disposals = 0
 
-        func controllerDidDispose(_: ComponentProxy) {
+        func controllerDidDispose(_ controller: ComponentProxy) {
             disposals += 1
             ledger?.entries.append("controller-disposed")
+            onDispose?(controller)
+        }
+    }
+
+    /// Returns a fresh view controller on every access, like several SDK components do.
+    @MainActor
+    private final class FreshViewComponent: PaymentComponentHandle {
+        private(set) var viewControllerAccesses = 0
+        private(set) var submitCount = 0
+
+        var viewController: UIViewController? {
+            viewControllerAccesses += 1
+            return UIViewController()
+        }
+
+        func submit() {
+            submitCount += 1
         }
     }
 
@@ -1748,6 +2459,20 @@ final class CheckoutCoordinatorTests: XCTestCase {
 
     private enum TestError: Error {
         case factory
+        case timeout
+    }
+}
+
+/// Names the coordinator error a synchronous command throws, or "ok" when it succeeds.
+@MainActor
+private func outcome(_ command: () throws -> Void) -> String {
+    do {
+        try command()
+        return "ok"
+    } catch let error as CoordinatorError {
+        return "\(error)"
+    } catch {
+        return "\(error)"
     }
 }
 

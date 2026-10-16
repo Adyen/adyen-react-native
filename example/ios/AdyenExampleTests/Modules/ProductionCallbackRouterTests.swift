@@ -4,8 +4,10 @@
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 //
 
+import Adyen
 @testable import adyen_react_native
 import PassKit
+import UIKit
 import XCTest
 
 /// Exercises the routers that the generated TurboModule's real SDK closures call. These are not
@@ -271,6 +273,73 @@ final class ProductionCallbackRouterTests: XCTestCase {
         XCTAssertEqual(adapter.pendingResponseCount, 0)
     }
 
+    // MARK: - Registry controllers
+
+    func test_controllerSubmitOwnsItsCallbacksUntilTerminalCleanupDisposesItOnce() async throws {
+        let fixture = Fixture()
+        fixture.factory.paymentMethods = try registryPaymentMethods()
+        let coordinator = fixture.coordinator()
+        let adapter = CheckoutTurboModuleAdapter(coordinator: coordinator) { checkoutID in
+            try coordinator.assertDropInAvailability(checkoutID: checkoutID)
+        }
+        var events: [NSDictionary] = []
+        adapter.setEventSink { events.append($0) }
+        let checkoutID = try await coordinator.setup()
+        let paymentMethodID = try XCTUnwrap(coordinator.paymentMethodCatalog?.regularIDs.first)
+        let controller = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: paymentMethodID)
+        let component = try XCTUnwrap(fixture.factory.flows.last?.components.first)
+        let view = FixtureBinding()
+        try controller.bind(view)
+
+        let submitted = await settle { adapter.submitController(checkoutID, controllerID: controller.controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertEqual(submitted, "ok")
+        XCTAssertEqual(component.submitCount, 1)
+        let operationID = try XCTUnwrap(coordinator.operationID)
+
+        let submit = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "paypal"]]) }
+        try await waitForPendingResponse(adapter)
+        let request = try await nextRequest(from: &events)
+        XCTAssertEqual(request["operationId"] as? String, operationID, "the SDK callback claims the controller operation")
+        XCTAssertEqual(
+            respond(
+                adapter,
+                to: request,
+                payload: ["type": "action", "action": ["type": "redirect", "paymentMethodType": "paypal", "url": "https://example.test"]]
+            ),
+            nil
+        )
+        guard case .action = await submit.value else {
+            return XCTFail("The controller's action must reach the SDK")
+        }
+        let busy = await settle { adapter.submitController(checkoutID, controllerID: controller.controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertEqual(busy, "operationBusy")
+
+        let details = Task { await adapter.routeAdvancedAdditionalDetails(["details": [:]]) }
+        try await waitForPendingResponse(adapter)
+        let detailsRequest = try await nextRequest(from: &events)
+        XCTAssertEqual(detailsRequest["operationId"] as? String, operationID)
+        XCTAssertEqual(respond(adapter, to: detailsRequest, payload: ["resultCode": "Authorised"]), nil)
+        guard case .completion = await details.value else {
+            return XCTFail("Additional details must normalize its completion")
+        }
+
+        adapter.routeTerminal(kind: "completion", payload: ["resultCode": "Authorised"])
+        adapter.routeTerminal(kind: "error", payload: ["message": "late failure"])
+        try await waitForTerminalCleanup(coordinator)
+        await settleTasks()
+
+        let terminals = events.filter { $0["kind"] as? String == "completion" || $0["kind"] as? String == "error" }
+        XCTAssertEqual(terminals.compactMap { $0["kind"] as? String }, ["completion"])
+        XCTAssertEqual(terminals.first?["operationId"] as? String, operationID)
+        XCTAssertTrue(controller.isDisposed)
+        XCTAssertEqual(view.disposals, 1)
+        XCTAssertEqual(coordinator.controllerCount, 0)
+        XCTAssertEqual(respond(adapter, to: detailsRequest, payload: ["resultCode": "Authorised"]), "staleRequest")
+        let stale = await settle { adapter.submitController(checkoutID, controllerID: controller.controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertEqual(stale, "staleCheckout")
+        XCTAssertEqual(component.submitCount, 1)
+    }
+
     private func nextRequest(from events: inout [NSDictionary]) async throws -> NSDictionary {
         for _ in 0..<100 {
             if let event = events.last,
@@ -332,11 +401,12 @@ private extension ProductionCallbackRouterTests {
     @MainActor
     final class Fixture {
         private(set) var assertions: [String] = []
+        let factory = FixtureFactory()
 
         func coordinator() -> CheckoutCoordinator {
             CheckoutCoordinator(
                 dependencies: .init(
-                    checkoutFactory: FixtureFactory(),
+                    checkoutFactory: factory,
                     presenterFactory: FixturePresenterFactory(),
                     eventSink: FixtureEventSink(),
                     identityGenerator: FixtureIdentityGenerator(),
@@ -352,8 +422,21 @@ private extension ProductionCallbackRouterTests {
 
     @MainActor
     final class FixtureFlow: CoordinatorCheckout {
+        let paymentMethodCatalog: PaymentMethodCatalog?
+        private(set) var components: [FixtureComponent] = []
+
+        init(paymentMethods: PaymentMethods?) {
+            paymentMethodCatalog = paymentMethods.map { PaymentMethodCatalog(paymentMethods: $0) }
+        }
+
         var checkoutState: CheckoutState? {
             nil
+        }
+
+        func makePaymentComponent(for _: CatalogPaymentMethod) throws -> PaymentComponentHandle {
+            let component = FixtureComponent()
+            components.append(component)
+            return component
         }
 
         func dispose() {}
@@ -361,8 +444,48 @@ private extension ProductionCallbackRouterTests {
 
     @MainActor
     final class FixtureFactory: CheckoutFactory {
+        var paymentMethods: PaymentMethods?
+        private(set) var flows: [FixtureFlow] = []
+
         func makeCheckout() async throws -> CoordinatorCheckout {
-            FixtureFlow()
+            let flow = FixtureFlow(paymentMethods: paymentMethods)
+            flows.append(flow)
+            return flow
+        }
+    }
+
+    @MainActor
+    final class FixtureComponent: PaymentComponentHandle {
+        let viewController: UIViewController? = nil
+        private(set) var submitCount = 0
+
+        func submit() {
+            submitCount += 1
+        }
+    }
+
+    @MainActor
+    final class FixtureBinding: ControllerViewBinding {
+        private(set) var disposals = 0
+
+        func controllerDidDispose(_: ComponentProxy) {
+            disposals += 1
+        }
+    }
+
+    func registryPaymentMethods() throws -> PaymentMethods {
+        let json: [String: Any] = ["paymentMethods": [["type": "paypal", "name": "PayPal"]]]
+        return try (json as NSDictionary).decode()
+    }
+
+    func settle(
+        _ call: (@escaping (Any?) -> Void, @escaping (String?, String?, Error?) -> Void) -> Void
+    ) async -> String {
+        await withCheckedContinuation { continuation in
+            call(
+                { _ in continuation.resume(returning: "ok") },
+                { code, _, _ in continuation.resume(returning: code ?? "unknown") }
+            )
         }
     }
 

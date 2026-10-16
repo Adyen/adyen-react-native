@@ -534,7 +534,7 @@ internal final class CheckoutCoordinator {
         guard activeCheckoutID == checkoutID else {
             throw CoordinatorError.staleCheckout
         }
-        guard let controller = controllers[controllerID] else {
+        guard let controller = controllers[controllerID], controller.checkoutID == checkoutID, !controller.isDisposed else {
             throw CoordinatorError.invalidTarget
         }
         return controller
@@ -718,26 +718,33 @@ internal final class CheckoutCoordinator {
             return
         }
 
-        settleAllRequests()
-        activePresenter?.dispose()
-        activePresenter = nil
+        // Fallbacks, presenters, and views run synchronously below and may call back into the
+        // coordinator. Retiring the checkout identity first makes that work stale instead of
+        // registering controllers or reserving an operation that would outlive this teardown.
+        let checkoutID = activeCheckoutID
+        let checkout = activeCheckout
+        activeCheckoutID = nil
+        activeCheckout = nil
+        checkoutState = nil
         activeOperationID = nil
         activeOperationKind = nil
         addressLookupOperationID = nil
+        let presenter = activePresenter
+        activePresenter = nil
         let sheets = Array(controllerSheets.values)
         controllerSheets.removeAll()
-        sheets.forEach { $0.dispose() }
         let registeredControllers = Array(controllers.values)
         controllers.removeAll()
         controllerIDsByPaymentMethodID.removeAll()
         unsupportedPaymentMethodIDs.removeAll()
+
+        settleAllRequests()
+        presenter?.dispose()
+        sheets.forEach { $0.dispose() }
         registeredControllers.forEach { $0.dispose() }
 
-        guard let checkoutID = activeCheckoutID else { return }
-        activeCheckout?.dispose()
-        activeCheckout = nil
-        activeCheckoutID = nil
-        checkoutState = nil
+        guard let checkoutID else { return }
+        checkout?.dispose()
         let hostAdapter = (configuredDependencies ?? runtimeDependencies)?.hostAdapter
         disposalGeneration += 1
         let generation = disposalGeneration
