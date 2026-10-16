@@ -27,13 +27,7 @@
 
 ### Drop-in
 
-| Parameter                                                                  | Description                                                                                                                                                                                                                                                                                                          | Required |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `showPreselectedStoredPaymentMethod`                                       | Determines whether to enable the preselected stored payment method view step. Defaults to **true**.                                                                                                                                                                                                                  | No       |
-| `skipListWhenSinglePaymentMethod`                                          | When set to **true**, allow to skip payment methods list step when there is only one non-instant payment method. Defaults to **false**.                                                                                                                                                                              | No       |
-| `title`                                                                    | Set custom title for preselected stored payment method view Drop-in on iOS. By default app's name is used. This property has no effect on Android.                                                                                                                                                                   | No       |
-| `showRemovePaymentMethodButton`                                            | When set to **true**, the shopper can remove stored payment details using the UI. Defaults to **false**. For the `/sessions` flow, this option works out of the box. For the `/payments`(aka Advanced) flow, you must also use the `onDisableStorePaymentMethod` callback.                                           | No       |
-| `onDisableStoredPaymentMethod(storedPaymentMethod, resolve, reject) => {}` | Called when `showRemovePaymentMethodButton` is **true** and the shopper selects to remove stored payment details during the `/payments` (aka Advanced) flow. Make a POST [`/disable`](https://docs.adyen.com/api-explorer/Recurring/68/post/disable) request. If successful, call `resolve()`, otherwise `reject()`. | No       |
+`Configuration` has no Drop-in section. Drop-in is started with `AdyenDropIn.start(checkout)` and uses the root and payment method configurations of the `Checkout` it receives.
 
 ### Card component
 
@@ -92,16 +86,16 @@
 | `recurringPaymentRequest`       | A class that represents a request to set up a recurring payment, typically a subscription. Corresponds to [PKRecurringPaymentRequest](#applepay-recurring-payment).                                                                                                                                                                                                                         | No                                      |
 | `supportsCouponCode`            | When **true**, the Apple Pay sheet displays a coupon code entry field. Requires iOS 15+. Defaults to **false**.                                                                                                                                                                                                                                                                             | No                                      |
 | `couponCode`                    | Pre-fills the coupon code field in the Apple Pay sheet. Requires iOS 15+.                                                                                                                                                                                                                                                                                                                   | No                                      |
-| `onShippingContactChange(contact, resolve) => {}` | Called when the shopper selects or updates a shipping contact. Call `resolve({ paymentSummaryItems?, shippingMethods?, errors? })` to update the sheet. Pass an empty array for `shippingMethods` to indicate no shipping is available. Omit fields to keep current values. | No                                      |
-| `onShippingMethodChange(shippingMethod, resolve) => {}` | Called when the shopper selects a shipping method. Call `resolve({ paymentSummaryItems? })` to update the sheet. Omit to keep current summary items. | No                                      |
-| `onCouponCodeChange(couponCode, resolve) => {}` | Called when the shopper enters or updates a coupon code. Requires `supportsCouponCode: true` and iOS 15+. Call `resolve({ paymentSummaryItems?, shippingMethods?, errors? })` to update the sheet. | No                                      |
-| `onAuthorize(payment, actions) => {}` | Called after the shopper authorizes the payment (Face ID / Touch ID), before it is submitted to Adyen. Call `actions.resolve()` to proceed or `actions.reject(errors?)` to show field-level errors and keep the sheet open. If omitted, the payment is automatically approved. | No                                      |
+| `onShippingContactChange({ contact }) => result` | Called when the shopper selects or updates a shipping contact. Return (or resolve a promise with) `{ paymentSummaryItems?, shippingMethods?, errors? }` to update the sheet. Return an empty array for `shippingMethods` to indicate no shipping is available. Omit fields to keep current values. | No                                      |
+| `onShippingMethodChange({ shippingMethod }) => result` | Called when the shopper selects a shipping method. Return (or resolve a promise with) `{ paymentSummaryItems? }` to update the sheet. Omit `paymentSummaryItems` to keep the current summary items. | No                                      |
+| `onCouponCodeChange({ couponCode }) => result` | Called when the shopper enters or updates a coupon code. Requires `supportsCouponCode: true` and iOS 15+. Return (or resolve a promise with) `{ paymentSummaryItems?, shippingMethods?, errors? }` to update the sheet. | No                                      |
+| `onAuthorize({ payment }) => result` | Called after the shopper authorizes the payment (Face ID / Touch ID), before it is submitted to Adyen. Return (or resolve a promise with) `{ status: 'success' }` to proceed, or `{ status: 'failure', errors? }` to show field-level errors and keep the sheet open. If omitted, the payment is automatically approved. | No                                      |
 
 #### ApplePay Recurring payment
 
 | Parameter              | Description                                                                                                                                    | Required |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `paymentDescription`   | The description you provide of the recurring payment and that Apple Pay displays to the user in the payment sheet.                             | Yes      |
+| `description`          | The description you provide of the recurring payment and that Apple Pay displays to the user in the payment sheet.                             | Yes      |
 | `regularBilling`       | The regular billing cycle for the recurring payment, including start and end dates, an interval, and an interval count.                        | Yes      |
 | `managementURL`        | The URL to a web page where the user can update or delete the payment method for the recurring payment.                                        | Yes      |
 | `trialBilling`         | The trial billing cycle for the recurring payment.                                                                                             | No       |
@@ -144,10 +138,6 @@ const configuration = {
   analytics: {
     enabled: true,
     verboseLogs: true,
-  },
-  dropin: {
-    skipListWhenSinglePaymentMethod: true,
-    showPreselectedStoredPaymentMethod: false,
   },
   card: {
     holderNameRequired: true,
@@ -256,61 +246,61 @@ const configuration = {
     requiredBillingContactFields: ['phoneticName', 'postalAddress'],
     requiredShippingContactFields: ['name', 'phone', 'email', 'postalAddress'],
     supportsCouponCode: true,
-    onShippingContactChange: (contact, resolve) => {
-      resolve({
-        shippingMethods: [
-          { label: 'Standard', amount: 5, identifier: 'standard', detail: '5–7 days' },
-          { label: 'Express', amount: 15, identifier: 'express', detail: '1–2 days' },
-        ],
-        paymentSummaryItems: [
-          { label: 'Shipping', amount: 5 },
-          { label: '{YOUR_MERCHANT_NAME}', amount: 103 },
-        ],
-      });
-    },
-    onShippingMethodChange: (shippingMethod, resolve) => {
+    onShippingContactChange: ({ contact }) => ({
+      shippingMethods: [
+        { label: 'Standard', amount: 5, identifier: 'standard', detail: '5–7 days' },
+        { label: 'Express', amount: 15, identifier: 'express', detail: '1–2 days' },
+      ],
+      paymentSummaryItems: [
+        { label: 'Shipping', amount: 5 },
+        { label: '{YOUR_MERCHANT_NAME}', amount: 103 },
+      ],
+    }),
+    onShippingMethodChange: ({ shippingMethod }) => {
       const shippingCost = shippingMethod.identifier === 'express' ? 15 : 5;
-      resolve({
+      return {
         paymentSummaryItems: [
           { label: shippingMethod.label, amount: shippingCost },
           { label: '{YOUR_MERCHANT_NAME}', amount: 98 + shippingCost },
         ],
-      });
+      };
     },
-    onCouponCodeChange: (couponCode, resolve) => {
+    onCouponCodeChange: ({ couponCode }) => {
       if (couponCode === 'SAVE10') {
-        resolve({ paymentSummaryItems: [{ label: '{YOUR_MERCHANT_NAME}', amount: 88.2 }] });
-      } else {
-        resolve({ errors: [{ type: 'couponCode', message: 'This coupon code is not valid.' }] });
+        return { paymentSummaryItems: [{ label: '{YOUR_MERCHANT_NAME}', amount: 88.2 }] };
       }
+      return { errors: [{ type: 'couponCode', message: 'This coupon code is not valid.' }] };
     },
-    onAuthorize: (payment, actions) => {
+    onAuthorize: async ({ payment }) => {
       // Optionally validate billing/shipping contact before submission.
-      actions.resolve();
-      // Or reject with field-level errors:
-      // actions.reject([{ type: 'shippingAddress', field: 'postalCode', message: 'We do not ship here.' }]);
+      if (payment.shippingContact?.countryCode === 'AQ') {
+        return {
+          status: 'failure',
+          errors: [{ type: 'shippingAddress', field: 'postalCode', message: 'We do not ship here.' }],
+        };
+      }
+      return { status: 'success' };
     },
     recurringPaymentRequest: {
-            description: 'My Subscription',
-            regularBilling: {
-              amount: 1000,
-              label: 'Monthly payment',
-              intervalCount: 1,
-              intervalUnit: 'month',
-              startDate: new Date('2025-04-28'),
-            },
-            managementURL: 'https://my-domain.com/managementURL',
-            trialBilling: {
-              amount: 10,
-              label: 'Trial week',
-              intervalCount: 7,
-              intervalUnit: 'day',
-              endDate: new Date('2025-04-21'),
-            },
-            tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
-            billingAgreement: 'Hereby I am willing to give my money',
-          },
-        }
+      description: 'My Subscription',
+      regularBilling: {
+        amount: 1000,
+        label: 'Monthly payment',
+        intervalCount: 1,
+        intervalUnit: 'month',
+        startDate: '2025-04-28',
+      },
+      managementURL: 'https://my-domain.com/managementURL',
+      trialBilling: {
+        amount: 10,
+        label: 'Trial week',
+        intervalCount: 7,
+        intervalUnit: 'day',
+        endDate: '2025-04-21',
+      },
+      tokenNotificationURL: 'https://my-domain.com/tokenNotificationURL',
+      billingAgreement: 'Hereby I am willing to give my money',
+    },
   },
   googlepay: {
     allowCreditCards: false,
