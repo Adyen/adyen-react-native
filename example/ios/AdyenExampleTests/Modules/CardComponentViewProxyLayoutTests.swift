@@ -103,15 +103,6 @@ private final class CardViewHost: UIView, CardComponentViewProxyDelegate {
 
     /// The scroll view that Adyen's form is laid out in.
     var formScrollView: UIScrollView? {
-        Self.firstScrollView(in: self)
-    }
-
-    private static func firstScrollView(in view: UIView) -> UIScrollView? {
-        for subview in view.subviews {
-            if let scrollView = subview as? UIScrollView ?? firstScrollView(in: subview) {
-                return scrollView
-            }
-        }
-        return nil
+        findSubview()
     }
 }

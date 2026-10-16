@@ -10,7 +10,7 @@ extension UIView {
             if let match = subview as? T {
                 return match
             }
-            if let match = subview.findSubview() as? T {
+            if let match: T = subview.findSubview() {
                 return match
             }
         }
