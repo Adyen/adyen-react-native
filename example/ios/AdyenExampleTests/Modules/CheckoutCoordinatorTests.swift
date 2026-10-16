@@ -1072,6 +1072,70 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(cardComponent.submitCount, 1)
     }
 
+    func test_submitPresentsAnUnboundInteractiveControllerInsteadOfSubmittingIt() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let checkoutID = try await coordinator.setup()
+        let checkout = try XCTUnwrap(fixture.factory.checkouts.last)
+        let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let instant = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-2")
+        let cardComponent = checkout.createdComponents[0].component
+        let instantComponent = checkout.createdComponents[1].component
+        var presented: [String] = []
+        let present: @MainActor (ComponentProxy) throws -> CoordinatorPresenter = { controller in
+            presented.append(controller.controllerID)
+            return Presenter()
+        }
+
+        let missingHost: @MainActor (ComponentProxy) throws -> CoordinatorPresenter = { _ in
+            throw CoordinatorError.noActiveCheckout
+        }
+        XCTAssertThrowsError(try coordinator.submitController(
+            checkoutID: checkoutID,
+            controllerID: card.controllerID,
+            makeInteractivePresenter: missingHost
+        ))
+        XCTAssertNil(coordinator.operationID, "a failed presentation must not keep the slot")
+
+        let operationID = try coordinator.submitController(
+            checkoutID: checkoutID,
+            controllerID: card.controllerID,
+            makeInteractivePresenter: present
+        )
+        XCTAssertEqual(presented, [card.controllerID])
+        XCTAssertEqual(cardComponent.submitCount, 0, "the shopper submits from the presented UI")
+        XCTAssertEqual(coordinator.operationID, operationID)
+
+        XCTAssertThrowsError(try coordinator.submitController(
+            checkoutID: checkoutID,
+            controllerID: card.controllerID,
+            makeInteractivePresenter: present
+        )) { error in
+            XCTAssertEqual(error as? CoordinatorError, .operationBusy)
+        }
+        XCTAssertEqual(presented.count, 1, "a busy contender never presents")
+        coordinator.completeOperation(operationID)
+
+        try coordinator.submitController(
+            checkoutID: checkoutID,
+            controllerID: instant.controllerID,
+            makeInteractivePresenter: present
+        )
+        XCTAssertEqual(instantComponent.submitCount, 1, "a controller without UI submits directly")
+        XCTAssertEqual(presented.count, 1)
+        try coordinator.completeOperation(XCTUnwrap(coordinator.operationID))
+
+        let view = RecordingBinding()
+        try card.bind(view)
+        try coordinator.submitController(
+            checkoutID: checkoutID,
+            controllerID: card.controllerID,
+            makeInteractivePresenter: present
+        )
+        XCTAssertEqual(cardComponent.submitCount, 1, "a bound controller submits its mounted form")
+        XCTAssertEqual(presented.count, 1)
+    }
+
     func test_cleanupSettlesPendingControllerRequestsOnceWithoutListeners() async throws {
         let triggers: [(String, @MainActor (CheckoutCoordinator) async throws -> Void)] = [
             ("invalidate", { coordinator in await coordinator.invalidate() }),
@@ -1127,6 +1191,7 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual((again.value as? NSDictionary)?["controllerId"] as? String, controllerID)
         let instant = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-2", resolver: $0, rejecter: $1) }
         XCTAssertEqual((instant.value as? NSDictionary)?["requiresUserInteraction"] as? Bool, false)
+        let instantControllerID = try XCTUnwrap((instant.value as? NSDictionary)?["controllerId"] as? String)
 
         let available = await settle { adapter.isAvailable(checkoutID, paymentMethodID: "checkout1-pm-1", resolver: $0, rejecter: $1) }
         XCTAssertEqual(available.value as? Bool, true)
@@ -1140,9 +1205,9 @@ final class CheckoutCoordinatorTests: XCTestCase {
         let unsupported = await settle { adapter.createController(checkoutID, paymentMethodID: "checkout1-pm-3", resolver: $0, rejecter: $1) }
         XCTAssertEqual(unsupported.code, "unsupportedCapability")
 
-        let submitted = await settle { adapter.submitController(checkoutID, controllerID: controllerID, resolver: $0, rejecter: $1) }
+        let submitted = await settle { adapter.submitController(checkoutID, controllerID: instantControllerID, resolver: $0, rejecter: $1) }
         XCTAssertTrue(submitted.resolved)
-        XCTAssertEqual(fixture.factory.checkouts.last?.createdComponents.first?.component.submitCount, 1)
+        XCTAssertEqual(fixture.factory.checkouts.last?.createdComponents[1].component.submitCount, 1)
         let busy = await settle { adapter.submitController(checkoutID, controllerID: controllerID, resolver: $0, rejecter: $1) }
         XCTAssertEqual(busy.code, "operationBusy")
 

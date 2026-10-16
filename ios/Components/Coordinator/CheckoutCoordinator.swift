@@ -537,9 +537,20 @@ internal final class CheckoutCoordinator {
 
     /// Headless submission of a registry controller. The slot is reserved before the component is
     /// asked to submit, so a busy contender never reaches the SDK.
+    ///
+    /// A controller that needs shopper input and has no bound view cannot collect it by
+    /// submitting, so `makeInteractivePresenter` presents its UI instead; the shopper then
+    /// submits from that UI within the same operation.
     @discardableResult
-    internal func submitController(checkoutID: String, controllerID: String) throws -> String {
+    internal func submitController(
+        checkoutID: String,
+        controllerID: String,
+        makeInteractivePresenter: (@MainActor (ComponentProxy) throws -> CoordinatorPresenter)? = nil
+    ) throws -> String {
         let controller = try controller(checkoutID: checkoutID, controllerID: controllerID)
+        if controller.requiresUserInteraction, !controller.isBound, let makeInteractivePresenter {
+            return try beginOperation { try makeInteractivePresenter(controller) }
+        }
         let operationID = try beginOperation { NoopCoordinatorPresenter() }
         controller.submit()
         return operationID

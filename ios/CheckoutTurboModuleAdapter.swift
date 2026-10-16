@@ -236,12 +236,39 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
     ) {
         Task { @MainActor in
             do {
-                try coordinator.submitController(checkoutID: checkoutID, controllerID: controllerID)
+                var sheet: ControllerSheetPresenter?
+                let operationID = try coordinator.submitController(
+                    checkoutID: checkoutID,
+                    controllerID: controllerID
+                ) { controller in
+                    guard let viewController = controller.viewController,
+                          let host = self.coordinator.topPresenterProvider() else {
+                        throw CoordinatorError.noActiveCheckout
+                    }
+                    let presenter = ControllerSheetPresenter(viewController: viewController, host: host)
+                    sheet = presenter
+                    return presenter
+                }
+                if let sheet {
+                    coordinator.presenterStack.append(sheet.present { [weak self] in
+                        self?.controllerSheetDismissedByShopper(checkoutID: checkoutID, operationID: operationID)
+                    })
+                }
                 resolver(nil)
             } catch {
                 reject(error, rejecter: rejecter)
             }
         }
+    }
+
+    /// Mirrors a cancelled Android sheet: the abandoned operation ends the checkout with a
+    /// terminal error, so the merchant never keeps a checkout whose UI the shopper dismissed.
+    func controllerSheetDismissedByShopper(checkoutID: String, operationID: String) {
+        guard coordinator.isActive(checkoutID: checkoutID),
+              coordinator.operationID == operationID else {
+            return
+        }
+        routeTerminal(kind: EventKind.error, payload: terminalErrorPayload)
     }
 
     @objc
@@ -1047,6 +1074,63 @@ private final class TurboPresenterFactory: PresenterFactory {
 @MainActor
 private final class NoopTurboPresenter: CoordinatorPresenter {
     func dispose() {}
+}
+
+/// Presents an unbound controller's own view controller modally for an explicit submit.
+///
+/// Dismissal on teardown is left to the coordinator's presenter stack, because an operation can
+/// end through a retry while the shopper still needs the form on screen.
+@MainActor
+private final class ControllerSheetPresenter: NSObject, CoordinatorPresenter, UIAdaptivePresentationControllerDelegate {
+    private let viewController: UIViewController
+    private weak var host: UIViewController?
+    private var onShopperDismissal: (@MainActor () -> Void)?
+
+    init(viewController: UIViewController, host: UIViewController) {
+        self.viewController = viewController
+        self.host = host
+    }
+
+    func present(onShopperDismissal: @escaping @MainActor () -> Void) -> UIViewController {
+        self.onShopperDismissal = onShopperDismissal
+        let navigationController = UINavigationController(rootViewController: viewController)
+        let cancel = UIBarButtonItem(
+            barButtonSystemItem: .cancel,
+            target: self,
+            action: #selector(cancelTapped)
+        )
+        cancel.accessibilityIdentifier = Self.cancelAccessibilityIdentifier
+        viewController.navigationItem.leftBarButtonItem = cancel
+        navigationController.presentationController?.delegate = self
+        host?.present(navigationController, animated: true)
+        return navigationController
+    }
+
+    func dispose() {
+        onShopperDismissal = nil
+    }
+
+    func presentationControllerDidDismiss(_: UIPresentationController) {
+        notifyShopperDismissal()
+    }
+
+    /// While the operation is active its terminal teardown dismisses the sheet through the
+    /// presenter stack; dismissing here as well would race that dismissal.
+    @objc private func cancelTapped() {
+        guard onShopperDismissal != nil else {
+            viewController.navigationController?.dismiss(animated: true)
+            return
+        }
+        notifyShopperDismissal()
+    }
+
+    private func notifyShopperDismissal() {
+        let callback = onShopperDismissal
+        onShopperDismissal = nil
+        callback?()
+    }
+
+    static let cancelAccessibilityIdentifier = "AdyenReactNative.ControllerSheet.cancel"
 }
 
 @MainActor

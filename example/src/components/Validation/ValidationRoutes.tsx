@@ -368,6 +368,41 @@ const ValidationCheckout = ({
     }
   }, []);
 
+  const runStaleCommands = useCallback(async () => {
+    const stale = staleCheckout.current;
+    if (!stale) {
+      setStatus('stale-commands-missing');
+      return;
+    }
+    try {
+      await stale.invalidate();
+      await stale.invalidate();
+    } catch (error) {
+      setStatus(`stale-commands-invalidate-${errorCode(error)}`);
+      return;
+    }
+    const card = stale.paymentMethods.regular.first(
+      (paymentMethod) => paymentMethod.type === 'scheme'
+    );
+    if (!card) {
+      setStatus('stale-commands-missing');
+      return;
+    }
+    const outcomes = await Promise.allSettled([
+      stale.createController(card),
+      stale.isAvailable(card),
+      AdyenDropIn.start(stale),
+    ]);
+    const codes = outcomes.map((outcome) =>
+      outcome.status === 'rejected' ? errorCode(outcome.reason) : 'resolved'
+    );
+    setStatus(
+      codes.every((code) => code === 'staleCheckout')
+        ? 'stale-commands-staleCheckout'
+        : `stale-commands-${codes.join('-')}`
+    );
+  }, []);
+
   const recyclePresenter = useCallback(async () => {
     if (!checkout) return;
     const controller = await cardController(checkout);
@@ -384,6 +419,23 @@ const ValidationCheckout = ({
       again === controller ? 'presenter-recycled' : 'presenter-duplicated'
     );
   }, [checkout]);
+
+  const remountPresenter = useCallback(async () => {
+    if (!checkout) return;
+    const controller = await cardController(checkout);
+    if (controller !== presentedController) {
+      setStatus('presenter-remount-different-controller');
+      return;
+    }
+    setShowPresenter(true);
+    await wait(RECYCLE_STEP_MS);
+    setStatus('presenter-remounted');
+  }, [checkout, presentedController]);
+
+  const unmountPresenter = useCallback(() => {
+    setShowPresenter(false);
+    setStatus('presenter-unmounted');
+  }, []);
 
   const cleanupContention = useCallback(async () => {
     try {
@@ -535,6 +587,13 @@ const ValidationCheckout = ({
         }}
       />
       <Button
+        testID="validation-stale-commands"
+        title="Run stale checkout commands"
+        onPress={() => {
+          runStaleCommands().catch(() => undefined);
+        }}
+      />
+      <Button
         testID="validation-recycle-presenter"
         title="Recycle presenter"
         onPress={() => {
@@ -542,6 +601,20 @@ const ValidationCheckout = ({
             setStatus(`presenter-recycle-${errorCode(error)}`);
           });
         }}
+      />
+      <Button
+        testID="validation-remount-presenter"
+        title="Remount presenter"
+        onPress={() => {
+          remountPresenter().catch((error) => {
+            setStatus(`presenter-remount-${errorCode(error)}`);
+          });
+        }}
+      />
+      <Button
+        testID="validation-unmount-presenter"
+        title="Unmount presenter"
+        onPress={unmountPresenter}
       />
       <Button
         testID="validation-start-headless"

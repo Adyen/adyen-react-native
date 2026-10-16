@@ -2,11 +2,14 @@ package com.adyenreactnativesdk.react.base
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Size
 import android.view.View
 import android.widget.FrameLayout
 
 private const val TIMEOUT = 250L
+private val mainHandler = Handler(Looper.getMainLooper())
 
 open class DynamicComponentView(
   context: Context,
@@ -46,18 +49,31 @@ open class DynamicComponentView(
     postDelayed(resizeRunnable, TIMEOUT)
   }
 
+  private var isDetachingFromWindow = false
+
   override fun onDetachedFromWindow() {
     super.onDetachedFromWindow()
-    onDispose()
-    detachListener?.invoke()
+    isDetachingFromWindow = true
+    try {
+      onDispose()
+      detachListener?.invoke()
+    } finally {
+      isDetachingFromWindow = false
+    }
+    // Children were already detached by the parent dispatch. Removing them while this view
+    // still holds its attach info would detach a ComposeView twice and crash, so removal waits
+    // until the detach has finished. A view re-attached meanwhile is rebound by Fabric instead.
+    mainHandler.post {
+      if (!isAttachedToWindow) onDispose()
+    }
   }
 
   /** Explicit disposal from [AdyenComponentViewManager.onDropViewInstance]. */
   fun onDispose() {
     removeCallbacks(resizeRunnable)
-    removeAllViews()
     isViewSet = false
     oldSize = null
+    if (!isDetachingFromWindow) removeAllViews()
   }
 }
 

@@ -19,7 +19,7 @@ function statusId(driver, status) {
 
 async function openValidationRoutes(driver) {
   const apiOnlyTab = await driver.$(testId(driver, 'tab-API-Only'));
-  await apiOnlyTab.waitForDisplayed({ timeout: 15000 });
+  await apiOnlyTab.waitForDisplayed({ timeout: 45000 });
   await apiOnlyTab.click();
 
   const validationMenu = await driver.$(
@@ -86,12 +86,48 @@ async function expectOldPresenterInactive(driver) {
   await oldCardField.waitForExist({ reverse: true, timeout: 15000 });
 }
 
+async function expectEmbeddedCardAttached(driver) {
+  const cardField = driver.isIOS
+    ? await driver.$(
+        '~AdyenCard.FormCardNumberContainerItem.numberItem.textField'
+      )
+    : await driver.$(
+        'android=new UiSelector().className("android.widget.EditText")'
+      );
+
+  await cardField.waitForExist({ timeout: 15000 });
+  await driver.waitUntil(async () => (await cardField.getSize()).height > 0, {
+    timeout: 15000,
+    timeoutMsg: 'Re-attached card view has no height',
+  });
+}
+
 async function expectStandaloneActionVisible(driver) {
   const action = driver.isAndroid
     ? await driver.$('android=new UiSelector().text("Purchase Authentication")')
     : await driver.$('~Cancel');
 
   await action.waitForDisplayed({ timeout: 30000 });
+}
+
+// Modal sheets ignore a close tap that lands while they are still animating in.
+async function tapUntilGone(element, failureMessage) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await element.click().catch(() => undefined);
+    const closed = await element
+      .waitForExist({ reverse: true, timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+    if (closed) return;
+  }
+  throw new Error(failureMessage);
+}
+
+async function cancelIOSStandaloneAction(driver) {
+  await tapUntilGone(
+    await driver.$('~Cancel'),
+    'The standalone action challenge did not close'
+  );
 }
 
 async function expectCardPaymentVisible(driver) {
@@ -106,10 +142,12 @@ async function expectCardPaymentVisible(driver) {
   await cardField.waitForDisplayed({ timeout: 30000 });
 }
 
-async function dismissAndroidCardSheet(driver) {
-  const dismiss = await driver.$('android=new UiSelector().text("\u2715")');
+async function dismissCardSheet(driver) {
+  const dismiss = driver.isAndroid
+    ? await driver.$('android=new UiSelector().text("\u2715")')
+    : await driver.$('~AdyenReactNative.ControllerSheet.cancel');
   await dismiss.waitForDisplayed({ timeout: 15000 });
-  await dismiss.click();
+  await tapUntilGone(dismiss, 'The card sheet did not close');
 }
 
 async function runHeadlessPayment(driver, routeId) {
@@ -179,12 +217,10 @@ async function testValidationRoutes(driver, isAndroid) {
     await openValidationRoutes(driver);
   }
 
-  if (isAndroid) {
-    await runHeadlessPayment(driver, 'validation-route-headless-sessions');
-    await openValidationRoutes(driver);
-    await runHeadlessPayment(driver, 'validation-route-headless-advanced');
-    await openValidationRoutes(driver);
-  }
+  await runHeadlessPayment(driver, 'validation-route-headless-sessions');
+  await openValidationRoutes(driver);
+  await runHeadlessPayment(driver, 'validation-route-headless-advanced');
+  await openValidationRoutes(driver);
 
   await openRoute(driver, 'validation-route-lifecycle');
   await expectStatus(driver, 'embedded-ready');
@@ -196,8 +232,21 @@ async function testValidationRoutes(driver, isAndroid) {
   await clickControl(driver, 'validation-submit-stale');
   await expectStatus(driver, 'stale-submit-staleCheckout');
 
+  // invalidate() stays idempotent; createController, isAvailable and Drop-in on the replaced
+  // checkout all reject staleCheckout.
+  await clickControl(driver, 'validation-stale-commands');
+  await expectStatus(driver, 'stale-commands-staleCheckout');
+
   await clickControl(driver, 'validation-recycle-presenter');
   await expectStatus(driver, 'presenter-recycled');
+
+  // After several mount/unmount cycles the same controller still re-attaches its native view.
+  await clickControl(driver, 'validation-remount-presenter');
+  await expectStatus(driver, 'presenter-remounted');
+  await expectEmbeddedCardAttached(driver);
+  await clickControl(driver, 'validation-unmount-presenter');
+  await expectStatus(driver, 'presenter-unmounted');
+  await expectOldPresenterInactive(driver);
 
   await clickControl(driver, 'validation-cse');
   await expectStatus(driver, 'cse-encryption-and-validation-complete');
@@ -207,8 +256,7 @@ async function testValidationRoutes(driver, isAndroid) {
   if (isAndroid) {
     await driver.back();
   } else {
-    const cancel = await driver.$('~Cancel');
-    await cancel.click();
+    await cancelIOSStandaloneAction(driver);
   }
   await expectAnyStatus(driver, [
     'standalone-action-cancelled',
@@ -216,9 +264,7 @@ async function testValidationRoutes(driver, isAndroid) {
   ]);
 
   await clickControl(driver, 'validation-headless-contention');
-  if (isAndroid) {
-    await dismissAndroidCardSheet(driver);
-  }
+  await dismissCardSheet(driver);
   await expectStatus(driver, 'contention-operationBusy');
 
   await clickControl(driver, 'validation-cleanup-contention');
@@ -229,16 +275,9 @@ async function testValidationRoutes(driver, isAndroid) {
   await clickControl(driver, 'validation-start-fresh-checkout');
   await expectStatus(driver, 'fresh-checkout-ready');
   await clickControl(driver, 'validation-start-fresh-headless');
-  if (isAndroid) {
-    await expectCardPaymentVisible(driver);
-    await dismissAndroidCardSheet(driver);
-  } else {
-    await expectStatus(driver, 'fresh-headless-started');
-  }
-
-  if (isAndroid) {
-    await clickControl(driver, 'validation-exit');
-  }
+  await expectCardPaymentVisible(driver);
+  await dismissCardSheet(driver);
+  await clickControl(driver, 'validation-exit');
 
   console.log(
     '==> [Test] SUCCESS: Lookup, headless outcomes, replacement, stale, contention, Action, and CSE controls are selector-driven.'

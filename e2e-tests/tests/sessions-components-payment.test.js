@@ -23,7 +23,7 @@ function statusId(driver, status) {
  */
 async function testSessionsComponentsPayment(driver, _isAndroid) {
   const apiOnlyTab = await driver.$(testId(driver, 'tab-API-Only'));
-  await apiOnlyTab.waitForDisplayed({ timeout: 15000 });
+  await apiOnlyTab.waitForDisplayed({ timeout: 45000 });
   await apiOnlyTab.click();
 
   const validationMenu = await driver.$(

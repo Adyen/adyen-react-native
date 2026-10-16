@@ -11,10 +11,12 @@ const { testValidationRoutes } = require('./tests/validation-routes.test');
 const {
   testDropInAndUnsupportedFlows,
 } = require('./tests/dropin-and-unsupported.test');
+const { testExampleNavigation } = require('./tests/example-navigation.test');
 
 // Runs payment-flow tests against the real example/ app (unlike run-appium.js, which uses a
 // scaffolded fixture app). Reuses helpers/driver.js and helpers/utils.js conventions.
 const TESTS = [
+  { name: 'Example navigation smoke', run: testExampleNavigation },
   { name: 'Sessions Components (Card)', run: testSessionsComponentsPayment },
   { name: 'Advanced Checkout (Card)', run: testAdvancedCheckoutPayment },
   {

@@ -120,7 +120,19 @@ async function tapBackToHome(driver, timeout = 10000) {
         'android=new UiSelector().textMatches("(?i).*back to home.*")'
       );
   await backButton.waitForDisplayed({ timeout });
-  await backButton.click();
+  // A tap that lands while the Result modal is still animating in is ignored, so retry until
+  // the Result screen is gone.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await backButton.click().catch(() => undefined);
+    const dismissed = await backButton
+      .waitForExist({ reverse: true, timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+    if (dismissed) return;
+  }
+  throw new Error(
+    'The Result screen did not dismiss after tapping Back to Home'
+  );
 }
 
 module.exports = {

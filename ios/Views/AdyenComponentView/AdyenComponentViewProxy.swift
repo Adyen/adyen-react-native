@@ -23,6 +23,8 @@ public final class AdyenComponentViewProxy: UIStackView {
     private var componentViewController: UIViewController?
     private var componentView: UIView?
     private var lastReportedHeight: CGFloat = 0
+    private var originalTranslatesAutoresizingMask = true
+    private var originalScrollState: ScrollState?
     private let coordinator: CheckoutCoordinator
 
     @objc public weak var delegate: AdyenComponentViewProxyDelegate?
@@ -99,6 +101,7 @@ public final class AdyenComponentViewProxy: UIStackView {
             removeArrangedSubview(childVC.view)
             childVC.view.removeFromSuperview()
             childVC.removeFromParent()
+            restoreEmbeddingChanges(in: childVC.view)
         }
         componentView = nil
         componentViewController = nil
@@ -115,6 +118,7 @@ public final class AdyenComponentViewProxy: UIStackView {
         }
 
         componentView = childVC.view
+        originalTranslatesAutoresizingMask = childVC.view.translatesAutoresizingMaskIntoConstraints
         addArrangedSubview(childVC.view)
         disableNativeScrollingAndBouncing(in: childVC.view)
         layoutIfNeeded()
@@ -122,10 +126,46 @@ public final class AdyenComponentViewProxy: UIStackView {
 
     private func disableNativeScrollingAndBouncing(in componentView: UIView) {
         guard let formView: UIScrollView = componentView.findSubview() else { return }
+        originalScrollState = ScrollState(formView)
         formView.bounces = false
         formView.isScrollEnabled = false
         formView.alwaysBounceVertical = false
         formView.contentInsetAdjustmentBehavior = .never
+    }
+
+    /// The controller outlives this view and its view controller can be presented on its own
+    /// later (headless submit), where stack-view constraints and disabled scrolling would leave
+    /// the form collapsed under the navigation bar.
+    private func restoreEmbeddingChanges(in componentView: UIView) {
+        componentView.translatesAutoresizingMaskIntoConstraints = originalTranslatesAutoresizingMask
+        originalScrollState?.restore()
+        originalScrollState = nil
+    }
+
+    private struct ScrollState {
+        weak var scrollView: UIScrollView?
+        let bounces: Bool
+        let isScrollEnabled: Bool
+        let alwaysBounceVertical: Bool
+        let contentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
+
+        @MainActor
+        init(_ scrollView: UIScrollView) {
+            self.scrollView = scrollView
+            bounces = scrollView.bounces
+            isScrollEnabled = scrollView.isScrollEnabled
+            alwaysBounceVertical = scrollView.alwaysBounceVertical
+            contentInsetAdjustmentBehavior = scrollView.contentInsetAdjustmentBehavior
+        }
+
+        @MainActor
+        func restore() {
+            guard let scrollView else { return }
+            scrollView.bounces = bounces
+            scrollView.isScrollEnabled = isScrollEnabled
+            scrollView.alwaysBounceVertical = alwaysBounceVertical
+            scrollView.contentInsetAdjustmentBehavior = contentInsetAdjustmentBehavior
+        }
     }
 
     // MARK: - Layout reporting

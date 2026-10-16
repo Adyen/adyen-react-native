@@ -26,6 +26,11 @@ using namespace facebook::react;
 
 @implementation ADYAdyenComponentView {
   AdyenComponentViewProxy *_proxy;
+  // The proxy binds synchronously inside updateProps, which Fabric calls before it assigns the
+  // event emitter. The first height report is held here until the emitter arrives.
+  BOOL _hasPendingLayout;
+  CGFloat _pendingWidth;
+  CGFloat _pendingHeight;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -55,8 +60,17 @@ using namespace facebook::react;
   [super updateProps:props oldProps:oldProps];
 }
 
+- (void)updateEventEmitter:(EventEmitter::Shared const &)eventEmitter {
+  [super updateEventEmitter:eventEmitter];
+  if (_hasPendingLayout && _eventEmitter) {
+    _hasPendingLayout = NO;
+    [self emitLayoutChangeWithWidth:_pendingWidth height:_pendingHeight];
+  }
+}
+
 - (void)prepareForRecycle {
   [super prepareForRecycle];
+  _hasPendingLayout = NO;
   [_proxy detach];
 }
 
@@ -64,12 +78,21 @@ using namespace facebook::react;
 
 - (void)onLayoutChangeWithWidth:(CGFloat)width height:(CGFloat)height {
   if (_eventEmitter) {
-    AdyenCheckoutComponentViewEventEmitter::OnLayoutChange result = {
-      .width = static_cast<int>(width),
-      .height = static_cast<int>(height)
-    };
-    self.eventEmitter.onLayoutChange(result);
+    _hasPendingLayout = NO;
+    [self emitLayoutChangeWithWidth:width height:height];
+  } else {
+    _hasPendingLayout = YES;
+    _pendingWidth = width;
+    _pendingHeight = height;
   }
+}
+
+- (void)emitLayoutChangeWithWidth:(CGFloat)width height:(CGFloat)height {
+  AdyenCheckoutComponentViewEventEmitter::OnLayoutChange result = {
+    .width = static_cast<int>(width),
+    .height = static_cast<int>(height)
+  };
+  self.eventEmitter.onLayoutChange(result);
 }
 
 - (const AdyenCheckoutComponentViewEventEmitter &)eventEmitter {

@@ -139,8 +139,8 @@ async function assertAndroidUnsupportedLookup(driver) {
   await dismiss.click();
 }
 
-async function assertIOSUnsupportedDropIn(driver) {
-  await openRoute(driver, 'validation-route-dropin-sessions');
+async function assertIOSUnsupportedDropIn(driver, route) {
+  await openRoute(driver, route);
   await expectStatus(driver, 'dropin-ready');
   await clickControl(driver, 'validation-start-dropin');
   await expectStatus(driver, 'dropin-unsupportedCapability-presentation');
@@ -172,9 +172,11 @@ async function testDropInAndUnsupportedFlows(driver, isAndroid) {
     return;
   }
 
-  await assertIOSUnsupportedDropIn(driver);
+  await assertIOSUnsupportedDropIn(driver, 'validation-route-dropin-sessions');
+  await clickControl(driver, 'validation-exit');
+  await assertIOSUnsupportedDropIn(driver, 'validation-route-dropin-advanced');
   console.log(
-    '==> [Test] SUCCESS: iOS Drop-in stayed unsupported with no presented UI.'
+    '==> [Test] SUCCESS: iOS sessions and advanced Drop-in stayed unsupported with no presented UI.'
   );
 }
 
