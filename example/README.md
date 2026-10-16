@@ -16,7 +16,7 @@ This will fetch dependencies and generate compressed binaries in *lib/* folder.
 
 ## Step 2: Provide credentials
 
-This project uses `example/src/secrets.json` to store local, non-committed keys and configuration for the example app.
+This project uses `example/secrets.json` to store local, non-committed keys and configuration for the example app.
 
 Create a `secrets.json` file in the `example/` directory with the following structure (DO NOT commit this file to the repository):
 
@@ -61,6 +61,8 @@ yarn app ios
 ```
 
 The iOS project uses Swift Package Manager (no CocoaPods). `yarn app spm-scaffold` writes the Package.swift stopgap for dependencies that do not ship one (currently `@react-native-async-storage/async-storage`) into `node_modules`, so run it again after every `yarn install`.
+
+`yarn app ios` builds, installs, and launches the app on a booted simulator; it does not start Metro, so start the bundler in a separate terminal with `yarn app start` first.
 
 If everything is set up _correctly_, you should see the app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
 
