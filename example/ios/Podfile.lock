@@ -1,14 +1,14 @@
 PODS:
-  - Adyen (5.25.1):
-    - Adyen/Actions (= 5.25.1)
-    - Adyen/Card (= 5.25.1)
-    - Adyen/Components (= 5.25.1)
-    - Adyen/Core (= 5.25.1)
-    - Adyen/DropIn (= 5.25.1)
-    - Adyen/Encryption (= 5.25.1)
-    - Adyen/Session (= 5.25.1)
+  - Adyen (5.26.0):
+    - Adyen/Actions (= 5.26.0)
+    - Adyen/Card (= 5.26.0)
+    - Adyen/Components (= 5.26.0)
+    - Adyen/Core (= 5.26.0)
+    - Adyen/DropIn (= 5.26.0)
+    - Adyen/Encryption (= 5.26.0)
+    - Adyen/Session (= 5.26.0)
   - adyen-react-native (2.0.0-local.1):
-    - Adyen (= 5.25.1)
+    - Adyen (= 5.26.0)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -30,25 +30,25 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - Adyen/Actions (5.25.1):
+  - Adyen/Actions (5.26.0):
     - Adyen/Core
     - Adyen3DS2 (= 2.4.4)
-  - Adyen/Card (5.25.1):
+  - Adyen/Card (5.26.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Components (5.25.1):
+  - Adyen/Components (5.26.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Core (5.25.1):
+  - Adyen/Core (5.26.0):
     - AdyenNetworking (= 3.0.1)
-  - Adyen/DropIn (5.25.1):
+  - Adyen/DropIn (5.26.0):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (5.25.1)
-  - Adyen/Session (5.25.1):
+  - Adyen/Encryption (5.26.0)
+  - Adyen/Session (5.26.0):
     - Adyen/Actions
     - Adyen/Core
   - Adyen3DS2 (2.4.4)
@@ -1892,7 +1892,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - RNScreens (4.25.2):
+  - RNScreens (4.26.2):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -1914,9 +1914,9 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
-    - RNScreens/common (= 4.25.2)
+    - RNScreens/common (= 4.26.2)
     - Yoga
-  - RNScreens/common (4.25.2):
+  - RNScreens/common (4.26.2):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2185,8 +2185,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: bfb5baaf4dded13ec151d336368ac1c26e9a99b4
-  adyen-react-native: 3b3ce2d7486adedd59f2339c3df5df10827f0735
+  Adyen: 2ea7cab4a141e33f31cbc995f751333c5a1c354e
+  adyen-react-native: ec800ef9099b1a0f5a17b3e7d4117896ab8a2c36
   Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
   AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
   FBLazyVector: c00c20551d40126351a6783c47ce75f5b374851b
@@ -2263,7 +2263,7 @@ SPEC CHECKSUMS:
   ReactCommon: fe2a3af8975e63efa60f95fca8c34dc85deee360
   ReactNativeDependencies: 8b0ee9be647e5534e887b8fafcf9a4d888f3e070
   RNCAsyncStorage: 2ad919e88b8bc2cd80e8697ce66d04d006743283
-  RNScreens: 991cc417cd396602a6cf59a42139e5a9d91462a9
+  RNScreens: 7118cd7715c226856125b5bece3c4d9abec90356
   Yoga: e83c3121d079541e69f3c5c623faaaf933fb5812
 
 PODFILE CHECKSUM: eda0e5d5cab8c57a802b6d505abac2d6d53c3430
