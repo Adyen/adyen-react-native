@@ -199,6 +199,11 @@ internal final class CheckoutCoordinator {
     /// at most one controller, which makes creation idempotent.
     private var controllers: [String: ComponentProxy] = [:]
     private var controllerIDsByPaymentMethodID: [String: String] = [:]
+    /// Sheets presenting unbound controllers, keyed by controller id. They are owned by the
+    /// checkout rather than the operation slot: a merchant retry releases the slot while the
+    /// shopper stays on the sheet, which must remain cancellable until it is dismissed or the
+    /// checkout is torn down.
+    private var controllerSheets: [String: CoordinatorPresenter] = [:]
     /// Payment methods whose component creation failed, so availability stays a pure query.
     private var unsupportedPaymentMethodIDs: Set<String> = []
     private var activeRequests: [String: PendingRequest] = [:]
@@ -540,7 +545,8 @@ internal final class CheckoutCoordinator {
     ///
     /// A controller that needs shopper input and has no bound view cannot collect it by
     /// submitting, so `makeInteractivePresenter` presents its UI instead; the shopper then
-    /// submits from that UI within the same operation.
+    /// submits from that UI within the same operation. A sheet that is still visible for the
+    /// controller is reused rather than presented again.
     @discardableResult
     internal func submitController(
         checkoutID: String,
@@ -549,7 +555,15 @@ internal final class CheckoutCoordinator {
     ) throws -> String {
         let controller = try controller(checkoutID: checkoutID, controllerID: controllerID)
         if controller.requiresUserInteraction, !controller.isBound, let makeInteractivePresenter {
-            return try beginOperation { try makeInteractivePresenter(controller) }
+            let operationID = try beginOperation { NoopCoordinatorPresenter() }
+            guard controllerSheets[controllerID] == nil else { return operationID }
+            do {
+                controllerSheets[controllerID] = try makeInteractivePresenter(controller)
+            } catch {
+                completeOperation(operationID)
+                throw error
+            }
+            return operationID
         }
         let operationID = try beginOperation { NoopCoordinatorPresenter() }
         controller.submit()
@@ -564,6 +578,19 @@ internal final class CheckoutCoordinator {
             return
         }
         cancelAddressLookup(checkoutID: controller.checkoutID)
+    }
+
+    /// Forgets a controller sheet the shopper dismissed. Returns false when `sheet` is not a
+    /// live sheet of the active checkout `checkoutID`, so a stale sheet cannot act on a
+    /// replacement checkout or dismiss twice.
+    internal func releaseControllerSheet(_ sheet: CoordinatorPresenter, checkoutID: String) -> Bool {
+        guard activeCheckoutID == checkoutID,
+              let controllerID = controllerSheets.first(where: { $0.value === sheet })?.key else {
+            return false
+        }
+        controllerSheets.removeValue(forKey: controllerID)
+        sheet.dispose()
+        return true
     }
 
     @discardableResult
@@ -697,6 +724,9 @@ internal final class CheckoutCoordinator {
         activeOperationID = nil
         activeOperationKind = nil
         addressLookupOperationID = nil
+        let sheets = Array(controllerSheets.values)
+        controllerSheets.removeAll()
+        sheets.forEach { $0.dispose() }
         let registeredControllers = Array(controllers.values)
         controllers.removeAll()
         controllerIDsByPaymentMethodID.removeAll()

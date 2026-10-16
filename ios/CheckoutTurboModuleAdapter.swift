@@ -237,7 +237,7 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
         Task { @MainActor in
             do {
                 var sheet: ControllerSheetPresenter?
-                let operationID = try coordinator.submitController(
+                try coordinator.submitController(
                     checkoutID: checkoutID,
                     controllerID: controllerID
                 ) { controller in
@@ -250,8 +250,9 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
                     return presenter
                 }
                 if let sheet {
-                    coordinator.presenterStack.append(sheet.present { [weak self] in
-                        self?.controllerSheetDismissedByShopper(checkoutID: checkoutID, operationID: operationID)
+                    coordinator.presenterStack.append(sheet.present { [weak self, weak sheet] in
+                        guard let sheet else { return }
+                        self?.controllerSheetDismissedByShopper(checkoutID: checkoutID, sheet: sheet)
                     })
                 }
                 resolver(nil)
@@ -263,9 +264,10 @@ internal final class CheckoutTurboModuleAdapter: NSObject {
 
     /// Mirrors a cancelled Android sheet: the abandoned operation ends the checkout with a
     /// terminal error, so the merchant never keeps a checkout whose UI the shopper dismissed.
-    func controllerSheetDismissedByShopper(checkoutID: String, operationID: String) {
-        guard coordinator.isActive(checkoutID: checkoutID),
-              coordinator.operationID == operationID else {
+    /// The sheet may outlive the operation that presented it (a merchant retry releases the
+    /// slot), so ownership is checked against the checkout's live sheets, not an operation id.
+    func controllerSheetDismissedByShopper(checkoutID: String, sheet: CoordinatorPresenter) {
+        guard coordinator.releaseControllerSheet(sheet, checkoutID: checkoutID) else {
             return
         }
         routeTerminal(kind: EventKind.error, payload: terminalErrorPayload)
@@ -1114,7 +1116,7 @@ private final class ControllerSheetPresenter: NSObject, CoordinatorPresenter, UI
         notifyShopperDismissal()
     }
 
-    /// While the operation is active its terminal teardown dismisses the sheet through the
+    /// While the sheet is owned by the checkout, its terminal teardown dismisses it through the
     /// presenter stack; dismissing here as well would race that dismissal.
     @objc private func cancelTapped() {
         guard onShopperDismissal != nil else {

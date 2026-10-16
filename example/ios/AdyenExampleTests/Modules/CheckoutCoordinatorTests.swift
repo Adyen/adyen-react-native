@@ -1220,6 +1220,186 @@ final class CheckoutCoordinatorTests: XCTestCase {
         XCTAssertEqual(staleCreation.code, "staleCheckout")
     }
 
+    // MARK: - Controller sheet
+
+    func test_controllerSheetStaysCancellableAfterAdvancedRetry() async throws {
+        for dismissal in SheetDismissal.allCases {
+            let fixture = Fixture()
+            let coordinator = fixture.makeCoordinator()
+            let host = makeWindowedHost()
+            coordinator.topPresenterProvider = { host }
+            let adapter = makeAdapter(coordinator)
+            var events: [NSDictionary] = []
+            adapter.setEventSink { events.append($0) }
+            let checkoutID = try await coordinator.setup()
+            let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+            let form = try XCTUnwrap(fixture.factory.checkouts.last?.createdComponents[0].component.viewController)
+
+            let submitted = await settle { adapter.submitController(checkoutID, controllerID: card.controllerID, resolver: $0, rejecter: $1) }
+            XCTAssertTrue(submitted.resolved, "\(dismissal)")
+            XCTAssertNotNil(form.navigationController, "\(dismissal)")
+
+            try await shopperSubmitsAndMerchantRetries(adapter, events: { events })
+            XCTAssertNil(coordinator.operationID, "\(dismissal): a retry releases the slot")
+            XCTAssertTrue(coordinator.isActive(checkoutID: checkoutID), "\(dismissal)")
+            XCTAssertNotNil(form.navigationItem.leftBarButtonItem?.target, "\(dismissal): Cancel keeps a live receiver")
+            XCTAssertNotNil(form.navigationController?.presentationController?.delegate, "\(dismissal): swipe keeps a live receiver")
+
+            dismiss(form, by: dismissal)
+            try await waitForCleanup(coordinator)
+            dismiss(form, by: dismissal)
+            await Task.yield()
+
+            XCTAssertEqual(terminalKinds(events), ["error"], "\(dismissal) must deliver exactly one terminal")
+            XCTAssertTrue(card.isDisposed, "\(dismissal)")
+            XCTAssertEqual(coordinator.controllerCount, 0, "\(dismissal)")
+            XCTAssertEqual(fixture.host.releaseCount, 1, "\(dismissal)")
+        }
+    }
+
+    func test_resubmittingAVisibleControllerSheetReusesItWithinANewOperation() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let host = makeWindowedHost()
+        coordinator.topPresenterProvider = { host }
+        let adapter = makeAdapter(coordinator)
+        var events: [NSDictionary] = []
+        adapter.setEventSink { events.append($0) }
+        let checkoutID = try await coordinator.setup()
+        let card = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let component = try XCTUnwrap(fixture.factory.checkouts.last?.createdComponents[0].component)
+        let form = try XCTUnwrap(component.viewController)
+
+        _ = await settle { adapter.submitController(checkoutID, controllerID: card.controllerID, resolver: $0, rejecter: $1) }
+        let sheet = try XCTUnwrap(form.navigationController)
+        try await shopperSubmitsAndMerchantRetries(adapter, events: { events })
+
+        let again = await settle { adapter.submitController(checkoutID, controllerID: card.controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertTrue(again.resolved)
+        XCTAssertNotNil(coordinator.operationID)
+        XCTAssertTrue(form.navigationController === sheet, "the visible sheet is reused, never presented twice")
+        XCTAssertEqual(coordinator.presenterStack.count, 1)
+        XCTAssertEqual(component.submitCount, 0)
+
+        dismiss(form, by: .cancelButton)
+        try await waitForCleanup(coordinator)
+        XCTAssertEqual(terminalKinds(events), ["error"])
+    }
+
+    func test_staleControllerSheetCannotCancelAReplacementCheckout() async throws {
+        let fixture = Fixture()
+        let coordinator = fixture.makeCoordinator()
+        let host = makeWindowedHost()
+        coordinator.topPresenterProvider = { host }
+        let adapter = makeAdapter(coordinator)
+        var events: [NSDictionary] = []
+        adapter.setEventSink { events.append($0) }
+        let checkoutID = try await coordinator.setup()
+        let staleCard = try coordinator.createController(checkoutID: checkoutID, paymentMethodID: "checkout1-pm-1")
+        let staleForm = try XCTUnwrap(fixture.factory.checkouts.last?.createdComponents[0].component.viewController)
+        _ = await settle { adapter.submitController(checkoutID, controllerID: staleCard.controllerID, resolver: $0, rejecter: $1) }
+        try await shopperSubmitsAndMerchantRetries(adapter, events: { events })
+
+        let replacementID = try await coordinator.setup()
+        let replacementHost = makeWindowedHost()
+        coordinator.topPresenterProvider = { replacementHost }
+        let card = try coordinator.createController(checkoutID: replacementID, paymentMethodID: "checkout2-pm-1")
+        let form = try XCTUnwrap(fixture.factory.checkouts.last?.createdComponents[0].component.viewController)
+        let submitted = await settle { adapter.submitController(replacementID, controllerID: card.controllerID, resolver: $0, rejecter: $1) }
+        XCTAssertTrue(submitted.resolved)
+        let operationID = coordinator.operationID
+
+        for dismissal in SheetDismissal.allCases {
+            dismiss(staleForm, by: dismissal)
+        }
+        await Task.yield()
+        XCTAssertTrue(terminalKinds(events).isEmpty, "a stale sheet must not end the replacement")
+        XCTAssertTrue(coordinator.isActive(checkoutID: replacementID))
+        XCTAssertEqual(coordinator.operationID, operationID)
+        XCTAssertFalse(card.isDisposed)
+
+        dismiss(form, by: .swipe)
+        try await waitForCleanup(coordinator)
+        XCTAssertEqual(terminalKinds(events), ["error"])
+        XCTAssertTrue(card.isDisposed)
+    }
+
+    /// UIKit keeps a sheet's presentation controller, and so its dismissal delegate, only for a
+    /// presentation from a view controller in a window.
+    private func makeWindowedHost() -> UIViewController {
+        let host = UIViewController()
+        let window: UIWindow
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            window = UIWindow(windowScene: scene)
+        } else {
+            window = UIWindow(frame: UIScreen.main.bounds)
+        }
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        addTeardownBlock { @MainActor in
+            host.dismiss(animated: false)
+            window.isHidden = true
+        }
+        return host
+    }
+
+    private enum SheetDismissal: CaseIterable {
+        case cancelButton
+        case swipe
+    }
+
+    private func dismiss(_ form: UIViewController, by dismissal: SheetDismissal) {
+        switch dismissal {
+        case .cancelButton:
+            guard let item = form.navigationItem.leftBarButtonItem, let action = item.action else {
+                return XCTFail("The sheet must install a Cancel button")
+            }
+            _ = (item.target as? NSObject)?.perform(action, with: item)
+        case .swipe:
+            guard let presentation = form.navigationController?.presentationController else {
+                return XCTFail("The form must be embedded in a presented sheet")
+            }
+            presentation.delegate?.presentationControllerDidDismiss?(presentation)
+        }
+    }
+
+    private func shopperSubmitsAndMerchantRetries(
+        _ adapter: CheckoutTurboModuleAdapter,
+        events: () -> [NSDictionary]
+    ) async throws {
+        let shopperSubmit = Task { await adapter.routeAdvancedSubmit(["paymentMethod": ["type": "scheme"]]) }
+        var request: NSDictionary?
+        for _ in 0..<100 {
+            request = events().last { $0["kind"] as? String == "advancedSubmit" && $0["requestId"] != nil }
+            if request != nil, adapter.pendingResponseCount > 0 {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let response = try XCTUnwrap(request?.mutableCopy() as? NSMutableDictionary)
+        response["payloadJson"] = #"{"type":"retry"}"#
+        var rejection: String?
+        adapter.respond(response, resolver: { _ in }) { code, _, _ in rejection = code }
+        XCTAssertNil(rejection)
+        guard case .retry = await shopperSubmit.value else {
+            return XCTFail("The merchant retry must reach the SDK")
+        }
+    }
+
+    private func waitForCleanup(_ coordinator: CheckoutCoordinator) async throws {
+        for _ in 0..<100 {
+            if coordinator.checkoutID == nil {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTFail("Checkout cleanup did not run")
+    }
+
+    private func terminalKinds(_ events: [NSDictionary]) -> [String] {
+        events.compactMap { $0["kind"] as? String }.filter { $0 == "error" || $0 == "completion" }
+    }
+
     // MARK: - Address lookup ownership
 
     func test_detachingTheCardViewCancelsLookupButKeepsTheController() async throws {
