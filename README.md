@@ -212,16 +212,19 @@ const configuration: Configuration = {
   environment: 'test',
   clientKey: '{YOUR_CLIENT_KEY}',
   countryCode: 'NL',
+  returnUrl: 'myapp://payment',
 };
 ```
 
-`clientKey` is required. Supply `countryCode` when the selected payment method requires it. Read the [configuration reference][configuration] for card, Apple Pay, Google Pay, and iOS address-lookup options.
+`environment`, `clientKey`, and `returnUrl` are required. Supply `countryCode` when the selected payment method requires it. Read the [configuration reference][configuration] for card, Apple Pay, Google Pay, and iOS address-lookup options.
 
 ### Return URL
 
 Use a custom URL scheme, App Link, or Universal Link that your application owns as `returnUrl`.
 Pass it explicitly when your server creates either a `/sessions` or `/payments` request, and set
-the same value in `Configuration.returnUrl`.
+the same value in `Configuration.returnUrl`. The example above uses `myapp://payment`, which
+matches the Android `intent-filter` shown in the installation steps; replace it with the URL your
+application registers on each platform.
 
 ## Opening Payment component
 
@@ -255,7 +258,9 @@ function CardPayment({ checkout }: { checkout: Checkout }) {
 ```
 
 `createController` creates the native component eagerly and returns the same `Controller` for the
-same payment method. When `controller.requiresUserInteraction` is `false`, submit it without UI:
+same payment method. `controller.submit()` starts a payment without rendering an embedded
+`AdyenComponent`. When `controller.requiresUserInteraction` is `false`, the payment method needs no
+shopper input before submission:
 
 ```ts
 const openBanking = checkout.paymentMethods.regular.first(
@@ -268,6 +273,17 @@ if (openBanking && (await checkout.isAvailable(openBanking))) {
   }
 }
 ```
+
+`requiresUserInteraction` only describes input needed before submission. It does not mean the
+payment completes without native UI:
+
+- On Android, submitting a controller that is not mounted in an `AdyenComponent` hosts it in a
+  native bottom sheet, which submits automatically when no input is needed. The shopper can close
+  the sheet, which ends the operation with an error.
+- On iOS, an unmounted no-input controller submits without presenting a form. An unmounted
+  controller that does need input is presented in a native modal sheet instead.
+- On both platforms, the payment can still return an action, such as a redirect, 3D Secure, or a
+  voucher, that the checkout shows in its own UI.
 
 All checkout commands are asynchronous. A checkout has one interactive operation at a time, so
 competing `controller.submit()` or Drop-in starts reject with `operationBusy`. Controllers are
