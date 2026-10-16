@@ -20,7 +20,7 @@ on:
 
 jobs:
   update-sdk:
-    runs-on: ${{ inputs.platform == 'iOS' && 'macos-latest' || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     env:
       PLATFORM: ${{ inputs.platform }}
 
@@ -52,9 +52,16 @@ jobs:
         # Set platform-specific prefix and update SDK version
         if [ "$PLATFORM" = "iOS" ]; then
           PLATFORM_PREFIX="ios"
-          SDK_FILE="adyen-react-native.podspec"
+          # iOS ships through both CocoaPods (deprecated) and Swift Package Manager;
+          # both manifests must pin the same Adyen iOS version.
           SDK_PATTERN="s\.dependency \"Adyen\","
-          sed "${SED_FLAG[@]}" "s/$SDK_PATTERN '[^']*'/$SDK_PATTERN '$VERSION'/" "$SDK_FILE"
+          sed "${SED_FLAG[@]}" "s/$SDK_PATTERN '[^']*'/$SDK_PATTERN '$VERSION'/" adyen-react-native.podspec
+          SPM_PATTERN='\.package(url: "https:\/\/github\.com\/Adyen\/adyen-ios", exact: '
+          sed "${SED_FLAG[@]}" "s/$SPM_PATTERN\"[^\"]*\")/$SPM_PATTERN\"$VERSION\")/" ios/Package.swift
+          grep -qF "s.dependency \"Adyen\", '$VERSION'" adyen-react-native.podspec \
+            || { echo "::error::adyen-react-native.podspec does not pin Adyen $VERSION"; exit 1; }
+          grep -qF ".package(url: \"https://github.com/Adyen/adyen-ios\", exact: \"$VERSION\")" ios/Package.swift \
+            || { echo "::error::ios/Package.swift does not pin adyen-ios $VERSION"; exit 1; }
         else
           PLATFORM_PREFIX="android"
           SDK_FILE="android/dependencies.gradle"
@@ -65,23 +72,6 @@ jobs:
         # Update badge in README.md
         sed "${SED_FLAG[@]}" "s|${PLATFORM_PREFIX}-v[^-]*|${PLATFORM_PREFIX}-v$VERSION|g" README.md
         sed "${SED_FLAG[@]}" "s|${PLATFORM_PREFIX}/releases/tag/[^)]*|${PLATFORM_PREFIX}/releases/tag/$VERSION|g" README.md
-
-    - name: Update Podfile.lock
-      if: inputs.platform == 'iOS'
-      run: |
-        rm -f example/ios/Podfile.lock
-        yarn
-        bundle install
-        yarn app pod
-
-    - uses: actions/cache@v6
-      if: inputs.platform == 'iOS'
-      id: pods-cache
-      with:
-        key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
-        path: |
-          example/ios/Pods
-          ~/Library/Caches/CocoaPods
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v8
@@ -95,7 +85,7 @@ jobs:
           README.md
           adyen-react-native.podspec
           android/dependencies.gradle
-          example/ios/Podfile.lock
+          ios/Package.swift
         body: |
           # Open PR
           This PR updates the ${{ inputs.platform }} SDK version to ${{ steps.fetch-version.outputs.version }}.
