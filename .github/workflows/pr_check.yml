@@ -58,6 +58,10 @@ jobs:
             node-version: '20'
           - version: '0.85.3'
             node-version: '22'
+          - version: '0.87.1'
+            node-version: '22'
+          - version: '0.88.0'
+            node-version: '22'
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'react-native'
@@ -74,7 +78,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['52', '53']
+        version: ['52', '55', '58']
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'expo'
