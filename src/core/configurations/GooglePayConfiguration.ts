@@ -1,4 +1,6 @@
 export interface GooglePayConfiguration {
+  /** Merchant information passed to Google Pay. Android only. */
+  merchantInfo?: GooglePayMerchantInfo;
   /**  The merchant account to be put in the payment token from Google to Adyen. By default uses value from brands. */
   merchantAccount?: string;
   /** One or more card networks that you support, also supported by the Google Pay API. */
@@ -45,6 +47,14 @@ export interface GooglePayBillingAddressParameters {
   format?: GooglePayBillingAddressFormat;
   /** Set to true if a phone number is required for the provided shipping address. */
   phoneNumberRequired?: boolean;
+}
+
+/** Merchant information for Google Pay on Android. Does not replace Google Pay registration. */
+export interface GooglePayMerchantInfo {
+  /** Merchant display name requested for the Google Pay payment sheet. */
+  merchantName?: string;
+  /** Google-issued merchant identifier, distinct from the Adyen merchantAccount. */
+  merchantId?: string;
 }
 
 export type GooglePayBillingAddressFormat = 'MIN' | 'FULL';

@@ -10,11 +10,17 @@ extension UIView {
             if let match = subview as? T {
                 return match
             }
-            if let match = subview.findSubview() as? T {
+            if let match: T = subview.findSubview() {
                 return match
             }
         }
         return nil
+    }
+
+    /// Stops this view and all the views inside it from growing their layout margins with the safe area.
+    func ignoreSafeAreaInLayoutMargins() {
+        insetsLayoutMarginsFromSafeArea = false
+        subviews.forEach { $0.ignoreSafeAreaInLayoutMargins() }
     }
 
     var parentViewController: UIViewController? {

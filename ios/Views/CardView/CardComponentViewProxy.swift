@@ -188,6 +188,37 @@ public final class CardComponentViewProxy: UIStackView {
         formView.isScrollEnabled = false
         formView.alwaysBounceVertical = false
         formView.contentInsetAdjustmentBehavior = .never
+        ignoreSafeArea(scrollView: formView, in: cardView)
+    }
+
+    /// The form is laid out for a full screen: its scroll view is pinned inside the safe area, and the layout
+    /// margins of its views grow with the safe area. Embedded in a page, the card can sit in the bottom safe area
+    /// (the home indicator area). The scroll view was then shorter than the form, which cut off the bottom of the
+    /// form, and when the card mounted at or below the bottom edge of the screen, margins that followed the safe
+    /// area kept its layout from settling, which hung the main thread. The page around the card handles the safe
+    /// area, so the embedded form ignores it.
+    private func ignoreSafeArea(scrollView: UIScrollView, in cardView: UIView) {
+        if let container = scrollView.superview {
+            let guide = container.safeAreaLayoutGuide
+            let pinnedToSafeArea = container.constraints.filter {
+                ($0.firstItem === scrollView && $0.secondItem === guide) || ($0.firstItem === guide && $0.secondItem === scrollView)
+            }
+            NSLayoutConstraint.deactivate(pinnedToSafeArea)
+            NSLayoutConstraint.activate(pinnedToSafeArea.map { constraint in
+                let pinned = NSLayoutConstraint(
+                    item: constraint.firstItem === guide ? container : scrollView,
+                    attribute: constraint.firstAttribute,
+                    relatedBy: constraint.relation,
+                    toItem: constraint.secondItem === guide ? container : scrollView,
+                    attribute: constraint.secondAttribute,
+                    multiplier: constraint.multiplier,
+                    constant: constraint.constant
+                )
+                pinned.priority = constraint.priority
+                return pinned
+            })
+        }
+        cardView.ignoreSafeAreaInLayoutMargins()
     }
 
     // MARK: - Layout reporting
