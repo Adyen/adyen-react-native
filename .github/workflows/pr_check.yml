@@ -55,7 +55,7 @@ jobs:
       matrix:
         include:
           - version: '0.76.8'
-            node-version: '20'
+            node-version: '22'
           - version: '0.85.3'
             node-version: '22'
           - version: '0.87.1'
@@ -83,7 +83,7 @@ jobs:
     with:
       platform: 'expo'
       version: ${{ matrix.version }}
-      node-version: ${{ vars.NODE_VERSION }}
+      node-version: '22'
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
