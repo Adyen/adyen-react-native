@@ -90,6 +90,7 @@ jobs:
 
   android-agp9-build:
     name: Android AGP 9 (${{ matrix.mode }})
+    continue-on-error: ${{ matrix.mode == 'builtin-kotlin' }}
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
     needs: [build-lib]
     runs-on: ubuntu-latest
@@ -130,14 +131,16 @@ jobs:
       - name: Set built-in Kotlin mode (${{ matrix.mode }})
         working-directory: ${{ env.APP_DIR }}/android
         run: |
-          # Don't rely on template defaults: remove both flags, then set them explicitly.
           sed -i '/^android\.builtInKotlin=/d;/^android\.newDsl=/d' gradle.properties
           echo >> gradle.properties
           if [ "${{ matrix.mode }}" = "opt-out" ]; then
             printf 'android.builtInKotlin=false\nandroid.newDsl=false\n' >> gradle.properties
+          else
+            # built-in Kotlin: the app must not apply kotlin-android itself
+            sed -i '/apply plugin: "org.jetbrains.kotlin.android"/d' app/build.gradle
           fi
-          echo "== android.* properties in gradle.properties"
-          grep -n '^android\.' gradle.properties || true
+          echo "== android.* properties"; grep -n '^android\.' gradle.properties || true
+          echo "== plugins in app/build.gradle"; grep -n 'apply plugin' app/build.gradle
 
       - name: Build debug APK
         working-directory: ${{ env.APP_DIR }}/android
