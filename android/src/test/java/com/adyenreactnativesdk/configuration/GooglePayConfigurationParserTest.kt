@@ -7,8 +7,10 @@
 package com.adyenreactnativesdk.configuration
 
 import com.adyen.checkout.googlepay.GooglePayConfiguration
+import com.adyen.checkout.googlepay.MerchantInfo
 import com.facebook.react.bridge.ReadableArray
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -16,8 +18,122 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verifyNoInteractions
 
 class GooglePayConfigurationParserTest {
+  @Test
+  fun test_merchantInfo_nameOnly() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    val info = WritableMapMock()
+    info.putString("merchantName", "Example Store")
+    config.putMap(GooglePayConfigurationParser.MERCHANT_INFO_KEY, info)
+
+    GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+
+    val captor = argumentCaptor<MerchantInfo>()
+    verify(mockBuilder).merchantInfo = captor.capture()
+    assertEquals("Example Store", captor.firstValue.merchantName)
+    assertEquals(null, captor.firstValue.merchantId)
+  }
+
+  @Test
+  fun test_merchantInfo_idOnly() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    val info = WritableMapMock()
+    info.putString("merchantId", "0123456789")
+    config.putMap(GooglePayConfigurationParser.MERCHANT_INFO_KEY, info)
+
+    GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+
+    val captor = argumentCaptor<MerchantInfo>()
+    verify(mockBuilder).merchantInfo = captor.capture()
+    assertEquals(null, captor.firstValue.merchantName)
+    assertEquals("0123456789", captor.firstValue.merchantId)
+  }
+
+  @Test
+  fun test_merchantInfo_both() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    val info = WritableMapMock()
+    info.putString("merchantName", "Example Store")
+    info.putString("merchantId", "0123456789")
+    config.putMap(GooglePayConfigurationParser.MERCHANT_INFO_KEY, info)
+
+    GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+
+    val captor = argumentCaptor<MerchantInfo>()
+    verify(mockBuilder).merchantInfo = captor.capture()
+    assertEquals("Example Store", captor.firstValue.merchantName)
+    assertEquals("0123456789", captor.firstValue.merchantId)
+  }
+
+  @Test
+  fun test_merchantInfo_empty() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    val info = WritableMapMock()
+    config.putMap(GooglePayConfigurationParser.MERCHANT_INFO_KEY, info)
+
+    GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+
+    val captor = argumentCaptor<MerchantInfo>()
+    verify(mockBuilder).merchantInfo = captor.capture()
+    assertEquals(null, captor.firstValue.merchantName)
+    assertEquals(null, captor.firstValue.merchantId)
+  }
+
+  @Test
+  fun test_merchantInfo_allNull() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    val info = WritableMapMock()
+    info.putNull("merchantName")
+    info.putNull("merchantId")
+    config.putMap(GooglePayConfigurationParser.MERCHANT_INFO_KEY, info)
+
+    GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+
+    val captor = argumentCaptor<MerchantInfo>()
+    verify(mockBuilder).merchantInfo = captor.capture()
+    assertEquals(null, captor.firstValue.merchantName)
+    assertEquals(null, captor.firstValue.merchantId)
+  }
+
+  @Test
+  fun test_merchantInfo_nested() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    val info = WritableMapMock()
+    info.putString("merchantName", "Example Store")
+    info.putString("merchantId", "0123456789")
+    config.putMap(GooglePayConfigurationParser.MERCHANT_INFO_KEY, info)
+    val root = WritableMapMock()
+    root.putMap(GooglePayConfigurationParser.ROOT_KEY, config)
+
+    GooglePayConfigurationParser(root).applyConfiguration(mockBuilder)
+
+    val captor = argumentCaptor<MerchantInfo>()
+    verify(mockBuilder).merchantInfo = captor.capture()
+    assertEquals("Example Store", captor.firstValue.merchantName)
+    assertEquals("0123456789", captor.firstValue.merchantId)
+  }
+
+  @Test
+  fun test_merchantInfo_throws_whenNull() {
+    val mockBuilder = mock(GooglePayConfiguration.Builder::class.java)
+    val config = WritableMapMock()
+    config.putNull(GooglePayConfigurationParser.MERCHANT_INFO_KEY)
+
+    assertThrows(NullPointerException::class.java) {
+      GooglePayConfigurationParser(config).applyConfiguration(mockBuilder)
+    }
+    verifyNoInteractions(mockBuilder)
+  }
+
   @Test
   fun test_applyConfiguration_doesNotModifyBuilder_whenGivenEmptySubDictionary() {
     // GIVEN
@@ -41,6 +157,7 @@ class GooglePayConfigurationParserTest {
     verify(mockBuilder, times(0)).isBillingAddressRequired = any()
     verify(mockBuilder, times(0)).totalPriceStatus = any()
     verify(mockBuilder, times(0)).merchantAccount = any()
+    verifyNoInteractions(mockBuilder)
   }
 
   @Test

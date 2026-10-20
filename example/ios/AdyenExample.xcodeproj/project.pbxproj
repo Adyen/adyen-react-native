@@ -15,6 +15,8 @@
 		945936B12AE185B700F3E676 /* ApplePayConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945936B02AE185B700F3E676 /* ApplePayConfigurationTests.swift */; };
 		94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */; };
 		E70D4FB42FF77A5D00C09021 /* ThreadingSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */; };
+		414043ADD6A19E70D3A11B5F /* CardComponentViewProxyLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F56D44DF5F96EF4CC4BEB335 /* CardComponentViewProxyLayoutTests.swift */; };
+		6852AE6650528CDF10D31366 /* UIViewHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EFEF1FA2B02149D450F340 /* UIViewHelperTests.swift */; };
 		E732B0CD2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */; };
 		E741F0FE2E38DECD000D0F42 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */; };
 		E741F2012E38DECD000D0F42 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E741F2002E38DEC6000D0F42 /* SceneDelegate.swift */; };
@@ -64,6 +66,8 @@
 		94FC2FEB2AF28DAE009F6FC1 /* CardConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardConfigurationTests.swift; sourceTree = "<group>"; };
 		CF789D357E922939DFD4AED9 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = AdyenExample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadingSafetyTests.swift; sourceTree = "<group>"; };
+		F56D44DF5F96EF4CC4BEB335 /* CardComponentViewProxyLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardComponentViewProxyLayoutTests.swift; sourceTree = "<group>"; };
+		05EFEF1FA2B02149D450F340 /* UIViewHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewHelperTests.swift; sourceTree = "<group>"; };
 		E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayModuleUtilitiesTests.swift; sourceTree = "<group>"; };
 		E741F0FD2E38DEC6000D0F42 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E741F2002E38DEC6000D0F42 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -111,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				E77961D52F33710B00728F99 /* DummyData.swift */,
+				05EFEF1FA2B02149D450F340 /* UIViewHelperTests.swift */,
 				E7BBA45C2E8AB9040068997A /* Modules */,
 				E77AE11E2E605FBC00607717 /* Encoders */,
 				E773B10A2BE3B5B000638431 /* Parsers */,
@@ -228,6 +233,7 @@
 				E77961CE2F334E4300728F99 /* BaseModuleSenderTests.swift */,
 				E77961CF2F334E4300728F99 /* MockEmitter.swift */,
 				E70D4FB32FF77A5D00C09021 /* ThreadingSafetyTests.swift */,
+				F56D44DF5F96EF4CC4BEB335 /* CardComponentViewProxyLayoutTests.swift */,
 				E7BBA45B2E8AB9040068997A /* ApplePayModuleTests.swift */,
 				E732B0CC2FB37E0400EBF477 /* ApplePayModuleUtilitiesTests.swift */,
 			);
@@ -477,6 +483,8 @@
 				E77961D12F334E4300728F99 /* BaseModuleSenderTests.swift in Sources */,
 				E77961D22F334E4300728F99 /* MockEmitter.swift in Sources */,
 				E70D4FB42FF77A5D00C09021 /* ThreadingSafetyTests.swift in Sources */,
+				414043ADD6A19E70D3A11B5F /* CardComponentViewProxyLayoutTests.swift in Sources */,
+				6852AE6650528CDF10D31366 /* UIViewHelperTests.swift in Sources */,
 				94FC2FEC2AF28DAE009F6FC1 /* CardConfigurationTests.swift in Sources */,
 				E77D207A2CDBB31900FED3F0 /* AnalyticsParserTests.swift in Sources */,
 				E77D207B2CDBB31900FED3F0 /* RootConfigurationtParserTests.swift in Sources */,
