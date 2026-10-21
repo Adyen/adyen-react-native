@@ -55,19 +55,15 @@ jobs:
       matrix:
         include:
           - version: '0.76.8'
-            node-version: '22'
           - version: '0.85.3'
-            node-version: '22'
           - version: '0.87.1'
-            node-version: '22'
           - version: 'latest'
-            node-version: '22'
             allow-failure: true
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'react-native'
       version: ${{ matrix.version }}
-      node-version: ${{ matrix.node-version }}
+      node-version: ${{ vars.NODE_VERSION }}
       allow-failure: ${{ matrix.allow-failure || false }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
@@ -85,7 +81,7 @@ jobs:
     with:
       platform: 'expo'
       version: ${{ matrix.version }}
-      node-version: '22'
+      node-version: ${{ vars.NODE_VERSION }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
@@ -101,7 +97,7 @@ jobs:
         rn-version: ['0.87.1', 'latest']
     uses: ./.github/workflows/android_agp9_build.yml
     with:
-      node-version: '22'
+      node-version: ${{ vars.NODE_VERSION }}
       rn-version: ${{ matrix.rn-version }}
       mode: ${{ matrix.mode }}
       allow-failure: ${{ matrix.mode == 'builtin-kotlin' || matrix.rn-version == 'latest' }}
