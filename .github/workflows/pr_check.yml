@@ -60,13 +60,15 @@ jobs:
             node-version: '22'
           - version: '0.87.1'
             node-version: '22'
-          - version: '0.88.0'
+          - version: 'latest'
             node-version: '22'
+            allow-failure: true
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'react-native'
       version: ${{ matrix.version }}
       node-version: ${{ matrix.node-version }}
+      allow-failure: ${{ matrix.allow-failure || false }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
@@ -89,68 +91,17 @@ jobs:
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
 
   android-agp9-build:
-    name: Android AGP 9 (${{ matrix.mode }}, RN ${{ matrix.rn-version }})
-    continue-on-error: ${{ matrix.mode == 'builtin-kotlin' || matrix.rn-version == 'latest' }}
+    name: Android AGP 9
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
     needs: [build-lib]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         mode: [builtin-kotlin, opt-out]
         rn-version: ['0.87.1', 'latest']
-    env:
-      APP_DIR: tested_app
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-          cache: 'yarn'
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Resolve React Native version
-        run: |
-          rn_version="${{ matrix.rn-version }}"
-          if [ "$rn_version" = "latest" ]; then
-            rn_version=$(npm view react-native dist-tags.latest)
-          fi
-          echo "Using React Native $rn_version"
-          echo "RN_VERSION=$rn_version" >> "$GITHUB_ENV"
-
-      - name: Generate fixture
-        run: bash ./e2e-tests/scripts/setup.sh "$APP_DIR" react-native "$RN_VERSION"
-
-      - name: Download library
-        uses: actions/download-artifact@v8
-        with:
-          name: built-tgz
-          path: ${{ env.APP_DIR }}
-
-      - name: Add library as dependency
-        working-directory: ${{ env.APP_DIR }}
-        run: |
-          touch yarn.lock
-          yarn add ./adyen-react-native.tgz
-
-      - name: Set built-in Kotlin mode (${{ matrix.mode }})
-        working-directory: ${{ env.APP_DIR }}/android
-        run: |
-          sed -i '/^android\.builtInKotlin=/d;/^android\.newDsl=/d' gradle.properties
-          echo >> gradle.properties
-          if [ "${{ matrix.mode }}" = "opt-out" ]; then
-            printf 'android.builtInKotlin=false\nandroid.newDsl=false\n' >> gradle.properties
-          else
-            # built-in Kotlin: the app must not apply kotlin-android itself
-            sed -i '/apply plugin: "org.jetbrains.kotlin.android"/d' app/build.gradle
-          fi
-          echo "== android.* properties"; grep -n '^android\.' gradle.properties || true
-          echo "== plugins in app/build.gradle"; grep -n 'apply plugin' app/build.gradle
-
-      - name: Build debug APK
-        working-directory: ${{ env.APP_DIR }}/android
-        run: ./gradlew :app:assembleDebug --warning-mode all -PreactNativeArchitectures=x86_64
+    uses: ./.github/workflows/android_agp9_build.yml
+    with:
+      node-version: '22'
+      rn-version: ${{ matrix.rn-version }}
+      mode: ${{ matrix.mode }}
+      allow-failure: ${{ matrix.mode == 'builtin-kotlin' || matrix.rn-version == 'latest' }}
