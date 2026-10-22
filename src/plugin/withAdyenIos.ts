@@ -1,5 +1,6 @@
 import {
   type ConfigPlugin,
+  WarningAggregator,
   withAppDelegate,
   withEntitlementsPlist,
 } from '@expo/config-plugins';
@@ -12,10 +13,20 @@ import { setImportSwift } from './setImportSwift';
 import { setApplicationOpenUrlSwift } from './setApplicationOpenUrlSwift';
 import { setApplicationContinueUserActivitySwift } from './setApplicationContinueUserActivitySwift';
 
+const USE_FRAMEWORKS_DEPRECATION =
+  'The `useFrameworks` option is deprecated and ignored: the generated import works with and without `use_frameworks!`. Remove it from your app config.';
+
 export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
   config,
   { merchantIdentifier, useFrameworks }
 ) => {
+  if (useFrameworks !== undefined) {
+    WarningAggregator.addWarningIOS(
+      '@adyen/react-native.useFrameworks',
+      USE_FRAMEWORKS_DEPRECATION
+    );
+  }
+
   config = withAppDelegate(config, (newConfig) => {
     let appDelegate = newConfig.modResults.contents;
     if (
@@ -34,7 +45,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
       appDelegate = setApplicationOpenUrlSwift(appDelegate);
       appDelegate = setApplicationContinueUserActivitySwift(appDelegate);
     } else {
-      appDelegate = setImport(appDelegate, useFrameworks);
+      appDelegate = setImport(appDelegate);
       appDelegate = setApplicationOpenUrl(appDelegate);
       appDelegate = setApplicationContinueUserActivity(appDelegate);
     }

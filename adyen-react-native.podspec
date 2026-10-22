@@ -10,13 +10,24 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
+  # CocoaPods integration is deprecated in favor of Swift Package Manager (ios/Package.swift,
+  # React Native >= 0.87). The podspec stays functional for Expo and other CocoaPods-based apps;
+  # `deprecated` only makes `pod install` print a warning.
+  s.deprecated   = true
+
   s.platform     = :ios, "12.0"
   s.source       = { :git => "https://github.com/Adyen/adyen-react-native.git", :tag => "#{s.version}" }
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
-  s.public_header_files = "ios/ADYRedirectComponent.h"
+  s.exclude_files = ["ios/Package.swift", "ios/.build/**/*"]
+  s.public_header_files = "ios/include/ADYRedirectComponent.h"
 
   s.dependency "Adyen", '5.26.0'
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
+
+  # The generated adyen_react_native-Swift.h exposes the public RCTEventEmitter subclasses and so
+  # emits `@import React;`. With prebuilt React Native core (Expo default), the React framework
+  # module includes non-modular Pods headers, which is an error in ObjC explicit-module builds.
+  s.pod_target_xcconfig = { "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES" => "YES" }
 
   install_modules_dependencies(s)
 end

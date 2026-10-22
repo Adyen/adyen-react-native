@@ -5,7 +5,7 @@
 #import <react/renderer/components/AdyenPaymentSpec/Props.h>
 #import <react/renderer/components/AdyenPaymentSpec/RCTComponentViewHelpers.h>
 
-#import "RCTFabricComponentsPlugins.h"
+#import <React/RCTFabricComponentsPlugins.h>
 
 #import <PassKit/PassKit.h>
 

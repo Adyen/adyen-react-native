@@ -5,21 +5,17 @@
 #import <react/renderer/components/AdyenPaymentSpec/Props.h>
 #import <react/renderer/components/AdyenPaymentSpec/RCTComponentViewHelpers.h>
 
-#import "RCTFabricComponentsPlugins.h"
+#import <React/RCTFabricComponentsPlugins.h>
 
-#if __has_include(<adyen_react_native/adyen_react_native-Swift.h>)
-#import <adyen_react_native/adyen_react_native-Swift.h>
-#else
-#import "adyen_react_native-Swift.h"
-#endif
+#import "ADYCardComponentViewBridge.h"
 
 using namespace facebook::react;
 
-@interface ADYCardView () <RCTCardViewViewProtocol, CardComponentViewProxyDelegate>
+@interface ADYCardView () <RCTCardViewViewProtocol>
 @end
 
 @implementation ADYCardView {
-  CardComponentViewProxy *_cardProxy;
+  ADYCardComponentViewBridge *_cardProxy;
   NSString *_paymentMethod;
   NSString *_configuration;
 }
@@ -32,10 +28,13 @@ using namespace facebook::react;
   if (self = [super initWithFrame:frame]) {
     static const auto defaultProps = std::make_shared<const CardViewProps>();
     _props = defaultProps;
-    _cardProxy = [[CardComponentViewProxy alloc] initWithFrame:self.bounds];
-    _cardProxy.delegate = self;
-    _cardProxy.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self addSubview:_cardProxy];
+    _cardProxy = [[ADYCardComponentViewBridge alloc] initWithFrame:self.bounds];
+    __weak ADYCardView *weakSelf = self;
+    _cardProxy.onLayoutChange = ^(CGFloat width, CGFloat height) {
+      [weakSelf onLayoutChangeWithWidth:width height:height];
+    };
+    _cardProxy.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self addSubview:_cardProxy.view];
   }
   return self;
 }
@@ -70,7 +69,7 @@ using namespace facebook::react;
   _configuration = nil;
 }
 
-#pragma mark - CardComponentViewProxyDelegate
+#pragma mark - Layout
 
 - (void)onLayoutChangeWithWidth:(CGFloat)width height:(CGFloat)height {
   if (_eventEmitter) {

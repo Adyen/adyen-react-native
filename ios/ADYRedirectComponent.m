@@ -7,8 +7,11 @@
 #import "ADYRedirectComponent.h"
 #if __has_include("adyen_react_native-Swift.h")
 #import "adyen_react_native-Swift.h"
-#else
+#elif __has_include("adyen_react_native/adyen_react_native-Swift.h")
 #import "adyen_react_native/adyen_react_native-Swift.h"
+#else
+// Swift Package Manager exposes the Swift target's generated header only through its module map.
+@import adyen_react_native;
 #endif
 
 @implementation ADYRedirectComponent

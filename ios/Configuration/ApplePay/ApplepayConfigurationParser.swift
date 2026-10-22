@@ -134,7 +134,7 @@ public struct ApplepayConfigurationParser {
         return parser.paymentRequest
     }
 
-    public func buildConfiguration(payment: Payment) throws -> Adyen.ApplePayComponent.Configuration {
+    public func buildConfiguration(payment: Payment) throws -> ApplePayComponent.Configuration {
         let paymentRequest = try buildPaymentRequest(payment: payment)
         return try .init(paymentRequest: paymentRequest, allowOnboarding: allowOnboarding)
     }

@@ -7,44 +7,44 @@
 import Adyen
 
 extension DropInModule: DropInComponentDelegate {
-    func didSubmit(_ data: Adyen.PaymentComponentData,
-                   from _: Adyen.PaymentComponent,
-                   in _: Adyen.AnyDropInComponent) {
+    public func didSubmit(_ data: Adyen.PaymentComponentData,
+                          from _: Adyen.PaymentComponent,
+                          in _: Adyen.AnyDropInComponent) {
         sendSubmitEvent(data: data)
     }
 
-    func didFail(with error: Error,
-                 from _: Adyen.PaymentComponent,
-                 in _: Adyen.AnyDropInComponent) {
+    public func didFail(with error: Error,
+                        from _: Adyen.PaymentComponent,
+                        in _: Adyen.AnyDropInComponent) {
         sendError(error: error)
     }
 
-    func didProvide(_ data: Adyen.ActionComponentData,
-                    from _: Adyen.ActionComponent,
-                    in _: Adyen.AnyDropInComponent) {
+    public func didProvide(_ data: Adyen.ActionComponentData,
+                           from _: Adyen.ActionComponent,
+                           in _: Adyen.AnyDropInComponent) {
         sendProvideEvent(actionData: data)
     }
 
-    func didComplete(from _: Adyen.ActionComponent,
-                     in _: Adyen.AnyDropInComponent) {
+    public func didComplete(from _: Adyen.ActionComponent,
+                            in _: Adyen.AnyDropInComponent) {
         sendCompleteEvent()
     }
 
-    func didFail(with error: Error,
-                 from _: Adyen.ActionComponent,
-                 in _: Adyen.AnyDropInComponent) {
+    public func didFail(with error: Error,
+                        from _: Adyen.ActionComponent,
+                        in _: Adyen.AnyDropInComponent) {
         sendError(error: error)
     }
 
-    func didFail(with error: Error,
-                 from _: Adyen.AnyDropInComponent) {
+    public func didFail(with error: Error,
+                        from _: Adyen.AnyDropInComponent) {
         sendError(error: error)
     }
 }
 
 extension DropInModule: StoredPaymentMethodsDelegate {
-    func disable(storedPaymentMethod: any Adyen.StoredPaymentMethod,
-                 completion: @escaping Adyen.Completion<Bool>) {
+    public func disable(storedPaymentMethod: any Adyen.StoredPaymentMethod,
+                        completion: @escaping Adyen.Completion<Bool>) {
         disableStoredPaymentMethodHandler = completion
         sendEvent(event: .disableStoredPaymentMethod, body: storedPaymentMethod.jsonObject)
     }
@@ -52,9 +52,9 @@ extension DropInModule: StoredPaymentMethodsDelegate {
 
 extension DropInModule: PartialPaymentDelegate {
 
-    func checkBalance(with data: PaymentComponentData,
-                      component _: any Adyen.Component,
-                      completion: @escaping (Result<Balance, any Error>) -> Void) {
+    public func checkBalance(with data: PaymentComponentData,
+                             component _: any Adyen.Component,
+                             completion: @escaping (Result<Balance, any Error>) -> Void) {
         sendEvent(event: .checkBalance, body: data.jsonObject)
         checkBalanceHandler = completion
     }
@@ -71,8 +71,8 @@ extension DropInModule: PartialPaymentDelegate {
         }
     }
 
-    func requestOrder(for _: any Adyen.Component,
-                      completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void) {
+    public func requestOrder(for _: any Adyen.Component,
+                             completion: @escaping (Result<PartialPaymentOrder, any Error>) -> Void) {
         sendEvent(event: .requestOrder)
         requestOrderHandler = completion
     }
@@ -89,7 +89,7 @@ extension DropInModule: PartialPaymentDelegate {
         }
     }
 
-    func cancelOrder(_ order: Adyen.PartialPaymentOrder, component _: any Adyen.Component) {
+    public func cancelOrder(_ order: Adyen.PartialPaymentOrder, component _: any Adyen.Component) {
         let orderData = CancelOrderData(shouldUpdatePaymentMethods: false, order: order)
         sendEvent(event: .cancelOrder, body: orderData.jsonObject)
     }
