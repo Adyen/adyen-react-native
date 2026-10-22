@@ -5,36 +5,36 @@
   "scripts": {
     "android": "react-native run-android",
     "android:netlify": "cd android && ENTRY_FILE=index.netlify.js ./gradlew assembleRelease",
-    "ios": "react-native run-ios",
-    "ios:netlify": "cd ios && ENTRY_FILE=index.netlify.js xcodebuild -workspace AdyenExample.xcworkspace -scheme AdyenExample -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/netlify CODE_SIGNING_ALLOWED=NO ENABLE_USER_SCRIPT_SANDBOXING=NO",
+    "ios": "node scripts/run-ios.js",
+    "ios:netlify": "cd ios && ENTRY_FILE=index.netlify.js xcodebuild -project AdyenExample.xcodeproj -scheme AdyenExample -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/netlify CODE_SIGNING_ALLOWED=NO ENABLE_USER_SCRIPT_SANDBOXING=NO",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "pod": "cd ios && bundle exec pod update"
+    "spm-scaffold": "react-native spm scaffold"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^2.1.2",
-    "@react-navigation/native": "^7.0.9",
-    "@react-navigation/native-stack": "^7.3.3",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-navigation/native": "^7.4.1",
+    "@react-navigation/native-stack": "^7.19.2",
     "react": "19.2.3",
-    "react-native": "0.85.0",
-    "react-native-safe-area-context": "^5.4.1",
-    "react-native-screens": "4.26.2"
+    "react-native": "0.87.1",
+    "react-native-safe-area-context": "^5.10.0",
+    "react-native-screens": "5.0.0-alpha.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.3",
     "@babel/runtime": "^7.25.0",
-    "@react-native-community/cli": "~20.1.0",
-    "@react-native-community/cli-platform-android": "~20.1.0",
-    "@react-native-community/cli-platform-ios": "~20.1.0",
-    "@react-native/babel-preset": "0.85.0",
-    "@react-native/metro-config": "0.85.0",
-    "@react-native/typescript-config": "0.85.0",
-    "@types/react": "^19.0.0",
+    "@react-native-community/cli": "20.2.0",
+    "@react-native-community/cli-platform-android": "20.2.0",
+    "@react-native-community/cli-platform-ios": "20.2.0",
+    "@react-native/babel-preset": "0.87.1",
+    "@react-native/metro-config": "0.87.1",
+    "@react-native/typescript-config": "0.87.1",
+    "@types/react": "^19.2.0",
     "react-native-builder-bob": "^0.41.0"
   },
   "engines": {
-    "node": ">=18"
+    "node": "^22.13.0 || ^24.3.0 || >=26"
   }
 }

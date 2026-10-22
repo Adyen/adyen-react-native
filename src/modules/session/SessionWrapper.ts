@@ -21,9 +21,14 @@ interface SessionNativeModule extends NativeModule, AdyenComponent {
   ): Promise<SessionContext>;
 }
 
+type SessionEvents = {
+  [Event.onSessionComplete]: [SessionsResult];
+  [Event.onSessionError]: [AdyenError];
+};
+
 export class SessionWrapper implements SessionHelperModule {
   private readonly nativeModule: SessionNativeModule;
-  private readonly eventEmitter: NativeEventEmitter;
+  private readonly eventEmitter: NativeEventEmitter<SessionEvents>;
   private readonly subscriptions: Map<string, EventSubscription> = new Map();
 
   constructor(nativeModule: SessionNativeModule) {
