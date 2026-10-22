@@ -27,6 +27,9 @@ if [ "$platform" = "expo" ]; then
     cp ../e2e-tests/template/App.tsx.template App.tsx
     cp ../e2e-tests/template/secrets.js.template secrets.js
 else
+    if [ "$version" = "latest" ]; then
+        version=$(npm view react-native dist-tags.latest)
+    fi
     cli_version=$(bash ./e2e-tests/scripts/resolve_rn_cli_version.sh "$version")
     echo "== Building React-Native $version (CLI $cli_version)"
     npx @react-native-community/cli@"$cli_version" init --directory $path --version "$version" --install-pods false --skip-install "$PROJECT_NAME"

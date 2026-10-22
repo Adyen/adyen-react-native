@@ -1,0 +1,92 @@
+name: Android AGP 9 Build
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: string
+      rn-version:
+        description: 'React Native version (e.g. 0.87.1) or "latest"'
+        required: true
+        type: string
+      mode:
+        description: 'Kotlin mode: builtin-kotlin or opt-out'
+        required: true
+        type: string
+      allow-failure:
+        description: 'Do not fail the workflow on errors; emit an error annotation instead'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  APP_DIR: tested_app
+
+jobs:
+  build:
+    name: Build (${{ inputs.mode }}, RN ${{ inputs.rn-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: ${{ inputs.allow-failure }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'yarn'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Resolve React Native version
+        run: |
+          rn_version="${{ inputs.rn-version }}"
+          if [ "$rn_version" = "latest" ]; then
+            rn_version=$(npm view react-native dist-tags.latest)
+          fi
+          echo "Using React Native $rn_version"
+          echo "RN_VERSION=$rn_version" >> "$GITHUB_ENV"
+
+      - name: Generate fixture
+        run: bash ./e2e-tests/scripts/setup.sh "$APP_DIR" react-native "$RN_VERSION"
+
+      - name: Download library
+        uses: actions/download-artifact@v8
+        with:
+          name: built-tgz
+          path: ${{ env.APP_DIR }}
+
+      - name: Add library as dependency
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          touch yarn.lock
+          yarn add ./adyen-react-native.tgz
+
+      - name: Set built-in Kotlin mode (${{ inputs.mode }})
+        working-directory: ${{ env.APP_DIR }}/android
+        run: |
+          sed -i '/^android\.builtInKotlin=/d;/^android\.newDsl=/d' gradle.properties
+          echo >> gradle.properties
+          if [ "${{ inputs.mode }}" = "opt-out" ]; then
+            printf 'android.builtInKotlin=false\nandroid.newDsl=false\n' >> gradle.properties
+          else
+            # built-in Kotlin: the app must not apply kotlin-android itself
+            sed -i '/apply plugin: "org.jetbrains.kotlin.android"/d' app/build.gradle
+          fi
+          echo "== android.* properties"; grep -n '^android\.' gradle.properties || true
+          echo "== plugins in app/build.gradle"; grep -n 'apply plugin' app/build.gradle
+
+      - name: Build debug APK
+        working-directory: ${{ env.APP_DIR }}/android
+        run: ./gradlew :app:assembleDebug --warning-mode all -PreactNativeArchitectures=x86_64
+
+      - name: Report allowed failure
+        if: failure() && inputs.allow-failure
+        run: |
+          msg="Android AGP 9 (${{ inputs.mode }}) build failed on React Native $RN_VERSION. Non-blocking, but needs investigation."
+          echo "::error title=Non-blocking failure::$msg"
+          echo "### :warning: $msg" >> "$GITHUB_STEP_SUMMARY"
