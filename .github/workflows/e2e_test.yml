@@ -16,6 +16,11 @@ on:
         description: 'Version (RN e.g. 0.80.2 OR Expo SDK e.g. 52.0.0)'
         required: true
         type: string
+      allow-failure:
+        description: 'Do not fail the workflow on errors; emit a warning annotation instead'
+        required: false
+        type: boolean
+        default: false
     secrets:
       ADYEN_CLIENT_KEY:
         required: false
@@ -32,6 +37,7 @@ jobs:
   setup:
     name: Fixture ${{ inputs.version }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.allow-failure }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -68,6 +74,10 @@ jobs:
           include-hidden-files: true
           retention-days: 1
 
+      - name: Report allowed failure
+        if: failure() && inputs.allow-failure
+        run: echo "::error title=Non-blocking failure::Fixture setup for ${{ inputs.platform }} ${{ inputs.version }} failed. Non-blocking, but needs investigation."
+
   # ====================================================
   # JOB 2: iOS Build & Test
   # ====================================================
@@ -76,6 +86,7 @@ jobs:
     needs: setup
     runs-on: macos-26
     timeout-minutes: 45
+    continue-on-error: ${{ inputs.allow-failure }}
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
@@ -146,6 +157,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+      - name: Report allowed failure
+        if: failure() && inputs.allow-failure
+        run: echo "::error title=Non-blocking failure::iOS e2e test for ${{ inputs.platform }} ${{ inputs.version }} failed. Non-blocking, but needs investigation."
+
   # ====================================================
   # JOB 3: Android Build & Test
   # ====================================================
@@ -154,6 +169,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    continue-on-error: ${{ inputs.allow-failure }}
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
@@ -215,3 +231,7 @@ jobs:
           path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
+
+      - name: Report allowed failure
+        if: failure() && inputs.allow-failure
+        run: echo "::error title=Non-blocking failure::Android e2e test for ${{ inputs.platform }} ${{ inputs.version }} failed. Non-blocking, but needs investigation."
