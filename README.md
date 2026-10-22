@@ -80,7 +80,10 @@ Add `@adyen/react-native` plugin to your `app.json`:
 | Option               | Description                                                                     |
 | -------------------- | ------------------------------------------------------------------------------- |
 | `merchantIdentifier` | Sets ApplePay Merchant ID to your iOS app's entitlement file. Empty by default. |
-| `useFrameworks`      | Adjust `import` on iOS in case your `Podfile` has `use_frameworks!` enabled.    |
+
+> [!NOTE]
+>
+> The `useFrameworks` option is deprecated and ignored. The plugin now generates an import that works with and without `use_frameworks!`. Remove the option from your app config to silence the warning.
 
 **Example with all options:**
 
@@ -91,8 +94,7 @@ Add `@adyen/react-native` plugin to your `app.json`:
       [
         "@adyen/react-native",
         {
-          "merchantIdentifier": "merchant.com.my-merchant-id",
-          "useFrameworks": true
+          "merchantIdentifier": "merchant.com.my-merchant-id"
         }
       ]
     ]
@@ -110,6 +112,10 @@ Add `@adyen/react-native` plugin to your `app.json`:
 > npx expo prebuild --clean
 > ```
 
+> [!NOTE]
+>
+> Expo prebuild generates a CocoaPods-based iOS project, so Expo apps use the deprecated [CocoaPods integration](#cocoapods-deprecated). No extra steps are needed: `npx expo prebuild` runs `pod install` for you.
+
 ## Manual Integration
 
 > [!NOTE]
@@ -119,12 +125,30 @@ Add `@adyen/react-native` plugin to your `app.json`:
 <details>
 <summary><strong>iOS Setup</strong></summary>
 
-1. Run `pod install`
+1. Link the native module with Swift Package Manager (SPM). This requires **React Native 0.87.1 or newer**. `@adyen/react-native` ships its own `Package.swift`, and React Native's SPM autolinking picks it up together with [Adyen iOS](https://github.com/Adyen/adyen-ios).
+
+   - If your app does not use SPM yet, convert it once from the app's root directory:
+
+     ```bash
+     npx react-native spm add --deintegrate
+     rm -f ios/Podfile ios/Podfile.lock
+     ```
+
+     React Native 0.87 templates create a CocoaPods-integrated Xcode project, even if you never ran `pod install`, and `spm add` refuses to convert such a project without `--deintegrate`. The flag removes the CocoaPods build phases and references from the Xcode project; it needs the `pod` command on your `PATH`. Add `--yes` to skip the confirmation prompt in non-interactive environments such as CI. The conversion leaves `ios/Podfile` and `ios/Podfile.lock` behind unused, so delete them. Without a Podfile, `@react-native-community/cli` 20.x no longer detects the iOS project; see [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for the CLI config wrapper that React Native's SPM tooling needs.
+
+   - After adding or updating `@adyen/react-native`, refresh the generated packages:
+
+     ```bash
+     npx react-native spm update
+     ```
+
+   React Native marks SPM support as experimental in 0.87. See [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for requirements and known limitations. Apps that cannot use SPM (React Native below 0.87.1 or Expo prebuild) use the deprecated [CocoaPods integration](#cocoapods-deprecated).
 
 2. Add `returnURL` handler to your `AppDelegate.swift`:
 
 ```swift
 import Adyen
+import adyen_react_native
 
 // ...
 
@@ -133,7 +157,9 @@ func application(_ app: UIApplication, open url: URL, options: [UIApplication.Op
 }
 ```
 
-If using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpen` before them:
+`import adyen_react_native` is required with SPM: Adyen iOS splits into several modules there, and this import re-exports `RedirectComponent` and `DropInComponent`. It also works with CocoaPods.
+
+If using `RCTLinkingManager` or other deep-linking techniques, place `RedirectComponent.applicationDidOpen` before them:
 
 ```swift
 func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
@@ -157,6 +183,26 @@ func application(_ application: UIApplication, continue userActivity: NSUserActi
 3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
 
 4. **For ApplePay:** Follow the [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
+
+</details>
+
+<details>
+<summary><strong>CocoaPods (deprecated)</strong></summary>
+
+<a id="cocoapods-deprecated"></a>
+
+> [!WARNING]
+>
+> CocoaPods integration (`adyen-react-native.podspec`) is **deprecated**. It still works and is supported for apps that cannot use SPM yet, such as Expo prebuild projects and apps on React Native below 0.87.1. `pod install` prints `adyen-react-native has been deprecated`. CocoaPods support may be removed in a future major version.
+
+1. Run `pod install` in your app's `ios` directory.
+2. Follow steps 2 to 4 of the [iOS Setup](#manual-integration) above. The `AppDelegate.swift` imports are the same.
+
+**Migrating to SPM** (React Native 0.87.1 or newer):
+
+1. Run the one-time conversion from step 1 of the [iOS Setup](#manual-integration): `npx react-native spm add --deintegrate` from the app's root directory, then delete the leftover `ios/Podfile` and `ios/Podfile.lock`. It removes the CocoaPods wiring from your Xcode project and links all autolinked packages, including `@adyen/react-native`, through SPM. Every native dependency of your app needs SPM support; `npx react-native spm scaffold` generates a stopgap `Package.swift` for dependencies that lack one.
+2. Open the `.xcodeproj` instead of the `.xcworkspace` from now on.
+3. Add `import adyen_react_native` next to `import Adyen` in every Swift file that uses `RedirectComponent` or `DropInComponent`. Use unqualified type names, for example `DropInComponent.Style` instead of `Adyen.DropInComponent.Style`.
 
 </details>
 
@@ -380,7 +426,7 @@ const handleSubmit = (paymentData, nativeComponent) => {
 ### Standalone Action handling
 
 In case of API-only integration `AdyenAction.handle` could be used.
-Before you begin, make sure you follow all [iOS integration](#ios-integration) and [Android integration](#android-integration) steps.
+Before you begin, make sure you follow all [iOS and Android integration](#manual-integration) steps.
 
 Example:
 
