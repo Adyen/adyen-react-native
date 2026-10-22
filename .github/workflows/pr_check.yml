@@ -54,11 +54,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '0.76.8'
-          - version: '0.85.3'
+          # React Native CLI fixtures build through Swift Package Manager, so
+          # only React Native versions that ship scripts/setup-apple-spm.js fit.
           - version: '0.87.1'
-          - version: 'latest'
-            allow-failure: true
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'react-native'
@@ -76,7 +74,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['52', '55', '58']
+        # SDK 56 is left out: its expo-modules-jsi (56.0.x) fails to compile
+        # with the Xcode 27 Swift compiler; SDK 57 (expo-modules-jsi 57.1) builds.
+        version: ['52', '55', '57', '58']
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'expo'

@@ -18,7 +18,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 45
     env:
-      workspace: AdyenExample.xcworkspace
+      project: AdyenExample.xcodeproj
       scheme: AdyenExample
       buildFolder: ./DerivedData
       buildLogPath: ${{ github.workspace }}/xcodebuild.log
@@ -40,23 +40,11 @@ jobs:
         run: |
           yarn install --frozen-lockfile
 
-      - uses: actions/cache@v6
-        id: pods-cache
-        with:
-          path: |
-            example/ios/Pods
-            ~/Library/Caches/CocoaPods
-          key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: pods-
-
-      - name: Pod install
-        working-directory: example/ios
+      # async-storage ships no Package.swift; React Native's SPM tooling writes a
+      # stopgap manifest into node_modules and regenerates the SPM build inputs.
+      - name: Prepare Swift packages
         run: |
-          if [ "${{ steps.pods-cache.outputs.cache-hit }}" != "true" ]; then
-            pod install --repo-update
-          else
-            pod install
-          fi
+          yarn app spm-scaffold
 
       - name: Resolve iOS Simulator
         id: simulator
@@ -68,7 +56,7 @@ jobs:
         working-directory: example/ios
         run: |
           xcodebuild test \
-            -workspace ${{ env.workspace }} \
+            -project ${{ env.project }} \
             -scheme ${{ env.scheme }} \
             -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath ${{ env.buildFolder }} \
@@ -87,11 +75,21 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+      # xccov only attributes coverage to the app and test targets, so the library's
+      # Swift package sources are missing from its report. They are linked into the
+      # app binary, so llvm-cov reads them from there.
       - name: Generate code Coverage
         run: |
           mkdir reports
-          xcrun xccov view --archive $(find example/ios -name "*.xcresult") \
-            | swift scripts/xccov-to-sonarqube-generic.swift --filter "$PWD/ios" --strip "$PWD/" \
+          ROOT=$(pwd -P)
+          PROFDATA=$(find example/ios/DerivedData -name Coverage.profdata | head -n 1)
+          APP=$(find example/ios -type d -path '*/Products/Debug-iphonesimulator/AdyenExample.app' -not -path '*/Index.noindex/*' | head -n 1)
+          OBJECTS=("$APP/AdyenExample")
+          if [ -f "$APP/AdyenExample.debug.dylib" ]; then
+            OBJECTS+=(-object "$APP/AdyenExample.debug.dylib")
+          fi
+          xcrun llvm-cov export -format=lcov -instr-profile "$PROFDATA" "${OBJECTS[@]}" \
+            | swift scripts/xccov-to-sonarqube-generic.swift --filter "$ROOT/ios/" --strip "$ROOT/" \
             > reports/sonarqube-generic-coverage.xml
 
       - name: SwiftLint
