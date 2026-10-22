@@ -89,7 +89,11 @@ const ApplePaySettingsView = ({ navigation }: Props) => {
         onValueChange={setDebitOnly}
       />
       <View style={Styles.formAction}>
-        <Button title="Save" onPress={saveAndGoBack} />
+        <Button
+          title="Save"
+          testID="apple-pay-settings-save-button"
+          onPress={saveAndGoBack}
+        />
       </View>
     </PageScrollView>
   );
