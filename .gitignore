@@ -89,6 +89,9 @@ example/yarn.lock
 # React Native Codegen
 **/generated/
 
+# SwiftPM cache of the library's ios/Package.swift
+ios/.build/
+
 # React Native Nitro Modules
 nitrogen/
 

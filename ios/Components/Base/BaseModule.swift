@@ -13,7 +13,7 @@ import UIKit
 /// Base class for all Adyen React Native modules.
 /// - Important: Only one payment flow is supported at a time. Starting a new payment flow
 ///   while another is in progress will replace the current session and presenter.
-internal class BaseModule: RCTEventEmitter {
+public class BaseModule: RCTEventEmitter {
 
     internal static var session: AdyenSession?
     internal weak static var sessionDelegate: SessionErrorDelegate?
@@ -50,7 +50,7 @@ internal class BaseModule: RCTEventEmitter {
     internal var currentComponent: Component?
 
     #if DEBUG
-        override func invalidate() {
+        override public func invalidate() {
             super.invalidate()
             dismiss(false)
         }
@@ -59,7 +59,7 @@ internal class BaseModule: RCTEventEmitter {
     // MARK: - Public methods
 
     @objc
-    override static func requiresMainQueueSetup() -> Bool {
+    override public static func requiresMainQueueSetup() -> Bool {
         true
     }
 
@@ -70,7 +70,7 @@ internal class BaseModule: RCTEventEmitter {
 
     // MARK: - Internal methods
 
-    open func sendError(error _: Error) {
+    internal func sendError(error _: Error) {
         assertionFailure("Not implemented")
     }
 
@@ -169,7 +169,7 @@ internal class BaseModule: RCTEventEmitter {
 
 extension BaseModule: PresentationDelegate {
 
-    internal func present(component: PresentableComponent) {
+    public func present(component: PresentableComponent) {
         ensureMainThread { [weak self] in
             guard let self else { return }
 
@@ -211,7 +211,7 @@ extension BaseModule: PresentationDelegate {
 }
 
 extension BaseModule: UIAdaptivePresentationControllerDelegate {
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         // Remove the swiped-away VC from the stack
         BaseModule.presenterStack.removeAll { $0 === presentationController.presentedViewController }
         cancelDidPress()

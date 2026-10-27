@@ -9,7 +9,7 @@ import React
 import UIKit
 
 @objc(AdyenGooglePay)
-internal class GooglePayModuleMock: BaseModuleSender {
+public class GooglePayModuleMock: BaseModuleSender {
 
     @objc
     func open(_: NSDictionary, configuration _: NSDictionary) {

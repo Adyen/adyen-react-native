@@ -118,12 +118,21 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
 <details>
 <summary><strong>iOS Setup</strong></summary>
 
-1. Run `pod install`
+1. Link the native module. The default integration is CocoaPods: run `pod install` in your app's `ios` directory.
+
+   On **React Native 0.87.1 or newer** the module can also be linked with Swift Package Manager (SPM): `@adyen/react-native` ships its own `Package.swift`, and React Native's SPM autolinking picks it up together with [Adyen iOS](https://github.com/Adyen/adyen-ios). After adding or updating the package, refresh the generated packages with:
+
+   ```bash
+   npx react-native spm update
+   ```
+
+   React Native marks SPM support as experimental in 0.87. See [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for requirements and known limitations.
 
 2. Add `returnURL` handler to your `AppDelegate.swift`:
 
 ```swift
 import Adyen
+import adyen_react_native
 
 // ...
 
@@ -132,7 +141,9 @@ func application(_ app: UIApplication, open url: URL, options: [UIApplication.Op
 }
 ```
 
-If using `RCTLinkingManager` or other deep-linking techniques, place `ADYRedirectComponent.applicationDidOpen` before them:
+`import adyen_react_native` is required when the module is linked through Swift Package Manager: Adyen iOS splits into several modules there, and this import re-exports `RedirectComponent` and `DropInComponent`. It also works with CocoaPods.
+
+If using `RCTLinkingManager` or other deep-linking techniques, place `RedirectComponent.applicationDidOpen` before them:
 
 ```swift
 func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {

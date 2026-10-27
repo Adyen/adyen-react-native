@@ -1,3 +1,14 @@
+## iOS: Swift Package Manager
+
+`@adyen/react-native` ships its own `ios/Package.swift` for React Native's Swift Package Manager (SPM) autolinking. SPM is an alternative to the CocoaPods integration on React Native 0.87.1 or newer; both integrations pin the same Adyen iOS version.
+
+* SPM integration requires **React Native 0.87.1 or newer**. Older React Native versions and Expo prebuild projects must use CocoaPods.
+* React Native 0.87 templates create CocoaPods-integrated Xcode projects, so converting an existing app needs `npx react-native spm add --deintegrate` once from the app's root directory (see the [README](../README.md#manual-integration)).
+* React Native marks SPM support as experimental in 0.87.
+* `@react-native-community/cli` 20.x detects the iOS project only through `ios/Podfile`. If your SPM app no longer has a Podfile, React Native's SPM tooling fails with `CLI config did not provide project.ios.sourceDir`. Point the tooling at a CLI config wrapper that fills in `project.ios` with `node node_modules/react-native/scripts/setup-apple-spm.js update --config-command '<argv JSON>'`, where the wrapper is a small Node script that runs the CLI `config` command and supplies the missing `project.ios` fields.
+* The package resolves [Adyen iOS](https://github.com/Adyen/adyen-ios) from GitHub at the exact version the podspec pins (5.27.0) and declares iOS 15 as its minimum, matching React Native's SPM autolinking floor.
+* Adyen iOS splits into several modules under SPM (`Adyen`, `AdyenActions`, `AdyenDropIn`, ...), while the CocoaPod is the single `Adyen` module. App code that only does `import Adyen` and uses `RedirectComponent` or `DropInComponent` must also `import adyen_react_native`, which re-exports those modules. This import works with CocoaPods as well. Do not qualify those types with the `Adyen.` module prefix (for example, write `DropInComponent.Style`, not `Adyen.DropInComponent.Style`).
+
 ## Adyen Android SDK 5.22.0: Kotlin and Android SDK requirements
 
 Adyen Android SDK 5.22.0 sets three build requirements for the Android app that consumes `@adyen/react-native`:
