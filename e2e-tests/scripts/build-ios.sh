@@ -17,6 +17,28 @@ patch_fmt_for_xcode26() {
   fi
 }
 
+# Echo the app's Xcode container under ios/ or fail; its base name doubles
+# as the xcodebuild scheme.
+detect_xcworkspace() {
+  local found
+  found=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+  if [ -z "$found" ]; then
+    echo "Error: No .xcworkspace found in ios directory" >&2
+    exit 1
+  fi
+  echo "$found"
+}
+
+detect_xcodeproj() {
+  local found
+  found=$(find ios -maxdepth 1 -name "*.xcodeproj" | head -n 1)
+  if [ -z "$found" ]; then
+    echo "Error: No .xcodeproj found in ios directory" >&2
+    exit 1
+  fi
+  echo "$found"
+}
+
 if [ "$platform" = "expo" ]; then
   # Expo apps stay on CocoaPods and resolve the deprecated adyen-react-native
   # podspec. Pods are installed separately because prebuild hides the
@@ -33,11 +55,7 @@ if [ "$platform" = "expo" ]; then
   patch_fmt_for_xcode26
   echo "::endgroup::"
 
-  WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
-  if [ -z "$WORKSPACE" ]; then
-    echo "Error: No .xcworkspace found in ios directory"
-    exit 1
-  fi
+  WORKSPACE=$(detect_xcworkspace)
   SCHEME=$(basename "$WORKSPACE" .xcworkspace)
   XCODE_CONTAINER=(-workspace "$WORKSPACE")
 elif [ -f node_modules/react-native/scripts/setup-apple-spm.js ]; then
@@ -55,11 +73,7 @@ elif [ -f node_modules/react-native/scripts/setup-apple-spm.js ]; then
   rm -f ios/Podfile ios/Podfile.lock
   echo "::endgroup::"
 
-  PROJECT=$(find ios -maxdepth 1 -name "*.xcodeproj" | head -n 1)
-  if [ -z "$PROJECT" ]; then
-    echo "Error: No .xcodeproj found in ios directory"
-    exit 1
-  fi
+  PROJECT=$(detect_xcodeproj)
   SCHEME=$(basename "$PROJECT" .xcodeproj)
   XCODE_CONTAINER=(-project "$PROJECT")
 else
@@ -71,11 +85,7 @@ else
   # On Xcode 26, pods builds need the template's swift library search paths
   # spelled with $(DT_TOOLCHAIN_DIR) instead of $(TOOLCHAIN_DIR). The SPM
   # branch above must NOT get this patch - it breaks SPM fixture builds.
-  PROJECT=$(find ios -maxdepth 1 -name "*.xcodeproj" | head -n 1)
-  if [ -z "$PROJECT" ]; then
-    echo "Error: No .xcodeproj found in ios directory"
-    exit 1
-  fi
+  PROJECT=$(detect_xcodeproj)
   project_file="$PROJECT/project.pbxproj"
   if grep -q '\$(TOOLCHAIN_DIR)/usr/lib/swift/\$(PLATFORM_NAME)' "$project_file"; then
     perl -0pi -e 's/\$\(TOOLCHAIN_DIR\)(\/usr\/lib\/swift\/\$\(PLATFORM_NAME\))/\$(DT_TOOLCHAIN_DIR)$1/g' "$project_file"
@@ -91,11 +101,7 @@ else
   patch_fmt_for_xcode26
   echo "::endgroup::"
 
-  WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
-  if [ -z "$WORKSPACE" ]; then
-    echo "Error: No .xcworkspace found in ios directory"
-    exit 1
-  fi
+  WORKSPACE=$(detect_xcworkspace)
   SCHEME=$(basename "$WORKSPACE" .xcworkspace)
   XCODE_CONTAINER=(-workspace "$WORKSPACE")
 fi
