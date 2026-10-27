@@ -13,7 +13,7 @@ on:
         required: true
         type: string
       version:
-        description: 'Version (RN e.g. 0.87.1 OR Expo SDK e.g. 57)'
+        description: 'Version (RN e.g. 0.76.8, 0.87.1 OR Expo SDK e.g. 57)'
         required: true
         type: string
       allow-failure:
