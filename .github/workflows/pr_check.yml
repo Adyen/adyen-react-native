@@ -76,12 +76,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['52', '55', '58']
+        include:
+          - version: '52'
+          - version: '55'
+          - version: '57'
+          - version: 'latest'
+            allow-failure: true
     uses: ./.github/workflows/e2e_test.yml
     with:
       platform: 'expo'
       version: ${{ matrix.version }}
       node-version: ${{ vars.NODE_VERSION }}
+      allow-failure: ${{ matrix.allow-failure || false }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}

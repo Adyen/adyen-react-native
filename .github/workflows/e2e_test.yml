@@ -29,6 +29,8 @@ on:
 
 env:
   APP_DIR: 'tested_app'
+  # "latest" templates pin brand-new releases that Yarn's age gate (default 1d) would quarantine.
+  YARN_NPM_MINIMAL_AGE_GATE: ${{ inputs.version == 'latest' && '0' || '1d' }}
 
 jobs:
   # ====================================================
