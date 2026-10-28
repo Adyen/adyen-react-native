@@ -7,6 +7,7 @@
 import XCTest
 @testable @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
+@testable import AdyenCard
 
 final class BaseModuleSenderDelegatesTests: XCTestCase {
 

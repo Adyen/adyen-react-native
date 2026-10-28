@@ -44,7 +44,7 @@ jobs:
           }
 
           check js      '^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor'
-          check ios     '^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov'
+          check ios     '^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov|^example/scripts/|^example/react-native\.config\.js$|^example/package\.json$'
           check android '^android/|^src/specs/|^example/android/'
 
   build-lib:

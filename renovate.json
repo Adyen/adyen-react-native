@@ -23,17 +23,32 @@
     },
     {
       "description": "Hard Whitelist Step 1: Disable all native updates",
-      "matchDatasources": ["maven", "cocoapods"],
+      "matchDatasources": ["maven", "git-tags", "github-tags"],
       "enabled": false
     },
     {
       "description": "Hard Whitelist Step 2: Enable ONLY Adyen Native Updates",
-      "matchDatasources": ["maven", "cocoapods"],
+      "matchDatasources": ["maven", "git-tags", "github-tags"],
       "matchSourceUrls": [
         "https://github.com/Adyen/adyen-android",
         "https://github.com/Adyen/adyen-ios"
       ],
       "enabled": true
+    },
+    {
+      "description": "Adyen iOS is pinned in both ios/Package.swift (SPM) and the podspec (CocoaPods); bump them together",
+      "matchSourceUrls": ["https://github.com/Adyen/adyen-ios"],
+      "groupName": "Adyen iOS"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Adyen iOS pin in the deprecated CocoaPods podspec",
+      "fileMatch": ["^adyen-react-native\\.podspec$"],
+      "matchStrings": ["s\\.dependency \"Adyen\", '(?<currentValue>[^']+)'"],
+      "depNameTemplate": "Adyen/adyen-ios",
+      "datasourceTemplate": "github-tags"
     }
   ],
   "osvVulnerabilityAlerts": true,
