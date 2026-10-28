@@ -92,8 +92,11 @@ example/yarn.lock
 # SwiftPM cache of the library's ios/Package.swift
 ios/.build/
 
-# Xcode's resolution of the Adyen iOS package that the podspec adds through spm_dependency
-example/ios/AdyenExample.xcworkspace/xcshareddata/swiftpm/
+# Example app SPM artifacts (auto-generated at build time)
+example/ios/**/Package.resolved
+example/ios/build/generated/
+example/ios/build/xcframeworks/
+example/ios/**/.build/
 
 # React Native Nitro Modules
 nitrogen/

@@ -40,16 +40,47 @@ jobs:
 
           # PR checkout is a merge commit; ^1 is the base branch tip
           files=$(git diff --name-only HEAD^1 HEAD)
-          shared='^package\.json$|^yarn\.lock$|^\.github/workflows/'
+          shared=(
+            '^package\.json$'
+            '^yarn\.lock$'
+            '^\.github/workflows/'
+          )
+          example_native=(
+            '^src/specs/'
+            '^example/react-native\.config\.js$' # declares platforms ios/android for codegen
+            '^example/package\.json$'            # example deps + spm scripts feed both app builds
+          )
+          js=(
+            '^src/'
+            '^etc/api/'
+            '^tsconfig'
+            '^babel\.config'
+            '^jest'
+            '^api-extractor'
+          )
+          ios=(
+            '^ios/'
+            '^example/ios/'
+            '\.podspec$'
+            '^react-native\.config\.js$' # spm.name sets the SPM package identity, iOS-only today
+            '^scripts/xccov'
+            '^example/scripts/' # run-ios.js / spm-cli-config.js
+          )
+          android=(
+            '^android/'
+            '^example/android/'
+          )
+
+          join() { local IFS='|'; echo "$*"; }
 
           check() {
             if printf '%s\n' "$files" | grep -qE "$2"; then v=true; else v=false; fi
             echo "$1=$v" >> "$GITHUB_OUTPUT"
           }
 
-          check js      "$shared|^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor"
-          check ios     "$shared|^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov"
-          check android "$shared|^android/|^src/specs/|^example/android/"
+          check js      "$(join "${shared[@]}" "${js[@]}")"
+          check ios     "$(join "${shared[@]}" "${example_native[@]}" "${ios[@]}")"
+          check android "$(join "${shared[@]}" "${example_native[@]}" "${android[@]}")"
           check expo    '^src/plugin/|^app\.plugin\.js$|^e2e-tests/scripts/configure-expo-app\.js$'
 
   build-lib:
