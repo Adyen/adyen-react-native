@@ -413,7 +413,8 @@ function main() {
     JSON.stringify({ changed, diff, summary: markdown })
   );
 
-  if (process.env.GITHUB_STEP_SUMMARY) {
+  console.log(markdown);
+  if (changed && process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n\n`);
   }
   if (process.env.GITHUB_OUTPUT) {
