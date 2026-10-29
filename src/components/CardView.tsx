@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { findNodeHandle } from 'react-native';
+import { findNodeHandle, StyleSheet } from 'react-native';
 import NativeCardView, {
   type LayoutChangeEvent,
 } from '../specs/NativeCardView';
@@ -19,6 +19,12 @@ export interface CardViewProps {
 }
 
 const PAYMENT_METHOD_TYPE = 'scheme';
+
+const styles = StyleSheet.create({
+  cardView: {
+    width: '100%',
+  },
+});
 
 /**
  * Type-safe wrapper for the native CardView component.
@@ -77,10 +83,7 @@ export const CardView: React.FC<CardViewProps> = ({ paymentMethod }) => {
       paymentMethod={JSON.stringify(_paymentMethod)}
       configuration={JSON.stringify(config)}
       onLayoutChange={handleLayoutChange}
-      style={{
-        height: size?.height,
-        width: '100%',
-      }}
+      style={[styles.cardView, { height: size?.height }]}
     />
   );
 };

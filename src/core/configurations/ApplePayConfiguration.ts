@@ -65,21 +65,14 @@ export interface ApplePayConfiguration {
 
 /** Collection of values for address field visibility. */
 export type ApplePayShippingType =
-  | 'shipping'
-  | 'delivery'
-  | 'storePickup'
-  | 'servicePickup';
+  'shipping' | 'delivery' | 'storePickup' | 'servicePickup';
 
 /** Supported Apple Pay merchant capabilities. `threeDSecure` is always included by the SDK. */
 export type ApplePayMerchantCapability = 'debit' | 'credit';
 
 /** Collection of values for address field visibility. */
 export type ApplePayAddressFields =
-  | 'postalAddress'
-  | 'name'
-  | 'phoneticName'
-  | 'phone'
-  | 'email';
+  'postalAddress' | 'name' | 'phoneticName' | 'phone' | 'email';
 
 /** An object that defines a summary item in a payment request—for example, total, tax, discount, or grand total. */
 export interface ApplePaySummaryItem {
