@@ -69,7 +69,9 @@ internal class ApplePayModule: BaseModuleSender {
     override func cleanUp() {
         shippingContactHandler = nil
         shippingMethodHandler = nil
-        if #available(iOS 15.0, *) { couponCodeHandler = nil }
+        if #available(iOS 15.0, *) {
+            couponCodeHandler = nil
+        }
         authorizationHandler = nil
         currentApplePayPayment = nil
         currentShippingMethods = []
