@@ -26,10 +26,9 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: 'yarn'
 
-      # Swapped Homebrew for npm, which is significantly faster on Ubuntu
       - name: Install Sonar Scanner
         run: |
-          npm install -g sonarqube-scanner
+          npm install -g @sonar/scan@5
 
       - name: Download library
         uses: actions/download-artifact@v8
@@ -61,4 +60,4 @@ jobs:
 
       - name: Run Sonar
         run: |
-          sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }} -X
+          sonar-scanner-npm -Dsonar.token=${{ secrets.SONAR_TOKEN }} -X
