@@ -65,7 +65,7 @@ export type AdyenCheckoutProps = {
     config: Configuration;
     paymentMethods?: PaymentMethodsResponse;
     session?: SessionConfiguration;
-    onSubmit?: (data: PaymentMethodData_2, component: AdyenActionComponent, extra?: any) => void;
+    onSubmit?: (data: PaymentMethodData, component: AdyenActionComponent, extra?: any) => void;
     onError: (error: AdyenError, component: AdyenComponent) => void;
     onAdditionalDetails?: (data: PaymentDetailsData, component: AdyenActionComponent) => void;
     onComplete?: (result: SessionsResult, component: AdyenComponent) => void;
@@ -586,7 +586,7 @@ export interface PartialPaymentComponent extends AdyenComponent {
 
 // @public (undocumented)
 export interface PartialPaymentConfiguration {
-    onBalanceCheck(paymentData: PaymentMethodData_2, resolve: (balance: Balance) => void, reject: (error: Error) => void): void;
+    onBalanceCheck(paymentData: PaymentMethodData, resolve: (balance: Balance) => void, reject: (error: Error) => void): void;
     onOrderCancel(order: Order, shouldUpdatePaymentMethods: boolean, component: PartialPaymentComponent): void;
     onOrderRequest(resolve: (order: Order) => void, reject: (error: Error) => void): void;
     pinRequired?: boolean;
@@ -664,7 +664,7 @@ export interface PaymentMethod {
 }
 
 // @public
-interface PaymentMethodData_2 {
+export interface PaymentMethodData {
     // (undocumented)
     browserInfo?: {
         userAgent: string;
@@ -677,7 +677,6 @@ interface PaymentMethodData_2 {
     };
     returnUrl: string;
 }
-export { PaymentMethodData_2 as PaymentMethodData }
 
 // @public
 export interface PaymentMethodGroup {
@@ -745,7 +744,7 @@ export interface SubmitModel {
     // (undocumented)
     extra?: any;
     // (undocumented)
-    paymentData: PaymentMethodData_2;
+    paymentData: PaymentMethodData;
 }
 
 // @public (undocumented)
