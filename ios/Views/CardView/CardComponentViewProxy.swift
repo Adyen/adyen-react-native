@@ -112,7 +112,11 @@ public final class CardComponentViewProxy: UIStackView {
             return
         }
 
-        let proxy = componentBus.register(viewId: viewId)
+        let proxy = componentBus.register(
+            viewId: viewId,
+            submitHandler: { [weak self] in self?.cardComponent?.submit() },
+            stopLoadingHandler: { [weak self] in self?.cardComponent?.stopLoading() }
+        )
         do {
             let component = try createCardComponent(
                 paymentMethodJSON: paymentMethodJSON,

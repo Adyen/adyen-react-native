@@ -16,6 +16,10 @@ export class EmbeddedComponentBusWrapper extends EventListenerWrapper<EmbeddedNa
     this.nativeModule.unsubscribe(viewId);
   }
 
+  submit(viewId: string): void {
+    this.nativeModule.submit(viewId);
+  }
+
   handle(viewId: string, action: PaymentAction): void {
     this.nativeModule.handle(viewId, action);
   }

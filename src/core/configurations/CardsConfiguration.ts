@@ -17,6 +17,12 @@ export interface InstallmentOptions {
 
 export interface CardsConfiguration {
   /**
+   * Indicates whether the native card component submit button should be displayed.
+   * Disable it when submitting the component through an external button.
+   * @default true
+   */
+  showSubmitButton?: boolean;
+  /**
    * Determines whether the field for the cardholder's name is required.
    * @default false
    */

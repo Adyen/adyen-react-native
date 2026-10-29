@@ -5,6 +5,10 @@ import com.adyen.checkout.components.core.LookupAddress
 import com.adyen.checkout.components.core.action.Action
 
 interface ComponentContract {
+  fun onSubmit()
+
+  fun onStopLoading()
+
   fun onAction(action: Action)
 
   fun onAddressLookupResult(result: AddressLookupResult)

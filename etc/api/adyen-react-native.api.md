@@ -360,12 +360,18 @@ export interface CardsConfiguration {
     onUpdateAddress?(prompt: string, lookup: AddressLookup): void;
     showInstallmentAmount?: boolean;
     showStorePaymentField?: boolean;
+    showSubmitButton?: boolean;
     socialSecurity?: FieldVisibility;
     supported?: string[];
 }
 
 // @public
-export const CardView: React_2.FC<CardViewProps>;
+export const CardView: React_2.ForwardRefExoticComponent<CardViewProps & React_2.RefAttributes<CardViewHandle>>;
+
+// @public
+export interface CardViewHandle {
+    submit(): void;
+}
 
 // @public (undocumented)
 export interface CardViewProps {
