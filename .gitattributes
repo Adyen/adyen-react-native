@@ -1,3 +1,4 @@
 *.pbxproj -text
 # specific for windows script files
 *.bat text eol=crlf
+etc/api/*.api.md text eol=lf
