@@ -54,7 +54,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '0.76.8'
+          - version: '0.80.3'
           - version: '0.85.3'
           - version: '0.87.1'
           - version: 'latest'
@@ -77,7 +77,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '52'
+          - version: '54'
           - version: '55'
           - version: '57'
           - version: 'latest'
