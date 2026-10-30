@@ -5,12 +5,14 @@ function getConfig() {
   const androidAppPackage = process.env.APP_PACKAGE || 'com.testproject';
   const androidAppActivity = '.MainActivity';
   const iosBundleId = process.env.IOS_BUNDLE_ID;
+  const androidUdid = process.env.ANDROID_UDID;
   const iosUdid = process.env.IOS_UDID;
 
   return {
     isAndroid,
     androidAppPackage,
     androidAppActivity,
+    androidUdid,
     iosBundleId,
     iosUdid,
   };
@@ -22,6 +24,7 @@ async function createDriver() {
     isAndroid,
     androidAppPackage,
     androidAppActivity,
+    androidUdid,
     iosBundleId,
     iosUdid,
   } = config;
@@ -39,6 +42,7 @@ async function createDriver() {
         'appium:adbExecTimeout': 120000,
         'appium:uiautomator2ServerInstallTimeout': 120000,
         'appium:uiautomator2ServerLaunchTimeout': 120000,
+        ...(androidUdid ? { 'appium:udid': androidUdid } : {}),
       }
     : {
         'platformName': 'iOS',
@@ -53,6 +57,9 @@ async function createDriver() {
         'appium:skipUnlock': true,
         'appium:waitForQuiescence': false,
         'appium:simpleIsVisibleCheck': true,
+        ...(process.env.WDA_LOCAL_PORT
+          ? { 'appium:wdaLocalPort': Number(process.env.WDA_LOCAL_PORT) }
+          : {}),
       };
 
   const driver = await remote({

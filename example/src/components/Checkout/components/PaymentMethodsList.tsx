@@ -28,6 +28,7 @@ const PaymentMethodsList = ({
             key={paymentMethod.type + paymentMethod.name}
             title={paymentMethod.name}
             icon={icon(paymentMethod)}
+            testID={`payment-method-${paymentMethod.type}`}
             onPress={() => start(paymentMethod.type)}
           />
         );
