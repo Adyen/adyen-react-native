@@ -1,14 +1,14 @@
 PODS:
-  - Adyen (5.26.0):
-    - Adyen/Actions (= 5.26.0)
-    - Adyen/Card (= 5.26.0)
-    - Adyen/Components (= 5.26.0)
-    - Adyen/Core (= 5.26.0)
-    - Adyen/DropIn (= 5.26.0)
-    - Adyen/Encryption (= 5.26.0)
-    - Adyen/Session (= 5.26.0)
+  - Adyen (5.27.0):
+    - Adyen/Actions (= 5.27.0)
+    - Adyen/Card (= 5.27.0)
+    - Adyen/Components (= 5.27.0)
+    - Adyen/Core (= 5.27.0)
+    - Adyen/DropIn (= 5.27.0)
+    - Adyen/Encryption (= 5.27.0)
+    - Adyen/Session (= 5.27.0)
   - adyen-react-native (2.0.0-local.1):
-    - Adyen (= 5.26.0)
+    - Adyen (= 5.27.0)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -30,25 +30,25 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - Adyen/Actions (5.26.0):
+  - Adyen/Actions (5.27.0):
     - Adyen/Core
     - Adyen3DS2 (= 2.4.4)
-  - Adyen/Card (5.26.0):
+  - Adyen/Card (5.27.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Components (5.26.0):
+  - Adyen/Components (5.27.0):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Core (5.26.0):
+  - Adyen/Core (5.27.0):
     - AdyenNetworking (= 3.0.1)
-  - Adyen/DropIn (5.26.0):
+  - Adyen/DropIn (5.27.0):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (5.26.0)
-  - Adyen/Session (5.26.0):
+  - Adyen/Encryption (5.27.0)
+  - Adyen/Session (5.27.0):
     - Adyen/Actions
     - Adyen/Core
   - Adyen3DS2 (2.4.4)
@@ -1416,7 +1416,7 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
-  - react-native-safe-area-context (5.8.0):
+  - react-native-safe-area-context (5.11.0):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -1428,8 +1428,8 @@ PODS:
     - React-graphics
     - React-ImageManager
     - React-jsi
-    - react-native-safe-area-context/common (= 5.8.0)
-    - react-native-safe-area-context/fabric (= 5.8.0)
+    - react-native-safe-area-context/common (= 5.11.0)
+    - react-native-safe-area-context/fabric (= 5.11.0)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -1440,7 +1440,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - react-native-safe-area-context/common (5.8.0):
+  - react-native-safe-area-context/common (5.11.0):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -1462,7 +1462,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - react-native-safe-area-context/fabric (5.8.0):
+  - react-native-safe-area-context/fabric (5.11.0):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2185,8 +2185,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: 2ea7cab4a141e33f31cbc995f751333c5a1c354e
-  adyen-react-native: ec800ef9099b1a0f5a17b3e7d4117896ab8a2c36
+  Adyen: fc03cdeb4a4903ee256afd1ba25aacf9e7e038a1
+  adyen-react-native: 741f7544d7ac87aaf196e726c5d8f19e43af5247
   Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
   AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
   FBLazyVector: c00c20551d40126351a6783c47ce75f5b374851b
@@ -2227,7 +2227,7 @@ SPEC CHECKSUMS:
   React-logger: ee47d5f3b59a46a006c65038ed5d0b1143e37510
   React-Mapbuffer: 7f8bfbe3fcb2203db4ccb3975414af8cabe4bcd0
   React-microtasksnativemodule: ca1f33f7c98b76d923f550d39631eb4e05fa9aec
-  react-native-safe-area-context: fb5c8ee9f6dd62ef710611b3d370c501f42a4ac0
+  react-native-safe-area-context: 42d92054ea1ba17d214037895cdb1fd00cf8bb6a
   React-NativeModulesApple: 9c1f8815ebd72cc1c75587fe588513f6dd9cb708
   React-networking: 8f75f882c6794e91e28b458b5bc1461034098c80
   React-oscompat: 5361d0fa7905ba1c3b3c5e7c464d6be9d2d85f4b
