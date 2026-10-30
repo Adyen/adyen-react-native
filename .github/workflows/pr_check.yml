@@ -14,17 +14,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-24.04
+    outputs:
+      js: ${{ steps.filter.outputs.js }}
+      ios: ${{ steps.filter.outputs.ios }}
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Filter changed paths
+        id: filter
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            for k in js ios android; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
+            exit 0
+          fi
+
+          # PR checkout is a merge commit; ^1 is the base branch tip
+          files=$(git diff --name-only HEAD^1 HEAD)
+          shared='^package\.json$|^yarn\.lock$|^\.github/workflows/'
+
+          check() {
+            if printf '%s\n' "$files" | grep -qE "$2|$shared"; then v=true; else v=false; fi
+            echo "$1=$v" >> "$GITHUB_OUTPUT"
+          }
+
+          check js      '^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor'
+          check ios     '^ios/|^src/specs/|^example/ios/|\.podspec$|^scripts/xccov'
+          check android '^android/|^src/specs/|^example/android/'
+
   build-lib:
     name: Build Nodes
+    needs: [changes]
     uses: ./.github/workflows/build_lib.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
       build-tgz: ${{ contains(github.event.pull_request.labels.*.name, 'run-e2e-tests') }}
       build-precompiled-sdk: true
+      run-js-checks: ${{ needs.changes.outputs.js == 'true' }}
 
   test-iOS:
     name: Test iOS
-    needs: [build-lib]
+    needs: [changes, build-lib]
+    if: needs.changes.outputs.ios == 'true'
     uses: ./.github/workflows/ios_tests.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
@@ -32,7 +68,8 @@ jobs:
 
   test-Android:
     name: Test Android
-    needs: [build-lib]
+    needs: [changes, build-lib]
+    if: needs.changes.outputs.android == 'true'
     uses: ./.github/workflows/android_tests.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
@@ -40,7 +77,12 @@ jobs:
 
   run-sonar:
     name: Collect Sonar reports
-    needs: [test-iOS, test-Android]
+    needs: [changes, build-lib, test-iOS, test-Android]
+    if: >-
+      ${{ !cancelled() && !contains(needs.*.result, 'failure') &&
+          (needs.changes.outputs.js == 'true' ||
+           needs.changes.outputs.ios == 'true' ||
+           needs.changes.outputs.android == 'true') }}
     uses: ./.github/workflows/run_sonar.yml
     secrets: inherit
     with:
