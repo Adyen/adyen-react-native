@@ -6,6 +6,12 @@ permissions:
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**'
+      - 'etc/api/**'
+      - '.github/workflows/public_api_check.yml'
+      - 'scripts/api-report-summary.js'
+      - 'scripts/post-api-report-comment.js'
 
 concurrency:
   group: public-api-check-${{ github.event.pull_request.number }}

@@ -67,7 +67,7 @@ async function postApiReportComment({ github, context }) {
       comment_id: existingComment.id,
       body,
     });
-  } else {
+  } else if (changed) {
     await github.rest.issues.createComment({
       owner,
       repo,

@@ -1,24 +1,50 @@
 // Copyright (c) 2026 Adyen N.V.
 
 import { describe, expect, it } from '@jest/globals';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { spawnSync } from 'child_process';
 
 const SCRIPT = resolve(__dirname, '../api-report-summary.js');
 
+const RUNNER_FILE_VARIABLES = [
+  'GITHUB_ENV',
+  'GITHUB_OUTPUT',
+  'GITHUB_STEP_SUMMARY',
+];
+
+type Options = {
+  githubOutput?: boolean;
+  githubStepSummary?: boolean;
+};
+
 type Result = {
   changed: boolean;
   diff: string;
   githubOutput?: string;
+  githubStepSummary?: string;
+  stdout: string;
   summary: string;
 };
+
+function isolatedEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const key of RUNNER_FILE_VARIABLES) delete env[key];
+
+  return env;
+}
 
 function run(
   base: string | undefined,
   head: string,
-  includeGithubOutput = false
+  { githubOutput = false, githubStepSummary = false }: Options = {}
 ): Result {
   const directory = mkdtempSync(join(tmpdir(), 'api-report-summary-'));
   const basePath = join(directory, 'base.md');
@@ -26,13 +52,14 @@ function run(
   const headPath = join(directory, 'head.md');
   const outputPath = join(directory, 'output');
   const githubOutputPath = join(directory, 'github-output.txt');
+  const githubStepSummaryPath = join(directory, 'github-step-summary.md');
 
   try {
     if (base !== undefined) writeFileSync(basePath, base);
     writeFileSync(headPath, head);
-    const env = { ...process.env };
-    if (includeGithubOutput) env.GITHUB_OUTPUT = githubOutputPath;
-    else delete env.GITHUB_OUTPUT;
+    const env = isolatedEnv();
+    if (githubOutput) env.GITHUB_OUTPUT = githubOutputPath;
+    if (githubStepSummary) env.GITHUB_STEP_SUMMARY = githubStepSummaryPath;
 
     const result = spawnSync(
       'node',
@@ -49,9 +76,14 @@ function run(
 
     return {
       ...JSON.parse(readFileSync(join(outputPath, 'report.json'), 'utf8')),
-      githubOutput: includeGithubOutput
+      githubOutput: githubOutput
         ? readFileSync(githubOutputPath, 'utf8')
         : undefined,
+      githubStepSummary:
+        githubStepSummary && existsSync(githubStepSummaryPath)
+          ? readFileSync(githubStepSummaryPath, 'utf8')
+          : undefined,
+      stdout: result.stdout,
     };
   } finally {
     rmSync(directory, { force: true, recursive: true });
@@ -132,7 +164,7 @@ export interface Existing {
 }
 `;
 
-    const result = run(report, report, true);
+    const result = run(report, report, { githubOutput: true });
 
     expect(result.githubOutput).toBe('changed=false\n');
   });
@@ -292,8 +324,83 @@ export interface Added {
     expect(result.diff).toContain('+// @public');
   });
 
+  it('prints the summary to stdout and skips the step summary when unchanged', () => {
+    const report = `// @public
+export interface Existing {
+    value: string;
+}
+`;
+
+    const result = run(report, report, {
+      githubOutput: true,
+      githubStepSummary: true,
+    });
+
+    expect(result.stdout).toContain('🟢 Public API is unchanged');
+    expect(result.githubStepSummary).toBeUndefined();
+    expect(result.githubOutput).toBe('changed=false\n');
+  });
+
+  it('prints the summary to stdout and the step summary when changed', () => {
+    const base = `// @public
+export interface Existing {
+    value: string;
+}
+`;
+    const head = `${base}
+// @public
+export interface Added {
+    added: string;
+}
+`;
+
+    const result = run(base, head, {
+      githubOutput: true,
+      githubStepSummary: true,
+    });
+
+    expect(result.stdout).toContain('🟡 Public API changes detected');
+    expect(result.stdout).toContain('`Added`');
+    expect(result.stdout).toBe(`${result.summary}\n`);
+    expect(result.githubStepSummary).toBe(`${result.summary}\n\n`);
+    expect(result.githubOutput).toBe('changed=true\n');
+  });
+
+  it('does not write to a GITHUB_STEP_SUMMARY inherited from the test process', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'api-report-inherited-'));
+    const inheritedSummaryPath = join(directory, 'step-summary.md');
+    const previous = process.env.GITHUB_STEP_SUMMARY;
+    writeFileSync(inheritedSummaryPath, '');
+    process.env.GITHUB_STEP_SUMMARY = inheritedSummaryPath;
+
+    try {
+      const result = run(
+        `// @public
+export interface Existing {
+    value: string;
+}
+`,
+        `// @public
+export interface Existing {
+    value: number;
+}
+`
+      );
+
+      expect(result.changed).toBe(true);
+      expect(readFileSync(inheritedSummaryPath, 'utf8')).toBe('');
+    } finally {
+      if (previous === undefined) delete process.env.GITHUB_STEP_SUMMARY;
+      else process.env.GITHUB_STEP_SUMMARY = previous;
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
   it('fails when report paths are omitted', () => {
-    const result = spawnSync('node', [SCRIPT], { encoding: 'utf8' });
+    const result = spawnSync('node', [SCRIPT], {
+      encoding: 'utf8',
+      env: isolatedEnv(),
+    });
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('Usage: api-report-summary.js');
