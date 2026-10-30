@@ -41,6 +41,9 @@ else
 
     cd $path || exit 1
     
+    # Adyen Android SDK needs a newer Kotlin than older templates ship with
+    node ../e2e-tests/scripts/configure-android-toolchain.js react-native .
+
     # Add React Native-specific files
     echo "== Add default MainActivity.kt"
     mkdir -p android/app/src/main/java/com/testproject
