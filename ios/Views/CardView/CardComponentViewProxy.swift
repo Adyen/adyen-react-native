@@ -20,7 +20,10 @@ import UIKit
 @objc(CardComponentViewProxy)
 public final class CardComponentViewProxy: UIStackView {
 
-    private var cardComponent: CardComponent?
+    /// Resolves the merchant's `AdyenAppearance` style. Replaced in tests to simulate a host app without one.
+    static var appearanceProvider: () -> DropInComponent.Style? = AdyenAppearanceLoader.findStyle
+
+    private(set) var cardComponent: CardComponent?
     private var paymentMethodJSON: NSDictionary?
     private var configurationJSON: NSDictionary?
     private var hasComponent: Bool = false
@@ -138,10 +141,11 @@ public final class CardComponentViewProxy: UIStackView {
         let context = try parser.fetchContext(session: BaseModule.session)
         let paymentMethod = try parseCardPaymentMethod(from: paymentMethodJSON)
 
-        let cardConfig = CardConfigurationParser(
+        var cardConfig = CardConfigurationParser(
             configuration: configurationJSON,
             delegate: proxy
         ).configuration
+        cardConfig.style = Self.appearanceProvider()?.formComponent ?? FormComponentStyle()
 
         let component = CardComponent(
             paymentMethod: paymentMethod,

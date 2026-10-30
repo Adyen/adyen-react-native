@@ -16,6 +16,9 @@ class AdyenAppearance: AdyenAppearanceProvider {
 }
 ```
 
+The `formComponent` style of the returned `Adyen.DropInComponent.Style` also styles the embedded `CardView`.
+Without an `AdyenAppearance` class, the `CardView` uses Adyen's default form style.
+
 ## Android
 
 Follow the Android SDK [Customization docs](https://github.com/Adyen/adyen-android/blob/main/docs/UI_CUSTOMIZATION.md).

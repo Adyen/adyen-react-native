@@ -15,6 +15,7 @@ final class CardComponentViewProxyLayoutTests: XCTestCase {
     private var window: UIWindow?
 
     override func tearDown() {
+        CardComponentViewProxy.appearanceProvider = AdyenAppearanceLoader.findStyle
         window?.isHidden = true
         window = nil
         EmbeddedComponentBusModule.shared = nil
@@ -47,6 +48,35 @@ final class CardComponentViewProxyLayoutTests: XCTestCase {
         // THEN Adyen's scroll view is as tall as the form, so no part of the form is cut off
         let scrollView = try XCTUnwrap(cardView.formScrollView)
         XCTAssertEqual(scrollView.frame.height, cardView.reportedHeight, accuracy: 0.5)
+    }
+
+    func test_cardView_appliesAdyenAppearanceFormStyle() throws {
+        // GIVEN an AdyenAppearance that tints everything teal, like the one in the example app.
+        // The test bundle links its own copy of adyen_react_native, so `AdyenAppearanceLoader` cannot cast the
+        // host app's `AdyenAppearance` to the test copy of `AdyenAppearanceProvider`. The style is provided directly.
+        CardComponentViewProxy.appearanceProvider = { .init(tintColor: .systemTeal) }
+
+        // WHEN a card view mounts
+        let cardView = mountCardView(in: makePage(), atY: 100)
+
+        // THEN its card component uses that form style
+        let style = try XCTUnwrap(cardView.proxy.cardComponent?.configuration.style)
+        XCTAssertEqual(style.mainButtonItem.button.backgroundColor, .systemTeal)
+        XCTAssertEqual(style.textField.tintColor, .systemTeal)
+    }
+
+    func test_cardView_usesDefaultFormStyle_whenNoAppearance() throws {
+        // GIVEN a host app without an AdyenAppearance
+        CardComponentViewProxy.appearanceProvider = { nil }
+
+        // WHEN a card view mounts
+        let cardView = mountCardView(in: makePage(), atY: 100)
+
+        // THEN its card component uses the default form style
+        let style = try XCTUnwrap(cardView.proxy.cardComponent?.configuration.style)
+        let defaultStyle = FormComponentStyle()
+        XCTAssertEqual(style.mainButtonItem.button.backgroundColor, defaultStyle.mainButtonItem.button.backgroundColor)
+        XCTAssertNotEqual(style.mainButtonItem.button.backgroundColor, .systemTeal)
     }
 
     // MARK: - Helpers
