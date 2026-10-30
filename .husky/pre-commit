@@ -11,9 +11,23 @@ run_check() {
   rm -f "$tmpfile"
 }
 
-run_check yarn test
-run_check yarn lint
-run_check yarn typecheck
-run_check yarn api-extractor
-run_check swiftformat --lint ios
-run_check ./example/android/gradlew -p example/android ktlint
+staged=$(git diff --cached --name-only)
+
+changed() {
+  printf '%s\n' "$staged" | grep -qE "$1"
+}
+
+if changed '^src/'; then
+  run_check yarn test
+  run_check yarn lint
+  run_check yarn typecheck
+  run_check yarn api-extractor
+fi
+
+if changed '^ios/'; then
+  run_check swiftformat --lint ios
+fi
+
+if changed '^android/'; then
+  run_check ./example/android/gradlew -p example/android ktlint
+fi
