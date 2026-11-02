@@ -2,8 +2,10 @@ import {
   type ConfigPlugin,
   withMainActivity,
   withAndroidStyles,
+  withProjectBuildGradle,
 } from '@expo/config-plugins';
 import { setAppTheme } from './setAppTheme';
+import { setKotlinGradlePlugin } from './setKotlinGradlePlugin';
 import { setKotlinMainActivity } from './setKotlinMainActivity';
 import { setJavaMainActivity } from './setJavaMainActivity';
 
@@ -29,6 +31,15 @@ export const withAdyenAndroid: ConfigPlugin = (config) => {
 
   config = withAndroidStyles(config, async (newConfig) => {
     newConfig.modResults = setAppTheme(newConfig.modResults);
+    return newConfig;
+  });
+
+  config = withProjectBuildGradle(config, async (newConfig) => {
+    if (newConfig.modResults.language === 'groovy') {
+      newConfig.modResults.contents = setKotlinGradlePlugin(
+        newConfig.modResults.contents
+      );
+    }
     return newConfig;
   });
 
