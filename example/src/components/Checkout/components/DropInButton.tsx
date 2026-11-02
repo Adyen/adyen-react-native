@@ -6,7 +6,11 @@ const DropInButton = () => {
   const { start } = useAdyenCheckout();
   return (
     <View style={Styles.padded}>
-      <Button title="Drop-in" onPress={() => start('dropin')} />
+      <Button
+        title="Drop-in"
+        testID="dropin-button"
+        onPress={() => start('dropin')}
+      />
     </View>
   );
 };

@@ -13,22 +13,53 @@ type TabName = 'Sessions' | 'Advanced' | 'API-Only';
 type PageType = {
   title: string;
   route: keyof HomeStackParamList;
+  testID: string;
 };
 
 const TABS: TabName[] = ['Sessions', 'Advanced', 'API-Only'];
 
+const TAB_TEST_IDS: Record<TabName, string> = {
+  'Sessions': 'tab-sessions',
+  'Advanced': 'tab-advanced',
+  'API-Only': 'tab-api-only',
+};
+
 const TAB_CONTENT: Record<TabName, PageType[]> = {
   'Sessions': [
-    { title: 'Sessions DropIn', route: 'SessionsDropInCheckout' },
-    { title: 'Sessions Components', route: 'SessionsComponentsCheckout' },
+    {
+      title: 'Sessions DropIn',
+      route: 'SessionsDropInCheckout',
+      testID: 'menu-sessions-dropin',
+    },
+    {
+      title: 'Sessions Components',
+      route: 'SessionsComponentsCheckout',
+      testID: 'menu-sessions-components',
+    },
   ],
   'Advanced': [
-    { title: 'Advanced Checkout', route: 'AdvancedCheckout' },
-    { title: 'Partial Payment', route: 'PartialPaymentCheckout' },
+    {
+      title: 'Advanced Checkout',
+      route: 'AdvancedCheckout',
+      testID: 'menu-advanced-checkout',
+    },
+    {
+      title: 'Partial Payment',
+      route: 'PartialPaymentCheckout',
+      testID: 'menu-partial-payment',
+    },
   ],
   'API-Only': [
-    { title: 'Custom Card (CSE)', route: 'CustomCard' },
-    { title: 'Stored Cards', route: 'StoredCards' },
+    {
+      title: 'Custom Card (CSE)',
+      route: 'CustomCard',
+      testID: 'menu-custom-card',
+    },
+    {
+      title: 'Stored Cards',
+      route: 'StoredCards',
+      testID: 'menu-stored-cards',
+    },
   ],
 };
 
@@ -49,6 +80,7 @@ const Home = ({ navigation }: HomeScreenProps) => {
           <TabItem
             key={tab}
             label={tab}
+            testID={TAB_TEST_IDS[tab]}
             isActive={activeTab === tab}
             onPress={() => setActiveTab(tab)}
           />
@@ -56,10 +88,11 @@ const Home = ({ navigation }: HomeScreenProps) => {
       </View>
 
       <View style={Styles.content}>
-        {TAB_CONTENT[activeTab].map(({ title, route }) => (
+        {TAB_CONTENT[activeTab].map(({ title, route, testID }) => (
           <MenuButton
             key={title}
             title={title}
+            testID={testID}
             onPress={() => navigationHandler(route)}
           />
         ))}

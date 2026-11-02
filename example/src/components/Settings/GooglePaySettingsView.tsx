@@ -109,7 +109,11 @@ const GooglePaySettingsView = ({ navigation }: Props) => {
         onChange={setTotalPriceStatus}
       />
       <View style={Styles.formAction}>
-        <Button title="Save" onPress={saveAndGoBack} />
+        <Button
+          title="Save"
+          testID="google-pay-settings-save-button"
+          onPress={saveAndGoBack}
+        />
       </View>
     </PageScrollView>
   );
