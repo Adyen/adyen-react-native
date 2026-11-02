@@ -1,21 +1,18 @@
 [![npm version](https://img.shields.io/npm/v/@adyen/react-native.svg?style=flat-square)](https://www.npmjs.com/package/@adyen/react-native)
 [![Adyen iOS](https://img.shields.io/badge/ios-v5.27.0-brightgreen.svg)](https://github.com/Adyen/adyen-ios/releases/tag/5.27.0)
-[![Adyen Android](https://img.shields.io/badge/android-v5.20.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.20.0)
+[![Adyen Android](https://img.shields.io/badge/android-v5.22.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.22.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
 > [!Important]
 > **React Native New Architecture Support** </br>
 >
 > The **New Architecture** for React Native is exclusively supported on versions **0.76.0 and above**.
->
-> For projects using versions lower than 0.76.0, please:
->
-> - Continue utilizing the **Old Architecture**.
-> - Alternatively, disable bridgeless mode by setting `load(bridgelessEnabled=false)`.
 
-> [!Note]
+> [!Important]
 >
-> For compatibility with officially unsupported versions below v0.74 check [this document](docs/Compatibility.md).
+> Adyen Android SDK 5.22.0 requires Kotlin 2.3 (2.2.20 on Expo SDK 54), Android API 36 and Android Gradle plugin 8.9.1. It is supported from React Native 0.79 and Expo SDK 54.
+>
+> See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for what to set for your React Native or Expo version. The same document keeps notes for officially unsupported React Native versions below 0.74.
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
@@ -73,6 +70,8 @@ Add `@adyen/react-native` plugin to your `app.json`:
   }
 }
 ```
+
+For Android, install `expo-build-properties` and set the Kotlin and Android API values for your Expo SDK from [Compatibility](docs/Compatibility.md#expo).
 
 <details>
 <summary><strong>Plugin Configuration Options</strong></summary>
@@ -163,7 +162,9 @@ func application(_ application: UIApplication, continue userActivity: NSUserActi
 <details>
 <summary><strong>Android Setup</strong></summary>
 
-1. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.kt`:
+1. Set Kotlin, the Android API level and, on React Native 0.79, the Android Gradle plugin in `android/build.gradle` as listed in [Compatibility](docs/Compatibility.md#bare-react-native).
+
+2. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.kt`:
 
 ```kotlin
 import com.adyenreactnativesdk.AdyenCheckout
@@ -177,7 +178,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
 }
 ```
 
-2. Add `intent-filter` to your Checkout activity (for standalone components):
+3. Add `intent-filter` to your Checkout activity (for standalone components):
 
 ```xml
 <intent-filter>
@@ -188,7 +189,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
 </intent-filter>
 ```
 
-3. Add `returnURL` handler for standalone redirect components in `MainActivity.kt`:
+4. Add `returnURL` handler for standalone redirect components in `MainActivity.kt`:
 
 ```kotlin
 import android.content.Intent
@@ -201,7 +202,7 @@ override fun onNewIntent(intent: Intent) {
 }
 ```
 
-4. Ensure your app theme extends `Theme.MaterialComponents`:
+5. Ensure your app theme extends `Theme.MaterialComponents`:
 
 ```xml
 <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">

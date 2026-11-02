@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const {
+  addExpoBuildProperties,
+  expoBuildPropertiesFor,
+} = require('./configure-android-toolchain');
 
 const PROJECT_NAME = process.argv[2] || 'TestProject';
 const PACKAGE_NAME = process.argv[3] || 'com.testproject';
@@ -40,6 +44,14 @@ try {
     appJson.expo.plugins.unshift('@adyen/react-native');
     console.log('✓ Added @adyen/react-native plugin');
   }
+
+  // Adyen Android SDK needs a newer Kotlin than the template ships with and API 36
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  addExpoBuildProperties(
+    appJson.expo,
+    expoBuildPropertiesFor(packageJson.dependencies.expo)
+  );
+  console.log('✓ Configured expo-build-properties for Android');
 
   fs.writeFileSync('app.json', JSON.stringify(appJson, null, 2));
   console.log(`✓ Configured app.json with package: ${PACKAGE_NAME}`);
