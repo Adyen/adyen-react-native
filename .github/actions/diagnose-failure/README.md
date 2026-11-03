@@ -29,7 +29,7 @@ Without the secret, Droid is neither installed nor run, and the report says `FAC
 | `github-token`    | Yes      |                         | Token with read access to Actions (jobs, logs, artifacts). It is never passed to Droid.          |
 | `model`           | No       | `claude-sonnet-5-5`     | Model used by Droid.                                                                              |
 | `run-id`          | No       | `${{ github.run_id }}`  | Workflow run to diagnose.                                                                         |
-| `droid-version`   | No       | `1.1.0`                 | Droid CLI version. Only the default version has a checksum pinned in the action.                 |
+| `droid-version`   | No       | `1.1.0`                 | Droid CLI version. Passed to `setup-droid`. Only the default version has a checksum pinned.       |
 
 The calling job needs `contents: read` and `actions: read` permissions, a checkout of the repository and Node.js (the action runs [`scripts/diagnose-ci-failure.js`](../../../scripts/diagnose-ci-failure.js)).
 
@@ -48,7 +48,7 @@ The calling job needs `contents: read` and `actions: read` permissions, a checko
    - `appium_failure_*` (screenshots)
    - `appium_page_source_*`
    - `android_logs_*`: build and test output of `build-android.sh`, the Appium server log and, on failure, an `adb logcat -d` dump. They are written by [`e2e-tests/scripts/capture-android-logs.sh`](../../../e2e-tests/scripts/capture-android-logs.sh) and uploaded by the `Upload Android Logs` step of [`e2e_test.yml`](../../workflows/e2e_test.yml).
-3. **Install Droid.** The pinned Droid version is downloaded from `downloads.factory.ai` and its SHA-256 checksum is checked against values hard-coded in `action.yml`. On x64 runners without AVX2 the baseline build is used. A non-default `droid-version` is checked against the published checksum instead, with a warning. Auto-update is disabled.
+3. **Install Droid.** The installation is delegated to the [`setup-droid`](../setup-droid/README.md) action. It downloads the pinned Droid version from `downloads.factory.ai` and checks its SHA-256 checksum against values hard-coded in its `action.yml`. On x64 runners without AVX2 the baseline build is used. A non-default `droid-version` is checked against the published checksum instead, with a warning. Auto-update is disabled. If the installation fails, Droid is not run and the report explains why.
 4. **Run Droid.** `droid exec` reads the prompt, inspects the logs, excerpts, artifacts and the repository checkout, and replies with the sections **Classification** (`code`, `test`, `infra`, `flaky` or `unknown`), **Root cause**, **Evidence** and **Suggested patch**. The run is stopped after 12 minutes.
 5. **Report.** `diagnose-ci-failure.js report` renders the report. If the job list could not be fetched, Droid could not be installed, failed, timed out or returned invalid output, the report explains why and lists the failed jobs and their excerpts.
 

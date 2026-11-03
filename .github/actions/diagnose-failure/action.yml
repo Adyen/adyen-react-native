@@ -96,60 +96,9 @@ runs:
       id: install
       if: steps.collect.outputs.has_failures == 'true' && inputs.factory-api-key != ''
       continue-on-error: true
-      shell: bash
-      env:
-        DROID_VERSION: ${{ inputs.droid-version }}
-        FACTORY_DROID_AUTO_UPDATE_ENABLED: 'false'
-      run: |
-        set -euo pipefail
-
-        # Checksums are pinned only for the default version; they must be
-        # updated together with the default of the droid-version input.
-        pinned_version='1.1.0'
-        pinned_sha_x64='90485af9cde0cb4c144a4c5464992ad1d3004f51929c60c2e0d33baba4764ad8'
-        pinned_sha_x64_baseline='4508dec02980d0e98079962038838d08be27dc4b6050a5753830546796f7cb0e'
-        pinned_sha_arm64='96c554b59271b44b68ee31755694cbc17b9257634d30e39aa16f2e0848a368e8'
-
-        if ! [[ "$DROID_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "::error::Invalid droid-version: $DROID_VERSION"
-          exit 1
-        fi
-
-        # Same architecture selection as the official installer (https://app.factory.ai/cli)
-        case "$(uname -m)" in
-          x86_64|amd64) arch='x64' ;;
-          arm64|aarch64) arch='arm64' ;;
-          *) echo "::error::Unsupported architecture: $(uname -m)"; exit 1 ;;
-        esac
-        if [ "$arch" = 'x64' ] && ! grep -q -i avx2 /proc/cpuinfo 2>/dev/null; then
-          arch='x64-baseline'
-        fi
-
-        base_url="https://downloads.factory.ai/factory-cli/releases/$DROID_VERSION/linux/$arch"
-        tmp_dir="$(mktemp -d)"
-        trap 'rm -rf "$tmp_dir"' EXIT
-        curl -fsSL --retry 3 -o "$tmp_dir/droid" "$base_url/droid"
-
-        if [ "$DROID_VERSION" = "$pinned_version" ]; then
-          case "$arch" in
-            x64) expected="$pinned_sha_x64" ;;
-            x64-baseline) expected="$pinned_sha_x64_baseline" ;;
-            arm64) expected="$pinned_sha_arm64" ;;
-          esac
-        else
-          echo "::warning::No pinned checksum for droid $DROID_VERSION; verifying against the published checksum"
-          expected="$(curl -fsSL --retry 3 "$base_url/droid.sha256" | awk '{print $1}')"
-        fi
-
-        actual="$(sha256sum "$tmp_dir/droid" | awk '{print $1}')"
-        if [ -z "$expected" ] || [ "$actual" != "$expected" ]; then
-          echo "::error::Checksum mismatch for droid $DROID_VERSION ($arch)"
-          exit 1
-        fi
-
-        install -d "$HOME/.local/bin"
-        install -m 0755 "$tmp_dir/droid" "$HOME/.local/bin/droid"
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      uses: ./.github/actions/setup-droid
+      with:
+        droid-version: ${{ inputs.droid-version }}
 
     - name: Run Droid
       id: droid
