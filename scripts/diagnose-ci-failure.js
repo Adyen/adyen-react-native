@@ -280,10 +280,10 @@ function selectLinesWithinBudget(candidates, budget) {
     if (candidate.rank < 0 || used + candidate.cost <= budget) {
       selected.add(candidate.index);
       used += candidate.cost;
-    } else if (candidate.rank > 0) {
-      // Only closer context is worth keeping; do not skip ahead to far lines.
-      break;
     }
+    // A line that does not fit is skipped, not a stop: candidates are ranked
+    // across all windows, so a long line of one window must not starve the
+    // shorter, equally close context of another.
   }
   return selected;
 }

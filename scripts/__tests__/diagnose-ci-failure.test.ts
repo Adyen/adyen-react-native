@@ -437,6 +437,27 @@ describe('extractExcerpt', () => {
       expect(excerpt).toContain('##[error]second');
       expect(excerpt).toContain('ctx 40 ');
     });
+
+    it('keeps short preceding context of a later window when an earlier window has long lines that do not fit', () => {
+      const early = Array.from({ length: 10 }, (_, i) => [
+        `##[error]early ${i + 1} ${'x'.repeat(300)}`,
+        ...wide(`early-ctx-${i + 1}`, 4, 300),
+      ]).flat();
+      const log = stamp([
+        ...early,
+        ...numbered('gap', 300),
+        ...numbered('late-before', 20),
+        '##[error]late failure',
+        ...numbered('late-after', 5),
+      ]);
+
+      const excerpt: string = script.extractExcerpt(log, { maxBytes: 4000 });
+
+      expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(4000);
+      expect(excerpt).toContain('##[error]early 10 ');
+      expect(excerpt).toContain('late-before 20\n##[error]late failure');
+      expect(excerpt).toContain('late-before 19\nlate-before 20\n');
+    });
   });
 });
 
