@@ -304,6 +304,140 @@ describe('extractExcerpt', () => {
   it('returns an empty string for an empty log', () => {
     expect(script.extractExcerpt('')).toBe('');
   });
+
+  describe('byte budget with error anchors', () => {
+    const wide = (prefix: string, count: number, width = 200) =>
+      Array.from(
+        { length: count },
+        (_, i) => `${prefix} ${i + 1} ${'x'.repeat(width)}`
+      );
+
+    it('keeps every error window with its anchor and closest context when windows exceed the cap', () => {
+      const log = stamp([
+        ...wide('first-before', 90),
+        '##[error]first failure',
+        ...wide('first-after', 10),
+        ...wide('gap', 300),
+        ...wide('second-before', 90),
+        '##[error]second failure',
+        ...wide('second-after', 10),
+        ...wide('gap2', 300),
+        ...wide('third-before', 90),
+        '##[error]third failure',
+        ...wide('third-after', 10),
+      ]);
+
+      const excerpt: string = script.extractExcerpt(log, { maxBytes: 12000 });
+
+      expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(12000);
+      for (const name of ['first', 'second', 'third']) {
+        expect(excerpt).toContain(`##[error]${name} failure`);
+        expect(excerpt).toContain(`${name}-before 90 `);
+        expect(excerpt).toContain(`${name}-before 89 `);
+        expect(excerpt).not.toContain(`${name}-before 1 `);
+      }
+      expect(excerpt).toMatch(/\[\.\.\. truncated \d+ lines \.\.\.\]/);
+    });
+
+    it('trims context farthest from the anchor first and keeps lines in log order', () => {
+      const log = stamp([
+        ...wide('before', 80),
+        '##[error]boom',
+        ...wide('after', 10),
+      ]);
+
+      const lines: string[] = script
+        .extractExcerpt(log, { maxBytes: 4000 })
+        .split('\n');
+
+      const anchor = lines.indexOf('##[error]boom');
+      expect(anchor).toBeGreaterThan(0);
+      expect(lines[anchor - 1]).toMatch(/^before 80 /);
+      expect(lines[anchor + 1]).toMatch(/^after 1 /);
+      const numbers = lines
+        .map((line) => line.match(/^before (\d+) /))
+        .filter((match): match is RegExpMatchArray => match !== null)
+        .map((match) => Number(match[1]));
+      expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
+      expect(numbers[numbers.length - 1]).toBe(80);
+      expect(numbers[0]).toBeGreaterThan(60);
+      expect(lines[0]).toMatch(/^\[\.\.\. truncated \d+ lines \.\.\.\]$/);
+    });
+
+    it('keeps the error when long post-error lines would consume the budget', () => {
+      const log = stamp([
+        ...numbered('before', 30),
+        '##[error]boom',
+        ...wide('after', 10, 1990),
+      ]);
+
+      const excerpt: string = script.extractExcerpt(log, { maxBytes: 12800 });
+
+      expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(12800);
+      expect(excerpt).toContain('##[error]boom');
+      expect(excerpt).toContain('before 30\n##[error]boom');
+      expect(excerpt).toContain('before 29\nbefore 30\n##[error]boom');
+      expect(excerpt).toMatch(/\[\.\.\. truncated \d+ lines \.\.\.\]/);
+    });
+
+    it('keeps a single error near the start of a huge log with its context', () => {
+      const log = stamp([
+        'job start',
+        'setup',
+        '##[error]early failure',
+        ...wide('tail', 20000),
+      ]);
+
+      const excerpt: string = script.extractExcerpt(log);
+
+      expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(
+        script.EXCERPT_MAX_BYTES
+      );
+      expect(
+        excerpt.startsWith('job start\nsetup\n##[error]early failure\n')
+      ).toBe(true);
+      expect(excerpt).toContain('tail 10 ');
+      expect(excerpt).not.toContain('tail 11 ');
+      expect(excerpt).not.toContain('omitted');
+    });
+
+    it('keeps the anchor and closest context of every window under a tiny cap', () => {
+      const log = stamp([
+        ...wide('a', 20),
+        '##[error]one',
+        ...wide('gap', 200),
+        ...wide('b', 20),
+        '##[error]two',
+        ...wide('c', 5),
+      ]);
+
+      const excerpt: string = script.extractExcerpt(log, { maxBytes: 1500 });
+
+      expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(1500);
+      expect(excerpt).toContain('a 20 ');
+      expect(excerpt).toContain('##[error]one');
+      expect(excerpt).toContain('b 20 ');
+      expect(excerpt).toContain('##[error]two');
+      expect(excerpt).toMatch(/\[\.\.\. truncated \d+ lines \.\.\.\]/);
+    });
+
+    it('keeps every anchor of a merged window before dropping context', () => {
+      const log = stamp([
+        ...wide('ctx', 40),
+        '##[error]first',
+        ...wide('mid', 5),
+        '##[error]second',
+        ...wide('post', 10),
+      ]);
+
+      const excerpt: string = script.extractExcerpt(log, { maxBytes: 2500 });
+
+      expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(2500);
+      expect(excerpt).toContain('##[error]first');
+      expect(excerpt).toContain('##[error]second');
+      expect(excerpt).toContain('ctx 40 ');
+    });
+  });
 });
 
 describe('capRawLog', () => {
@@ -647,6 +781,46 @@ describe('collect', () => {
       expect(readFileSync(excerptPath, 'utf8')).toContain('truncated');
       const rawSize = statSync(join(outDir, 'logs', `${j.id}.log`)).size;
       expect(rawSize).toBeLessThanOrEqual(script.RAW_LOG_MAX_BYTES);
+    }
+    expect(total).toBeLessThanOrEqual(script.TOTAL_EXCERPT_MAX_BYTES);
+  });
+
+  it('keeps every error anchor of every job when the total cap forces trimming', () => {
+    const jobs = Array.from({ length: 10 }, (_, i) =>
+      job(700 + i, `Expo (${i}.0.0) / Android Test`, 'failure')
+    );
+    const wide = (prefix: string, count: number) =>
+      Array.from(
+        { length: count },
+        (_, i) => `${prefix} ${i + 1} ${'z'.repeat(300)}`
+      );
+    const logFor = (id: number) =>
+      stamp([
+        ...wide('one-before', 80),
+        `##[error]first failure of ${id}`,
+        ...wide('one-after', 10),
+        ...wide('gap', 100),
+        ...wide('two-before', 80),
+        `##[error]second failure of ${id}`,
+        ...wide('two-after', 10),
+      ]);
+    const logs = Object.fromEntries(jobs.map((j) => [j.id, logFor(j.id)]));
+    const gh = fakeGh({ jobsPages: [jobs], logs });
+
+    const { outDir } = run(gh);
+
+    let total = 0;
+    for (const j of jobs) {
+      const excerpt = readFileSync(
+        join(outDir, 'excerpts', `${j.id}.txt`),
+        'utf8'
+      );
+      total += Buffer.byteLength(excerpt);
+      expect(excerpt).toContain(`##[error]first failure of ${j.id}\n`);
+      expect(excerpt).toContain(`##[error]second failure of ${j.id}\n`);
+      expect(excerpt).toContain('one-before 80 ');
+      expect(excerpt).toContain('two-before 80 ');
+      expect(excerpt).toMatch(/\[\.\.\. truncated \d+ lines \.\.\.\]/);
     }
     expect(total).toBeLessThanOrEqual(script.TOTAL_EXCERPT_MAX_BYTES);
   });
@@ -1110,6 +1284,17 @@ describe('report', () => {
 
       expect(markdown).toContain(freeform);
       expect(markdown).not.toContain('Diagnosis unavailable');
+    });
+
+    it('includes the Droid result byte-for-byte, keeping trailing spaces and newlines', () => {
+      writeJobs();
+      const result = `${DIAGNOSIS}  \n\n\n   \n`;
+      const droidOutput = writeDroid(droidJson({ result }));
+
+      const { markdown } = runReport({ droidOutput });
+
+      expect(markdown).toContain(`\n\n${result}\n\n---\n<sub>`);
+      expect(markdown.endsWith('\n')).toBe(true);
     });
 
     it('omits footer details that are unavailable', () => {

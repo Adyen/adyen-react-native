@@ -155,22 +155,30 @@ runs:
       id: droid
       if: steps.collect.outputs.has_failures == 'true' && inputs.factory-api-key != '' && steps.install.outcome == 'success'
       continue-on-error: true
-      timeout-minutes: 12
       shell: bash
       env:
         FACTORY_API_KEY: ${{ inputs.factory-api-key }}
         FACTORY_DROID_AUTO_UPDATE_ENABLED: 'false'
         MODEL: ${{ inputs.model }}
       run: |
-        set -euo pipefail
+        set -uo pipefail
         out="$RUNNER_TEMP/e2e-diagnosis"
-        env -u GH_TOKEN -u GITHUB_TOKEN \
+        # Composite steps do not support timeout-minutes, so the deadline is
+        # enforced here. A timeout (124) or any other non-zero status fails
+        # this step, which makes the report step render the droid-failed case.
+        status=0
+        timeout --kill-after=30s 12m \
+          env -u GH_TOKEN -u GITHUB_TOKEN \
           droid exec \
           -f "$out/prompt.md" \
           --model "$MODEL" \
           --only-tools Read,Grep,Glob,LS \
           --cwd "$GITHUB_WORKSPACE" \
-          -o json > "$out/droid.json"
+          -o json > "$out/droid.json" || status=$?
+        if [ "$status" -eq 124 ]; then
+          echo "::warning::Droid did not finish within 12 minutes and was stopped"
+        fi
+        exit "$status"
 
     - name: Write report
       id: report

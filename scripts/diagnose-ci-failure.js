@@ -214,14 +214,15 @@ function mergeWindows(windows) {
     const last = merged[merged.length - 1];
     if (last && window.start <= last.end + 1) {
       last.end = Math.max(last.end, window.end);
+      last.anchors.push(...window.anchors);
     } else {
-      merged.push({ ...window });
+      merged.push({ ...window, anchors: [...window.anchors] });
     }
   }
   return merged;
 }
 
-function buildExcerptLines(content) {
+function findErrorWindows(content) {
   const errorIndexes = [];
   content.forEach((line, index) => {
     if (line.startsWith('##[error]') && !isMarkerError(line)) {
@@ -229,29 +230,106 @@ function buildExcerptLines(content) {
     }
   });
 
-  if (errorIndexes.length === 0) {
-    return content
-      .filter((line) => line.trim() !== '')
-      .slice(-FALLBACK_TAIL_LINES);
-  }
-
-  const windows = mergeWindows(
+  return mergeWindows(
     errorIndexes.map((index) => ({
       start: Math.max(0, index - LINES_BEFORE_ERROR),
       end: Math.min(content.length - 1, index + LINES_AFTER_ERROR),
+      anchors: [index],
     }))
   );
+}
 
-  const output = [];
-  let previousEnd = -1;
-  for (const window of windows) {
-    if (previousEnd !== -1) {
-      output.push(`[... ${window.start - previousEnd - 1} lines omitted ...]`);
-    }
-    output.push(...content.slice(window.start, window.end + 1));
-    previousEnd = window.end;
+// Lower rank is kept first. The first anchor of every window ranks -1 so each
+// window survives any budget; other anchors rank 0; context ranks by distance
+// to the nearest anchor, preceding context before following context.
+function rankWindowLines(content, window) {
+  const size = window.end - window.start + 1;
+  const isAnchor = new Array(size).fill(false);
+  for (const anchor of window.anchors) isAnchor[anchor - window.start] = true;
+
+  const sincePrevious = new Array(size);
+  let previous = -Infinity;
+  for (let i = 0; i < size; i += 1) {
+    if (isAnchor[i]) previous = i;
+    sincePrevious[i] = i - previous;
   }
-  return output;
+  const untilNext = new Array(size);
+  let next = Infinity;
+  for (let i = size - 1; i >= 0; i -= 1) {
+    if (isAnchor[i]) next = i;
+    untilNext[i] = next - i;
+  }
+
+  return content.slice(window.start, window.end + 1).map((line, i) => {
+    let rank;
+    if (isAnchor[i]) {
+      rank = window.start + i === window.anchors[0] ? -1 : 0;
+    } else if (untilNext[i] <= sincePrevious[i]) {
+      rank = 2 * untilNext[i] - 1;
+    } else {
+      rank = 2 * sincePrevious[i];
+    }
+    return { index: window.start + i, cost: Buffer.byteLength(line) + 1, rank };
+  });
+}
+
+function selectLinesWithinBudget(candidates, budget) {
+  const selected = new Set();
+  let used = 0;
+  for (const candidate of candidates) {
+    if (candidate.rank < 0 || used + candidate.cost <= budget) {
+      selected.add(candidate.index);
+      used += candidate.cost;
+    } else if (candidate.rank > 0) {
+      // Only closer context is worth keeping; do not skip ahead to far lines.
+      break;
+    }
+  }
+  return selected;
+}
+
+function renderWindows(content, windows, selected) {
+  const output = [];
+  windows.forEach((window, windowIndex) => {
+    if (windowIndex > 0) {
+      const gap = window.start - windows[windowIndex - 1].end - 1;
+      output.push(`[... ${gap} lines omitted ...]`);
+    }
+    let skipped = 0;
+    for (let i = window.start; i <= window.end; i += 1) {
+      if (selected.has(i)) {
+        if (skipped > 0) output.push(`[... truncated ${skipped} lines ...]`);
+        skipped = 0;
+        output.push(content[i]);
+      } else {
+        skipped += 1;
+      }
+    }
+    if (skipped > 0) output.push(`[... truncated ${skipped} lines ...]`);
+  });
+  return output.join('\n');
+}
+
+// Budget is spent on error anchors and their closest context first. Only if
+// the anchors alone exceed maxBytes (many separate windows with very long
+// lines) can the result go over the cap.
+function fitWindowsToBudget(content, windows, maxBytes) {
+  const candidates = windows
+    .flatMap((window) => rankWindowLines(content, window))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index);
+
+  let budget = maxBytes;
+  for (;;) {
+    const excerpt = renderWindows(
+      content,
+      windows,
+      selectLinesWithinBudget(candidates, budget)
+    );
+    const overflow = Buffer.byteLength(excerpt) - maxBytes;
+    // Markers are not part of the line budget; shrink it by what they cost.
+    if (overflow <= 0 || budget <= 0) return excerpt;
+    budget -= overflow;
+  }
 }
 
 function truncateFromStart(lines, maxBytes) {
@@ -274,10 +352,15 @@ function extractExcerpt(rawLog, { maxBytes = EXCERPT_MAX_BYTES } = {}) {
   while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
 
   const content = lines.slice(0, findContentEnd(lines));
-  const excerptLines = buildExcerptLines(content);
-  const excerpt = excerptLines.join('\n');
+  const windows = findErrorWindows(content);
+  if (windows.length > 0) return fitWindowsToBudget(content, windows, maxBytes);
+
+  const tail = content
+    .filter((line) => line.trim() !== '')
+    .slice(-FALLBACK_TAIL_LINES);
+  const excerpt = tail.join('\n');
   if (Buffer.byteLength(excerpt) <= maxBytes) return excerpt;
-  return truncateFromStart(excerptLines, maxBytes).join('\n');
+  return truncateFromStart(tail, maxBytes).join('\n');
 }
 
 function capRawLog(log, maxBytes = RAW_LOG_MAX_BYTES) {
@@ -616,7 +699,9 @@ function renderReport({ outDir, droidOutput, reason, env }) {
     if (reason || droid.error) {
       sections.push(unavailableSection(reason, droid, failedJobs));
     } else {
-      sections.push(droid.result.trimEnd(), reportFooter(droid.data, env));
+      // Droid's result is user-visible evidence: keep it byte-for-byte and
+      // put the separator after it.
+      sections.push(droid.result, reportFooter(droid.data, env));
     }
   }
 
