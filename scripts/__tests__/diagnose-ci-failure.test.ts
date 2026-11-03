@@ -955,3 +955,561 @@ describe('real run 41096464630 fixtures', () => {
     expect(prompt).toContain(join(outDir, 'excerpts', `${BLOCKING_ID}.txt`));
   });
 });
+
+describe('report', () => {
+  const RUN_URL = `https://github.com/${REPO}/actions/runs/${RUN_ID}`;
+  const REPORT_CAP_BYTES = 512 * 1024;
+
+  const JOB_ALLOWED = {
+    id: 124205245095,
+    name: 'Expo (latest, true) / Android Test',
+    url: `${RUN_URL}/job/124205245095`,
+    conclusion: 'failure',
+    blocking: false,
+    logFile: '/tmp/out/logs/124205245095.log',
+    excerptFile: '/tmp/out/excerpts/124205245095.txt',
+  };
+  const JOB_BLOCKING = {
+    id: 124205419341,
+    name: 'React Native (0.79.7) / Android Test',
+    url: `${RUN_URL}/job/124205419341`,
+    conclusion: 'failure',
+    blocking: true,
+    logFile: '/tmp/out/logs/124205419341.log',
+    excerptFile: '/tmp/out/excerpts/124205419341.txt',
+  };
+
+  const DIAGNOSIS = [
+    '### Classification',
+    '`infra` - both Android jobs',
+    '',
+    '### Root cause',
+    'The emulator ran out of disk space | and Gradle failed.',
+    '',
+    '### Evidence',
+    '- `e2e-tests/run-appium.js:42`',
+    '',
+    '### Suggested patch',
+    '```diff',
+    '--- a/.github/workflows/e2e_test.yml',
+    '+++ b/.github/workflows/e2e_test.yml',
+    '@@',
+    '-  disk-size: 2048M',
+    '+  disk-size: 4096M',
+    '```',
+  ].join('\n');
+
+  const droidJson = (overrides: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      type: 'result',
+      subtype: 'success',
+      is_error: false,
+      duration_ms: 93500,
+      num_turns: 7,
+      result: DIAGNOSIS,
+      session_id: 'session-1',
+      usage: { input_tokens: 10, output_tokens: 20 },
+      ...overrides,
+    });
+
+  let outDir: string;
+  let summaryFile: string;
+
+  beforeEach(() => {
+    outDir = join(workDir, 'out');
+    summaryFile = join(workDir, 'summary.md');
+    mkdirSync(outDir, { recursive: true });
+  });
+
+  function writeJobs(
+    failedJobs: unknown[] = [JOB_ALLOWED, JOB_BLOCKING],
+    extra: Record<string, unknown> = {}
+  ) {
+    writeFileSync(
+      join(outDir, 'jobs.json'),
+      JSON.stringify({
+        repo: REPO,
+        runId: RUN_ID,
+        runUrl: RUN_URL,
+        failedJobs,
+        ...extra,
+      })
+    );
+  }
+
+  function writeDroid(content: string) {
+    const file = join(outDir, 'droid.json');
+    writeFileSync(file, content);
+    return file;
+  }
+
+  function runReport(
+    options: {
+      droidOutput?: string;
+      reason?: string;
+      reportFile?: string;
+    } = {},
+    env: Record<string, string> = {}
+  ) {
+    const result = script.report({ outDir, ...options, env });
+    return {
+      ...result,
+      markdown: readFileSync(result.reportFile, 'utf8') as string,
+    };
+  }
+
+  describe('successful diagnosis', () => {
+    it('renders title, run link, jobs table, Droid body verbatim and footer', () => {
+      writeJobs();
+      const droidOutput = writeDroid(droidJson());
+
+      const { markdown, reportFile } = runReport(
+        { droidOutput },
+        { DROID_MODEL: 'claude-sonnet-5-5' }
+      );
+
+      expect(reportFile).toBe(join(outDir, 'report.md'));
+      expect(markdown).toContain('## 🤖 Droid E2E failure diagnosis');
+      expect(markdown).toContain(`[run ${RUN_ID}](${RUN_URL})`);
+      expect(markdown).toContain(
+        `| [Expo (latest, true) / Android Test](${JOB_ALLOWED.url}) | allowed failure | \`failure\` |`
+      );
+      expect(markdown).toContain(
+        `| [React Native (0.79.7) / Android Test](${JOB_BLOCKING.url}) | blocking | \`failure\` |`
+      );
+      expect(markdown).toContain(DIAGNOSIS);
+      expect(markdown).toContain(
+        '```diff\n--- a/.github/workflows/e2e_test.yml'
+      );
+      expect(markdown).toContain('claude-sonnet-5-5');
+      expect(markdown).toContain('7 turns');
+      expect(markdown).toContain('1m 34s');
+      expect(markdown).toMatch(/AI-generated/);
+      expect(markdown).toMatch(/verif/i);
+      expect(markdown.endsWith('\n')).toBe(true);
+    });
+
+    it('lists the Droid body after the jobs table and the footer after the body', () => {
+      writeJobs();
+      const { markdown } = runReport({ droidOutput: writeDroid(droidJson()) });
+
+      const table = markdown.indexOf('| [React Native (0.79.7)');
+      const body = markdown.indexOf(DIAGNOSIS);
+      const footer = markdown.indexOf('AI-generated');
+      expect(table).toBeGreaterThan(-1);
+      expect(body).toBeGreaterThan(table);
+      expect(footer).toBeGreaterThan(body);
+    });
+
+    it('includes the body verbatim when Droid omits the expected headings', () => {
+      writeJobs();
+      const freeform = 'Looks like a flaky emulator boot.\n\n- retry it\n';
+      const droidOutput = writeDroid(droidJson({ result: freeform }));
+
+      const { markdown } = runReport({ droidOutput });
+
+      expect(markdown).toContain(freeform);
+      expect(markdown).not.toContain('Diagnosis unavailable');
+    });
+
+    it('omits footer details that are unavailable', () => {
+      writeJobs();
+      const droidOutput = writeDroid(
+        JSON.stringify({ is_error: false, result: 'body' })
+      );
+
+      const { markdown } = runReport({ droidOutput }, {});
+
+      expect(markdown).toContain('body');
+      expect(markdown).toMatch(/AI-generated/);
+      expect(markdown).not.toContain('undefined');
+      expect(markdown).not.toContain('NaN');
+      expect(markdown).not.toContain('turns');
+    });
+
+    it('escapes table-breaking characters in job names and skips non-http links', () => {
+      writeJobs([
+        {
+          ...JOB_BLOCKING,
+          name: 'React Native (a|b) / [Android] Test',
+          url: 'ftp://example.com/job',
+        },
+      ]);
+
+      const { markdown } = runReport({ droidOutput: writeDroid(droidJson()) });
+
+      expect(markdown).toContain('React Native (a\\|b) / \\[Android\\] Test');
+      expect(markdown).not.toContain('ftp://');
+    });
+  });
+
+  describe('fallbacks', () => {
+    it.each([
+      ['missing-key', 'FACTORY_API_KEY is not configured; diagnosis skipped'],
+      ['droid-failed', 'Diagnosis unavailable'],
+    ])(
+      'renders the %s fallback with the jobs table and exits cleanly',
+      (reason, message) => {
+        writeJobs();
+
+        const { markdown } = runReport({ reason });
+
+        expect(markdown).toContain('## 🤖 Droid E2E failure diagnosis');
+        expect(markdown).toContain(message);
+        expect(markdown).toContain(`[Expo (latest, true) / Android Test]`);
+        expect(markdown).toContain('| blocking |');
+        expect(markdown).not.toContain('### Classification');
+      }
+    );
+
+    it('ignores a Droid output file when the reason says the run was skipped or failed', () => {
+      writeJobs();
+      const droidOutput = writeDroid(droidJson());
+
+      expect(
+        runReport({ reason: 'droid-failed', droidOutput }).markdown
+      ).toContain('Diagnosis unavailable');
+      expect(
+        runReport({ reason: 'missing-key', droidOutput }).markdown
+      ).toContain('FACTORY_API_KEY is not configured');
+    });
+
+    it('points at the collected excerpts when Droid failed', () => {
+      writeJobs();
+
+      const { markdown } = runReport({ reason: 'droid-failed' });
+
+      expect(markdown).toContain(JOB_ALLOWED.excerptFile);
+      expect(markdown).toContain(JOB_BLOCKING.excerptFile);
+    });
+
+    it('renders collect-failed without jobs.json and links the current run from the environment', () => {
+      const { markdown } = runReport(
+        { reason: 'collect-failed' },
+        {
+          GITHUB_SERVER_URL: 'https://github.com',
+          GITHUB_REPOSITORY: REPO,
+          GITHUB_RUN_ID: RUN_ID,
+        }
+      );
+
+      expect(markdown).toContain('## 🤖 Droid E2E failure diagnosis');
+      expect(markdown).toContain('Could not list the jobs of this run');
+      expect(markdown).toContain(RUN_URL);
+      expect(markdown).not.toContain('| Job |');
+    });
+
+    it('renders collect-failed even when nothing is known about the run', () => {
+      const { markdown } = runReport({ reason: 'collect-failed' });
+
+      expect(markdown).toContain('Could not list the jobs of this run');
+    });
+
+    it('treats a missing Droid output file as unavailable and still shows the table', () => {
+      writeJobs();
+
+      const { markdown } = runReport({
+        droidOutput: join(outDir, 'does-not-exist.json'),
+      });
+
+      expect(markdown).toContain('Diagnosis unavailable');
+      expect(markdown).toContain('| blocking |');
+    });
+
+    it('treats an omitted --droid-output the same way', () => {
+      writeJobs();
+
+      expect(runReport().markdown).toContain('Diagnosis unavailable');
+    });
+
+    it.each([
+      ['unparseable JSON', 'not json at all {'],
+      ['an empty file', ''],
+      ['a JSON array', '[]'],
+      ['JSON null', 'null'],
+      ['is_error true', droidJson({ is_error: true, result: 'Auth failed' })],
+      ['an empty result', droidJson({ result: '' })],
+      ['a whitespace-only result', droidJson({ result: '  \n ' })],
+      ['a non-string result', droidJson({ result: { a: 1 } })],
+      ['a missing result', JSON.stringify({ is_error: false })],
+    ])('renders "Diagnosis unavailable" for %s', (_name, content) => {
+      writeJobs();
+      const droidOutput = writeDroid(content);
+
+      const { markdown } = runReport({ droidOutput });
+
+      expect(markdown).toContain('Diagnosis unavailable');
+      expect(markdown).toContain(`[React Native (0.79.7) / Android Test]`);
+      expect(markdown).not.toContain('### Classification');
+    });
+
+    it('surfaces the error message when Droid reports is_error', () => {
+      writeJobs();
+      const droidOutput = writeDroid(
+        droidJson({ is_error: true, result: 'Rate limit exceeded' })
+      );
+
+      expect(runReport({ droidOutput }).markdown).toContain(
+        'Rate limit exceeded'
+      );
+    });
+
+    it('does not leak environment values into the report', () => {
+      writeJobs();
+
+      const { markdown } = runReport(
+        { reason: 'droid-failed' },
+        { FACTORY_API_KEY: 'fk-super-secret', GH_TOKEN: 'ghs_secret' }
+      );
+
+      expect(markdown).not.toContain('fk-super-secret');
+      expect(markdown).not.toContain('ghs_secret');
+    });
+
+    it('renders jobs whose log could not be fetched without excerpt pointers', () => {
+      writeJobs([
+        {
+          ...JOB_BLOCKING,
+          logFile: null,
+          excerptFile: null,
+          logError: 'HTTP 410',
+        },
+      ]);
+
+      const { markdown } = runReport({ reason: 'droid-failed' });
+
+      expect(markdown).toContain('| blocking |');
+      expect(markdown).not.toContain('null');
+    });
+  });
+
+  describe('no failures', () => {
+    it('renders a one-line report when jobs.json lists zero failed jobs', () => {
+      writeJobs([]);
+
+      const { markdown } = runReport({
+        droidOutput: join(outDir, 'missing.json'),
+      });
+
+      expect(markdown).toContain('No failed E2E jobs in this run');
+      expect(markdown).toContain(RUN_URL);
+      expect(markdown).not.toContain('| Job |');
+      expect(markdown).not.toContain('Diagnosis unavailable');
+      expect(markdown.trim().split('\n')).toHaveLength(1);
+    });
+
+    it('prefers the no-failure report over a missing-key reason', () => {
+      writeJobs([]);
+
+      expect(runReport({ reason: 'missing-key' }).markdown).toContain(
+        'No failed E2E jobs in this run'
+      );
+    });
+  });
+
+  describe('output files', () => {
+    it('writes to --report-file and creates parent directories', () => {
+      writeJobs();
+      const reportFile = join(workDir, 'nested', 'dir', 'custom.md');
+
+      const result = runReport({ reportFile, reason: 'droid-failed' });
+
+      expect(result.reportFile).toBe(reportFile);
+      expect(existsSync(join(outDir, 'report.md'))).toBe(false);
+      expect(result.markdown).toContain('Diagnosis unavailable');
+    });
+
+    it('appends identical content to GITHUB_STEP_SUMMARY without overwriting it', () => {
+      writeJobs();
+      writeFileSync(summaryFile, '## Earlier step\n');
+      const droidOutput = writeDroid(droidJson());
+
+      const { markdown } = runReport(
+        { droidOutput },
+        { GITHUB_STEP_SUMMARY: summaryFile }
+      );
+
+      expect(readFileSync(summaryFile, 'utf8')).toBe(
+        `## Earlier step\n${markdown}`
+      );
+    });
+
+    it('creates the summary file when it does not exist yet and appends on repeat runs', () => {
+      writeJobs();
+
+      const first = runReport(
+        { reason: 'droid-failed' },
+        { GITHUB_STEP_SUMMARY: summaryFile }
+      );
+      runReport(
+        { reason: 'droid-failed' },
+        { GITHUB_STEP_SUMMARY: summaryFile }
+      );
+
+      expect(readFileSync(summaryFile, 'utf8')).toBe(
+        `${first.markdown}${first.markdown}`
+      );
+    });
+
+    it('does not touch a summary when GITHUB_STEP_SUMMARY is unset', () => {
+      writeJobs();
+
+      runReport({ reason: 'droid-failed' });
+
+      expect(existsSync(summaryFile)).toBe(false);
+    });
+  });
+
+  describe('size cap', () => {
+    it('truncates reports above 512 KiB with a visible notice, keeping the start', () => {
+      writeJobs();
+      const huge = `${'x'.repeat(100)}\n`.repeat(8000);
+      const droidOutput = writeDroid(droidJson({ result: `START\n${huge}` }));
+
+      const { markdown } = runReport(
+        { droidOutput },
+        { GITHUB_STEP_SUMMARY: summaryFile }
+      );
+
+      expect(Buffer.byteLength(markdown)).toBeLessThanOrEqual(REPORT_CAP_BYTES);
+      expect(markdown).toContain('START');
+      expect(markdown).toMatch(/truncated/i);
+      expect(markdown).toContain('512 KiB');
+      expect(readFileSync(summaryFile, 'utf8')).toBe(markdown);
+    });
+
+    it('does not cut multi-byte characters in half and closes an open code fence', () => {
+      writeJobs();
+      const body = `\`\`\`diff\n${'é'.repeat(REPORT_CAP_BYTES)}`;
+      const droidOutput = writeDroid(droidJson({ result: body }));
+
+      const { markdown } = runReport({ droidOutput });
+
+      expect(markdown).not.toContain('\uFFFD');
+      expect(Buffer.byteLength(markdown)).toBeLessThanOrEqual(REPORT_CAP_BYTES);
+      const fences = markdown.split('\n').filter((l) => l.startsWith('```'));
+      expect(fences.length % 2).toBe(0);
+      expect(markdown.trimEnd().split('\n').pop()).toMatch(/truncated/i);
+    });
+
+    it('leaves reports at or below the cap untouched', () => {
+      writeJobs();
+      const droidOutput = writeDroid(droidJson());
+
+      expect(runReport({ droidOutput }).markdown).not.toMatch(/truncated/i);
+    });
+  });
+
+  describe('parseArgs', () => {
+    it('parses report arguments in both forms', () => {
+      expect(
+        script.parseArgs([
+          'report',
+          '--out-dir',
+          '/tmp/out',
+          '--droid-output=/tmp/out/droid.json',
+          '--reason',
+          'droid-failed',
+          '--report-file',
+          '/tmp/r.md',
+        ])
+      ).toEqual({
+        command: 'report',
+        outDir: '/tmp/out',
+        droidOutput: '/tmp/out/droid.json',
+        reason: 'droid-failed',
+        reportFile: '/tmp/r.md',
+      });
+    });
+
+    it('needs only --out-dir', () => {
+      expect(script.parseArgs(['report', '--out-dir', '/tmp/out'])).toEqual({
+        command: 'report',
+        outDir: '/tmp/out',
+      });
+    });
+
+    it.each([
+      [['report'], 'missing --out-dir'],
+      [['report', '--out-dir', '/tmp/o', '--reason', 'bogus'], 'bad reason'],
+      [['report', '--out-dir', '/tmp/o', '--repo', REPO], 'collect-only flag'],
+      [['report', '--out-dir'], 'flag without value'],
+      [
+        [
+          'collect',
+          '--repo',
+          REPO,
+          '--run-id',
+          RUN_ID,
+          '--out-dir',
+          '/o',
+          '--reason',
+          'missing-key',
+        ],
+        'report-only flag on collect',
+      ],
+    ])('rejects %j (%s) with a usage error', (argv) => {
+      expect(() => script.parseArgs(argv)).toThrow(script.UsageError);
+    });
+  });
+
+  describe('CLI', () => {
+    it('exits 0 and writes report.md for a fallback without jobs.json', () => {
+      const result = spawnSync(
+        'node',
+        [SCRIPT, 'report', '--out-dir', outDir, '--reason', 'collect-failed'],
+        {
+          encoding: 'utf8',
+          env: { PATH: process.env.PATH, GITHUB_STEP_SUMMARY: summaryFile },
+        }
+      );
+
+      expect(result.status).toBe(0);
+      expect(readFileSync(join(outDir, 'report.md'), 'utf8')).toContain(
+        'Could not list the jobs of this run'
+      );
+      expect(readFileSync(summaryFile, 'utf8')).toBe(
+        readFileSync(join(outDir, 'report.md'), 'utf8')
+      );
+    });
+
+    it('main returns 0 for a report and non-zero for report usage errors', () => {
+      writeJobs();
+      const quiet = { stderr: () => undefined, stdout: () => undefined };
+
+      expect(
+        script.main(['report', '--out-dir', outDir], { env: {}, ...quiet })
+      ).toBe(0);
+      expect(script.main(['report'], { env: {}, ...quiet })).not.toBe(0);
+    });
+  });
+
+  describe('real run 41096464630 jobs', () => {
+    it('reports both real failed jobs with the right blocking status after collect', () => {
+      const FIXTURES = join(__dirname, '__fixtures__', 'diagnose-ci-failure');
+      const read = (name: string) => readFileSync(join(FIXTURES, name), 'utf8');
+      script.collect(
+        { repo: REPO, runId: RUN_ID, outDir, repoDir: '/w', env: {} },
+        (args: string[]) => {
+          const endpoint = args.find((a) => a.startsWith('repos/')) ?? '';
+          if (endpoint.includes('/jobs?'))
+            return read('jobs-run-41096464630.json');
+          if (endpoint.endsWith('/124205245095/logs'))
+            return read('job-124205245095-allowed.log');
+          return read('job-124205419341-blocking.log');
+        }
+      );
+      const droidOutput = writeDroid(droidJson());
+
+      const { markdown } = runReport({ droidOutput });
+
+      expect(markdown).toContain(
+        '[Expo (latest, true) / Android Test](https://github.com/Adyen/adyen-react-native/actions/runs/41096464630/job/124205245095) | allowed failure'
+      );
+      expect(markdown).toContain(
+        '[React Native (0.79.7) / Android Test](https://github.com/Adyen/adyen-react-native/actions/runs/41096464630/job/124205419341) | blocking'
+      );
+      expect(markdown).toContain(DIAGNOSIS);
+    });
+  });
+});

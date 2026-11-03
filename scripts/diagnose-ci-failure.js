@@ -8,8 +8,11 @@ const { spawnSync } = require('child_process');
 
 const USAGE = `Usage:
   node diagnose-ci-failure.js collect --repo <owner/name> --run-id <id> --out-dir <dir> [--artifacts-dir <dir>]
+  node diagnose-ci-failure.js report --out-dir <dir> [--droid-output <file>] [--reason missing-key|droid-failed|collect-failed] [--report-file <path>]
 
-Environment: GH_TOKEN with read access to the repository's Actions.`;
+Environment:
+  collect: GH_TOKEN with read access to the repository's Actions.
+  report: optional DROID_MODEL (shown in the footer) and GITHUB_STEP_SUMMARY (the report is appended to it).`;
 
 const E2E_JOB_PREFIXES = ['React Native (', 'Expo (', 'Android AGP 9 ('];
 const FAILED_CONCLUSIONS = ['failure', 'timed_out'];
@@ -30,6 +33,14 @@ const MAX_LINE_CHARS = 2000;
 const TRUNCATION_MARKER_RESERVE_BYTES = 64;
 const GH_MAX_BUFFER_BYTES = 512 * 1024 * 1024;
 
+const REPORT_REASONS = ['missing-key', 'droid-failed', 'collect-failed'];
+const REPORT_TITLE = '## 🤖 Droid E2E failure diagnosis';
+const REPORT_MAX_BYTES = 512 * 1024;
+const REPORT_TRUNCATION_NOTICE =
+  '> ⚠️ Report truncated: it exceeded the 512 KiB limit.';
+const REPORT_NOTICE_RESERVE_BYTES = 256;
+const DROID_ERROR_MAX_CHARS = 1000;
+
 const TIMESTAMP_PREFIX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z ?/;
 // eslint-disable-next-line no-control-regex
 const ANSI_ESCAPE = /\u001b\[[0-9;]*[A-Za-z]/g;
@@ -37,16 +48,25 @@ const POST_JOB_START = /^(?:Post job cleanup\.?|##\[group\]Post )/;
 
 class UsageError extends Error {}
 
-const FLAG_OPTIONS = {
-  '--repo': 'repo',
-  '--run-id': 'runId',
-  '--out-dir': 'outDir',
-  '--artifacts-dir': 'artifactsDir',
+const COMMAND_FLAGS = {
+  collect: {
+    '--repo': 'repo',
+    '--run-id': 'runId',
+    '--out-dir': 'outDir',
+    '--artifacts-dir': 'artifactsDir',
+  },
+  report: {
+    '--out-dir': 'outDir',
+    '--droid-output': 'droidOutput',
+    '--reason': 'reason',
+    '--report-file': 'reportFile',
+  },
 };
 
 function parseArgs(argv) {
   const [command, ...rest] = argv;
-  if (command !== 'collect') {
+  const flagOptions = COMMAND_FLAGS[command];
+  if (!flagOptions) {
     throw new UsageError(
       command ? `Unknown command: ${command}` : 'Missing command'
     );
@@ -57,7 +77,7 @@ function parseArgs(argv) {
     const token = rest[i];
     const equals = token.indexOf('=');
     const flag = equals === -1 ? token : token.slice(0, equals);
-    const key = FLAG_OPTIONS[flag];
+    const key = flagOptions[flag];
     if (!key) throw new UsageError(`Unknown argument: ${token}`);
 
     let value;
@@ -71,9 +91,16 @@ function parseArgs(argv) {
     options[key] = value;
   }
 
+  if (!options.outDir) throw new UsageError('Missing --out-dir');
+  if (command === 'report') {
+    if (options.reason && !REPORT_REASONS.includes(options.reason)) {
+      throw new UsageError(`Invalid --reason: ${options.reason}`);
+    }
+    return options;
+  }
+
   if (!options.repo) throw new UsageError('Missing --repo');
   if (!options.runId) throw new UsageError('Missing --run-id');
-  if (!options.outDir) throw new UsageError('Missing --out-dir');
   if (!/^[\w.-]+\/[\w.-]+$/.test(options.repo)) {
     throw new UsageError(`Invalid --repo: ${options.repo}`);
   }
@@ -427,6 +454,191 @@ function collect(options, runGh = defaultRunGh) {
   return { runUrl, failedJobs, outDir };
 }
 
+function readJsonFile(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function readJobsFile(outDir) {
+  const jobs = readJsonFile(path.join(outDir, 'jobs.json'));
+  if (!jobs || typeof jobs !== 'object' || !Array.isArray(jobs.failedJobs)) {
+    return null;
+  }
+  return jobs;
+}
+
+function readDroidOutput(file) {
+  if (!file) return { error: 'No Droid output was produced.' };
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return { error: 'No Droid output was produced.' };
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return { error: 'Droid output could not be parsed as JSON.' };
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return { error: 'Droid output was not a JSON object.' };
+  }
+
+  const result = typeof data.result === 'string' ? data.result : '';
+  if (data.is_error === true) {
+    return { error: 'Droid reported an error.', detail: result };
+  }
+  if (!result.trim()) {
+    return { error: 'Droid returned an empty result.' };
+  }
+  return { data, result };
+}
+
+function escapeTableText(text) {
+  return String(text).replace(/[|[\]]/g, (char) => `\\${char}`);
+}
+
+function runLink(runUrl, runId) {
+  if (!runUrl) return null;
+  return `[${runId ? `run ${runId}` : 'this run'}](${runUrl})`;
+}
+
+function jobsTable(failedJobs) {
+  const rows = failedJobs.map((job) => {
+    const name = escapeTableText(job.name);
+    const label = /^https?:\/\//.test(job.url || '')
+      ? `[${name}](${job.url})`
+      : name;
+    return `| ${label} | ${statusLabel(job)} | \`${job.conclusion}\` |`;
+  });
+  return ['| Job | Status | Conclusion |', '| --- | --- | --- |', ...rows].join(
+    '\n'
+  );
+}
+
+function evidencePointers(failedJobs) {
+  const lines = failedJobs.flatMap((job) => {
+    if (job.logError)
+      return [`- ${job.name}: log unavailable (${job.logError})`];
+    if (!job.excerptFile) return [];
+    return [`- ${job.name}: \`${job.excerptFile}\``];
+  });
+  if (lines.length === 0) return null;
+  return `Collected failure excerpts (on the runner):\n\n${lines.join('\n')}`;
+}
+
+function formatDuration(milliseconds) {
+  const seconds = Math.round(milliseconds / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
+function reportFooter(data, env) {
+  const details = [];
+  if (env.DROID_MODEL) details.push(`model \`${env.DROID_MODEL}\``);
+  if (Number.isFinite(data.num_turns)) details.push(`${data.num_turns} turns`);
+  if (Number.isFinite(data.duration_ms)) {
+    details.push(formatDuration(data.duration_ms));
+  }
+  const summary = details.length > 0 ? `${details.join(', ')}. ` : '';
+  return `---\n<sub>${summary}This diagnosis is AI-generated and must be verified before acting on it.</sub>`;
+}
+
+function quote(text) {
+  return text
+    .slice(0, DROID_ERROR_MAX_CHARS)
+    .split('\n')
+    .map((line) => `> ${line}`)
+    .join('\n');
+}
+
+function unavailableSection(reason, droid, failedJobs) {
+  if (reason === 'missing-key') {
+    return '⚠️ FACTORY_API_KEY is not configured; diagnosis skipped.';
+  }
+  const lines = [
+    reason === 'droid-failed'
+      ? '⚠️ Diagnosis unavailable: the Droid run failed.'
+      : `⚠️ Diagnosis unavailable: ${droid.error}`,
+  ];
+  if (droid.detail && droid.detail.trim()) lines.push(quote(droid.detail));
+  const pointers = evidencePointers(failedJobs);
+  if (pointers) lines.push(pointers);
+  return lines.join('\n\n');
+}
+
+function truncateReport(markdown) {
+  if (Buffer.byteLength(markdown) <= REPORT_MAX_BYTES) return markdown;
+
+  const buffer = Buffer.from(markdown, 'utf8');
+  let cut = REPORT_MAX_BYTES - REPORT_NOTICE_RESERVE_BYTES;
+  // Step back over UTF-8 continuation bytes so no character is split.
+  while (cut > 0 && buffer[cut] >= 0x80 && buffer[cut] < 0xc0) cut -= 1;
+
+  let kept = buffer.subarray(0, cut).toString('utf8').trimEnd();
+  const openFence = kept.split('\n').filter((l) => l.startsWith('```')).length;
+  if (openFence % 2 === 1) kept += '\n```';
+  return `${kept}\n\n${REPORT_TRUNCATION_NOTICE}\n`;
+}
+
+function renderReport({ outDir, droidOutput, reason, env }) {
+  const jobs = reason === 'collect-failed' ? null : readJobsFile(outDir);
+  const failedJobs = jobs ? jobs.failedJobs : [];
+  const runUrl =
+    (jobs && jobs.runUrl) ||
+    (env.GITHUB_REPOSITORY && env.GITHUB_RUN_ID
+      ? `${env.GITHUB_SERVER_URL || 'https://github.com'}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}`
+      : null);
+  const link = runLink(runUrl, jobs ? jobs.runId : env.GITHUB_RUN_ID);
+
+  if (jobs && failedJobs.length === 0) {
+    return `**Droid E2E failure diagnosis:** No failed E2E jobs in this run${link ? ` (${link})` : ''}.\n`;
+  }
+
+  const sections = [REPORT_TITLE];
+  if (link) sections.push(`Run: ${link}`);
+
+  if (reason === 'collect-failed') {
+    sections.push(
+      '⚠️ Could not list the jobs of this run, so no diagnosis was attempted.'
+    );
+  } else {
+    if (failedJobs.length > 0) sections.push(jobsTable(failedJobs));
+    const droid =
+      reason === 'missing-key' || reason === 'droid-failed'
+        ? { error: '' }
+        : readDroidOutput(droidOutput);
+    if (reason || droid.error) {
+      sections.push(unavailableSection(reason, droid, failedJobs));
+    } else {
+      sections.push(droid.result.trimEnd(), reportFooter(droid.data, env));
+    }
+  }
+
+  return truncateReport(`${sections.join('\n\n')}\n`);
+}
+
+function report(options) {
+  const { env = process.env, reason, droidOutput } = options;
+  const outDir = path.resolve(options.outDir);
+  const reportFile = path.resolve(
+    options.reportFile || path.join(outDir, 'report.md')
+  );
+  const markdown = renderReport({ outDir, droidOutput, reason, env });
+
+  fs.mkdirSync(path.dirname(reportFile), { recursive: true });
+  fs.writeFileSync(reportFile, markdown);
+  if (env.GITHUB_STEP_SUMMARY)
+    fs.appendFileSync(env.GITHUB_STEP_SUMMARY, markdown);
+
+  return { reportFile, markdown };
+}
+
 function main(argv = process.argv.slice(2), deps = {}) {
   const env = deps.env || process.env;
   const runGh = deps.runGh || ((args) => defaultRunGh(args, env));
@@ -437,6 +649,11 @@ function main(argv = process.argv.slice(2), deps = {}) {
 
   try {
     const options = parseArgs(argv);
+    if (options.command === 'report') {
+      const { reportFile } = report({ ...options, env });
+      stdout(`Wrote report to ${reportFile}`);
+      return 0;
+    }
     const { failedJobs } = collect({ ...options, env }, runGh);
     stdout(`Found ${failedJobs.length} failed E2E job(s).`);
     return 0;
@@ -454,6 +671,7 @@ module.exports = {
   EXCERPT_MAX_BYTES,
   TOTAL_EXCERPT_MAX_BYTES,
   RAW_LOG_MAX_BYTES,
+  REPORT_MAX_BYTES,
   UsageError,
   buildPrompt,
   capRawLog,
@@ -464,6 +682,7 @@ module.exports = {
   main,
   parseArgs,
   parseJobPages,
+  report,
   selectFailedJobs,
 };
 
