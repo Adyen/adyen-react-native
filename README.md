@@ -410,6 +410,8 @@ We strongly encourage you to join us in contributing to this repository so every
 
 Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
 
+Failed E2E jobs on pull requests are diagnosed by Droid; see [Diagnose E2E Failure](.github/actions/diagnose-failure/README.md).
+
 # Support
 
 If you have a feature request, or spotted a bug or a technical problem, [create a GitHub issue](https://github.com/Adyen/adyen-react-native/issues/new/choose). For other questions, contact our Support Team via [Customer Area](https://ca-live.adyen.com/ca/ca/contactUs/support.shtml) or via email: support@adyen.com
