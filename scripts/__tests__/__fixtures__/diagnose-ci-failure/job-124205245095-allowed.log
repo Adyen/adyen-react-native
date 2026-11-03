@@ -1,0 +1,257 @@
+﻿2026-10-30T17:14:18.0776128Z Current runner version: '2.338.2'
+2026-10-30T17:14:18.0797385Z ##[group]Runner Image Provisioner
+2026-10-30T17:14:18.0798184Z Hosted Compute Agent
+2026-10-30T17:14:18.0798927Z Version: 20261021.618
+2026-10-30T17:14:18.0799482Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-30T17:14:18.0800142Z Build Date: 2026-10-21T00:45:21Z
+2026-10-30T17:14:18.0800805Z Worker ID: {5a186e6e-ad31-4b5f-a66a-4d0ccb296de0}
+2026-10-30T17:14:18.0801425Z Region: centralus
+2026-10-30T17:14:18.0801973Z Cloud: Azure
+2026-10-30T17:14:18.0802465Z ##[endgroup]
+2026-10-30T17:14:18.0803702Z ##[group]Operating System
+2026-10-30T17:14:18.0804255Z Ubuntu
+2026-10-30T17:14:18.0804734Z 24.04.5
+2026-10-30T17:14:18.0805245Z LTS
+2026-10-30T17:14:18.0805751Z ##[endgroup]
+2026-10-30T17:14:18.0806278Z ##[group]Runner Image
+2026-10-30T17:14:18.0806831Z Image: ubuntu-24.04
+2026-10-30T17:14:18.0807346Z Version: 20261025.353.1
+2026-10-30T17:14:18.0808723Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-30T17:14:18.0810103Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-10-30T17:14:18.0810994Z ##[endgroup]
+2026-10-30T17:14:18.0812011Z ##[group]GITHUB_TOKEN Permissions
+2026-10-30T17:14:18.0813573Z Contents: read
+2026-10-30T17:14:18.0814141Z Metadata: read
+2026-10-30T17:14:18.0814726Z ##[endgroup]
+2026-10-30T17:14:18.0816424Z Secret source: Actions
+2026-10-30T17:14:18.0817343Z Cache mode: write
+2026-10-30T17:14:18.0817927Z Prepare workflow directory
+2026-10-30T17:14:18.1244662Z Prepare all required actions
+2026-10-30T17:14:18.1283845Z Getting action download info
+2026-10-30T17:19:00.0000000Z [fixture: log lines 31-1599 omitted]
+2026-10-30T17:19:08.9676832Z INFO         |   androidboot.hardware=ranchu
+2026-10-30T17:19:08.9677346Z INFO         |   androidboot.hardware.gltransport=pipe
+2026-10-30T17:19:08.9677883Z INFO         |   androidboot.hardware.vulkan=ranchu
+2026-10-30T17:19:08.9678490Z INFO         |   androidboot.logcat=*:V
+2026-10-30T17:19:08.9678965Z INFO         |   androidboot.opengles.version=196608
+2026-10-30T17:19:08.9679440Z INFO         |   androidboot.qemu=1
+2026-10-30T17:19:08.9684378Z INFO         |   androidboot.qemu.adb.pubkey=QAAAAH/aG1eBGjo6c2tvKI5Dc/+nKgbp+4r/ybNV6TmQTdh31KD7H0mYn7QIFb6GAMNqxrHqSuPf+4F+/VS6TYqn4DRy1OTV7UNgaGG+0Jq4LgBS4E8psEAxZRXui2LcXhuvaRnDNrG/o0Dk6WVnn/zIuQcbKANBNocsUR+4Hlxn/24Vgl25Z+FeHB2funfoDKQ2s/m/LLZ/mdxHt7NZslnhvEl5VMTvp7EnAcOQggzWqeeOoufEq5kjAf7i5kS6dSs81oLocWf9B2aKuXRVA6eZsh/ZLthcizfxeWK7Lo08qiZCDShuOHbFRv+XeJvWv4MWAHRx85/uPUqVYh68hrk3IDekzZ61/0crW1wsASSkmHVGa+I1P4DZNw1q6WhqW/5eJoW/3NguzQOxSYWeVWyHE2sHIm1uv0/NY4M8Dtmy653fTdUZBRlJC4fI+AjM3LUxvcakKI4eR7Ei7QlrJL2UiSzhUxzTXyzssSM160dYZ6WX1VVJPyy0mTqSlkMpl1tb/8SDVGQm0CLHEh6gsP2+L2vAXaWufVUpn3lFimxtvKveg/vylyyRo7FXuC6EGqmtVEMv5Fije+0RjI0lKbqd7LquwOp86z77qjJ48KnzS6fexPyqFhrWPx6Her+7z4DWYdTbhNkX0/o6DQ/tr8fQJwsUO2Vb+SzCSwGDYV/VuVTgOrLFiAEAAQA= runner@unknown
+2026-10-30T17:19:08.9687220Z INFO         |   androidboot.qemu.avd_name=test
+2026-10-30T17:19:08.9687583Z INFO         |   androidboot.qemu.camera_hq_edge_processing=0
+2026-10-30T17:19:08.9687952Z INFO         |   androidboot.qemu.camera_protocol_ver=1
+2026-10-30T17:19:08.9688306Z INFO         |   androidboot.qemu.cpuvulkan.version=4206592
+2026-10-30T17:19:08.9688924Z INFO         |   androidboot.qemu.gltransport.drawFlushInterval=800
+2026-10-30T17:19:08.9689330Z INFO         |   androidboot.qemu.gltransport.name=pipe
+2026-10-30T17:19:08.9689977Z INFO         |   androidboot.qemu.hwcodec.avcdec=2
+2026-10-30T17:19:08.9690487Z INFO         |   androidboot.qemu.hwcodec.hevcdec=2
+2026-10-30T17:19:08.9690982Z INFO         |   androidboot.qemu.hwcodec.vpxdec=2
+2026-10-30T17:19:08.9691401Z INFO         |   androidboot.qemu.settings.system.screen_off_timeout=2147483647
+2026-10-30T17:19:08.9691781Z INFO         |   androidboot.qemu.skin=320x640
+2026-10-30T17:19:08.9692103Z INFO         |   androidboot.qemu.virtiowifi=1
+2026-10-30T17:19:08.9692398Z INFO         |   androidboot.qemu.vsync=60
+2026-10-30T17:19:08.9692729Z INFO         |   androidboot.serialno=EMULATOR37X2X13X0
+2026-10-30T17:19:08.9693240Z INFO         |   androidboot.vbmeta.digest=b3271ba499104f4631ae3723913d5c12574e01715fce5b82d60beed097ead264
+2026-10-30T17:19:08.9693693Z INFO         |   androidboot.vbmeta.hash_alg=sha256
+2026-10-30T17:19:08.9694003Z INFO         |   androidboot.vbmeta.size=6720
+2026-10-30T17:19:08.9694308Z INFO         |   androidboot.veritymode=enforcing
+2026-10-30T17:19:08.9776672Z WARNING: cannnot unmap ptr 0x7f8f0ee01000 as it is in the protected range from 0x7f8e6ee00000 to 0x7f8f0f000000
+2026-10-30T17:19:08.9979569Z INFO         | Monitoring duration of emulator setup.
+2026-10-30T17:19:10.0104819Z INFO         | Activated packet streamer for bluetooth emulation
+2026-10-30T17:19:10.0105342Z INFO         | Successfully initialized netsim WiFi
+2026-10-30T17:19:10.0152813Z INFO         | Setting display: 0 configuration to: 320x640, dpi: 160x160 
+2026-10-30T17:19:10.0153425Z INFO         | setDisplayActiveConfig: id:0, 320x640
+2026-10-30T17:19:10.0154081Z INFO         | emulatorSetupEnvironment: Environment scene is not required
+2026-10-30T17:19:10.0243655Z INFO         | Loading snapshot 'default_boot'...
+2026-10-30T17:19:10.0244688Z WARNING      | Failed to process .ini file /home/runner/.android/emu-update-last-check.ini for reading.
+2026-10-30T17:19:10.0411728Z WARNING      | Device 'cache' does not have the requested snapshot 'default_boot'
+2026-10-30T17:19:10.0412214Z 
+2026-10-30T17:19:10.0422494Z WARNING      | Failed to load snapshot 'default_boot'
+2026-10-30T17:19:10.0423292Z USER_INFO    | The emulator is performing a cold boot without a saved state because there's no snapshot and you have configured it not to save on exit.
+2026-10-30T17:19:10.2182334Z WARNING      | Failed to process .ini file /home/runner/.android/emu-update-last-check.ini for reading.
+2026-10-30T17:19:18.1854179Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:18.1873934Z * daemon not running; starting now at tcp:5037
+2026-10-30T17:19:18.5594898Z * daemon started successfully
+2026-10-30T17:19:18.5595705Z adb: device offline
+2026-10-30T17:19:18.5619959Z The process '/usr/local/lib/android/sdk/platform-tools/adb' failed with exit code 1
+2026-10-30T17:19:20.5673543Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:20.5832634Z 
+2026-10-30T17:19:22.5880511Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:22.6123713Z 
+2026-10-30T17:19:24.6158228Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:24.6521533Z 
+2026-10-30T17:19:26.6577274Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:26.6754159Z 
+2026-10-30T17:19:28.6811536Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:28.7039755Z 
+2026-10-30T17:19:30.7102607Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:30.7278796Z 
+2026-10-30T17:19:31.4153830Z INFO         | Boot completed in 23198 ms
+2026-10-30T17:19:31.4156073Z INFO         | Increasing screen off timeout, logcat buffer size to 2M.
+2026-10-30T17:19:32.7350172Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+2026-10-30T17:19:32.7632754Z 1
+2026-10-30T17:19:32.7647243Z Emulator booted.
+2026-10-30T17:19:32.7693908Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell input keyevent 82
+2026-10-30T17:19:34.6660411Z Disabling animations.
+2026-10-30T17:19:34.6750491Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell settings put global window_animation_scale 0.0
+2026-10-30T17:19:34.7939011Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell settings put global transition_animation_scale 0.0
+2026-10-30T17:19:35.0640297Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell settings put global animator_duration_scale 0.0
+2026-10-30T17:19:35.1151268Z ##[endgroup]
+2026-10-30T17:19:35.1165279Z [command]/usr/bin/sh -c bash ./build-android.sh "expo"
+2026-10-30T17:19:35.1299796Z ##[group]Booting emulator [17:19:35]
+2026-10-30T17:19:35.1473253Z ##[endgroup]
+2026-10-30T17:19:35.1493239Z ##[group]Prebuild Expo Android [17:19:35]
+2026-10-30T17:19:35.6503729Z [33m[1mWarning: [22mRoot-level [1m"expo"[22m object found. Ignoring extra key in Expo config: "name"
+2026-10-30T17:19:35.6505013Z [90mLearn more: https://expo.fyi/root-expo-object[0m[0m
+2026-10-30T17:19:35.7599939Z - Creating native directory (./android)
+2026-10-30T17:19:36.2540620Z ✔ Created native directory
+2026-10-30T17:19:36.2559368Z - Updating package.json
+2026-10-30T17:19:36.2587342Z ✔ Updated package.json
+2026-10-30T17:19:36.2588025Z - Running prebuild
+2026-10-30T17:19:38.1286546Z » android: userInterfaceStyle: Install expo-system-ui in your project to enable this feature.
+2026-10-30T17:19:38.1295950Z - Running prebuild
+2026-10-30T17:19:38.1320619Z ✔ Finished prebuild
+2026-10-30T17:19:38.2206038Z Error configuring Android toolchain: kotlin-gradle-plugin classpath not found in build.gradle
+2026-10-30T17:19:38.2304975Z ##[error]The process '/usr/bin/sh' failed with exit code 1
+2026-10-30T17:19:38.2317462Z ##[group]Terminate Emulator
+2026-10-30T17:19:38.2318254Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 emu kill
+2026-10-30T17:19:38.2329378Z OK: killing emulator, bye bye
+2026-10-30T17:19:38.2330008Z OK
+2026-10-30T17:19:38.2330941Z ##[endgroup]
+2026-10-30T17:19:38.2335008Z INFO         | Wait for emulator (pid 14598) 20 seconds to shutdown gracefully before kill;you can set environment variable ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL(in seconds) to change the default value (20 seconds)
+2026-10-30T17:19:38.2336282Z 
+2026-10-30T17:19:38.2519331Z USER_INFO    | Snapshots have been disabled by the user, save request is ignored.
+2026-10-30T17:19:38.2520319Z INFO         | Saving snapshot 'default_boot' took 0 ms
+2026-10-30T17:19:39.0083574Z ERROR        | stop: Not implemented
+2026-10-30T17:19:39.0084448Z WARNING      | Emulator client has not yet been configured.. Call configure me first!
+2026-10-30T17:19:39.0405574Z INFO         | removeAll
+2026-10-30T17:19:39.0951153Z WARNING      | Netsim Wifi dns:///localhost:39761 is gone due to Stream removed (CANCELLED)
+2026-10-30T17:19:39.3242570Z ##[group]Run actions/upload-artifact@v7
+2026-10-30T17:19:39.3242822Z with:
+2026-10-30T17:19:39.3243022Z   name: appium_failure_android_expo_latest
+2026-10-30T17:19:39.3243279Z   path: appium_failure.png
+2026-10-30T17:19:39.3243503Z   if-no-files-found: ignore
+2026-10-30T17:19:39.3243709Z   retention-days: 1
+2026-10-30T17:19:39.3243906Z   compression-level: 6
+2026-10-30T17:19:39.3244101Z   overwrite: false
+2026-10-30T17:19:39.3244296Z   include-hidden-files: false
+2026-10-30T17:19:39.3244506Z   archive: true
+2026-10-30T17:19:39.3244689Z env:
+2026-10-30T17:19:39.3244868Z   APP_DIR: tested_app
+2026-10-30T17:19:39.3245065Z   YARN_NPM_MINIMAL_AGE_GATE: 0
+2026-10-30T17:19:39.3245390Z   ADYEN_CLIENT_KEY: ***
+2026-10-30T17:19:39.3247685Z   ADYEN_PUBLIC_KEY: ***
+2026-10-30T17:19:39.3247874Z   ANDROID_API_LEVEL: 35
+2026-10-30T17:19:39.3248067Z   APPIUM_VERSION: 3.4.2
+2026-10-30T17:19:39.3248628Z   APPIUM_UIAUTOMATOR2_VERSION: 7.5.2
+2026-10-30T17:19:39.3248990Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:19:39.3249337Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:19:39.3249627Z   MAVEN_ARGS: -ntp
+2026-10-30T17:19:39.3249843Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-30T17:19:39.3250106Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-30T17:19:39.3250353Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-30T17:19:39.3250720Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-30T17:19:39.3251110Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-30T17:19:39.3251383Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-30T17:19:39.3251631Z   ANDROID_AVD_HOME: /home/runner/.android/avd
+2026-10-30T17:19:39.3251877Z ##[endgroup]
+2026-10-30T17:19:39.4432148Z No files were found with the provided path: appium_failure.png. No artifacts will be uploaded.
+2026-10-30T17:19:39.4556711Z ##[group]Run actions/upload-artifact@v7
+2026-10-30T17:19:39.4556968Z with:
+2026-10-30T17:19:39.4557173Z   name: appium_page_source_android_expo_latest
+2026-10-30T17:19:39.4557429Z   path: appium_page_source.xml
+2026-10-30T17:19:39.4557655Z   if-no-files-found: ignore
+2026-10-30T17:19:39.4557862Z   retention-days: 1
+2026-10-30T17:19:39.4558055Z   compression-level: 6
+2026-10-30T17:19:39.4558247Z   overwrite: false
+2026-10-30T17:19:39.4558671Z   include-hidden-files: false
+2026-10-30T17:19:39.4558885Z   archive: true
+2026-10-30T17:19:39.4559062Z env:
+2026-10-30T17:19:39.4559229Z   APP_DIR: tested_app
+2026-10-30T17:19:39.4559429Z   YARN_NPM_MINIMAL_AGE_GATE: 0
+2026-10-30T17:19:39.4559756Z   ADYEN_CLIENT_KEY: ***
+2026-10-30T17:19:39.4562038Z   ADYEN_PUBLIC_KEY: ***
+2026-10-30T17:19:39.4562237Z   ANDROID_API_LEVEL: 35
+2026-10-30T17:19:39.4562428Z   APPIUM_VERSION: 3.4.2
+2026-10-30T17:19:39.4562637Z   APPIUM_UIAUTOMATOR2_VERSION: 7.5.2
+2026-10-30T17:19:39.4562988Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:19:39.4563329Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:19:39.4563620Z   MAVEN_ARGS: -ntp
+2026-10-30T17:19:39.4563840Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-30T17:19:39.4564120Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-30T17:19:39.4564373Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-30T17:19:39.4564754Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-30T17:19:39.4565144Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-30T17:19:39.4565415Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-30T17:19:39.4565673Z   ANDROID_AVD_HOME: /home/runner/.android/avd
+2026-10-30T17:19:39.4565912Z ##[endgroup]
+2026-10-30T17:19:39.5728792Z No files were found with the provided path: appium_page_source.xml. No artifacts will be uploaded.
+2026-10-30T17:19:39.5838966Z ##[group]Run echo "::error title=Non-blocking failure::Android e2e test for expo latest failed. Non-blocking, but needs investigation."
+2026-10-30T17:19:39.5839745Z [36;1mecho "::error title=Non-blocking failure::Android e2e test for expo latest failed. Non-blocking, but needs investigation."[0m
+2026-10-30T17:19:39.5856393Z shell: /usr/bin/bash -e {0}
+2026-10-30T17:19:39.5856625Z env:
+2026-10-30T17:19:39.5856799Z   APP_DIR: tested_app
+2026-10-30T17:19:39.5857012Z   YARN_NPM_MINIMAL_AGE_GATE: 0
+2026-10-30T17:19:39.5857341Z   ADYEN_CLIENT_KEY: ***
+2026-10-30T17:19:39.5859803Z   ADYEN_PUBLIC_KEY: ***
+2026-10-30T17:19:39.5860024Z   ANDROID_API_LEVEL: 35
+2026-10-30T17:19:39.5860220Z   APPIUM_VERSION: 3.4.2
+2026-10-30T17:19:39.5860426Z   APPIUM_UIAUTOMATOR2_VERSION: 7.5.2
+2026-10-30T17:19:39.5860715Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:19:39.5861056Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:19:39.5861378Z   MAVEN_ARGS: -ntp
+2026-10-30T17:19:39.5861596Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-30T17:19:39.5862051Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-30T17:19:39.5862299Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-30T17:19:39.5862668Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-30T17:19:39.5863057Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-30T17:19:39.5863323Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-30T17:19:39.5863575Z   ANDROID_AVD_HOME: /home/runner/.android/avd
+2026-10-30T17:19:39.5863813Z ##[endgroup]
+2026-10-30T17:19:39.5904456Z ##[error]Android e2e test for expo latest failed. Non-blocking, but needs investigation.
+2026-10-30T17:19:39.5990169Z Post job cleanup.
+2026-10-30T17:19:39.6010480Z ##[start-action display=AVD cache;id=__20fffd61-e262-467b-9d9f-d8667778c6a6.avd-cache]
+2026-10-30T17:19:39.6012277Z ##[end-action id=__20fffd61-e262-467b-9d9f-d8667778c6a6.avd-cache;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-30T17:19:39.6013782Z ##[start-action display=Gradle cache;id=__20fffd61-e262-467b-9d9f-d8667778c6a6.__gradle_actions]
+2026-10-30T17:19:39.6087394Z Post job cleanup.
+2026-10-30T17:19:39.8375588Z In post-action step
+2026-10-30T17:19:39.8380685Z Enhanced Caching: This build is using the proprietary 'gradle-actions-caching' provider for optimized caching support. See https://github.com/gradle/actions/blob/main/DISTRIBUTION.md for terms of use and opt-out instructions.
+2026-10-30T17:19:39.9000363Z Cache is read-only: will not save state for use in subsequent builds.
+2026-10-30T17:19:39.9003599Z ##[group]Generating Job Summary
+2026-10-30T17:19:39.9006926Z 
+2026-10-30T17:19:39.9007470Z <b>No Gradle build results detected.</b>
+2026-10-30T17:19:39.9007773Z 
+2026-10-30T17:19:39.9007934Z ============================
+2026-10-30T17:19:39.9008767Z <h4>Gradle State Caching - ⚡ Enhanced (read-only)</h4>
+2026-10-30T17:19:39.9008976Z 
+2026-10-30T17:19:39.9009960Z **[Enhanced Caching](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md#enhanced-caching)** uses the proprietary `gradle-actions-caching` provider. See [DISTRIBUTION.md](https://github.com/gradle/actions/blob/main/DISTRIBUTION.md) for terms of use and opt-out instructions.
+2026-10-30T17:19:39.9010809Z 
+2026-10-30T17:19:39.9010896Z <details>
+2026-10-30T17:19:39.9011243Z <summary>Entries: 0 restored, 0 saved - Expand for more details</summary>
+2026-10-30T17:19:39.9011494Z 
+2026-10-30T17:19:39.9012285Z [Cache was read-only](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md#using-the-cache-read-only) — by default, the action only writes to the cache for jobs running on the default branch.
+2026-10-30T17:19:39.9012853Z 
+2026-10-30T17:19:39.9012949Z <pre>
+2026-10-30T17:19:39.9013156Z Entry: Gradle User Home
+2026-10-30T17:19:39.9013811Z     Requested Key : gradle-home-v2|Linux-X64|android-test[b26ed2ff149a229cf42b300def8dadcc]-330bba6f688aebe4f395d271df866823a77a9c9c
+2026-10-30T17:19:39.9014287Z     Restored  Key : 
+2026-10-30T17:19:39.9014482Z               Size: 
+2026-10-30T17:19:39.9014763Z               Time: 
+2026-10-30T17:19:39.9015048Z               (Entry not restored: no match found)
+2026-10-30T17:19:39.9015306Z     Saved     Key : 
+2026-10-30T17:19:39.9015490Z               Size: 
+2026-10-30T17:19:39.9015661Z               Time: 
+2026-10-30T17:19:39.9015902Z               (Entry not saved: cache is read-only)
+2026-10-30T17:19:39.9016151Z </pre>
+2026-10-30T17:19:39.9016328Z </details>
+2026-10-30T17:19:39.9016431Z 
+2026-10-30T17:19:39.9024901Z ##[endgroup]
+2026-10-30T17:19:39.9026182Z Completed post-action step
+2026-10-30T17:19:39.9148046Z ##[end-action id=__20fffd61-e262-467b-9d9f-d8667778c6a6.__gradle_actions;outcome=success;conclusion=success;duration_ms=313]
+2026-10-30T17:19:39.9150589Z ##[start-action display=Setup Node.js;id=__20fffd61-e262-467b-9d9f-d8667778c6a6.__actions_setup-node]
+2026-10-30T17:19:39.9153108Z ##[end-action id=__20fffd61-e262-467b-9d9f-d8667778c6a6.__actions_setup-node;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-30T17:19:39.9154772Z ##[start-action display=Setup Java;id=__20fffd61-e262-467b-9d9f-d8667778c6a6.__actions_setup-java]
+2026-10-30T17:19:39.9204744Z Post job cleanup.
+2026-10-30T17:19:40.0346166Z ##[end-action id=__20fffd61-e262-467b-9d9f-d8667778c6a6.__actions_setup-java;outcome=success;conclusion=success;duration_ms=119]
+2026-10-30T17:19:40.0396058Z Cleaning up orphan processes
+2026-10-30T17:19:40.0731954Z Terminate orphan process: pid (14736) (adb)
+2026-10-30T17:19:40.0811601Z Terminate orphan process: pid (14936) (emulator)
