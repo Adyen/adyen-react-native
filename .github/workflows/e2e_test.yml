@@ -220,7 +220,16 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            bash ./build-android.sh "${{ inputs.platform }}"
+            bash ./capture-android-logs.sh "${{ inputs.platform }}"
+
+      - name: Upload Android Logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android_logs_${{ inputs.platform }}_${{ inputs.version }}
+          path: android_logs
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Upload Appium Failure Screenshot (Android)
         if: always()
