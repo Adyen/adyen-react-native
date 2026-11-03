@@ -458,6 +458,56 @@ describe('extractExcerpt', () => {
       expect(excerpt).toContain('late-before 20\n##[error]late failure');
       expect(excerpt).toContain('late-before 19\nlate-before 20\n');
     });
+
+    describe('when anchors alone exceed the cap', () => {
+      const longAnchors = (count: number, width = 5000) =>
+        Array.from({ length: count }, (_, i) => [
+          `##[error]anchor ${i + 1} ${'e'.repeat(width)}`,
+          ...numbered(`gap-${i + 1}`, 100),
+        ]).flat();
+
+      it('truncates over-long anchor lines and keeps the cap', () => {
+        const log = stamp(['##[error]only ' + 'e'.repeat(10000)]);
+
+        const excerpt: string = script.extractExcerpt(log, { maxBytes: 4000 });
+
+        expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(4000);
+        expect(excerpt).toContain('##[error]only ');
+        expect(excerpt).toContain('[... line truncated ...]');
+      });
+
+      it('keeps anchors in priority order within the cap and reports the omitted ones with the log path', () => {
+        const log = stamp(longAnchors(24));
+
+        const excerpt: string = script.extractExcerpt(log, {
+          maxBytes: 25 * 1024,
+          logPath: '/tmp/out/logs/1.log',
+        });
+
+        expect(Buffer.byteLength(excerpt)).toBeLessThanOrEqual(25 * 1024);
+        expect(excerpt).toContain('##[error]anchor 1 ');
+        const kept = excerpt.match(/##\[error\]anchor \d+ /g) ?? [];
+        expect(kept.length).toBeGreaterThan(0);
+        expect(kept.length).toBeLessThan(24);
+        const marker = excerpt.match(
+          /\[\.\.\. (\d+) more error lines omitted; see full log \/tmp\/out\/logs\/1\.log \.\.\.\]/
+        );
+        expect(marker).not.toBeNull();
+        expect(Number(marker?.[1])).toBe(24 - kept.length);
+        const numbers = kept.map((m) => Number(m.match(/\d+/)?.[0]));
+        expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
+      });
+
+      it('does not add an omission marker when every anchor fits', () => {
+        const log = stamp(longAnchors(3, 100));
+
+        const excerpt: string = script.extractExcerpt(log, {
+          maxBytes: 25 * 1024,
+        });
+
+        expect(excerpt).not.toContain('more error lines omitted');
+      });
+    });
   });
 });
 
@@ -842,6 +892,40 @@ describe('collect', () => {
       expect(excerpt).toContain('one-before 80 ');
       expect(excerpt).toContain('two-before 80 ');
       expect(excerpt).toMatch(/\[\.\.\. truncated \d+ lines \.\.\.\]/);
+    }
+    expect(total).toBeLessThanOrEqual(script.TOTAL_EXCERPT_MAX_BYTES);
+  });
+
+  it('keeps both caps and at least one anchor per job when long anchors alone exceed the budget', () => {
+    const jobs = Array.from({ length: 8 }, (_, i) =>
+      job(900 + i, `React Native (0.${i}.0) / Android Test`, 'failure')
+    );
+    const logFor = (id: number) =>
+      stamp(
+        Array.from({ length: 24 }, (_, i) => [
+          `##[error]anchor ${i + 1} of ${id} ${'e'.repeat(5000)}`,
+          ...Array.from({ length: 100 }, (__, n) => `gap-${i + 1} ${n}`),
+        ]).flat()
+      );
+    const logs = Object.fromEntries(jobs.map((j) => [j.id, logFor(j.id)]));
+    const gh = fakeGh({ jobsPages: [jobs], logs });
+
+    const { outDir } = run(gh);
+
+    let total = 0;
+    for (const j of jobs) {
+      const excerpt = readFileSync(
+        join(outDir, 'excerpts', `${j.id}.txt`),
+        'utf8'
+      );
+      const size = Buffer.byteLength(excerpt);
+      total += size;
+      expect(size).toBeLessThanOrEqual(script.EXCERPT_MAX_BYTES);
+      expect(excerpt).toContain(`##[error]anchor 1 of ${j.id} `);
+      expect(excerpt).toContain('[... line truncated ...]');
+      expect(excerpt).toContain(
+        `more error lines omitted; see full log ${join(outDir, 'logs', `${j.id}.log`)} ...]`
+      );
     }
     expect(total).toBeLessThanOrEqual(script.TOTAL_EXCERPT_MAX_BYTES);
   });

@@ -240,8 +240,9 @@ function findErrorWindows(content) {
 }
 
 // Lower rank is kept first. The first anchor of every window ranks -1 so each
-// window survives any budget; other anchors rank 0; context ranks by distance
-// to the nearest anchor, preceding context before following context.
+// window is considered before anything else; other anchors rank 0; context
+// ranks by distance to the nearest anchor, preceding context before following
+// context.
 function rankWindowLines(content, window) {
   const size = window.end - window.start + 1;
   const isAnchor = new Array(size).fill(false);
@@ -277,7 +278,7 @@ function selectLinesWithinBudget(candidates, budget) {
   const selected = new Set();
   let used = 0;
   for (const candidate of candidates) {
-    if (candidate.rank < 0 || used + candidate.cost <= budget) {
+    if (used + candidate.cost <= budget) {
       selected.add(candidate.index);
       used += candidate.cost;
     }
@@ -288,13 +289,26 @@ function selectLinesWithinBudget(candidates, budget) {
   return selected;
 }
 
-function renderWindows(content, windows, selected) {
+function countOmittedAnchors(windows, selected) {
+  return windows
+    .flatMap((window) => window.anchors)
+    .filter((anchor) => !selected.has(anchor)).length;
+}
+
+function renderWindows(content, windows, selected, logPath) {
   const output = [];
-  windows.forEach((window, windowIndex) => {
-    if (windowIndex > 0) {
-      const gap = window.start - windows[windowIndex - 1].end - 1;
-      output.push(`[... ${gap} lines omitted ...]`);
+  let previousEnd = null;
+  windows.forEach((window) => {
+    let hasSelected = false;
+    for (let i = window.start; i <= window.end && !hasSelected; i += 1) {
+      hasSelected = selected.has(i);
     }
+    if (!hasSelected) return;
+
+    if (previousEnd !== null) {
+      output.push(`[... ${window.start - previousEnd - 1} lines omitted ...]`);
+    }
+    previousEnd = window.end;
     let skipped = 0;
     for (let i = window.start; i <= window.end; i += 1) {
       if (selected.has(i)) {
@@ -307,13 +321,19 @@ function renderWindows(content, windows, selected) {
     }
     if (skipped > 0) output.push(`[... truncated ${skipped} lines ...]`);
   });
+
+  const omitted = countOmittedAnchors(windows, selected);
+  if (omitted > 0) {
+    output.push(
+      `[... ${omitted} more error lines omitted; see full log ${logPath} ...]`
+    );
+  }
   return output.join('\n');
 }
 
-// Budget is spent on error anchors and their closest context first. Only if
-// the anchors alone exceed maxBytes (many separate windows with very long
-// lines) can the result go over the cap.
-function fitWindowsToBudget(content, windows, maxBytes) {
+// Budget is spent on error anchors and their closest context first; when even
+// the anchors do not fit, the later ones are dropped and counted in a marker.
+function fitWindowsToBudget(content, windows, maxBytes, logPath) {
   const candidates = windows
     .flatMap((window) => rankWindowLines(content, window))
     .sort((a, b) => a.rank - b.rank || a.index - b.index);
@@ -323,7 +343,8 @@ function fitWindowsToBudget(content, windows, maxBytes) {
     const excerpt = renderWindows(
       content,
       windows,
-      selectLinesWithinBudget(candidates, budget)
+      selectLinesWithinBudget(candidates, budget),
+      logPath
     );
     const overflow = Buffer.byteLength(excerpt) - maxBytes;
     // Markers are not part of the line budget; shrink it by what they cost.
@@ -345,7 +366,10 @@ function truncateFromStart(lines, maxBytes) {
   return [`[... truncated ${keepFrom} lines ...]`, ...lines.slice(keepFrom)];
 }
 
-function extractExcerpt(rawLog, { maxBytes = EXCERPT_MAX_BYTES } = {}) {
+function extractExcerpt(
+  rawLog,
+  { maxBytes = EXCERPT_MAX_BYTES, logPath = 'the job log' } = {}
+) {
   const lines = rawLog
     .split(/\r?\n/)
     .map((line, index) => cleanLine(line, index === 0));
@@ -353,7 +377,9 @@ function extractExcerpt(rawLog, { maxBytes = EXCERPT_MAX_BYTES } = {}) {
 
   const content = lines.slice(0, findContentEnd(lines));
   const windows = findErrorWindows(content);
-  if (windows.length > 0) return fitWindowsToBudget(content, windows, maxBytes);
+  if (windows.length > 0) {
+    return fitWindowsToBudget(content, windows, maxBytes, logPath);
+  }
 
   const tail = content
     .filter((line) => line.trim() !== '')
@@ -505,7 +531,7 @@ function collect(options, runGh = defaultRunGh) {
     fs.writeFileSync(logFile, capRawLog(log));
     fs.writeFileSync(
       excerptFile,
-      extractExcerpt(log, { maxBytes: excerptBudget })
+      extractExcerpt(log, { maxBytes: excerptBudget, logPath: logFile })
     );
     return {
       ...entry,
