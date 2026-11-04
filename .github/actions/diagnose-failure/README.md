@@ -23,7 +23,7 @@ Add a repository secret named `SDK_META_DISPATCH_TOKEN`. It is a fine-grained pe
 
 The token is used only to dispatch the `diagnose-react-native-e2e.yml` workflow on the `develop` branch of the meta repository. The Factory API key lives in the meta repository only, in its `droid-diagnosis` environment.
 
-Without the secret, the action still collects data and writes the summary, and the summary says `Diagnosis not requested: SDK_META_DISPATCH_TOKEN is not configured.` Nothing is uploaded or dispatched without it.
+Without the secret, the action still collects data, uploads `e2e-diagnosis-data` and writes the summary. Only the dispatch is skipped, and the summary says `Diagnosis not requested: SDK_META_DISPATCH_TOKEN is not configured.`
 
 ## Inputs
 
@@ -50,14 +50,14 @@ The calling job needs `contents: read` and `actions: read` permissions, a checko
    - `appium_failure_*` (screenshots)
    - `appium_page_source_*`
    - `android_logs_*`: build and test output of `build-android.sh`, the Appium server log and, on failure, an `adb logcat -d` dump. They are written by [`e2e-tests/scripts/capture-android-logs.sh`](../../../e2e-tests/scripts/capture-android-logs.sh) and uploaded by the `Upload Android Logs` step of [`e2e_test.yml`](../../workflows/e2e_test.yml).
-3. **Upload.** The whole output directory is uploaded as the artifact `e2e-diagnosis-data` (kept for 1 day). It contains `jobs.json` (`schemaVersion: 1`, with paths relative to the artifact root), `logs/<job-id>.log`, `excerpts/<job-id>.txt` and `artifacts/<artifact name>/...`.
+3. **Upload.** Whenever failed E2E jobs were found, with or without the dispatch token, the whole output directory is uploaded as the artifact `e2e-diagnosis-data` (kept for 1 day). It contains `jobs.json` (`schemaVersion: 1`, with paths relative to the artifact root), `logs/<job-id>.log`, `excerpts/<job-id>.txt` and `artifacts/<artifact name>/...`.
 4. **Dispatch.** When the token is set and the upload succeeded, `diagnose-ci-failure.js dispatch` triggers `diagnose-react-native-e2e.yml` on `develop` in `Adyen/adyen-checkout-sdk-meta` with the input `run_id`. The meta workflow validates the run, downloads `e2e-diagnosis-data` and runs the diagnosis. Its result is shown only in the private job summary of that workflow.
 5. **Report.** `diagnose-ci-failure.js report` writes the public summary: a link to the run, the table of failed jobs and one status line:
    - `requested`: the diagnosis was requested, with a link to the dispatched run or to the workflow page.
-   - `not-configured`: `SDK_META_DISPATCH_TOKEN` is not set.
-   - `failed`: the upload or the dispatch failed. The job log has the HTTP status in a warning.
+   - `not-configured`: `SDK_META_DISPATCH_TOKEN` is not set. The data is still uploaded.
+   - `failed`: the token is set, but the upload or the dispatch failed. A failed upload also skips the dispatch. For a failed dispatch, the job log has the HTTP status in a warning.
 
-   If the job list could not be fetched, the report says so instead.
+   If the job list could not be fetched, the report says so instead, nothing is uploaded or dispatched, and `dispatch-status` is empty.
 
 ## Where to find the results
 
