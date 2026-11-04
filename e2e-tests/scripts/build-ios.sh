@@ -4,6 +4,23 @@ set -euo pipefail
 
 platform=${1:-}
 device_name=${2:-}
+# Only Expo fixtures choose their iOS integration; React Native fixtures pick
+# SPM or CocoaPods from the React Native version below.
+ios_integration=${3:-cocoapods}
+
+case "$ios_integration" in
+  cocoapods) ;;
+  spm)
+    if [ "$platform" != "expo" ]; then
+      echo "Error: the spm iOS integration can only be requested for Expo fixtures" >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "Error: unknown iOS integration '$ios_integration' (expected cocoapods or spm)" >&2
+    exit 1
+    ;;
+esac
 
 # Xcode 26's Apple Clang breaks consteval in fmt 11.0.2 (RN 0.76 - 0.80 and
 # Expo SDK 52 pods fixtures). base.h ignores a pre-defined FMT_USE_CONSTEVAL,
@@ -39,8 +56,30 @@ detect_xcodeproj() {
   echo "$found"
 }
 
-if [ "$platform" = "expo" ]; then
-  # Expo apps stay on CocoaPods and resolve the deprecated adyen-react-native
+if [ "$platform" = "expo" ] && [ "$ios_integration" = "spm" ]; then
+  # Expo SDK 58+ links its modules through Expo's preview SwiftPM autolinking
+  # plugin, and the library through its own ios/Package.swift.
+  echo "Swift Package Manager requested: building the Expo fixture through SPM"
+  echo "::group::Prebuild Expo iOS [$(date '+%H:%M:%S')]"
+  npx expo prebuild -p ios --clean --no-install
+  echo "::endgroup::"
+
+  echo "::group::Set up Swift Package Manager [$(date '+%H:%M:%S')]"
+  # Expo apps have no @react-native-community/cli, so `npx react-native spm`
+  # is unavailable: run React Native's script directly with the autolinking
+  # config command that Expo's Podfile uses. `add` pins it in
+  # .spm-injected.json for later syncs and Xcode builds.
+  node node_modules/react-native/scripts/setup-apple-spm.js add --deintegrate --yes \
+    --config-command '["node","--no-warnings","--eval","require('"'"'expo/bin/autolinking'"'"')","expo-modules-autolinking","react-native-config","--json","--platform","ios"]'
+  # --deintegrate leaves Expo's Podfile as invalid Ruby.
+  rm -f ios/Podfile ios/Podfile.lock
+  echo "::endgroup::"
+
+  PROJECT=$(detect_xcodeproj)
+  SCHEME=$(basename "$PROJECT" .xcodeproj)
+  XCODE_CONTAINER=(-project "$PROJECT")
+elif [ "$platform" = "expo" ]; then
+  # Expo apps on CocoaPods resolve the deprecated adyen-react-native
   # podspec. Pods are installed separately because prebuild hides the
   # `pod install` output, including the podspec deprecation warning.
   echo "::group::Prebuild Expo iOS [$(date '+%H:%M:%S')]"

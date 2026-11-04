@@ -21,6 +21,11 @@ on:
         required: false
         type: boolean
         default: false
+      ios-integration:
+        description: 'iOS integration of Expo fixtures (cocoapods or spm); React Native fixtures pick it from the React Native version'
+        required: false
+        type: string
+        default: 'cocoapods'
     secrets:
       ADYEN_CLIENT_KEY:
         required: false
@@ -136,7 +141,7 @@ jobs:
 
       - name: Run iOS Test
         run: |
-          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}"
+          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ inputs.ios-integration }}"
 
       - name: Upload Xcodebuild Log (iOS)
         if: failure()

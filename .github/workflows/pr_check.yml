@@ -122,6 +122,8 @@ jobs:
           - version: '54'
           - version: '55'
           - version: '57'
+          - version: '58'
+            ios-integration: 'spm'
           - version: 'latest'
             allow-failure: true
     uses: ./.github/workflows/e2e_test.yml
@@ -130,6 +132,7 @@ jobs:
       version: ${{ matrix.version }}
       node-version: ${{ vars.NODE_VERSION }}
       allow-failure: ${{ matrix.allow-failure || false }}
+      ios-integration: ${{ matrix.ios-integration || 'cocoapods' }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
