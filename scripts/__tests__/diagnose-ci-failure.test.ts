@@ -1419,6 +1419,21 @@ describe('dispatch', () => {
       expect(out).not.toContain('::warning::');
     });
 
+    it.each(['develop', 'release/1.2', 'feature/a-b_c.d', 'v1.0.0', 'a.b/c'])(
+      'accepts the valid ref %s',
+      (ref) => {
+        const gh = fakeDispatchGh([{ status: 204 }]);
+
+        const { code } = runMain(
+          ['dispatch', '--run-id', RUN_ID, '--ref', ref],
+          gh
+        );
+
+        expect(code).toBe(0);
+        expect(gh.calls).toHaveLength(1);
+      }
+    );
+
     it.each([
       [['dispatch']],
       [['dispatch', '--run-id', '']],
@@ -1434,6 +1449,23 @@ describe('dispatch', () => {
       [['dispatch', '--run-id', RUN_ID, '--ref', 'a b']],
       [['dispatch', '--run-id', RUN_ID, '--ref', '../x']],
       [['dispatch', '--run-id', RUN_ID, '--ref', '--oops']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'release/']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'release//next']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a..b']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', '-x']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'x.lock']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'release/x.lock']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'release.lock/x']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'release/.hidden']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'x.']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'release/x.']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a\tb']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a\nb']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a\u0000b']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a\u007fb']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a@{b']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a~b']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a:b']],
       [['dispatch', '--run-id', RUN_ID, '--wat', 'x']],
     ])('exits 2 without calling gh for %j', (argv) => {
       const gh = fakeDispatchGh([{ status: 204 }]);
@@ -1680,6 +1712,32 @@ describe('report', () => {
     expect(Buffer.byteLength(markdown)).toBeLessThanOrEqual(REPORT_CAP_BYTES);
     expect(markdown).toContain('Report truncated');
   });
+
+  it.each([
+    ['requested', 'Droid diagnosis requested in'],
+    ['not-configured', 'SDK_META_DISPATCH_TOKEN'],
+    ['failed', 'failed; see the job log'],
+  ])(
+    'keeps the %s dispatch status line exactly once when the jobs table is capped',
+    (dispatch, statusText) => {
+      const manyJobs = Array.from({ length: 6000 }, (_, i) => ({
+        ...JOB_BLOCKING,
+        id: i,
+        name: `React Native (${'x'.repeat(100)}-${i}) / Android Test`,
+      }));
+      writeJobs(manyJobs);
+
+      const { markdown } = runReport({
+        dispatch,
+        dispatchUrl: DISPATCH_URL,
+      });
+
+      expect(Buffer.byteLength(markdown)).toBeLessThanOrEqual(REPORT_CAP_BYTES);
+      expect(markdown).toContain('Report truncated');
+      expect(markdown.split(statusText)).toHaveLength(2);
+      expect(markdown.trimEnd().split('\n').pop()).toContain(statusText);
+    }
+  );
 
   describe('arguments', () => {
     it('parses --dispatch, --dispatch-url and --reason', () => {

@@ -43,6 +43,7 @@ const DEFAULT_REF = 'develop';
 const REPO_FORMAT = /^[\w.-]+\/[\w.-]+$/;
 const WORKFLOW_FORMAT = /^\w[\w.-]*\.ya?ml$/;
 const REF_FORMAT = /^\w[\w./-]*$/;
+const REF_FORBIDDEN_SEQUENCES = ['..', '//', '@{'];
 const HTTP_STATUS_LINE = /^HTTP\/\S+ (\d{3})/;
 const HTTP_STATUS_IN_MESSAGE = /\(HTTP (\d{3})\)|HTTP\/\S+ (\d{3})/;
 const GITHUB_URL = /^https:\/\/github\.com\/\S+$/;
@@ -83,6 +84,19 @@ const COMMAND_FLAGS = {
   },
 };
 
+// REF_FORMAT already excludes spaces, control characters and Git's special
+// characters (~ ^ : ? * [ and backslash); the rest mirrors git check-ref-format.
+function isValidRef(ref) {
+  if (!REF_FORMAT.test(ref)) return false;
+  if (REF_FORBIDDEN_SEQUENCES.some((sequence) => ref.includes(sequence))) {
+    return false;
+  }
+  if (ref.endsWith('/') || ref.endsWith('.')) return false;
+  return ref
+    .split('/')
+    .every((part) => !part.startsWith('.') && !part.endsWith('.lock'));
+}
+
 function validateDispatchOptions(options) {
   if (!options.runId) throw new UsageError('Missing --run-id');
   if (!/^\d+$/.test(options.runId)) {
@@ -97,7 +111,7 @@ function validateDispatchOptions(options) {
   if (!WORKFLOW_FORMAT.test(workflow) || workflow.includes('..')) {
     throw new UsageError(`Invalid --workflow: ${workflow}`);
   }
-  if (!REF_FORMAT.test(ref) || ref.includes('..')) {
+  if (!isValidRef(ref)) {
     throw new UsageError(`Invalid --ref: ${ref}`);
   }
   return {
@@ -576,16 +590,23 @@ function jobsTable(failedJobs) {
   );
 }
 
-function truncateReport(markdown) {
-  if (Buffer.byteLength(markdown) <= REPORT_MAX_BYTES) return markdown;
+// `tail` is appended after any truncation notice so it always survives the cap.
+function truncateReport(markdown, tail = '') {
+  if (
+    Buffer.byteLength(markdown) + Buffer.byteLength(tail) <=
+    REPORT_MAX_BYTES
+  ) {
+    return `${markdown}${tail}`;
+  }
 
   const buffer = Buffer.from(markdown, 'utf8');
-  let cut = REPORT_MAX_BYTES - REPORT_NOTICE_RESERVE_BYTES;
+  let cut =
+    REPORT_MAX_BYTES - REPORT_NOTICE_RESERVE_BYTES - Buffer.byteLength(tail);
   // Step back over UTF-8 continuation bytes so no character is split.
   while (cut > 0 && buffer[cut] >= 0x80 && buffer[cut] < 0xc0) cut -= 1;
 
   const kept = buffer.subarray(0, cut).toString('utf8').trimEnd();
-  return `${kept}\n\n${REPORT_TRUNCATION_NOTICE}\n`;
+  return `${kept}\n\n${REPORT_TRUNCATION_NOTICE}\n${tail}`;
 }
 
 function dispatchStatusLine(status, dispatchUrl) {
@@ -619,6 +640,7 @@ function renderReport({ outDir, dispatchStatus, dispatchUrl, reason, env }) {
   }
 
   const sections = [REPORT_TITLE];
+  let tail = '';
   if (link) sections.push(`Run: ${link}`);
 
   if (!jobs) {
@@ -628,10 +650,10 @@ function renderReport({ outDir, dispatchStatus, dispatchUrl, reason, env }) {
   } else {
     sections.push(jobsTable(failedJobs));
     const statusLine = dispatchStatusLine(dispatchStatus, dispatchUrl);
-    if (statusLine) sections.push(statusLine);
+    if (statusLine) tail = `\n${statusLine}\n`;
   }
 
-  return truncateReport(`${sections.join('\n\n')}\n`);
+  return truncateReport(`${sections.join('\n\n')}\n`, tail);
 }
 
 function report(options) {
