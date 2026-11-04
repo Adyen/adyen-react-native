@@ -89,17 +89,29 @@ jobs:
       node-version: ${{ vars.NODE_VERSION }}
 
   e2e-react-native:
-    name: React Native
+    name: React Native (${{ matrix.version }}, ${{ matrix.ios-integration }})
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
     needs: [build-lib]
     strategy:
       fail-fast: false
       matrix:
+        # Android does not depend on the iOS integration, so it runs once per version.
         include:
           - version: '0.79.7'
+            ios-integration: 'cocoapods'
           - version: '0.85.3'
+            ios-integration: 'cocoapods'
           - version: '0.87.1'
+            ios-integration: 'spm'
+          - version: '0.87.1'
+            ios-integration: 'cocoapods'
+            skip-android: true
           - version: 'latest'
+            ios-integration: 'spm'
+            allow-failure: true
+          - version: 'latest'
+            ios-integration: 'cocoapods'
+            skip-android: true
             allow-failure: true
     uses: ./.github/workflows/e2e_test.yml
     with:
@@ -107,12 +119,14 @@ jobs:
       version: ${{ matrix.version }}
       node-version: ${{ vars.NODE_VERSION }}
       allow-failure: ${{ matrix.allow-failure || false }}
+      ios-integration: ${{ matrix.ios-integration }}
+      android: ${{ !matrix.skip-android }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
 
   e2e-expo:
-    name: Expo
+    name: Expo (${{ matrix.version }}, ${{ matrix.ios-integration }})
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
     needs: [build-lib]
     strategy:
@@ -120,11 +134,15 @@ jobs:
       matrix:
         include:
           - version: '54'
+            ios-integration: 'cocoapods'
           - version: '55'
+            ios-integration: 'cocoapods'
           - version: '57'
+            ios-integration: 'cocoapods'
           - version: '58'
             ios-integration: 'spm'
           - version: 'latest'
+            ios-integration: 'cocoapods'
             allow-failure: true
     uses: ./.github/workflows/e2e_test.yml
     with:
@@ -132,7 +150,7 @@ jobs:
       version: ${{ matrix.version }}
       node-version: ${{ vars.NODE_VERSION }}
       allow-failure: ${{ matrix.allow-failure || false }}
-      ios-integration: ${{ matrix.ios-integration || 'cocoapods' }}
+      ios-integration: ${{ matrix.ios-integration }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}

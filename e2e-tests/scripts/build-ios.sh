@@ -4,15 +4,14 @@ set -euo pipefail
 
 platform=${1:-}
 device_name=${2:-}
-# Only Expo fixtures choose their iOS integration; React Native fixtures pick
-# SPM or CocoaPods from the React Native version below.
 ios_integration=${3:-cocoapods}
 
 case "$ios_integration" in
   cocoapods) ;;
   spm)
-    if [ "$platform" != "expo" ]; then
-      echo "Error: the spm iOS integration can only be requested for Expo fixtures" >&2
+    # React Native ships its SPM tooling from 0.87 (Expo SDK 58) on.
+    if [ ! -f node_modules/react-native/scripts/setup-apple-spm.js ]; then
+      echo "Error: the spm iOS integration needs React Native 0.87 or newer (node_modules/react-native/scripts/setup-apple-spm.js not found)" >&2
       exit 1
     fi
     ;;
@@ -97,12 +96,11 @@ elif [ "$platform" = "expo" ]; then
   WORKSPACE=$(detect_xcworkspace)
   SCHEME=$(basename "$WORKSPACE" .xcworkspace)
   XCODE_CONTAINER=(-workspace "$WORKSPACE")
-elif [ -f node_modules/react-native/scripts/setup-apple-spm.js ]; then
-  # React Native CLI apps that ship the SPM tooling (scripts/setup-apple-spm.js,
-  # RN 0.87+) build through Swift Package Manager; the library is linked through
-  # its own ios/Package.swift. `pod deintegrate` strips the template's
-  # CocoaPods wiring from the Xcode project; `pod install` never runs.
-  echo "Swift Package Manager tooling found: building the React Native fixture through SPM"
+elif [ "$ios_integration" = "spm" ]; then
+  # The library is linked through its own ios/Package.swift. `pod deintegrate`
+  # strips the template's CocoaPods wiring from the Xcode project;
+  # `pod install` never runs.
+  echo "Swift Package Manager requested: building the React Native fixture through SPM"
   echo "::group::Set up Swift Package Manager [$(date '+%H:%M:%S')]"
   # @react-native-community/cli only detects ios/ through a Podfile, which the
   # SPM app no longer has; spm-cli-config.js fills in project.ios instead.
@@ -116,10 +114,9 @@ elif [ -f node_modules/react-native/scripts/setup-apple-spm.js ]; then
   SCHEME=$(basename "$PROJECT" .xcodeproj)
   XCODE_CONTAINER=(-project "$PROJECT")
 else
-  # Older React Native CLI apps ship no SPM tooling (RN <= 0.86), so they stay
-  # on CocoaPods and resolve the deprecated adyen-react-native podspec - this
-  # is also what keeps the podspec covered by CI on older React Native.
-  echo "No Swift Package Manager tooling found: building the React Native fixture through CocoaPods"
+  # React Native CLI apps on CocoaPods resolve the deprecated
+  # adyen-react-native podspec.
+  echo "CocoaPods requested: building the React Native fixture through CocoaPods"
   echo "::group::Patch toolchain search paths for pods [$(date '+%H:%M:%S')]"
   # On Xcode 26, pods builds need the template's swift library search paths
   # spelled with $(DT_TOOLCHAIN_DIR) instead of $(TOOLCHAIN_DIR). The SPM
