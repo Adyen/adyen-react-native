@@ -1608,7 +1608,7 @@ describe('report', () => {
     expect(markdown).not.toContain('DROID-RESULT-MARKER');
     expect(markdown).not.toContain('some-model');
     expect(markdown).not.toMatch(/AI-generated/);
-    expect(markdown).not.toMatch(/FACTORY_API_KEY/);
+    expect(markdown).not.toMatch(/FACTORY_API/);
   });
 
   it('renders the collect-failed fallback without a table or status line', () => {

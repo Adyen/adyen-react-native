@@ -174,5 +174,5 @@ jobs:
 
       - uses: ./.github/actions/diagnose-failure
         with:
-          factory-api-key: ${{ secrets.FACTORY_API_KEY }}
           github-token: ${{ github.token }}
+          dispatch-token: ${{ secrets.SDK_META_DISPATCH_TOKEN }}

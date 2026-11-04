@@ -1,31 +1,25 @@
 name: 'Diagnose E2E Failure'
-description: 'Collect failed E2E job logs and ask a read-only Droid agent for a root-cause diagnosis'
+description: 'Collect failed E2E job data and hand it to a private repository that runs the diagnosis'
 
 inputs:
-  factory-api-key:
-    description: 'Factory API key used by Droid. When empty, Droid is skipped and the report says so.'
+  github-token:
+    description: 'Token with read access to Actions (jobs, logs, artifacts) of this repository.'
+    required: true
+  dispatch-token:
+    description: 'Fine-grained token with Actions: write on the private meta repository. When empty, the diagnosis is not requested and the report says so.'
     required: false
     default: ''
-  github-token:
-    description: 'Token with read access to Actions (jobs, logs, artifacts). Never exposed to Droid.'
-    required: true
-  model:
-    description: 'Model used by Droid'
-    default: 'claude-sonnet-5-5'
   run-id:
     description: 'Workflow run to diagnose'
     default: ${{ github.run_id }}
-  droid-version:
-    description: 'Droid CLI version. Only the default version has a checksum pinned in this action.'
-    default: '1.1.0'
 
 outputs:
-  report-path:
-    description: 'Path of the generated report.md'
-    value: ${{ steps.report.outputs.report-path }}
   has-failures:
     description: 'Whether failed E2E jobs were found'
     value: ${{ steps.collect.outputs.has_failures }}
+  dispatch-status:
+    description: 'not-configured, failed or requested. Empty when there was nothing to report.'
+    value: ${{ steps.report.outputs.dispatch-status }}
 
 runs:
   using: 'composite'
@@ -92,42 +86,28 @@ runs:
         repository: ${{ github.repository }}
         run-id: ${{ inputs.run-id }}
 
-    - name: Install Droid
-      id: install
-      if: steps.collect.outputs.has_failures == 'true' && inputs.factory-api-key != ''
+    - name: Upload diagnosis data
+      id: upload
+      if: steps.collect.outputs.has_failures == 'true'
       continue-on-error: true
-      uses: ./.github/actions/setup-droid
+      uses: actions/upload-artifact@v7
       with:
-        droid-version: ${{ inputs.droid-version }}
+        name: e2e-diagnosis-data
+        path: ${{ runner.temp }}/e2e-diagnosis
+        retention-days: 1
+        if-no-files-found: warn
 
-    - name: Run Droid
-      id: droid
-      if: steps.collect.outputs.has_failures == 'true' && inputs.factory-api-key != '' && steps.install.outcome == 'success'
+    - name: Request diagnosis
+      id: dispatch
+      if: steps.collect.outputs.has_failures == 'true' && inputs.dispatch-token != '' && steps.upload.outcome == 'success'
       continue-on-error: true
       shell: bash
       env:
-        FACTORY_API_KEY: ${{ inputs.factory-api-key }}
-        FACTORY_DROID_AUTO_UPDATE_ENABLED: 'false'
-        MODEL: ${{ inputs.model }}
+        GH_TOKEN: ${{ inputs.dispatch-token }}
+        RUN_ID: ${{ inputs.run-id }}
       run: |
         set -uo pipefail
-        out="$RUNNER_TEMP/e2e-diagnosis"
-        # Composite steps do not support timeout-minutes, so the deadline is
-        # enforced here. A timeout (124) or any other non-zero status fails
-        # this step, which makes the report step render the droid-failed case.
-        status=0
-        timeout --kill-after=30s 12m \
-          env -u GH_TOKEN -u GITHUB_TOKEN \
-          droid exec \
-          -f "$out/prompt.md" \
-          --model "$MODEL" \
-          --only-tools Read,Grep,Glob,LS \
-          --cwd "$GITHUB_WORKSPACE" \
-          -o json > "$out/droid.json" || status=$?
-        if [ "$status" -eq 124 ]; then
-          echo "::warning::Droid did not finish within 12 minutes and was stopped"
-        fi
-        exit "$status"
+        node scripts/diagnose-ci-failure.js dispatch --run-id "$RUN_ID"
 
     - name: Write report
       id: report
@@ -135,32 +115,30 @@ runs:
       shell: bash
       env:
         COLLECT_FAILED: ${{ steps.collect.outputs.collect_failed }}
-        HAS_KEY: ${{ inputs.factory-api-key != '' }}
-        INSTALL_OUTCOME: ${{ steps.install.outcome }}
-        DROID_OUTCOME: ${{ steps.droid.outcome }}
-        DROID_MODEL: ${{ inputs.model }}
+        HAS_DISPATCH_TOKEN: ${{ inputs.dispatch-token != '' }}
+        UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        DISPATCH_OUTCOME: ${{ steps.dispatch.outcome }}
+        DISPATCH_STATUS: ${{ steps.dispatch.outputs.dispatch_status }}
+        DISPATCH_URL: ${{ steps.dispatch.outputs.dispatch_url }}
       run: |
         set -euo pipefail
         out="$RUNNER_TEMP/e2e-diagnosis"
-        reason_args=()
+        args=()
+        status=''
         if [ "$COLLECT_FAILED" = 'true' ]; then
-          reason_args=(--reason collect-failed)
-        elif [ "$HAS_KEY" != 'true' ]; then
-          reason_args=(--reason missing-key)
-        elif [ "$INSTALL_OUTCOME" != 'success' ] || [ "$DROID_OUTCOME" != 'success' ]; then
-          reason_args=(--reason droid-failed)
+          args=(--reason collect-failed)
+        elif [ "$HAS_DISPATCH_TOKEN" != 'true' ]; then
+          status='not-configured'
+        elif [ "$UPLOAD_OUTCOME" != 'success' ] || [ "$DISPATCH_OUTCOME" != 'success' ] || [ "$DISPATCH_STATUS" != 'requested' ]; then
+          status='failed'
+        else
+          status='requested'
         fi
-        node scripts/diagnose-ci-failure.js report \
-          --out-dir "$out" \
-          --droid-output "$out/droid.json" \
-          ${reason_args[@]+"${reason_args[@]}"}
-        echo "report-path=$out/report.md" >> "$GITHUB_OUTPUT"
-
-    - name: Upload report
-      if: always() && (steps.collect.outputs.has_failures == 'true' || steps.collect.outputs.collect_failed == 'true')
-      uses: actions/upload-artifact@v7
-      with:
-        name: e2e-failure-diagnosis
-        path: ${{ runner.temp }}/e2e-diagnosis/report.md
-        if-no-files-found: ignore
-        retention-days: 1
+        if [ -n "$status" ]; then
+          args=(--dispatch "$status")
+          if [ "$status" = 'requested' ] && [ -n "$DISPATCH_URL" ]; then
+            args+=(--dispatch-url "$DISPATCH_URL")
+          fi
+        fi
+        node scripts/diagnose-ci-failure.js report --out-dir "$out" "${args[@]}"
+        echo "dispatch-status=$status" >> "$GITHUB_OUTPUT"

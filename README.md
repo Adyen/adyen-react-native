@@ -410,7 +410,7 @@ We strongly encourage you to join us in contributing to this repository so every
 
 Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
 
-Failed E2E jobs on pull requests are diagnosed by Droid; see [Diagnose E2E Failure](.github/actions/diagnose-failure/README.md).
+For failed E2E jobs on pull requests, the data is collected and a diagnosis is requested in a private repository; see [Diagnose E2E Failure](.github/actions/diagnose-failure/README.md) for the flow and the `SDK_META_DISPATCH_TOKEN` setup.
 
 # Support
 
