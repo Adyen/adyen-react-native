@@ -5,6 +5,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   statSync,
@@ -540,15 +541,12 @@ describe('parseArgs', () => {
         `--run-id=${RUN_ID}`,
         '--out-dir',
         '/tmp/out',
-        '--artifacts-dir',
-        '/tmp/art',
       ])
     ).toEqual({
       command: 'collect',
       repo: REPO,
       runId: RUN_ID,
       outDir: '/tmp/out',
-      artifactsDir: '/tmp/art',
     });
   });
 
@@ -620,7 +618,6 @@ describe('collect', () => {
         repo: REPO,
         runId: RUN_ID,
         outDir,
-        repoDir: '/workspace/repo',
         env: { GITHUB_OUTPUT: githubOutput },
         ...extra,
       },
@@ -641,7 +638,7 @@ describe('collect', () => {
     124205419341: BLOCKING_LOG,
   };
 
-  it('lists failed jobs with classification and absolute file paths in jobs.json', () => {
+  it('lists failed jobs with classification and bundle-relative file paths in jobs.json', () => {
     const gh = fakeGh({ jobsPages: [standardJobs], logs: standardLogs });
 
     const { outDir, result } = run(gh);
@@ -649,6 +646,7 @@ describe('collect', () => {
 
     expect(result.failedJobs).toHaveLength(2);
     expect(jobs).toMatchObject({
+      schemaVersion: 1,
       repo: REPO,
       runId: RUN_ID,
       runUrl: `https://github.com/${REPO}/actions/runs/${RUN_ID}`,
@@ -660,8 +658,8 @@ describe('collect', () => {
         url: `https://github.com/${REPO}/actions/runs/${RUN_ID}/job/124205245095`,
         conclusion: 'failure',
         blocking: false,
-        logFile: join(outDir, 'logs', '124205245095.log'),
-        excerptFile: join(outDir, 'excerpts', '124205245095.txt'),
+        logFile: 'logs/124205245095.log',
+        excerptFile: 'excerpts/124205245095.txt',
       },
       {
         id: 124205419341,
@@ -669,9 +667,25 @@ describe('collect', () => {
         url: `https://github.com/${REPO}/actions/runs/${RUN_ID}/job/124205419341`,
         conclusion: 'failure',
         blocking: true,
-        logFile: join(outDir, 'logs', '124205419341.log'),
-        excerptFile: join(outDir, 'excerpts', '124205419341.txt'),
+        logFile: 'logs/124205419341.log',
+        excerptFile: 'excerpts/124205419341.txt',
       },
+    ]);
+    for (const failedJob of jobs.failedJobs) {
+      expect(existsSync(join(outDir, failedJob.logFile))).toBe(true);
+      expect(existsSync(join(outDir, failedJob.excerptFile))).toBe(true);
+    }
+  });
+
+  it('never writes prompt.md, droid.json or a report', () => {
+    const gh = fakeGh({ jobsPages: [standardJobs], logs: standardLogs });
+
+    const { outDir } = run(gh);
+
+    expect(readdirSync(outDir).sort()).toEqual([
+      'excerpts',
+      'jobs.json',
+      'logs',
     ]);
   });
 
@@ -730,6 +744,7 @@ describe('collect', () => {
 
     expect(result.failedJobs).toEqual([]);
     expect(readJobsJson(outDir).failedJobs).toEqual([]);
+    expect(readJobsJson(outDir).schemaVersion).toBe(1);
     expect(existsSync(join(outDir, 'prompt.md'))).toBe(false);
     expect(readFileSync(githubOutput, 'utf8')).toBe(
       'has_failures=false\nfailed_count=0\n'
@@ -737,19 +752,6 @@ describe('collect', () => {
     expect(gh.calls.some((args) => args.join(' ').includes('/logs'))).toBe(
       false
     );
-  });
-
-  it('removes a stale prompt.md when a rerun finds no failures', () => {
-    const gh = fakeGh({
-      jobsPages: [[job(1, 'Build lib / Build', 'success')]],
-    });
-    const outDir = join(workDir, 'out');
-    mkdirSync(outDir, { recursive: true });
-    writeFileSync(join(outDir, 'prompt.md'), 'stale');
-
-    run(gh);
-
-    expect(existsSync(join(outDir, 'prompt.md'))).toBe(false);
   });
 
   it('works without GITHUB_OUTPUT', () => {
@@ -776,10 +778,9 @@ describe('collect', () => {
     expect(jobs[0].excerptFile).toBeNull();
     expect(jobs[0].blocking).toBe(false);
     expect(jobs[1].logError).toBeUndefined();
-    expect(existsSync(jobs[1].excerptFile)).toBe(true);
+    expect(existsSync(join(outDir, jobs[1].excerptFile))).toBe(true);
     expect(readFileSync(githubOutput, 'utf8')).toContain('failed_count=2');
-    const prompt = readFileSync(join(outDir, 'prompt.md'), 'utf8');
-    expect(prompt).toContain('HTTP 410');
+    expect(existsSync(join(outDir, 'prompt.md'))).toBe(false);
   });
 
   it('follows pagination so more than 100 jobs are handled', () => {
@@ -924,95 +925,10 @@ describe('collect', () => {
       expect(excerpt).toContain(`##[error]anchor 1 of ${j.id} `);
       expect(excerpt).toContain('[... line truncated ...]');
       expect(excerpt).toContain(
-        `more error lines omitted; see full log ${join(outDir, 'logs', `${j.id}.log`)} ...]`
+        `more error lines omitted; see full log logs/${j.id}.log ...]`
       );
     }
     expect(total).toBeLessThanOrEqual(script.TOTAL_EXCERPT_MAX_BYTES);
-  });
-
-  describe('prompt.md', () => {
-    function promptFor(
-      gh = fakeGh({ jobsPages: [standardJobs], logs: standardLogs })
-    ) {
-      const { outDir } = run(gh);
-      return {
-        prompt: readFileSync(join(outDir, 'prompt.md'), 'utf8'),
-        outDir,
-      };
-    }
-
-    it('names the run, repo checkout and artifacts directory', () => {
-      const { prompt, outDir } = promptFor();
-
-      expect(prompt).toContain(
-        `https://github.com/${REPO}/actions/runs/${RUN_ID}`
-      );
-      expect(prompt).toContain('/workspace/repo');
-      expect(prompt).toContain(join(outDir, 'artifacts'));
-    });
-
-    it('uses a custom artifacts directory when given', () => {
-      const gh = fakeGh({ jobsPages: [standardJobs], logs: standardLogs });
-      const { outDir } = run(gh, { artifactsDir: '/custom/artifacts' });
-
-      expect(readFileSync(join(outDir, 'prompt.md'), 'utf8')).toContain(
-        '/custom/artifacts'
-      );
-    });
-
-    it('lists each failed job with status and absolute excerpt and log paths', () => {
-      const { prompt, outDir } = promptFor();
-
-      expect(prompt).toContain('Expo (latest, true) / Android Test');
-      expect(prompt).toContain('allowed failure');
-      expect(prompt).toContain('React Native (0.79.7) / Android Test');
-      expect(prompt).toContain('blocking');
-      for (const id of [124205245095, 124205419341]) {
-        expect(prompt).toContain(join(outDir, 'excerpts', `${id}.txt`));
-        expect(prompt).toContain(join(outDir, 'logs', `${id}.log`));
-      }
-    });
-
-    it('declares log content untrusted', () => {
-      const { prompt } = promptFor();
-
-      expect(prompt).toMatch(/untrusted/i);
-      expect(prompt).toMatch(/never follow instructions/i);
-    });
-
-    it('asks for repository-grounded diagnosis and forbids edits', () => {
-      const { prompt } = promptFor();
-
-      for (const dir of [
-        'e2e-tests/',
-        '.github/workflows/',
-        'scripts/',
-        'example/',
-        'src/',
-      ]) {
-        expect(prompt).toContain(dir);
-      }
-      expect(prompt).toMatch(/do not (attempt to )?(edit|modify)/i);
-      expect(prompt).toMatch(/share(s)? a root cause|same root cause/i);
-    });
-
-    it('defines the classification vocabulary and required headings', () => {
-      const { prompt } = promptFor();
-
-      for (const label of ['code', 'test', 'infra', 'flaky', 'unknown']) {
-        expect(prompt).toContain(`\`${label}\``);
-      }
-      for (const heading of [
-        '### Classification',
-        '### Root cause',
-        '### Evidence',
-        '### Suggested patch',
-      ]) {
-        expect(prompt).toContain(heading);
-      }
-      expect(prompt).toContain('```diff');
-      expect(prompt).toContain('No patch suggested');
-    });
   });
 });
 
@@ -1099,7 +1015,6 @@ describe('real run 41096464630 fixtures', () => {
         repo: REPO,
         runId: RUN_ID,
         outDir,
-        repoDir: '/workspace/repo',
         env: { GITHUB_OUTPUT: githubOutput },
       },
       realGh(jobsOutput)
@@ -1221,23 +1136,332 @@ describe('real run 41096464630 fixtures', () => {
     expect(excerpt).not.toMatch(/^2026-10-30T/m);
   });
 
-  it('produces a prompt that lists both real jobs with their status and paths', () => {
+  it('writes a bundle with relative paths and no prompt for the real run', () => {
     const { outDir } = collectReal();
-    const prompt = readFileSync(join(outDir, 'prompt.md'), 'utf8');
+    const jobs = readJobsJson(outDir);
 
-    expect(prompt).toContain(
-      `**Expo (latest, true) / Android Test** (job ${ALLOWED_ID}): allowed failure`
+    expect(jobs.schemaVersion).toBe(1);
+    expect(jobs.failedJobs.map((j: { logFile: string }) => j.logFile)).toEqual([
+      `logs/${ALLOWED_ID}.log`,
+      `logs/${BLOCKING_ID}.log`,
+    ]);
+    expect(
+      jobs.failedJobs.map((j: { excerptFile: string }) => j.excerptFile)
+    ).toEqual([`excerpts/${ALLOWED_ID}.txt`, `excerpts/${BLOCKING_ID}.txt`]);
+    expect(existsSync(join(outDir, 'prompt.md'))).toBe(false);
+  });
+});
+
+describe('dispatch', () => {
+  const TARGET_REPO = 'Adyen/adyen-checkout-sdk-meta';
+  const WORKFLOW = 'diagnose-react-native-e2e.yml';
+  const WORKFLOW_PAGE = `https://github.com/${TARGET_REPO}/actions/workflows/${WORKFLOW}`;
+  const ENDPOINT = `repos/${TARGET_REPO}/actions/workflows/${WORKFLOW}/dispatches`;
+  const RUN_PAGE = `https://github.com/${TARGET_REPO}/actions/runs/777`;
+  const TOKEN = 'ghs_synthetictoken1234567890';
+  const BODY_MARKER = 'RESPONSE-BODY-MARKER-xyz';
+
+  type FakeResponse = { status: number; body?: string };
+  type DispatchCall = { args: string[]; input?: string };
+
+  function httpResponse({ status, body = '' }: FakeResponse) {
+    return `HTTP/2.0 ${status} Status\r\nContent-Type: application/json\r\n\r\n${body}`;
+  }
+
+  function fakeDispatchGh(responses: FakeResponse[]) {
+    const calls: DispatchCall[] = [];
+    const runGh = (args: string[], options: { input?: string } = {}) => {
+      calls.push({ args, input: options.input });
+      const response = responses[calls.length - 1];
+      if (!response) throw new Error('unexpected extra gh call');
+      const stdout = httpResponse(response);
+      if (response.status >= 300) {
+        const error = new Error(
+          `gh api failed: ${response.body ?? ''} (HTTP ${response.status})`
+        ) as Error & { stdout: string };
+        error.stdout = stdout;
+        throw error;
+      }
+      return stdout;
+    };
+    return { runGh, calls };
+  }
+
+  let githubOutput: string;
+
+  beforeEach(() => {
+    githubOutput = join(workDir, 'github-output');
+    writeFileSync(githubOutput, '');
+  });
+
+  function runDispatch(
+    gh: ReturnType<typeof fakeDispatchGh>,
+    extra: Record<string, unknown> = {}
+  ) {
+    const result = script.dispatch(
+      {
+        runId: RUN_ID,
+        targetRepo: TARGET_REPO,
+        workflow: WORKFLOW,
+        ref: 'develop',
+        env: { GITHUB_OUTPUT: githubOutput, GH_TOKEN: TOKEN },
+        ...extra,
+      },
+      gh.runGh
     );
-    expect(prompt).toContain(
-      `**React Native (0.79.7) / Android Test** (job ${BLOCKING_ID}): blocking`
+    return { result, output: readFileSync(githubOutput, 'utf8') as string };
+  }
+
+  it('POSTs the workflow_dispatch body on stdin with return_run_details', () => {
+    const gh = fakeDispatchGh([
+      { status: 200, body: JSON.stringify({ html_url: RUN_PAGE }) },
+    ]);
+
+    runDispatch(gh);
+
+    expect(gh.calls).toHaveLength(1);
+    const { args, input } = gh.calls[0];
+    expect(args).toContain('api');
+    expect(args).toContain(ENDPOINT);
+    expect(args[args.indexOf('-X') + 1]).toBe('POST');
+    expect(args[args.indexOf('--input') + 1]).toBe('-');
+    expect(JSON.parse(input as string)).toEqual({
+      ref: 'develop',
+      inputs: { run_id: RUN_ID },
+      return_run_details: true,
+    });
+    expect(input).toBe(
+      `{"ref":"develop","inputs":{"run_id":"${RUN_ID}"},"return_run_details":true}`
     );
-    expect(prompt).toContain(join(outDir, 'excerpts', `${BLOCKING_ID}.txt`));
+    expect(args.join(' ')).not.toContain(TOKEN);
+  });
+
+  it('honours --target-repo, --workflow and --ref overrides', () => {
+    const gh = fakeDispatchGh([{ status: 204 }]);
+
+    runDispatch(gh, {
+      targetRepo: 'Other/meta-repo',
+      workflow: 'other.yaml',
+      ref: 'release/1.x',
+    });
+
+    expect(gh.calls[0].args).toContain(
+      'repos/Other/meta-repo/actions/workflows/other.yaml/dispatches'
+    );
+    expect(JSON.parse(gh.calls[0].input as string).ref).toBe('release/1.x');
+  });
+
+  it('reports requested with the html_url on HTTP 200 and makes one request', () => {
+    const gh = fakeDispatchGh([
+      {
+        status: 200,
+        body: JSON.stringify({
+          workflow_run_id: 777,
+          run_url: 'https://api.github.com/repos/x/actions/runs/777',
+          html_url: RUN_PAGE,
+        }),
+      },
+    ]);
+
+    const { result, output } = runDispatch(gh);
+
+    expect(gh.calls).toHaveLength(1);
+    expect(result).toMatchObject({ status: 'requested', url: RUN_PAGE });
+    expect(output).toBe(
+      `dispatch_status=requested\ndispatch_url=${RUN_PAGE}\n`
+    );
+  });
+
+  it('falls back to the workflow page when html_url is not a GitHub URL', () => {
+    const gh = fakeDispatchGh([
+      {
+        status: 200,
+        body: JSON.stringify({ html_url: 'https://evil.example/x\nfoo=bar' }),
+      },
+    ]);
+
+    const { output } = runDispatch(gh);
+
+    expect(output).toBe(
+      `dispatch_status=requested\ndispatch_url=${WORKFLOW_PAGE}\n`
+    );
+  });
+
+  it('treats HTTP 204 as success, links the workflow page and does not retry', () => {
+    const gh = fakeDispatchGh([{ status: 204 }]);
+
+    const { result, output } = runDispatch(gh);
+
+    expect(gh.calls).toHaveLength(1);
+    expect(result).toMatchObject({ status: 'requested', url: WORKFLOW_PAGE });
+    expect(output).toBe(
+      `dispatch_status=requested\ndispatch_url=${WORKFLOW_PAGE}\n`
+    );
+  });
+
+  it('treats an unparseable 200 body as success with the workflow page link', () => {
+    const gh = fakeDispatchGh([{ status: 200, body: 'not json' }]);
+
+    const { output } = runDispatch(gh);
+
+    expect(gh.calls).toHaveLength(1);
+    expect(output).toContain('dispatch_status=requested');
+    expect(output).toContain(`dispatch_url=${WORKFLOW_PAGE}`);
+  });
+
+  it('retries exactly once without return_run_details after HTTP 422', () => {
+    const gh = fakeDispatchGh([
+      { status: 422, body: 'Unexpected inputs' },
+      { status: 204 },
+    ]);
+
+    const { output } = runDispatch(gh);
+
+    expect(gh.calls).toHaveLength(2);
+    expect(JSON.parse(gh.calls[1].input as string)).toEqual({
+      ref: 'develop',
+      inputs: { run_id: RUN_ID },
+    });
+    expect(output).toBe(
+      `dispatch_status=requested\ndispatch_url=${WORKFLOW_PAGE}\n`
+    );
+  });
+
+  it('fails when the 422 retry also fails, with at most two requests', () => {
+    const gh = fakeDispatchGh([
+      { status: 422, body: BODY_MARKER },
+      { status: 422, body: BODY_MARKER },
+      { status: 204 },
+    ]);
+
+    const { result, output } = runDispatch(gh);
+
+    expect(gh.calls).toHaveLength(2);
+    expect(result.status).toBe('failed');
+    expect(output).toBe('dispatch_status=failed\n');
+  });
+
+  it.each([401, 403, 404, 500])(
+    'does not retry HTTP %i and reports failed',
+    (status) => {
+      const gh = fakeDispatchGh([
+        { status, body: BODY_MARKER },
+        { status: 204 },
+      ]);
+
+      const { result, output } = runDispatch(gh);
+
+      expect(gh.calls).toHaveLength(1);
+      expect(result.status).toBe('failed');
+      expect(output).toBe('dispatch_status=failed\n');
+      expect(output).not.toContain('dispatch_url');
+      expect(result.warning).toContain(String(status));
+    }
+  );
+
+  it('reports failed when gh cannot run at all', () => {
+    const runGh = () => {
+      throw new Error(`gh could not run: spawn ENOENT ${TOKEN} ${BODY_MARKER}`);
+    };
+
+    const result = script.dispatch(
+      {
+        runId: RUN_ID,
+        targetRepo: TARGET_REPO,
+        workflow: WORKFLOW,
+        ref: 'develop',
+        env: { GITHUB_OUTPUT: githubOutput, GH_TOKEN: TOKEN },
+      },
+      runGh
+    );
+
+    expect(result.status).toBe('failed');
+    expect(readFileSync(githubOutput, 'utf8')).toBe('dispatch_status=failed\n');
+    expect(result.warning).not.toContain(TOKEN);
+    expect(result.warning).not.toContain(BODY_MARKER);
+  });
+
+  describe('main', () => {
+    function runMain(argv: string[], gh: ReturnType<typeof fakeDispatchGh>) {
+      const out: string[] = [];
+      const err: string[] = [];
+      const code = script.main(argv, {
+        runGh: gh.runGh,
+        env: { GITHUB_OUTPUT: githubOutput, GH_TOKEN: TOKEN },
+        stdout: (message: string) => out.push(message),
+        stderr: (message: string) => err.push(message),
+      });
+      return { code, out: out.join('\n'), err: err.join('\n') };
+    }
+
+    it('exits 0 on failure with a ::warning:: that has the status but no body or token', () => {
+      const gh = fakeDispatchGh([{ status: 403, body: BODY_MARKER }]);
+
+      const { code, out, err } = runMain(['dispatch', '--run-id', RUN_ID], gh);
+
+      expect(code).toBe(0);
+      expect(out).toMatch(/^::warning::.*403/m);
+      for (const text of [out, err]) {
+        expect(text).not.toContain(BODY_MARKER);
+        expect(text).not.toContain(TOKEN);
+      }
+      expect(readFileSync(githubOutput, 'utf8')).toBe(
+        'dispatch_status=failed\n'
+      );
+    });
+
+    it('exits 0 and prints no warning on success', () => {
+      const gh = fakeDispatchGh([{ status: 204 }]);
+
+      const { code, out } = runMain(['dispatch', '--run-id', RUN_ID], gh);
+
+      expect(code).toBe(0);
+      expect(out).not.toContain('::warning::');
+    });
+
+    it.each([
+      [['dispatch']],
+      [['dispatch', '--run-id', '']],
+      [['dispatch', '--run-id', '12a']],
+      [['dispatch', '--run-id', '1;rm']],
+      [['dispatch', '--run-id', '-1']],
+      [['dispatch', '--run-id', RUN_ID, '--target-repo', 'nope']],
+      [['dispatch', '--run-id', RUN_ID, '--target-repo', 'a/b/c']],
+      [['dispatch', '--run-id', RUN_ID, '--workflow', 'x.txt']],
+      [['dispatch', '--run-id', RUN_ID, '--workflow', 'a/b.yml']],
+      [['dispatch', '--run-id', RUN_ID, '--workflow', '..yml']],
+      [['dispatch', '--run-id', RUN_ID, '--workflow', 'a..b.yml']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', 'a b']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', '../x']],
+      [['dispatch', '--run-id', RUN_ID, '--ref', '--oops']],
+      [['dispatch', '--run-id', RUN_ID, '--wat', 'x']],
+    ])('exits 2 without calling gh for %j', (argv) => {
+      const gh = fakeDispatchGh([{ status: 204 }]);
+
+      const { code } = runMain(argv, gh);
+
+      expect(code).toBe(2);
+      expect(gh.calls).toHaveLength(0);
+      expect(readFileSync(githubOutput, 'utf8')).toBe('');
+    });
+  });
+
+  it('applies the documented defaults when parsing arguments', () => {
+    expect(script.parseArgs(['dispatch', '--run-id', RUN_ID])).toEqual({
+      command: 'dispatch',
+      runId: RUN_ID,
+      targetRepo: TARGET_REPO,
+      workflow: WORKFLOW,
+      ref: 'develop',
+    });
   });
 });
 
 describe('report', () => {
   const RUN_URL = `https://github.com/${REPO}/actions/runs/${RUN_ID}`;
   const REPORT_CAP_BYTES = 512 * 1024;
+  const DISPATCH_URL =
+    'https://github.com/Adyen/adyen-checkout-sdk-meta/actions/runs/777';
 
   const JOB_ALLOWED = {
     id: 124205245095,
@@ -1245,8 +1469,8 @@ describe('report', () => {
     url: `${RUN_URL}/job/124205245095`,
     conclusion: 'failure',
     blocking: false,
-    logFile: '/tmp/out/logs/124205245095.log',
-    excerptFile: '/tmp/out/excerpts/124205245095.txt',
+    logFile: 'logs/124205245095.log',
+    excerptFile: 'excerpts/124205245095.txt',
   };
   const JOB_BLOCKING = {
     id: 124205419341,
@@ -1254,42 +1478,17 @@ describe('report', () => {
     url: `${RUN_URL}/job/124205419341`,
     conclusion: 'failure',
     blocking: true,
-    logFile: '/tmp/out/logs/124205419341.log',
-    excerptFile: '/tmp/out/excerpts/124205419341.txt',
+    logFile: 'logs/124205419341.log',
+    excerptFile: 'excerpts/124205419341.txt',
   };
 
-  const DIAGNOSIS = [
-    '### Classification',
-    '`infra` - both Android jobs',
-    '',
-    '### Root cause',
-    'The emulator ran out of disk space | and Gradle failed.',
-    '',
-    '### Evidence',
-    '- `e2e-tests/run-appium.js:42`',
-    '',
-    '### Suggested patch',
-    '```diff',
-    '--- a/.github/workflows/e2e_test.yml',
-    '+++ b/.github/workflows/e2e_test.yml',
-    '@@',
-    '-  disk-size: 2048M',
-    '+  disk-size: 4096M',
-    '```',
-  ].join('\n');
-
-  const droidJson = (overrides: Record<string, unknown> = {}) =>
-    JSON.stringify({
-      type: 'result',
-      subtype: 'success',
-      is_error: false,
-      duration_ms: 93500,
-      num_turns: 7,
-      result: DIAGNOSIS,
-      session_id: 'session-1',
-      usage: { input_tokens: 10, output_tokens: 20 },
-      ...overrides,
-    });
+  const STATUS_LINES = {
+    'requested': `Droid diagnosis requested in \`Adyen/adyen-checkout-sdk-meta\` (private): [diagnosis run](${DISPATCH_URL})`,
+    'not-configured':
+      'Diagnosis not requested: `SDK_META_DISPATCH_TOKEN` is not configured.',
+    'failed':
+      'Diagnosis request to `Adyen/adyen-checkout-sdk-meta` failed; see the job log.',
+  };
 
   let outDir: string;
   let summaryFile: string;
@@ -1307,6 +1506,7 @@ describe('report', () => {
     writeFileSync(
       join(outDir, 'jobs.json'),
       JSON.stringify({
+        schemaVersion: 1,
         repo: REPO,
         runId: RUN_ID,
         runUrl: RUN_URL,
@@ -1316,18 +1516,8 @@ describe('report', () => {
     );
   }
 
-  function writeDroid(content: string) {
-    const file = join(outDir, 'droid.json');
-    writeFileSync(file, content);
-    return file;
-  }
-
   function runReport(
-    options: {
-      droidOutput?: string;
-      reason?: string;
-      reportFile?: string;
-    } = {},
+    options: Record<string, unknown> = {},
     env: Record<string, string> = {}
   ) {
     const result = script.report({ outDir, ...options, env });
@@ -1337,469 +1527,202 @@ describe('report', () => {
     };
   }
 
-  describe('successful diagnosis', () => {
-    it('renders title, run link, jobs table, Droid body verbatim and footer', () => {
-      writeJobs();
-      const droidOutput = writeDroid(droidJson());
+  const statusLineCount = (markdown: string) =>
+    markdown
+      .split('\n')
+      .filter((line) => /requested|Diagnosis request|not requested/.test(line))
+      .length;
 
-      const { markdown, reportFile } = runReport(
-        { droidOutput },
-        { DROID_MODEL: 'claude-sonnet-5-5' }
-      );
+  it('renders title, run link and the failed jobs table', () => {
+    writeJobs();
 
-      expect(reportFile).toBe(join(outDir, 'report.md'));
-      expect(markdown).toContain('## 🤖 Droid E2E failure diagnosis');
-      expect(markdown).toContain(`[run ${RUN_ID}](${RUN_URL})`);
-      expect(markdown).toContain(
-        `| [Expo (latest, true) / Android Test](${JOB_ALLOWED.url}) | allowed failure | \`failure\` |`
-      );
-      expect(markdown).toContain(
-        `| [React Native (0.79.7) / Android Test](${JOB_BLOCKING.url}) | blocking | \`failure\` |`
-      );
-      expect(markdown).toContain(DIAGNOSIS);
-      expect(markdown).toContain(
-        '```diff\n--- a/.github/workflows/e2e_test.yml'
-      );
-      expect(markdown).toContain('claude-sonnet-5-5');
-      expect(markdown).toContain('7 turns');
-      expect(markdown).toContain('1m 34s');
-      expect(markdown).toMatch(/AI-generated/);
-      expect(markdown).toMatch(/verif/i);
-      expect(markdown.endsWith('\n')).toBe(true);
-    });
+    const { markdown, reportFile } = runReport({ dispatch: 'failed' });
 
-    it('lists the Droid body after the jobs table and the footer after the body', () => {
-      writeJobs();
-      const { markdown } = runReport({ droidOutput: writeDroid(droidJson()) });
-
-      const table = markdown.indexOf('| [React Native (0.79.7)');
-      const body = markdown.indexOf(DIAGNOSIS);
-      const footer = markdown.indexOf('AI-generated');
-      expect(table).toBeGreaterThan(-1);
-      expect(body).toBeGreaterThan(table);
-      expect(footer).toBeGreaterThan(body);
-    });
-
-    it('includes the body verbatim when Droid omits the expected headings', () => {
-      writeJobs();
-      const freeform = 'Looks like a flaky emulator boot.\n\n- retry it\n';
-      const droidOutput = writeDroid(droidJson({ result: freeform }));
-
-      const { markdown } = runReport({ droidOutput });
-
-      expect(markdown).toContain(freeform);
-      expect(markdown).not.toContain('Diagnosis unavailable');
-    });
-
-    it('includes the Droid result byte-for-byte, keeping trailing spaces and newlines', () => {
-      writeJobs();
-      const result = `${DIAGNOSIS}  \n\n\n   \n`;
-      const droidOutput = writeDroid(droidJson({ result }));
-
-      const { markdown } = runReport({ droidOutput });
-
-      expect(markdown).toContain(`\n\n${result}\n\n---\n<sub>`);
-      expect(markdown.endsWith('\n')).toBe(true);
-    });
-
-    it('omits footer details that are unavailable', () => {
-      writeJobs();
-      const droidOutput = writeDroid(
-        JSON.stringify({ is_error: false, result: 'body' })
-      );
-
-      const { markdown } = runReport({ droidOutput }, {});
-
-      expect(markdown).toContain('body');
-      expect(markdown).toMatch(/AI-generated/);
-      expect(markdown).not.toContain('undefined');
-      expect(markdown).not.toContain('NaN');
-      expect(markdown).not.toContain('turns');
-    });
-
-    it('escapes table-breaking characters in job names and skips non-http links', () => {
-      writeJobs([
-        {
-          ...JOB_BLOCKING,
-          name: 'React Native (a|b) / [Android] Test',
-          url: 'ftp://example.com/job',
-        },
-      ]);
-
-      const { markdown } = runReport({ droidOutput: writeDroid(droidJson()) });
-
-      expect(markdown).toContain('React Native (a\\|b) / \\[Android\\] Test');
-      expect(markdown).not.toContain('ftp://');
-    });
+    expect(reportFile).toBe(join(outDir, 'report.md'));
+    expect(markdown).toContain('## 🤖 E2E failure diagnosis');
+    expect(markdown).not.toContain('Droid E2E failure diagnosis');
+    expect(markdown).toContain(`[run ${RUN_ID}](${RUN_URL})`);
+    expect(markdown).toContain(
+      `| [Expo (latest, true) / Android Test](${JOB_ALLOWED.url}) | allowed failure | \`failure\` |`
+    );
+    expect(markdown).toContain(
+      `| [React Native (0.79.7) / Android Test](${JOB_BLOCKING.url}) | blocking | \`failure\` |`
+    );
+    expect(markdown.endsWith('\n')).toBe(true);
   });
 
-  describe('fallbacks', () => {
-    it.each([
-      ['missing-key', 'FACTORY_API_KEY is not configured; diagnosis skipped'],
-      ['droid-failed', 'Diagnosis unavailable'],
-    ])(
-      'renders the %s fallback with the jobs table and exits cleanly',
-      (reason, message) => {
-        writeJobs();
+  it.each(['requested', 'not-configured', 'failed'] as const)(
+    'renders exactly one status line for --dispatch %s after the table',
+    (dispatch) => {
+      writeJobs();
 
-        const { markdown } = runReport({ reason });
+      const { markdown } = runReport({
+        dispatch,
+        dispatchUrl: DISPATCH_URL,
+      });
 
-        expect(markdown).toContain('## 🤖 Droid E2E failure diagnosis');
-        expect(markdown).toContain(message);
-        expect(markdown).toContain(`[Expo (latest, true) / Android Test]`);
-        expect(markdown).toContain('| blocking |');
-        expect(markdown).not.toContain('### Classification');
+      expect(markdown).toContain(STATUS_LINES[dispatch]);
+      expect(statusLineCount(markdown)).toBe(1);
+      expect(markdown.indexOf(STATUS_LINES[dispatch])).toBeGreaterThan(
+        markdown.indexOf('| Job | Status | Conclusion |')
+      );
+    }
+  );
+
+  it('does not link the requested line when no URL is given', () => {
+    writeJobs();
+
+    const { markdown } = runReport({ dispatch: 'requested' });
+
+    expect(markdown).toContain(
+      'Droid diagnosis requested in `Adyen/adyen-checkout-sdk-meta` (private)'
+    );
+    expect(markdown).not.toContain('](undefined)');
+  });
+
+  it('ignores a dispatch URL that is not http(s)', () => {
+    writeJobs();
+
+    const { markdown } = runReport({
+      dispatch: 'requested',
+      dispatchUrl: 'ftp://example.com/x',
+    });
+
+    expect(markdown).not.toContain('ftp://');
+  });
+
+  it('never renders droid.json or other Droid output from the out dir', () => {
+    writeJobs();
+    writeFileSync(
+      join(outDir, 'droid.json'),
+      JSON.stringify({ result: 'DROID-RESULT-MARKER', is_error: false })
+    );
+
+    const { markdown } = runReport(
+      { dispatch: 'requested' },
+      {
+        DROID_MODEL: 'some-model',
       }
     );
 
-    it('ignores a Droid output file when the reason says the run was skipped or failed', () => {
-      writeJobs();
-      const droidOutput = writeDroid(droidJson());
-
-      expect(
-        runReport({ reason: 'droid-failed', droidOutput }).markdown
-      ).toContain('Diagnosis unavailable');
-      expect(
-        runReport({ reason: 'missing-key', droidOutput }).markdown
-      ).toContain('FACTORY_API_KEY is not configured');
-    });
-
-    it('points at the collected excerpts when Droid failed', () => {
-      writeJobs();
-
-      const { markdown } = runReport({ reason: 'droid-failed' });
-
-      expect(markdown).toContain(JOB_ALLOWED.excerptFile);
-      expect(markdown).toContain(JOB_BLOCKING.excerptFile);
-    });
-
-    it('renders collect-failed without jobs.json and links the current run from the environment', () => {
-      const { markdown } = runReport(
-        { reason: 'collect-failed' },
-        {
-          GITHUB_SERVER_URL: 'https://github.com',
-          GITHUB_REPOSITORY: REPO,
-          GITHUB_RUN_ID: RUN_ID,
-        }
-      );
-
-      expect(markdown).toContain('## 🤖 Droid E2E failure diagnosis');
-      expect(markdown).toContain('Could not list the jobs of this run');
-      expect(markdown).toContain(RUN_URL);
-      expect(markdown).not.toContain('| Job |');
-    });
-
-    it('renders collect-failed even when nothing is known about the run', () => {
-      const { markdown } = runReport({ reason: 'collect-failed' });
-
-      expect(markdown).toContain('Could not list the jobs of this run');
-    });
-
-    it('treats a missing Droid output file as unavailable and still shows the table', () => {
-      writeJobs();
-
-      const { markdown } = runReport({
-        droidOutput: join(outDir, 'does-not-exist.json'),
-      });
-
-      expect(markdown).toContain('Diagnosis unavailable');
-      expect(markdown).toContain('| blocking |');
-    });
-
-    it('treats an omitted --droid-output the same way', () => {
-      writeJobs();
-
-      expect(runReport().markdown).toContain('Diagnosis unavailable');
-    });
-
-    it.each([
-      ['unparseable JSON', 'not json at all {'],
-      ['an empty file', ''],
-      ['a JSON array', '[]'],
-      ['JSON null', 'null'],
-      ['is_error true', droidJson({ is_error: true, result: 'Auth failed' })],
-      ['an empty result', droidJson({ result: '' })],
-      ['a whitespace-only result', droidJson({ result: '  \n ' })],
-      ['a non-string result', droidJson({ result: { a: 1 } })],
-      ['a missing result', JSON.stringify({ is_error: false })],
-    ])('renders "Diagnosis unavailable" for %s', (_name, content) => {
-      writeJobs();
-      const droidOutput = writeDroid(content);
-
-      const { markdown } = runReport({ droidOutput });
-
-      expect(markdown).toContain('Diagnosis unavailable');
-      expect(markdown).toContain(`[React Native (0.79.7) / Android Test]`);
-      expect(markdown).not.toContain('### Classification');
-    });
-
-    it('surfaces the error message when Droid reports is_error', () => {
-      writeJobs();
-      const droidOutput = writeDroid(
-        droidJson({ is_error: true, result: 'Rate limit exceeded' })
-      );
-
-      expect(runReport({ droidOutput }).markdown).toContain(
-        'Rate limit exceeded'
-      );
-    });
-
-    it('does not leak environment values into the report', () => {
-      writeJobs();
-
-      const { markdown } = runReport(
-        { reason: 'droid-failed' },
-        { FACTORY_API_KEY: 'fk-super-secret', GH_TOKEN: 'ghs_secret' }
-      );
-
-      expect(markdown).not.toContain('fk-super-secret');
-      expect(markdown).not.toContain('ghs_secret');
-    });
-
-    it('renders jobs whose log could not be fetched without excerpt pointers', () => {
-      writeJobs([
-        {
-          ...JOB_BLOCKING,
-          logFile: null,
-          excerptFile: null,
-          logError: 'HTTP 410',
-        },
-      ]);
-
-      const { markdown } = runReport({ reason: 'droid-failed' });
-
-      expect(markdown).toContain('| blocking |');
-      expect(markdown).not.toContain('null');
-    });
+    expect(markdown).not.toContain('DROID-RESULT-MARKER');
+    expect(markdown).not.toContain('some-model');
+    expect(markdown).not.toMatch(/AI-generated/);
+    expect(markdown).not.toMatch(/FACTORY_API_KEY/);
   });
 
-  describe('no failures', () => {
-    it('renders a one-line report when jobs.json lists zero failed jobs', () => {
-      writeJobs([]);
+  it('renders the collect-failed fallback without a table or status line', () => {
+    writeJobs();
 
-      const { markdown } = runReport({
-        droidOutput: join(outDir, 'missing.json'),
-      });
+    const { markdown } = runReport(
+      { reason: 'collect-failed', dispatch: 'requested' },
+      { GITHUB_REPOSITORY: REPO, GITHUB_RUN_ID: RUN_ID }
+    );
 
-      expect(markdown).toContain('No failed E2E jobs in this run');
-      expect(markdown).toContain(RUN_URL);
-      expect(markdown).not.toContain('| Job |');
-      expect(markdown).not.toContain('Diagnosis unavailable');
-      expect(markdown.trim().split('\n')).toHaveLength(1);
-    });
-
-    it('prefers the no-failure report over a missing-key reason', () => {
-      writeJobs([]);
-
-      expect(runReport({ reason: 'missing-key' }).markdown).toContain(
-        'No failed E2E jobs in this run'
-      );
-    });
+    expect(markdown).toContain('## 🤖 E2E failure diagnosis');
+    expect(markdown).toContain(
+      `[run ${RUN_ID}](https://github.com/${REPO}/actions/runs/${RUN_ID})`
+    );
+    expect(markdown).toContain('Could not list the jobs of this run');
+    expect(markdown).not.toContain('| Job |');
+    expect(statusLineCount(markdown)).toBe(0);
+    expect(markdown).not.toMatch(/droid/i);
   });
 
-  describe('output files', () => {
-    it('writes to --report-file and creates parent directories', () => {
-      writeJobs();
-      const reportFile = join(workDir, 'nested', 'dir', 'custom.md');
+  it('renders a short note when no E2E job failed', () => {
+    writeJobs([]);
 
-      const result = runReport({ reportFile, reason: 'droid-failed' });
+    const { markdown } = runReport({ dispatch: 'requested' });
 
-      expect(result.reportFile).toBe(reportFile);
-      expect(existsSync(join(outDir, 'report.md'))).toBe(false);
-      expect(result.markdown).toContain('Diagnosis unavailable');
-    });
-
-    it('appends identical content to GITHUB_STEP_SUMMARY without overwriting it', () => {
-      writeJobs();
-      writeFileSync(summaryFile, '## Earlier step\n');
-      const droidOutput = writeDroid(droidJson());
-
-      const { markdown } = runReport(
-        { droidOutput },
-        { GITHUB_STEP_SUMMARY: summaryFile }
-      );
-
-      expect(readFileSync(summaryFile, 'utf8')).toBe(
-        `## Earlier step\n${markdown}`
-      );
-    });
-
-    it('creates the summary file when it does not exist yet and appends on repeat runs', () => {
-      writeJobs();
-
-      const first = runReport(
-        { reason: 'droid-failed' },
-        { GITHUB_STEP_SUMMARY: summaryFile }
-      );
-      runReport(
-        { reason: 'droid-failed' },
-        { GITHUB_STEP_SUMMARY: summaryFile }
-      );
-
-      expect(readFileSync(summaryFile, 'utf8')).toBe(
-        `${first.markdown}${first.markdown}`
-      );
-    });
-
-    it('does not touch a summary when GITHUB_STEP_SUMMARY is unset', () => {
-      writeJobs();
-
-      runReport({ reason: 'droid-failed' });
-
-      expect(existsSync(summaryFile)).toBe(false);
-    });
+    expect(markdown).toBe(
+      `**E2E failure diagnosis:** No failed E2E jobs in this run ([run ${RUN_ID}](${RUN_URL})).\n`
+    );
   });
 
-  describe('size cap', () => {
-    it('truncates reports above 512 KiB with a visible notice, keeping the start', () => {
-      writeJobs();
-      const huge = `${'x'.repeat(100)}\n`.repeat(8000);
-      const droidOutput = writeDroid(droidJson({ result: `START\n${huge}` }));
+  it('escapes pipes and brackets in job names and drops non-http job URLs', () => {
+    writeJobs([
+      { ...JOB_BLOCKING, name: 'A | [b]', url: 'ftp://example.com/x' },
+    ]);
 
-      const { markdown } = runReport(
-        { droidOutput },
-        { GITHUB_STEP_SUMMARY: summaryFile }
-      );
+    const { markdown } = runReport({ dispatch: 'failed' });
 
-      expect(Buffer.byteLength(markdown)).toBeLessThanOrEqual(REPORT_CAP_BYTES);
-      expect(markdown).toContain('START');
-      expect(markdown).toMatch(/truncated/i);
-      expect(markdown).toContain('512 KiB');
-      expect(readFileSync(summaryFile, 'utf8')).toBe(markdown);
-    });
-
-    it('does not cut multi-byte characters in half and closes an open code fence', () => {
-      writeJobs();
-      const body = `\`\`\`diff\n${'é'.repeat(REPORT_CAP_BYTES)}`;
-      const droidOutput = writeDroid(droidJson({ result: body }));
-
-      const { markdown } = runReport({ droidOutput });
-
-      expect(markdown).not.toContain('\uFFFD');
-      expect(Buffer.byteLength(markdown)).toBeLessThanOrEqual(REPORT_CAP_BYTES);
-      const fences = markdown.split('\n').filter((l) => l.startsWith('```'));
-      expect(fences.length % 2).toBe(0);
-      expect(markdown.trimEnd().split('\n').pop()).toMatch(/truncated/i);
-    });
-
-    it('leaves reports at or below the cap untouched', () => {
-      writeJobs();
-      const droidOutput = writeDroid(droidJson());
-
-      expect(runReport({ droidOutput }).markdown).not.toMatch(/truncated/i);
-    });
+    expect(markdown).toContain('| A \\| \\[b\\] | blocking |');
+    expect(markdown).not.toContain('ftp://');
   });
 
-  describe('parseArgs', () => {
-    it('parses report arguments in both forms', () => {
+  it('writes --report-file and appends the same content to GITHUB_STEP_SUMMARY', () => {
+    writeJobs();
+    writeFileSync(summaryFile, 'previous content\n');
+    const reportFile = join(workDir, 'nested', 'custom.md');
+
+    const { markdown } = runReport(
+      { dispatch: 'failed', reportFile },
+      { GITHUB_STEP_SUMMARY: summaryFile }
+    );
+
+    expect(readFileSync(reportFile, 'utf8')).toBe(markdown);
+    expect(readFileSync(summaryFile, 'utf8')).toBe(
+      `previous content\n${markdown}`
+    );
+    expect(existsSync(join(outDir, 'report.md'))).toBe(false);
+  });
+
+  it('truncates output above 512 KiB with a visible notice', () => {
+    const manyJobs = Array.from({ length: 6000 }, (_, i) => ({
+      ...JOB_BLOCKING,
+      id: i,
+      name: `React Native (${'x'.repeat(100)}-${i}) / Android Test`,
+    }));
+    writeJobs(manyJobs);
+
+    const { markdown } = runReport({ dispatch: 'failed' });
+
+    expect(Buffer.byteLength(markdown)).toBeLessThanOrEqual(REPORT_CAP_BYTES);
+    expect(markdown).toContain('Report truncated');
+  });
+
+  describe('arguments', () => {
+    it('parses --dispatch, --dispatch-url and --reason', () => {
       expect(
         script.parseArgs([
           'report',
           '--out-dir',
-          '/tmp/out',
-          '--droid-output=/tmp/out/droid.json',
+          '/tmp/o',
+          '--dispatch',
+          'requested',
+          '--dispatch-url',
+          DISPATCH_URL,
           '--reason',
-          'droid-failed',
+          'collect-failed',
           '--report-file',
           '/tmp/r.md',
         ])
       ).toEqual({
         command: 'report',
-        outDir: '/tmp/out',
-        droidOutput: '/tmp/out/droid.json',
-        reason: 'droid-failed',
+        outDir: '/tmp/o',
+        dispatch: 'requested',
+        dispatchUrl: DISPATCH_URL,
+        reason: 'collect-failed',
         reportFile: '/tmp/r.md',
       });
     });
 
-    it('needs only --out-dir', () => {
-      expect(script.parseArgs(['report', '--out-dir', '/tmp/out'])).toEqual({
-        command: 'report',
-        outDir: '/tmp/out',
-      });
-    });
-
     it.each([
-      [['report'], 'missing --out-dir'],
-      [['report', '--out-dir', '/tmp/o', '--reason', 'bogus'], 'bad reason'],
-      [['report', '--out-dir', '/tmp/o', '--repo', REPO], 'collect-only flag'],
-      [['report', '--out-dir'], 'flag without value'],
-      [
-        [
-          'collect',
-          '--repo',
-          REPO,
-          '--run-id',
-          RUN_ID,
-          '--out-dir',
-          '/o',
-          '--reason',
-          'missing-key',
-        ],
-        'report-only flag on collect',
-      ],
-    ])('rejects %j (%s) with a usage error', (argv) => {
+      [['report']],
+      [['report', '--out-dir', '/tmp/o', '--dispatch', 'maybe']],
+      [['report', '--out-dir', '/tmp/o', '--reason', 'something-else']],
+      [['report', '--out-dir', '/tmp/o', '--droid-output', '/tmp/d.json']],
+    ])('rejects %j with a usage error', (argv) => {
       expect(() => script.parseArgs(argv)).toThrow(script.UsageError);
     });
-  });
 
-  describe('CLI', () => {
-    it('exits 0 and writes report.md for a fallback without jobs.json', () => {
-      const result = spawnSync(
-        'node',
-        [SCRIPT, 'report', '--out-dir', outDir, '--reason', 'collect-failed'],
-        {
-          encoding: 'utf8',
-          env: { PATH: process.env.PATH, GITHUB_STEP_SUMMARY: summaryFile },
-        }
+    it('exits 2 for an unknown --dispatch value through main', () => {
+      const code = script.main(
+        ['report', '--out-dir', outDir, '--dispatch', 'maybe'],
+        { env: {}, stdout: () => undefined, stderr: () => undefined }
       );
 
-      expect(result.status).toBe(0);
-      expect(readFileSync(join(outDir, 'report.md'), 'utf8')).toContain(
-        'Could not list the jobs of this run'
-      );
-      expect(readFileSync(summaryFile, 'utf8')).toBe(
-        readFileSync(join(outDir, 'report.md'), 'utf8')
-      );
-    });
-
-    it('main returns 0 for a report and non-zero for report usage errors', () => {
-      writeJobs();
-      const quiet = { stderr: () => undefined, stdout: () => undefined };
-
-      expect(
-        script.main(['report', '--out-dir', outDir], { env: {}, ...quiet })
-      ).toBe(0);
-      expect(script.main(['report'], { env: {}, ...quiet })).not.toBe(0);
-    });
-  });
-
-  describe('real run 41096464630 jobs', () => {
-    it('reports both real failed jobs with the right blocking status after collect', () => {
-      const FIXTURES = join(__dirname, '__fixtures__', 'diagnose-ci-failure');
-      const read = (name: string) => readFileSync(join(FIXTURES, name), 'utf8');
-      script.collect(
-        { repo: REPO, runId: RUN_ID, outDir, repoDir: '/w', env: {} },
-        (args: string[]) => {
-          const endpoint = args.find((a) => a.startsWith('repos/')) ?? '';
-          if (endpoint.includes('/jobs?'))
-            return read('jobs-run-41096464630.json');
-          if (endpoint.endsWith('/124205245095/logs'))
-            return read('job-124205245095-allowed.log');
-          return read('job-124205419341-blocking.log');
-        }
-      );
-      const droidOutput = writeDroid(droidJson());
-
-      const { markdown } = runReport({ droidOutput });
-
-      expect(markdown).toContain(
-        '[Expo (latest, true) / Android Test](https://github.com/Adyen/adyen-react-native/actions/runs/41096464630/job/124205245095) | allowed failure'
-      );
-      expect(markdown).toContain(
-        '[React Native (0.79.7) / Android Test](https://github.com/Adyen/adyen-react-native/actions/runs/41096464630/job/124205419341) | blocking'
-      );
-      expect(markdown).toContain(DIAGNOSIS);
+      expect(code).toBe(2);
     });
   });
 });
