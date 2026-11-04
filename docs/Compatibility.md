@@ -1,8 +1,13 @@
 ## iOS: Swift Package Manager
 
-`@adyen/react-native` ships its own `ios/Package.swift` for React Native's Swift Package Manager (SPM) autolinking. SPM is an alternative to the CocoaPods integration on React Native 0.87.1 or newer; both integrations pin the same Adyen iOS version.
+Swift Package Manager (SPM) is the iOS integration going forward. CocoaPods trunk is becoming read-only: the CocoaPods team plans to stop accepting new podspecs on December 2, 2026 (see the [CocoaPods blog](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). New releases of Swift libraries, including [Adyen iOS](https://github.com/Adyen/adyen-ios), will be distributed through SPM only. CocoaPods can only resolve versions that are already published to trunk.
 
-* SPM integration requires **React Native 0.87.1 or newer**. Older React Native versions and Expo prebuild projects must use CocoaPods.
+SPM is the recommended iOS integration. It requires **React Native 0.87.1 or newer**. `@adyen/react-native` ships its own `ios/Package.swift` for React Native's SPM autolinking.
+
+React Native 0.76 to 0.86 and Expo prebuild projects can only use CocoaPods for now. This limits them to Adyen iOS versions published to CocoaPods trunk. A bridge is planned that lets the CocoaPods integration pull newer Adyen iOS releases through SPM, using React Native's `spm_dependency` podspec helper (available since React Native 0.75).
+
+Notes on the SPM integration:
+
 * React Native 0.87 templates create CocoaPods-integrated Xcode projects, so converting an existing app needs `npx react-native spm add --deintegrate` once from the app's root directory (see the [README](../README.md#manual-integration)).
 * React Native marks SPM support as experimental in 0.87.
 * `@react-native-community/cli` 20.x detects the iOS project only through `ios/Podfile`. If your SPM app no longer has a Podfile, React Native's SPM tooling fails with `CLI config did not provide project.ios.sourceDir`. Point the tooling at a CLI config wrapper that fills in `project.ios` with `node node_modules/react-native/scripts/setup-apple-spm.js update --config-command '<argv JSON>'`, where the wrapper is a small Node script that runs the CLI `config` command and supplies the missing `project.ios` fields.

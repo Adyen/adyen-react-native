@@ -118,15 +118,19 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
 <details>
 <summary><strong>iOS Setup</strong></summary>
 
-1. Link the native module. The default integration is CocoaPods: run `pod install` in your app's `ios` directory.
+1. Link the native module.
 
-   On **React Native 0.87.1 or newer** the module can also be linked with Swift Package Manager (SPM): `@adyen/react-native` ships its own `Package.swift`, and React Native's SPM autolinking picks it up together with [Adyen iOS](https://github.com/Adyen/adyen-ios). After adding or updating the package, refresh the generated packages with:
+   On **React Native 0.87.1 or newer**, link it with Swift Package Manager (SPM). `@adyen/react-native` ships its own `Package.swift`, and React Native's SPM autolinking picks it up together with [Adyen iOS](https://github.com/Adyen/adyen-ios). After adding or updating the package, refresh the generated packages with:
 
    ```bash
    npx react-native spm update
    ```
 
-   React Native marks SPM support as experimental in 0.87. See [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for requirements and known limitations.
+   To convert an existing CocoaPods app, run `npx react-native spm add --deintegrate` once from the app's root directory. React Native marks SPM support as experimental in 0.87.
+
+   On **older React Native versions and Expo**, use CocoaPods: run `pod install` in your app's `ios` directory.
+
+   See [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for why SPM is the integration going forward and for known limitations.
 
 2. Add `returnURL` handler to your `AppDelegate.swift`:
 
