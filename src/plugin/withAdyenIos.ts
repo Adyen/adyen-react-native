@@ -18,10 +18,7 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
 ) => {
   config = withAppDelegate(config, (newConfig) => {
     let appDelegate = newConfig.modResults.contents;
-    if (
-      appDelegate.includes('ADYRedirectComponent') ||
-      appDelegate.includes('import Adyen')
-    ) {
+    if (appDelegate.includes('ADYRedirectComponent')) {
       return newConfig;
     }
     // Detect if it's Swift or Objective-C
@@ -30,9 +27,14 @@ export const withAdyenIos: ConfigPlugin<AdyenPluginProps> = (
       appDelegate.includes('import UIKit');
 
     if (isSwift) {
+      // AppDelegates configured by an earlier plugin version already call RedirectComponent
+      // but only `import Adyen`, so their imports are upgraded without adding the hooks again.
+      const hasRedirectHooks = appDelegate.includes('RedirectComponent');
       appDelegate = setImportSwift(appDelegate);
-      appDelegate = setApplicationOpenUrlSwift(appDelegate);
-      appDelegate = setApplicationContinueUserActivitySwift(appDelegate);
+      if (!hasRedirectHooks) {
+        appDelegate = setApplicationOpenUrlSwift(appDelegate);
+        appDelegate = setApplicationContinueUserActivitySwift(appDelegate);
+      }
     } else {
       appDelegate = setImport(appDelegate, useFrameworks);
       appDelegate = setApplicationOpenUrl(appDelegate);

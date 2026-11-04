@@ -188,8 +188,9 @@ describe('withAdyenIos', () => {
     expect(result.modResults.contents).toBe(originalContent);
   });
 
-  it('should skip modification if AppDelegate is already configured for Swift', async () => {
-    const originalContent = 'import Adyen\n// Already contains Adyen';
+  it('should only update imports if the Swift AppDelegate already handles redirects', async () => {
+    const originalContent =
+      'import Expo\nimport Adyen\n// return RedirectComponent.applicationDidOpen(from: url)';
     const config = {
       name: 'test-app',
       slug: 'test-app',
@@ -198,12 +199,14 @@ describe('withAdyenIos', () => {
 
     const result = withAdyenIos(config, mockPluginSettings);
 
-    // Check that no modifiers were called
+    // The imports are upgraded, but the redirect hooks are not added again
+    expect(setImportSwift).toHaveBeenCalledWith(originalContent);
+    expect(setApplicationOpenUrlSwift).not.toHaveBeenCalled();
+    expect(setApplicationContinueUserActivitySwift).not.toHaveBeenCalled();
     expect(setImport).not.toHaveBeenCalled();
-    expect(setImportSwift).not.toHaveBeenCalled();
-    // ...and so on for all other modifiers
 
-    // Check that the content is unchanged
-    expect(result.modResults.contents).toBe(originalContent);
+    expect(result.modResults.contents).toBe(
+      `${originalContent}\n// MOCK: swift import`
+    );
   });
 });
