@@ -128,7 +128,7 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
 
    To convert an existing CocoaPods app, run `npx react-native spm add --deintegrate` once from the app's root directory. React Native marks SPM support as experimental in 0.87.
 
-   On **older React Native versions and Expo**, use CocoaPods: run `pod install` in your app's `ios` directory.
+   On **older React Native versions**, use CocoaPods: run `pod install` in your app's `ios` directory. Expo apps use CocoaPods by default; Expo SDK 58 can link through Swift Package Manager as a preview (see [Compatibility](docs/Compatibility.md#ios-swift-package-manager)).
 
    See [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for why SPM is the integration going forward and for known limitations.
 
