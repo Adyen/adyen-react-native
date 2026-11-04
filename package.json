@@ -124,6 +124,9 @@
     ]
   },
   "packageManager": "yarn@4.17.1",
+  "swiftpmConfig": {
+    "name": "AdyenReactNative"
+  },
   "codegenConfig": {
     "name": "AdyenPaymentSpec",
     "type": "all",
