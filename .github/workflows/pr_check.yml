@@ -96,10 +96,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # build-ios.sh picks the iOS integration per fixture by capability:
-          # React Native versions that ship scripts/setup-apple-spm.js (0.87)
-          # build through Swift Package Manager, older versions (0.79, 0.85)
-          # fall back to CocoaPods and the deprecated podspec.
           - version: '0.79.7'
           - version: '0.85.3'
           - version: '0.87.1'
@@ -122,8 +118,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # SDK 56 is left out: its expo-modules-jsi (56.0.x) fails to compile
-        # with the Xcode 27 Swift compiler; SDK 57 (expo-modules-jsi 57.1) builds.
         include:
           - version: '54'
           - version: '55'
