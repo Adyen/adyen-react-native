@@ -4,7 +4,16 @@ Swift Package Manager (SPM) is the iOS integration going forward. CocoaPods trun
 
 SPM is the recommended iOS integration. It requires **React Native 0.87.1 or newer**. `@adyen/react-native` ships its own `ios/Package.swift` for React Native's SPM autolinking.
 
-React Native 0.76 to 0.86 and Expo prebuild projects can only use CocoaPods for now. This limits them to Adyen iOS versions published to CocoaPods trunk. A bridge is planned that lets the CocoaPods integration pull newer Adyen iOS releases through SPM, using React Native's `spm_dependency` podspec helper (available since React Native 0.75).
+React Native 0.76 to 0.86 can only use CocoaPods for now. This limits them to Adyen iOS versions published to CocoaPods trunk. A bridge is planned that lets the CocoaPods integration pull newer Adyen iOS releases through SPM, using React Native's `spm_dependency` podspec helper (available since React Native 0.75).
+
+Expo SDK 58 ships a preview SwiftPM autolinking plugin. `@adyen/react-native` links through it the same way as in a bare React Native app, through its `ios/Package.swift`. The preview is not usable out of the box yet: `expo-modules-jsi` 58.0.x publishes no prebuilt XCFramework, which the plugin requires. Until Expo ships it, Expo apps should stay on CocoaPods. Earlier Expo SDKs can only use CocoaPods.
+
+To try the preview, use the `@adyen/react-native` config plugin from this release or newer: it adds `import adyen_react_native` to `AppDelegate.swift`, which SPM builds need. After `npx expo prebuild`, convert the project from the app's root directory and delete `ios/Podfile`, which the conversion leaves in an unusable state. Expo apps have no `@react-native-community/cli`, so `npx react-native spm` is not available; run React Native's script with Expo's autolinking config instead:
+
+```bash
+node node_modules/react-native/scripts/setup-apple-spm.js add --deintegrate --config-command '["node","--no-warnings","--eval","require('"'"'expo/bin/autolinking'"'"')","expo-modules-autolinking","react-native-config","--json","--platform","ios"]'
+rm ios/Podfile
+```
 
 Notes on the SPM integration:
 
