@@ -31,6 +31,16 @@ on:
         required: false
         type: boolean
         default: true
+      release-archive:
+        description: 'After the iOS e2e test, archive the app in Release (unsigned) and check that it embeds Adyen3DS2.framework'
+        required: false
+        type: boolean
+        default: false
+      use-frameworks:
+        description: 'USE_FRAMEWORKS linkage for pod install in React Native CocoaPods fixtures (static or dynamic; empty for the template default)'
+        required: false
+        type: string
+        default: ''
     secrets:
       ADYEN_CLIENT_KEY:
         required: false
@@ -103,7 +113,7 @@ jobs:
     name: iOS Test
     needs: setup
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: ${{ inputs.release-archive && 60 || 45 }}
     continue-on-error: ${{ inputs.allow-failure }}
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
@@ -145,8 +155,15 @@ jobs:
           bash ./inject_secrets.sh
 
       - name: Run iOS Test
+        env:
+          USE_FRAMEWORKS: ${{ inputs.use-frameworks }}
         run: |
           bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ inputs.ios-integration }}"
+
+      - name: Archive iOS Release
+        if: inputs.release-archive
+        run: |
+          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ inputs.ios-integration }}" archive
 
       - name: Upload Xcodebuild Log (iOS)
         if: failure()
@@ -154,6 +171,15 @@ jobs:
         with:
           name: xcodebuild_log_ios_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
           path: xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Xcodebuild Archive Log (iOS)
+        if: failure() && inputs.release-archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcodebuild_archive_log_ios_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
+          path: xcodebuild-archive.log
           if-no-files-found: ignore
           retention-days: 1
 

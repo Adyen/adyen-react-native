@@ -5,6 +5,23 @@ set -euo pipefail
 platform=${1:-}
 device_name=${2:-}
 ios_integration=${3:-cocoapods}
+# e2e: prepare the fixture, build Debug for the simulator and run the Appium
+# tests. archive: archive the already prepared fixture in Release, unsigned.
+mode=${4:-e2e}
+
+case "$mode" in
+  e2e | archive) ;;
+  *)
+    echo "Error: unknown mode '$mode' (expected e2e or archive)" >&2
+    exit 1
+    ;;
+esac
+
+# React Native's Podfile treats any set USE_FRAMEWORKS, even an empty one, as a
+# linkage name.
+if [ -z "${USE_FRAMEWORKS:-}" ]; then
+  unset USE_FRAMEWORKS
+fi
 
 case "$ios_integration" in
   cocoapods) ;;
@@ -54,6 +71,58 @@ detect_xcodeproj() {
   fi
   echo "$found"
 }
+
+# Runs after an e2e run in the same checkout, which already prepared the
+# Xcode project (prebuild, pods or SPM), so it only archives and inspects.
+archive_release() {
+  if [ "$ios_integration" = "spm" ]; then
+    PROJECT=$(detect_xcodeproj)
+    SCHEME=$(basename "$PROJECT" .xcodeproj)
+    XCODE_CONTAINER=(-project "$PROJECT")
+  else
+    WORKSPACE=$(detect_xcworkspace)
+    SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+    XCODE_CONTAINER=(-workspace "$WORKSPACE")
+  fi
+
+  local archive_path="build/$SCHEME.xcarchive"
+
+  echo "::group::Archive iOS Release [$(date '+%H:%M:%S')]"
+  echo "Using ${XCODE_CONTAINER[*]} with scheme: $SCHEME"
+  xcodebuild "${XCODE_CONTAINER[@]}" \
+    -scheme "$SCHEME" \
+    -configuration Release \
+    -destination generic/platform=iOS \
+    -derivedDataPath build \
+    -archivePath "$archive_path" \
+    CODE_SIGNING_ALLOWED=NO \
+    archive \
+    2>&1 | tee xcodebuild-archive.log | xcbeautify --renderer github-actions
+  echo "::endgroup::"
+
+  echo "::group::Check archived app [$(date '+%H:%M:%S')]"
+  local app
+  app=$(find "$archive_path/Products/Applications" -maxdepth 1 -name "*.app" | head -n 1)
+  if [ -z "$app" ]; then
+    echo "Error: No .app found in $archive_path/Products/Applications" >&2
+    exit 1
+  fi
+  if [ ! -d "$app/Frameworks/Adyen3DS2.framework" ]; then
+    echo "Error: $app does not embed Frameworks/Adyen3DS2.framework" >&2
+    exit 1
+  fi
+  echo "$app embeds Frameworks/Adyen3DS2.framework"
+  echo "::endgroup::"
+}
+
+if [ "$mode" = "archive" ]; then
+  if ! command -v xcbeautify &> /dev/null; then
+    echo "Installing xcbeautify..."
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install xcbeautify
+  fi
+  archive_release
+  exit 0
+fi
 
 if [ "$platform" = "expo" ] && [ "$ios_integration" = "spm" ]; then
   # Expo SDK 58+ links its modules through Expo's preview SwiftPM autolinking

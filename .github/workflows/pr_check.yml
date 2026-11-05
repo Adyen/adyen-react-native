@@ -89,7 +89,7 @@ jobs:
       node-version: ${{ vars.NODE_VERSION }}
 
   e2e-react-native:
-    name: React Native (${{ matrix.version }}, ${{ matrix.ios-integration }})
+    name: React Native (${{ matrix.version }}, ${{ matrix.ios-integration }}${{ matrix.use-frameworks && format(', {0} frameworks', matrix.use-frameworks) || '' }})
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
     needs: [build-lib]
     strategy:
@@ -99,13 +99,18 @@ jobs:
         include:
           - version: '0.79.7'
             ios-integration: 'cocoapods'
+            release-archive: true
           - version: '0.85.3'
             ios-integration: 'cocoapods'
           - version: '0.87.1'
             ios-integration: 'spm'
+            release-archive: true
+          # The other CocoaPods entries cover the template's default linkage.
           - version: '0.87.1'
             ios-integration: 'cocoapods'
+            use-frameworks: 'static'
             skip-android: true
+            release-archive: true
           - version: 'latest'
             ios-integration: 'spm'
             allow-failure: true
@@ -121,6 +126,8 @@ jobs:
       allow-failure: ${{ matrix.allow-failure || false }}
       ios-integration: ${{ matrix.ios-integration }}
       android: ${{ !matrix.skip-android }}
+      release-archive: ${{ matrix.release-archive || false }}
+      use-frameworks: ${{ matrix.use-frameworks || '' }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
@@ -135,6 +142,7 @@ jobs:
         include:
           - version: '54'
             ios-integration: 'cocoapods'
+            release-archive: true
           - version: '55'
             ios-integration: 'cocoapods'
           - version: '57'
@@ -151,6 +159,7 @@ jobs:
       node-version: ${{ vars.NODE_VERSION }}
       allow-failure: ${{ matrix.allow-failure || false }}
       ios-integration: ${{ matrix.ios-integration }}
+      release-archive: ${{ matrix.release-archive || false }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
