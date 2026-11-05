@@ -1,14 +1,5 @@
 PODS:
-  - Adyen (5.27.0):
-    - Adyen/Actions (= 5.27.0)
-    - Adyen/Card (= 5.27.0)
-    - Adyen/Components (= 5.27.0)
-    - Adyen/Core (= 5.27.0)
-    - Adyen/DropIn (= 5.27.0)
-    - Adyen/Encryption (= 5.27.0)
-    - Adyen/Session (= 5.27.0)
   - adyen-react-native (2.0.0-local.1):
-    - Adyen (= 5.27.0)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -30,29 +21,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - Adyen/Actions (5.27.0):
-    - Adyen/Core
-    - Adyen3DS2 (= 2.4.4)
-  - Adyen/Card (5.27.0):
-    - Adyen/Core
-    - Adyen/Encryption
-  - Adyen/Components (5.27.0):
-    - Adyen/Core
-    - Adyen/Encryption
-  - Adyen/Core (5.27.0):
-    - AdyenNetworking (= 3.0.1)
-  - Adyen/DropIn (5.27.0):
-    - Adyen/Actions
-    - Adyen/Card
-    - Adyen/Components
-    - Adyen/Core
-    - Adyen/Encryption
-  - Adyen/Encryption (5.27.0)
-  - Adyen/Session (5.27.0):
-    - Adyen/Actions
-    - Adyen/Core
-  - Adyen3DS2 (2.4.4)
-  - AdyenNetworking (3.0.1)
   - boost (1.84.0):
     - ReactNativeDependencies
   - DoubleConversion (1.1.6):
@@ -1893,12 +1861,6 @@ DEPENDENCIES:
   - SocketRocket (from `build/rndeps-facades/SocketRocket`)
   - Yoga (from `build/rncore-facades/Yoga`)
 
-SPEC REPOS:
-  trunk:
-    - Adyen
-    - Adyen3DS2
-    - AdyenNetworking
-
 EXTERNAL SOURCES:
   adyen-react-native:
     :path: "../.."
@@ -2081,10 +2043,7 @@ EXTERNAL SOURCES:
     :path: build/rncore-facades/Yoga
 
 SPEC CHECKSUMS:
-  Adyen: fc03cdeb4a4903ee256afd1ba25aacf9e7e038a1
-  adyen-react-native: 02e8b6c1f2f97ce5be7c28608735168ceeef7e86
-  Adyen3DS2: 45cc4a1f5ca2081e987bfa5bceaa986ba95c289b
-  AdyenNetworking: eb6196954566a5b3e0c3c56fa12d8d69948603dc
+  adyen-react-native: 41c3c5d12fffd009d4e38a6ca530898089e1c448
   boost: 8502bfdc46e2804408af2e163049ece181009af4
   DoubleConversion: 501a575c40c0b50c89685762dd3e415e6bb26fb0
   fast_float: 7c925d1cebf8328d4018d061f49377e9f887e3b4
@@ -2174,6 +2133,6 @@ SPEC CHECKSUMS:
   SocketRocket: 37aec555668fb852ec12e3c0de59a86ca58f0871
   Yoga: d1c536142c5ff8ec8cd856ab2a7c227a1d875c8e
 
-PODFILE CHECKSUM: eda0e5d5cab8c57a802b6d505abac2d6d53c3430
+PODFILE CHECKSUM: 1b89fafd5262faee6242ccb880c48b63bf0fc82c
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2
