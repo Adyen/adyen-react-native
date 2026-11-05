@@ -61,7 +61,7 @@ yarn add @adyen/react-native
 >
 > This library is not compatible with Expo Go. It is designed exclusively for use with the [Continuous Native Generation](https://docs.expo.dev/workflow/overview/#continuous-native-generation-cng).
 
-Add `@adyen/react-native` plugin to your `app.json`:
+Add `@adyen/react-native` plugin to your `app.json`. The plugin requires Expo SDK 54 or newer:
 
 ```json
 {
@@ -79,7 +79,6 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
 | Option               | Description                                                                     |
 | -------------------- | ------------------------------------------------------------------------------- |
 | `merchantIdentifier` | Sets ApplePay Merchant ID to your iOS app's entitlement file. Empty by default. |
-| `useFrameworks`      | Adjust `import` on iOS in case your `Podfile` has `use_frameworks!` enabled.    |
 
 **Example with all options:**
 
@@ -90,8 +89,7 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
       [
         "@adyen/react-native",
         {
-          "merchantIdentifier": "merchant.com.my-merchant-id",
-          "useFrameworks": true
+          "merchantIdentifier": "merchant.com.my-merchant-id"
         }
       ]
     ]
