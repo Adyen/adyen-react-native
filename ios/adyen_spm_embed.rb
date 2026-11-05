@@ -72,6 +72,17 @@ module AdyenSPMEmbed
     end
   end
 
+  # CocoaPods numbers new Pods project objects from a counter and does not check for collisions.
+  # After CocoaPods stabilizes the target UUIDs, that counter restarts at 0 once the current batch of
+  # UUIDs runs out, so objects that React Native's spm_dependency adds in post_install can reuse the
+  # UUID of an existing object (even the root project object), and Xcode cannot open Pods.xcodeproj.
+  module ProjectUUIDs
+    def generate_available_uuid_list(count = 100)
+      super
+      @available_uuids.reject! { |uuid| objects_by_uuid.key?(uuid) }
+    end
+  end
+
   # A test bundle that links the pod as well as its host app (`inherit! :complete`) gives Xcode two
   # clients of the Adyen package products. Xcode then builds them as dynamic frameworks that nothing
   # links, and the app fails to link with undefined Adyen symbols.
@@ -91,6 +102,7 @@ end
 
 Pod::AggregateTarget.prepend(AdyenSPMEmbed::AggregateTarget) unless Pod::AggregateTarget < AdyenSPMEmbed::AggregateTarget
 Pod::Installer.prepend(AdyenSPMEmbed::Installer) unless Pod::Installer < AdyenSPMEmbed::Installer
+Pod::Project.prepend(AdyenSPMEmbed::ProjectUUIDs) unless Pod::Project < AdyenSPMEmbed::ProjectUUIDs
 if defined?(SPMManager) && SPMManager.private_method_defined?(:rewrite_aggregate_modulemap_references) &&
    !(SPMManager < AdyenSPMEmbed::ModuleMapReferences)
   SPMManager.prepend(AdyenSPMEmbed::ModuleMapReferences)
