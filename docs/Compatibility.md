@@ -1,3 +1,28 @@
+## iOS: Swift Package Manager
+
+Swift Package Manager (SPM) is the iOS integration going forward. CocoaPods trunk is becoming read-only: the CocoaPods team plans to stop accepting new podspecs on December 2, 2026 (see the [CocoaPods blog](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). New releases of Swift libraries, including [Adyen iOS](https://github.com/Adyen/adyen-ios), will be distributed through SPM only. CocoaPods can only resolve versions that are already published to trunk.
+
+SPM is the recommended iOS integration. It requires **React Native 0.87.1 or newer**. `@adyen/react-native` ships its own `ios/Package.swift` for React Native's SPM autolinking.
+
+React Native 0.76 to 0.86 can only use CocoaPods for now. This limits them to Adyen iOS versions published to CocoaPods trunk. A bridge is planned that lets the CocoaPods integration pull newer Adyen iOS releases through SPM, using React Native's `spm_dependency` podspec helper (available since React Native 0.75).
+
+Expo SDK 58 ships a preview SwiftPM autolinking plugin. With `expo` 58.0.17 or newer, `@adyen/react-native` links through it the same way as in a bare React Native app, through its `ios/Package.swift`; this setup is tested in CI. Earlier 58.0.x patch releases cannot build the `ExpoModulesJSI` framework that the plugin needs. Expo's SPM support is a preview, and CocoaPods stays Expo's default. Earlier Expo SDKs can only use CocoaPods.
+
+To use SPM, use the `@adyen/react-native` config plugin from this release or newer: it adds `import adyen_react_native` to `AppDelegate.swift`, which SPM builds need. After `npx expo prebuild`, convert the project from the app's root directory and delete `ios/Podfile`, which the conversion leaves in an unusable state. Expo apps have no `@react-native-community/cli`, so `npx react-native spm` is not available; run React Native's script with Expo's autolinking config instead:
+
+```bash
+node node_modules/react-native/scripts/setup-apple-spm.js add --deintegrate --yes --config-command '["node","--no-warnings","--eval","require('"'"'expo/bin/autolinking'"'"')","expo-modules-autolinking","react-native-config","--json","--platform","ios"]'
+rm ios/Podfile
+```
+
+Notes on the SPM integration:
+
+* React Native 0.87 templates create CocoaPods-integrated Xcode projects, so converting an existing app needs `npx react-native spm add --deintegrate` once from the app's root directory (see the [README](../README.md#manual-integration)).
+* React Native marks SPM support as experimental in 0.87.
+* `@react-native-community/cli` 20.x detects the iOS project only through `ios/Podfile`. If your SPM app no longer has a Podfile, React Native's SPM tooling fails with `CLI config did not provide project.ios.sourceDir`. Point the tooling at a CLI config wrapper that fills in `project.ios` with `node node_modules/react-native/scripts/setup-apple-spm.js update --config-command '<argv JSON>'`, where the wrapper is a small Node script that runs the CLI `config` command and supplies the missing `project.ios` fields.
+* The package resolves [Adyen iOS](https://github.com/Adyen/adyen-ios) from GitHub at the exact version the podspec pins (5.27.0) and declares iOS 15 as its minimum, matching React Native's SPM autolinking floor.
+* Adyen iOS splits into several modules under SPM (`Adyen`, `AdyenActions`, `AdyenDropIn`, ...), while the CocoaPod is the single `Adyen` module. App code that only does `import Adyen` and uses `RedirectComponent` or `DropInComponent` must also `import adyen_react_native`, which re-exports those modules. This import works with CocoaPods as well. Do not qualify those types with the `Adyen.` module prefix (for example, write `DropInComponent.Style`, not `Adyen.DropInComponent.Style`).
+
 ## Adyen Android SDK 5.22.0: Kotlin and Android SDK requirements
 
 Adyen Android SDK 5.22.0 sets three build requirements for the Android app that consumes `@adyen/react-native`:

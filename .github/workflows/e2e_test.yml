@@ -21,6 +21,16 @@ on:
         required: false
         type: boolean
         default: false
+      ios-integration:
+        description: 'iOS integration of the fixture (cocoapods or spm; spm needs React Native 0.87+ or Expo SDK 58+)'
+        required: false
+        type: string
+        default: 'cocoapods'
+      android:
+        description: 'Run the Android job'
+        required: false
+        type: boolean
+        default: true
     secrets:
       ADYEN_CLIENT_KEY:
         required: false
@@ -77,14 +87,14 @@ jobs:
       - name: Upload Fixture
         uses: actions/upload-artifact@v7
         with:
-          name: fixture-${{ inputs.platform }}-${{ inputs.version }}
+          name: fixture-${{ inputs.platform }}-${{ inputs.version }}-${{ inputs.ios-integration }}
           path: ${{ env.APP_DIR }}
           include-hidden-files: true
           retention-days: 1
 
       - name: Report allowed failure
         if: failure() && inputs.allow-failure
-        run: echo "::error title=Non-blocking failure::Fixture setup for ${{ inputs.platform }} ${{ inputs.version }} failed. Non-blocking, but needs investigation."
+        run: echo "::error title=Non-blocking failure::Fixture setup for ${{ inputs.platform }} ${{ inputs.version }} (${{ inputs.ios-integration }}) failed. Non-blocking, but needs investigation."
 
   # ====================================================
   # JOB 2: iOS Build & Test
@@ -105,7 +115,7 @@ jobs:
       - name: Download Fixture
         uses: actions/download-artifact@v8
         with:
-          name: fixture-${{ inputs.platform }}-${{ inputs.version }}
+          name: fixture-${{ inputs.platform }}-${{ inputs.version }}-${{ inputs.ios-integration }}
 
       - uses: actions/setup-node@v7
         with:
@@ -136,13 +146,13 @@ jobs:
 
       - name: Run iOS Test
         run: |
-          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}"
+          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ inputs.ios-integration }}"
 
       - name: Upload Xcodebuild Log (iOS)
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: xcodebuild_log_ios_${{ inputs.platform }}_${{ inputs.version }}
+          name: xcodebuild_log_ios_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
           path: xcodebuild.log
           if-no-files-found: ignore
           retention-days: 1
@@ -151,7 +161,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: appium_failure_ios_${{ inputs.platform }}_${{ inputs.version }}
+          name: appium_failure_ios_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
           path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
@@ -160,14 +170,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: appium_page_source_ios_${{ inputs.platform }}_${{ inputs.version }}
+          name: appium_page_source_ios_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
           path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
 
       - name: Report allowed failure
         if: failure() && inputs.allow-failure
-        run: echo "::error title=Non-blocking failure::iOS e2e test for ${{ inputs.platform }} ${{ inputs.version }} failed. Non-blocking, but needs investigation."
+        run: echo "::error title=Non-blocking failure::iOS e2e test for ${{ inputs.platform }} ${{ inputs.version }} (${{ inputs.ios-integration }}) failed. Non-blocking, but needs investigation."
 
   # ====================================================
   # JOB 3: Android Build & Test
@@ -175,6 +185,7 @@ jobs:
   android-test:
     name: Android Test
     needs: setup
+    if: inputs.android
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     continue-on-error: ${{ inputs.allow-failure }}
@@ -189,7 +200,7 @@ jobs:
       - name: Download Fixture
         uses: actions/download-artifact@v8
         with:
-          name: fixture-${{ inputs.platform }}-${{ inputs.version }}
+          name: fixture-${{ inputs.platform }}-${{ inputs.version }}-${{ inputs.ios-integration }}
 
       - name: Setup Android Emulator
         uses: ./.github/actions/setup-android-emulator
@@ -226,7 +237,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: appium_failure_android_${{ inputs.platform }}_${{ inputs.version }}
+          name: appium_failure_android_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
           path: appium_failure.png
           if-no-files-found: ignore
           retention-days: 1
@@ -235,11 +246,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: appium_page_source_android_${{ inputs.platform }}_${{ inputs.version }}
+          name: appium_page_source_android_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
           path: appium_page_source.xml
           if-no-files-found: ignore
           retention-days: 1
 
       - name: Report allowed failure
         if: failure() && inputs.allow-failure
-        run: echo "::error title=Non-blocking failure::Android e2e test for ${{ inputs.platform }} ${{ inputs.version }} failed. Non-blocking, but needs investigation."
+        run: echo "::error title=Non-blocking failure::Android e2e test for ${{ inputs.platform }} ${{ inputs.version }} (${{ inputs.ios-integration }}) failed. Non-blocking, but needs investigation."

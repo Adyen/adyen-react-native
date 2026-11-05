@@ -12,7 +12,7 @@ extension BaseModuleSender: EventEmitter {
     }
 }
 
-internal class BaseModuleSender: BaseModule {
+package class BaseModuleSender: BaseModule {
 
     /// Override for testing. When nil, uses self (RCTEventEmitter).
     internal var emitterOverride: EventEmitter?
@@ -20,15 +20,15 @@ internal class BaseModuleSender: BaseModule {
         emitterOverride ?? self
     }
 
-    override func stopObserving() { /* No JS events expected */ }
-    override func startObserving() { /* No JS events expected */ }
+    override package func stopObserving() { /* No JS events expected */ }
+    override package func startObserving() { /* No JS events expected */ }
     
-    override open func supportedEvents() -> [String]! {
+    override package func supportedEvents() -> [String]! {
         [EventName.fail, EventName.submit].map(\.rawValue)
     }
 
     @objc
-    override func constantsToExport() -> [AnyHashable: Any]! {
+    override package func constantsToExport() -> [AnyHashable: Any]! {
         ["supportedEvents": supportedEvents() ?? []]
     }
 

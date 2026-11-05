@@ -4,40 +4,145 @@ set -euo pipefail
 
 platform=${1:-}
 device_name=${2:-}
+ios_integration=${3:-cocoapods}
 
-if [ "$platform" = "expo" ]; then
+case "$ios_integration" in
+  cocoapods) ;;
+  spm)
+    # React Native ships its SPM tooling from 0.87 (Expo SDK 58) on.
+    if [ ! -f node_modules/react-native/scripts/setup-apple-spm.js ]; then
+      echo "Error: the spm iOS integration needs React Native 0.87 or newer (node_modules/react-native/scripts/setup-apple-spm.js not found)" >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "Error: unknown iOS integration '$ios_integration' (expected cocoapods or spm)" >&2
+    exit 1
+    ;;
+esac
+
+# Xcode 26's Apple Clang breaks consteval in fmt 11.0.2 (RN 0.76 - 0.80 and
+# Expo SDK 52 pods fixtures). base.h ignores a pre-defined FMT_USE_CONSTEVAL,
+# so patch the header. No-op when fmt is absent (newer pods, SPM fixtures).
+patch_fmt_for_xcode26() {
+  local fmt_base="ios/Pods/fmt/include/fmt/base.h"
+  if [ -f "$fmt_base" ] && ! grep -q "Xcode 26 workaround" "$fmt_base"; then
+    chmod 0644 "$fmt_base"
+    perl -0pi -e 's/(#elif defined\(__cpp_consteval\)\n#  define FMT_USE_CONSTEVAL) 1/\/\/ Xcode 26 workaround: disable consteval\n$1 0/' "$fmt_base"
+    echo "Patched $fmt_base"
+  fi
+}
+
+# Echo the app's Xcode container under ios/ or fail; its base name doubles
+# as the xcodebuild scheme.
+detect_xcworkspace() {
+  local found
+  found=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+  if [ -z "$found" ]; then
+    echo "Error: No .xcworkspace found in ios directory" >&2
+    exit 1
+  fi
+  echo "$found"
+}
+
+detect_xcodeproj() {
+  local found
+  found=$(find ios -maxdepth 1 -name "*.xcodeproj" | head -n 1)
+  if [ -z "$found" ]; then
+    echo "Error: No .xcodeproj found in ios directory" >&2
+    exit 1
+  fi
+  echo "$found"
+}
+
+if [ "$platform" = "expo" ] && [ "$ios_integration" = "spm" ]; then
+  # Expo SDK 58+ links its modules through Expo's preview SwiftPM autolinking
+  # plugin, and the library through its own ios/Package.swift.
+  echo "Swift Package Manager requested: building the Expo fixture through SPM"
   echo "::group::Prebuild Expo iOS [$(date '+%H:%M:%S')]"
-  npx expo prebuild -p ios --clean
+  npx expo prebuild -p ios --clean --no-install
   echo "::endgroup::"
+
+  echo "::group::Set up Swift Package Manager [$(date '+%H:%M:%S')]"
+  # Expo apps have no @react-native-community/cli, so `npx react-native spm`
+  # is unavailable: run React Native's script directly with the autolinking
+  # config command that Expo's Podfile uses. `add` pins it in
+  # .spm-injected.json for later syncs and Xcode builds.
+  node node_modules/react-native/scripts/setup-apple-spm.js add --deintegrate --yes \
+    --config-command '["node","--no-warnings","--eval","require('"'"'expo/bin/autolinking'"'"')","expo-modules-autolinking","react-native-config","--json","--platform","ios"]'
+  # --deintegrate leaves Expo's Podfile as invalid Ruby.
+  rm -f ios/Podfile ios/Podfile.lock
+  echo "::endgroup::"
+
+  PROJECT=$(detect_xcodeproj)
+  SCHEME=$(basename "$PROJECT" .xcodeproj)
+  XCODE_CONTAINER=(-project "$PROJECT")
+elif [ "$platform" = "expo" ]; then
+  # Expo apps on CocoaPods resolve the deprecated adyen-react-native
+  # podspec. Pods are installed separately because prebuild hides the
+  # `pod install` output, including the podspec deprecation warning.
+  echo "::group::Prebuild Expo iOS [$(date '+%H:%M:%S')]"
+  npx expo prebuild -p ios --clean --no-install
+  echo "::endgroup::"
+
+  echo "::group::Install Pods [$(date '+%H:%M:%S')]"
+  (cd ios && pod install --repo-update)
+  echo "::endgroup::"
+
+  echo "::group::Patch fmt for Xcode 26 [$(date '+%H:%M:%S')]"
+  patch_fmt_for_xcode26
+  echo "::endgroup::"
+
+  WORKSPACE=$(detect_xcworkspace)
+  SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+  XCODE_CONTAINER=(-workspace "$WORKSPACE")
+elif [ "$ios_integration" = "spm" ]; then
+  # The library is linked through its own ios/Package.swift. `pod deintegrate`
+  # strips the template's CocoaPods wiring from the Xcode project;
+  # `pod install` never runs.
+  echo "Swift Package Manager requested: building the React Native fixture through SPM"
+  echo "::group::Set up Swift Package Manager [$(date '+%H:%M:%S')]"
+  # @react-native-community/cli only detects ios/ through a Podfile, which the
+  # SPM app no longer has; spm-cli-config.js fills in project.ios instead.
+  # `spm add` pins it in .spm-injected.json for later syncs and Xcode builds.
+  RCT_SPM_AUTOLINKING_CONFIG_COMMAND='["node","spm-cli-config.js"]' \
+    npx react-native spm add --deintegrate --yes
+  rm -f ios/Podfile ios/Podfile.lock
+  echo "::endgroup::"
+
+  PROJECT=$(detect_xcodeproj)
+  SCHEME=$(basename "$PROJECT" .xcodeproj)
+  XCODE_CONTAINER=(-project "$PROJECT")
 else
-  echo "::group::Update Pods [$(date '+%H:%M:%S')]"
-  cd ios || exit
-  pod install --repo-update
-  cd ..
+  # React Native CLI apps on CocoaPods resolve the deprecated
+  # adyen-react-native podspec.
+  echo "CocoaPods requested: building the React Native fixture through CocoaPods"
+  echo "::group::Patch toolchain search paths for pods [$(date '+%H:%M:%S')]"
+  # On Xcode 26, pods builds need the template's swift library search paths
+  # spelled with $(DT_TOOLCHAIN_DIR) instead of $(TOOLCHAIN_DIR). The SPM
+  # branch above must NOT get this patch - it breaks SPM fixture builds.
+  PROJECT=$(detect_xcodeproj)
+  project_file="$PROJECT/project.pbxproj"
+  if grep -q '\$(TOOLCHAIN_DIR)/usr/lib/swift/\$(PLATFORM_NAME)' "$project_file"; then
+    perl -0pi -e 's/\$\(TOOLCHAIN_DIR\)(\/usr\/lib\/swift\/\$\(PLATFORM_NAME\))/\$(DT_TOOLCHAIN_DIR)$1/g' "$project_file"
+    echo "Patched $project_file"
+  fi
   echo "::endgroup::"
+
+  echo "::group::Install Pods [$(date '+%H:%M:%S')]"
+  (cd ios && pod install --repo-update)
+  echo "::endgroup::"
+
+  echo "::group::Patch fmt for Xcode 26 [$(date '+%H:%M:%S')]"
+  patch_fmt_for_xcode26
+  echo "::endgroup::"
+
+  WORKSPACE=$(detect_xcworkspace)
+  SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+  XCODE_CONTAINER=(-workspace "$WORKSPACE")
 fi
 
-echo "::group::Patch fmt for Xcode 26 [$(date '+%H:%M:%S')]"
-# Xcode 26's Apple Clang breaks consteval in fmt 11.0.2 (RN 0.80.2 / Expo SDK 52
-# fixtures). base.h ignores a pre-defined FMT_USE_CONSTEVAL, so patch the header.
-FMT_BASE="ios/Pods/fmt/include/fmt/base.h"
-if [ -f "$FMT_BASE" ] && ! grep -q "Xcode 26 workaround" "$FMT_BASE"; then
-  chmod 0644 "$FMT_BASE"
-  perl -0pi -e 's/(#elif defined\(__cpp_consteval\)\n#  define FMT_USE_CONSTEVAL) 1/\/\/ Xcode 26 workaround: disable consteval\n$1 0/' "$FMT_BASE"
-  echo "Patched $FMT_BASE"
-fi
-echo "::endgroup::"
-
-# Find the workspace file dynamically (after ios directory is created)
-WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
-if [ -z "$WORKSPACE" ]; then
-  echo "Error: No .xcworkspace found in ios directory"
-  exit 1
-fi
-
-# Extract scheme name from workspace (remove path and extension)
-SCHEME=$(basename "$WORKSPACE" .xcworkspace)
-echo "Using workspace: $WORKSPACE with scheme: $SCHEME"
+echo "Using ${XCODE_CONTAINER[*]} with scheme: $SCHEME"
 
 # Resolve simulator UDID
 UDID=$(bash ./resolve_ios_simulator.sh "$device_name")
@@ -49,7 +154,7 @@ if ! command -v xcbeautify &> /dev/null; then
 fi
 
 XCODEBUILD_LOG="xcodebuild.log"
-xcodebuild -workspace "ios/$SCHEME.xcworkspace" \
+xcodebuild "${XCODE_CONTAINER[@]}" \
   -scheme "$SCHEME" \
   -configuration Debug \
   -sdk iphonesimulator \

@@ -13,10 +13,16 @@ Pod::Spec.new do |s|
   s.platform     = :ios, "12.0"
   s.source       = { :git => "https://github.com/Adyen/adyen-react-native.git", :tag => "#{s.version}" }
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
-  s.public_header_files = "ios/ADYRedirectComponent.h"
+  s.exclude_files = ["ios/Package.swift", "ios/.build/**/*"]
+  s.public_header_files = "ios/include/ADYRedirectComponent.h"
 
   s.dependency "Adyen", '5.27.0'
   s.resource_bundles = { 'adyen-react-native' => [ 'ios/PrivacyInfo.xcprivacy' ] }
+
+  s.pod_target_xcconfig = {
+    # Swift `package` access needs a package name; SwiftPM passes it for ios/Package.swift.
+    "OTHER_SWIFT_FLAGS" => "$(inherited) -package-name AdyenReactNative"
+  }
 
   install_modules_dependencies(s)
 end
