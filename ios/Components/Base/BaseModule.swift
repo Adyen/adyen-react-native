@@ -13,7 +13,7 @@ import UIKit
 /// Base class for all Adyen React Native modules.
 /// - Important: Only one payment flow is supported at a time. Starting a new payment flow
 ///   while another is in progress will replace the current session and presenter.
-public class BaseModule: RCTEventEmitter {
+package class BaseModule: RCTEventEmitter {
 
     internal static var session: AdyenSession?
     internal weak static var sessionDelegate: SessionErrorDelegate?
@@ -50,7 +50,7 @@ public class BaseModule: RCTEventEmitter {
     internal var currentComponent: Component?
 
     #if DEBUG
-        override public func invalidate() {
+        override package func invalidate() {
             super.invalidate()
             dismiss(false)
         }
@@ -59,7 +59,7 @@ public class BaseModule: RCTEventEmitter {
     // MARK: - Public methods
 
     @objc
-    override public static func requiresMainQueueSetup() -> Bool {
+    override package static func requiresMainQueueSetup() -> Bool {
         true
     }
 
@@ -169,7 +169,7 @@ public class BaseModule: RCTEventEmitter {
 
 extension BaseModule: PresentationDelegate {
 
-    public func present(component: PresentableComponent) {
+    package func present(component: PresentableComponent) {
         ensureMainThread { [weak self] in
             guard let self else { return }
 
@@ -211,7 +211,7 @@ extension BaseModule: PresentationDelegate {
 }
 
 extension BaseModule: UIAdaptivePresentationControllerDelegate {
-    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+    package func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         // Remove the swiped-away VC from the stack
         BaseModule.presenterStack.removeAll { $0 === presentationController.presentedViewController }
         cancelDidPress()

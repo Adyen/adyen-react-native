@@ -11,7 +11,7 @@ import PassKit
 
 extension ApplePayModule: ApplePayComponentDelegate {
 
-    public func didUpdate(
+    package func didUpdate(
         contact: PKContact,
         for payment: ApplePayPayment,
         completion: @escaping (PKPaymentRequestShippingContactUpdate) -> Void
@@ -21,7 +21,7 @@ extension ApplePayModule: ApplePayComponentDelegate {
         sendEvent(event: .updateShippingContact, body: contact.jsonObject)
     }
 
-    public func didUpdate(
+    package func didUpdate(
         shippingMethod: PKShippingMethod,
         for payment: ApplePayPayment,
         completion: @escaping (PKPaymentRequestShippingMethodUpdate) -> Void
@@ -32,7 +32,7 @@ extension ApplePayModule: ApplePayComponentDelegate {
     }
 
     @available(iOS 15.0, *)
-    public func didUpdate(
+    package func didUpdate(
         couponCode: String,
         for payment: ApplePayPayment,
         completion: @escaping (PKPaymentRequestCouponCodeUpdate) -> Void
@@ -47,7 +47,7 @@ extension ApplePayModule: ApplePayComponentDelegate {
 
 extension ApplePayModule: ApplePayAuthorizationDelegate {
 
-    public func didAuthorize(
+    package func didAuthorize(
         payment: PKPayment,
         completion: @escaping (PKPaymentAuthorizationResult) -> Void
     ) {

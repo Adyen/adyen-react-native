@@ -9,7 +9,7 @@ import Foundation
 import React
 
 @objc(AdyenCSE)
-public final class AdyenCSEModule: NSObject {
+package final class AdyenCSEModule: NSObject {
 
     @objc
     static func requiresMainQueueSetup() -> Bool {

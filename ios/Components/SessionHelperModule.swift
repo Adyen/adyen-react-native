@@ -14,9 +14,9 @@ protocol SessionErrorDelegate: AnyObject {
 }
 
 @objc(SessionHelper)
-public final class SessionHelperModule: BaseModule, SessionErrorDelegate {
+package final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
-    override public func supportedEvents() -> [String]! {
+    override package func supportedEvents() -> [String]! {
         EventName.sessionEvents.map(\.rawValue)
     }
 
@@ -81,18 +81,18 @@ public final class SessionHelperModule: BaseModule, SessionErrorDelegate {
 
 extension SessionHelperModule: AdyenSessionDelegate {
 
-    public func didComplete(with result: AdyenSessionResult, component _: Adyen.Component, session: AdyenSession) {
+    package func didComplete(with result: AdyenSessionResult, component _: Adyen.Component, session: AdyenSession) {
         var dict = result.jsonObject
         dict[Key.sessionId] = session.sessionContext.identifier
         dict[Key.sessionData] = session.sessionContext.data
         sendEvent(withName: EventName.completeSession.rawValue, body: dict)
     }
 
-    public func didFail(with error: Error, from _: Adyen.Component, session _: AdyenSession) {
+    package func didFail(with error: Error, from _: Adyen.Component, session _: AdyenSession) {
         sendError(error: error)
     }
 
-    public func didOpenExternalApplication(component _: Adyen.ActionComponent, session _: AdyenSession) {
+    package func didOpenExternalApplication(component _: Adyen.ActionComponent, session _: AdyenSession) {
         // No-op: external application redirects are handled by the OS
     }
 }

@@ -10,13 +10,13 @@ import PassKit
 import React
 
 @objc(AdyenDropIn)
-public final class DropInModule: BaseAddressModule {
+package final class DropInModule: BaseAddressModule {
 
     internal var disableStoredPaymentMethodHandler: Adyen.Completion<Bool>?
     internal var requestOrderHandler: ((Result<PartialPaymentOrder, any Error>) -> Void)?
     internal var checkBalanceHandler: ((Result<Balance, any Error>) -> Void)?
 
-    override public func supportedEvents() -> [String]! {
+    override package func supportedEvents() -> [String]! {
         super.supportedEvents() + (EventName.cardEvents + EventName.dropInEvents).map(\.rawValue)
     }
 

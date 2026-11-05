@@ -10,11 +10,11 @@ import Foundation
 import React
 
 @objc(AdyenAction)
-public final class ActionModule: BaseModule {
+package final class ActionModule: BaseModule {
 
     private var actionHandler: AdyenActionComponent?
 
-    @objc override public func constantsToExport() -> [AnyHashable: Any]! {
+    @objc override package func constantsToExport() -> [AnyHashable: Any]! {
         [Constant.threeDS2SdkVersionName: threeDS2SdkVersion]
     }
 
@@ -82,15 +82,15 @@ public final class ActionModule: BaseModule {
 }
 
 extension ActionModule: ActionComponentDelegate {
-    public func didProvide(_ data: Adyen.ActionComponentData, from _: Adyen.ActionComponent) {
+    package func didProvide(_ data: Adyen.ActionComponentData, from _: Adyen.ActionComponent) {
         resolver?(data.jsonObject)
     }
 
-    public func didComplete(from _: Adyen.ActionComponent) {
+    package func didComplete(from _: Adyen.ActionComponent) {
         resolver?(ResultDTO(result: .presentToShopper).jsonObject)
     }
 
-    public func didFail(with error: Error, from _: Adyen.ActionComponent) {
+    package func didFail(with error: Error, from _: Adyen.ActionComponent) {
         reject(with: error)
     }
 }

@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenApplePay)
-public class ApplePayModule: BaseModuleSender {
+package class ApplePayModule: BaseModuleSender {
 
     private let paymentAuthorizationService: PKPaymentAuthorizationService
 
@@ -37,7 +37,7 @@ public class ApplePayModule: BaseModuleSender {
         super.init()
     }
 
-    override public func supportedEvents() -> [String]! {
+    override package func supportedEvents() -> [String]! {
         super.supportedEvents() + EventName.applePayEvents.map(\.rawValue)
     }
 

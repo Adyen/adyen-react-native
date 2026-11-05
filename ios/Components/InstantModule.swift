@@ -10,7 +10,7 @@ import PassKit
 import React
 
 @objc(AdyenInstant)
-public final class InstantModule: BaseActionModule {
+package final class InstantModule: BaseActionModule {
 
     // MARK: - Internal
 
