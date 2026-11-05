@@ -4,7 +4,7 @@ Swift Package Manager (SPM) is the iOS integration going forward. CocoaPods trun
 
 SPM is the recommended iOS integration. It requires **React Native 0.87.1 or newer**. `@adyen/react-native` ships its own `ios/Package.swift` for React Native's SPM autolinking.
 
-React Native 0.76 to 0.86 can only use CocoaPods for now. This limits them to Adyen iOS versions published to CocoaPods trunk. A bridge is planned that lets the CocoaPods integration pull newer Adyen iOS releases through SPM, using React Native's `spm_dependency` podspec helper (available since React Native 0.75).
+Older React Native versions use CocoaPods. The CocoaPods integration also gets Adyen iOS as a Swift package, so it is not limited to the Adyen iOS versions published to CocoaPods trunk (see [iOS: CocoaPods](#ios-cocoapods)).
 
 Expo SDK 58 ships a preview SwiftPM autolinking plugin. With `expo` 58.0.17 or newer, `@adyen/react-native` links through it the same way as in a bare React Native app, through its `ios/Package.swift`; this setup is tested in CI. Earlier 58.0.x patch releases cannot build the `ExpoModulesJSI` framework that the plugin needs. Expo's SPM support is a preview, and CocoaPods stays Expo's default. Earlier Expo SDKs can only use CocoaPods.
 
@@ -21,7 +21,19 @@ Notes on the SPM integration:
 * React Native marks SPM support as experimental in 0.87.
 * `@react-native-community/cli` 20.x detects the iOS project only through `ios/Podfile`. If your SPM app no longer has a Podfile, React Native's SPM tooling fails with `CLI config did not provide project.ios.sourceDir`. Point the tooling at a CLI config wrapper that fills in `project.ios` with `node node_modules/react-native/scripts/setup-apple-spm.js update --config-command '<argv JSON>'`, where the wrapper is a small Node script that runs the CLI `config` command and supplies the missing `project.ios` fields.
 * The package resolves [Adyen iOS](https://github.com/Adyen/adyen-ios) from GitHub at the exact version the podspec pins (5.27.0) and declares iOS 15 as its minimum, matching React Native's SPM autolinking floor.
-* Adyen iOS splits into several modules under SPM (`Adyen`, `AdyenActions`, `AdyenDropIn`, ...), while the CocoaPod is the single `Adyen` module. App code that only does `import Adyen` and uses `RedirectComponent` or `DropInComponent` must also `import adyen_react_native`, which re-exports those modules. This import works with CocoaPods as well. Do not qualify those types with the `Adyen.` module prefix (for example, write `DropInComponent.Style`, not `Adyen.DropInComponent.Style`).
+* Adyen iOS splits into several modules (`Adyen`, `AdyenActions`, `AdyenDropIn`, ...). App code that only does `import Adyen` and uses `RedirectComponent` or `DropInComponent` must also `import adyen_react_native`, which re-exports those modules. Do not qualify those types with the `Adyen.` module prefix (for example, write `DropInComponent.Style`, not `Adyen.DropInComponent.Style`). The same applies to CocoaPods.
+
+## iOS: CocoaPods
+
+React Native apps older than 0.87.1 and Expo apps use CocoaPods by default. The `adyen-react-native` podspec gets [Adyen iOS](https://github.com/Adyen/adyen-ios) as a Swift package through React Native's `spm_dependency` helper, pinned to the same exact version as `ios/Package.swift` (5.27.0). CocoaPods installs no `Adyen`, `Adyen3DS2` or `AdyenNetworking` pods; after upgrading `@adyen/react-native`, `pod install` removes them from `Podfile.lock`.
+
+* `spm_dependency` is defined by React Native's `react_native_pods.rb`, which the Podfiles of React Native CLI and Expo apps load. Supported versions are React Native 0.79 and newer and Expo SDK 54 and newer.
+* Xcode resolves the Swift packages (`adyen-ios` and the packages it depends on, such as `adyen-3ds2-ios` and `adyen-networking-ios`) from GitHub when it first opens or builds the workspace. Build machines need network access to `github.com`. Xcode records the resolved versions in `<App>.xcworkspace/xcshareddata/swiftpm/Package.resolved` and caches the checkouts in DerivedData (`SourcePackages`).
+* `Adyen3DS2.framework` is a dynamic framework. The podspec adds it to the frameworks that the "[CP] Embed Pods Frameworks" build phase embeds into the app, as for frameworks shipped by pods.
+* Unit test targets must use `inherit! :search_paths`. With `inherit! :complete`, the test bundle links `adyen-react-native` a second time, Xcode builds the Adyen package products as dynamic frameworks that nothing links, and the app fails to link with undefined Adyen symbols. `pod install` prints a warning in that case.
+* Do not add an `Adyen` pod to the Podfile: the app would contain Adyen iOS twice.
+* App code must `import adyen_react_native` to use `RedirectComponent` or `DropInComponent`, as with SPM (see above).
+* `pod install` prints `[SPM] WARNING!!! Pod adyen-react-native is using swift package(s) ... with static linking, this might cause linker errors`. React Native prints it for every `spm_dependency` pod in apps without `use_frameworks! :linkage => :dynamic`. Apps link `adyen-react-native` without `use_frameworks!` as long as test targets use `inherit! :search_paths`.
 
 ## Adyen Android SDK 5.22.0: Kotlin and Android SDK requirements
 
