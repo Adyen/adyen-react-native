@@ -23,7 +23,7 @@ public class BaseModuleSender: BaseModule {
     override public func stopObserving() { /* No JS events expected */ }
     override public func startObserving() { /* No JS events expected */ }
     
-    override open func supportedEvents() -> [String]! {
+    override public func supportedEvents() -> [String]! {
         [EventName.fail, EventName.submit].map(\.rawValue)
     }
 
