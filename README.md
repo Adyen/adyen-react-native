@@ -427,6 +427,8 @@ We strongly encourage you to join us in contributing to this repository so every
 
 Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
 
+For failed E2E jobs on pull requests, the data is collected and a diagnosis is requested in a private repository; see [Diagnose E2E Failure](.github/actions/diagnose-failure/README.md) for the flow and the `SDK_META_DISPATCH_TOKEN` setup.
+
 # Support
 
 If you have a feature request, or spotted a bug or a technical problem, [create a GitHub issue](https://github.com/Adyen/adyen-react-native/issues/new/choose). For other questions, contact our Support Team via [Customer Area](https://ca-live.adyen.com/ca/ca/contactUs/support.shtml) or via email: support@adyen.com

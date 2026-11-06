@@ -1,0 +1,144 @@
+name: 'Diagnose E2E Failure'
+description: 'Collect failed E2E job data and hand it to a private repository that runs the diagnosis'
+
+inputs:
+  github-token:
+    description: 'Token with read access to Actions (jobs, logs, artifacts) of this repository.'
+    required: true
+  dispatch-token:
+    description: 'Fine-grained token with Actions: write on the private meta repository. When empty, the diagnosis is not requested and the report says so.'
+    required: false
+    default: ''
+  run-id:
+    description: 'Workflow run to diagnose'
+    default: ${{ github.run_id }}
+
+outputs:
+  has-failures:
+    description: 'Whether failed E2E jobs were found'
+    value: ${{ steps.collect.outputs.has_failures }}
+  dispatch-status:
+    description: 'not-configured, failed or requested. Empty when there was nothing to report.'
+    value: ${{ steps.report.outputs.dispatch-status }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Collect failed E2E jobs
+      id: collect
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        RUN_ID: ${{ inputs.run-id }}
+      run: |
+        set -uo pipefail
+        out="$RUNNER_TEMP/e2e-diagnosis"
+        mkdir -p "$out/artifacts"
+        if ! node scripts/diagnose-ci-failure.js collect \
+          --repo "$GITHUB_REPOSITORY" \
+          --run-id "$RUN_ID" \
+          --out-dir "$out"; then
+          echo "::warning::Could not collect failed jobs; a fallback report will be generated"
+          echo "collect_failed=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Download xcodebuild logs
+      if: steps.collect.outputs.has_failures == 'true'
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        pattern: xcodebuild_log_*
+        path: ${{ runner.temp }}/e2e-diagnosis/artifacts
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ inputs.run-id }}
+
+    - name: Download Appium failure screenshots
+      if: steps.collect.outputs.has_failures == 'true'
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        pattern: appium_failure_*
+        path: ${{ runner.temp }}/e2e-diagnosis/artifacts
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ inputs.run-id }}
+
+    - name: Download Appium page sources
+      if: steps.collect.outputs.has_failures == 'true'
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        pattern: appium_page_source_*
+        path: ${{ runner.temp }}/e2e-diagnosis/artifacts
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ inputs.run-id }}
+
+    - name: Download Android logs
+      if: steps.collect.outputs.has_failures == 'true'
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        pattern: android_logs_*
+        path: ${{ runner.temp }}/e2e-diagnosis/artifacts
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ inputs.run-id }}
+
+    - name: Upload diagnosis data
+      id: upload
+      if: steps.collect.outputs.has_failures == 'true'
+      continue-on-error: true
+      uses: actions/upload-artifact@v7
+      with:
+        name: e2e-diagnosis-data
+        path: ${{ runner.temp }}/e2e-diagnosis
+        retention-days: 1
+        if-no-files-found: warn
+
+    - name: Request diagnosis
+      id: dispatch
+      if: steps.collect.outputs.has_failures == 'true' && inputs.dispatch-token != '' && steps.upload.outcome == 'success'
+      continue-on-error: true
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.dispatch-token }}
+        RUN_ID: ${{ inputs.run-id }}
+      run: |
+        set -uo pipefail
+        node scripts/diagnose-ci-failure.js dispatch --run-id "$RUN_ID"
+
+    - name: Write report
+      id: report
+      if: always() && (steps.collect.outputs.has_failures == 'true' || steps.collect.outputs.collect_failed == 'true')
+      shell: bash
+      env:
+        COLLECT_FAILED: ${{ steps.collect.outputs.collect_failed }}
+        HAS_DISPATCH_TOKEN: ${{ inputs.dispatch-token != '' }}
+        UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        DISPATCH_OUTCOME: ${{ steps.dispatch.outcome }}
+        DISPATCH_STATUS: ${{ steps.dispatch.outputs.dispatch_status }}
+        DISPATCH_URL: ${{ steps.dispatch.outputs.dispatch_url }}
+      run: |
+        set -euo pipefail
+        out="$RUNNER_TEMP/e2e-diagnosis"
+        args=()
+        status=''
+        if [ "$COLLECT_FAILED" = 'true' ]; then
+          args=(--reason collect-failed)
+        elif [ "$HAS_DISPATCH_TOKEN" != 'true' ]; then
+          status='not-configured'
+        elif [ "$UPLOAD_OUTCOME" != 'success' ] || [ "$DISPATCH_OUTCOME" != 'success' ] || [ "$DISPATCH_STATUS" != 'requested' ]; then
+          status='failed'
+        else
+          status='requested'
+        fi
+        if [ -n "$status" ]; then
+          args=(--dispatch "$status")
+          if [ "$status" = 'requested' ] && [ -n "$DISPATCH_URL" ]; then
+            args+=(--dispatch-url "$DISPATCH_URL")
+          fi
+        fi
+        node scripts/diagnose-ci-failure.js report --out-dir "$out" "${args[@]}"
+        echo "dispatch-status=$status" >> "$GITHUB_OUTPUT"
