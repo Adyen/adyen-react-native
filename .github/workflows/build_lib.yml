@@ -14,6 +14,9 @@ on:
       build-precompiled-sdk:
         type: boolean
         default: true
+      run-js-checks:
+        type: boolean
+        default: true
 
 jobs:
   build-lib:
@@ -32,13 +35,16 @@ jobs:
           yarn prepare
 
       - name: Check public API
+        if: inputs.run-js-checks
         run: yarn api-extractor
 
       - name: Make JS coverage report
+        if: inputs.run-js-checks
         run: |
           npx jest --coverage --coverageDirectory=reports
 
       - name: Archive JS Coverage report
+        if: inputs.run-js-checks
         uses: actions/upload-artifact@v7
         with:
           name: js-coverage-report

@@ -120,7 +120,11 @@ const CardSettingsView = ({ navigation }: Props) => {
         onValueChange={setShowInstallmentAmount}
       />
       <View style={Styles.formAction}>
-        <Button title="Save" onPress={saveAndGoBack} />
+        <Button
+          title="Save"
+          testID="card-settings-save-button"
+          onPress={saveAndGoBack}
+        />
       </View>
     </PageScrollView>
   );

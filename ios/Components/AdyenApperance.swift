@@ -21,7 +21,7 @@ internal class AdyenAppearanceLoader: NSObject {
     private static let expectedClassName = "AdyenAppearance"
     private static let bundleExecutableKey = "CFBundleExecutable"
 
-    static func findStyle() -> Adyen.DropInComponent.Style? {
+    static func findStyle() -> DropInComponent.Style? {
         let appearanceProviders = Bundle.allBundles
             .compactMap { $0.infoDictionary?[bundleExecutableKey] as? String }
             .map { $0.replacingOccurrences(of: " ", with: "_") }

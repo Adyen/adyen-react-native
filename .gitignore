@@ -89,6 +89,12 @@ example/yarn.lock
 # React Native Codegen
 **/generated/
 
+# SwiftPM cache of the library's ios/Package.swift
+ios/.build/
+
+# Xcode's resolution of the Adyen iOS package that the podspec adds through spm_dependency
+example/ios/AdyenExample.xcworkspace/xcshareddata/swiftpm/
+
 # React Native Nitro Modules
 nitrogen/
 

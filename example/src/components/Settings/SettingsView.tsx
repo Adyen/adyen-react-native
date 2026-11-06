@@ -76,6 +76,7 @@ const SettingView = ({ navigation }: Props) => {
       />
       <FormTextInput
         title="Merchant Account"
+        testID="settings-merchant-account"
         value={merchantAccount}
         onChangeText={setMerchantAccount}
       />
@@ -128,7 +129,11 @@ const SettingView = ({ navigation }: Props) => {
       </TouchableOpacity>
 
       <View style={Styles.formAction}>
-        <Button title="Save" onPress={saveAndClose} />
+        <Button
+          title="Save"
+          testID="settings-save-button"
+          onPress={saveAndClose}
+        />
       </View>
     </PageScrollView>
   );

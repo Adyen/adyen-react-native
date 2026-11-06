@@ -5,6 +5,9 @@ set -euo pipefail
 path=${1:-'tested_app'}
 platform=${2:-}
 version=${3:-}
+# iOS framework linkage for Expo fixtures (static or dynamic). React Native
+# fixtures take it from USE_FRAMEWORKS at pod install time instead.
+use_frameworks=${4:-}
 
 if [ -z "$platform" ] || [ -z "$version" ]; then
   echo "Error: platform and version are required"
@@ -20,7 +23,7 @@ if [ "$platform" = "expo" ]; then
     cd $path || exit 1
     
     # Configure app.json with proper package name and plugin
-    node ../e2e-tests/scripts/configure-expo-app.js "$PROJECT_NAME" "com.testproject"
+    node ../e2e-tests/scripts/configure-expo-app.js "$PROJECT_NAME" "com.testproject" "$use_frameworks"
     
     # Add Expo-specific app files
     echo "== Add default App.tsx"
@@ -33,11 +36,6 @@ else
     cli_version=$(bash ./e2e-tests/scripts/resolve_rn_cli_version.sh "$version")
     echo "== Building React-Native $version (CLI $cli_version)"
     npx @react-native-community/cli@"$cli_version" init --directory $path --version "$version" --install-pods false --skip-install "$PROJECT_NAME"
-
-    project_file="$path/ios/$PROJECT_NAME.xcodeproj/project.pbxproj"
-    if grep -q '\$(TOOLCHAIN_DIR)/usr/lib/swift/\$(PLATFORM_NAME)' "$project_file"; then
-        perl -0pi -e 's/\$\(TOOLCHAIN_DIR\)(\/usr\/lib\/swift\/\$\(PLATFORM_NAME\))/\$(DT_TOOLCHAIN_DIR)$1/g' "$project_file"
-    fi
 
     cd $path || exit 1
     
@@ -59,6 +57,7 @@ cp ../e2e-tests/run-appium.js ./
 cp -r ../e2e-tests/helpers ./
 cp -r ../e2e-tests/tests ./
 cp ../e2e-tests/scripts/*.sh ./
+cp ../e2e-tests/scripts/spm-cli-config.js ./
 
 echo "== Bundle CI dependencies"
 mkdir -p .github/actions/setup-android-emulator

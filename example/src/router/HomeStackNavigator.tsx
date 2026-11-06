@@ -18,7 +18,7 @@ export type HomeStackParamList = {
 };
 
 const SettingsButton = ({ onPress }: { onPress: () => void }) => (
-  <Button title="Settings" onPress={onPress} />
+  <Button title="Settings" testID="settings-button" onPress={onPress} />
 );
 
 // Home stack with main navigation (back button navigation)

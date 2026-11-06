@@ -10,6 +10,7 @@ interface PaymentMethodListItemProps {
   title: string;
   subtitle?: string;
   icon: string;
+  testID?: string;
 }
 
 const PaymentMethodListItem = (props: PaymentMethodListItemProps) => {
@@ -18,6 +19,7 @@ const PaymentMethodListItem = (props: PaymentMethodListItemProps) => {
   return (
     <TouchableHighlight
       onPress={props.onPress}
+      testID={props.testID}
       style={Styles.btnClickContain}
       underlayColor={Colors.buttonOverlay}
     >

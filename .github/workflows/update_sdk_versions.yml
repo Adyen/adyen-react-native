@@ -52,9 +52,16 @@ jobs:
         # Set platform-specific prefix and update SDK version
         if [ "$PLATFORM" = "iOS" ]; then
           PLATFORM_PREFIX="ios"
-          SDK_FILE="adyen-react-native.podspec"
-          SDK_PATTERN="s\.dependency \"Adyen\","
-          sed "${SED_FLAG[@]}" "s/$SDK_PATTERN '[^']*'/$SDK_PATTERN '$VERSION'/" "$SDK_FILE"
+          # CocoaPods (spm_dependency in the podspec) and Swift Package Manager (ios/Package.swift)
+          # must pin the same Adyen iOS version.
+          POD_PATTERN='requirement: { kind: "exactVersion", version: '
+          sed "${SED_FLAG[@]}" "s/$POD_PATTERN\"[^\"]*\" }/$POD_PATTERN\"$VERSION\" }/" adyen-react-native.podspec
+          SPM_PATTERN='\.package(url: "https:\/\/github\.com\/Adyen\/adyen-ios", exact: '
+          sed "${SED_FLAG[@]}" "s/$SPM_PATTERN\"[^\"]*\")/$SPM_PATTERN\"$VERSION\")/" ios/Package.swift
+          grep -qF "requirement: { kind: \"exactVersion\", version: \"$VERSION\" }" adyen-react-native.podspec \
+            || { echo "::error::adyen-react-native.podspec does not pin adyen-ios $VERSION"; exit 1; }
+          grep -qF ".package(url: \"https://github.com/Adyen/adyen-ios\", exact: \"$VERSION\")" ios/Package.swift \
+            || { echo "::error::ios/Package.swift does not pin adyen-ios $VERSION"; exit 1; }
         else
           PLATFORM_PREFIX="android"
           SDK_FILE="android/dependencies.gradle"
@@ -96,6 +103,7 @@ jobs:
           adyen-react-native.podspec
           android/dependencies.gradle
           example/ios/Podfile.lock
+          ios/Package.swift
         body: |
           # Open PR
           This PR updates the ${{ inputs.platform }} SDK version to ${{ steps.fetch-version.outputs.version }}.

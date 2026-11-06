@@ -37,6 +37,7 @@ const StoredPaymentMethodsList = ({
             title={storedTitle(paymentMethod)}
             subtitle={storedSubtitle(paymentMethod)}
             icon={storedIcon(paymentMethod)}
+            testID={`stored-payment-method-${paymentMethod.id}`}
             onPress={() => makePayment(paymentMethod)}
           />
         );

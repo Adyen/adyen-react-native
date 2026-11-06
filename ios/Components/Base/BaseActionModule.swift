@@ -6,11 +6,11 @@
 
 import Adyen
 
-internal class BaseActionModule: BaseModuleSender {
+package class BaseActionModule: BaseModuleSender {
 
     private var actionHandler: AdyenActionComponent?
 
-    override func supportedEvents() -> [String]! {
+    override package func supportedEvents() -> [String]! {
         super.supportedEvents() + [EventName.additionalDetails, EventName.complete].map(\.rawValue)
     }
 

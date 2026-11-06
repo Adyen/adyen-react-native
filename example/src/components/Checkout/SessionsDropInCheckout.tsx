@@ -82,7 +82,9 @@ const SessionsDropInCheckout = () => {
   if (initError) {
     return (
       <View style={Styles.centeredContent}>
-        <Text style={Styles.errorText}>{initError}</Text>
+        <Text testID="checkout-error" style={Styles.errorText}>
+          {initError}
+        </Text>
       </View>
     );
   }
