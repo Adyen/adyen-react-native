@@ -226,6 +226,21 @@ describe('addExpoBuildProperties', () => {
     ]);
   });
 
+  it('sets the iOS framework linkage when requested', () => {
+    const config = toolchain.addExpoBuildProperties(
+      {
+        plugins: [
+          ['expo-build-properties', { ios: { deploymentTarget: '16.0' } }],
+        ],
+      },
+      { useFrameworks: 'static' }
+    );
+    expect(config.plugins[0][1].ios).toEqual({
+      deploymentTarget: '16.0',
+      useFrameworks: 'static',
+    });
+  });
+
   it('creates the plugins list when missing', () => {
     const config = toolchain.addExpoBuildProperties({});
     expect(config.plugins).toHaveLength(1);

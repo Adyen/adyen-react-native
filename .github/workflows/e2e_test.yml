@@ -31,6 +31,16 @@ on:
         required: false
         type: boolean
         default: true
+      release-archive:
+        description: 'After the iOS e2e test, archive the app in Release (unsigned) and check that it embeds Adyen3DS2.framework'
+        required: false
+        type: boolean
+        default: false
+      use-frameworks:
+        description: 'iOS framework linkage for CocoaPods fixtures (static or dynamic; empty for the template default). React Native gets USE_FRAMEWORKS for pod install; Expo gets expo-build-properties ios.useFrameworks'
+        required: false
+        type: string
+        default: ''
     secrets:
       ADYEN_CLIENT_KEY:
         required: false
@@ -59,7 +69,7 @@ jobs:
 
       - name: Generate Fixture
         run: |
-          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}"
+          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}" "${{ inputs.use-frameworks }}"
 
       - name: Download Library
         uses: actions/download-artifact@v8
@@ -103,7 +113,7 @@ jobs:
     name: iOS Test
     needs: setup
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: ${{ inputs.release-archive && 60 || 45 }}
     continue-on-error: ${{ inputs.allow-failure }}
     env:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
@@ -145,8 +155,15 @@ jobs:
           bash ./inject_secrets.sh
 
       - name: Run iOS Test
+        env:
+          USE_FRAMEWORKS: ${{ inputs.platform == 'react-native' && inputs.use-frameworks || '' }}
         run: |
           bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ inputs.ios-integration }}"
+
+      - name: Archive iOS Release
+        if: inputs.release-archive
+        run: |
+          bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ inputs.ios-integration }}" archive
 
       - name: Upload Xcodebuild Log (iOS)
         if: failure()
@@ -154,6 +171,15 @@ jobs:
         with:
           name: xcodebuild_log_ios_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
           path: xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Xcodebuild Archive Log (iOS)
+        if: failure() && inputs.release-archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcodebuild_archive_log_ios_${{ inputs.platform }}_${{ inputs.version }}_${{ inputs.ios-integration }}
+          path: xcodebuild-archive.log
           if-no-files-found: ignore
           retention-days: 1
 
