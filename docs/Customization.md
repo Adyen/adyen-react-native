@@ -10,13 +10,13 @@ import Adyen
 import adyen_react_native
 
 class AdyenAppearance: AdyenAppearanceProvider {
-  static func createStyle() -> Adyen.DropInComponent.Style {
+  static func createStyle() -> DropInComponent.Style {
      # provide your custom style here
   }
 }
 ```
 
-The `formComponent` style of the returned `Adyen.DropInComponent.Style` also styles the embedded `CardView`.
+The `formComponent` style of the returned `DropInComponent.Style` also styles the embedded `CardView`.
 Without an `AdyenAppearance` class, the `CardView` uses Adyen's default form style.
 
 ## Android

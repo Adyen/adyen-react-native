@@ -34,6 +34,21 @@
         "https://github.com/Adyen/adyen-ios"
       ],
       "enabled": true
+    },
+    {
+      "description": "Adyen iOS is pinned in both ios/Package.swift and the podspec's spm_dependency; bump them together",
+      "matchPackageNames": ["Adyen/adyen-ios", "https://github.com/Adyen/adyen-ios"],
+      "groupName": "Adyen iOS"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Adyen iOS pin in the podspec's spm_dependency",
+      "fileMatch": ["^adyen-react-native\\.podspec$"],
+      "matchStrings": ["url: \"https://github\\.com/Adyen/adyen-ios\",\\s*requirement: \\{ kind: \"exactVersion\", version: \"(?<currentValue>[^\"]+)\" \\}"],
+      "depNameTemplate": "Adyen/adyen-ios",
+      "datasourceTemplate": "github-tags"
     }
   ],
   "osvVulnerabilityAlerts": true,

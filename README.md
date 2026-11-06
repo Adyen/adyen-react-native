@@ -12,7 +12,7 @@
 >
 > Adyen Android SDK 5.22.0 requires Kotlin 2.3 (2.2.20 on Expo SDK 54), Android API 36 and Android Gradle plugin 8.9.1. It is supported from React Native 0.79 and Expo SDK 54.
 >
-> See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for what to set for your React Native or Expo version. The same document keeps notes for officially unsupported React Native versions below 0.74.
+> See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for what to set for your React Native or Expo version.
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
@@ -130,6 +130,8 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
 
    On **older React Native versions**, use CocoaPods: run `pod install` in your app's `ios` directory. Expo apps use CocoaPods by default; Expo SDK 58 can link through Swift Package Manager as a preview (see [Compatibility](docs/Compatibility.md#ios-swift-package-manager)).
 
+   With CocoaPods, the `adyen-react-native` pod gets [Adyen iOS](https://github.com/Adyen/adyen-ios) as a Swift package through React Native's `spm_dependency` helper, so `pod install` adds no `Adyen` pod. Xcode resolves the package from `github.com/Adyen/adyen-ios` when it first opens or builds the workspace, so the build machine needs network access to GitHub. See [Compatibility](docs/Compatibility.md#ios-cocoapods) for details.
+
    See [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for why SPM is the integration going forward and for known limitations.
 
 2. Add `returnURL` handler to your `AppDelegate.swift`:
@@ -145,7 +147,7 @@ func application(_ app: UIApplication, open url: URL, options: [UIApplication.Op
 }
 ```
 
-`import adyen_react_native` is required when the module is linked through Swift Package Manager: Adyen iOS splits into several modules there, and this import re-exports `RedirectComponent` and `DropInComponent`. It also works with CocoaPods.
+`import adyen_react_native` is required: Adyen iOS is a Swift package with several modules (`Adyen`, `AdyenActions`, `AdyenDropIn`, ...) under both Swift Package Manager and CocoaPods, and this import re-exports `RedirectComponent` and `DropInComponent`.
 
 If using `RCTLinkingManager` or other deep-linking techniques, place `RedirectComponent.applicationDidOpen` before them:
 

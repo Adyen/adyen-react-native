@@ -6,6 +6,7 @@
 
 @testable @_spi(AdyenInternal) import Adyen
 @testable import adyen_react_native
+@testable import AdyenEncryption
 import XCTest
 
 class EncodablePaymentComponentDataTests: XCTestCase {

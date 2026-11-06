@@ -24,7 +24,7 @@ target 'AdyenExample' do
   )
 
   target 'AdyenExampleTests' do
-    inherit! :complete
+    inherit! :search_paths
     # Pods for testing
   end
 
