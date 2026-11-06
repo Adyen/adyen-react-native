@@ -193,13 +193,18 @@ function patchReactNativeBuildGradle(content, minVersion = KOTLIN_VERSION) {
   return pinKotlinGradlePlugin(patched, '${kotlinVersion}', minVersion);
 }
 
-/** Adds or merges the expo-build-properties plugin entry in an Expo config. */
+/**
+ * Adds or merges the expo-build-properties plugin entry in an Expo config.
+ * useFrameworks ("static" or "dynamic") sets ios.useFrameworks; empty keeps the
+ * template's linkage.
+ */
 function addExpoBuildProperties(
   expoConfig,
   {
     kotlinVersion = KOTLIN_VERSION,
     compileSdkVersion = COMPILE_SDK_VERSION,
     targetSdkVersion = TARGET_SDK_VERSION,
+    useFrameworks = '',
   } = {}
 ) {
   const plugins = expoConfig.plugins || (expoConfig.plugins = []);
@@ -231,7 +236,12 @@ function addExpoBuildProperties(
     android.targetSdkVersion = targetSdkVersion;
   }
 
-  const entry = ['expo-build-properties', { ...existing, android }];
+  const properties = { ...existing, android };
+  if (useFrameworks) {
+    properties.ios = { ...existing.ios, useFrameworks };
+  }
+
+  const entry = ['expo-build-properties', properties];
   if (index >= 0) {
     plugins[index] = entry;
   } else {

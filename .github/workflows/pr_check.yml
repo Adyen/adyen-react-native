@@ -133,7 +133,7 @@ jobs:
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}
 
   e2e-expo:
-    name: Expo (${{ matrix.version }}, ${{ matrix.ios-integration }})
+    name: Expo (${{ matrix.version }}, ${{ matrix.ios-integration }}${{ matrix.use-frameworks && format(', {0} frameworks', matrix.use-frameworks) || '' }})
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
     needs: [build-lib]
     strategy:
@@ -147,8 +147,11 @@ jobs:
             ios-integration: 'cocoapods'
           - version: '57'
             ios-integration: 'cocoapods'
+            use-frameworks: 'static'
+            release-archive: true
           - version: '58'
             ios-integration: 'spm'
+            release-archive: true
           - version: 'latest'
             ios-integration: 'cocoapods'
             allow-failure: true
@@ -160,6 +163,7 @@ jobs:
       allow-failure: ${{ matrix.allow-failure || false }}
       ios-integration: ${{ matrix.ios-integration }}
       release-archive: ${{ matrix.release-archive || false }}
+      use-frameworks: ${{ matrix.use-frameworks || '' }}
     secrets:
       ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
       ADYEN_PUBLIC_KEY: ${{ secrets.ADYEN_PUBLIC_KEY }}

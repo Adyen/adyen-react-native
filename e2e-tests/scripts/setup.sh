@@ -5,6 +5,9 @@ set -euo pipefail
 path=${1:-'tested_app'}
 platform=${2:-}
 version=${3:-}
+# iOS framework linkage for Expo fixtures (static or dynamic). React Native
+# fixtures take it from USE_FRAMEWORKS at pod install time instead.
+use_frameworks=${4:-}
 
 if [ -z "$platform" ] || [ -z "$version" ]; then
   echo "Error: platform and version are required"
@@ -20,7 +23,7 @@ if [ "$platform" = "expo" ]; then
     cd $path || exit 1
     
     # Configure app.json with proper package name and plugin
-    node ../e2e-tests/scripts/configure-expo-app.js "$PROJECT_NAME" "com.testproject"
+    node ../e2e-tests/scripts/configure-expo-app.js "$PROJECT_NAME" "com.testproject" "$use_frameworks"
     
     # Add Expo-specific app files
     echo "== Add default App.tsx"

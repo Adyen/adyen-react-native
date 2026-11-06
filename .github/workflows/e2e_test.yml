@@ -37,7 +37,7 @@ on:
         type: boolean
         default: false
       use-frameworks:
-        description: 'USE_FRAMEWORKS linkage for pod install in React Native CocoaPods fixtures (static or dynamic; empty for the template default)'
+        description: 'iOS framework linkage for CocoaPods fixtures (static or dynamic; empty for the template default). React Native gets USE_FRAMEWORKS for pod install; Expo gets expo-build-properties ios.useFrameworks'
         required: false
         type: string
         default: ''
@@ -69,7 +69,7 @@ jobs:
 
       - name: Generate Fixture
         run: |
-          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}"
+          bash ./e2e-tests/scripts/setup.sh ${{ env.APP_DIR }} "${{ inputs.platform }}" "${{ inputs.version }}" "${{ inputs.use-frameworks }}"
 
       - name: Download Library
         uses: actions/download-artifact@v8
@@ -156,7 +156,7 @@ jobs:
 
       - name: Run iOS Test
         env:
-          USE_FRAMEWORKS: ${{ inputs.use-frameworks }}
+          USE_FRAMEWORKS: ${{ inputs.platform == 'react-native' && inputs.use-frameworks || '' }}
         run: |
           bash ./build-ios.sh "${{ inputs.platform }}" "${{ env.IOS_DEVICE_NAME }}" "${{ inputs.ios-integration }}"
 
