@@ -25,6 +25,34 @@ To add a test, put it in `tests/`, select elements with `byTestId`, and call it 
 
 Matrix entries for `latest` may fail without failing the workflow; they add an error annotation instead.
 
+Entries with a Release archive then run `build-ios.sh` again with `archive` as the fourth argument. It archives the prepared fixture in Release without code signing and checks that the app embeds `Frameworks/Adyen3DS2.framework`.
+
+### Test scenarios
+
+The e2e and Android AGP 9 jobs run only on pull requests with the `run-e2e-tests` label. Keep this table in sync with `.github/workflows/pr_check.yml`.
+
+| Job | Version | iOS integration | Linking | iOS (Debug e2e) | Release archive | Android | Allowed to fail |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| React Native | 0.79.7 | CocoaPods | default | yes | yes | yes | no |
+| React Native | 0.85.3 | CocoaPods | default | yes | no | yes | no |
+| React Native | 0.87.1 | SPM | n/a | yes | yes | yes | no |
+| React Native | 0.87.1 | CocoaPods | static frameworks | yes | yes | no | no |
+| React Native | latest | SPM | n/a | yes | no | yes | yes |
+| React Native | latest | CocoaPods | default | yes | no | no | yes |
+| Expo | 54 | CocoaPods | default | yes | yes | yes | no |
+| Expo | 55 | CocoaPods | default | yes | no | yes | no |
+| Expo | 57 | CocoaPods | static frameworks | yes | yes | yes | no |
+| Expo | 58 | SPM | n/a | yes | yes | yes | no |
+| Expo | latest | CocoaPods | default | yes | no | yes | yes |
+
+Static frameworks come from the `use-frameworks` input: React Native fixtures get `USE_FRAMEWORKS=static` for `pod install`, and Expo fixtures get `ios.useFrameworks` through `expo-build-properties` in `app.json`.
+
+Other jobs in `pr_check.yml`:
+
+- Test iOS: Swift unit tests of the example app, built in Debug. Runs without the label when iOS files change.
+- Test Android: Kotlin unit tests. Runs without the label when Android files change.
+- Android AGP 9: `assembleDebug` of a React Native fixture for 0.87.1 and `latest`, each with built-in Kotlin and with the opt-out. Label-gated; the built-in Kotlin and `latest` builds may fail.
+
 ## Running locally
 
 You need Node.js, Yarn, and Appium with the `xcuitest` driver (iOS) or the `uiautomator2` driver (Android). iOS also needs Xcode and CocoaPods. Android needs the Android SDK and a booted emulator or device.
