@@ -1,3 +1,23 @@
+## iOS: integration by version
+
+An app can build `@adyen/react-native` on iOS in two ways:
+
+- **Hybrid**: the app uses CocoaPods (`Podfile`, `pod install`). CocoaPods builds the `adyen-react-native` pod, and the pod gets [Adyen iOS](https://github.com/Adyen/adyen-ios) as a Swift package (see [iOS: CocoaPods](#ios-cocoapods)). This is what every CocoaPods app uses.
+- **SPM**: the app uses React Native's Swift Package Manager integration and has no Podfile. Xcode links `@adyen/react-native` through its `ios/Package.swift` (see [iOS: Swift Package Manager](#ios-swift-package-manager)).
+- **CocoaPods only**: the app gets Adyen iOS as an `Adyen` pod. `@adyen/react-native` no longer supports this setup; its podspec has no `Adyen` pod dependency.
+
+| React Native   | Expo SDK                                   | CocoaPods app  | SPM app                                         | Tested in CI                                     |
+| -------------- | ------------------------------------------ | -------------- | ----------------------------------------------- | ------------------------------------------------ |
+| 0.78 and older | 53 and older                               | not supported  | not supported                                   | –                                                |
+| 0.79 – 0.86    | 54 (0.81), 55 (0.83), 56 (0.85), 57 (0.86) | Hybrid         | not available                                   | React Native 0.79.7, 0.85.3; Expo 54, 55, 57     |
+| 0.87           | –                                          | Hybrid         | SPM, from 0.87.1 (experimental)                 | 0.87.1 SPM; 0.87.1 Hybrid with static frameworks |
+| 0.88           | 58 (0.88)                                  | Hybrid         | SPM; on Expo, `expo` 58.0.17 or newer (preview) | Expo 58 SPM                                      |
+| 0.89 and newer | –                                          | not yet tested | not yet tested                                  | –                                                |
+
+- On React Native 0.79 to 0.86, the pod keeps the Swift package entries that `spm_dependency` adds from colliding with existing objects in `Pods.xcodeproj`. React Native 0.87.1 and newer do this themselves.
+- On React Native 0.87 and 0.88, the pod corrects the module map path that React Native writes for static Swift package pods ([facebook/react-native#59182](https://github.com/facebook/react-native/pull/59182)).
+- CI also builds the latest React Native and Expo releases, which are allowed to fail. See the [e2e test scenarios](../e2e-tests/README.md#test-scenarios) for the full list.
+
 ## iOS: Swift Package Manager
 
 Swift Package Manager (SPM) is the iOS integration going forward. CocoaPods trunk is becoming read-only: the CocoaPods team plans to stop accepting new podspecs on December 2, 2026 (see the [CocoaPods blog](https://blog.cocoapods.org/CocoaPods-Specs-Repo/)). New releases of Swift libraries, including [Adyen iOS](https://github.com/Adyen/adyen-ios), will be distributed through SPM only. CocoaPods can only resolve versions that are already published to trunk.
