@@ -12,7 +12,7 @@
 >
 > Adyen Android SDK 5.22.0 requires Kotlin 2.3 (2.2.20 on Expo SDK 54), Android API 36 and Android Gradle plugin 8.9.1. It is supported from React Native 0.79 and Expo SDK 54.
 >
-> See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for what to set for your React Native or Expo version. The same document keeps notes for officially unsupported React Native versions below 0.74.
+> See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for what to set for your React Native or Expo version.
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
