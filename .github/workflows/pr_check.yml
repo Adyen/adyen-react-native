@@ -50,7 +50,6 @@ jobs:
           check js      "$shared|^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor"
           check ios     "$shared|^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov"
           check android "$shared|^android/|^src/specs/|^example/android/"
-          # No $shared: package.json, yarn.lock and workflow changes run the Expo matrix only with the label.
           check expo    '^src/plugin/|^app\.plugin\.js$|^e2e-tests/scripts/configure-expo-app\.js$'
 
   build-lib:
