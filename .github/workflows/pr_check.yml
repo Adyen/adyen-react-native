@@ -21,6 +21,9 @@ jobs:
       js: ${{ steps.filter.outputs.js }}
       ios: ${{ steps.filter.outputs.ios }}
       android: ${{ steps.filter.outputs.android }}
+      expo: ${{ steps.filter.outputs.expo }}
+      # True when any e2e job runs: the label runs all of them, an Expo plugin change runs the Expo ones.
+      build_tgz: ${{ contains(github.event.pull_request.labels.*.name, 'run-e2e-tests') || steps.filter.outputs.expo == 'true' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -31,6 +34,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             for k in js ios android; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
+            echo "expo=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -39,13 +43,14 @@ jobs:
           shared='^package\.json$|^yarn\.lock$|^\.github/workflows/'
 
           check() {
-            if printf '%s\n' "$files" | grep -qE "$2|$shared"; then v=true; else v=false; fi
+            if printf '%s\n' "$files" | grep -qE "$2"; then v=true; else v=false; fi
             echo "$1=$v" >> "$GITHUB_OUTPUT"
           }
 
-          check js      '^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor'
-          check ios     '^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov'
-          check android '^android/|^src/specs/|^example/android/'
+          check js      "$shared|^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor"
+          check ios     "$shared|^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov"
+          check android "$shared|^android/|^src/specs/|^example/android/"
+          check expo    '^src/plugin/|^app\.plugin\.js$|^e2e-tests/scripts/configure-expo-app\.js$'
 
   build-lib:
     name: Build Nodes
@@ -53,7 +58,7 @@ jobs:
     uses: ./.github/workflows/build_lib.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
-      build-tgz: ${{ contains(github.event.pull_request.labels.*.name, 'run-e2e-tests') }}
+      build-tgz: ${{ needs.changes.outputs.build_tgz == 'true' }}
       build-precompiled-sdk: true
       run-js-checks: ${{ needs.changes.outputs.js == 'true' }}
 
@@ -134,8 +139,8 @@ jobs:
 
   e2e-expo:
     name: Expo (${{ matrix.version }}, ${{ matrix.ios-integration }}${{ matrix.use-frameworks && format(', {0} frameworks', matrix.use-frameworks) || '' }})
-    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
-    needs: [build-lib]
+    needs: [changes, build-lib]
+    if: needs.changes.outputs.build_tgz == 'true'
     strategy:
       fail-fast: false
       matrix:
