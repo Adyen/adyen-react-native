@@ -17,15 +17,11 @@ jobs:
   changes:
     name: Detect changes
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      pull-requests: read
     outputs:
       js: ${{ steps.filter.outputs.js }}
       ios: ${{ steps.filter.outputs.ios }}
       android: ${{ steps.filter.outputs.android }}
       expo: ${{ steps.filter.outputs.expo }}
-      e2e: ${{ steps.label.outputs.e2e }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -55,25 +51,13 @@ jobs:
           # No $shared: package.json, yarn.lock and workflow changes run the Expo matrix only with the label.
           check expo    '^src/plugin/|^app\.plugin\.js$|^e2e-tests/scripts/configure-expo-app\.js$'
 
-      # The opened event's payload lacks a label added right after creation (gh pr create --label),
-      # and the concurrency group can cancel the labeled run, so read the labels as they are now.
-      - name: Read e2e label
-        id: label
-        if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          e2e=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels?per_page=100" --jq 'any(.[]; .name == "run-e2e-tests")')
-          echo "e2e=$e2e" >> "$GITHUB_OUTPUT"
-
   build-lib:
     name: Build Nodes
     needs: [changes]
     uses: ./.github/workflows/build_lib.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
-      build-tgz: ${{ needs.changes.outputs.e2e == 'true' || needs.changes.outputs.expo == 'true' }}
+      build-tgz: ${{ contains(github.event.pull_request.labels.*.name, 'run-e2e-tests') || needs.changes.outputs.expo == 'true' }}
       build-precompiled-sdk: true
       run-js-checks: ${{ needs.changes.outputs.js == 'true' }}
 
@@ -110,8 +94,8 @@ jobs:
 
   e2e-react-native:
     name: React Native (${{ matrix.version }}, ${{ matrix.ios-integration }}${{ matrix.use-frameworks && format(', {0} frameworks', matrix.use-frameworks) || '' }})
-    needs: [changes, build-lib]
-    if: needs.changes.outputs.e2e == 'true'
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
+    needs: [build-lib]
     strategy:
       fail-fast: false
       matrix:
@@ -155,7 +139,7 @@ jobs:
   e2e-expo:
     name: Expo (${{ matrix.version }}, ${{ matrix.ios-integration }}${{ matrix.use-frameworks && format(', {0} frameworks', matrix.use-frameworks) || '' }})
     needs: [changes, build-lib]
-    if: needs.changes.outputs.e2e == 'true' || needs.changes.outputs.expo == 'true'
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests') || needs.changes.outputs.expo == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -190,8 +174,8 @@ jobs:
 
   android-agp9-build:
     name: Android AGP 9
-    needs: [changes, build-lib]
-    if: needs.changes.outputs.e2e == 'true'
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-tests')
+    needs: [build-lib]
     strategy:
       fail-fast: false
       matrix:
