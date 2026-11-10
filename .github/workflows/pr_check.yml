@@ -45,17 +45,15 @@ jobs:
           shared='^package\.json$|^yarn\.lock$|^\.github/workflows/'
 
           check() {
-            if printf '%s\n' "$files" | grep -qE "$2|$shared"; then v=true; else v=false; fi
+            if printf '%s\n' "$files" | grep -qE "$2"; then v=true; else v=false; fi
             echo "$1=$v" >> "$GITHUB_OUTPUT"
           }
 
-          check js      '^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor'
-          check ios     '^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov'
-          check android '^android/|^src/specs/|^example/android/'
-
-          # No $shared here: package.json, yarn.lock and workflow changes run the Expo matrix only with the label.
-          if printf '%s\n' "$files" | grep -qE '^src/plugin/|^app\.plugin\.js$|^e2e-tests/scripts/configure-expo-app\.js$'; then expo=true; else expo=false; fi
-          echo "expo=$expo" >> "$GITHUB_OUTPUT"
+          check js      "$shared|^src/|^etc/api/|^tsconfig|^babel\.config|^jest|^api-extractor"
+          check ios     "$shared|^ios/|^src/specs/|^example/ios/|\.podspec$|^react-native\.config\.js$|^scripts/xccov"
+          check android "$shared|^android/|^src/specs/|^example/android/"
+          # No $shared: package.json, yarn.lock and workflow changes run the Expo matrix only with the label.
+          check expo    '^src/plugin/|^app\.plugin\.js$|^e2e-tests/scripts/configure-expo-app\.js$'
 
       # The opened event's payload lacks a label added right after creation (gh pr create --label),
       # and the concurrency group can cancel the labeled run, so read the labels as they are now.
