@@ -2,11 +2,12 @@ import { withAdyenIos } from '../withAdyenIos';
 import { describe, it, expect } from '@jest/globals';
 
 // Import the mocked functions to spy on them
-import { withAppDelegate, withEntitlementsPlist } from '@expo/config-plugins';
+import {
+  WarningAggregator,
+  withAppDelegate,
+  withEntitlementsPlist,
+} from '@expo/config-plugins';
 import { setEntitlements } from '../setEntitlements';
-import { setImport } from '../setImport';
-import { setApplicationOpenUrl } from '../setApplicationOpenUrl';
-import { setApplicationContinueUserActivity } from '../setApplicationContinueUserActivity';
 import { setImportSwift } from '../setImportSwift';
 import { setApplicationOpenUrlSwift } from '../setApplicationOpenUrlSwift';
 import { setApplicationContinueUserActivitySwift } from '../setApplicationContinueUserActivitySwift';
@@ -17,6 +18,7 @@ jest.mock('@expo/config-plugins', () => ({
   // allowing us to test the logic within the callback.
   withAppDelegate: jest.fn((config, modifier) => modifier(config)),
   withEntitlementsPlist: jest.fn((config, modifier) => modifier(config)),
+  WarningAggregator: { addWarningIOS: jest.fn() },
 }));
 
 jest.mock('../setEntitlements', () => ({
@@ -24,22 +26,6 @@ jest.mock('../setEntitlements', () => ({
     ...entitlements,
     'merchant.id': id,
   })),
-}));
-
-jest.mock('../setImport', () => ({
-  setImport: jest.fn((content) => `${content}\n// MOCK: obj-c import`),
-}));
-
-jest.mock('../setApplicationOpenUrl', () => ({
-  setApplicationOpenUrl: jest.fn(
-    (content) => `${content}\n// MOCK: obj-c openurl`
-  ),
-}));
-
-jest.mock('../setApplicationContinueUserActivity', () => ({
-  setApplicationContinueUserActivity: jest.fn(
-    (content) => `${content}\n// MOCK: obj-c useractivity`
-  ),
 }));
 
 jest.mock('../setImportSwift', () => ({
@@ -61,8 +47,15 @@ jest.mock('../setApplicationContinueUserActivitySwift', () => ({
 const merchantIdentifier = 'merchant.com.example.test';
 const mockPluginSettings = {
   merchantIdentifier: merchantIdentifier,
-  useFrameworks: false,
 };
+
+const swiftConfig = (
+  contents = 'import Expo\n// This is a Swift AppDelegate'
+) => ({
+  name: 'test-app',
+  slug: 'test-app',
+  modResults: { language: 'swift', contents },
+});
 
 describe('withAdyenIos', () => {
   // Reset all mocks before each test to ensure isolation
@@ -70,46 +63,8 @@ describe('withAdyenIos', () => {
     jest.clearAllMocks();
   });
 
-  it('should apply Objective-C changes for a non-Swift AppDelegate', async () => {
-    const config = {
-      name: 'test-app',
-      slug: 'test-app',
-      modResults: { contents: '// This is an Objective-C AppDelegate' },
-    };
-
-    const result = withAdyenIos(config, {
-      merchantIdentifier: undefined,
-      useFrameworks: false,
-    });
-
-    // Check that the correct HOF was called
-    expect(withAppDelegate).toHaveBeenCalled();
-
-    // Check that the Objective-C modifiers were called
-    expect(setImport).toHaveBeenCalled();
-    expect(setApplicationOpenUrl).toHaveBeenCalled();
-    expect(setApplicationContinueUserActivity).toHaveBeenCalled();
-
-    // Check that Swift modifiers were NOT called
-    expect(setImportSwift).not.toHaveBeenCalled();
-    expect(setApplicationOpenUrlSwift).not.toHaveBeenCalled();
-    expect(setApplicationContinueUserActivitySwift).not.toHaveBeenCalled();
-
-    // Check the final content of the AppDelegate
-    const finalContent = result.modResults.contents;
-    expect(finalContent).toContain('// MOCK: obj-c import');
-    expect(finalContent).toContain('// MOCK: obj-c openurl');
-    expect(finalContent).toContain('// MOCK: obj-c useractivity');
-  });
-
   it('should apply Swift changes for a Swift AppDelegate', async () => {
-    const config = {
-      name: 'test-app',
-      slug: 'test-app',
-      modResults: { contents: 'import Expo \n// This is a Swift AppDelegate' },
-    };
-
-    const result = withAdyenIos(config, mockPluginSettings);
+    const result = withAdyenIos(swiftConfig(), mockPluginSettings);
 
     // Check that the correct HOF was called
     expect(withAppDelegate).toHaveBeenCalled();
@@ -119,11 +74,6 @@ describe('withAdyenIos', () => {
     expect(setApplicationOpenUrlSwift).toHaveBeenCalled();
     expect(setApplicationContinueUserActivitySwift).toHaveBeenCalled();
 
-    // Check that Objective-C modifiers were NOT called
-    expect(setImport).not.toHaveBeenCalled();
-    expect(setApplicationOpenUrl).not.toHaveBeenCalled();
-    expect(setApplicationContinueUserActivity).not.toHaveBeenCalled();
-
     // Check the final content of the AppDelegate
     const finalContent = result.modResults.contents;
     expect(finalContent).toContain('// MOCK: swift import');
@@ -131,14 +81,51 @@ describe('withAdyenIos', () => {
     expect(finalContent).toContain('// MOCK: swift useractivity');
   });
 
-  it('should set entitlements when merchantIdentifier is provided', async () => {
+  it.each(['objc', 'objcpp'])(
+    'should fail for an Objective-C AppDelegate (%s)',
+    async (language) => {
+      const originalContent = '#import "AppDelegate.h"\n@end';
+      const config = {
+        name: 'test-app',
+        slug: 'test-app',
+        modResults: { language, contents: originalContent },
+      };
+
+      expect(() => withAdyenIos(config, mockPluginSettings)).toThrow(
+        '@adyen/react-native: the config plugin supports only the Swift AppDelegate generated by Expo SDK 54 and newer. Found an Objective-C AppDelegate; run `npx expo prebuild --clean` with a supported Expo SDK.'
+      );
+      expect(setImportSwift).not.toHaveBeenCalled();
+      expect(config.modResults.contents).toBe(originalContent);
+    }
+  );
+
+  it('should fail for an Objective-C AppDelegate configured by an earlier plugin version', async () => {
     const config = {
       name: 'test-app',
       slug: 'test-app',
-      modResults: { contents: '// AppDelegate content' },
+      modResults: {
+        language: 'objc',
+        contents:
+          '#import <adyen-react-native/ADYRedirectComponent.h>\n// Already contains ADYRedirectComponent',
+      },
     };
 
-    withAdyenIos(config, mockPluginSettings);
+    expect(() => withAdyenIos(config, mockPluginSettings)).toThrow(
+      'supports only the Swift AppDelegate'
+    );
+  });
+
+  it('should work without plugin options', async () => {
+    const result = withAdyenIos(swiftConfig(), {});
+
+    expect(setImportSwift).toHaveBeenCalled();
+    expect(result.modResults.contents).toContain('// MOCK: swift openurl');
+    expect(withEntitlementsPlist).not.toHaveBeenCalled();
+    expect(WarningAggregator.addWarningIOS).not.toHaveBeenCalled();
+  });
+
+  it('should set entitlements when merchantIdentifier is provided', async () => {
+    withAdyenIos(swiftConfig(), mockPluginSettings);
 
     // Check that both HOFs were called
     expect(withAppDelegate).toHaveBeenCalled();
@@ -152,61 +139,48 @@ describe('withAdyenIos', () => {
   });
 
   it('should NOT set entitlements when merchantIdentifier is missing', async () => {
-    const config = {
-      name: 'test-app',
-      slug: 'test-app',
-      modResults: { contents: '// AppDelegate content' },
-    };
-
-    withAdyenIos(config, {
-      merchantIdentifier: '',
-      useFrameworks: false,
-    });
+    withAdyenIos(swiftConfig(), { merchantIdentifier: '' });
 
     // Check that the entitlements HOF was NOT called
     expect(withEntitlementsPlist).not.toHaveBeenCalled();
     expect(setEntitlements).not.toHaveBeenCalled();
   });
 
-  it('should skip modification if AppDelegate is already configured for Obj-c', async () => {
-    const originalContent =
-      '#import <adyen-react-native/ADYRedirectComponent.h>\n// Already contains ADYRedirectComponent';
-    const config = {
-      name: 'test-app',
-      slug: 'test-app',
-      modResults: { contents: originalContent },
-    };
-
-    const result = withAdyenIos(config, mockPluginSettings);
-
-    // Check that no modifiers were called
-    expect(setImport).not.toHaveBeenCalled();
-    expect(setImportSwift).not.toHaveBeenCalled();
-    // ...and so on for all other modifiers
-
-    // Check that the content is unchanged
-    expect(result.modResults.contents).toBe(originalContent);
-  });
-
   it('should only update imports if the Swift AppDelegate already handles redirects', async () => {
     const originalContent =
       'import Expo\nimport Adyen\n// return RedirectComponent.applicationDidOpen(from: url)';
-    const config = {
-      name: 'test-app',
-      slug: 'test-app',
-      modResults: { contents: originalContent },
-    };
 
-    const result = withAdyenIos(config, mockPluginSettings);
+    const result = withAdyenIos(
+      swiftConfig(originalContent),
+      mockPluginSettings
+    );
 
     // The imports are upgraded, but the redirect hooks are not added again
     expect(setImportSwift).toHaveBeenCalledWith(originalContent);
     expect(setApplicationOpenUrlSwift).not.toHaveBeenCalled();
     expect(setApplicationContinueUserActivitySwift).not.toHaveBeenCalled();
-    expect(setImport).not.toHaveBeenCalled();
 
     expect(result.modResults.contents).toBe(
       `${originalContent}\n// MOCK: swift import`
     );
+  });
+
+  it('should warn that useFrameworks is no longer used when it is set', async () => {
+    const result = withAdyenIos(swiftConfig(), {
+      ...mockPluginSettings,
+      useFrameworks: true,
+    } as Parameters<typeof withAdyenIos>[1]);
+
+    expect(WarningAggregator.addWarningIOS).toHaveBeenCalledWith(
+      '@adyen/react-native.useFrameworks',
+      'The `useFrameworks` option is no longer used and can be removed from your app config.'
+    );
+    expect(result.modResults.contents).toContain('// MOCK: swift import');
+  });
+
+  it('should not warn when useFrameworks is omitted', async () => {
+    withAdyenIos(swiftConfig(), mockPluginSettings);
+
+    expect(WarningAggregator.addWarningIOS).not.toHaveBeenCalled();
   });
 });
