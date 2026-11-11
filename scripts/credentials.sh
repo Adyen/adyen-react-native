@@ -45,11 +45,11 @@ fi
 # NOTE: If your secrets contain quotes or special characters, consider storing/escaping them appropriately.
 cat > "$SECRETS_FILE" <<EOF
 {
-  "clientKey": "${CLIENT_KEY}",
-  "demoServerApiKey": "${DEMO_SERVER_API_KEY}",
-  "merchantAccount": "${MERCHANT_ACCOUNT}",
-  "publicKey": "${PUBLIC_KEY}",
-  "appleMerchantId": "${APPLE_MERCHANT_ID}"
+  "CLIENT_KEY": "${CLIENT_KEY}",
+  "DEMO_SERVER_API_KEY": "${DEMO_SERVER_API_KEY}",
+  "MERCHANT_ACCOUNT": "${MERCHANT_ACCOUNT}",
+  "PUBLIC_KEY": "${PUBLIC_KEY}",
+  "APPLE_MERCHANT_ID": "${APPLE_MERCHANT_ID}"
 }
 EOF
 

@@ -1,11 +1,11 @@
 import type { Environment } from '@adyen/react-native';
 import { Platform, I18nManager } from 'react-native';
 import {
-  merchantAccount,
-  demoServerApiKey,
-  publicKey,
-  clientKey,
-  appleMerchantId,
+  MERCHANT_ACCOUNT,
+  DEMO_SERVER_API_KEY,
+  PUBLIC_KEY,
+  CLIENT_KEY,
+  APPLE_MERCHANT_ID,
 } from '../secrets.json';
 
 let locale = I18nManager.getConstants().localeIdentifier ?? 'en-US';
@@ -20,7 +20,7 @@ export const DEFAULT_CONFIGURATION = {
   countryCode: 'NL',
   currency: 'EUR',
   amount: 1000, // The amount value in minor units.
-  merchantAccount: merchantAccount,
+  merchantAccount: MERCHANT_ACCOUNT,
   shopperLocale: DEVICE_LOCALE,
   shopperReference: 'Checkout Shopper',
 };
@@ -28,10 +28,10 @@ export const DEFAULT_CONFIGURATION = {
 // For test purposes only! Do not call Adyen API from your mobile app on LIVE.
 export const ENVIRONMENT = {
   environment: 'test' as Environment,
-  apiKey: demoServerApiKey,
+  apiKey: DEMO_SERVER_API_KEY,
   url: 'https://checkout-test.adyen.com/v70/',
-  publicKey: publicKey,
-  clientKey: clientKey,
+  publicKey: PUBLIC_KEY,
+  clientKey: CLIENT_KEY,
   returnUrl: 'myapp://payment', // **WARNING** Not used for Android DropIn.
-  applepayMerchantID: appleMerchantId,
+  applepayMerchantID: APPLE_MERCHANT_ID,
 };
