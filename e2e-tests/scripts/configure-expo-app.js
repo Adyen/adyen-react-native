@@ -41,18 +41,13 @@ try {
     appJson.expo.plugins = [];
   }
 
-  // Only add if not already present. The README asks apps with
-  // use_frameworks! to set the plugin's useFrameworks option.
+  // Only add if not already present
   const hasAdyenPlugin = appJson.expo.plugins.some(
     (plugin) =>
       (Array.isArray(plugin) ? plugin[0] : plugin) === '@adyen/react-native'
   );
   if (!hasAdyenPlugin) {
-    appJson.expo.plugins.unshift(
-      USE_FRAMEWORKS
-        ? ['@adyen/react-native', { useFrameworks: true }]
-        : '@adyen/react-native'
-    );
+    appJson.expo.plugins.unshift('@adyen/react-native');
     console.log('✓ Added @adyen/react-native plugin');
   }
 
