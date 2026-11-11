@@ -6,7 +6,7 @@
 > [!Important]
 > **React Native New Architecture Support** </br>
 >
-> The **New Architecture** for React Native is exclusively supported on versions **0.76.0 and above**.
+> The **New Architecture** for React Native is exclusively supported on versions **0.79.0 and above**.
 
 > [!Important]
 >

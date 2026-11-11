@@ -61,9 +61,9 @@ __metadata:
     react-test-renderer: "npm:19.2.3"
     typescript: "npm:^6.0.3"
   peerDependencies:
-    expo: ">=52"
+    expo: ">=54"
     react: "*"
-    react-native: ">=0.76.0"
+    react-native: ">=0.79.0"
   peerDependenciesMeta:
     expo:
       optional: true
