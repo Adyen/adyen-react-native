@@ -4,9 +4,9 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 > **Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
 
-## Step 1: Build librarty
+## Step 1: Build
 
-Before begining with the app, make sure you have build binaries in the root folder.
+Build the library from the repository root:
 
 ```bash
 npm start
@@ -16,9 +16,7 @@ This will fetch dependencies and generate compressed binaries in _lib/_ folder.
 
 ## Step 2: Provide credentials
 
-This project uses `example/src/secrets.json` to store local, non-committed keys and configuration for the example app.
-
-Create a `secrets.json` file in the `example/` directory with the following structure (DO NOT commit this file to the repository):
+The example app reads its keys from `example/secrets.json`. `npm start` creates it from corresponding environment variables. You can also create it manually. Make sure not to commit it.
 
 ```json
 {
@@ -30,8 +28,8 @@ Create a `secrets.json` file in the `example/` directory with the following stru
 }
 ```
 
-- CLIENT_KEY: Your Adyen [client Key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key) for the client-side drop-in/components.
-- DEMO_SERVER_API_KEY: [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key) key for the Adyen API.
+- CLIENT_KEY: Your Adyen [client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key) for the client-side drop-in/components.
+- DEMO_SERVER_API_KEY: [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key) for the Adyen API.
 - MERCHANT_ACCOUNT: Your [Merchant Account](https://docs.adyen.com/account/account-structure/#merchant-accounts) name.
 - PUBLIC_KEY: Your [public RSA key](https://docs.adyen.com/online-payments/classic-integrations/classic-api-integration/client-side-encryption/cse-library-public-key-location-and-token) (optional).
 - APPLE_MERCHANT_ID: Your Apple Pay merchant identifier (optional).
