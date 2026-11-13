@@ -3,17 +3,6 @@
 [![Adyen Android](https://img.shields.io/badge/android-v5.22.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.22.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
-> [!Important]
-> **React Native New Architecture Support** </br>
->
-> The **New Architecture** for React Native is exclusively supported on versions **0.79.0 and above**.
-
-> [!Important]
->
-> Adyen Android SDK 5.22.0 requires Kotlin 2.3 (2.2.20 on Expo SDK 54), Android API 36 and Android Gradle plugin 8.9.1. It is supported from React Native 0.79 and Expo SDK 54.
->
-> See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for what to set for your React Native or Expo version.
-
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
 # Adyen React Native
@@ -27,7 +16,7 @@ You can integrate with Adyen React Native in two ways:
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
 - [Installation](#installation)
   - [Expo](#expo-integration)
   - [Manual Integration](#manual-integration)
@@ -41,15 +30,15 @@ You can integrate with Adyen React Native in two ways:
 - [Support](#support)
 - [License](#license)
 
-## Prerequisites
+## Requirements
 
-- [Adyen test account](https://www.adyen.com/signup)
-- [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key)
-- [Client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key)
+- React Native 0.79 or newer, or Expo SDK 54 or newer.
+- On Android: Kotlin 2.3 (2.2.20 on Expo SDK 54), Android API 36 and Android Gradle plugin 8.9.1, required by Adyen Android SDK 5.22.0. See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for the values per React Native and Expo version.
+- An [Adyen test account](https://www.adyen.com/signup), an [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key) and a [client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key).
 
 # Installation
 
-Add `@adyen/react-native` to your React Native project:
+Add `@adyen/react-native` to your project:
 
 ```bash
 yarn add @adyen/react-native
@@ -61,7 +50,7 @@ yarn add @adyen/react-native
 >
 > This library is not compatible with Expo Go. It is designed exclusively for use with the [Continuous Native Generation](https://docs.expo.dev/workflow/overview/#continuous-native-generation-cng).
 
-Add `@adyen/react-native` plugin to your `app.json`. The plugin requires Expo SDK 54 or newer:
+Add the `@adyen/react-native` plugin to your `app.json`:
 
 ```json
 {
@@ -74,11 +63,11 @@ Add `@adyen/react-native` plugin to your `app.json`. The plugin requires Expo SD
 For Android, install `expo-build-properties` and set the Kotlin and Android API values for your Expo SDK from [Compatibility](docs/Compatibility.md#expo).
 
 <details>
-<summary><strong>Plugin Configuration Options</strong></summary>
+<summary><strong>Optional Plugin Configurations</strong></summary>
 
-| Option               | Description                                                                     |
-| -------------------- | ------------------------------------------------------------------------------- |
-| `merchantIdentifier` | Sets ApplePay Merchant ID to your iOS app's entitlement file. Empty by default. |
+| Option               | Description                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `merchantIdentifier` | Adds your Apple Pay merchant ID to your iOS app's entitlements file. Empty by default. |
 
 **Example with all options:**
 
@@ -109,33 +98,20 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
 
 ## Manual Integration
 
-> [!NOTE]
->
-> For Objective-C and Java integration, see the [legacy documentation](https://github.com/Adyen/adyen-react-native/tree/2.9.0?tab=readme-ov-file#ios-integration).
-
 <details>
 <summary><strong>iOS Setup</strong></summary>
 
 1. Link the native module.
 
-   On **React Native 0.87.1 or newer**, link it with Swift Package Manager (SPM). `@adyen/react-native` ships its own `Package.swift`, and React Native's SPM autolinking picks it up together with [Adyen iOS](https://github.com/Adyen/adyen-ios). After adding or updating the package, refresh the generated packages with:
+   On **React Native 0.87.1 or newer**, you can link it with Swift Package Manager (SPM). See [Compatibility](docs/Compatibility.md#ios-swift-package-manager).
 
-   ```bash
-   npx react-native spm update
-   ```
+   On **older React Native versions**, or to keep CocoaPods, run `pod install` in your app's `ios` directory. Expo apps use CocoaPods.
 
-   To convert an existing CocoaPods app, run `npx react-native spm add --deintegrate` once from the app's root directory. React Native marks SPM support as experimental in 0.87.
+   With CocoaPods, `pod install` and the build need network access to `github.com`. See [Compatibility](docs/Compatibility.md#ios-cocoapods) for all CocoaPods steps.
 
-   On **older React Native versions**, use CocoaPods: run `pod install` in your app's `ios` directory. Expo apps use CocoaPods by default; Expo SDK 58 can link through Swift Package Manager as a preview (see [Compatibility](docs/Compatibility.md#ios-swift-package-manager)).
-
-   With CocoaPods, the `adyen-react-native` pod gets [Adyen iOS](https://github.com/Adyen/adyen-ios) as a Swift package through React Native's `spm_dependency` helper, so `pod install` adds no `Adyen` pod. Xcode resolves the package from `github.com/Adyen/adyen-ios` when it first opens or builds the workspace, so the build machine needs network access to GitHub. See [Compatibility](docs/Compatibility.md#ios-cocoapods) for details.
-
-   See [Compatibility](docs/Compatibility.md#ios-swift-package-manager) for why SPM is the integration going forward and for known limitations.
-
-2. Add `returnURL` handler to your `AppDelegate.swift`:
+2. Add `returnUrl` handler to your `AppDelegate.swift`:
 
 ```swift
-import Adyen
 import adyen_react_native
 
 // ...
@@ -145,7 +121,7 @@ func application(_ app: UIApplication, open url: URL, options: [UIApplication.Op
 }
 ```
 
-`import adyen_react_native` is required: Adyen iOS is a Swift package with several modules (`Adyen`, `AdyenActions`, `AdyenDropIn`, ...) under both Swift Package Manager and CocoaPods, and this import re-exports `RedirectComponent` and `DropInComponent`.
+`import adyen_react_native` re-exports the Adyen iOS modules, so `RedirectComponent` is available without a module prefix.
 
 If using `RCTLinkingManager` or other deep-linking techniques, place `RedirectComponent.applicationDidOpen` before them:
 
@@ -168,16 +144,18 @@ func application(_ application: UIApplication, continue userActivity: NSUserActi
 }
 ```
 
+If your app uses the UIScene lifecycle (required for apps built with Xcode 27), the AppDelegate methods above are not called. Call `RedirectComponent.applicationDidOpen(from:)` from your `UISceneDelegate` instead: in `scene(_:openURLContexts:)`, in `scene(_:continue:)` for Universal Links, and in `scene(_:willConnectTo:options:)` for the URLs in `connectionOptions.urlContexts` and `connectionOptions.userActivities`.
+
 3. Add [custom URL Scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) to your app.
 
-4. **For ApplePay:** Follow the [Enable ApplePay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
+4. **For Apple Pay:** Follow the [Enable Apple Pay for iOS](https://docs.adyen.com/payment-methods/apple-pay/enable-apple-pay?tab=i_os_2) guide.
 
 </details>
 
 <details>
 <summary><strong>Android Setup</strong></summary>
 
-1. Set Kotlin, the Android API level and, on React Native 0.79, the Android Gradle plugin in `android/build.gradle` as listed in [Compatibility](docs/Compatibility.md#bare-react-native).
+1. Set Kotlin, the Android API level and, on React Native 0.79, the Android Gradle plugin in `android/build.gradle` as listed in [Compatibility](docs/Compatibility.md#react-native).
 
 2. Provide your Checkout activity to `AdyenCheckout` in `MainActivity.kt`:
 
@@ -204,7 +182,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
 </intent-filter>
 ```
 
-4. Add `returnURL` handler for standalone redirect components in `MainActivity.kt`:
+4. Add `returnUrl` handler for standalone redirect components in `MainActivity.kt`:
 
 ```kotlin
 import android.content.Intent
@@ -263,25 +241,37 @@ const configuration: Configuration = {
   <td> Advanced flow </td> 
   <td> 
     
-  During `onSubmit(data, component, extras)` pass `"returnUrl": data.returnUrl` to make `\payments` API call. 
+  During `onSubmit(data, component, extras)` pass `"returnUrl": data.returnUrl` to make `/payments` API call. 
     
   </td>
 </tr>
 <tr>
-  <td> Sessions flow </td> 
+  <td> Sessions flow (Drop-in) </td>
   <td>
 
-To make `\sessions` API call use `AdyenDropIn.getReturnURL()` to fetch `returnUrl`.
+Drop-in runs the payment in its own activity — both the full Drop-in and a single payment method started with `start('card')` and similar. On Android, fetch `returnUrl` with `AdyenDropIn.getReturnURL()`; on iOS, use your app's URL scheme.
 
 ```js
-const returnUrl = Platform.select({
-  ios: 'myapp://payment',
-  android: await AdyenDropIn.getReturnURL(),
-});
+const returnUrl =
+  Platform.OS === 'android'
+    ? await AdyenDropIn.getReturnURL()
+    : 'myapp://payment';
 ```
 
   </td>
-</tr> 
+</tr>
+<tr>
+  <td> Sessions flow (Components) </td>
+  <td>
+
+Components — embedded (`<CardView>`, `<ApplePayButton>`, `<GooglePayButton>`) or standalone (`start('applepay')`, `start('ideal')`, and similar) — redirect through your app. Use your app's URL scheme:
+
+```js
+const returnUrl = 'myapp://payment';
+```
+
+  </td>
+</tr>
 </table>
 
 ## Opening Payment component
@@ -395,16 +385,19 @@ const handleSubmit = (paymentData, nativeComponent) => {
 
 ### Standalone Action handling
 
-In case of API-only integration `AdyenAction.handle` could be used.
-Before you begin, make sure you follow all [iOS integration](#ios-integration) and [Android integration](#android-integration) steps.
+For an API-only integration, use `AdyenAction.handle`.
+Before you begin, follow the iOS and Android setup steps in [Manual Integration](#manual-integration).
 
 Example:
 
 ```js
 import { AdyenAction } from '@adyen/react-native';
 
-const data = await AdyenAction.handle(apiResponse.action, { environment: 'test', clientKey: '{YOUR_CLIENT_KEY}');
-result = await ApiClient.paymentDetails(data);
+const data = await AdyenAction.handle(apiResponse.action, {
+  environment: 'test',
+  clientKey: '{YOUR_CLIENT_KEY}',
+});
+const result = await ApiClient.paymentDetails(data);
 ```
 
 # Documentation
@@ -419,6 +412,7 @@ result = await ApiClient.paymentDetails(data);
 ## Contributing
 
 We strongly encourage you to join us in contributing to this repository so everyone can benefit from:
+
 - New features and functionality
 - Resolved bug fixes and issues
 - Any general improvements
@@ -433,7 +427,6 @@ If you have a feature request, or spotted a bug or a technical problem, [create 
 
 MIT license. For more information, see the [LICENSE](LICENSE) file.
 
-[client.key]: https://docs.adyen.com/online-payments/android/drop-in#client-key
 [configuration]: /docs/Configuration.md
 [localization]: /docs/Localization.md
 [customization]: /docs/Customization.md
