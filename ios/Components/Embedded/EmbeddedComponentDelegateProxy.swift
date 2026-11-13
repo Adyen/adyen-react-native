@@ -93,8 +93,7 @@ extension EmbeddedComponentDelegateProxy: CardComponentDelegate {
     }
 
     func didChangeCardBrand(_ value: [CardBrand]?, component _: CardComponent) {
-        guard let bus else { return }
-        guard let value, !value.isEmpty else { return }
+        guard let bus, let value, !value.isEmpty else { return }
         let jsonData = value.map { BinLookupDataDTO(brand: $0.type.rawValue).jsonObject }
         bus.sendEvent(event: .binLookup, body: taggedBody([Keys.data: jsonData]))
     }

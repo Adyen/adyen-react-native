@@ -172,8 +172,7 @@ public final class CardComponentViewProxy: UIStackView {
     /// Called both from `performInitialization` and `didMoveToWindow` to handle either ordering:
     /// component created before or after the proxy is added to the window.
     private func attachChildViewControllerIfNeeded() {
-        guard let childVC = cardComponent?.viewController, childVC.parent == nil else { return }
-        guard let parentVC = parentViewController else { return }
+        guard let childVC = cardComponent?.viewController, childVC.parent == nil, let parentVC = parentViewController else { return }
         parentVC.addChild(childVC)
         childVC.didMove(toParent: parentVC)
         layoutIfNeeded()

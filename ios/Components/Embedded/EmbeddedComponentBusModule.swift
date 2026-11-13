@@ -146,11 +146,7 @@ package final class EmbeddedComponentBusModule: BaseAddressModule {
 
     private func performHandle(_ viewId: String, action actionDict: NSDictionary?) {
         guard let actionDict else { return }
-        guard let handler = actionHandler else {
-            sendError(error: ModuleException.componentNotRegistered(viewId))
-            return
-        }
-        guard let proxy = delegates[viewId] else {
+        guard let handler = actionHandler, let proxy = delegates[viewId] else {
             sendError(error: ModuleException.componentNotRegistered(viewId))
             return
         }
