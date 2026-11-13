@@ -6,8 +6,8 @@
 
 import UIKit
 
+@MainActor
 extension UIViewController {
-    @MainActor
     internal static var topPresenter: UIViewController? {
         let keyWindow: UIWindow?
         if #available(iOS 13, *) {
