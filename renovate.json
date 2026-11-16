@@ -23,12 +23,12 @@
     },
     {
       "description": "Hard Whitelist Step 1: Disable all native updates",
-      "matchDatasources": ["maven", "cocoapods"],
+      "matchDatasources": ["maven", "git-tags", "github-tags"],
       "enabled": false
     },
     {
       "description": "Hard Whitelist Step 2: Enable ONLY Adyen Native Updates",
-      "matchDatasources": ["maven", "cocoapods"],
+      "matchDatasources": ["maven", "git-tags", "github-tags"],
       "matchSourceUrls": [
         "https://github.com/Adyen/adyen-android",
         "https://github.com/Adyen/adyen-ios"

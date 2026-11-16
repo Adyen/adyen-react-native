@@ -3,9 +3,9 @@
 //
 // This file is open source and available under the MIT license. See the LICENSE file for more info.
 
-// Reads `xcrun xccov view --archive` output from stdin and writes SonarQube generic
-// coverage XML to stdout, optionally filtering to files under --filter and making
-// paths relative by stripping --strip.
+// Reads `xcrun xccov view --archive` or `xcrun llvm-cov export -format=lcov` output
+// from stdin and writes SonarQube generic coverage XML to stdout, optionally filtering
+// to files under --filter and making paths relative by stripping --strip.
 
 // Example of input:
 // adyen-react-native/ios/Views/PlatformView/ADYPlatformPayView.mm:
@@ -17,6 +17,12 @@
 //   (10, 0, 2)
 //   ]
 //   6: 0
+//
+// Example of lcov input:
+// SF:/path/to/adyen-react-native/ios/Views/PlatformView/ADYPlatformPayView.mm
+// DA:3,0
+// DA:4,2
+// end_of_record
 
 import Foundation
 
@@ -62,24 +68,48 @@ func flushFile() {
     print("  </file>")
 }
 
+func beginFile(_ rawPath: String) {
+    flushFile()
+    keep = filterPrefix.isEmpty || rawPath.contains(filterPrefix)
+    var path = rawPath
+    if keep, !stripPrefix.isEmpty, path.hasPrefix(stripPrefix) {
+        path = String(path.dropFirst(stripPrefix.count))
+    }
+    currentPath = path
+        .replacingOccurrences(of: "&", with: "&amp;")
+        .replacingOccurrences(of: "\"", with: "&quot;")
+}
+
+func appendLine(_ lineNumber: Int, covered: Bool) {
+    pendingLines.append("    <lineToCover lineNumber=\"\(lineNumber)\" covered=\"\(covered)\"/>")
+}
+
 while let line = readLine(strippingNewline: true) {
-    if line.isEmpty {
+    if line.isEmpty || line == "end_of_record" {
         flushFile()
+        continue
+    }
+
+    // lcov: "SF:<path>" starts a file, "DA:<line>,<count>[,<checksum>]" is a line record;
+    // other records (FN, BRDA, LF, ...) are skipped
+    if line.hasPrefix("SF:") {
+        beginFile(String(line.dropFirst(3)))
+        continue
+    }
+    if line.hasPrefix("DA:") {
+        let fields = line.dropFirst(3).split(separator: ",")
+        if fields.count >= 2, let lineNumber = Int(fields[0]), let count = Int(fields[1]) {
+            appendLine(lineNumber, covered: count > 0)
+        }
+        continue
+    }
+    if line.range(of: #"^[A-Z]+:"#, options: .regularExpression) != nil {
         continue
     }
 
     // File path lines end with ':' and have no leading whitespace
     if line.hasSuffix(":"), !line.hasPrefix(" ") {
-        flushFile()
-        let rawPath = String(line.dropLast())
-        keep = filterPrefix.isEmpty || rawPath.contains(filterPrefix)
-        var path = rawPath
-        if keep, !stripPrefix.isEmpty, path.hasPrefix(stripPrefix) {
-            path = String(path.dropFirst(stripPrefix.count))
-        }
-        currentPath = path
-            .replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "\"", with: "&quot;")
+        beginFile(String(line.dropLast()))
         continue
     }
 
@@ -100,11 +130,11 @@ while let line = readLine(strippingNewline: true) {
         .trimmingCharacters(in: .whitespaces)
         .components(separatedBy: " ").first ?? ""
     if countToken == "0" {
-        pendingLines.append("    <lineToCover lineNumber=\"\(lineNumber)\" covered=\"false\"/>")
+        appendLine(lineNumber, covered: false)
     } else if countToken == "*" {
         continue
     } else if let first = countToken.first, first.isNumber {
-        pendingLines.append("    <lineToCover lineNumber=\"\(lineNumber)\" covered=\"true\"/>")
+        appendLine(lineNumber, covered: true)
     }
 }
 

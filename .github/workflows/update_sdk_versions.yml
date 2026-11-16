@@ -20,7 +20,7 @@ on:
 
 jobs:
   update-sdk:
-    runs-on: ${{ inputs.platform == 'iOS' && 'macos-latest' || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     env:
       PLATFORM: ${{ inputs.platform }}
 
@@ -73,23 +73,6 @@ jobs:
         sed "${SED_FLAG[@]}" "s|${PLATFORM_PREFIX}-v[^-]*|${PLATFORM_PREFIX}-v$VERSION|g" README.md
         sed "${SED_FLAG[@]}" "s|${PLATFORM_PREFIX}/releases/tag/[^)]*|${PLATFORM_PREFIX}/releases/tag/$VERSION|g" README.md
 
-    - name: Update Podfile.lock
-      if: inputs.platform == 'iOS'
-      run: |
-        rm -f example/ios/Podfile.lock
-        yarn
-        bundle install
-        yarn app pod
-
-    - uses: actions/cache@v6
-      if: inputs.platform == 'iOS'
-      id: pods-cache
-      with:
-        key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
-        path: |
-          example/ios/Pods
-          ~/Library/Caches/CocoaPods
-
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v8
       with:
@@ -102,7 +85,6 @@ jobs:
           README.md
           adyen-react-native.podspec
           android/dependencies.gradle
-          example/ios/Podfile.lock
           ios/Package.swift
         body: |
           # Open PR

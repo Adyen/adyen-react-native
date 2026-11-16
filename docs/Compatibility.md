@@ -14,6 +14,8 @@ If your Podfile has a test target with `inherit! :complete` (for example `target
 
 For React Native 0.87.1 and newer apps that use SPM ([switching to SPM](https://reactnative.dev/blog/2026/08/11/react-native-0.87#experimental-swift-package-manager-support-for-ios)). Expo apps use [CocoaPods](#ios-cocoapods). Run `npx react-native spm` after a fresh clone and in CI. Building the app downloads the Adyen iOS packages from GitHub.
 
+On React Native 0.87.1, `@react-native-community/cli` detects an iOS project only when `ios/` contains a `Podfile`. If your app removed its `Podfile`, `npx react-native spm` fails because `project.ios` resolves to `null`. To work around it, point `RCT_SPM_AUTOLINKING_CONFIG_COMMAND` at a small config script that fills in `project.ios`. Copy the pattern from [`example/scripts/spm-cli-config.js`](../example/scripts/spm-cli-config.js), which is not shipped in the npm package. The command is pinned as `configCommand` in `.spm-injected.json`. Apps that keep their `Podfile` need nothing extra.
+
 ## Adyen Android SDK 5.22.0: Kotlin and Android SDK requirements
 
 Your Android app must build with:
