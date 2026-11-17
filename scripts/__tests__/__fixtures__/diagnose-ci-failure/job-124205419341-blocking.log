@@ -1,0 +1,324 @@
+﻿2026-10-30T17:14:41.1248069Z Current runner version: '2.338.2'
+2026-10-30T17:14:41.1282896Z ##[group]Runner Image Provisioner
+2026-10-30T17:14:41.1284199Z Hosted Compute Agent
+2026-10-30T17:14:41.1285162Z Version: 20261021.618
+2026-10-30T17:14:41.1286113Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-30T17:14:41.1287506Z Build Date: 2026-10-21T00:45:21Z
+2026-10-30T17:14:41.1288568Z Worker ID: {6189854b-cafd-411e-a5b6-804616ec66c8}
+2026-10-30T17:14:41.1289777Z Region: centralus
+2026-10-30T17:14:41.1290551Z Cloud: Azure
+2026-10-30T17:14:41.1291397Z ##[endgroup]
+2026-10-30T17:14:41.1293265Z ##[group]Operating System
+2026-10-30T17:14:41.1294109Z Ubuntu
+2026-10-30T17:14:41.1294911Z 24.04.5
+2026-10-30T17:14:41.1295566Z LTS
+2026-10-30T17:14:41.1296307Z ##[endgroup]
+2026-10-30T17:14:41.1297340Z ##[group]Runner Image
+2026-10-30T17:14:41.1298208Z Image: ubuntu-24.04
+2026-10-30T17:14:41.1298995Z Version: 20261025.353.1
+2026-10-30T17:14:41.1300778Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-30T17:14:41.1302961Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-10-30T17:14:41.1304367Z ##[endgroup]
+2026-10-30T17:14:41.1306027Z ##[group]GITHUB_TOKEN Permissions
+2026-10-30T17:14:41.1309343Z Contents: read
+2026-10-30T17:14:41.1310218Z Metadata: read
+2026-10-30T17:14:41.1311058Z ##[endgroup]
+2026-10-30T17:14:41.1313911Z Secret source: Actions
+2026-10-30T17:14:41.1315364Z Cache mode: write
+2026-10-30T17:14:41.1316418Z Prepare workflow directory
+2026-10-30T17:14:41.1937604Z Prepare all required actions
+2026-10-30T17:14:41.2009477Z Getting action download info
+2026-10-30T17:19:00.0000000Z [fixture: log lines 31-2579 omitted]
+2026-10-30T17:23:41.3345107Z            Recommended action: Update this project's version of the Android Gradle
+2026-10-30T17:23:41.3345890Z            plugin to one that supports 36, then update this project to use
+2026-10-30T17:23:41.3346498Z            compileSdk of at least 36.
+2026-10-30T17:23:41.3347070Z      
+2026-10-30T17:23:41.3347569Z            Note that updating a library or application's compileSdk (which
+2026-10-30T17:23:41.3348317Z            allows newer APIs to be used) can be done separately from updating
+2026-10-30T17:23:41.3349061Z            targetSdk (which opts the app in to new runtime behavior) and
+2026-10-30T17:23:41.3349789Z            minSdk (which determines which devices the app can be installed
+2026-10-30T17:23:41.3350611Z            on).
+2026-10-30T17:23:41.3350934Z      
+2026-10-30T17:23:41.3351577Z       46.  Dependency 'com.adyen.checkout:cse:5.22.0' requires libraries and applications that
+2026-10-30T17:23:41.3352360Z            depend on it to compile against version 36 or later of the
+2026-10-30T17:23:41.3352855Z            Android APIs.
+2026-10-30T17:23:41.3353198Z      
+2026-10-30T17:23:41.3353608Z            :app is currently compiled against android-35.
+2026-10-30T17:23:41.3354063Z      
+2026-10-30T17:23:41.3354583Z            Also, the maximum recommended compile SDK version for Android Gradle
+2026-10-30T17:23:41.3355187Z            plugin 8.8.2 is 35.
+2026-10-30T17:23:41.3355547Z      
+2026-10-30T17:23:41.3356080Z            Recommended action: Update this project's version of the Android Gradle
+2026-10-30T17:23:41.3357035Z            plugin to one that supports 36, then update this project to use
+2026-10-30T17:23:41.3357660Z            compileSdk of at least 36.
+2026-10-30T17:23:41.3358068Z      
+2026-10-30T17:23:41.3358585Z            Note that updating a library or application's compileSdk (which
+2026-10-30T17:23:41.3359493Z            allows newer APIs to be used) can be done separately from updating
+2026-10-30T17:23:41.3360176Z            targetSdk (which opts the app in to new runtime behavior) and
+2026-10-30T17:23:41.3360714Z            minSdk (which determines which devices the app can be installed
+2026-10-30T17:23:41.3361107Z            on).
+2026-10-30T17:23:41.3361353Z      
+2026-10-30T17:23:41.3361844Z       47.  Dependency 'com.adyen.checkout:components-core:5.22.0' requires libraries and applications that
+2026-10-30T17:23:41.3362477Z            depend on it to compile against version 36 or later of the
+2026-10-30T17:23:41.3362908Z            Android APIs.
+2026-10-30T17:23:41.3363165Z      
+2026-10-30T17:23:41.3363477Z            :app is currently compiled against android-35.
+2026-10-30T17:23:41.3363809Z      
+2026-10-30T17:23:41.3364182Z            Also, the maximum recommended compile SDK version for Android Gradle
+2026-10-30T17:23:41.3364627Z            plugin 8.8.2 is 35.
+2026-10-30T17:23:41.3364897Z      
+2026-10-30T17:23:41.3365290Z            Recommended action: Update this project's version of the Android Gradle
+2026-10-30T17:23:41.3365857Z            plugin to one that supports 36, then update this project to use
+2026-10-30T17:23:41.3366288Z            compileSdk of at least 36.
+2026-10-30T17:23:41.3366582Z      
+2026-10-30T17:23:41.3367095Z            Note that updating a library or application's compileSdk (which
+2026-10-30T17:23:41.3367660Z            allows newer APIs to be used) can be done separately from updating
+2026-10-30T17:23:41.3368192Z            targetSdk (which opts the app in to new runtime behavior) and
+2026-10-30T17:23:41.3368718Z            minSdk (which determines which devices the app can be installed
+2026-10-30T17:23:41.3369117Z            on).
+2026-10-30T17:23:41.3369427Z      
+2026-10-30T17:23:41.3369929Z       48.  Dependency 'com.adyen.checkout:checkout-core:5.22.0' requires libraries and applications that
+2026-10-30T17:23:41.3370547Z            depend on it to compile against version 36 or later of the
+2026-10-30T17:23:41.3370940Z            Android APIs.
+2026-10-30T17:23:41.3371203Z      
+2026-10-30T17:23:41.3371505Z            :app is currently compiled against android-35.
+2026-10-30T17:23:41.3371839Z      
+2026-10-30T17:23:41.3372207Z            Also, the maximum recommended compile SDK version for Android Gradle
+2026-10-30T17:23:41.3372643Z            plugin 8.8.2 is 35.
+2026-10-30T17:23:41.3372911Z      
+2026-10-30T17:23:41.3373299Z            Recommended action: Update this project's version of the Android Gradle
+2026-10-30T17:23:41.3373866Z            plugin to one that supports 36, then update this project to use
+2026-10-30T17:23:41.3374299Z            compileSdk of at least 36.
+2026-10-30T17:23:41.3374600Z      
+2026-10-30T17:23:41.3374965Z            Note that updating a library or application's compileSdk (which
+2026-10-30T17:23:41.3376329Z            allows newer APIs to be used) can be done separately from updating
+2026-10-30T17:23:41.3377017Z            targetSdk (which opts the app in to new runtime behavior) and
+2026-10-30T17:23:41.3377684Z            minSdk (which determines which devices the app can be installed
+2026-10-30T17:23:41.3378220Z            on).
+2026-10-30T17:23:41.3378535Z      
+2026-10-30T17:23:41.3379154Z       49.  Dependency 'androidx.browser:browser:1.9.0' requires libraries and applications that
+2026-10-30T17:23:41.3379983Z            depend on it to compile against version 36 or later of the
+2026-10-30T17:23:41.3380497Z            Android APIs.
+2026-10-30T17:23:41.3380847Z      
+2026-10-30T17:23:41.3381265Z            :app is currently compiled against android-35.
+2026-10-30T17:23:41.3381723Z      
+2026-10-30T17:23:41.3382250Z            Also, the maximum recommended compile SDK version for Android Gradle
+2026-10-30T17:23:41.3382847Z            plugin 8.8.2 is 35.
+2026-10-30T17:23:41.3383219Z      
+2026-10-30T17:23:41.3383780Z            Recommended action: Update this project's version of the Android Gradle
+2026-10-30T17:23:41.3384763Z            plugin to one that supports 36, then update this project to use
+2026-10-30T17:23:41.3385396Z            compileSdk of at least 36.
+2026-10-30T17:23:41.3385787Z      
+2026-10-30T17:23:41.3386189Z            Note that updating a library or application's compileSdk (which
+2026-10-30T17:23:41.3386956Z            allows newer APIs to be used) can be done separately from updating
+2026-10-30T17:23:41.3387593Z            targetSdk (which opts the app in to new runtime behavior) and
+2026-10-30T17:23:41.3388224Z            minSdk (which determines which devices the app can be installed
+2026-10-30T17:23:41.3388716Z            on).
+2026-10-30T17:23:41.3389017Z      
+2026-10-30T17:23:41.3389629Z       50.  Dependency 'androidx.browser:browser:1.9.0' requires Android Gradle plugin 8.9.1 or higher.
+2026-10-30T17:23:41.3390241Z      
+2026-10-30T17:23:41.3391274Z            This build currently uses Android Gradle plugin 8.8.2.
+2026-10-30T17:23:41.3391717Z      
+2026-10-30T17:23:41.3392321Z       51.  Dependency 'androidx.activity:activity:1.11.0' requires libraries and applications that
+2026-10-30T17:23:41.3393081Z            depend on it to compile against version 36 or later of the
+2026-10-30T17:23:41.3393590Z            Android APIs.
+2026-10-30T17:23:41.3393934Z      
+2026-10-30T17:23:41.3394294Z            :app is currently compiled against android-35.
+2026-10-30T17:23:41.3394737Z      
+2026-10-30T17:23:41.3395227Z            Also, the maximum recommended compile SDK version for Android Gradle
+2026-10-30T17:23:41.3395794Z            plugin 8.8.2 is 35.
+2026-10-30T17:23:41.3396190Z      
+2026-10-30T17:23:41.3396759Z            Recommended action: Update this project's version of the Android Gradle
+2026-10-30T17:23:41.3397647Z            plugin to one that supports 36, then update this project to use
+2026-10-30T17:23:41.3398224Z            compileSdk of at least 36.
+2026-10-30T17:23:41.3398543Z      
+2026-10-30T17:23:41.3398916Z            Note that updating a library or application's compileSdk (which
+2026-10-30T17:23:41.3399476Z            allows newer APIs to be used) can be done separately from updating
+2026-10-30T17:23:41.3400026Z            targetSdk (which opts the app in to new runtime behavior) and
+2026-10-30T17:23:41.3400562Z            minSdk (which determines which devices the app can be installed
+2026-10-30T17:23:41.3400960Z            on).
+2026-10-30T17:23:41.3401199Z      
+2026-10-30T17:23:41.3401689Z       52.  Dependency 'androidx.activity:activity:1.11.0' requires Android Gradle plugin 8.9.1 or higher.
+2026-10-30T17:23:41.3402202Z      
+2026-10-30T17:23:41.3402544Z            This build currently uses Android Gradle plugin 8.8.2.
+2026-10-30T17:23:41.3402976Z      
+2026-10-30T17:23:41.3403471Z       53.  Dependency 'androidx.activity:activity-ktx:1.11.0' requires libraries and applications that
+2026-10-30T17:23:41.3404095Z            depend on it to compile against version 36 or later of the
+2026-10-30T17:23:41.3404738Z            Android APIs.
+2026-10-30T17:23:41.3405131Z      
+2026-10-30T17:23:41.3405449Z            :app is currently compiled against android-35.
+2026-10-30T17:23:41.3405801Z      
+2026-10-30T17:23:41.3406177Z            Also, the maximum recommended compile SDK version for Android Gradle
+2026-10-30T17:23:41.3406624Z            plugin 8.8.2 is 35.
+2026-10-30T17:23:41.3407041Z      
+2026-10-30T17:23:41.3407458Z            Recommended action: Update this project's version of the Android Gradle
+2026-10-30T17:23:41.3408034Z            plugin to one that supports 36, then update this project to use
+2026-10-30T17:23:41.3408470Z            compileSdk of at least 36.
+2026-10-30T17:23:41.3408771Z      
+2026-10-30T17:23:41.3409135Z            Note that updating a library or application's compileSdk (which
+2026-10-30T17:23:41.3409693Z            allows newer APIs to be used) can be done separately from updating
+2026-10-30T17:23:41.3410238Z            targetSdk (which opts the app in to new runtime behavior) and
+2026-10-30T17:23:41.3410772Z            minSdk (which determines which devices the app can be installed
+2026-10-30T17:23:41.3411272Z            on).
+2026-10-30T17:23:41.3411525Z      
+2026-10-30T17:23:41.3412034Z       54.  Dependency 'androidx.activity:activity-ktx:1.11.0' requires Android Gradle plugin 8.9.1 or higher.
+2026-10-30T17:23:41.3412558Z      
+2026-10-30T17:23:41.3412896Z            This build currently uses Android Gradle plugin 8.8.2.
+2026-10-30T17:23:41.3413180Z 
+2026-10-30T17:23:41.3413291Z * Try:
+2026-10-30T17:23:41.3413665Z > Run with --stacktrace option to get the stack trace.
+2026-10-30T17:23:41.3414219Z > Run with --info or --debug option to get more log output.
+2026-10-30T17:23:41.3414665Z > Run with --scan to get full insights.
+2026-10-30T17:23:41.3415078Z > Get more help at https://help.gradle.org.
+2026-10-30T17:23:41.3415323Z 
+2026-10-30T17:23:41.3415470Z BUILD FAILED in 3m 25s
+2026-10-30T17:23:41.3415640Z 
+2026-10-30T17:23:41.3416031Z Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+2026-10-30T17:23:41.3416424Z 
+2026-10-30T17:23:41.3417133Z You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+2026-10-30T17:23:41.3417674Z 
+2026-10-30T17:23:41.3418350Z For more on this, please refer to https://docs.gradle.org/8.13/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+2026-10-30T17:23:41.3419116Z 28 actionable tasks: 28 executed
+2026-10-30T17:23:41.8060886Z ##[error]The process '/usr/bin/sh' failed with exit code 1
+2026-10-30T17:23:41.8071484Z ##[group]Terminate Emulator
+2026-10-30T17:23:41.8072426Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 emu kill
+2026-10-30T17:23:41.8073819Z OK: killing emulator, bye bye
+2026-10-30T17:23:41.8074549Z OK
+2026-10-30T17:23:41.8100233Z INFO         | Wait for emulator (pid 14816) 20 seconds to shutdown gracefully before kill;you can set environment variable ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL(in seconds) to change the default value (20 seconds)
+2026-10-30T17:23:41.8101442Z 
+2026-10-30T17:23:41.8102242Z ##[endgroup]
+2026-10-30T17:23:41.8182204Z USER_INFO    | Snapshots have been disabled by the user, save request is ignored.
+2026-10-30T17:23:41.8185132Z INFO         | Saving snapshot 'default_boot' took 0 ms
+2026-10-30T17:23:42.0931196Z ERROR        | stop: Not implemented
+2026-10-30T17:23:42.0931981Z WARNING      | Emulator client has not yet been configured.. Call configure me first!
+2026-10-30T17:23:42.1303358Z INFO         | removeAll
+2026-10-30T17:23:42.1748235Z WARNING      | Netsim Wifi dns:///localhost:40421 is gone due to Stream removed (CANCELLED)
+2026-10-30T17:23:42.1790160Z INFO         | ipv6:%5B::1%5D:40421: Got goaway [2] err=UNAVAILABLE:GOAWAY received; Error code: 2; Debug Text: Cancelling all calls {http2_error:2}
+2026-10-30T17:23:42.6374585Z ##[group]Run actions/upload-artifact@v7
+2026-10-30T17:23:42.6375053Z with:
+2026-10-30T17:23:42.6375341Z   name: appium_failure_android_react-native_0.79.7
+2026-10-30T17:23:42.6375680Z   path: appium_failure.png
+2026-10-30T17:23:42.6375976Z   if-no-files-found: ignore
+2026-10-30T17:23:42.6376245Z   retention-days: 1
+2026-10-30T17:23:42.6376499Z   compression-level: 6
+2026-10-30T17:23:42.6376747Z   overwrite: false
+2026-10-30T17:23:42.6377216Z   include-hidden-files: false
+2026-10-30T17:23:42.6377493Z   archive: true
+2026-10-30T17:23:42.6377732Z env:
+2026-10-30T17:23:42.6377951Z   APP_DIR: tested_app
+2026-10-30T17:23:42.6378264Z   YARN_NPM_MINIMAL_AGE_GATE: 1d
+2026-10-30T17:23:42.6378676Z   ADYEN_CLIENT_KEY: ***
+2026-10-30T17:23:42.6381336Z   ADYEN_PUBLIC_KEY: ***
+2026-10-30T17:23:42.6381590Z   ANDROID_API_LEVEL: 35
+2026-10-30T17:23:42.6381844Z   APPIUM_VERSION: 3.4.2
+2026-10-30T17:23:42.6382108Z   APPIUM_UIAUTOMATOR2_VERSION: 7.5.2
+2026-10-30T17:23:42.6382522Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:23:42.6382938Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:23:42.6383308Z   MAVEN_ARGS: -ntp
+2026-10-30T17:23:42.6383576Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-30T17:23:42.6383910Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-30T17:23:42.6384808Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-30T17:23:42.6385274Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-30T17:23:42.6385773Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-30T17:23:42.6386106Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-30T17:23:42.6386422Z   ANDROID_AVD_HOME: /home/runner/.android/avd
+2026-10-30T17:23:42.6386716Z ##[endgroup]
+2026-10-30T17:23:42.7967567Z No files were found with the provided path: appium_failure.png. No artifacts will be uploaded.
+2026-10-30T17:23:42.8087301Z ##[group]Run actions/upload-artifact@v7
+2026-10-30T17:23:42.8087635Z with:
+2026-10-30T17:23:42.8087927Z   name: appium_page_source_android_react-native_0.79.7
+2026-10-30T17:23:42.8088298Z   path: appium_page_source.xml
+2026-10-30T17:23:42.8088593Z   if-no-files-found: ignore
+2026-10-30T17:23:42.8088862Z   retention-days: 1
+2026-10-30T17:23:42.8089118Z   compression-level: 6
+2026-10-30T17:23:42.8089361Z   overwrite: false
+2026-10-30T17:23:42.8089615Z   include-hidden-files: false
+2026-10-30T17:23:42.8089884Z   archive: true
+2026-10-30T17:23:42.8090121Z env:
+2026-10-30T17:23:42.8090342Z   APP_DIR: tested_app
+2026-10-30T17:23:42.8090600Z   YARN_NPM_MINIMAL_AGE_GATE: 1d
+2026-10-30T17:23:42.8091002Z   ADYEN_CLIENT_KEY: ***
+2026-10-30T17:23:42.8093641Z   ADYEN_PUBLIC_KEY: ***
+2026-10-30T17:23:42.8093901Z   ANDROID_API_LEVEL: 35
+2026-10-30T17:23:42.8094150Z   APPIUM_VERSION: 3.4.2
+2026-10-30T17:23:42.8094426Z   APPIUM_UIAUTOMATOR2_VERSION: 7.5.2
+2026-10-30T17:23:42.8094845Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:23:42.8095293Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.21-9/x64
+2026-10-30T17:23:42.8095647Z   MAVEN_ARGS: -ntp
+2026-10-30T17:23:42.8095937Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+2026-10-30T17:23:42.8096265Z   GRADLE_USER_HOME: /home/runner/.gradle
+2026-10-30T17:23:42.8096589Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+2026-10-30T17:23:42.8097383Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+2026-10-30T17:23:42.8097869Z   DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+2026-10-30T17:23:42.8098216Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+2026-10-30T17:23:42.8098535Z   ANDROID_AVD_HOME: /home/runner/.android/avd
+2026-10-30T17:23:42.8098859Z ##[endgroup]
+2026-10-30T17:23:42.9651572Z No files were found with the provided path: appium_page_source.xml. No artifacts will be uploaded.
+2026-10-30T17:23:42.9831669Z Post job cleanup.
+2026-10-30T17:23:42.9837605Z ##[start-action display=AVD cache;id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.avd-cache]
+2026-10-30T17:23:42.9839949Z ##[end-action id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.avd-cache;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-30T17:23:42.9842004Z ##[start-action display=Gradle cache;id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.__gradle_actions]
+2026-10-30T17:23:42.9939989Z Post job cleanup.
+2026-10-30T17:23:43.2872285Z In post-action step
+2026-10-30T17:23:43.2880524Z Enhanced Caching: This build is using the proprietary 'gradle-actions-caching' provider for optimized caching support. See https://github.com/gradle/actions/blob/main/DISTRIBUTION.md for terms of use and opt-out instructions.
+2026-10-30T17:23:43.3691890Z Cache is read-only: will not save state for use in subsequent builds.
+2026-10-30T17:23:43.3695717Z ##[group]Generating Job Summary
+2026-10-30T17:23:43.3702219Z 
+2026-10-30T17:23:43.3702502Z 
+2026-10-30T17:23:43.3703051Z <table>
+2026-10-30T17:23:43.3703359Z     <tr>
+2026-10-30T17:23:43.3703715Z         <th>Gradle Root Project</th>
+2026-10-30T17:23:43.3704123Z         <th>Requested Tasks</th>
+2026-10-30T17:23:43.3704465Z         <th>Gradle Version</th>
+2026-10-30T17:23:43.3704799Z         <th>Build Outcome</th>
+2026-10-30T17:23:43.3705404Z         <th>Build&nbsp;Scan®</th>
+2026-10-30T17:23:43.3705715Z     </tr>
+2026-10-30T17:23:43.3705937Z     <tr>
+2026-10-30T17:23:43.3706178Z         <td>TestProject</td>
+2026-10-30T17:23:43.3706455Z         <td>installDebug</td>
+2026-10-30T17:23:43.3706966Z         <td align='center'>8.13 :information_source:</td>
+2026-10-30T17:23:43.3707458Z         <td align='center'>:x:</td>
+2026-10-30T17:23:43.3708264Z         <td><a href="https://scans.gradle.com" rel="nofollow" target="_blank"><img src="https://img.shields.io/badge/Not%20published-lightgrey" alt="Build Scan not published" /></a></td>
+2026-10-30T17:23:43.3708930Z     </tr>
+2026-10-30T17:23:43.3709154Z </table>
+2026-10-30T17:23:43.3709291Z 
+2026-10-30T17:23:43.3710201Z <p>:information_source: Gradle version is out of date — consider upgrading. See <a href="https://docs.gradle.org/current/userguide/feature_lifecycle.html#eol_support">Gradle release lifecycle</a></p>
+2026-10-30T17:23:43.3710820Z 
+2026-10-30T17:23:43.3710952Z ============================
+2026-10-30T17:23:43.3711418Z <h4>Gradle State Caching - ⚡ Enhanced (read-only)</h4>
+2026-10-30T17:23:43.3711652Z 
+2026-10-30T17:23:43.3712758Z **[Enhanced Caching](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md#enhanced-caching)** uses the proprietary `gradle-actions-caching` provider. See [DISTRIBUTION.md](https://github.com/gradle/actions/blob/main/DISTRIBUTION.md) for terms of use and opt-out instructions.
+2026-10-30T17:23:43.3713695Z 
+2026-10-30T17:23:43.3713794Z <details>
+2026-10-30T17:23:43.3714207Z <summary>Entries: 0 restored, 0 saved - Expand for more details</summary>
+2026-10-30T17:23:43.3714497Z 
+2026-10-30T17:23:43.3715811Z [Cache was read-only](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md#using-the-cache-read-only) — by default, the action only writes to the cache for jobs running on the default branch.
+2026-10-30T17:23:43.3716621Z 
+2026-10-30T17:23:43.3716726Z <pre>
+2026-10-30T17:23:43.3717140Z Entry: Gradle User Home
+2026-10-30T17:23:43.3717749Z     Requested Key : gradle-home-v2|Linux-X64|android-test[b26ed2ff149a229cf42b300def8dadcc]-330bba6f688aebe4f395d271df866823a77a9c9c
+2026-10-30T17:23:43.3718291Z     Restored  Key : 
+2026-10-30T17:23:43.3718543Z               Size: 
+2026-10-30T17:23:43.3718787Z               Time: 
+2026-10-30T17:23:43.3719075Z               (Entry not restored: no match found)
+2026-10-30T17:23:43.3719405Z     Saved     Key : 
+2026-10-30T17:23:43.3719632Z               Size: 
+2026-10-30T17:23:43.3719860Z               Time: 
+2026-10-30T17:23:43.3720215Z               (Entry not saved: cache is read-only)
+2026-10-30T17:23:43.3720609Z </pre>
+2026-10-30T17:23:43.3720904Z </details>
+2026-10-30T17:23:43.3721034Z 
+2026-10-30T17:23:43.3721764Z ##[endgroup]
+2026-10-30T17:23:43.3729479Z ##[notice]Gradle 8.13 is out of date: consider updating to the latest Gradle version. See https://docs.gradle.org/current/userguide/feature_lifecycle.html#eol_support
+2026-10-30T17:23:43.3730443Z Completed post-action step
+2026-10-30T17:23:43.3834983Z ##[end-action id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.__gradle_actions;outcome=success;conclusion=success;duration_ms=399]
+2026-10-30T17:23:43.3837958Z ##[start-action display=Setup Node.js;id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.__actions_setup-node]
+2026-10-30T17:23:43.3840493Z ##[end-action id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.__actions_setup-node;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-30T17:23:43.3842405Z ##[start-action display=Setup Java;id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.__actions_setup-java]
+2026-10-30T17:23:43.3908304Z Post job cleanup.
+2026-10-30T17:23:43.5374459Z ##[end-action id=__2fdb3e18-49bd-4191-bb18-fea4bfcacef6.__actions_setup-java;outcome=success;conclusion=success;duration_ms=153]
+2026-10-30T17:23:43.5442924Z Cleaning up orphan processes
+2026-10-30T17:23:43.5956434Z Terminate orphan process: pid (14917) (adb)
+2026-10-30T17:23:43.6102572Z Terminate orphan process: pid (15069) (java)
+2026-10-30T17:23:43.6234117Z Terminate orphan process: pid (15343) (java)
+2026-10-30T17:23:43.6328871Z Terminate orphan process: pid (15550) (java)

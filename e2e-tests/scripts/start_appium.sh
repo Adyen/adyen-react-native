@@ -7,7 +7,12 @@ TIMEOUT=${2:-90}
 PID_FILE=${APPIUM_PID_FILE:-.appium.pid}
 
 echo "== Starting Appium on port $PORT"
-appium --port "$PORT" --log-level error &
+if [ -n "${APPIUM_LOG_FILE:-}" ]; then
+  # Redirecting the output also stops Appium from holding a caller's pipe open (e.g. `| tee`) after the script exits.
+  appium --port "$PORT" --log-level "${APPIUM_LOG_LEVEL:-error}" --log-timestamp >> "$APPIUM_LOG_FILE" 2>&1 &
+else
+  appium --port "$PORT" --log-level error &
+fi
 APPIUM_PID=$!
 printf '%s\n' "$APPIUM_PID" > "$PID_FILE"
 
