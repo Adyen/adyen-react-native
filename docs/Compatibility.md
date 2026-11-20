@@ -97,9 +97,7 @@ Set the values for your version in [React Native](#react-native) or [Expo](#expo
 
 ## R8 and native 3D Secure 2 in release builds
 
-With Android Gradle plugin 9 and minification enabled in release builds, native 3D Secure 2 payments fail with "Unexpected 3DS2 exception" (`VerifyError` on `atd.o.getDeviceData$getSDKTransactionID`). This is an R8 bug fixed in R8 9.4.18. Use Android Gradle plugin 9.4.1 (R8 9.4.24) or newer and Gradle 9.6.0 or newer. See [adyen-flutter#794](https://github.com/Adyen/adyen-flutter/issues/794).
-
-React Native 0.87 uses Android Gradle plugin 9.2.1 by default. Pin the version in `android/build.gradle`:
+Android Gradle plugin 9.4.1 or newer (with Gradle 9.6.0 or newer) is required if you use native 3D Secure 2 with R8 and minification in release builds. Pin it in `android/build.gradle`:
 
 ```groovy
 buildscript {
