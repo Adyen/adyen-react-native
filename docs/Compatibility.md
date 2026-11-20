@@ -20,7 +20,7 @@ Your Android app must build with:
 
 - Kotlin Gradle plugin 2.3.0 (2.2.20 on Expo SDK 54).
 - `compileSdkVersion` 36 or newer. Otherwise `:app:checkDebugAarMetadata` fails with "requires libraries and applications that depend on it to compile against version 36 or later of the Android APIs".
-- Android Gradle plugin 8.9.1 or newer.
+- Android Gradle plugin 8.9.1 or newer. With Android Gradle plugin 9, use 9.4.1 or newer if you enable minification in release builds. See [R8 and native 3D Secure 2](#r8-and-native-3d-secure-2-in-release-builds).
 
 Set the values for your version in [React Native](#react-native) or [Expo](#expo).
 
@@ -94,3 +94,29 @@ Set the values for your version in [React Native](#react-native) or [Expo](#expo
    ```
 
 3. Run `npx expo prebuild --platform android --clean`.
+
+## R8 and native 3D Secure 2 in release builds
+
+Release builds with minification enabled (`enableProguardInReleaseBuilds = true` in `android/app/build.gradle`) and R8 optimization can break native 3D Secure 2 payments. The Adyen 3DS2 SDK fails to initialize and the payment ends with "Unexpected 3DS2 exception". Logcat shows `java.lang.VerifyError: Verifier rejected class atd.o.getDeviceData$getSDKTransactionID`. Debug builds and release builds without minification are not affected.
+
+This is an R8 bug that is fixed in R8 9.4.18. Android Gradle plugin 9.4.1 bundles R8 9.4.24. React Native 0.87 apps use Android Gradle plugin 9.2.1 by default, which bundles R8 9.2.14 and shows the error. Android Gradle plugin 8.x was not tested. The same issue is tracked for the Flutter plugin in [adyen-flutter#794](https://github.com/Adyen/adyen-flutter/issues/794).
+
+If you enable minification with Android Gradle plugin 9, use 9.4.1 or newer:
+
+1. Pin the version in the `buildscript` dependencies of `android/build.gradle`:
+
+   ```groovy
+   buildscript {
+       dependencies {
+           classpath("com.android.tools.build:gradle:9.4.1")
+       }
+   }
+   ```
+
+2. Use Gradle 9.6.0 or newer in `android/gradle/wrapper/gradle-wrapper.properties`, which Android Gradle plugin 9.4.1 requires:
+
+   ```properties
+   distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.0-bin.zip
+   ```
+
+Verify the R8 version of a release build in the first lines of `android/app/build/outputs/mapping/release/mapping.txt` (`# compiler_version`).
