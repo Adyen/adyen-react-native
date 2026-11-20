@@ -34,6 +34,7 @@ You can integrate with Adyen React Native in two ways:
 
 - React Native 0.79 or newer, or Expo SDK 54 or newer.
 - On Android: Kotlin 2.3 (2.2.20 on Expo SDK 54), Android API 36 and Android Gradle plugin 8.9.1, required by Adyen Android SDK 5.22.0. See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for the values per React Native and Expo version.
+- On Android with Android Gradle plugin 9 and minification enabled in release builds: Android Gradle plugin 9.4.1 or newer. See [Compatibility](docs/Compatibility.md#r8-and-native-3d-secure-2-in-release-builds).
 - An [Adyen test account](https://www.adyen.com/signup), an [API key](https://docs.adyen.com/development-resources/how-to-get-the-api-key) and a [client key](https://docs.adyen.com/development-resources/client-side-authentication#get-your-client-key).
 
 # Installation
