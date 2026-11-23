@@ -3,6 +3,9 @@
 [![Adyen Android](https://img.shields.io/badge/android-v5.22.0-brightgreen.svg)](https://github.com/Adyen/adyen-android/releases/tag/5.22.0)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Adyen_adyen-react-native&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Adyen_adyen-react-native)
 
+> [!IMPORTANT]
+> **Android release builds: use Android Gradle plugin (AGP) 9.4.1 or later.** Older AGP versions bundle an R8 version that breaks native 3D Secure 2 payments in release builds. The app can crash without an error, and debug builds are not affected, so test 3D Secure 2 payments on a release build. If you stay on AGP 8, pin R8 9.4.18 or later in your `android/settings.gradle`. See [Compatibility](docs/Compatibility.md#android-r8-and-3d-secure-2-in-release-builds).
+
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
 # Adyen React Native

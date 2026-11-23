@@ -86,6 +86,19 @@ jobs:
         working-directory: ${{ env.APP_DIR }}/android
         run: ./gradlew :app:assembleDebug --warning-mode all -PreactNativeArchitectures=x86_64
 
+      - name: Enable R8 minification for release
+        working-directory: ${{ env.APP_DIR }}/android
+        run: |
+          sed -i 's/def enableProguardInReleaseBuilds = false/def enableProguardInReleaseBuilds = true/' app/build.gradle
+          grep -n 'enableProguardInReleaseBuilds' app/build.gradle
+          grep -q 'def enableProguardInReleaseBuilds = true' app/build.gradle
+
+      # Release builds run R8, which can break native 3D Secure 2 without any build error.
+      # The library guard (android/r8-guard.gradle) fails this build on an affected R8 version.
+      - name: Build release APK (R8 enabled)
+        working-directory: ${{ env.APP_DIR }}/android
+        run: ./gradlew :app:assembleRelease --warning-mode all -PreactNativeArchitectures=x86_64
+
       - name: Report allowed failure
         if: failure() && inputs.allow-failure
         run: |

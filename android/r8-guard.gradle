@@ -1,0 +1,80 @@
+// Fails the build when an app is about to build a minified release with an R8 version that
+// breaks native 3D Secure 2 payments. The affected app crashes without an error, and debug
+// builds and automated tests do not show it, so merchants find out only after going live.
+//
+// Warn only: -Padyen.failOnAffectedR8=false     (or `adyen.failOnAffectedR8=false` in gradle.properties)
+// Skip:      -Padyen.skipR8Check=true           (or `adyen.skipR8Check=true` in gradle.properties)
+//
+// Applied from build.gradle after the Android library plugin.
+
+def minR8 = "9.4.18"
+def minAgp9 = "9.4.1"
+
+def parseVersion = { String v ->
+  (v ?: "").tokenize('.').take(3).collect { (it.find(/^\d+/) ?: "0") as int }
+}
+
+def compareVersions = { String a, String b ->
+  def x = parseVersion(a)
+  def y = parseVersion(b)
+  for (int i = 0; i < 3; i++) {
+    int xi = i < x.size() ? x[i] : 0
+    int yi = i < y.size() ? y[i] : 0
+    if (xi != yi) return xi <=> yi
+  }
+  return 0
+}
+
+// Only care when a release build is requested. An IDE sync has no task names, so it is skipped.
+def releaseRequested = gradle.startParameter.taskNames.any { String task ->
+  def name = task.tokenize(':').last().toLowerCase()
+  name.contains("release") || name.contains("minify") || name in ["assemble", "bundle", "build"]
+}
+
+if (releaseRequested && project.findProperty("adyen.skipR8Check")?.toString() != "true") {
+  // R8 version that will actually run: read it from the loaded class, so a pin in
+  // settings.gradle is honoured, and fall back to the version in the buildscript classpath.
+  def detectR8 = {
+    try {
+      def versionClass = Class.forName("com.android.tools.r8.Version", true, rootProject.buildscript.classLoader)
+      return versionClass.getMethod("getVersionString").invoke(null)?.toString()
+    } catch (Throwable ignored) { }
+    try {
+      def artifacts = rootProject.buildscript.configurations.getByName("classpath")
+        .resolvedConfiguration.lenientConfiguration.getArtifacts()
+      def r8 = artifacts.find { it.moduleVersion.id.group == "com.android.tools" && it.moduleVersion.id.name == "r8" }
+      return r8?.moduleVersion?.id?.version
+    } catch (Throwable ignored) { }
+    return null
+  }
+
+  def detectAgp = {
+    try {
+      def v = project.extensions.findByName("androidComponents")?.pluginVersion
+      return v != null ? "${v.major}.${v.minor}.${v.micro}" : null
+    } catch (Throwable ignored) { }
+    return null
+  }
+
+  def r8 = detectR8()
+  def agp = detectAgp()
+
+  String affectedBy = null
+  if (r8 != null) {
+    if (compareVersions(r8, minR8) < 0) affectedBy = "R8 ${r8}"
+  } else if (agp != null && compareVersions(agp, "9.0.0") >= 0 && compareVersions(agp, minAgp9) < 0) {
+    affectedBy = "Android Gradle plugin ${agp} (its R8 version could not be detected)"
+  }
+
+  if (affectedBy != null) {
+    def message = "[@adyen/react-native] ${affectedBy} can break native 3D Secure 2 payments in release builds: " +
+      "the app can crash without an error while the shopper authenticates, and debug builds are not affected. " +
+      "Use Android Gradle plugin ${minAgp9} or later. On AGP 8, pin R8 ${minR8} or later in android/settings.gradle. " +
+      "Details: https://github.com/Adyen/adyen-react-native/blob/develop/docs/Compatibility.md#android-r8-and-3d-secure-2-in-release-builds " +
+      "To print this as a warning instead of failing the build, set adyen.failOnAffectedR8=false. To turn the check off, set adyen.skipR8Check=true."
+    if (project.findProperty("adyen.failOnAffectedR8")?.toString() != "false") {
+      throw new GradleException(message)
+    }
+    logger.error(message)
+  }
+}
