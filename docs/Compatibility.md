@@ -129,6 +129,19 @@ To fix it, use the first option that works for your app:
 
 The build check below cannot see options 3 and 4. If you use one of them, set `adyen.skipR8Check=true`.
 
+On Expo, `npx expo prebuild` regenerates `android/`, so edits to `settings.gradle` do not last. The `@adyen/react-native` plugin pins R8 9.4.18 for you, unless your `settings.gradle` already pins R8. Use the plugin options instead of the steps above:
+
+```json
+{
+  "expo": {
+    "plugins": [["@adyen/react-native", { "r8Version": "9.4.18" }]]
+  }
+}
+```
+
+- `r8Version` pins another R8 version. `false` turns the pin off, for example when you use AGP 9.4.1 or later and want no pin.
+- `skipR8Check: true` sets `adyen.skipR8Check=true` in `gradle.properties`. Use it with option 3 or 4. For option 3, also add `-dontoptimize` through `expo-build-properties` (`android.extraProguardRules`).
+
 Test 3D Secure 2 payments on a release build (`npx react-native run-android --mode release`, or an installed release APK or AAB) before you publish your app, with minification enabled as in production.
 
 When you build a release with an affected R8 version, `@adyen/react-native` fails the build with this advice. These Gradle properties, set with `-P` or in `gradle.properties`, change the behavior:
