@@ -20,7 +20,7 @@ Your Android app must build with:
 
 - Kotlin Gradle plugin 2.3.0 (2.2.20 on Expo SDK 54).
 - `compileSdkVersion` 36 or newer. Otherwise `:app:checkDebugAarMetadata` fails with "requires libraries and applications that depend on it to compile against version 36 or later of the Android APIs".
-- Android Gradle plugin 8.9.1 or newer. With Android Gradle plugin 9, use 9.4.1 or newer if you enable minification in release builds. See [R8 and native 3D Secure 2](#r8-and-native-3d-secure-2-in-release-builds).
+- Android Gradle plugin 8.9.1 or newer. If you enable R8 optimization in release builds, use Android Gradle plugin 9.4.1 or newer, or pin R8 9.4.18 or newer. See [R8 and native 3D Secure 2](#r8-and-native-3d-secure-2-in-release-builds).
 
 Set the values for your version in [React Native](#react-native) or [Expo](#expo).
 
@@ -97,12 +97,22 @@ Set the values for your version in [React Native](#react-native) or [Expo](#expo
 
 ## R8 and native 3D Secure 2 in release builds
 
-Android Gradle plugin 9.4.1 or newer (with Gradle 9.6.0 or newer) is required if you use native 3D Secure 2 with R8 and minification in release builds. Pin it in `android/build.gradle`:
+Android Gradle plugin 9.4.1 or newer (with Gradle 9.6.0 or newer) is required if you use native 3D Secure 2 with R8 optimization in release builds. Pin it in `android/build.gradle`:
 
 ```groovy
 buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:9.4.1")
+    }
+}
+```
+
+On Android Gradle plugin 8, or if you cannot upgrade Android Gradle plugin, pin R8 9.4.18 or newer instead:
+
+```groovy
+buildscript {
+    dependencies {
+        classpath("com.android.tools:r8:9.4.18")
     }
 }
 ```
