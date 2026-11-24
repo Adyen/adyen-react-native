@@ -105,21 +105,45 @@ jobs:
       - name: Print resolved toolchain
         working-directory: ${{ env.APP_DIR }}/android
         run: |
-          ./gradlew buildEnvironment -q 2>&1 | tee toolchain.log | grep -E "com\.android\.tools(\.build)?:(gradle|r8):" | sort -u || true
-          ./gradlew :app:dependencies --configuration releaseRuntimeClasspath -q 2>&1 | tee deps.log | grep "com.adyen.threeds:adyen-3ds2" | sort -u || true
+          set +e
+          ./gradlew buildEnvironment -q > toolchain.log 2>&1
+          echo "buildEnvironment exit code: $?"
+          if grep -qE "com\.android\.tools(\.build)?:(gradle|r8):" toolchain.log; then
+            grep -E "com\.android\.tools(\.build)?:(gradle|r8):" toolchain.log | sort -u
+          else
+            echo "No Android Gradle plugin or R8 line in toolchain.log. Last lines of the log:"
+            tail -40 toolchain.log
+          fi
+          ./gradlew :app:dependencies --configuration releaseRuntimeClasspath -q > deps.log 2>&1
+          echo "app:dependencies exit code: $?"
+          if grep -q "com.adyen.threeds:adyen-3ds2" deps.log; then
+            grep "com.adyen.threeds:adyen-3ds2" deps.log | sort -u
+          else
+            echo "adyen-3ds2 is not in deps.log. Last lines of the log:"
+            tail -40 deps.log
+          fi
+          ./gradlew :app:dependencyInsight --dependency adyen-3ds2 --configuration releaseRuntimeClasspath -q 2>&1 | head -40
 
+      # Gradle prints a version that was raised or forced as "requested -> resolved", so the
+      # resolved version is the last version on a line.
       - name: Check the scenario took effect
         working-directory: ${{ env.APP_DIR }}/android
         run: |
+          resolved_versions() {
+            grep "$1" "$2" | while read -r line; do
+              echo "$line" | grep -o "[0-9][0-9.]*[0-9]" | tail -1
+            done | sort -u
+          }
           case "$SCENARIO" in
             agp-upgrade)
-              grep -q "com.android.tools.build:gradle:9.4.1" toolchain.log || { echo "::error::AGP 9.4.1 is not on the build classpath"; exit 1; }
+              versions=$(resolved_versions "com.android.tools.build:gradle:" toolchain.log)
+              echo "Resolved Android Gradle plugin version(s): ${versions:-none}"
+              [ "$versions" = "9.4.1" ] || { echo "::error::Android Gradle plugin should resolve to 9.4.1 only, got: ${versions:-none}"; exit 1; }
               ;;
             downgrade-3ds2)
-              grep -q "com.adyen.threeds:adyen-3ds2" deps.log || { echo "::error::adyen-3ds2 is not on the release classpath"; exit 1; }
-              if grep "com.adyen.threeds:adyen-3ds2" deps.log | grep -qv "2.2.27"; then
-                echo "::error::adyen-3ds2 resolves to a version other than 2.2.27"; exit 1
-              fi
+              versions=$(resolved_versions "com.adyen.threeds:adyen-3ds2" deps.log)
+              echo "Resolved adyen-3ds2 version(s): ${versions:-none}"
+              [ "$versions" = "2.2.27" ] || { echo "::error::adyen-3ds2 should resolve to 2.2.27 only, got: ${versions:-none}"; exit 1; }
               ;;
           esac
 

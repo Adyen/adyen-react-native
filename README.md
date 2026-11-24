@@ -5,7 +5,7 @@
 
 > [!IMPORTANT]
 >
-> **Android release builds: use Android Gradle plugin (AGP) 9.4.1 or later.** Older AGP versions bundle an R8 version that breaks native 3D Secure 2 payments in release builds. The app can crash without an error, and debug builds are not affected, so test 3D Secure 2 payments on a release build. If you stay on AGP 8, pin R8 9.4.18 or later in your `android/settings.gradle`. See [Compatibility](docs/Compatibility.md#android-r8-and-3d-secure-2-in-release-builds).
+> **Android release builds: use Android Gradle plugin (AGP) 9.4.1 or later, with Gradle 9.6.0 or later.** Older AGP versions bundle an R8 version that breaks native 3D Secure 2 payments in release builds. The app can crash without an error, and debug builds are not affected, so test 3D Secure 2 payments on a release build. If you stay on AGP 8, pin R8 9.4.18 or later in your `android/settings.gradle`. See [Compatibility](docs/Compatibility.md#android-r8-and-3d-secure-2-in-release-builds).
 
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 

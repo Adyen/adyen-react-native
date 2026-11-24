@@ -69,7 +69,7 @@ if (releaseRequested && project.findProperty("adyen.skipR8Check")?.toString() !=
   if (affectedBy != null) {
     def message = "[@adyen/react-native] ${affectedBy} can break native 3D Secure 2 payments in release builds: " +
       "the app can crash without an error while the shopper authenticates, and debug builds are not affected. " +
-      "Use Android Gradle plugin ${minAgp9} or later, or pin R8 ${minR8} or later in android/settings.gradle. " +
+      "Use Android Gradle plugin ${minAgp9} or later (it needs Gradle 9.6.0 or later), or pin R8 ${minR8} or later in android/settings.gradle. " +
       "If you fixed this another way (-dontoptimize, or adyen-3ds2 2.2.27), set adyen.skipR8Check=true. " +
       "Details: https://github.com/Adyen/adyen-react-native/blob/develop/docs/Compatibility.md#android-r8-and-3d-secure-2-in-release-builds " +
       "To print this as a warning instead of failing the build, set adyen.failOnAffectedR8=false."

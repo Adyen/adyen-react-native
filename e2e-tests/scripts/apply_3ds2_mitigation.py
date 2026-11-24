@@ -7,7 +7,8 @@ Usage: apply_3ds2_mitigation.py <scenario> <android-dir>
 
 Scenarios:
   baseline        no change (the fixture as generated)
-  agp-upgrade     use Android Gradle plugin 9.4.1 (android/build.gradle)
+  agp-upgrade     use Android Gradle plugin 9.4.1 and Gradle 9.6.0, which AGP 9.4 requires
+                  (android/build.gradle, android/gradle/wrapper/gradle-wrapper.properties)
   pin-r8          pin R8 9.4.18 (android/settings.gradle)
   dontoptimize    add -dontoptimize (android/app/proguard-rules.pro)
   downgrade-3ds2  force adyen-3ds2 2.2.27 (android/app/build.gradle)
@@ -19,6 +20,7 @@ import sys
 from pathlib import Path
 
 AGP_VERSION = "9.4.1"
+GRADLE_VERSION = "9.6.0"  # minimum Gradle of AGP 9.4
 R8_VERSION = "9.4.18"
 OLD_R8_VERSION = "8.7.18"
 THREEDS2_VERSION = "2.2.27"
@@ -26,6 +28,7 @@ THREEDS2_VERSION = "2.2.27"
 AGP_CLASSPATH = re.compile(
     r"""classpath\((['"])com\.android\.tools\.build:gradle(?::[^'"]*)?\1\)"""
 )
+GRADLE_DISTRIBUTION = re.compile(r"(distributionUrl=.*/)gradle-[^/\s]*-(?:bin|all)\.zip")
 APP_DEPENDENCIES = re.compile(r"^dependencies\s*\{[ \t]*\n", re.MULTILINE)
 
 
@@ -49,6 +52,15 @@ def agp_upgrade(android):
         fail(f"no com.android.tools.build:gradle classpath entry in {path}")
     path.write_text(text)
     print(f"{path}: Android Gradle plugin set to {AGP_VERSION}")
+
+    wrapper = android / "gradle" / "wrapper" / "gradle-wrapper.properties"
+    text, count = GRADLE_DISTRIBUTION.subn(
+        rf"\g<1>gradle-{GRADLE_VERSION}-bin.zip", read(wrapper)
+    )
+    if count == 0:
+        fail(f"no distributionUrl in {wrapper}")
+    wrapper.write_text(text)
+    print(f"{wrapper}: Gradle set to {GRADLE_VERSION}")
 
 
 def end_of_plugin_management(text):

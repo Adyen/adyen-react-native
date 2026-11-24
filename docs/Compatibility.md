@@ -101,7 +101,7 @@ Older R8 versions break native 3D Secure 2 payments in release builds that have 
 
 To fix it, use the first option that works for your app:
 
-1. Use AGP 9.4.1 or later.
+1. Use AGP 9.4.1 or later. AGP 9.4 needs Gradle 9.6.0 or later, so also set `distributionUrl` in `android/gradle/wrapper/gradle-wrapper.properties` to `https\://services.gradle.org/distributions/gradle-9.6.0-bin.zip`.
 2. Pin R8 9.4.18 or later in `android/settings.gradle`:
 
    ```groovy
