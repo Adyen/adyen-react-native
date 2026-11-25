@@ -24,6 +24,7 @@ if (project.extensions.findByName('kotlin') == null) {
   apply plugin: "kotlin-android"
 }
 
+apply from: "r8-guard.gradle"
 apply from: "jacoco.gradle"
 apply from: 'dependencies.gradle'
 
