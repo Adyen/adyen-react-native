@@ -109,6 +109,30 @@ plugins { id("a") }
     );
   });
 
+  test('ignores an escaped quote inside a string', () => {
+    const settings = `pluginManagement {
+  def text = "a \\" } b"
+  includeBuild("x")
+}
+plugins { id("a") }
+`;
+    const result = setR8Pin(settings, '9.4.18');
+    expect(result.indexOf('buildscript {')).toBeGreaterThan(
+      result.indexOf('includeBuild("x")\n}')
+    );
+  });
+
+  test.each([
+    ['string', 'pluginManagement {\n  def text = "never closed\n}\n'],
+    ['block comment', 'pluginManagement {\n  /* never closed\n}\n'],
+    ['line comment', 'pluginManagement {\n  includeBuild("x") // }'],
+  ])(
+    'leaves the contents unchanged for an unterminated %s',
+    (_name, broken) => {
+      expect(setR8Pin(broken, '9.4.18')).toBe(broken);
+    }
+  );
+
   test('puts the block first when there is no pluginManagement', () => {
     const settings = "rootProject.name = 'MyApp'\ninclude ':app'\n";
     expect(setR8Pin(settings, '9.4.18')).toBe(

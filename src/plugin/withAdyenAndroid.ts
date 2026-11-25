@@ -55,7 +55,7 @@ export const withAdyenAndroid: ConfigPlugin<AdyenPluginProps> = (
   const r8Version = props?.r8Version ?? DEFAULT_R8_VERSION;
   if (r8Version !== false) {
     assertValidR8Version(r8Version);
-    config = withSettingsGradle(config, async (newConfig) => {
+    config = withSettingsGradle(config, (newConfig) => {
       if (newConfig.modResults.language !== 'groovy') {
         WarningAggregator.addWarningAndroid(
           '@adyen/react-native',
@@ -76,7 +76,7 @@ export const withAdyenAndroid: ConfigPlugin<AdyenPluginProps> = (
   }
 
   if (props?.skipR8Check) {
-    config = withGradleProperties(config, async (newConfig) => {
+    config = withGradleProperties(config, (newConfig) => {
       newConfig.modResults = setGradleProperty(
         newConfig.modResults,
         'adyen.skipR8Check',

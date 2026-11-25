@@ -21,41 +21,57 @@ export function assertValidR8Version(version: string): void {
   }
 }
 
+/** Index after the first `marker` at or after `from`, or the end of the text. */
+function skipPast(text: string, marker: string, from: number): number {
+  const end = text.indexOf(marker, from);
+  return end === -1 ? text.length : end + marker.length;
+}
+
+/** Index after the quoted string that starts at `start`, or the end of the text. */
+function skipString(text: string, start: number): number {
+  const quote = text[start];
+  let i = start + 1;
+  while (i < text.length && text[i] !== quote) {
+    i += text[i] === '\\' ? 2 : 1;
+  }
+  return i + 1;
+}
+
+/** Index after the comment or quoted string that starts at `i`, or `i` when none does. */
+function skipCommentOrString(text: string, i: number): number {
+  const pair = text.slice(i, i + 2);
+  if (pair === '//') return skipPast(text, '\n', i + 2);
+  if (pair === '/*') return skipPast(text, '*/', i + 2);
+  if (text[i] === '"' || text[i] === "'") return skipString(text, i);
+  return i;
+}
+
 /**
  * Index of the `}` that closes the block opened by the `{` at `open`.
  * Quoted strings and comments are skipped. Returns -1 when the block is not closed.
  */
 function findClosingBrace(text: string, open: number): number {
   let depth = 0;
-  for (let i = open; i < text.length; i++) {
-    const char = text[i];
-    const next = text[i + 1];
-    if (char === '/' && next === '/') {
-      const end = text.indexOf('\n', i);
-      if (end === -1) return -1;
-      i = end;
-    } else if (char === '/' && next === '*') {
-      const end = text.indexOf('*/', i + 2);
-      if (end === -1) return -1;
-      i = end + 1;
-    } else if (char === '"' || char === "'") {
-      i++;
-      while (i < text.length && text[i] !== char) {
-        if (text[i] === '\\') i++;
-        i++;
-      }
-    } else if (char === '{') {
+  let i = open;
+  while (i < text.length) {
+    const next = skipCommentOrString(text, i);
+    if (next !== i) {
+      i = next;
+      continue;
+    }
+    if (text[i] === '{') {
       depth++;
-    } else if (char === '}' && --depth === 0) {
+    } else if (text[i] === '}' && --depth === 0) {
       return i;
     }
+    i++;
   }
   return -1;
 }
 
 /** Index of the `{` of a top-level block such as `pluginManagement {`, or -1. */
 function findTopLevelBlock(text: string, name: string): number {
-  const match = new RegExp(`^${name}\\s*\\{`, 'm').exec(text);
+  const match = new RegExp(String.raw`^${name}\s*\{`, 'm').exec(text);
   return match ? match.index + match[0].length - 1 : -1;
 }
 

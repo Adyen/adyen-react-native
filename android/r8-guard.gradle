@@ -63,13 +63,16 @@ if (releaseRequested && project.findProperty("adyen.skipR8Check")?.toString() !=
   }
 
   // R8 reports a long version such as "9.2.14 (build b159b01e... from go/r8bot ...)".
-  def r8 = detectR8()?.find(/^\d+(\.\d+){0,2}/)
+  def r8Reported = detectR8()
+  def r8 = r8Reported?.find(/^\d+(\.\d+){0,2}/)
   def agp = detectAgp()
 
+  // An R8 built from source reports a version such as "main". Nothing can be said about it,
+  // so it is not compared, and the Android Gradle plugin version is not used instead.
   String affectedBy = null
   if (r8 != null) {
     if (compareVersions(r8, minR8) < 0) affectedBy = "R8 ${r8}"
-  } else if (agp != null && compareVersions(agp, "9.0.0") >= 0 && compareVersions(agp, minAgp9) < 0) {
+  } else if (r8Reported == null && agp != null && compareVersions(agp, "9.0.0") >= 0 && compareVersions(agp, minAgp9) < 0) {
     affectedBy = "Android Gradle plugin ${agp} (its R8 version could not be detected)"
   }
 
@@ -84,6 +87,6 @@ if (releaseRequested && project.findProperty("adyen.skipR8Check")?.toString() !=
     if (project.findProperty("adyen.failOnAffectedR8")?.toString() != "false") {
       throw new GradleException(message)
     }
-    logger.error(message)
+    logger.warn(message)
   }
 }
