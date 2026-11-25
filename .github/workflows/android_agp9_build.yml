@@ -16,6 +16,11 @@ on:
         description: 'Kotlin mode: builtin-kotlin or opt-out'
         required: true
         type: string
+      scenario:
+        description: 'R8 / 3D Secure 2 mitigation to apply: baseline, agp-upgrade, pin-r8, dontoptimize, downgrade-3ds2 or old-r8-control'
+        required: false
+        type: string
+        default: 'baseline'
       allow-failure:
         description: 'Do not fail the workflow on errors; emit an error annotation instead'
         required: false
@@ -24,12 +29,13 @@ on:
 
 env:
   APP_DIR: tested_app
+  SCENARIO: ${{ inputs.scenario }}
   # "latest" templates pin brand-new releases that Yarn's age gate (default 1d) would quarantine.
   YARN_NPM_MINIMAL_AGE_GATE: ${{ inputs.rn-version == 'latest' && '0' || '1d' }}
 
 jobs:
   build:
-    name: Build (${{ inputs.mode }}, RN ${{ inputs.rn-version }})
+    name: Build (${{ inputs.mode }}, RN ${{ inputs.rn-version }}, ${{ inputs.scenario }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     continue-on-error: ${{ inputs.allow-failure }}
@@ -85,6 +91,99 @@ jobs:
       - name: Build debug APK
         working-directory: ${{ env.APP_DIR }}/android
         run: ./gradlew :app:assembleDebug --warning-mode all -PreactNativeArchitectures=x86_64
+
+      - name: Apply scenario (${{ inputs.scenario }})
+        run: python3 e2e-tests/scripts/apply_3ds2_mitigation.py "$SCENARIO" "$APP_DIR/android"
+
+      - name: Enable R8 minification for release
+        working-directory: ${{ env.APP_DIR }}/android
+        run: |
+          sed -i 's/def enableProguardInReleaseBuilds = false/def enableProguardInReleaseBuilds = true/' app/build.gradle
+          grep -n 'enableProguardInReleaseBuilds' app/build.gradle
+          grep -q 'def enableProguardInReleaseBuilds = true' app/build.gradle
+
+      - name: Print resolved toolchain
+        working-directory: ${{ env.APP_DIR }}/android
+        run: |
+          set +e
+          ./gradlew buildEnvironment -q > toolchain.log 2>&1
+          echo "buildEnvironment exit code: $?"
+          if grep -qE "com\.android\.tools(\.build)?:(gradle|r8):" toolchain.log; then
+            grep -E "com\.android\.tools(\.build)?:(gradle|r8):" toolchain.log | sort -u
+          else
+            echo "No Android Gradle plugin or R8 line in toolchain.log. Last lines of the log:"
+            tail -40 toolchain.log
+          fi
+          ./gradlew :app:dependencies --configuration releaseRuntimeClasspath -q > deps.log 2>&1
+          echo "app:dependencies exit code: $?"
+          if grep -q "com.adyen.threeds:adyen-3ds2" deps.log; then
+            grep "com.adyen.threeds:adyen-3ds2" deps.log | sort -u
+          else
+            echo "adyen-3ds2 is not in deps.log. Last lines of the log:"
+            tail -40 deps.log
+          fi
+          ./gradlew :app:dependencyInsight --dependency adyen-3ds2 --configuration releaseRuntimeClasspath -q 2>&1 | head -40
+
+      # Gradle prints a version that was raised or forced as "requested -> resolved", so the
+      # resolved version is the last version on a line.
+      - name: Check the scenario took effect
+        working-directory: ${{ env.APP_DIR }}/android
+        run: |
+          resolved_versions() {
+            grep "$1" "$2" | while read -r line; do
+              echo "$line" | grep -o "[0-9][0-9.]*[0-9]" | tail -1
+            done | sort -u
+          }
+          case "$SCENARIO" in
+            agp-upgrade)
+              versions=$(resolved_versions "com.android.tools.build:gradle:" toolchain.log)
+              echo "Resolved Android Gradle plugin version(s): ${versions:-none}"
+              [ "$versions" = "9.4.1" ] || { echo "::error::Android Gradle plugin should resolve to 9.4.1 only, got: ${versions:-none}"; exit 1; }
+              ;;
+            downgrade-3ds2)
+              versions=$(resolved_versions "com.adyen.threeds:adyen-3ds2" deps.log)
+              echo "Resolved adyen-3ds2 version(s): ${versions:-none}"
+              [ "$versions" = "2.2.27" ] || { echo "::error::adyen-3ds2 should resolve to 2.2.27 only, got: ${versions:-none}"; exit 1; }
+              ;;
+          esac
+
+      # Release builds run R8, which can break native 3D Secure 2 without any build error.
+      # The library guard (android/r8-guard.gradle) fails the build on an affected R8 version.
+      # This only builds the app; it does not run a 3D Secure 2 payment.
+      - name: Build release APK (R8 enabled)
+        working-directory: ${{ env.APP_DIR }}/android
+        run: |
+          flags="--warning-mode all -PreactNativeArchitectures=x86_64"
+          case "$SCENARIO" in
+            # No mitigation: report whether this toolchain is flagged, without failing the job.
+            baseline) flags="$flags -Padyen.failOnAffectedR8=false" ;;
+            # The guard cannot see these two mitigations, so merchants turn the check off.
+            dontoptimize|downgrade-3ds2) flags="$flags -Padyen.skipR8Check=true" ;;
+          esac
+          set +e
+          ./gradlew :app:assembleRelease $flags 2>&1 | tee release.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$SCENARIO" = "old-r8-control" ]; then
+            if [ "$status" -eq 0 ] || ! grep -q "can break native 3D Secure 2 payments" release.log; then
+              echo "::error title=Guard control failed::R8 8.7.18 should fail the release build with the 3D Secure 2 guard message."
+              exit 1
+            fi
+            echo "The guard rejected R8 8.7.18 as expected."
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Summarize the unmitigated build
+        if: always() && inputs.scenario == 'baseline'
+        working-directory: ${{ env.APP_DIR }}/android
+        run: |
+          if [ -f release.log ] && grep -q "can break native 3D Secure 2 payments" release.log; then
+            found=$(grep -o "R8 [0-9][0-9.]*\|Android Gradle plugin [0-9][0-9.]*" release.log | head -1)
+            echo "### :x: Unmitigated release build is flagged by the R8 guard (${found:-version unknown})" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### :white_check_mark: Unmitigated release build is not flagged by the R8 guard" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Report allowed failure
         if: failure() && inputs.allow-failure
