@@ -183,7 +183,7 @@ export const AdyenCheckout: React.FC<AdyenCheckoutProps> = ({
         validPaymentMethods
       );
 
-      removeEventListeners(nativeComponent);
+      removeEventListeners();
       const listeners = startEventListeners(nativeComponent, eventHandlerRefs);
       storeEventListeners(nativeComponent, listeners);
 
