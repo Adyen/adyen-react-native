@@ -20,6 +20,13 @@ type ComponentSubscriptionManager = AdyenComponentContextType & {
   ) => void;
 };
 
+function removeAll(subscriptions: Map<string, EmitterSubscription[]>) {
+  subscriptions.forEach((listeners) => {
+    listeners.forEach((s: EmitterSubscription) => s.remove());
+  });
+  subscriptions.clear();
+}
+
 export function useSubscriptionManager(
   eventHandlerRefs: EventHandlerRefs
 ): ComponentSubscriptionManager {
@@ -29,10 +36,7 @@ export function useSubscriptionManager(
   );
 
   const removeEventListeners = useCallback(() => {
-    nativeSubscriptions.current.forEach((listeners) => {
-      listeners.forEach((s: EmitterSubscription) => s.remove());
-    });
-    nativeSubscriptions.current.clear();
+    removeAll(nativeSubscriptions.current);
   }, []);
 
   const storeEventListeners = useCallback(
@@ -64,10 +68,7 @@ export function useSubscriptionManager(
   }, []);
 
   function cleanup() {
-    nativeSubscriptions.current.forEach((listeners) => {
-      listeners.forEach((s) => s.remove());
-    });
-    nativeSubscriptions.current.clear();
+    removeAll(nativeSubscriptions.current);
     subscriptions.current.forEach((listeners, viewId) => {
       listeners.forEach((s) => s.remove());
       EmbeddedComponentBus.unsubscribe(viewId);
