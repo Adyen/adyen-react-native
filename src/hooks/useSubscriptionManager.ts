@@ -13,37 +13,38 @@ import type {
 } from '../modules/base/EventListenerWrapper';
 
 type ComponentSubscriptionManager = AdyenComponentContextType & {
-  removeEventListeners: <T extends NativeModuleWithConstants>(
-    nativeComponent: EventListenerWrapper<T>
-  ) => void;
+  removeEventListeners: () => void;
   storeEventListeners: <T extends NativeModuleWithConstants>(
     nativeComponent: EventListenerWrapper<T>,
     listeners: EmitterSubscription[]
   ) => void;
 };
 
+function removeAll(subscriptions: Map<string, EmitterSubscription[]>) {
+  subscriptions.forEach((listeners) => {
+    listeners.forEach((s: EmitterSubscription) => s.remove());
+  });
+  subscriptions.clear();
+}
+
 export function useSubscriptionManager(
   eventHandlerRefs: EventHandlerRefs
 ): ComponentSubscriptionManager {
   const subscriptions = useRef<Map<string, EmitterSubscription[]>>(new Map());
-
-  const removeEventListeners = useCallback(
-    <T extends NativeModuleWithConstants>(
-      nativeComponent: EventListenerWrapper<T>
-    ) => {
-      const listeners = subscriptions.current.get(nativeComponent.name) ?? [];
-      listeners.forEach((s: EmitterSubscription) => s.remove());
-      subscriptions.current.delete(nativeComponent.name);
-    },
-    []
+  const nativeSubscriptions = useRef<Map<string, EmitterSubscription[]>>(
+    new Map()
   );
+
+  const removeEventListeners = useCallback(() => {
+    removeAll(nativeSubscriptions.current);
+  }, []);
 
   const storeEventListeners = useCallback(
     <T extends NativeModuleWithConstants>(
       nativeComponent: EventListenerWrapper<T>,
       listeners: EmitterSubscription[]
     ) => {
-      subscriptions.current.set(nativeComponent.name, listeners);
+      nativeSubscriptions.current.set(nativeComponent.name, listeners);
     },
     []
   );
@@ -67,6 +68,7 @@ export function useSubscriptionManager(
   }, []);
 
   function cleanup() {
+    removeAll(nativeSubscriptions.current);
     subscriptions.current.forEach((listeners, viewId) => {
       listeners.forEach((s) => s.remove());
       EmbeddedComponentBus.unsubscribe(viewId);
