@@ -47,7 +47,6 @@ jobs:
             example/ios/Pods
             ~/Library/Caches/CocoaPods
           key: pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: pods-
 
       - name: Pod install
         working-directory: example/ios
