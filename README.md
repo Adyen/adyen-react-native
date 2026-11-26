@@ -14,6 +14,10 @@
 >
 > See [Compatibility](docs/Compatibility.md#adyen-android-sdk-5220-kotlin-and-android-sdk-requirements) for what to set for your React Native or Expo version. The same document keeps notes for officially unsupported React Native versions below 0.74.
 
+> [!IMPORTANT]
+>
+> **Android release builds: use Android Gradle plugin (AGP) 9.4.1 or later, with Gradle 9.6.0 or later.** Older AGP versions bundle an R8 version that breaks native 3D Secure 2 payments in release builds. The app can crash without an error, and debug builds are not affected, so test 3D Secure 2 payments on a release build. If you stay on AGP 8, pin R8 9.4.18 or later in your `android/settings.gradle`. See [Compatibility](docs/Compatibility.md#android-r8-and-3d-secure-2-in-release-builds).
+
 ![React Native Logo](https://user-images.githubusercontent.com/2648655/198584674-f0c46e71-1c21-409f-857e-77acaa4daae0.png)
 
 # Adyen React Native
@@ -76,10 +80,12 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
 <details>
 <summary><strong>Plugin Configuration Options</strong></summary>
 
-| Option               | Description                                                                     |
-| -------------------- | ------------------------------------------------------------------------------- |
-| `merchantIdentifier` | Sets ApplePay Merchant ID to your iOS app's entitlement file. Empty by default. |
+| Option               | Description                                                                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `merchantIdentifier` | Adds your Apple Pay merchant ID to your iOS app's entitlements file. Empty by default.                                                                              |
 | `useFrameworks`      | Adjust `import` on iOS in case your `Podfile` has `use_frameworks!` enabled.    |
+| `r8Version`          | Android: R8 version that the plugin pins in `android/settings.gradle`. `9.4.18` by default. Set `false` to turn the pin off. See [Compatibility][r8-compatibility]. |
+| `skipR8Check`        | Android: set `true` to turn off the release build check for R8 versions that break 3D Secure 2. Use it only if you fixed the problem another way.                   |
 
 **Example with all options:**
 
@@ -91,7 +97,9 @@ For Android, install `expo-build-properties` and set the Kotlin and Android API 
         "@adyen/react-native",
         {
           "merchantIdentifier": "merchant.com.my-merchant-id",
-          "useFrameworks": true
+          "useFrameworks": true,
+          "r8Version": "9.4.18",
+          "skipR8Check": false
         }
       ]
     ]
@@ -424,3 +432,4 @@ MIT license. For more information, see the [LICENSE](LICENSE) file.
 [customization]: /docs/Customization.md
 [adyen-docs-dropin]: https://docs.adyen.com/online-payments/react-native/drop-in
 [adyen-docs-components]: https://docs.adyen.com/online-payments/react-native/components
+[r8-compatibility]: docs/Compatibility.md#android-r8-and-3d-secure-2-in-release-builds

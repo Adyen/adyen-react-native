@@ -101,9 +101,18 @@ jobs:
       matrix:
         mode: [builtin-kotlin, opt-out]
         rn-version: ['0.87.1', 'latest']
+        scenario: [baseline]
+        # One job per R8 / 3D Secure 2 mitigation, on the supported toolchain only.
+        include:
+          - { mode: opt-out, rn-version: '0.87.1', scenario: agp-upgrade }
+          - { mode: opt-out, rn-version: '0.87.1', scenario: pin-r8 }
+          - { mode: opt-out, rn-version: '0.87.1', scenario: dontoptimize }
+          - { mode: opt-out, rn-version: '0.87.1', scenario: downgrade-3ds2 }
+          - { mode: opt-out, rn-version: '0.87.1', scenario: old-r8-control }
     uses: ./.github/workflows/android_agp9_build.yml
     with:
       node-version: ${{ vars.NODE_VERSION }}
       rn-version: ${{ matrix.rn-version }}
       mode: ${{ matrix.mode }}
+      scenario: ${{ matrix.scenario }}
       allow-failure: ${{ matrix.mode == 'builtin-kotlin' || matrix.rn-version == 'latest' }}
